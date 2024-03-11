@@ -1,15 +1,15 @@
 [package]
-name = "stylus-hello-world-minimal"
+name = "fairy-v1"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-stylus-sdk = "0.4.2"
+stylus-sdk = { version = "0.4.2", features = ["hostio", "debug"] }
 mini-alloc = "0.4.2"
 
 [features]
 export-abi = ["stylus-sdk/export-abi"]
-debug = ["stylus-sdk/debug"]
+#debug = ["stylus-sdk/debug"]
 
 [lib]
 crate-type = ["lib", "cdylib"]
