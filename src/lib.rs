@@ -2,6 +2,8 @@
 #![cfg_attr(not(test), no_std)]
 extern crate alloc;
 
+pub mod quantities;
+
 #[global_allocator]
 static ALLOC: mini_alloc::MiniAlloc = mini_alloc::MiniAlloc::INIT;
 
