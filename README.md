@@ -8,7 +8,7 @@ cargo stylus check --wasm-file-path ./target/wasm32-unknown-unknown/release/fair
 
 cargo stylus deploy --private-key-path ./.localnet.key --endpoint http://localhost:8547
 
-cast send 0x525c2aBA45F66987217323E8a05EA400C65D06DC 0xe50c000000000000 --rpc-url 'http://localhost:8547' --private-key $PRIVATE_KEY
+cast send 0xda52b25ddB0e3B9CC393b0690Ac62245Ac772527 0xe50c000000000000 --rpc-url 'http://localhost:8547' --private-key $PRIVATE_KEY
 
 
 # Debugging
