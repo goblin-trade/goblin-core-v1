@@ -1,2 +1,2 @@
 pub mod slot_storage;
-pub mod storage;
+pub mod tick_array;
