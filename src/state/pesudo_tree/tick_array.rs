@@ -1,35 +1,4 @@
-//! The storage engine consists of 3 data structures
-//! - Array of ticks: stored continuously as u24 integers in U256 slots
-//! - Tick header: gives the number of active orders on a tick and head index
-//! - Resting order: Resting orders have a key (price, index). Resting orders on a tick
-//! stored in a virtual circular array with a max limit of 16 orders per tick.
-//!
-//! Operations
-//! 1. Placing post-only order
-//!   - Add the order's tick price to the tick array if it doesn't exist. Shift the ticks
-//!   on the right side (greater than) of the order's price
-//!   - Increment the order count on the tick header. Ensure that the max size is not exceeded
-//!   - Insert the resting order
-//!
-//! 2. Taker order
-//!   - Read first slot from the ticks array. Decode the ticks and use them to fetch the resting
-//!   - orders. Perform operations on the resting orders.
-//!   - Depleted ticks must be removed from the ticks array
-//!
-//!
-//! Tick operations needed
-//!
-//! 1. Iterate tick slots one by one for taker orders
-//!   - Save fetched slots into a vector. The ticks vector will be used when updating the slots
-//!
-//! 2. Find whether tick exists*: We can directly look at the tick header.
-//!
-//! 3. Read all ticks: Needed for new tick insertions
-//!
-//! 4. Write all slots to the right
-//!
-
-use crate::state::slot_storage::{SlotActions, SlotStorage};
+use crate::state::slot_storage::{SlotActions, SlotKey, SlotStorage};
 use alloc::vec::Vec;
 
 pub struct TickArrayKey {
@@ -40,8 +9,8 @@ pub struct TickArrayKey {
     pub tick_slot_index: u32,
 }
 
-impl TickArrayKey {
-    pub fn get_key(&self) -> [u8; 32] {
+impl SlotKey for TickArrayKey {
+    fn get_key(&self) -> [u8; 32] {
         let mut key = [0u8; 32];
 
         key[0..4].copy_from_slice(&self.tick_slot_index.to_le_bytes());

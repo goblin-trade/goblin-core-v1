@@ -57,6 +57,10 @@ impl SlotActions for SlotStorage {
     }
 }
 
+pub trait SlotKey {
+    fn get_key(&self) -> [u8; 32];
+}
+
 #[cfg(test)]
 mod test {
     use super::*;

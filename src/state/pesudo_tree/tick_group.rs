@@ -1,4 +1,4 @@
-use crate::state::slot_storage::{SlotActions, SlotStorage};
+use crate::state::slot_storage::{SlotActions, SlotKey, SlotStorage};
 
 const TICK_HEADER_KEY_SEED: u8 = 1;
 
@@ -11,16 +11,8 @@ pub struct TickGroupKey {
     pub tick_group_index: u32,
 }
 
-impl TickGroupKey {
-    pub fn new_from_tick_index(market_index: u16, tick_index: u32) -> Self {
-        TickGroupKey {
-            market_index,
-            // A TickGroup holds 32 TickHeaders
-            tick_group_index: tick_index / 32,
-        }
-    }
-
-    pub fn get_key(&self) -> [u8; 32] {
+impl SlotKey for TickGroupKey {
+    fn get_key(&self) -> [u8; 32] {
         let mut key = [0u8; 32];
 
         key[0..4].copy_from_slice(&self.tick_group_index.to_le_bytes());
@@ -28,6 +20,16 @@ impl TickGroupKey {
         key[6..7].copy_from_slice(&TICK_HEADER_KEY_SEED.to_le_bytes());
 
         key
+    }
+}
+
+impl TickGroupKey {
+    pub fn new_from_tick_index(market_index: u16, tick_index: u32) -> Self {
+        TickGroupKey {
+            market_index,
+            // A TickGroup holds 32 TickHeaders
+            tick_group_index: tick_index / 32,
+        }
     }
 }
 
@@ -66,7 +68,7 @@ pub struct TickGroup {
 }
 
 impl TickGroup {
-    pub fn new(slot_storage: &SlotStorage, key: &TickGroupKey) -> Self {
+    pub fn new_from_slot(slot_storage: &SlotStorage, key: &TickGroupKey) -> Self {
         TickGroup {
             inner: slot_storage.sload(&key.get_key()),
         }
@@ -126,7 +128,7 @@ mod test {
     fn test_decode_group_from_empty_slot() {
         let slot_storage = SlotStorage::new();
 
-        let tick_group = TickGroup::new(
+        let tick_group = TickGroup::new_from_slot(
             &slot_storage,
             &TickGroupKey {
                 market_index: 0,
@@ -159,7 +161,7 @@ mod test {
 
         slot_storage.sstore(&key.get_key(), &slot_bytes);
 
-        let tick_header = TickGroup::new(&slot_storage, &key);
+        let tick_header = TickGroup::new_from_slot(&slot_storage, &key);
         assert_eq!(tick_header.inner, slot_bytes);
 
         let mut expected_headers = [TickHeader {
