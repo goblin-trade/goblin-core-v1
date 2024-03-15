@@ -10,10 +10,14 @@ static ALLOC: mini_alloc::MiniAlloc = mini_alloc::MiniAlloc::INIT;
 
 use alloc::vec::Vec;
 
-use stylus_sdk::{alloy_primitives::{B256, U256}, console, stylus_proc::entrypoint};
+use stylus_sdk::{
+    alloy_primitives::{B256, U256},
+    console,
+    stylus_proc::entrypoint,
+};
 
-use state::slot_storage::SlotStorage;
 use crate::state::slot_storage::SlotActions;
+use state::slot_storage::SlotStorage;
 
 #[entrypoint]
 fn user_main(input: Vec<u8>) -> Result<Vec<u8>, Vec<u8>> {
