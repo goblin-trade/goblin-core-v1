@@ -1,6 +1,7 @@
 use crate::state::slot_storage::{SlotActions, SlotKey, SlotStorage};
 
 const TICK_HEADER_KEY_SEED: u8 = 1;
+pub const MAX_ORDERS_PER_TICK: u8 = 15;
 
 /// A TickGroup contains 32 contiguous encoded TickHeaders in ascending order.
 /// Bids and Asks have a common set of TickGroups because a resting order
@@ -36,38 +37,6 @@ impl TickGroup {
     }
 }
 
-
-/// Key to fetch a TickGroup. A TickGroup consists of multiple TickHeaders
-pub struct TickGroupKey {
-    /// The market index
-    pub market_index: u8,
-
-    /// Index of tick header
-    pub tick_group_index: u16,
-}
-
-impl SlotKey for TickGroupKey {
-    fn get_key(&self) -> [u8; 32] {
-        let mut key = [0u8; 32];
-
-        key[0] = TICK_HEADER_KEY_SEED;
-        key[1] = self.market_index;
-        key[2..4].copy_from_slice(&self.tick_group_index.to_le_bytes());
-
-        key
-    }
-}
-
-impl TickGroupKey {
-    pub fn new_from_tick_index(market_index: u8, tick_index: u16) -> Self {
-        TickGroupKey {
-            market_index,
-            // A TickGroup holds 32 TickHeaders
-            tick_group_index: tick_index / 32,
-        }
-    }
-}
-
 /// A decoded TickHeader provides metadata about resting orders at a tick
 /// TickHeader is encoded as 8 bits and stored on the TickHeaderSlot
 #[derive(Copy, Clone)]
@@ -95,6 +64,43 @@ impl TickHeader {
     }
 }
 
+/// Key to fetch a TickGroup. A TickGroup consists of multiple TickHeaders
+pub struct TickGroupKey {
+    /// The market index
+    pub market_index: u8,
+
+    /// Index of tick header
+    pub index: u16,
+}
+
+impl SlotKey for TickGroupKey {
+    fn get_key(&self) -> [u8; 32] {
+        let mut key = [0u8; 32];
+
+        key[0] = TICK_HEADER_KEY_SEED;
+        key[1] = self.market_index;
+        key[2..4].copy_from_slice(&self.index.to_le_bytes());
+
+        key
+    }
+}
+
+impl TickGroupKey {
+    /// Obtain tick group key from a tick
+    ///
+    /// # Arguments
+    ///
+    /// * `market_index` - The market index
+    /// * `tick` - The price tick of size 2^21. This must be ensured externally.
+    ///
+    pub fn new_from_tick(market_index: u8, tick: u32) -> Self {
+        TickGroupKey {
+            market_index,
+            // A TickGroup holds headers for 32 ticks
+            index: (tick / 32) as u16,
+        }
+    }
+}
 #[cfg(test)]
 mod test {
     use super::*;
@@ -133,7 +139,7 @@ mod test {
             &slot_storage,
             &TickGroupKey {
                 market_index: 0,
-                tick_group_index: 0,
+                index: 0,
             },
         );
 
@@ -152,7 +158,7 @@ mod test {
         // Tick group 0 contains ticks from 0 to 31
         let key = TickGroupKey {
             market_index: 0,
-            tick_group_index: 0,
+            index: 0,
         };
 
         let slot_bytes: [u8; 32] = [

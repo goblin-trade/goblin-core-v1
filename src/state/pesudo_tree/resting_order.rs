@@ -2,31 +2,6 @@ use crate::state::{slot_storage::SlotKey, RestingOrder, SlotActions, SlotStorage
 
 const RESTING_ORDER_KEY_SEED: u8 = 2;
 
-pub struct RestingOrderKey {
-    /// The market index
-    pub market_index: u8,
-
-    /// Tick where order is placed
-    pub tick: u32,
-
-    /// Resting order index between 0 to 15. A single tick can have at most 15 orders
-    pub resting_order_index: u8,
-}
-
-impl SlotKey for RestingOrderKey {
-    fn get_key(&self) -> [u8; 32] {
-        let mut key = [0u8; 32];
-
-        key[0] = RESTING_ORDER_KEY_SEED;
-        key[1] = self.market_index;
-        key[2..6].copy_from_slice(&self.tick.to_le_bytes());
-        key[7] = self.resting_order_index;
-
-        key
-    }
-}
-
-
 /// Circular buffer resting order
 /// Occupies exactly 32 bytes
 #[repr(C)]
@@ -140,6 +115,30 @@ impl RestingOrder for CBRestingOrder {
         (self.last_valid_slot != 0 && self.last_valid_slot < current_slot)
             || (self.last_valid_unix_timestamp_in_seconds != 0
                 && self.last_valid_unix_timestamp_in_seconds < current_unix_timestamp_in_seconds)
+    }
+}
+
+pub struct RestingOrderKey {
+    /// The market index
+    pub market_index: u8,
+
+    /// Tick where order is placed
+    pub tick: u32,
+
+    /// Resting order index between 0 to 15. A single tick can have at most 15 orders
+    pub resting_order_index: u8,
+}
+
+impl SlotKey for RestingOrderKey {
+    fn get_key(&self) -> [u8; 32] {
+        let mut key = [0u8; 32];
+
+        key[0] = RESTING_ORDER_KEY_SEED;
+        key[1] = self.market_index;
+        key[2..6].copy_from_slice(&self.tick.to_le_bytes());
+        key[7] = self.resting_order_index;
+
+        key
     }
 }
 
