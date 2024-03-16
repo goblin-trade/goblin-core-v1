@@ -2,29 +2,64 @@ use crate::state::slot_storage::{SlotActions, SlotKey, SlotStorage};
 
 const TICK_HEADER_KEY_SEED: u8 = 1;
 
+/// A TickGroup contains 32 contiguous encoded TickHeaders in ascending order.
+/// Bids and Asks have a common set of TickGroups because a resting order
+/// at a tick can't be on both sides at the same time.
+pub struct TickGroup {
+    pub inner: [u8; 32],
+}
+
+impl TickGroup {
+    pub fn new_from_slot(slot_storage: &SlotStorage, key: &TickGroupKey) -> Self {
+        TickGroup {
+            inner: slot_storage.sload(&key.get_key()),
+        }
+    }
+
+    /// Decode all TickHeaders in a TickGroup
+    pub fn headers(&self) -> [TickHeader; 32] {
+        let mut headers = [TickHeader {
+            order_count: 0,
+            head: 0,
+        }; 32];
+        for i in 0..32 {
+            headers[i] = TickHeader::new(self.inner[i]);
+        }
+
+        headers
+    }
+
+    /// Obtain TickHeader at a given index
+    /// Must externally ensure that index is less than 32
+    pub fn header(&self, header_index: u8) -> TickHeader {
+        TickHeader::new(self.inner[header_index as usize])
+    }
+}
+
+
 /// Key to fetch a TickGroup. A TickGroup consists of multiple TickHeaders
 pub struct TickGroupKey {
     /// The market index
-    pub market_index: u16,
+    pub market_index: u8,
 
     /// Index of tick header
-    pub tick_group_index: u32,
+    pub tick_group_index: u16,
 }
 
 impl SlotKey for TickGroupKey {
     fn get_key(&self) -> [u8; 32] {
         let mut key = [0u8; 32];
 
-        key[0..4].copy_from_slice(&self.tick_group_index.to_le_bytes());
-        key[4..6].copy_from_slice(&self.market_index.to_le_bytes());
-        key[6..7].copy_from_slice(&TICK_HEADER_KEY_SEED.to_le_bytes());
+        key[0] = TICK_HEADER_KEY_SEED;
+        key[1] = self.market_index;
+        key[2..4].copy_from_slice(&self.tick_group_index.to_le_bytes());
 
         key
     }
 }
 
 impl TickGroupKey {
-    pub fn new_from_tick_index(market_index: u16, tick_index: u32) -> Self {
+    pub fn new_from_tick_index(market_index: u8, tick_index: u16) -> Self {
         TickGroupKey {
             market_index,
             // A TickGroup holds 32 TickHeaders
@@ -57,40 +92,6 @@ impl TickHeader {
         let encoded_order_count = self.order_count & 0x0F; // Ensure order_count fits into 4 bits
         let encoded_head = self.head << 4; // Shift head to upper 4 bits
         encoded_order_count | encoded_head // Combine order_count and head
-    }
-}
-
-/// A TickGroup contains 32 contiguous encoded TickHeaders in ascending order.
-/// Bids and Asks have a common set of TickGroups because a resting order
-/// at a tick can't be on both sides at the same time.
-pub struct TickGroup {
-    pub inner: [u8; 32],
-}
-
-impl TickGroup {
-    pub fn new_from_slot(slot_storage: &SlotStorage, key: &TickGroupKey) -> Self {
-        TickGroup {
-            inner: slot_storage.sload(&key.get_key()),
-        }
-    }
-
-    /// Decode all TickHeaders in a TickGroup
-    pub fn headers(&self) -> [TickHeader; 32] {
-        let mut headers = [TickHeader {
-            order_count: 0,
-            head: 0,
-        }; 32];
-        for i in 0..32 {
-            headers[i] = TickHeader::new(self.inner[i]);
-        }
-
-        headers
-    }
-
-    /// Obtain TickHeader at a given index
-    /// Must externally ensure that index is less than 32
-    pub fn header(&self, header_index: u8) -> TickHeader {
-        TickHeader::new(self.inner[header_index as usize])
     }
 }
 

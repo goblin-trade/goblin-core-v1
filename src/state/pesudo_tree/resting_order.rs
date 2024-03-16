@@ -4,7 +4,7 @@ const RESTING_ORDER_KEY_SEED: u8 = 2;
 
 pub struct RestingOrderKey {
     /// The market index
-    pub market_index: u16,
+    pub market_index: u8,
 
     /// Tick where order is placed
     pub tick: u32,
@@ -17,9 +17,10 @@ impl SlotKey for RestingOrderKey {
     fn get_key(&self) -> [u8; 32] {
         let mut key = [0u8; 32];
 
-        key[0..1].copy_from_slice(&self.resting_order_index.to_le_bytes());
-        key[4..6].copy_from_slice(&self.market_index.to_le_bytes());
-        key[6..7].copy_from_slice(&RESTING_ORDER_KEY_SEED.to_le_bytes());
+        key[0] = RESTING_ORDER_KEY_SEED;
+        key[1] = self.market_index;
+        key[2..6].copy_from_slice(&self.tick.to_le_bytes());
+        key[7] = self.resting_order_index;
 
         key
     }
@@ -88,16 +89,16 @@ impl CBRestingOrder {
         }
     }
 
-    /// Load CBRestingOrder from slot storage
-    pub fn new_from_slot(slot: [u8; 32]) -> Self {
+    /// Decode CBRestingOrder from slot
+    pub fn decode(slot: [u8; 32]) -> Self {
         unsafe { core::mem::transmute::<[u8; 32], CBRestingOrder>(slot) }
     }
 
     /// Load CBRestingOrder from slot storage
-    pub fn new_from_slot_storage(slot_storage: &SlotStorage, key: &RestingOrderKey) -> Self {
+    pub fn new_from_slot(slot_storage: &SlotStorage, key: &RestingOrderKey) -> Self {
         let slot = slot_storage.sload(&key.get_key());
 
-        CBRestingOrder::new_from_slot(slot)
+        CBRestingOrder::decode(slot)
     }
 
     /// Encode CBRestingOrder as a 32 bit slot in little endian
@@ -175,7 +176,7 @@ mod test {
             0, 0, 0, 0, 1, 1, 0, 0,
         ];
 
-        let resting_order = CBRestingOrder::new_from_slot(slot);
+        let resting_order = CBRestingOrder::decode(slot);
 
         // This is 0x0000000000000000000000000000000000000001
         let expected_address = Address::from_slice(&[
