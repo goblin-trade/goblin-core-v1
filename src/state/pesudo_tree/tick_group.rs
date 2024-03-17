@@ -17,50 +17,48 @@ impl TickGroup {
         }
     }
 
-    /// Decode all TickHeaders in a TickGroup
-    pub fn headers(&self) -> [TickHeader; 32] {
-        let mut headers = [TickHeader {
-            order_count: 0,
-            head: 0,
-        }; 32];
-        for i in 0..32 {
-            headers[i] = TickHeader::new(self.inner[i]);
-        }
-
-        headers
-    }
-
-    /// Obtain TickHeader at a given index
+    /// Obtain TickBitmap at a given index
     /// Must externally ensure that index is less than 32
-    pub fn header(&self, header_index: u8) -> TickHeader {
-        TickHeader::new(self.inner[header_index as usize])
+    pub fn bitmap(&self, index: usize) -> TickBitmap {
+        TickBitmap {
+            inner: self.inner[index],
+        }
+    }
+
+    /// Whether the tick group is active. If the active state changes then
+    /// the tick group list must be updated
+    pub fn is_active(&self) -> bool {
+        self.inner != [0u8; 32]
     }
 }
 
-/// A decoded TickHeader provides metadata about resting orders at a tick
-/// TickHeader is encoded as 8 bits and stored on the TickHeaderSlot
+/// TickBitmap is an 8 bit bitmap in little endian format which tells
+/// about active resting orders at the given tick.
 #[derive(Copy, Clone)]
-pub struct TickHeader {
-    /// Number of resting orders at the tick
-    /// Occupies 4 bits for a max value of 15.
-    pub order_count: u8,
-
-    /// Head index of the first order in the resting orders circular array
-    /// Occupies 4 bits for a max value of 15
-    pub head: u8,
+pub struct TickBitmap {
+    pub inner: u8,
 }
 
-impl TickHeader {
-    pub fn new(tick_header_byte: u8) -> Self {
-        let order_count = tick_header_byte & 0x0F; // Extract lower 4 bits
-        let head = tick_header_byte >> 4; // Extract upper 4 bits
-        TickHeader { order_count, head }
+impl TickBitmap {
+    /// Whether a resting order is present at the given index
+    /// Must externally ensure that `index` is less than 8
+    pub fn order_present(&self, index: u8) -> bool {
+        // Use bitwise AND operation to check if the bit at the given index is set
+        // If the bit is set, it means that an order is present at that index
+        (self.inner & (1 << index)) != 0
     }
 
-    pub fn encode(&self) -> u8 {
-        let encoded_order_count = self.order_count & 0x0F; // Ensure order_count fits into 4 bits
-        let encoded_head = self.head << 4; // Shift head to upper 4 bits
-        encoded_order_count | encoded_head // Combine order_count and head
+    /// Find the best available slot with the lowest index
+    pub fn best_free_index(&self) -> Option<u8> {
+        // Iterate through each bit starting from the least significant bit
+        for i in 0..8 {
+            // Check if the bit at index `i` is 0
+            if !self.order_present(i) {
+                return Some(i);
+            }
+        }
+        // If all bits are 1, return None indicating no free index
+        None
     }
 }
 
@@ -106,32 +104,6 @@ mod test {
     use super::*;
 
     #[test]
-    fn test_encode_header() {
-        let tick_header = TickHeader {
-            order_count: 1,
-            head: 1,
-        };
-
-        assert_eq!(tick_header.encode(), 17);
-    }
-
-    #[test]
-    fn test_decode_header() {
-        let tick_header = TickHeader::new(18);
-
-        assert_eq!(tick_header.order_count, 2);
-        assert_eq!(tick_header.head, 1);
-    }
-
-    #[test]
-    fn test_decode_header_from_empty_byte() {
-        let tick_header = TickHeader::new(0);
-
-        assert_eq!(tick_header.order_count, 0);
-        assert_eq!(tick_header.head, 0);
-    }
-
-    #[test]
     fn test_decode_group_from_empty_slot() {
         let slot_storage = SlotStorage::new();
 
@@ -144,11 +116,6 @@ mod test {
         );
 
         assert_eq!(tick_group.inner, [0u8; 32]);
-
-        for header in tick_group.headers() {
-            assert_eq!(header.order_count, 0);
-            assert_eq!(header.head, 0);
-        }
     }
 
     #[test]
@@ -171,25 +138,23 @@ mod test {
         let tick_header = TickGroup::new_from_slot(&slot_storage, &key);
         assert_eq!(tick_header.inner, slot_bytes);
 
-        let mut expected_headers = [TickHeader {
-            order_count: 0,
-            head: 0,
-        }; 32];
+        let bitmap_0 = tick_header.bitmap(0);
+        let bitmap_1 = tick_header.bitmap(1);
 
-        expected_headers[0] = TickHeader {
-            order_count: 0,
-            head: 1,
-        };
-        expected_headers[1] = TickHeader {
-            order_count: 1,
-            head: 1,
-        };
+        assert_eq!(bitmap_0.inner, 16);
+        assert_eq!(bitmap_1.inner, 17);
+        let order_present_expected_0 = [false, false, false, false, true, false, false, false];
+        let order_present_expected_1 = [true, false, false, false, true, false, false, false];
 
-        let headers = tick_header.headers();
-
-        for i in 0..32 {
-            assert_eq!(headers[i].order_count, expected_headers[i].order_count);
-            assert_eq!(headers[i].head, expected_headers[i].head);
+        for i in 0..8 {
+            assert_eq!(
+                bitmap_0.order_present(i),
+                order_present_expected_0[i as usize]
+            );
+            assert_eq!(
+                bitmap_1.order_present(i),
+                order_present_expected_1[i as usize]
+            );
         }
     }
 }

@@ -11,7 +11,7 @@ pub struct CBRestingOrder {
     pub trader_address: [u8; 20],
     pub num_base_lots: u32,
     pub last_valid_slot: u32,
-    pub last_valid_unix_timestamp_in_seconds: u32
+    pub last_valid_unix_timestamp_in_seconds: u32,
 }
 
 impl CBRestingOrder {
@@ -87,7 +87,6 @@ impl CBRestingOrder {
 
         slot_storage.sstore(&key.get_key(), &encoded);
     }
-
 }
 
 impl RestingOrder for CBRestingOrder {
@@ -154,34 +153,31 @@ mod test {
             trader_address: Address::ZERO.0.into(),
             num_base_lots: 1,
             last_valid_slot: 0,
-            last_valid_unix_timestamp_in_seconds: 257
+            last_valid_unix_timestamp_in_seconds: 257,
         };
 
         let encoded_order = resting_order.encode();
-        assert_eq!(encoded_order, [
-            0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 1, 0, 0, 0,
-            0, 0, 0, 0, 1, 1, 0, 0,
-        ]);
+        assert_eq!(
+            encoded_order,
+            [
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
+                1, 1, 0, 0,
+            ]
+        );
     }
 
     #[test]
     fn test_decode_resting_order() {
         let slot: [u8; 32] = [
-            1, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 1, 0, 0, 0,
-            0, 0, 0, 0, 1, 1, 0, 0,
+            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1,
+            1, 0, 0,
         ];
 
         let resting_order = CBRestingOrder::decode(slot);
 
         // This is 0x0000000000000000000000000000000000000001
-        let expected_address = Address::from_slice(&[
-            1, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0]);
+        let expected_address =
+            Address::from_slice(&[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
 
         assert_eq!(resting_order.trader_address, expected_address);
         assert_eq!(resting_order.num_base_lots, 1);

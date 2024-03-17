@@ -1,11 +1,14 @@
-use crate::state::{CBRestingOrder, RestingOrderKey, Side, SlotKey, SlotStorage, TickGroup, TickGroupKey, MAX_ORDERS_PER_TICK};
+use crate::state::{
+    CBRestingOrder, RestingOrderKey, Side, SlotKey, SlotStorage, TickGroup, TickGroupKey,
+    TickGroupList, MAX_ORDERS_PER_TICK,
+};
 
-use super::tick_group;
+use super::{tick_group, tick_group_list};
 
 pub struct PseudoTree {
     pub market_index: u8,
-    pub tick_groups_count_for_bids: u32,
-    pub tick_groups_count_for_asks: u32,
+    pub tick_groups_count_for_bids: u16,
+    pub tick_groups_count_for_asks: u16,
 }
 
 impl PseudoTree {
@@ -16,25 +19,47 @@ impl PseudoTree {
         slot_storage: &mut SlotStorage,
         side: Side,
         tick: u32,
-        resting_order: &CBRestingOrder
+        resting_order: &CBRestingOrder,
     ) {
         // Read tick group to see if space is available
         let tick_group_key = TickGroupKey::new_from_tick(self.market_index, tick);
         let tick_group = TickGroup::new_from_slot(slot_storage, &tick_group_key);
 
-        let header_index = (tick % tick_group_key.index as u32) as u8;
-        let header = tick_group.header(header_index);
+        let header_index = (tick % 32) as usize;
+        let header = tick_group.bitmap(header_index);
 
-        if header.order_count == MAX_ORDERS_PER_TICK {
-            return;
+        match header.best_free_index() {
+            None => {
+                return;
+            }
+            Some(index) => {
+                // Check whether tick group will become activated. If yes then push to tick_group_list
+                let to_activate_group = !tick_group.is_active();
+
+                if to_activate_group {
+                    // insert in tick_group_list at correct position
+                    let mut tick_group_list = TickGroupList {
+                        market_index: self.market_index,
+                        side,
+                        size: self.tick_groups_count_for_asks,
+                    };
+
+                    // increase size- tick_groups_count_for_asks
+
+                    tick_group_list.insert(slot_storage, tick_group_key.index);
+                }
+                // Save order
+                // update bitmap
+            }
         }
+        // if header.order_count == MAX_ORDERS_PER_TICK {
+        //     return;
+        // }
 
         // Why not store bitmap of active ticks instead of order_count and header?
         // This allows us to fit orders in the best slot, removing the need to loop.
         // We don't need a circular buffer as well.
-        // Disadvantage- need 16 bits for 16 orders. This means max tick is reduced to 2^20
-        // This also increases the number of elements in tick_group_list. 1 tick group is worth $1.6
-        // difference instead of $3.2
-        // Alternative- max 8 orders per tick. Is it too less?
+        // A 1 byte bitmap can track 8 resting orders, which is enough. No need to change
+        // tick_group_list
     }
 }
