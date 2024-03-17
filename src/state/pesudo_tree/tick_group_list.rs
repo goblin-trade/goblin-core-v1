@@ -1,4 +1,4 @@
-use crate::state::{slot_storage, Side, SlotActions, SlotKey, SlotStorage};
+use crate::state::{Side, SlotActions, SlotKey, SlotStorage};
 use alloc::vec::Vec;
 
 const TICK_GROUP_LIST_KEY_SEED: u8 = 0;
@@ -49,13 +49,15 @@ impl TickGroupList {
 
         let mut tick_group_slot = TickGroupItem::default();
 
-        // TODO handle empty case
-        for i in (0..self.size).rev() {
+        let mut i = self.size;
+        while i > 0 {
+            i -= 1;
+
             let slot_index = i / 16;
-            let group_index = i % 16;
+            let relative_index = i % 16;
 
             // Fetch slot if this is the first time, or we have exhausted the slot
-            if i == self.size - 1 || group_index == 0 {
+            if i == self.size - 1 || relative_index == 15 {
                 let key = TickGroupItemKey {
                     market_index: self.market_index,
                     index: slot_index,
@@ -65,50 +67,52 @@ impl TickGroupList {
             }
 
             // the current group
-            let group = tick_group_slot.inner[group_index as usize];
+            let group = tick_group_slot.inner[relative_index as usize];
 
             // check whether new_group is to be inserted after group
-            if (self.ascending() && group < new_group) || (!self.ascending() && group > new_group) {
+            if (self.ascending() && new_group < group) || (!self.ascending() && new_group > group) {
                 read_groups.push(group);
             } else {
-                let mut group_slot_to_write = TickGroupItem::default();
-
-                // save elements on left of new_group
-                let groups_on_left = &tick_group_slot.inner[0..(group_index as usize)];
-                group_slot_to_write.inner[0..(group_index as usize)]
-                    .copy_from_slice(groups_on_left);
-
-                // right shift and saving logic
-
-                // push the element to insert at top of the stack
-                read_groups.push(new_group);
-
-                for j in 0..read_groups.len() {
-                    let absolute_index = i as usize + j;
-                    let slot_index = absolute_index / 16;
-                    let group_index = absolute_index % 16;
-
-                    // pop group from stack and add to the slot
-                    group_slot_to_write.inner[group_index] = read_groups.pop().unwrap();
-
-                    // If the last element of the slot was entered, write and flush the slot
-                    if group_index == 15 {
-                        let key = TickGroupItemKey {
-                            market_index: self.market_index,
-                            index: slot_index as u16,
-                        };
-
-                        group_slot_to_write.write_to_slot(slot_storage, &key);
-
-                        // reset to empty slot
-                        group_slot_to_write = TickGroupItem::default();
-                    }
-                }
-
-                self.size += 1;
-                return;
+                i += 1;
+                break;
             }
         }
+
+        // push the element to insert at top of the stack
+        read_groups.push(new_group);
+
+        let mut group_slot_to_write = TickGroupItem::default();
+
+        // save elements on left of new_group
+        let relative_index = i % 16;
+        let groups_on_left = &tick_group_slot.inner[0..(relative_index as usize)];
+        group_slot_to_write.inner[0..(relative_index as usize)].copy_from_slice(groups_on_left);
+
+        // right shift and save to slot
+        for j in 0..read_groups.len() {
+            let absolute_index = i as usize + j;
+            let slot_index = absolute_index / 16;
+            let relative_index = absolute_index % 16;
+
+            // pop group from stack and add to the slot
+            group_slot_to_write.inner[relative_index] = read_groups.pop().unwrap();
+
+            // If the last element of the slot was entered or the list is exhausted, write and flush the slot
+            if relative_index == 15 || read_groups.is_empty() {
+                let key = TickGroupItemKey {
+                    market_index: self.market_index,
+                    index: slot_index as u16,
+                };
+
+                group_slot_to_write.write_to_slot(slot_storage, &key);
+
+                // reset to empty slot
+                group_slot_to_write = TickGroupItem::default();
+            }
+        }
+
+        self.size += 1;
+
     }
 }
 
@@ -200,17 +204,298 @@ mod test {
     }
 
     #[test]
-    fn test_insert() {
+    fn test_insert_for_bids() {
         let mut slot_storage = SlotStorage::new();
 
+        let market_index = 0;
+        let side = Side::Bid;
+
         let mut list = TickGroupList {
-            market_index: 0,
-            side: Side::Bid,
+            market_index,
+            side,
             size: 0,
         };
 
+        // 1. insert first item
         list.insert(&mut slot_storage, 1);
 
         assert_eq!(list.size, 1);
+        let key = TickGroupItemKey {
+            market_index,
+            index: 0
+        };
+
+        let mut item = TickGroupItem::new_from_slot(&slot_storage, &key);
+        assert_eq!(item.inner, [
+            1, 0, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+        ]);
+
+        // 2. insert second item
+        list.insert(&mut slot_storage, 2);
+
+        assert_eq!(list.size, 2);
+
+        item = TickGroupItem::new_from_slot(&slot_storage, &key);
+        assert_eq!(item.inner, [
+            1, 2, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+        ]);
+
+        // 3. insert third item
+        list.insert(&mut slot_storage, 4);
+
+        assert_eq!(list.size, 3);
+
+        item = TickGroupItem::new_from_slot(&slot_storage, &key);
+        assert_eq!(item.inner, [
+            1, 2, 4, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+        ]);
+
+        // 3. insert forth item in the middle
+        list.insert(&mut slot_storage, 3);
+
+        assert_eq!(list.size, 4);
+
+        item = TickGroupItem::new_from_slot(&slot_storage, &key);
+        assert_eq!(item.inner, [
+            1, 2, 3, 4,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+        ]);
+    }
+
+    #[test]
+    fn test_insert_for_asks() {
+        let mut slot_storage = SlotStorage::new();
+
+        let market_index = 0;
+        let side = Side::Ask;
+
+        let mut list = TickGroupList {
+            market_index,
+            side,
+            size: 0,
+        };
+
+        // 1. insert first item
+        list.insert(&mut slot_storage, 4);
+
+        assert_eq!(list.size, 1);
+        let key = TickGroupItemKey {
+            market_index,
+            index: 0
+        };
+
+        let mut item = TickGroupItem::new_from_slot(&slot_storage, &key);
+        assert_eq!(item.inner, [
+            4, 0, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+        ]);
+
+        // 2. insert second item
+        list.insert(&mut slot_storage, 2);
+
+        assert_eq!(list.size, 2);
+
+        item = TickGroupItem::new_from_slot(&slot_storage, &key);
+        assert_eq!(item.inner, [
+            4, 2, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+        ]);
+
+        // 3. insert third item
+        list.insert(&mut slot_storage, 1);
+
+        assert_eq!(list.size, 3);
+
+        item = TickGroupItem::new_from_slot(&slot_storage, &key);
+        assert_eq!(item.inner, [
+            4, 2, 1, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+        ]);
+
+        // 3. insert forth item in the middle
+        list.insert(&mut slot_storage, 3);
+
+        assert_eq!(list.size, 4);
+
+        item = TickGroupItem::new_from_slot(&slot_storage, &key);
+        assert_eq!(item.inner, [
+            4, 3, 2, 1,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+        ]);
+    }
+
+    #[test]
+    fn test_insert_across_multiple_slots_for_bids() {
+        let mut slot_storage = SlotStorage::new();
+
+        let market_index = 0;
+        let side = Side::Bid;
+
+        let mut list = TickGroupList {
+            market_index,
+            side,
+            size: 16,
+        };
+
+        let key_0 = TickGroupItemKey {
+            market_index,
+            index: 0
+        };
+        let key_1 = TickGroupItemKey {
+            market_index,
+            index: 1
+        };
+
+        let initial_tick_groups = [
+            1, 2, 3, 4,
+            5, 6, 7, 8,
+            9, 10, 11, 12,
+            13, 14, 15, 17,
+        ];
+
+        let slot_0_initial = TickGroupItem {
+            inner: initial_tick_groups
+        }.encode();
+
+        slot_storage.sstore(&key_0.get_key(), &slot_0_initial);
+
+        // 1. insert element at end
+        list.insert(&mut slot_storage, 18);
+        assert_eq!(list.size, 17);
+
+        let mut tick_group_item_0 = TickGroupItem::new_from_slot(&slot_storage, &key_0);
+        let mut tick_group_item_1 = TickGroupItem::new_from_slot(&slot_storage, &key_1);
+        assert_eq!(tick_group_item_0.inner, [
+            1, 2, 3, 4,
+            5, 6, 7, 8,
+            9, 10, 11, 12,
+            13, 14, 15, 17,
+        ]);
+
+        assert_eq!(tick_group_item_1.inner, [
+            18, 0, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+        ]);
+
+        // 2. insert element in middle
+        // problem- gives [16, 18] in slot 2
+        list.insert(&mut slot_storage, 16);
+        assert_eq!(list.size, 18);
+
+        tick_group_item_0 = TickGroupItem::new_from_slot(&slot_storage, &key_0);
+        tick_group_item_1 = TickGroupItem::new_from_slot(&slot_storage, &key_1);
+        assert_eq!(tick_group_item_0.inner, [
+            1, 2, 3, 4,
+            5, 6, 7, 8,
+            9, 10, 11, 12,
+            13, 14, 15, 16,
+        ]);
+
+        assert_eq!(tick_group_item_1.inner, [
+            17, 18, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+        ]);
+
+    }
+
+    #[test]
+    fn test_insert_across_multiple_slots_for_asks() {
+        let mut slot_storage = SlotStorage::new();
+
+        let market_index = 0;
+        let side = Side::Ask;
+
+        let mut list = TickGroupList {
+            market_index,
+            side,
+            size: 16,
+        };
+
+        let key_0 = TickGroupItemKey {
+            market_index,
+            index: 0
+        };
+        let key_1 = TickGroupItemKey {
+            market_index,
+            index: 1
+        };
+
+        let initial_tick_groups = [
+            18, 16, 15, 14,
+            13, 12, 11, 10,
+            9, 8, 7, 6,
+            5, 4, 3, 2,
+        ];
+
+        let slot_0_initial = TickGroupItem {
+            inner: initial_tick_groups
+        }.encode();
+
+        slot_storage.sstore(&key_0.get_key(), &slot_0_initial);
+
+        // 1. insert element at end
+        list.insert(&mut slot_storage, 1);
+        assert_eq!(list.size, 17);
+
+        let mut tick_group_item_0 = TickGroupItem::new_from_slot(&slot_storage, &key_0);
+        let mut tick_group_item_1 = TickGroupItem::new_from_slot(&slot_storage, &key_1);
+        assert_eq!(tick_group_item_0.inner, [
+            18, 16, 15, 14,
+            13, 12, 11, 10,
+            9, 8, 7, 6,
+            5, 4, 3, 2,
+        ]);
+
+        assert_eq!(tick_group_item_1.inner, [
+            1, 0, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+        ]);
+
+        // 2. insert element in middle
+        // problem- gives [16, 18] in slot 2
+        list.insert(&mut slot_storage, 17);
+        assert_eq!(list.size, 18);
+
+        tick_group_item_0 = TickGroupItem::new_from_slot(&slot_storage, &key_0);
+        tick_group_item_1 = TickGroupItem::new_from_slot(&slot_storage, &key_1);
+        assert_eq!(tick_group_item_0.inner, [
+            18, 17, 16, 15,
+            14, 13, 12, 11,
+            10, 9, 8, 7,
+            6, 5, 4, 3,
+        ]);
+
+        assert_eq!(tick_group_item_1.inner, [
+            2, 1, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+        ]);
+
     }
 }
