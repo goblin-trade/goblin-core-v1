@@ -25,10 +25,20 @@ impl TickGroup {
         }
     }
 
+    /// Update bitmap at the given index
+    pub fn update_bitmap(&mut self, index: usize, new_bitmap: &TickBitmap) {
+        self.inner[index] = new_bitmap.inner
+    }
+
     /// Whether the tick group is active. If the active state changes then
     /// the tick group list must be updated
     pub fn is_active(&self) -> bool {
         self.inner != [0u8; 32]
+    }
+
+    /// Write Tick group to slot
+    pub fn write_to_slot(&self, slot_storage: &mut SlotStorage, key: &TickGroupKey) {
+        slot_storage.sstore(&key.get_key(), &self.inner);
     }
 }
 
@@ -59,6 +69,13 @@ impl TickBitmap {
         }
         // If all bits are 1, return None indicating no free index
         None
+    }
+
+    /// Flip the bit at the given index
+    /// Must externally ensure that `index` is less than 8
+    pub fn flip(&mut self, index: u8) {
+        // Use bitwise XOR operation with a mask to flip the bit at the given index
+        self.inner ^= 1 << index;
     }
 }
 

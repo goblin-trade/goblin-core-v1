@@ -112,7 +112,6 @@ impl TickGroupList {
         }
 
         self.size += 1;
-
     }
 }
 
@@ -152,10 +151,10 @@ impl TickGroupItem {
 ///
 pub struct TickGroupItemKey {
     /// The market index
-    market_index: u8,
+    pub market_index: u8,
 
     /// Index of the TickGroupSlot, max 2^12 - 1
-    index: u16,
+    pub index: u16,
 }
 
 impl SlotKey for TickGroupItemKey {
@@ -222,16 +221,14 @@ mod test {
         assert_eq!(list.size, 1);
         let key = TickGroupItemKey {
             market_index,
-            index: 0
+            index: 0,
         };
 
         let mut item = TickGroupItem::new_from_slot(&slot_storage, &key);
-        assert_eq!(item.inner, [
-            1, 0, 0, 0,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-        ]);
+        assert_eq!(
+            item.inner,
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,]
+        );
 
         // 2. insert second item
         list.insert(&mut slot_storage, 2);
@@ -239,12 +236,10 @@ mod test {
         assert_eq!(list.size, 2);
 
         item = TickGroupItem::new_from_slot(&slot_storage, &key);
-        assert_eq!(item.inner, [
-            1, 2, 0, 0,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-        ]);
+        assert_eq!(
+            item.inner,
+            [1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,]
+        );
 
         // 3. insert third item
         list.insert(&mut slot_storage, 4);
@@ -252,12 +247,10 @@ mod test {
         assert_eq!(list.size, 3);
 
         item = TickGroupItem::new_from_slot(&slot_storage, &key);
-        assert_eq!(item.inner, [
-            1, 2, 4, 0,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-        ]);
+        assert_eq!(
+            item.inner,
+            [1, 2, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,]
+        );
 
         // 3. insert forth item in the middle
         list.insert(&mut slot_storage, 3);
@@ -265,12 +258,10 @@ mod test {
         assert_eq!(list.size, 4);
 
         item = TickGroupItem::new_from_slot(&slot_storage, &key);
-        assert_eq!(item.inner, [
-            1, 2, 3, 4,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-        ]);
+        assert_eq!(
+            item.inner,
+            [1, 2, 3, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,]
+        );
     }
 
     #[test]
@@ -292,16 +283,14 @@ mod test {
         assert_eq!(list.size, 1);
         let key = TickGroupItemKey {
             market_index,
-            index: 0
+            index: 0,
         };
 
         let mut item = TickGroupItem::new_from_slot(&slot_storage, &key);
-        assert_eq!(item.inner, [
-            4, 0, 0, 0,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-        ]);
+        assert_eq!(
+            item.inner,
+            [4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,]
+        );
 
         // 2. insert second item
         list.insert(&mut slot_storage, 2);
@@ -309,12 +298,10 @@ mod test {
         assert_eq!(list.size, 2);
 
         item = TickGroupItem::new_from_slot(&slot_storage, &key);
-        assert_eq!(item.inner, [
-            4, 2, 0, 0,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-        ]);
+        assert_eq!(
+            item.inner,
+            [4, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,]
+        );
 
         // 3. insert third item
         list.insert(&mut slot_storage, 1);
@@ -322,12 +309,10 @@ mod test {
         assert_eq!(list.size, 3);
 
         item = TickGroupItem::new_from_slot(&slot_storage, &key);
-        assert_eq!(item.inner, [
-            4, 2, 1, 0,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-        ]);
+        assert_eq!(
+            item.inner,
+            [4, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,]
+        );
 
         // 3. insert forth item in the middle
         list.insert(&mut slot_storage, 3);
@@ -335,12 +320,10 @@ mod test {
         assert_eq!(list.size, 4);
 
         item = TickGroupItem::new_from_slot(&slot_storage, &key);
-        assert_eq!(item.inner, [
-            4, 3, 2, 1,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-        ]);
+        assert_eq!(
+            item.inner,
+            [4, 3, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,]
+        );
     }
 
     #[test]
@@ -358,23 +341,19 @@ mod test {
 
         let key_0 = TickGroupItemKey {
             market_index,
-            index: 0
+            index: 0,
         };
         let key_1 = TickGroupItemKey {
             market_index,
-            index: 1
+            index: 1,
         };
 
-        let initial_tick_groups = [
-            1, 2, 3, 4,
-            5, 6, 7, 8,
-            9, 10, 11, 12,
-            13, 14, 15, 17,
-        ];
+        let initial_tick_groups = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17];
 
         let slot_0_initial = TickGroupItem {
-            inner: initial_tick_groups
-        }.encode();
+            inner: initial_tick_groups,
+        }
+        .encode();
 
         slot_storage.sstore(&key_0.get_key(), &slot_0_initial);
 
@@ -384,19 +363,15 @@ mod test {
 
         let mut tick_group_item_0 = TickGroupItem::new_from_slot(&slot_storage, &key_0);
         let mut tick_group_item_1 = TickGroupItem::new_from_slot(&slot_storage, &key_1);
-        assert_eq!(tick_group_item_0.inner, [
-            1, 2, 3, 4,
-            5, 6, 7, 8,
-            9, 10, 11, 12,
-            13, 14, 15, 17,
-        ]);
+        assert_eq!(
+            tick_group_item_0.inner,
+            [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17,]
+        );
 
-        assert_eq!(tick_group_item_1.inner, [
-            18, 0, 0, 0,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-        ]);
+        assert_eq!(
+            tick_group_item_1.inner,
+            [18, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,]
+        );
 
         // 2. insert element in middle
         // problem- gives [16, 18] in slot 2
@@ -405,20 +380,15 @@ mod test {
 
         tick_group_item_0 = TickGroupItem::new_from_slot(&slot_storage, &key_0);
         tick_group_item_1 = TickGroupItem::new_from_slot(&slot_storage, &key_1);
-        assert_eq!(tick_group_item_0.inner, [
-            1, 2, 3, 4,
-            5, 6, 7, 8,
-            9, 10, 11, 12,
-            13, 14, 15, 16,
-        ]);
+        assert_eq!(
+            tick_group_item_0.inner,
+            [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,]
+        );
 
-        assert_eq!(tick_group_item_1.inner, [
-            17, 18, 0, 0,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-        ]);
-
+        assert_eq!(
+            tick_group_item_1.inner,
+            [17, 18, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,]
+        );
     }
 
     #[test]
@@ -436,23 +406,19 @@ mod test {
 
         let key_0 = TickGroupItemKey {
             market_index,
-            index: 0
+            index: 0,
         };
         let key_1 = TickGroupItemKey {
             market_index,
-            index: 1
+            index: 1,
         };
 
-        let initial_tick_groups = [
-            18, 16, 15, 14,
-            13, 12, 11, 10,
-            9, 8, 7, 6,
-            5, 4, 3, 2,
-        ];
+        let initial_tick_groups = [18, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2];
 
         let slot_0_initial = TickGroupItem {
-            inner: initial_tick_groups
-        }.encode();
+            inner: initial_tick_groups,
+        }
+        .encode();
 
         slot_storage.sstore(&key_0.get_key(), &slot_0_initial);
 
@@ -462,19 +428,15 @@ mod test {
 
         let mut tick_group_item_0 = TickGroupItem::new_from_slot(&slot_storage, &key_0);
         let mut tick_group_item_1 = TickGroupItem::new_from_slot(&slot_storage, &key_1);
-        assert_eq!(tick_group_item_0.inner, [
-            18, 16, 15, 14,
-            13, 12, 11, 10,
-            9, 8, 7, 6,
-            5, 4, 3, 2,
-        ]);
+        assert_eq!(
+            tick_group_item_0.inner,
+            [18, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2,]
+        );
 
-        assert_eq!(tick_group_item_1.inner, [
-            1, 0, 0, 0,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-        ]);
+        assert_eq!(
+            tick_group_item_1.inner,
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,]
+        );
 
         // 2. insert element in middle
         // problem- gives [16, 18] in slot 2
@@ -483,19 +445,14 @@ mod test {
 
         tick_group_item_0 = TickGroupItem::new_from_slot(&slot_storage, &key_0);
         tick_group_item_1 = TickGroupItem::new_from_slot(&slot_storage, &key_1);
-        assert_eq!(tick_group_item_0.inner, [
-            18, 17, 16, 15,
-            14, 13, 12, 11,
-            10, 9, 8, 7,
-            6, 5, 4, 3,
-        ]);
+        assert_eq!(
+            tick_group_item_0.inner,
+            [18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3,]
+        );
 
-        assert_eq!(tick_group_item_1.inner, [
-            2, 1, 0, 0,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
-        ]);
-
+        assert_eq!(
+            tick_group_item_1.inner,
+            [2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,]
+        );
     }
 }
