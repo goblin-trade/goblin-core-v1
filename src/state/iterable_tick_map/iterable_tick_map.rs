@@ -1,14 +1,14 @@
 use crate::state::{
-    RestingOrderKey, Side, SlotRestingOrder, SlotStorage, TickGroup, TickGroupKey, TickGroupList,
+    Bitmap, BitmapKey, BitmapList, RestingOrderKey, Side, SlotRestingOrder, SlotStorage,
 };
 
-pub struct PseudoTree {
+pub struct IterableTickMap {
     pub market_index: u8,
     pub bid_groups: u16,
     pub ask_groups: u16,
 }
 
-impl PseudoTree {
+impl IterableTickMap {
     /// Insert a resting order at a tick
     /// Used for post orders
     pub fn insert(
@@ -19,11 +19,11 @@ impl PseudoTree {
         resting_order: &SlotRestingOrder,
     ) {
         // Read tick group to see if space is available
-        let tick_group_key = TickGroupKey::new_from_tick(self.market_index, tick);
-        let mut tick_group = TickGroup::new_from_slot(slot_storage, &tick_group_key);
+        let tick_group_key = BitmapKey::new_from_tick(self.market_index, tick);
+        let mut tick_group = Bitmap::new_from_slot(slot_storage, &tick_group_key);
 
         let bitmap_index = (tick % 32) as usize;
-        let mut bitmap = tick_group.bitmap(bitmap_index);
+        let mut bitmap = tick_group.orders(bitmap_index);
 
         match bitmap.best_free_index() {
             None => {
@@ -35,7 +35,7 @@ impl PseudoTree {
 
                 if to_activate_group {
                     // insert in tick_group_list at correct position
-                    let mut tick_group_list = TickGroupList {
+                    let mut tick_group_list = BitmapList {
                         market_index: self.market_index,
                         side: side.clone(),
                         size: self.ask_groups,
@@ -46,7 +46,7 @@ impl PseudoTree {
 
                     // update bitmap
                     bitmap.flip(index);
-                    tick_group.update_bitmap(bitmap_index, &bitmap);
+                    tick_group.update_orders(bitmap_index, &bitmap);
                     tick_group.write_to_slot(slot_storage, &tick_group_key);
                 }
                 // Save order
@@ -70,9 +70,9 @@ impl PseudoTree {
 
 #[cfg(test)]
 mod test {
-    use tick_group_list::{TickGroupItem, TickGroupItemKey};
+    use bitmap_list::{BitmapListSlot, BitmapListSlotKey};
 
-    use crate::state::{tick_group_list, SlotActions, SlotKey};
+    use crate::state::{bitmap_list, SlotActions, SlotKey};
 
     use super::*;
 
@@ -82,7 +82,7 @@ mod test {
 
         let market_index = 0;
 
-        let mut pseudo_tree = PseudoTree {
+        let mut pseudo_tree = IterableTickMap {
             market_index,
             bid_groups: 0,
             ask_groups: 0,
@@ -101,10 +101,10 @@ mod test {
         pseudo_tree.insert(&mut slot_storage, side.clone(), tick, &resting_order);
         assert_eq!(pseudo_tree.bid_groups, 1);
 
-        let tick_group_key = TickGroupKey::new_from_tick(market_index, tick);
+        let tick_group_key = BitmapKey::new_from_tick(market_index, tick);
         assert_eq!(tick_group_key.index, 625);
 
-        let tick_group_0 = TickGroup::new_from_slot(&slot_storage, &tick_group_key);
+        let tick_group_0 = Bitmap::new_from_slot(&slot_storage, &tick_group_key);
         assert_eq!(
             tick_group_0.inner,
             [
@@ -113,11 +113,11 @@ mod test {
             ]
         );
 
-        let tick_group_item_key = TickGroupItemKey {
+        let tick_group_item_key = BitmapListSlotKey {
             market_index,
             index: 0,
         };
-        let tick_group_item = TickGroupItem::new_from_slot(&slot_storage, &tick_group_item_key);
+        let tick_group_item = BitmapListSlot::new_from_slot(&slot_storage, &tick_group_item_key);
         assert_eq!(
             tick_group_item.inner,
             [625, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
