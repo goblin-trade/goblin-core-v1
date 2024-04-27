@@ -1,6 +1,4 @@
-use crate::state::{
-    Bitmap, BitmapKey, BitmapList, OrderId, Side, SlotRestingOrder, SlotStorage,
-};
+use crate::state::{Bitmap, BitmapKey, BitmapList, OrderId, Side, SlotRestingOrder, SlotStorage};
 
 pub struct IterableTickMap {
     pub market_index: u8,
@@ -71,8 +69,12 @@ impl IterableTickMap {
 #[cfg(test)]
 mod test {
     use bitmap_list::{BitmapListSlot, BitmapListSlotKey};
+    use stylus_sdk::alloy_primitives::Address;
 
-    use crate::state::{bitmap_list, SlotActions, SlotKey};
+    use crate::{
+        quantities::{BaseLots, WrapperU64},
+        state::{bitmap_list, SlotActions},
+    };
 
     use super::*;
 
@@ -91,10 +93,13 @@ mod test {
         let side = Side::Bid;
         let tick = 20000; // $2k
 
+        let num_base_lots = BaseLots::new(10);
+
         let resting_order = SlotRestingOrder {
-            trader_address: [0u8; 20],
-            num_base_lots: 10,
-            last_valid_slot: 0,
+            // trader_address: [0u8; 20],
+            trader_address: Address::ZERO,
+            num_base_lots,
+            last_valid_block: 0,
             last_valid_unix_timestamp_in_seconds: 0,
         };
 
