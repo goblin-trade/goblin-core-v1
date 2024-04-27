@@ -57,7 +57,7 @@ impl SlotKey for BitmapKey {
 
         key[0] = TICK_HEADER_KEY_SEED;
         key[1] = self.market_index;
-        key[2..4].copy_from_slice(&self.index.to_le_bytes());
+        key[2..4].copy_from_slice(&self.index.to_be_bytes());
 
         key
     }
@@ -80,7 +80,7 @@ impl BitmapKey {
     }
 }
 
-/// OrdersAtTick is an 8 bit bitmap in little endian format which tells
+/// OrdersAtTick is an 8 bit bitmap which tells
 /// about active resting orders at the given tick.
 #[derive(Copy, Clone)]
 pub struct OrdersAtTick {
