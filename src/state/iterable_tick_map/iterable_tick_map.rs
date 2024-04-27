@@ -1,7 +1,6 @@
 use crate::state::{Bitmap, BitmapKey, IndexList, OrderId, Side, SlotRestingOrder, SlotStorage};
 
 pub struct IterableTickMap {
-    pub market_index: u8,
     pub bid_groups: u16,
     pub ask_groups: u16,
 }
@@ -17,7 +16,7 @@ impl IterableTickMap {
         resting_order: &SlotRestingOrder,
     ) {
         // Read tick group to see if space is available
-        let tick_group_key = BitmapKey::new_from_tick(self.market_index, tick);
+        let tick_group_key = BitmapKey::new_from_tick(tick);
         let mut tick_group = Bitmap::new_from_slot(slot_storage, &tick_group_key);
 
         let bitmap_index = (tick % 32) as usize;
@@ -33,8 +32,7 @@ impl IterableTickMap {
 
                 if to_activate_group {
                     // insert in tick_group_list at correct position
-                    let mut tick_group_list = IndexList {
-                        market_index: self.market_index,
+                    let mut tick_group_list: IndexList = IndexList {
                         side: side.clone(),
                         size: self.ask_groups,
                     };
@@ -49,7 +47,6 @@ impl IterableTickMap {
                 }
                 // Save order
                 let resting_order_key = OrderId {
-                    market_index: self.market_index,
                     tick,
                     resting_order_index: index,
                 };
@@ -68,7 +65,7 @@ impl IterableTickMap {
 
 #[cfg(test)]
 mod test {
-    use index_list::{ListSlot, ListKey};
+    use index_list::{ListKey, ListSlot};
     use stylus_sdk::alloy_primitives::Address;
 
     use crate::{
@@ -82,10 +79,7 @@ mod test {
     fn test_insert_order() {
         let mut slot_storage = SlotStorage::new();
 
-        let market_index = 0;
-
         let mut pseudo_tree = IterableTickMap {
-            market_index,
             bid_groups: 0,
             ask_groups: 0,
         };
@@ -106,7 +100,7 @@ mod test {
         pseudo_tree.insert(&mut slot_storage, side.clone(), tick, &resting_order);
         assert_eq!(pseudo_tree.bid_groups, 1);
 
-        let tick_group_key = BitmapKey::new_from_tick(market_index, tick);
+        let tick_group_key = BitmapKey::new_from_tick(tick);
         assert_eq!(tick_group_key.index, 625);
 
         let tick_group_0 = Bitmap::new_from_slot(&slot_storage, &tick_group_key);
@@ -118,10 +112,7 @@ mod test {
             ]
         );
 
-        let tick_group_item_key = ListKey {
-            market_index,
-            index: 0,
-        };
+        let tick_group_item_key = ListKey { index: 0 };
         let tick_group_item = ListSlot::new_from_slot(&slot_storage, &tick_group_item_key);
         assert_eq!(
             tick_group_item.inner,

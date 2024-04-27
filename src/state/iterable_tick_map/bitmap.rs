@@ -44,9 +44,6 @@ impl Bitmap {
 
 /// Key to fetch a Bitmap. A Bitmap consists of multiple OrdersAtTick
 pub struct BitmapKey {
-    /// The market index
-    pub market_index: u8,
-
     /// Index of bitmap group
     pub index: u16,
 }
@@ -56,8 +53,7 @@ impl SlotKey for BitmapKey {
         let mut key = [0u8; 32];
 
         key[0] = TICK_HEADER_KEY_SEED;
-        key[1] = self.market_index;
-        key[2..4].copy_from_slice(&self.index.to_be_bytes());
+        key[1..3].copy_from_slice(&self.index.to_be_bytes());
 
         key
     }
@@ -68,12 +64,10 @@ impl BitmapKey {
     ///
     /// # Arguments
     ///
-    /// * `market_index` - The market index
     /// * `tick` - The price tick of size 2^21. This must be ensured externally.
     ///
-    pub fn new_from_tick(market_index: u8, tick: u32) -> Self {
+    pub fn new_from_tick(tick: u32) -> Self {
         BitmapKey {
-            market_index,
             // A Bitmap holds order statuses for 32 ticks
             index: (tick / 32) as u16,
         }
@@ -125,13 +119,7 @@ mod test {
     fn test_decode_group_from_empty_slot() {
         let slot_storage = SlotStorage::new();
 
-        let bitmap = Bitmap::new_from_slot(
-            &slot_storage,
-            &BitmapKey {
-                market_index: 0,
-                index: 0,
-            },
-        );
+        let bitmap = Bitmap::new_from_slot(&slot_storage, &BitmapKey { index: 0 });
 
         assert_eq!(bitmap.inner, [0u8; 32]);
     }
@@ -141,10 +129,7 @@ mod test {
         let mut slot_storage = SlotStorage::new();
 
         // Tick group 0 contains ticks from 0 to 31
-        let key = BitmapKey {
-            market_index: 0,
-            index: 0,
-        };
+        let key = BitmapKey { index: 0 };
 
         let slot_bytes: [u8; 32] = [
             16, 17, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,

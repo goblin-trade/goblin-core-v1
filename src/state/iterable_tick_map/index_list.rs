@@ -9,7 +9,6 @@
 ///
 /// Each tick group index is made of 2 bits in big endian format. This means that
 /// each ActiveBitmapsItem contains 16 tick group indices.
-
 use crate::state::{Side, SlotActions, SlotKey, SlotStorage};
 use alloc::vec::Vec;
 
@@ -21,9 +20,6 @@ const TICK_GROUP_LIST_KEY_SEED: u8 = 0;
 /// the max number of slots are 2^16 / 16 - 1 = 2^12 - 1
 ///
 pub struct ListKey {
-    /// The market index
-    pub market_index: u8,
-
     /// Index of the ListSlot, max 2^12 - 1
     pub index: u16,
 }
@@ -33,13 +29,11 @@ impl SlotKey for ListKey {
         let mut key = [0u8; 32];
 
         key[0] = TICK_GROUP_LIST_KEY_SEED;
-        key[1] = self.market_index;
-        key[2..4].copy_from_slice(&self.index.to_be_bytes());
+        key[1..3].copy_from_slice(&self.index.to_be_bytes());
 
         key
     }
 }
-
 
 #[derive(Default)]
 pub struct ListSlot {
@@ -73,9 +67,6 @@ impl ListSlot {
 
 /// High level structure for the index list with getter and setter function
 pub struct IndexList {
-    /// The market index
-    pub market_index: u8,
-
     /// Bid or ask
     pub side: Side,
 
@@ -84,8 +75,8 @@ pub struct IndexList {
 }
 
 impl IndexList {
-    pub fn new(market_index: u8, side: Side) -> Self {
-        IndexList { market_index, side, size: 0 }
+    pub fn new(side: Side) -> Self {
+        IndexList { side, size: 0 }
     }
 
     /// Bitmap indices are sorted in ascending order for bids and in descending order for asks,
@@ -121,10 +112,7 @@ impl IndexList {
 
             // Fetch slot if this is the first time, or we have exhausted the slot's items
             if i == self.size - 1 || relative_index == 15 {
-                let key = ListKey {
-                    market_index: self.market_index,
-                    index: slot_index,
-                };
+                let key = ListKey { index: slot_index };
 
                 current_slot = ListSlot::new_from_slot(slot_storage, &key);
             }
@@ -166,7 +154,6 @@ impl IndexList {
             // If the last element of the slot was entered or the list is exhausted, write and flush the slot
             if relative_index == 15 || read_bitmaps.is_empty() {
                 let key = ListKey {
-                    market_index: self.market_index,
                     index: slot_index as u16,
                 };
 
@@ -180,7 +167,6 @@ impl IndexList {
         self.size += 1;
     }
 }
-
 
 #[cfg(test)]
 mod test {
@@ -219,19 +205,15 @@ mod test {
     fn test_insert_for_bids() {
         let mut slot_storage = SlotStorage::new();
 
-        let market_index = 0;
         let side = Side::Bid;
 
-        let mut list = IndexList::new(market_index, side);
+        let mut list = IndexList::new(side);
 
         // 1. insert first item
         list.insert(&mut slot_storage, 1);
 
         assert_eq!(list.size, 1);
-        let key = ListKey {
-            market_index,
-            index: 0,
-        };
+        let key = ListKey { index: 0 };
 
         let mut bitmap_list_slot = ListSlot::new_from_slot(&slot_storage, &key);
         assert_eq!(
@@ -277,19 +259,15 @@ mod test {
     fn test_insert_for_asks() {
         let mut slot_storage = SlotStorage::new();
 
-        let market_index = 0;
         let side = Side::Ask;
 
-        let mut list = IndexList::new(market_index, side);
+        let mut list = IndexList::new(side);
 
         // 1. insert first item
         list.insert(&mut slot_storage, 4);
 
         assert_eq!(list.size, 1);
-        let key = ListKey {
-            market_index,
-            index: 0,
-        };
+        let key = ListKey { index: 0 };
 
         let mut bitmap_list_slot = ListSlot::new_from_slot(&slot_storage, &key);
         assert_eq!(
@@ -327,7 +305,7 @@ mod test {
         bitmap_list_slot = ListSlot::new_from_slot(&slot_storage, &key);
         assert_eq!(
             bitmap_list_slot.inner,
-            [4, 3, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,]
+            [4, 3, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         );
     }
 
@@ -335,23 +313,12 @@ mod test {
     fn test_insert_across_multiple_slots_for_bids() {
         let mut slot_storage = SlotStorage::new();
 
-        let market_index = 0;
         let side = Side::Bid;
 
-        let mut list = IndexList {
-            market_index,
-            side,
-            size: 16,
-        };
+        let mut list = IndexList { side, size: 16 };
 
-        let key_0 = ListKey {
-            market_index,
-            index: 0,
-        };
-        let key_1 = ListKey {
-            market_index,
-            index: 1,
-        };
+        let key_0 = ListKey { index: 0 };
+        let key_1 = ListKey { index: 1 };
 
         let initial_active_bitmaps = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17];
 
@@ -399,23 +366,12 @@ mod test {
     fn test_insert_across_multiple_slots_for_asks() {
         let mut slot_storage = SlotStorage::new();
 
-        let market_index = 0;
         let side = Side::Ask;
 
-        let mut list = IndexList {
-            market_index,
-            side,
-            size: 16,
-        };
+        let mut list = IndexList { side, size: 16 };
 
-        let key_0 = ListKey {
-            market_index,
-            index: 0,
-        };
-        let key_1 = ListKey {
-            market_index,
-            index: 1,
-        };
+        let key_0 = ListKey { index: 0 };
+        let key_1 = ListKey { index: 1 };
 
         let initial_active_bitmaps = [18, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2];
 

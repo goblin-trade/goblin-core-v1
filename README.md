@@ -19,10 +19,8 @@ cargo stylus trace --tx 0x89f684ddda3b525ce3f1bfb2ef47d99a4a382ba89901ee126b152b
 
 # Endianness
 
-- My custom code is in lower endian for understandibility.
-- Alloy primitive types use big endian. Address `0x000...1` is encoded as `[1, 0, 0, ...]`
+- Bitmaps have no endianness.
 
-```rs
-// This is in big endian
-let bytes = [u8; 20] = Address::new(&slice).0;
-```
+- Structs are encoded in big endian, with the first struct element at 0th index.
+
+- Use big endian to match EVM's convention.

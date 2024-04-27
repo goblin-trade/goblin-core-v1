@@ -8,9 +8,6 @@ use crate::{
 const RESTING_ORDER_KEY_SEED: u8 = 2;
 
 pub struct OrderId {
-    /// The market index
-    pub market_index: u8,
-
     /// Tick where order is placed
     pub tick: u32,
 
@@ -23,9 +20,8 @@ impl SlotKey for OrderId {
         let mut key = [0u8; 32];
 
         key[0] = RESTING_ORDER_KEY_SEED;
-        key[1] = self.market_index;
-        key[2..6].copy_from_slice(&self.tick.to_be_bytes());
-        key[7] = self.resting_order_index;
+        key[1..5].copy_from_slice(&self.tick.to_be_bytes());
+        key[6] = self.resting_order_index;
 
         key
     }
@@ -35,7 +31,6 @@ impl SlotKey for OrderId {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct SlotRestingOrder {
-    /// Trader address in big endian. Other fields are in little endian.
     pub trader_address: Address,
     pub num_base_lots: BaseLots,
     pub last_valid_block: u32,
