@@ -1,5 +1,5 @@
 use crate::state::{
-    Bitmap, BitmapKey, BitmapList, RestingOrderKey, Side, SlotRestingOrder, SlotStorage,
+    Bitmap, BitmapKey, BitmapList, OrderId, Side, SlotRestingOrder, SlotStorage,
 };
 
 pub struct IterableTickMap {
@@ -50,7 +50,7 @@ impl IterableTickMap {
                     tick_group.write_to_slot(slot_storage, &tick_group_key);
                 }
                 // Save order
-                let resting_order_key = RestingOrderKey {
+                let resting_order_key = OrderId {
                     market_index: self.market_index,
                     tick,
                     resting_order_index: index,

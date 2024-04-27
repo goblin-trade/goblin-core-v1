@@ -2,6 +2,31 @@ use crate::state::{slot_storage::SlotKey, RestingOrder, SlotActions, SlotStorage
 
 const RESTING_ORDER_KEY_SEED: u8 = 2;
 
+
+pub struct OrderId {
+    /// The market index
+    pub market_index: u8,
+
+    /// Tick where order is placed
+    pub tick: u32,
+
+    /// Resting order index between 0 to 15. A single tick can have at most 15 orders
+    pub resting_order_index: u8,
+}
+
+impl SlotKey for OrderId {
+    fn get_key(&self) -> [u8; 32] {
+        let mut key = [0u8; 32];
+
+        key[0] = RESTING_ORDER_KEY_SEED;
+        key[1] = self.market_index;
+        key[2..6].copy_from_slice(&self.tick.to_le_bytes());
+        key[7] = self.resting_order_index;
+
+        key
+    }
+}
+
 /// Resting order on a 32 byte slot
 #[repr(C)]
 #[derive(Copy, Clone)]
@@ -69,7 +94,7 @@ impl SlotRestingOrder {
     }
 
     /// Load CBRestingOrder from slot storage
-    pub fn new_from_slot(slot_storage: &SlotStorage, key: &RestingOrderKey) -> Self {
+    pub fn new_from_slot(slot_storage: &SlotStorage, key: &OrderId) -> Self {
         let slot = slot_storage.sload(&key.get_key());
 
         SlotRestingOrder::decode(slot)
@@ -81,7 +106,7 @@ impl SlotRestingOrder {
     }
 
     /// Encode and save CBRestingOrder to slot
-    pub fn write_to_slot(&self, slot_storage: &mut SlotStorage, key: &RestingOrderKey) {
+    pub fn write_to_slot(&self, slot_storage: &mut SlotStorage, key: &OrderId) {
         let encoded = self.encode();
 
         slot_storage.sstore(&key.get_key(), &encoded);
@@ -116,29 +141,6 @@ impl RestingOrder for SlotRestingOrder {
     }
 }
 
-pub struct RestingOrderKey {
-    /// The market index
-    pub market_index: u8,
-
-    /// Tick where order is placed
-    pub tick: u32,
-
-    /// Resting order index between 0 to 15. A single tick can have at most 15 orders
-    pub resting_order_index: u8,
-}
-
-impl SlotKey for RestingOrderKey {
-    fn get_key(&self) -> [u8; 32] {
-        let mut key = [0u8; 32];
-
-        key[0] = RESTING_ORDER_KEY_SEED;
-        key[1] = self.market_index;
-        key[2..6].copy_from_slice(&self.tick.to_le_bytes());
-        key[7] = self.resting_order_index;
-
-        key
-    }
-}
 
 #[cfg(test)]
 mod test {
