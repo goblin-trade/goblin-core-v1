@@ -1,4 +1,4 @@
-use crate::state::{Bitmap, BitmapKey, BitmapList, OrderId, Side, SlotRestingOrder, SlotStorage};
+use crate::state::{Bitmap, BitmapKey, IndexList, OrderId, Side, SlotRestingOrder, SlotStorage};
 
 pub struct IterableTickMap {
     pub market_index: u8,
@@ -33,7 +33,7 @@ impl IterableTickMap {
 
                 if to_activate_group {
                     // insert in tick_group_list at correct position
-                    let mut tick_group_list = BitmapList {
+                    let mut tick_group_list = IndexList {
                         market_index: self.market_index,
                         side: side.clone(),
                         size: self.ask_groups,
@@ -68,12 +68,12 @@ impl IterableTickMap {
 
 #[cfg(test)]
 mod test {
-    use bitmap_list::{BitmapListSlot, BitmapListSlotKey};
+    use index_list::{ListSlot, ListKey};
     use stylus_sdk::alloy_primitives::Address;
 
     use crate::{
         quantities::{BaseLots, WrapperU64},
-        state::{bitmap_list, SlotActions},
+        state::{index_list, SlotActions},
     };
 
     use super::*;
@@ -118,11 +118,11 @@ mod test {
             ]
         );
 
-        let tick_group_item_key = BitmapListSlotKey {
+        let tick_group_item_key = ListKey {
             market_index,
             index: 0,
         };
-        let tick_group_item = BitmapListSlot::new_from_slot(&slot_storage, &tick_group_item_key);
+        let tick_group_item = ListSlot::new_from_slot(&slot_storage, &tick_group_item_key);
         assert_eq!(
             tick_group_item.inner,
             [625, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
