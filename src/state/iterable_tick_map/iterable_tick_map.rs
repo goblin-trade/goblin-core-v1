@@ -1,4 +1,7 @@
-use crate::state::{Bitmap, BitmapKey, IndexList, OrderId, Side, SlotRestingOrder, SlotStorage};
+use crate::{
+    quantities::{Ticks, WrapperU64},
+    state::{Bitmap, BitmapKey, IndexList, OrderId, Side, SlotRestingOrder, SlotStorage},
+};
 
 pub struct IterableTickMap {
     pub bid_groups: u16,
@@ -47,7 +50,7 @@ impl IterableTickMap {
                 }
                 // Save order
                 let resting_order_key = OrderId {
-                    tick,
+                    price_in_ticks: Ticks::new(tick as u64),
                     resting_order_index: index,
                 };
                 resting_order.write_to_slot(slot_storage, &resting_order_key);

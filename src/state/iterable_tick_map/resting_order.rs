@@ -1,15 +1,15 @@
 use stylus_sdk::alloy_primitives::Address;
 
 use crate::{
-    quantities::{BaseLots, WrapperU64},
+    quantities::{BaseLots, Ticks, WrapperU64},
     state::{slot_storage::SlotKey, RestingOrder, SlotActions, SlotStorage},
 };
 
 const RESTING_ORDER_KEY_SEED: u8 = 2;
 
 pub struct OrderId {
-    /// Tick where order is placed
-    pub tick: u32,
+    /// Tick where order is placed. Externally ensure that tick is less than u21::MAX
+    pub price_in_ticks: Ticks,
 
     /// Resting order index between 0 to 15. A single tick can have at most 15 orders
     pub resting_order_index: u8,
@@ -20,8 +20,8 @@ impl SlotKey for OrderId {
         let mut key = [0u8; 32];
 
         key[0] = RESTING_ORDER_KEY_SEED;
-        key[1..5].copy_from_slice(&self.tick.to_be_bytes());
-        key[6] = self.resting_order_index;
+        key[1..9].copy_from_slice(&self.price_in_ticks.as_u64().to_be_bytes());
+        key[9] = self.resting_order_index;
 
         key
     }

@@ -22,14 +22,23 @@ macro_rules! basic_u64_struct {
             inner: u64,
         }
 
-        basic_u64!($type_name);
+        basic_u64!($type_name, 64);
     };
 }
 
 macro_rules! basic_u64 {
-    ($type_name:ident) => {
+    ($type_name:ident, $max_bits:expr) => {
         impl WrapperU64 for $type_name {
             fn new(value: u64) -> Self {
+                assert!($max_bits <= 64);
+
+                if $max_bits < 64 {
+                    assert!(
+                        value < (1 << $max_bits),
+                        "Value exceeds maximum allowed bits"
+                    );
+                }
+
                 $type_name { inner: value }
             }
 
@@ -41,7 +50,11 @@ macro_rules! basic_u64 {
         impl $type_name {
             pub const ZERO: Self = $type_name { inner: 0 };
             pub const ONE: Self = $type_name { inner: 1 };
-            pub const MAX: Self = $type_name { inner: u64::MAX };
+            // pub const MAX: Self = $type_name { inner: u64::MAX };
+            pub const MAX: Self = $type_name {
+                inner: ((1u128 << $max_bits) - 1) as u64,
+            };
+
             pub const MIN: Self = $type_name { inner: u64::MIN };
             pub fn as_u128(&self) -> u128 {
                 self.inner as u128
@@ -231,11 +244,12 @@ pub struct Ticks {
     inner: u64,
 }
 
-basic_u64!(QuoteLots);
-basic_u64!(BaseLots);
+basic_u64!(QuoteLots, 64);
+basic_u64!(BaseLots, 32);
 
 // Discrete price unit (quote quantity per base quantity)
-basic_u64!(Ticks);
+// 16 bits from bitmap index, 5 bits from resting order index
+basic_u64!(Ticks, 21);
 
 // Quantities
 basic_u64_struct!(QuoteAtoms);
@@ -319,4 +333,33 @@ fn test_multiply_macro() {
     // Below code (correctly) fails to compile.
     // let quote_units = QuoteUnits::new(5);
     // let result = quote_units * base_lots_per_base_unit;
+}
+
+#[test]
+#[should_panic]
+fn test_tick_overflow() {
+    Ticks::new(u64::MAX);
+}
+
+#[test]
+fn test_max_values() {
+    assert_eq!(Ticks::MAX, 2097151); // 2^21 - 1
+    assert_eq!(BaseLots::MAX, 4294967295); // 2^32 - 1
+}
+
+#[test]
+#[should_panic]
+fn test_tick_addition_overflow() {
+    println!("max tick {:?}", Ticks::MAX);
+    let tick = Ticks::new(2097151);
+
+    let _added_tick = tick.add(Ticks::new(1));
+}
+
+#[test]
+#[should_panic]
+fn test_tick_multiplication_overflow() {
+    let tick = Ticks::new(2097151);
+
+    let _multiplied_tick = tick.mul(Ticks::new(2));
 }
