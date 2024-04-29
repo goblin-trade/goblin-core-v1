@@ -7,12 +7,28 @@ use crate::{
 
 const RESTING_ORDER_KEY_SEED: u8 = 2;
 
+#[derive(Clone)]
+pub struct RestingOrderIndex {
+    inner: u8,
+}
+
+impl RestingOrderIndex {
+    pub fn new(inner: u8) -> Self {
+        assert!(inner < 8);
+        RestingOrderIndex { inner }
+    }
+
+    pub fn as_u8(&self) -> u8 {
+        self.inner
+    }
+}
+
 pub struct OrderId {
-    /// Tick where order is placed. Externally ensure that tick is less than u21::MAX
+    /// Tick where order is placed
     pub price_in_ticks: Ticks,
 
-    /// Resting order index between 0 to 15. A single tick can have at most 15 orders
-    pub resting_order_index: u8,
+    /// Resting order index between 0 to 7. A single tick can have at most 8 orders
+    pub resting_order_index: RestingOrderIndex,
 }
 
 impl SlotKey for OrderId {
@@ -21,7 +37,7 @@ impl SlotKey for OrderId {
 
         key[0] = RESTING_ORDER_KEY_SEED;
         key[1..9].copy_from_slice(&self.price_in_ticks.as_u64().to_be_bytes());
-        key[9] = self.resting_order_index;
+        key[9] = self.resting_order_index.as_u8();
 
         key
     }
