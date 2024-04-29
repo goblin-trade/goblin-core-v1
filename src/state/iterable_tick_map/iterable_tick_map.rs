@@ -27,7 +27,6 @@ impl IterableTickMap {
 
         let mut bitmap_group = BitmapGroup::new_from_slot(slot_storage, &outer_index);
 
-        // let order_index = (tick % 32) as usize;
         let mut bitmap = bitmap_group.bitmap_at(inner_index.clone());
 
         match bitmap.best_free_index() {

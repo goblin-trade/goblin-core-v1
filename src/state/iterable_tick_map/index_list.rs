@@ -12,7 +12,7 @@
 use crate::state::{Side, SlotActions, SlotKey, SlotStorage};
 use alloc::vec::Vec;
 
-const TICK_GROUP_LIST_KEY_SEED: u8 = 0;
+use super::LIST_KEY_SEED;
 
 /// Slot key to fetch a ListSlot
 ///
@@ -28,7 +28,7 @@ impl SlotKey for ListKey {
     fn get_key(&self) -> [u8; 32] {
         let mut key = [0u8; 32];
 
-        key[0] = TICK_GROUP_LIST_KEY_SEED;
+        key[0] = LIST_KEY_SEED;
         key[1..3].copy_from_slice(&self.index.to_be_bytes());
 
         key

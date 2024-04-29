@@ -2,10 +2,10 @@ use stylus_sdk::alloy_primitives::Address;
 
 use crate::{
     quantities::{BaseLots, Ticks, WrapperU64},
-    state::{slot_storage::SlotKey, RestingOrder, SlotActions, SlotStorage},
+    state::{slot_storage::SlotKey, RestingOrder, SlotActions, SlotStorage, ORDERS_PER_TICK},
 };
 
-const RESTING_ORDER_KEY_SEED: u8 = 2;
+use super::RESTING_ORDER_KEY_SEED;
 
 #[derive(Clone)]
 pub struct RestingOrderIndex {
@@ -14,7 +14,7 @@ pub struct RestingOrderIndex {
 
 impl RestingOrderIndex {
     pub fn new(inner: u8) -> Self {
-        assert!(inner < 8);
+        assert!(inner < ORDERS_PER_TICK);
         RestingOrderIndex { inner }
     }
 

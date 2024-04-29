@@ -3,6 +3,8 @@ use crate::{
     state::SlotKey,
 };
 
+use super::{BITMAPS_PER_GROUP, BITMAP_GROUP_SEED};
+
 /// To read orders at a tick we need two to derive variables. The `group_key` gives
 /// the bitmap group in the tick's bitmap belongs. The `bitmap_key` gives the location
 /// of the tick.
@@ -25,13 +27,11 @@ impl Ticks {
     pub fn to_indices(&self) -> TickIndices {
         TickIndices {
             // Since max size of Ticks is 2^21 - 1, division by 2^5 ensures that it fits in u16
-            outer_index: OuterIndex::new((self.as_u64() / 32) as u16),
-            inner_index: InnerIndex::new((self.as_u64() % 32) as usize),
+            outer_index: OuterIndex::new((self.as_u64() / BITMAPS_PER_GROUP) as u16),
+            inner_index: InnerIndex::new((self.as_u64() % BITMAPS_PER_GROUP) as usize),
         }
     }
 }
-
-const TICK_HEADER_KEY_SEED: u8 = 1;
 
 /// Key to fetch a Bitmap group. A Bitmap consists of multiple Bitmaps
 #[derive(Clone)]
@@ -55,7 +55,7 @@ impl SlotKey for OuterIndex {
     fn get_key(&self) -> [u8; 32] {
         let mut key = [0u8; 32];
 
-        key[0] = TICK_HEADER_KEY_SEED;
+        key[0] = BITMAP_GROUP_SEED;
         key[1..3].copy_from_slice(&self.inner.to_be_bytes());
 
         key
@@ -72,7 +72,7 @@ pub struct InnerIndex {
 
 impl InnerIndex {
     pub fn new(inner: usize) -> Self {
-        assert!(inner < 8);
+        assert!(inner < BITMAPS_PER_GROUP as usize);
         InnerIndex { inner }
     }
 
