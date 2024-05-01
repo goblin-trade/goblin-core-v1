@@ -1,9 +1,4 @@
-use stylus_sdk::{
-    alloy_primitives::{Address, U256},
-    // alloy_sol_types::sol,
-    evm, msg,
-    prelude::*,
-};
+use stylus_sdk::prelude::*;
 use alloy_sol_types::sol;
 
 sol! {
@@ -13,4 +8,15 @@ sol! {
 #[derive(SolidityError)]
 pub enum FairyError {
     InvalidInstructionData(InvalidInstructionData)
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn check_error_bytes() {
+        let bytes = Vec::<u8>::from(FairyError::InvalidInstructionData(InvalidInstructionData {}));
+        println!("bytes {:?}", bytes);
+    }
 }
