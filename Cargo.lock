@@ -320,6 +320,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "goblin-factory"
+version = "0.1.0"
+dependencies = [
+ "alloy-sol-types",
+ "borsh",
+ "bytemuck",
+ "mini-alloc",
+ "stylus-sdk",
+]
+
+[[package]]
 name = "goblin-market"
 version = "0.1.0"
 dependencies = [
