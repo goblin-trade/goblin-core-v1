@@ -1,29 +1,15 @@
-[package]
-name = "fairy-v1"
-version = "0.1.0"
-edition = "2021"
+[workspace]
 
-[dependencies]
-stylus-sdk = { version = "0.4.3", features = ["hostio", "debug"] }
-mini-alloc = "0.4.2"
-borsh = { version = "1.3.1", features = ["derive"] }
-bytemuck = { version = "1.14.3", features = ["derive"] }
+resolver = "2"
 
-# important- lock to this version
-alloy-sol-types = "0.3.1"
+members = [
+    "crates/fairy-market"
+]
 
-[features]
-export-abi = ["stylus-sdk/export-abi"]
-#debug = ["stylus-sdk/debug"]
-
-[lib]
-crate-type = ["lib", "cdylib"]
-
+# This must be at the root level otherwise binaries will bloat
 [profile.release]
 codegen-units = 1
 strip = true
 lto = true
 panic = "abort"
 opt-level = "s"
-
-[workspace]
