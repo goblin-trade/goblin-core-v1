@@ -15,7 +15,7 @@ use alloc::vec::Vec;
 use stylus_sdk::{console, stylus_proc::entrypoint};
 
 use crate::{
-    error::{FairyError, InvalidInstructionData},
+    error::{GoblinError, InvalidInstructionData},
     state::slot_storage::SlotActions,
 };
 
@@ -23,7 +23,7 @@ use crate::{
 fn main(instruction_data: Vec<u8>) -> Result<Vec<u8>, Vec<u8>> {
     let (tag, data) = instruction_data
         .split_first()
-        .ok_or(FairyError::InvalidInstructionData(
+        .ok_or(GoblinError::InvalidInstructionData(
             InvalidInstructionData {},
         ))?;
 

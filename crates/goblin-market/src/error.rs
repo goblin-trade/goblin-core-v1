@@ -85,7 +85,7 @@ sol! {
 }
 
 #[derive(SolidityError)]
-pub enum FairyError {
+pub enum GoblinError {
     InvalidInstructionData(InvalidInstructionData),
     InvalidMarketParameters(InvalidMarketParameters),
     InvalidMarketAuthority(InvalidMarketAuthority),
@@ -121,7 +121,7 @@ mod test {
 
     #[test]
     fn check_error_bytes() {
-        let bytes = Vec::<u8>::from(FairyError::InvalidInstructionData(
+        let bytes = Vec::<u8>::from(GoblinError::InvalidInstructionData(
             InvalidInstructionData {},
         ));
         println!("bytes {:?}", bytes);

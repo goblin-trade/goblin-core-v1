@@ -4,7 +4,7 @@
 cargo build --target wasm32-unknown-unknown --release
 
 cargo stylus check --endpoint http://localhost:8547
-cargo stylus check --wasm-file-path ./target/wasm32-unknown-unknown/release/fairy_v1.wasm --endpoint http://localhost:8547
+cargo stylus check --wasm-file-path ./target/wasm32-unknown-unknown/release/goblin_market.wasm --endpoint http://localhost:8547
 
 cargo stylus deploy --private-key-path ./.localnet.key --endpoint http://localhost:8547
 

@@ -287,17 +287,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "fairy-v1"
-version = "0.1.0"
-dependencies = [
- "alloy-sol-types",
- "borsh",
- "bytemuck",
- "mini-alloc",
- "stylus-sdk",
-]
-
-[[package]]
 name = "fastrand"
 version = "2.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -328,6 +317,17 @@ dependencies = [
  "cfg-if 1.0.0",
  "libc",
  "wasi",
+]
+
+[[package]]
+name = "goblin-market"
+version = "0.1.0"
+dependencies = [
+ "alloy-sol-types",
+ "borsh",
+ "bytemuck",
+ "mini-alloc",
+ "stylus-sdk",
 ]
 
 [[package]]

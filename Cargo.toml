@@ -3,7 +3,7 @@
 resolver = "2"
 
 members = [
-    "crates/fairy-market"
+    "crates/goblin-market"
 ]
 
 # This must be at the root level otherwise binaries will bloat
