@@ -1,5 +1,5 @@
-use stylus_sdk::prelude::*;
 use alloy_sol_types::sol;
+use stylus_sdk::prelude::*;
 
 sol! {
     // Invalid instruction data error
@@ -121,7 +121,9 @@ mod test {
 
     #[test]
     fn check_error_bytes() {
-        let bytes = Vec::<u8>::from(FairyError::InvalidInstructionData(InvalidInstructionData {}));
+        let bytes = Vec::<u8>::from(FairyError::InvalidInstructionData(
+            InvalidInstructionData {},
+        ));
         println!("bytes {:?}", bytes);
     }
 }
