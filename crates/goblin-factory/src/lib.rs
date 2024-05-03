@@ -9,10 +9,7 @@ extern crate alloc;
 static ALLOC: mini_alloc::MiniAlloc = mini_alloc::MiniAlloc::INIT;
 
 use stylus_sdk::{
-    alloy_primitives::{B256, U256},
-    console,
-    deploy::RawDeploy,
-    prelude::*,
+    alloy_primitives::{keccak256, Address, B256, U256}, console, contract, deploy::RawDeploy, prelude::*
 };
 
 sol_storage! {
@@ -24,18 +21,13 @@ sol_storage! {
 impl GoblinFactory {
     pub fn initialize_market(&mut self) -> Result<(), Vec<u8>> {
         // random salt
-        // let salt_val: [u8; 32] = [
-        //     33, 195, 93, 190, 27, 52, 74, 36, 136, 207, 51, 33, 214, 206, 84, 47, 142, 159, 48, 85, 68,
-        //     255, 9, 228, 153, 58, 98, 49, 154, 73, 124, 31,
-        // ];
-        // let salt = B256::new(salt_val);
-
         let salt = B256::default();
-
         let contract_bytes = include_bytes!("./deployment_tx_data");
 
-        // Read from .wasm file
-        // let creation_code: [u8; 1] = [1];
+        console!("this address {:?}", contract::address());
+
+        let expected_address = get_create2(contract::address(), salt, contract_bytes);
+        console!("expected address {:?}", expected_address);
 
         // ETH sent to contract
         let endowment = U256::from(0);
@@ -46,9 +38,33 @@ impl GoblinFactory {
                 .deploy(contract_bytes, endowment)?
         };
 
-        console!("deployed at {:?}", res);
+        // important- actual address is correct
+        console!("actual address {:?}", res);
         Ok(())
     }
+}
+
+fn get_create2(from: Address, salt: B256, init_code: &[u8]) -> Address {
+
+    // Address::default()
+    let init_code_hash = keccak256(init_code);
+
+    // Address::default()
+
+    let mut bytes = Vec::with_capacity(1 + 20 + salt.len() + init_code_hash.len());
+    bytes.push(0xff);
+    bytes.extend_from_slice(from.as_slice());
+    bytes.extend_from_slice(salt.as_slice());
+    bytes.extend_from_slice(init_code_hash.as_slice());
+
+    let hash = keccak256(bytes.as_slice());
+
+    let mut address_bytes = [0u8; 20];
+    address_bytes.copy_from_slice(&hash[12..]);
+
+    let address = Address::from_slice(&address_bytes);
+
+    address
 }
 
 #[cfg(test)]
@@ -90,41 +106,55 @@ mod test {
 
 }
 
-// #[cfg(test)]
-// mod test_native {
-//     use std::str::FromStr;
-//     use stylus_sdk::alloy_primitives::{address, keccak256, Address, B256};
+#[cfg(test)]
+mod test_alloy {
+    use stylus_sdk::alloy_primitives::{address, Address, FixedBytes, B256};
 
-//     fn get_create2(from: Address, salt: B256, init_code: &[u8]) -> Address {
-//         let init_code_hash = keccak256(init_code);
+    fn keccak256(bytes: &[u8]) -> FixedBytes<32> {
+        use tiny_keccak::{Hasher, Keccak};
 
-//         let mut bytes = Vec::with_capacity(1 + 20 + salt.len() + init_code_hash.len());
-//         bytes.push(0xff);
-//         bytes.extend_from_slice(from.as_slice());
-//         bytes.extend_from_slice(salt.as_slice());
-//         bytes.extend_from_slice(init_code_hash.as_slice());
+        let mut output = [0u8; 32];
+        let mut hasher = Keccak::v256();
+        hasher.update(bytes);
+        hasher.finalize(&mut output);
+        output.into()
+    }
 
-//         let hash = keccak256(bytes);
+    fn get_create2(from: Address, salt: B256, init_code: &[u8]) -> Address {
 
-//         let mut address_bytes = [0u8; 20];
-//         address_bytes.copy_from_slice(&hash[12..]);
+        // Address::default()
+        let init_code_hash = keccak256(init_code);
 
-//         let address = Address::from_slice(&address_bytes);
+        // Address::default()
 
-//         address
-//     }
+        let mut bytes = Vec::with_capacity(1 + 20 + salt.len() + init_code_hash.len());
+        bytes.push(0xff);
+        bytes.extend_from_slice(from.as_slice());
+        bytes.extend_from_slice(salt.as_slice());
+        bytes.extend_from_slice(init_code_hash.as_slice());
 
-//     #[test]
-//     fn get_deployed_address_native() {
-//         let bytes = include_bytes!("./deployment_tx_data");
-//         let salt = B256::new([0u8; 32]);
+        let hash = keccak256(bytes.as_slice());
 
-//         let this_address = address!("525c2aBA45F66987217323E8a05EA400C65D06DC");
+        let mut address_bytes = [0u8; 20];
+        address_bytes.copy_from_slice(&hash[12..]);
 
-//         let create2_address = get_create2(this_address, salt, bytes);
+        let address = Address::from_slice(&address_bytes);
 
-//         println!("address {:?}", create2_address);
-//     }
-// }
+        address
+    }
+
+    #[test]
+    fn get_deployed_address_native() {
+        let bytes = include_bytes!("./deployment_tx_data");
+        let salt = B256::new([0u8; 32]);
+
+        let this_address = address!("4Af567288e68caD4aA93A272fe6139Ca53859C70");
+
+        let create2_address = get_create2(this_address, salt, bytes);
+
+        // 0xff16c0c231f5d3fd55d4b8e1373885218d1ccd4d- matches the result from ethers
+        println!("address {:?}", create2_address);
+    }
+}
 
 
