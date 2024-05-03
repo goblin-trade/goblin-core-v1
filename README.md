@@ -35,11 +35,27 @@ cargo stylus trace --tx 0x89f684ddda3b525ce3f1bfb2ef47d99a4a382ba89901ee126b152b
 ```sh
 cargo build --target wasm32-unknown-unknown --release
 
+cargo stylus deploy --wasm-file-path ./target/wasm32-unknown-unknown/release/goblin_factory.wasm --private-key-path ./.localnet.key --endpoint http://localhost:8547
+
+# works once- something got deployed. But no code
+cast send 0x525c2aBA45F66987217323E8a05EA400C65D06DC "initializeMarket()" --rpc-url 'http://localhost:8547' --private-key $PRIVATE_KEY
+
+
+# activate- no code, nothing to activate
+cargo stylus deploy --mode activate-only --activate-program-address 0xde1718dae23f8f1fd058279853fbb4fa11dc167e --wasm-file-path ./target/wasm32-unknown-unknown/release/goblin_market.wasm --private-key-path ./.localnet.key --endpoint http://localhost:8547
+```
+
+## Does contract hold data before activation?
+
+Yes, code is present.
+
+```sh
+# deploy and activate- 2 transactions
 cargo stylus deploy --wasm-file-path ./target/wasm32-unknown-unknown/release/goblin_market.wasm --private-key-path ./.localnet.key --endpoint http://localhost:8547
 
-# works once- something got deployed
-cast send 0xF5FfD11A55AFD39377411Ab9856474D2a7Cb697e "initializeMarket()" --rpc-url 'http://localhost:8547' --private-key $PRIVATE_KEY
+# deploy only- just contract creation transaction. But code is present
+cargo stylus deploy --mode deploy-only --wasm-file-path ./target/wasm32-unknown-unknown/release/goblin_market.wasm --private-key-path ./.localnet.key --endpoint http://localhost:8547
 
-# activate
-cargo stylus deploy --mode activate-only --activate-program-address 0xde1718dae23f8f1fd058279853fbb4fa11dc167e --wasm-file-path ./target/wasm32-unknown-unknown/release/goblin_market.wasm --private-key-path ./.localnet.key --endpoint http://localhost:8547
+# activate- broken but not needed
+cargo stylus deploy --mode activate-only --activate-program-address 0xCe5303b8e8BFCa9d1857976F300fb29928522c6F --wasm-file-path ./target/wasm32-unknown-unknown/release/goblin_market.wasm --private-key-path ./.localnet.key --endpoint http://localhost:8547
 ```
