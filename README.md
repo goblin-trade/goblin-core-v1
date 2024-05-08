@@ -38,7 +38,7 @@ cargo build --target wasm32-unknown-unknown --release
 cargo stylus deploy --wasm-file-path ./target/wasm32-unknown-unknown/release/goblin_factory.wasm --private-key-path ./.localnet.key --endpoint http://localhost:8547
 
 # works once- something got deployed. But no code
-cast send 0x4Af567288e68caD4aA93A272fe6139Ca53859C70 "initializeMarket()" --rpc-url 'http://localhost:8547' --private-key $PRIVATE_KEY
+cast send 0xda52b25ddB0e3B9CC393b0690Ac62245Ac772527 "initializeMarket()" --rpc-url 'http://localhost:8547' --private-key $PRIVATE_KEY --gas-limit 10000000
 
 
 # activate- no code, nothing to activate

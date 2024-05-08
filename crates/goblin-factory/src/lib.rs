@@ -22,16 +22,18 @@ impl GoblinFactory {
     pub fn initialize_market(&mut self) -> Result<(), Vec<u8>> {
         // random salt
         let salt = B256::default();
-        let contract_bytes = include_bytes!("./deployment_tx_data");
+        let contract_bytes = include_bytes!("./goblin_market_bytes");
 
         console!("this address {:?}", contract::address());
 
+        // expected address is correct
         let expected_address = get_create2(contract::address(), salt, contract_bytes);
         console!("expected address {:?}", expected_address);
 
         // ETH sent to contract
         let endowment = U256::from(0);
 
+        // failing here
         let res = unsafe {
             RawDeploy::new()
                 .salt(salt)
@@ -78,8 +80,15 @@ mod test {
 
     #[test]
     fn read_wasm_bytes() {
-        // println!("ok");
-        let bytes = include_bytes!("./deployment_tx_data");
+        let bytes = include_bytes!("./goblin_market.wasm");
+
+        let hex_bytes = hex::encode(bytes);
+        println!("bytes {:?}", hex_bytes);
+    }
+
+    #[test]
+    fn read_tx_data_bytes() {
+        let bytes = include_bytes!("./goblin_market_bytes");
 
         let hex_bytes = hex::encode(bytes);
         println!("bytes {:?}", hex_bytes);
@@ -145,10 +154,10 @@ mod test_alloy {
 
     #[test]
     fn get_deployed_address_native() {
-        let bytes = include_bytes!("./deployment_tx_data");
+        let bytes = include_bytes!("./goblin_market_bytes");
         let salt = B256::new([0u8; 32]);
 
-        let this_address = address!("4Af567288e68caD4aA93A272fe6139Ca53859C70");
+        let this_address = address!("F5FfD11A55AFD39377411Ab9856474D2a7Cb697e");
 
         let create2_address = get_create2(this_address, salt, bytes);
 
