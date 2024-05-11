@@ -9,7 +9,10 @@ extern crate alloc;
 static ALLOC: mini_alloc::MiniAlloc = mini_alloc::MiniAlloc::INIT;
 
 use stylus_sdk::{
-    alloy_primitives::{keccak256, Address, B256, U256}, console, contract, deploy::RawDeploy, prelude::*
+    alloy_primitives::{keccak256, Address, B256, U256},
+    console, contract,
+    deploy::RawDeploy,
+    prelude::*,
 };
 
 sol_storage! {
@@ -24,7 +27,7 @@ impl GoblinFactory {
         let salt = B256::default();
         let contract_bytes = include_bytes!("./deployment_tx_data");
 
-        console!("this address {:?}", contract::address());
+        // console!("this address {:?}", contract::address());
 
         // expected address is correct
         let expected_address = get_create2_address(contract::address(), salt, contract_bytes);
@@ -41,7 +44,7 @@ impl GoblinFactory {
         };
 
         // important- actual address is correct
-        console!("actual address {:?}", res);
+        // console!("actual address {:?}", res);
         Ok(())
     }
 }

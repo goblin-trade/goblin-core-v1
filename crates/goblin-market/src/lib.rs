@@ -27,8 +27,8 @@ fn main(instruction_data: Vec<u8>) -> Result<Vec<u8>, Vec<u8>> {
             InvalidInstructionData {},
         ))?;
 
-    console!("input {:?}", instruction_data);
-    console!("tag {}", *tag);
+    // console!("input {:?}", instruction_data);
+    // console!("tag {}", *tag);
 
     Ok(instruction_data.to_vec())
 }

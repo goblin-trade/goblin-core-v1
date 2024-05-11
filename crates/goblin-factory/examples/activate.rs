@@ -13,10 +13,10 @@ use ethers::{
 };
 use eyre::eyre;
 use hex;
-use stylus_sdk::tx;
 use std::io::{BufRead, BufReader};
 use std::str::FromStr;
 use std::sync::Arc;
+use stylus_sdk::tx;
 
 pub const ARB_WASM_ADDRESS: &str = "0000000000000000000000000000000000000071";
 

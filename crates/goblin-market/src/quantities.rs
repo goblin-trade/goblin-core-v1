@@ -183,12 +183,12 @@ macro_rules! allow_multiply {
                 if self.inner % other.inner != 0 {
                     let caller = core::panic::Location::caller();
 
-                    console!(
-                        "WARNING: Expected clean division, but received {:?} / {:?}. Caller: {:?}",
-                        self,
-                        other,
-                        caller
-                    );
+                    // console!(
+                    //     "WARNING: Expected clean division, but received {:?} / {:?}. Caller: {:?}",
+                    //     self,
+                    //     other,
+                    //     caller
+                    // );
                 }
                 $type_2::new(self.inner / other.inner)
             }
@@ -201,12 +201,12 @@ macro_rules! allow_multiply {
                 if self.inner % other.inner != 0 {
                     let caller = core::panic::Location::caller();
 
-                    console!(
-                        "WARNING: Expected clean division, but received {:?} / {:?}. Caller: {:?}",
-                        self,
-                        other,
-                        caller
-                    );
+                    // console!(
+                    //     "WARNING: Expected clean division, but received {:?} / {:?}. Caller: {:?}",
+                    //     self,
+                    //     other,
+                    //     caller
+                    // );
                 }
                 $type_1::new(self.inner / other.inner)
             }
