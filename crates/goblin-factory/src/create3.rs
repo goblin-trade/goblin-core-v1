@@ -5,27 +5,14 @@
 //!
 //! Note that this code is unaudited and not fit for production use.
 
-use alloc::vec::Vec;
-use stylus_sdk::alloy_primitives::{
-    Address,
-    B256,
-    U256,
-};
-use alloy_sol_types::{
-    sol,
-    sol_data,
-    SolError,
-    SolType,
-};
+use alloy_sol_types::{sol, sol_data, SolType};
 use core::marker::PhantomData;
+use stylus_sdk::alloy_primitives::{Address, B256, U256};
 use stylus_sdk::call::RawCall;
 use stylus_sdk::contract;
 use stylus_sdk::crypto;
 use stylus_sdk::deploy::RawDeploy;
-use stylus_sdk::{
-    evm,
-    prelude::*,
-};
+use stylus_sdk::{evm, prelude::*};
 
 const KECCAK256_PROXY_CHILD_BYTECODE: [u8; 32] = [
     33, 195, 93, 190, 27, 52, 74, 36, 136, 207, 51, 33, 214, 206, 84, 47, 142, 159, 48, 85, 68,
@@ -56,9 +43,9 @@ pub enum CREATE3Error {
 type Result<T, E = CREATE3Error> = core::result::Result<T, E>;
 
 impl<T: CREATE3Params> CREATE3<T> {
-    pub fn deploy(salt: B256, creation_code: &[u8], value: U256) -> Result<Address> {
+    pub fn deploy(&mut self, salt: B256, creation_code: &[u8], value: U256) -> Result<Address> {
         if let Ok(proxy) = unsafe { RawDeploy::new().salt(salt).deploy(creation_code, value) } {
-            let deployed = Self::get_deployed(salt)?;
+            let deployed = self.get_deployed(salt)?;
 
             RawCall::new_static()
                 .gas(evm::gas_left())
@@ -72,11 +59,11 @@ impl<T: CREATE3Params> CREATE3<T> {
         }
     }
 
-    pub fn get_deployed(salt: B256) -> Result<Address> {
-        Self::get_deployed_with_creator(salt, contract::address())
+    pub fn get_deployed(&self, salt: B256) -> Result<Address> {
+        self.get_deployed_with_creator(salt, contract::address())
     }
 
-    pub fn get_deployed_with_creator(salt: B256, creator: Address) -> Result<Address> {
+    pub fn get_deployed_with_creator(&self, salt: B256, creator: Address) -> Result<Address> {
         let mut proxy_packed = [0u8; 1 + 20 + 32 + 32];
         proxy_packed[0] = 0xFF;
         proxy_packed[1..21].copy_from_slice(&creator[..]);

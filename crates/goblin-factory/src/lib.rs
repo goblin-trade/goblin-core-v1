@@ -4,7 +4,7 @@
 
 extern crate alloc;
 
-pub mod create3;
+mod create3;
 
 /// Use an efficient WASM allocator.
 #[global_allocator]
@@ -15,14 +15,13 @@ use stylus_sdk::{
     alloy_primitives::{keccak256, Address, B256, U256},
     console, contract,
     deploy::RawDeploy,
+    msg,
     prelude::*,
 };
 
 struct GoblinFactoryParams;
 
-impl CREATE3Params for GoblinFactoryParams {
-
-}
+impl CREATE3Params for GoblinFactoryParams {}
 
 sol_storage! {
     #[entrypoint]
@@ -37,9 +36,10 @@ sol_storage! {
 impl GoblinFactory {
     pub fn initialize_market_create3(&mut self) -> Result<(), Vec<u8>> {
         let salt = B256::default();
+        let contract_bytes = include_bytes!("./deployment_tx_data");
+        let endowment = U256::from(0);
 
-        // self.create3.get_deployed(salt);
-        // let address = CREATE3::<GoblinFactoryParams>::get_deployed(salt)?;
+        let res = self.create3.deploy(salt, contract_bytes, endowment)?;
 
         Ok(())
     }
@@ -86,4 +86,14 @@ fn get_create2_address(factory_address: Address, salt: B256, init_code: &[u8]) -
     let address = Address::from_slice(&address_bytes);
 
     address
+}
+
+#[cfg(test)]
+mod test {
+    use crate::*;
+
+    #[test]
+    fn test_create_3_address() {
+        // let expected_address = CREATE3::<GoblinFactoryParams>
+    }
 }
