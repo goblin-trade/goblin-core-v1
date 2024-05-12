@@ -1391,6 +1391,7 @@ dependencies = [
 name = "goblin-factory"
 version = "0.1.0"
 dependencies = [
+ "alloy-primitives",
  "alloy-sol-types",
  "borsh",
  "bytemuck",
@@ -1399,7 +1400,6 @@ dependencies = [
  "hex",
  "mini-alloc",
  "stylus-sdk",
- "tiny-keccak",
  "tokio",
 ]
 

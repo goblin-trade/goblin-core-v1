@@ -25,21 +25,17 @@ impl CREATE3Params for GoblinFactoryParams {}
 
 sol_storage! {
     #[entrypoint]
-    pub struct GoblinFactory {
-        #[borrow]
-        CREATE3<GoblinFactoryParams> create3;
-    }
+    pub struct GoblinFactory {}
 }
 
 #[external]
-#[inherit(CREATE3<GoblinFactoryParams>)]
 impl GoblinFactory {
     pub fn initialize_market_create3(&mut self) -> Result<(), Vec<u8>> {
         let salt = B256::default();
         let contract_bytes = include_bytes!("./deployment_tx_data");
         let endowment = U256::from(0);
 
-        let res = self.create3.deploy(salt, contract_bytes, endowment)?;
+        let res = CREATE3::<GoblinFactoryParams>::deploy(salt, contract_bytes, endowment)?;
 
         Ok(())
     }
@@ -90,10 +86,18 @@ fn get_create2_address(factory_address: Address, salt: B256, init_code: &[u8]) -
 
 #[cfg(test)]
 mod test {
-    use crate::*;
+    use stylus_sdk::alloy_primitives::{Address, B256};
+
+    use crate::{create3::CREATE3, GoblinFactoryParams};
 
     #[test]
-    fn test_create_3_address() {
-        // let expected_address = CREATE3::<GoblinFactoryParams>
+    fn test_create_3_address() -> Result<(), Vec<u8>> {
+        let salt = B256::default();
+        let creator = Address::default();
+
+        let address = CREATE3::<GoblinFactoryParams>::get_deployed_with_creator(salt, creator)?;
+        println!("address {:?}", address);
+
+        Ok(())
     }
 }

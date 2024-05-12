@@ -17,11 +17,19 @@ tokio = { version = "1.12.0", features = ["full"] }
 ethers = "2.0"
 eyre = "0.6.8"
 hex = "0.4.3"
-tiny-keccak = "2.0.2"
+
+# important- don't use VM accelerated keccak in tests
+alloy-primitives = { version = "0.3.3", features = ["tiny-keccak"] }
 
 [features]
 export-abi = ["stylus-sdk/export-abi"]
 debug = ["stylus-sdk/debug"]
+
+#test = ["tiny-keccak"]
+
+#default = ["alloy-primitives/tiny-keccak"]
+
+#tiny-keccak = ["alloy-primitives/tiny-keccak"]
 
 [lib]
 crate-type = ["lib", "cdylib"]
