@@ -4,10 +4,13 @@
 
 extern crate alloc;
 
+pub mod create3;
+
 /// Use an efficient WASM allocator.
 #[global_allocator]
 static ALLOC: mini_alloc::MiniAlloc = mini_alloc::MiniAlloc::INIT;
 
+use create3::{CREATE3Params, CREATE3};
 use stylus_sdk::{
     alloy_primitives::{keccak256, Address, B256, U256},
     console, contract,
@@ -15,19 +18,36 @@ use stylus_sdk::{
     prelude::*,
 };
 
+struct GoblinFactoryParams;
+
+impl CREATE3Params for GoblinFactoryParams {
+
+}
+
 sol_storage! {
     #[entrypoint]
-    pub struct GoblinFactory {}
+    pub struct GoblinFactory {
+        #[borrow]
+        CREATE3<GoblinFactoryParams> create3;
+    }
 }
 
 #[external]
+#[inherit(CREATE3<GoblinFactoryParams>)]
 impl GoblinFactory {
+    pub fn initialize_market_create3(&mut self) -> Result<(), Vec<u8>> {
+        let salt = B256::default();
+
+        // self.create3.get_deployed(salt);
+        // let address = CREATE3::<GoblinFactoryParams>::get_deployed(salt)?;
+
+        Ok(())
+    }
+
     pub fn initialize_market(&mut self) -> Result<(), Vec<u8>> {
         // random salt
         let salt = B256::default();
         let contract_bytes = include_bytes!("./deployment_tx_data");
-
-        // console!("this address {:?}", contract::address());
 
         // expected address is correct
         let expected_address = get_create2_address(contract::address(), salt, contract_bytes);
@@ -44,17 +64,17 @@ impl GoblinFactory {
         };
 
         // important- actual address is correct
-        // console!("actual address {:?}", res);
+        console!("actual address {:?}", res);
         Ok(())
     }
 }
 
-fn get_create2_address(from: Address, salt: B256, init_code: &[u8]) -> Address {
+fn get_create2_address(factory_address: Address, salt: B256, init_code: &[u8]) -> Address {
     let init_code_hash = keccak256(init_code);
 
     let mut bytes = Vec::with_capacity(1 + 20 + salt.len() + init_code_hash.len());
     bytes.push(0xff);
-    bytes.extend_from_slice(from.as_slice());
+    bytes.extend_from_slice(factory_address.as_slice());
     bytes.extend_from_slice(salt.as_slice());
     bytes.extend_from_slice(init_code_hash.as_slice());
 
