@@ -46,7 +46,7 @@ impl SlotActions for SlotStorage {
     }
 
     fn sstore(&mut self, key: &[u8; 32], value: &[u8; 32]) {
-        unsafe { hostio::storage_store_bytes32(key.as_ptr(), value.as_ptr()) };
+        unsafe { hostio::storage_cache_bytes32(key.as_ptr(), value.as_ptr()) };
     }
 
     fn sload(&self, key: &[u8; 32]) -> [u8; 32] {
