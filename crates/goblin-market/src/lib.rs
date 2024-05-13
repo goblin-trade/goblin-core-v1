@@ -2,33 +2,30 @@
 #![cfg_attr(not(test), no_std)]
 extern crate alloc;
 
-pub mod error;
-pub mod instruction;
-pub mod quantities;
-pub mod state;
-
 #[global_allocator]
 static ALLOC: mini_alloc::MiniAlloc = mini_alloc::MiniAlloc::INIT;
 
 use alloc::vec::Vec;
+use processor::deposit;
+use stylus_sdk::prelude::*;
 
-use stylus_sdk::{console, stylus_proc::entrypoint};
+pub mod processor;
+pub mod quantities;
+pub mod state;
 
-use crate::{
-    error::{GoblinError, InvalidInstructionData},
-    state::slot_storage::SlotActions,
-};
+sol_storage! {
+    #[entrypoint]
+    pub struct GoblinMarket {}
+}
 
-#[entrypoint]
-fn main(instruction_data: Vec<u8>) -> Result<Vec<u8>, Vec<u8>> {
-    let (tag, data) = instruction_data
-        .split_first()
-        .ok_or(GoblinError::InvalidInstructionData(
-            InvalidInstructionData {},
-        ))?;
-
-    // console!("input {:?}", instruction_data);
-    // console!("tag {}", *tag);
-
-    Ok(instruction_data.to_vec())
+#[external]
+impl GoblinMarket {
+    pub fn deposit_funds(
+        &mut self,
+        base_lots_to_deposit: u64,
+        quote_lots_to_deposit: u64,
+    ) -> Result<(), Vec<u8>> {
+        deposit::process_deposit_funds(base_lots_to_deposit, quote_lots_to_deposit);
+        Ok(())
+    }
 }
