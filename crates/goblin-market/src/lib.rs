@@ -7,7 +7,7 @@ static ALLOC: mini_alloc::MiniAlloc = mini_alloc::MiniAlloc::INIT;
 
 use processor::deposit;
 use state::{SlotActions, SlotStorage, TraderState};
-use stylus_sdk::{alloy_primitives::Address, prelude::*};
+use stylus_sdk::{alloy_primitives::{Address, B256}, prelude::*};
 
 pub mod error;
 pub mod parameters;
@@ -34,11 +34,11 @@ impl GoblinMarket {
         Ok(())
     }
 
-    // pub fn trader_state(&self, trader: Address) -> GoblinResult<TraderState> {
-    //     let slot_storage = SlotStorage::new();
+    // TODO how to return struct? Facing AbiType trait error
+    pub fn trader_state(&self, trader: Address) -> B256 {
+        let slot_storage = SlotStorage::new();
+        let trader_state = TraderState::read_from_slot(&slot_storage, trader);
 
-    //     let trader_state = TraderState::read_from_slot(&slot_storage, trader);
-
-    //     trader_state
-    // }
+        B256::from_slice(&trader_state.encode())
+    }
 }
