@@ -1,5 +1,3 @@
-use core::ops::Add;
-
 use stylus_sdk::{
     alloy_primitives::{Address, U256},
     contract,
@@ -22,6 +20,24 @@ sol_interface! {
     }
 }
 
+/// Withdraw token if the amount is greater than 0
+pub fn maybe_invoke_withdraw(
+    context: &mut GoblinMarket,
+    withdraw_amount: U256,
+    token_address: Address,
+    trader: Address,
+) -> GoblinResult<()> {
+    if withdraw_amount > U256::ZERO {
+        let token = IERC20::new(token_address);
+        token
+            .transfer(context, trader, withdraw_amount)
+            .unwrap();
+    }
+
+    Ok(())
+}
+
+/// Deposit token if the amount is greater than 0
 pub fn maybe_invoke_deposit(
     context: &mut GoblinMarket,
     deposit_amount: U256,
@@ -38,6 +54,20 @@ pub fn maybe_invoke_deposit(
     Ok(())
 }
 
+/// Withdraw base and quote tokens
+pub fn try_withdraw(
+    context: &mut GoblinMarket,
+    quote_amount: U256,
+    base_amount: U256,
+    trader: Address,
+) -> GoblinResult<()> {
+    maybe_invoke_withdraw(context, quote_amount, QUOTE_TOKEN, trader)?;
+    maybe_invoke_withdraw(context, base_amount, BASE_TOKEN, trader)?;
+
+    Ok(())
+}
+
+/// Deposit base and quote tokens
 pub fn try_deposit(
     context: &mut GoblinMarket,
     quote_amount: U256,
