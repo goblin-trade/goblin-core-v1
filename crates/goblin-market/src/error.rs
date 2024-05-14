@@ -115,6 +115,8 @@ pub enum GoblinError {
     FailedToFlushBuffer(FailedToFlushBuffer),
 }
 
+pub type GoblinResult<T, E = GoblinError> = core::result::Result<T, E>;
+
 #[cfg(test)]
 mod test {
     use super::*;

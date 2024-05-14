@@ -19,7 +19,7 @@ macro_rules! basic_u64_struct {
         #[derive(Debug, Clone, Copy, PartialOrd, Ord, Zeroable, Pod)]
         #[repr(transparent)]
         pub struct $type_name {
-            inner: u64,
+            pub inner: u64,
         }
 
         basic_u64!($type_name, 64);
