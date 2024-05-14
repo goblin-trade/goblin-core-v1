@@ -1,6 +1,9 @@
 use stylus_sdk::alloy_primitives::Address;
 
-use crate::{quantities::QuoteLots, state::TraderState};
+use crate::{
+    quantities::QuoteLots,
+    state::{SlotStorage, TraderState},
+};
 
 use super::Market;
 
@@ -16,7 +19,7 @@ pub struct FIFOMarket {
 }
 
 impl Market for FIFOMarket {
-    fn get_trader_state(address: Address) -> TraderState {
-        todo!()
+    fn get_trader_state(slot_storage: &SlotStorage, address: Address) -> TraderState {
+        TraderState::read_from_slot(slot_storage, address)
     }
 }

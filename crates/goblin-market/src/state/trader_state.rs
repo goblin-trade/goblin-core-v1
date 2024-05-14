@@ -54,6 +54,10 @@ impl TraderState {
         encoded_data
     }
 
+    pub fn write_to_slot(&self, slot_storage: &mut SlotStorage, trader_id: TraderId) {
+        slot_storage.sstore(&trader_id.get_key(), &self.encode());
+    }
+
     #[inline(always)]
     pub(crate) fn unlock_quote_lots(&mut self, quote_lots: QuoteLots) {
         self.quote_lots_locked -= quote_lots;

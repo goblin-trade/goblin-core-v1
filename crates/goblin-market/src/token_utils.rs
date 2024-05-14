@@ -29,9 +29,7 @@ pub fn maybe_invoke_withdraw(
 ) -> GoblinResult<()> {
     if withdraw_amount > U256::ZERO {
         let token = IERC20::new(token_address);
-        token
-            .transfer(context, trader, withdraw_amount)
-            .unwrap();
+        token.transfer(context, trader, withdraw_amount).unwrap();
     }
 
     Ok(())

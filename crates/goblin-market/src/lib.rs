@@ -5,10 +5,11 @@ extern crate alloc;
 #[global_allocator]
 static ALLOC: mini_alloc::MiniAlloc = mini_alloc::MiniAlloc::INIT;
 
-use processor::deposit;
+use processor::{deposit, withdraw};
 use state::{SlotActions, SlotStorage, TraderState};
 use stylus_sdk::{
     alloy_primitives::{Address, B256},
+    hostio,
     prelude::*,
 };
 
@@ -35,6 +36,24 @@ impl GoblinMarket {
         quote_lots_to_deposit: u64,
     ) -> GoblinResult<()> {
         deposit::process_deposit_funds(self, trader, base_lots_to_deposit, quote_lots_to_deposit)?;
+
+        // Write to slot
+        unsafe { hostio::storage_flush_cache(false) };
+        Ok(())
+    }
+
+    pub fn withdraw_funds(
+        &mut self,
+        trader: Address,
+        base_lots_to_withdraw: u64,
+        quote_lots_to_withdraw: u64,
+    ) -> GoblinResult<()> {
+        withdraw::process_withdraw_funds(
+            self,
+            trader,
+            base_lots_to_withdraw,
+            quote_lots_to_withdraw,
+        )?;
         Ok(())
     }
 

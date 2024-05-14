@@ -1,6 +1,6 @@
 use stylus_sdk::alloy_primitives::Address;
 
-use crate::state::TraderState;
+use crate::state::{SlotStorage, TraderState};
 
 pub trait RestingOrder {
     fn size(&self) -> u64;
@@ -10,7 +10,7 @@ pub trait RestingOrder {
 }
 
 pub trait Market {
-    fn get_trader_state(address: Address) -> TraderState;
+    fn get_trader_state(slot_storage: &SlotStorage, address: Address) -> TraderState;
 }
 
 pub trait WritableMarket {}
