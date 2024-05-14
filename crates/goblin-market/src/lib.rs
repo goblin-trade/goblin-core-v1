@@ -7,13 +7,17 @@ static ALLOC: mini_alloc::MiniAlloc = mini_alloc::MiniAlloc::INIT;
 
 use processor::deposit;
 use state::{SlotActions, SlotStorage, TraderState};
-use stylus_sdk::{alloy_primitives::{Address, B256}, prelude::*};
+use stylus_sdk::{
+    alloy_primitives::{Address, B256},
+    prelude::*,
+};
 
 pub mod error;
 pub mod parameters;
 pub mod processor;
 pub mod quantities;
 pub mod state;
+pub mod token_utils;
 
 use crate::error::GoblinResult;
 
@@ -30,7 +34,7 @@ impl GoblinMarket {
         base_lots_to_deposit: u64,
         quote_lots_to_deposit: u64,
     ) -> GoblinResult<()> {
-        deposit::process_deposit_funds(trader, base_lots_to_deposit, quote_lots_to_deposit)?;
+        deposit::process_deposit_funds(self, trader, base_lots_to_deposit, quote_lots_to_deposit)?;
         Ok(())
     }
 

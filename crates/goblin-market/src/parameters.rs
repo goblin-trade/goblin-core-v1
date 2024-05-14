@@ -14,9 +14,11 @@ pub const BASE_TOKEN: Address = address!("82af49447d8a07e3bd95bd0d56f35241523fba
 pub const QUOTE_TOKEN: Address = address!("af88d065e77c8cC2239327C5EDb3A432268e5831");
 
 // Base token (ETH) unit is considered to have 10^8 atoms
-pub const BASE_DECIMALS_TO_IGNORE: u8 = 10;
+// 10^8 as U256 in big endian
+pub const BASE_DECIMALS_TO_IGNORE: [u64; 4] = [100000000, 0, 0, 0];
 
-pub const QUOTE_DECIMALS_TO_IGNORE: u8 = 0;
+// 0 decimals to ignore- 10^0 = 1
+pub const QUOTE_DECIMALS_TO_IGNORE: [u64; 4] = [1, 0, 0, 0];
 
 pub const BASE_LOT_SIZE: BaseAtomsPerBaseLot = BaseAtomsPerBaseLot { inner: 10_000 };
 pub const QUOTE_LOT_SIZE: QuoteAtomsPerQuoteLot = QuoteAtomsPerQuoteLot { inner: 1 };
@@ -35,3 +37,20 @@ pub const TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT: QuoteLotsPerBaseUnitPerTick =
 
 // 2 bps fee
 pub const TAKER_FEE_BPS: u16 = 2;
+
+#[cfg(test)]
+mod test {
+    use stylus_sdk::alloy_primitives::U256;
+
+    #[test]
+    fn get_decimals_to_ignore() {
+        let factor = U256::from(10).pow(U256::from(8));
+        println!("factor {:?}", factor);
+
+        let limbs = factor.into_limbs();
+        println!("limbs {:?}", limbs);
+
+        let reconstructed_factor = U256::from_limbs(limbs);
+        println!("reconstructed_factor {:?}", reconstructed_factor);
+    }
+}
