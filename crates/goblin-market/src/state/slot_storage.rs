@@ -9,6 +9,11 @@ use std::collections::HashMap;
 #[cfg(not(test))]
 use stylus_sdk::hostio;
 
+pub const LIST_KEY_SEED: u8 = 0;
+pub const BITMAP_GROUP_SEED: u8 = 1;
+pub const RESTING_ORDER_KEY_SEED: u8 = 2;
+pub const TRADER_STATE_KEY_SEED: u8 = 3;
+
 pub struct SlotStorage {
     #[cfg(test)]
     inner: HashMap<[u8; 32], [u8; 32]>,
@@ -49,6 +54,7 @@ impl SlotActions for SlotStorage {
         unsafe { hostio::storage_cache_bytes32(key.as_ptr(), value.as_ptr()) };
     }
 
+    // important: call hostio::storage_flush_cache() before exiting or calling other contracts
     fn sload(&self, key: &[u8; 32]) -> [u8; 32] {
         let mut value = [0u8; 32];
         unsafe { hostio::storage_load_bytes32(key.as_ptr(), value.as_mut_ptr()) };

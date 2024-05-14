@@ -2,10 +2,11 @@ use stylus_sdk::alloy_primitives::Address;
 
 use crate::{
     quantities::{BaseLots, Ticks, WrapperU64},
-    state::{slot_storage::SlotKey, RestingOrder, SlotActions, SlotStorage, ORDERS_PER_TICK},
+    state::{
+        slot_storage::SlotKey, RestingOrder, SlotActions, SlotStorage, ORDERS_PER_TICK,
+        RESTING_ORDER_KEY_SEED,
+    },
 };
-
-use super::RESTING_ORDER_KEY_SEED;
 
 #[derive(Clone)]
 pub struct RestingOrderIndex {

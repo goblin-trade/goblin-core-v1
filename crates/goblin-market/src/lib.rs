@@ -6,6 +6,7 @@ extern crate alloc;
 static ALLOC: mini_alloc::MiniAlloc = mini_alloc::MiniAlloc::INIT;
 
 use processor::deposit;
+use state::{SlotActions, SlotStorage, TraderState};
 use stylus_sdk::{alloy_primitives::Address, prelude::*};
 
 pub mod error;
@@ -32,4 +33,12 @@ impl GoblinMarket {
         deposit::process_deposit_funds(trader, base_lots_to_deposit, quote_lots_to_deposit)?;
         Ok(())
     }
+
+    // pub fn trader_state(&self, trader: Address) -> GoblinResult<TraderState> {
+    //     let slot_storage = SlotStorage::new();
+
+    //     let trader_state = TraderState::read_from_slot(&slot_storage, trader);
+
+    //     trader_state
+    // }
 }

@@ -9,10 +9,8 @@
 ///
 /// Each tick group index is made of 2 bits in big endian format. This means that
 /// each ListItem contains 16 outer indices.
-use crate::state::{Side, SlotActions, SlotKey, SlotStorage};
+use crate::state::{Side, SlotActions, SlotKey, SlotStorage, LIST_KEY_SEED};
 use alloc::vec::Vec;
-
-use super::LIST_KEY_SEED;
 
 /// Slot key to fetch a ListSlot
 ///
