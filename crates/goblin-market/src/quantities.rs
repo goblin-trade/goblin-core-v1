@@ -244,6 +244,7 @@ pub struct Ticks {
     inner: u64,
 }
 
+// BaseLots have smaller max size than QuoteLots
 basic_u64!(QuoteLots, 64);
 basic_u64!(BaseLots, 32);
 

@@ -36,9 +36,6 @@ impl GoblinMarket {
         quote_lots_to_deposit: u64,
     ) -> GoblinResult<()> {
         deposit::process_deposit_funds(self, trader, base_lots_to_deposit, quote_lots_to_deposit)?;
-
-        // Write to slot
-        unsafe { hostio::storage_flush_cache(false) };
         Ok(())
     }
 

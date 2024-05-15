@@ -13,6 +13,7 @@ pub const LIST_KEY_SEED: u8 = 0;
 pub const BITMAP_GROUP_SEED: u8 = 1;
 pub const RESTING_ORDER_KEY_SEED: u8 = 2;
 pub const TRADER_STATE_KEY_SEED: u8 = 3;
+pub const MARKET_STATE_KEY_SEED: u8 = 4;
 
 pub struct SlotStorage {
     #[cfg(test)]
@@ -25,6 +26,8 @@ pub trait SlotActions {
     fn sstore(&mut self, key: &[u8; 32], value: &[u8; 32]);
 
     fn sload(&self, key: &[u8; 32]) -> [u8; 32];
+
+    fn storage_flush_cache(clear: bool);
 }
 
 #[cfg(test)]
@@ -42,6 +45,8 @@ impl SlotActions for SlotStorage {
     fn sload(&self, key: &[u8; 32]) -> [u8; 32] {
         *self.inner.get(key).unwrap_or(&[0u8; 32])
     }
+
+    fn storage_flush_cache(_clear: bool) {}
 }
 
 #[cfg(not(test))]
@@ -60,6 +65,18 @@ impl SlotActions for SlotStorage {
         unsafe { hostio::storage_load_bytes32(key.as_ptr(), value.as_mut_ptr()) };
 
         value
+    }
+
+    fn storage_flush_cache(clear: bool) {
+        unsafe { hostio::storage_flush_cache(clear) };
+    }
+}
+
+#[cfg(not(test))]
+impl Drop for SlotStorage {
+    fn drop(&mut self) {
+        // Write cache to slot
+        unsafe { hostio::storage_flush_cache(false) };
     }
 }
 

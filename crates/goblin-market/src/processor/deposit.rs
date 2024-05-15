@@ -7,7 +7,7 @@ use crate::{
         BASE_DECIMALS_TO_IGNORE, BASE_LOT_SIZE, QUOTE_DECIMALS_TO_IGNORE, QUOTE_LOT_SIZE,
     },
     quantities::{BaseLots, QuoteLots, WrapperU64},
-    state::{slot_storage, FIFOMarket, Market, TraderState},
+    state::{slot_storage, FIFOMarket, Market},
     token_utils::try_deposit,
     GoblinMarket,
 };
@@ -27,6 +27,9 @@ pub fn process_deposit_funds(
     trader_state.deposit_free_base_lots(base_lots);
     trader_state.deposit_free_quote_lots(quote_lots);
     trader_state.write_to_slot(&mut slot_storage, trader);
+
+    // Commit state before making cross-contract call
+    SlotStorage::storage_flush_cache(true);
 
     // Obtain base and quote amounts with resolution
     let base_amount = base_lots * BASE_LOT_SIZE;

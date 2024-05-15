@@ -1,4 +1,4 @@
-use stylus_sdk::{abi::AbiType, alloy_primitives::Address};
+use stylus_sdk::alloy_primitives::Address;
 
 use crate::quantities::{BaseLots, QuoteLots, WrapperU64};
 
