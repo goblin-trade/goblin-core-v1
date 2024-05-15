@@ -1,11 +1,14 @@
 use stylus_sdk::alloy_primitives::Address;
 
 use crate::{
-    quantities::{QuoteLots, WrapperU64},
-    state::{SlotActions, SlotStorage, TraderState, MARKET_STATE_KEY_SEED},
+    quantities::{BaseLots, QuoteLots, WrapperU64},
+    state::{
+        slot_storage, MatchingEngineResponse, SlotActions, SlotStorage, TraderId, TraderState,
+        MARKET_STATE_KEY_SEED,
+    },
 };
 
-use super::Market;
+use super::{Market, WritableMarket};
 
 #[repr(C)]
 #[derive(Default, Debug, Copy, Clone, PartialEq, Eq)]
@@ -100,6 +103,39 @@ impl Market for FIFOMarket {
 
     fn get_trader_state(slot_storage: &SlotStorage, address: Address) -> TraderState {
         TraderState::read_from_slot(slot_storage, address)
+    }
+}
+
+impl WritableMarket for FIFOMarket {
+    fn claim_funds(
+        &self,
+        slot_storage: &mut SlotStorage,
+        trader: TraderId,
+        num_quote_lots: QuoteLots,
+        num_base_lots: BaseLots,
+    ) -> Option<MatchingEngineResponse> {
+        // Book not initialized
+        if self.get_sequence_number() == 0 {
+            return None;
+        }
+        let (quote_lots_received, base_lots_received) = {
+            let mut trader_state = FIFOMarket::get_trader_state(slot_storage, trader);
+
+            let quote_lots_free = num_quote_lots.min(trader_state.quote_lots_free);
+            let base_lots_free = num_base_lots.min(trader_state.base_lots_free);
+
+            // Update and write to slot
+            trader_state.quote_lots_free -= quote_lots_free;
+            trader_state.base_lots_free -= base_lots_free;
+            trader_state.write_to_slot(slot_storage, trader);
+
+            (quote_lots_free, base_lots_free)
+        };
+
+        Some(MatchingEngineResponse::new_withdraw(
+            base_lots_received,
+            quote_lots_received,
+        ))
     }
 }
 

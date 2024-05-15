@@ -15,8 +15,8 @@ use crate::{
 pub fn process_deposit_funds(
     context: &mut GoblinMarket,
     trader: Address,
-    base_lots_to_deposit: u64,
     quote_lots_to_deposit: u64,
+    base_lots_to_deposit: u64,
 ) -> GoblinResult<()> {
     let quote_lots = QuoteLots::new(quote_lots_to_deposit);
     let base_lots = BaseLots::new(base_lots_to_deposit);
@@ -32,13 +32,14 @@ pub fn process_deposit_funds(
     SlotStorage::storage_flush_cache(true);
 
     // Obtain base and quote amounts with resolution
-    let base_amount = base_lots * BASE_LOT_SIZE;
-    let base_amount_raw =
-        U256::from(base_amount.as_u64()) * U256::from_limbs(BASE_DECIMALS_TO_IGNORE);
-
     let quote_amount = quote_lots * QUOTE_LOT_SIZE;
+    let base_amount = base_lots * BASE_LOT_SIZE;
+
     let quote_amount_raw =
         U256::from(quote_amount.as_u64()) * U256::from_limbs(QUOTE_DECIMALS_TO_IGNORE);
+
+    let base_amount_raw =
+        U256::from(base_amount.as_u64()) * U256::from_limbs(BASE_DECIMALS_TO_IGNORE);
 
     try_deposit(context, base_amount_raw, quote_amount_raw, trader)?;
 

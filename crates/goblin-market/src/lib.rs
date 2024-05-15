@@ -32,25 +32,19 @@ impl GoblinMarket {
     pub fn deposit_funds(
         &mut self,
         trader: Address,
-        base_lots_to_deposit: u64,
         quote_lots_to_deposit: u64,
+        base_lots_to_deposit: u64,
     ) -> GoblinResult<()> {
-        deposit::process_deposit_funds(self, trader, base_lots_to_deposit, quote_lots_to_deposit)?;
+        deposit::process_deposit_funds(self, trader, quote_lots_to_deposit, base_lots_to_deposit)?;
         Ok(())
     }
 
     pub fn withdraw_funds(
         &mut self,
-        trader: Address,
-        base_lots_to_withdraw: u64,
         quote_lots_to_withdraw: u64,
+        base_lots_to_withdraw: u64,
     ) -> GoblinResult<()> {
-        withdraw::process_withdraw_funds(
-            self,
-            trader,
-            base_lots_to_withdraw,
-            quote_lots_to_withdraw,
-        )?;
+        withdraw::process_withdraw_funds(self, quote_lots_to_withdraw, base_lots_to_withdraw)?;
         Ok(())
     }
 

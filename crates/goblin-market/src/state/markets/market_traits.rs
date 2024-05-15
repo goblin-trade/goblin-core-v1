@@ -1,8 +1,8 @@
 use stylus_sdk::alloy_primitives::Address;
 
 use crate::{
-    quantities::QuoteLots,
-    state::{SlotStorage, TraderState},
+    quantities::{BaseLots, QuoteLots},
+    state::{MatchingEngineResponse, SlotStorage, TraderId, TraderState},
 };
 
 pub trait RestingOrder {
@@ -22,4 +22,25 @@ pub trait Market {
     fn get_trader_state(slot_storage: &SlotStorage, address: Address) -> TraderState;
 }
 
-pub trait WritableMarket {}
+pub trait WritableMarket {
+    /// Try to claim the given number of lots from a trader's state.
+    ///
+    /// There is no eviction in Goblin.
+    ///
+    /// # Parameters
+    ///
+    /// * `slot_storage`
+    /// * `trader` - The trader address
+    /// * `num_quote_lots` - Number of lots to withdraw. Pass 0 if none should be withdrawn.
+    /// Pass U64::MAX to withdraw all.
+    /// * `num_base_lots` - Number of lots to withdraw. Pass 0 if none should be withdrawn.
+    /// Pass U32::MAX to withdraw all. (max value of base_lots is U32::MAX)
+    ///
+    fn claim_funds(
+        &self,
+        slot_storage: &mut SlotStorage,
+        trader: TraderId,
+        num_quote_lots: QuoteLots,
+        num_base_lots: BaseLots,
+    ) -> Option<MatchingEngineResponse>;
+}
