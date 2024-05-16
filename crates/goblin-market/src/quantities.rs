@@ -6,8 +6,11 @@ use bytemuck::{Pod, Zeroable};
 use core::fmt::Display;
 use core::iter::Sum;
 use core::ops::{Add, AddAssign, Div, Mul, Rem, Sub, SubAssign};
+use stylus_sdk::alloy_primitives::U256;
 
 use stylus_sdk::console;
+
+use crate::parameters::{BASE_DECIMALS_TO_IGNORE, QUOTE_DECIMALS_TO_IGNORE};
 
 pub trait WrapperU64 {
     fn new(value: u64) -> Self;
@@ -312,6 +315,14 @@ allow_mod!(AdjustedQuoteLots, BaseLotsPerBaseUnit);
 allow_mod!(BaseAtomsPerBaseUnit, BaseLotsPerBaseUnit);
 allow_mod!(QuoteAtomsPerQuoteUnit, QuoteLotsPerQuoteUnit);
 allow_mod!(QuoteLotsPerBaseUnitPerTick, BaseLotsPerBaseUnit);
+
+pub fn get_base_atoms_raw(atoms: BaseAtoms) -> U256 {
+    U256::from(atoms.as_u64()) * U256::from_limbs(BASE_DECIMALS_TO_IGNORE)
+}
+
+pub fn get_quote_atoms_raw(atoms: QuoteAtoms) -> U256 {
+    U256::from(atoms.as_u64()) * U256::from_limbs(QUOTE_DECIMALS_TO_IGNORE)
+}
 
 #[test]
 fn test_new_constructor_macro() {

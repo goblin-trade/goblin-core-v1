@@ -1,11 +1,9 @@
-use stylus_sdk::{alloy_primitives::U256, msg};
+use stylus_sdk::msg;
 
 use crate::{
     error::{GoblinError, GoblinResult, WithdrawFundsError},
-    parameters::{
-        BASE_DECIMALS_TO_IGNORE, BASE_LOT_SIZE, QUOTE_DECIMALS_TO_IGNORE, QUOTE_LOT_SIZE,
-    },
-    quantities::{BaseLots, QuoteLots, WrapperU64},
+    parameters::{BASE_LOT_SIZE, QUOTE_LOT_SIZE},
+    quantities::{get_base_atoms_raw, get_quote_atoms_raw, BaseLots, QuoteLots, WrapperU64},
     state::{FIFOMarket, MatchingEngineResponse, SlotActions, SlotStorage, WritableMarket},
     token_utils::try_withdraw,
     GoblinMarket,
@@ -46,11 +44,8 @@ pub fn process_withdraw_funds(
     let quote_amount = num_quote_lots_out * QUOTE_LOT_SIZE;
     let base_amount = num_base_lots_out * BASE_LOT_SIZE;
 
-    let quote_amount_raw =
-        U256::from(quote_amount.as_u64()) * U256::from_limbs(QUOTE_DECIMALS_TO_IGNORE);
-
-    let base_amount_raw =
-        U256::from(base_amount.as_u64()) * U256::from_limbs(BASE_DECIMALS_TO_IGNORE);
+    let quote_amount_raw = get_quote_atoms_raw(quote_amount);
+    let base_amount_raw = get_base_atoms_raw(base_amount);
 
     try_withdraw(context, quote_amount_raw, base_amount_raw, trader)?;
 

@@ -86,6 +86,10 @@ impl FIFOMarket {
 
         encoded_data
     }
+
+    pub fn write_to_slot(&self, slot_storage: &mut SlotStorage) {
+        slot_storage.sstore(&MARKET_SLOT_KEY, &self.encode());
+    }
 }
 
 impl Market for FIFOMarket {
@@ -136,6 +140,16 @@ impl WritableMarket for FIFOMarket {
             base_lots_received,
             quote_lots_received,
         ))
+    }
+
+    fn collect_fees(&mut self) -> QuoteLots {
+        let quote_lot_fees = self.unclaimed_quote_lot_fees;
+
+        // Mark as claimed
+        self.collected_quote_lot_fees += self.unclaimed_quote_lot_fees;
+        self.unclaimed_quote_lot_fees = QuoteLots::ZERO;
+
+        quote_lot_fees
     }
 }
 

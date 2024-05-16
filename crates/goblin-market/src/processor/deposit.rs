@@ -1,12 +1,10 @@
 use slot_storage::{SlotActions, SlotStorage};
-use stylus_sdk::alloy_primitives::{Address, U256};
+use stylus_sdk::alloy_primitives::Address;
 
 use crate::{
     error::GoblinResult,
-    parameters::{
-        BASE_DECIMALS_TO_IGNORE, BASE_LOT_SIZE, QUOTE_DECIMALS_TO_IGNORE, QUOTE_LOT_SIZE,
-    },
-    quantities::{BaseLots, QuoteLots, WrapperU64},
+    parameters::{BASE_LOT_SIZE, QUOTE_LOT_SIZE},
+    quantities::{get_base_atoms_raw, get_quote_atoms_raw, BaseLots, QuoteLots, WrapperU64},
     state::{slot_storage, FIFOMarket, Market},
     token_utils::try_deposit,
     GoblinMarket,
@@ -35,11 +33,8 @@ pub fn process_deposit_funds(
     let quote_amount = quote_lots * QUOTE_LOT_SIZE;
     let base_amount = base_lots * BASE_LOT_SIZE;
 
-    let quote_amount_raw =
-        U256::from(quote_amount.as_u64()) * U256::from_limbs(QUOTE_DECIMALS_TO_IGNORE);
-
-    let base_amount_raw =
-        U256::from(base_amount.as_u64()) * U256::from_limbs(BASE_DECIMALS_TO_IGNORE);
+    let quote_amount_raw = get_quote_atoms_raw(quote_amount);
+    let base_amount_raw = get_base_atoms_raw(base_amount);
 
     try_deposit(context, base_amount_raw, quote_amount_raw, trader)?;
 
