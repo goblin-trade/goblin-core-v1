@@ -24,10 +24,10 @@ pub fn process_collect_fees(context: &mut GoblinMarket, recipient: Address) -> G
     let mut slot_storage = SlotStorage::new();
     let mut market = FIFOMarket::read_from_slot(&slot_storage);
 
-    let num_quote_lots_out = market.collect_fees();
+    let num_quote_lots_out = market.collect_fees(&mut slot_storage);
 
     // write market to slot
-    market.write_to_slot(&mut slot_storage);
+    SlotStorage::storage_flush_cache(true);
 
     let quote_atoms_collected = num_quote_lots_out * QUOTE_LOT_SIZE;
     let quote_atoms_collected_raw = get_quote_atoms_raw(quote_atoms_collected);

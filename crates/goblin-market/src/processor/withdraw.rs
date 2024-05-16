@@ -41,6 +41,8 @@ pub fn process_withdraw_funds(
         .claim_funds(&mut slot_storage, trader, quote_lots, base_lots)
         .ok_or(GoblinError::WithdrawFundsError(WithdrawFundsError {}))?;
 
+    SlotStorage::storage_flush_cache(true);
+
     let quote_amount = num_quote_lots_out * QUOTE_LOT_SIZE;
     let base_amount = num_base_lots_out * BASE_LOT_SIZE;
 

@@ -142,12 +142,15 @@ impl WritableMarket for FIFOMarket {
         ))
     }
 
-    fn collect_fees(&mut self) -> QuoteLots {
+    fn collect_fees(&mut self, slot_storage: &mut SlotStorage) -> QuoteLots {
         let quote_lot_fees = self.unclaimed_quote_lot_fees;
 
         // Mark as claimed
         self.collected_quote_lot_fees += self.unclaimed_quote_lot_fees;
         self.unclaimed_quote_lot_fees = QuoteLots::ZERO;
+
+        // Write to slot
+        self.write_to_slot(slot_storage);
 
         quote_lot_fees
     }

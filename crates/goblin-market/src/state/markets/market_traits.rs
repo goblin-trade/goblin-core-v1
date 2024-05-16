@@ -45,5 +45,5 @@ pub trait WritableMarket {
     ) -> Option<MatchingEngineResponse>;
 
     /// Collect protocol fees. Returns the amount of quote lots to claim
-    fn collect_fees(&mut self) -> QuoteLots;
+    fn collect_fees(&mut self, slot_storage: &mut SlotStorage) -> QuoteLots;
 }
