@@ -1,11 +1,11 @@
 use stylus_sdk::msg;
 
 use crate::{
-    error::{GoblinError, GoblinResult, WithdrawFundsError},
     parameters::{BASE_LOT_SIZE, QUOTE_LOT_SIZE},
+    program::error::{GoblinError, GoblinResult, WithdrawFundsError},
+    program::token_utils::try_withdraw,
     quantities::{get_base_atoms_raw, get_quote_atoms_raw, BaseLots, QuoteLots, WrapperU64},
     state::{FIFOMarket, MatchingEngineResponse, SlotActions, SlotStorage, WritableMarket},
-    token_utils::try_withdraw,
     GoblinMarket,
 };
 

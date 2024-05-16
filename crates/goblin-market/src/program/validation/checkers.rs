@@ -1,8 +1,8 @@
 use stylus_sdk::msg;
 
 use crate::{
-    error::{GoblinError, GoblinResult, InvalidFeeCollector},
     parameters::FEE_COLLECTOR,
+    program::error::{GoblinError, GoblinResult, InvalidFeeCollector},
     require,
 };
 

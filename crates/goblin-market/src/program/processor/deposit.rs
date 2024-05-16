@@ -2,11 +2,10 @@ use slot_storage::{SlotActions, SlotStorage};
 use stylus_sdk::alloy_primitives::Address;
 
 use crate::{
-    error::GoblinResult,
     parameters::{BASE_LOT_SIZE, QUOTE_LOT_SIZE},
+    program::{try_deposit, GoblinResult},
     quantities::{get_base_atoms_raw, get_quote_atoms_raw, BaseLots, QuoteLots, WrapperU64},
     state::{slot_storage, FIFOMarket, Market},
-    token_utils::try_deposit,
     GoblinMarket,
 };
 

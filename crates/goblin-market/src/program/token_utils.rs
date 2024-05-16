@@ -5,8 +5,8 @@ use stylus_sdk::{
 };
 
 use crate::{
-    error::GoblinResult,
     parameters::{BASE_TOKEN, QUOTE_TOKEN},
+    program::error::GoblinResult,
     GoblinMarket,
 };
 

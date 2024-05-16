@@ -1,12 +1,11 @@
 use stylus_sdk::alloy_primitives::Address;
 
+use crate::program::checkers::assert_valid_fee_collector;
 use crate::{
-    error::GoblinResult,
     parameters::{QUOTE_LOT_SIZE, QUOTE_TOKEN},
+    program::{maybe_invoke_withdraw, GoblinResult},
     quantities::get_quote_atoms_raw,
     state::{FIFOMarket, SlotActions, SlotStorage, WritableMarket},
-    token_utils::maybe_invoke_withdraw,
-    validation::checkers::assert_valid_fee_collector,
     GoblinMarket,
 };
 

@@ -2,26 +2,21 @@
 #![cfg_attr(not(test), no_std)]
 extern crate alloc;
 
+pub mod parameters;
+pub mod program;
+pub mod quantities;
+pub mod state;
+
 #[global_allocator]
 static ALLOC: mini_alloc::MiniAlloc = mini_alloc::MiniAlloc::INIT;
 
-use processor::{deposit, fees, withdraw};
+use crate::program::GoblinResult;
+use program::processor::{deposit, fees, withdraw};
 use state::{SlotActions, SlotStorage, TraderState};
 use stylus_sdk::{
     alloy_primitives::{Address, B256},
-    hostio,
     prelude::*,
 };
-
-pub mod error;
-pub mod parameters;
-pub mod processor;
-pub mod quantities;
-pub mod state;
-pub mod token_utils;
-pub mod validation;
-
-use crate::error::GoblinResult;
 
 sol_storage! {
     #[entrypoint]
