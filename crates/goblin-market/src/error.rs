@@ -2,14 +2,16 @@ use alloy_sol_types::sol;
 use stylus_sdk::prelude::*;
 
 sol! {
+    // Invalid fee collector error
+    error InvalidFeeCollector();
+
+    // Not used yet- to check
+
     // Invalid instruction data error
     error InvalidInstructionData();
 
     // Invalid market parameters error
     error InvalidMarketParameters();
-
-    // Invalid market authority error
-    error InvalidMarketAuthority();
 
     // Market deserialization error
     error FailedToLoadMarketFromAccount();
@@ -86,9 +88,10 @@ sol! {
 
 #[derive(SolidityError)]
 pub enum GoblinError {
+    InvalidFeeCollector(InvalidFeeCollector),
+
     InvalidInstructionData(InvalidInstructionData),
     InvalidMarketParameters(InvalidMarketParameters),
-    InvalidMarketAuthority(InvalidMarketAuthority),
     FailedToLoadMarketFromAccount(FailedToLoadMarketFromAccount),
     MarketAlreadyInitialized(MarketAlreadyInitialized),
     MarketUninitialized(MarketUninitialized),
@@ -116,6 +119,15 @@ pub enum GoblinError {
 }
 
 pub type GoblinResult<T, E = GoblinError> = core::result::Result<T, E>;
+
+#[macro_export]
+macro_rules! require {
+    ($invariant:expr, $error:expr) => {
+        if !$invariant {
+            return Err($error);
+        }
+    };
+}
 
 #[cfg(test)]
 mod test {

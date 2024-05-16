@@ -10,6 +10,8 @@ use crate::quantities::{
     BaseAtomsPerBaseLot, BaseLotsPerBaseUnit, QuoteAtomsPerQuoteLot, QuoteLotsPerBaseUnitPerTick,
 };
 
+pub const FEE_COLLECTOR: Address = address!("1D9ff13fC7Bea07E6e1C323Ed48521DA532596d8");
+
 pub const BASE_TOKEN: Address = address!("82af49447d8a07e3bd95bd0d56f35241523fbab1");
 pub const QUOTE_TOKEN: Address = address!("af88d065e77c8cC2239327C5EDb3A432268e5831");
 

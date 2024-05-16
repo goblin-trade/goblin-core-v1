@@ -5,7 +5,7 @@ extern crate alloc;
 #[global_allocator]
 static ALLOC: mini_alloc::MiniAlloc = mini_alloc::MiniAlloc::INIT;
 
-use processor::{deposit, withdraw};
+use processor::{deposit, fees, withdraw};
 use state::{SlotActions, SlotStorage, TraderState};
 use stylus_sdk::{
     alloy_primitives::{Address, B256},
@@ -19,6 +19,7 @@ pub mod processor;
 pub mod quantities;
 pub mod state;
 pub mod token_utils;
+pub mod validation;
 
 use crate::error::GoblinResult;
 
@@ -45,6 +46,11 @@ impl GoblinMarket {
         base_lots_to_withdraw: u64,
     ) -> GoblinResult<()> {
         withdraw::process_withdraw_funds(self, quote_lots_to_withdraw, base_lots_to_withdraw)?;
+        Ok(())
+    }
+
+    pub fn collect_fees(&mut self, recipient: Address) -> GoblinResult<()> {
+        fees::process_collect_fees(self, recipient)?;
         Ok(())
     }
 
