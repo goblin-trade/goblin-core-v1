@@ -152,6 +152,8 @@ impl WritableMarket for FIFOMarket {
         // Write to slot
         self.write_to_slot(slot_storage);
 
+        // EMIT MarketEvent::Fee
+
         quote_lot_fees
     }
 }
