@@ -9,6 +9,7 @@ use crate::{
 };
 
 #[derive(Clone)]
+#[repr(transparent)]
 pub struct RestingOrderIndex {
     inner: u8,
 }
@@ -48,8 +49,10 @@ impl SlotKey for OrderId {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct SlotRestingOrder {
-    pub trader_address: Address,
-    pub num_base_lots: BaseLots,
+    pub trader_address: Address, // 20 bytes = 160 bits
+    pub num_base_lots: BaseLots, // 64
+    // use a bool to track if last_valid_block is used. If last_valid_block is 0 then this is none.
+    // this leaves us 256 - 160 - 64 - 1 = 31 bits for block / timestamp
     pub last_valid_block: u32,
     pub last_valid_unix_timestamp_in_seconds: u32,
 }

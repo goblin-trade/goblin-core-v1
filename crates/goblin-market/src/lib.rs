@@ -11,8 +11,12 @@ pub mod state;
 static ALLOC: mini_alloc::MiniAlloc = mini_alloc::MiniAlloc::INIT;
 
 use crate::program::GoblinResult;
-use program::processor::{deposit, fees, withdraw};
-use state::{SlotActions, SlotStorage, TraderState};
+use program::{
+    processor::{deposit, fees, withdraw},
+    reduce_order,
+};
+use quantities::{BaseLots, Ticks, WrapperU64};
+use state::{OrderId, RestingOrderIndex, Side, SlotActions, SlotStorage, TraderState};
 use stylus_sdk::{
     alloy_primitives::{Address, B256},
     prelude::*,
@@ -46,6 +50,49 @@ impl GoblinMarket {
 
     pub fn collect_fees(&mut self, recipient: Address) -> GoblinResult<()> {
         fees::process_collect_fees(self, recipient)?;
+        Ok(())
+    }
+
+    pub fn reduce_order(
+        &mut self,
+        is_bid: bool,
+        price_in_ticks: u64,
+        resting_order_index: u8,
+        size: u64,
+        recipient: Address,
+    ) -> GoblinResult<()> {
+        reduce_order::process_reduce_order(
+            self,
+            Side::init(is_bid),
+            &OrderId {
+                price_in_ticks: Ticks::new(price_in_ticks),
+                resting_order_index: RestingOrderIndex::new(resting_order_index),
+            },
+            BaseLots::new(size),
+            Some(recipient),
+        )?;
+
+        Ok(())
+    }
+
+    pub fn reduce_order_with_free_funds(
+        &mut self,
+        is_bid: bool,
+        price_in_ticks: u64,
+        resting_order_index: u8,
+        size: u64,
+    ) -> GoblinResult<()> {
+        reduce_order::process_reduce_order(
+            self,
+            Side::init(is_bid),
+            &OrderId {
+                price_in_ticks: Ticks::new(price_in_ticks),
+                resting_order_index: RestingOrderIndex::new(resting_order_index),
+            },
+            BaseLots::new(size),
+            None,
+        )?;
+
         Ok(())
     }
 
