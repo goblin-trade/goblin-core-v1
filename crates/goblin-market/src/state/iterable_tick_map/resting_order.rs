@@ -1,3 +1,5 @@
+use core::ops::Add;
+
 use stylus_sdk::alloy_primitives::Address;
 
 use crate::{
@@ -164,6 +166,17 @@ impl SlotRestingOrder {
         let encoded = self.encode();
 
         slot_storage.sstore(&key.get_key(), &encoded);
+    }
+
+    pub fn clear_order(&mut self) {
+        self.trader_address = Address::ZERO;
+        self.num_base_lots = BaseLots::ZERO;
+        self.last_valid_block = 0;
+        self.last_valid_unix_timestamp_in_seconds = 0;
+    }
+
+    pub fn does_not_exist(&self) -> bool {
+        self.trader_address == Address::ZERO
     }
 }
 

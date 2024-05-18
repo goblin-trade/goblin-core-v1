@@ -25,11 +25,11 @@ pub fn maybe_invoke_withdraw(
     context: &mut GoblinMarket,
     withdraw_amount: U256,
     token_address: Address,
-    trader: Address,
+    recipient: Address,
 ) -> GoblinResult<()> {
     if withdraw_amount > U256::ZERO {
         let token = IERC20::new(token_address);
-        token.transfer(context, trader, withdraw_amount).unwrap();
+        token.transfer(context, recipient, withdraw_amount).unwrap();
     }
 
     Ok(())
@@ -57,10 +57,10 @@ pub fn try_withdraw(
     context: &mut GoblinMarket,
     quote_amount: U256,
     base_amount: U256,
-    trader: Address,
+    recipient: Address,
 ) -> GoblinResult<()> {
-    maybe_invoke_withdraw(context, quote_amount, QUOTE_TOKEN, trader)?;
-    maybe_invoke_withdraw(context, base_amount, BASE_TOKEN, trader)?;
+    maybe_invoke_withdraw(context, quote_amount, QUOTE_TOKEN, recipient)?;
+    maybe_invoke_withdraw(context, base_amount, BASE_TOKEN, recipient)?;
 
     Ok(())
 }

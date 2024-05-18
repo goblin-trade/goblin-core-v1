@@ -9,7 +9,7 @@ use crate::{
     GoblinMarket,
 };
 
-/// Withdraw from free founds
+/// Withdraw from free funds
 ///
 /// # Arguments
 ///

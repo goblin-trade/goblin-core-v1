@@ -1,10 +1,11 @@
 use stylus_sdk::alloy_primitives::Address;
 
 use crate::{
+    parameters::{BASE_LOTS_PER_BASE_UNIT, TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT},
     quantities::{BaseLots, QuoteLots, WrapperU64},
     state::{
-        slot_storage, MatchingEngineResponse, SlotActions, SlotStorage, TraderId, TraderState,
-        MARKET_STATE_KEY_SEED,
+        slot_storage, MatchingEngineResponse, OrderId, Side, SlotActions, SlotRestingOrder,
+        SlotStorage, TraderId, TraderState, MARKET_STATE_KEY_SEED,
     },
 };
 
@@ -90,6 +91,96 @@ impl FIFOMarket {
     pub fn write_to_slot(&self, slot_storage: &mut SlotStorage) {
         slot_storage.sstore(&MARKET_SLOT_KEY, &self.encode());
     }
+
+    fn reduce_order_inner(
+        &self,
+        slot_storage: &mut SlotStorage,
+        trader: Address,
+        side: Side,
+        order_id: &OrderId,
+        size: Option<BaseLots>,
+        order_is_expired: bool,
+        claim_funds: bool,
+    ) -> Option<MatchingEngineResponse> {
+        let removed_base_lots = {
+            let mut order = SlotRestingOrder::new_from_slot(slot_storage, order_id);
+
+            // whether to remove order completely (clear slot), and lots to remove
+            let (should_remove_order_from_book, base_lots_to_remove) = {
+                // Empty slot- order doesn't exist
+                if order.does_not_exist() {
+                    return Some(MatchingEngineResponse::default());
+                }
+
+                if order.trader_address != trader {
+                    return None;
+                }
+
+                let base_lots_to_remove = size
+                    .map(|s| s.min(order.num_base_lots))
+                    .unwrap_or(order.num_base_lots);
+
+                // If the order is tagged as expired, we remove it from the book regardless of the size.
+                if order_is_expired {
+                    (true, order.num_base_lots)
+                } else {
+                    (
+                        base_lots_to_remove == order.num_base_lots,
+                        base_lots_to_remove,
+                    )
+                }
+            };
+            if should_remove_order_from_book {
+                // Clear order completely
+                order.clear_order();
+
+                // TODO update iterable tick map
+
+                BaseLots::ZERO
+            } else {
+                // Reduce order
+                order.num_base_lots -= base_lots_to_remove;
+                order.num_base_lots
+            };
+            order.write_to_slot(slot_storage, order_id);
+
+            // EMIT ExpiredOrder / Reduce
+
+            base_lots_to_remove
+        };
+        // Update trader state
+        let (num_quote_lots, num_base_lots) = {
+            let mut trader_state = TraderState::read_from_slot(slot_storage, trader);
+            match side {
+                Side::Bid => {
+                    let quote_lots = (order_id.price_in_ticks
+                        * TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT
+                        * removed_base_lots)
+                        / BASE_LOTS_PER_BASE_UNIT;
+                    trader_state.unlock_quote_lots(quote_lots);
+                    trader_state.write_to_slot(slot_storage, trader);
+
+                    (quote_lots, BaseLots::ZERO)
+                }
+                Side::Ask => {
+                    trader_state.unlock_base_lots(removed_base_lots);
+                    trader_state.write_to_slot(slot_storage, trader);
+
+                    (QuoteLots::ZERO, removed_base_lots)
+                }
+            }
+        };
+
+        // We don't want to claim funds if an order is removed from the book during a self trade
+        // or if the user specifically indicates that they don't want to claim funds.
+        if claim_funds {
+            // This reads and updates TraderState again
+            // TODO optimize- pass TraderState as param
+            self.claim_funds(slot_storage, trader, num_quote_lots, num_base_lots)
+        } else {
+            Some(MatchingEngineResponse::default())
+        }
+    }
 }
 
 impl Market for FIFOMarket {
@@ -111,6 +202,26 @@ impl Market for FIFOMarket {
 }
 
 impl WritableMarket for FIFOMarket {
+    fn reduce_order(
+        &self,
+        slot_storage: &mut SlotStorage,
+        trader: Address,
+        side: Side,
+        order_id: &OrderId,
+        size: BaseLots,
+        claim_funds: bool,
+    ) -> Option<MatchingEngineResponse> {
+        self.reduce_order_inner(
+            slot_storage,
+            trader,
+            side,
+            order_id,
+            Some(size),
+            false,
+            claim_funds,
+        )
+    }
+
     fn claim_funds(
         &self,
         slot_storage: &mut SlotStorage,
