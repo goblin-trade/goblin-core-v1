@@ -1,9 +1,8 @@
 use stylus_sdk::{alloy_primitives::Address, msg};
 
 use crate::{
-    parameters::{BASE_LOT_SIZE, QUOTE_LOT_SIZE},
     program::{try_withdraw, GoblinError, GoblinResult, ReduceOrderError},
-    quantities::{get_base_atoms_raw, get_quote_atoms_raw, BaseLots},
+    quantities::{BaseAtomsRaw, BaseLots, QuoteAtomsRaw},
     state::{
         FIFOMarket, MatchingEngineResponse, OrderId, Side, SlotActions, SlotStorage, WritableMarket,
     },
@@ -49,11 +48,8 @@ pub fn process_reduce_order(
         .ok_or(GoblinError::ReduceOrderError(ReduceOrderError {}))?;
 
     if let Some(recipient) = recipient {
-        let quote_amount = num_quote_lots_out * QUOTE_LOT_SIZE;
-        let base_amount = num_base_lots_out * BASE_LOT_SIZE;
-
-        let quote_amount_raw = get_quote_atoms_raw(quote_amount);
-        let base_amount_raw = get_base_atoms_raw(base_amount);
+        let quote_amount_raw = QuoteAtomsRaw::from_lots(num_quote_lots_out);
+        let base_amount_raw = BaseAtomsRaw::from_lots(num_base_lots_out);
 
         try_withdraw(context, quote_amount_raw, base_amount_raw, recipient)?;
     }

@@ -2,9 +2,8 @@ use slot_storage::{SlotActions, SlotStorage};
 use stylus_sdk::alloy_primitives::Address;
 
 use crate::{
-    parameters::{BASE_LOT_SIZE, QUOTE_LOT_SIZE},
     program::{try_deposit, GoblinResult},
-    quantities::{get_base_atoms_raw, get_quote_atoms_raw, BaseLots, QuoteLots, WrapperU64},
+    quantities::{BaseAtomsRaw, BaseLots, QuoteAtomsRaw, QuoteLots, WrapperU64},
     state::{slot_storage, FIFOMarket, Market},
     GoblinMarket,
 };
@@ -29,13 +28,10 @@ pub fn process_deposit_funds(
     SlotStorage::storage_flush_cache(true);
 
     // Obtain base and quote amounts with resolution
-    let quote_amount = quote_lots * QUOTE_LOT_SIZE;
-    let base_amount = base_lots * BASE_LOT_SIZE;
+    let quote_amount_raw = QuoteAtomsRaw::from_lots(quote_lots);
+    let base_amount_raw = BaseAtomsRaw::from_lots(base_lots);
 
-    let quote_amount_raw = get_quote_atoms_raw(quote_amount);
-    let base_amount_raw = get_base_atoms_raw(base_amount);
-
-    try_deposit(context, base_amount_raw, quote_amount_raw, trader)?;
+    try_deposit(context, quote_amount_raw, base_amount_raw, trader)?;
 
     Ok(())
 }

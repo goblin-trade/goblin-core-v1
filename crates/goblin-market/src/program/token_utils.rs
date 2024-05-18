@@ -7,6 +7,7 @@ use stylus_sdk::{
 use crate::{
     parameters::{BASE_TOKEN, QUOTE_TOKEN},
     program::error::GoblinResult,
+    quantities::{BaseAtomsRaw, QuoteAtomsRaw},
     GoblinMarket,
 };
 
@@ -55,12 +56,12 @@ pub fn maybe_invoke_deposit(
 /// Withdraw base and quote tokens
 pub fn try_withdraw(
     context: &mut GoblinMarket,
-    quote_amount: U256,
-    base_amount: U256,
+    quote_amount: QuoteAtomsRaw,
+    base_amount: BaseAtomsRaw,
     recipient: Address,
 ) -> GoblinResult<()> {
-    maybe_invoke_withdraw(context, quote_amount, QUOTE_TOKEN, recipient)?;
-    maybe_invoke_withdraw(context, base_amount, BASE_TOKEN, recipient)?;
+    maybe_invoke_withdraw(context, quote_amount.as_u256(), QUOTE_TOKEN, recipient)?;
+    maybe_invoke_withdraw(context, base_amount.as_u256(), BASE_TOKEN, recipient)?;
 
     Ok(())
 }
@@ -68,12 +69,12 @@ pub fn try_withdraw(
 /// Deposit base and quote tokens
 pub fn try_deposit(
     context: &mut GoblinMarket,
-    quote_amount: U256,
-    base_amount: U256,
+    quote_amount: QuoteAtomsRaw,
+    base_amount: BaseAtomsRaw,
     trader: Address,
 ) -> GoblinResult<()> {
-    maybe_invoke_deposit(context, quote_amount, QUOTE_TOKEN, trader)?;
-    maybe_invoke_deposit(context, base_amount, BASE_TOKEN, trader)?;
+    maybe_invoke_deposit(context, quote_amount.as_u256(), QUOTE_TOKEN, trader)?;
+    maybe_invoke_deposit(context, base_amount.as_u256(), BASE_TOKEN, trader)?;
 
     Ok(())
 }

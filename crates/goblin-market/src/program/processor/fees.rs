@@ -1,10 +1,10 @@
 use stylus_sdk::alloy_primitives::Address;
 
 use crate::program::checkers::assert_valid_fee_collector;
+use crate::quantities::QuoteAtomsRaw;
 use crate::{
-    parameters::{QUOTE_LOT_SIZE, QUOTE_TOKEN},
+    parameters::QUOTE_TOKEN,
     program::{maybe_invoke_withdraw, GoblinResult},
-    quantities::get_quote_atoms_raw,
     state::{FIFOMarket, SlotActions, SlotStorage, WritableMarket},
     GoblinMarket,
 };
@@ -28,10 +28,14 @@ pub fn process_collect_fees(context: &mut GoblinMarket, recipient: Address) -> G
     // write market to slot
     SlotStorage::storage_flush_cache(true);
 
-    let quote_atoms_collected = num_quote_lots_out * QUOTE_LOT_SIZE;
-    let quote_atoms_collected_raw = get_quote_atoms_raw(quote_atoms_collected);
+    let quote_atoms_collected_raw = QuoteAtomsRaw::from_lots(num_quote_lots_out);
 
-    maybe_invoke_withdraw(context, quote_atoms_collected_raw, QUOTE_TOKEN, recipient)?;
+    maybe_invoke_withdraw(
+        context,
+        quote_atoms_collected_raw.as_u256(),
+        QUOTE_TOKEN,
+        recipient,
+    )?;
 
     Ok(())
 }

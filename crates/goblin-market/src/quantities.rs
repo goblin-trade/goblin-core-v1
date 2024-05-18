@@ -5,12 +5,15 @@ use borsh::{BorshDeserialize as Deserialize, BorshSerialize as Serialize};
 use bytemuck::{Pod, Zeroable};
 use core::fmt::Display;
 use core::iter::Sum;
+use core::marker::PhantomData;
 use core::ops::{Add, AddAssign, Div, Mul, Rem, Sub, SubAssign};
 use stylus_sdk::alloy_primitives::U256;
 
 use stylus_sdk::console;
 
-use crate::parameters::{BASE_DECIMALS_TO_IGNORE, QUOTE_DECIMALS_TO_IGNORE};
+use crate::parameters::{
+    BASE_DECIMALS_TO_IGNORE, BASE_LOT_SIZE, QUOTE_DECIMALS_TO_IGNORE, QUOTE_LOT_SIZE,
+};
 
 pub trait WrapperU64 {
     fn new(value: u64) -> Self;
@@ -316,12 +319,38 @@ allow_mod!(BaseAtomsPerBaseUnit, BaseLotsPerBaseUnit);
 allow_mod!(QuoteAtomsPerQuoteUnit, QuoteLotsPerQuoteUnit);
 allow_mod!(QuoteLotsPerBaseUnitPerTick, BaseLotsPerBaseUnit);
 
-pub fn get_base_atoms_raw(atoms: BaseAtoms) -> U256 {
-    U256::from(atoms.as_u64()) * U256::from_limbs(BASE_DECIMALS_TO_IGNORE)
+pub struct QuoteAtomsRaw {
+    inner: U256,
 }
 
-pub fn get_quote_atoms_raw(atoms: QuoteAtoms) -> U256 {
-    U256::from(atoms.as_u64()) * U256::from_limbs(QUOTE_DECIMALS_TO_IGNORE)
+pub struct BaseAtomsRaw {
+    inner: U256,
+}
+
+impl QuoteAtomsRaw {
+    pub fn as_u256(&self) -> U256 {
+        self.inner
+    }
+
+    pub fn from_lots(lots: QuoteLots) -> Self {
+        QuoteAtomsRaw {
+            inner: U256::from((lots * QUOTE_LOT_SIZE).as_u64())
+                * U256::from_limbs(QUOTE_DECIMALS_TO_IGNORE),
+        }
+    }
+}
+
+impl BaseAtomsRaw {
+    pub fn as_u256(&self) -> U256 {
+        self.inner
+    }
+
+    pub fn from_lots(lots: BaseLots) -> Self {
+        BaseAtomsRaw {
+            inner: U256::from((lots * BASE_LOT_SIZE).as_u64())
+                * U256::from_limbs(BASE_DECIMALS_TO_IGNORE),
+        }
+    }
 }
 
 #[test]
