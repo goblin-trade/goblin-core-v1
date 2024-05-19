@@ -86,7 +86,7 @@ mod test {
     fn test_insert_order() {
         let mut slot_storage = SlotStorage::new();
 
-        let mut pseudo_tree = IterableTickMap {
+        let mut iterable_tick_map = IterableTickMap {
             bid_groups: 0,
             ask_groups: 0,
         };
@@ -96,20 +96,16 @@ mod test {
 
         let num_base_lots = BaseLots::new(10);
 
-        let resting_order = SlotRestingOrder {
-            trader_address: Address::ZERO,
-            num_base_lots,
-            last_valid_block: 0,
-            last_valid_unix_timestamp_in_seconds: 0,
-        };
+        let resting_order: SlotRestingOrder =
+            SlotRestingOrder::new(Address::ZERO, num_base_lots, false, 0);
 
-        pseudo_tree.insert(
+        iterable_tick_map.insert(
             &mut slot_storage,
             side.clone(),
             price_in_ticks,
             &resting_order,
         );
-        assert_eq!(pseudo_tree.bid_groups, 1);
+        assert_eq!(iterable_tick_map.bid_groups, 1);
 
         let TickIndices {
             outer_index,

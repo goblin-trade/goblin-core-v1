@@ -252,7 +252,7 @@ pub struct Ticks {
 
 // BaseLots have smaller max size than QuoteLots
 basic_u64!(QuoteLots, 64);
-basic_u64!(BaseLots, 32);
+basic_u64!(BaseLots, 64);
 
 // Discrete price unit (quote quantity per base quantity)
 // 16 bits from bitmap index, 5 bits from resting order index

@@ -1,5 +1,3 @@
-use core::ops::Add;
-
 use stylus_sdk::alloy_primitives::Address;
 
 use crate::{
@@ -52,11 +50,10 @@ impl SlotKey for OrderId {
 #[derive(Copy, Clone)]
 pub struct SlotRestingOrder {
     pub trader_address: Address, // 20 bytes = 160 bits
-    pub num_base_lots: BaseLots, // 64
-    // use a bool to track if last_valid_block is used. If last_valid_block is 0 then this is none.
-    // this leaves us 256 - 160 - 64 - 1 = 31 bits for block / timestamp
-    pub last_valid_block: u32,
-    pub last_valid_unix_timestamp_in_seconds: u32,
+    pub num_base_lots: BaseLots, // 63
+
+    pub track_block: bool,                                  // 1
+    pub last_valid_block_or_unix_timestamp_in_seconds: u32, // 32
 }
 
 impl SlotRestingOrder {
@@ -64,48 +61,22 @@ impl SlotRestingOrder {
         SlotRestingOrder {
             trader_address,
             num_base_lots,
-            last_valid_block: 0,
-            last_valid_unix_timestamp_in_seconds: 0,
+            track_block: false,
+            last_valid_block_or_unix_timestamp_in_seconds: 0,
         }
     }
 
     pub fn new(
         trader_address: Address,
         num_base_lots: BaseLots,
-        last_valid_slot: Option<u32>,
-        last_valid_unix_timestamp_in_seconds: Option<u32>,
+        track_block: bool,
+        last_valid_block_or_unix_timestamp_in_seconds: u32,
     ) -> Self {
         SlotRestingOrder {
             trader_address,
             num_base_lots,
-            last_valid_block: last_valid_slot.unwrap_or(0),
-            last_valid_unix_timestamp_in_seconds: last_valid_unix_timestamp_in_seconds.unwrap_or(0),
-        }
-    }
-
-    pub fn new_with_last_valid_slot(
-        trader_address: Address,
-        num_base_lots: BaseLots,
-        last_valid_slot: u32,
-    ) -> Self {
-        SlotRestingOrder {
-            trader_address,
-            num_base_lots,
-            last_valid_block: last_valid_slot,
-            last_valid_unix_timestamp_in_seconds: 0,
-        }
-    }
-
-    pub fn new_with_last_valid_unix_timestamp(
-        trader_address: Address,
-        num_base_lots: BaseLots,
-        last_valid_unix_timestamp_in_seconds: u32,
-    ) -> Self {
-        SlotRestingOrder {
-            trader_address,
-            num_base_lots,
-            last_valid_block: 0,
-            last_valid_unix_timestamp_in_seconds,
+            track_block,
+            last_valid_block_or_unix_timestamp_in_seconds,
         }
     }
 
@@ -113,17 +84,27 @@ impl SlotRestingOrder {
     pub fn decode(slot: [u8; 32]) -> Self {
         let trader_address = Address::from_slice(&slot[0..20]);
 
-        let num_base_lots =
-            BaseLots::new(u32::from_be_bytes(slot[20..24].try_into().unwrap()) as u64);
-        let last_valid_block = u32::from_be_bytes(slot[24..28].try_into().unwrap());
-        let last_valid_unix_timestamp_in_seconds =
-            u32::from_be_bytes(slot[28..32].try_into().unwrap());
+        let num_base_lots = BaseLots::new(u64::from_be_bytes([
+            slot[20] & 0b0111_1111,
+            slot[21],
+            slot[22],
+            slot[23],
+            slot[24],
+            slot[25],
+            slot[26],
+            slot[27],
+        ]));
+
+        let track_timestamp = (slot[20] & 0b1000_0000) != 0;
+
+        let last_valid_block_or_unix_timestamp_in_seconds =
+            u32::from_be_bytes([slot[28], slot[29], slot[30], slot[31]]);
 
         SlotRestingOrder {
             trader_address,
             num_base_lots,
-            last_valid_block,
-            last_valid_unix_timestamp_in_seconds,
+            track_block: track_timestamp,
+            last_valid_block_or_unix_timestamp_in_seconds,
         }
     }
 
@@ -134,22 +115,22 @@ impl SlotRestingOrder {
         // Copy trader_address
         encoded_data[0..20].copy_from_slice(self.trader_address.as_slice());
 
-        // num_base_lots is encoded as u32. Ensure that it fits
-        let num_base_lots = self.num_base_lots.as_u64();
-        assert!(num_base_lots <= u32::MAX as u64);
-
         // Encode num_base_lots in big-endian format
-        let num_base_lots_bytes = (num_base_lots as u32).to_be_bytes();
-        encoded_data[20..24].copy_from_slice(&num_base_lots_bytes);
+        let num_base_lots_bytes = self.num_base_lots.as_u64().to_be_bytes();
 
-        // Encode last_valid_block in big-endian format
-        let last_valid_block_bytes = self.last_valid_block.to_be_bytes();
-        encoded_data[24..28].copy_from_slice(&last_valid_block_bytes);
+        encoded_data[20..28].copy_from_slice(&num_base_lots_bytes);
 
-        // Encode last_valid_unix_timestamp_in_seconds in big-endian format
-        let last_valid_unix_timestamp_bytes =
-            self.last_valid_unix_timestamp_in_seconds.to_be_bytes();
-        encoded_data[28..32].copy_from_slice(&last_valid_unix_timestamp_bytes);
+        // Encode track_timestamp flag in the LSB of the i=20 byte
+        if self.track_block {
+            encoded_data[20] |= 0b1000_0000;
+        }
+
+        // Encode last_valid_block_or_unix_timestamp_in_seconds in big-endian format
+        encoded_data[28..32].copy_from_slice(
+            &self
+                .last_valid_block_or_unix_timestamp_in_seconds
+                .to_be_bytes(),
+        );
 
         encoded_data
     }
@@ -171,8 +152,8 @@ impl SlotRestingOrder {
     pub fn clear_order(&mut self) {
         self.trader_address = Address::ZERO;
         self.num_base_lots = BaseLots::ZERO;
-        self.last_valid_block = 0;
-        self.last_valid_unix_timestamp_in_seconds = 0;
+        self.track_block = false;
+        self.last_valid_block_or_unix_timestamp_in_seconds = 0;
     }
 
     pub fn does_not_exist(&self) -> bool {
@@ -186,26 +167,22 @@ impl RestingOrder for SlotRestingOrder {
     }
 
     fn last_valid_block(&self) -> Option<u32> {
-        if self.last_valid_block == 0 {
-            None
+        if self.track_block && self.last_valid_block_or_unix_timestamp_in_seconds != 0 {
+            Some(self.last_valid_block_or_unix_timestamp_in_seconds)
         } else {
-            Some(self.last_valid_block)
+            None
         }
     }
 
     fn last_valid_unix_timestamp_in_seconds(&self) -> Option<u32> {
-        if self.last_valid_unix_timestamp_in_seconds == 0 {
-            None
+        if !self.track_block && self.last_valid_block_or_unix_timestamp_in_seconds != 0 {
+            Some(self.last_valid_block_or_unix_timestamp_in_seconds)
         } else {
-            Some(self.last_valid_unix_timestamp_in_seconds)
+            None
         }
     }
 
-    fn is_expired(&self, current_slot: u32, current_unix_timestamp_in_seconds: u32) -> bool {
-        (self.last_valid_block != 0 && self.last_valid_block < current_slot)
-            || (self.last_valid_unix_timestamp_in_seconds != 0
-                && self.last_valid_unix_timestamp_in_seconds < current_unix_timestamp_in_seconds)
-    }
+    // TODO is_expired() function
 }
 
 #[cfg(test)]
@@ -217,40 +194,173 @@ mod test {
     use super::SlotRestingOrder;
 
     #[test]
+    fn test_be_and_le() {
+        let num = 1u64;
+        println!("be {:?}", num.to_be_bytes());
+        println!("le {:?}", num.to_le_bytes());
+    }
+
+    #[test]
     fn test_encode_resting_order() {
         let resting_order = SlotRestingOrder {
-            trader_address: Address::ZERO.0.into(),
+            trader_address: Address::ZERO,
             num_base_lots: BaseLots::new(1),
-            last_valid_block: 256,
-            last_valid_unix_timestamp_in_seconds: 257,
+            track_block: true,
+            last_valid_block_or_unix_timestamp_in_seconds: 257,
         };
 
         let encoded_order = resting_order.encode();
         assert_eq!(
             encoded_order,
             [
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, // 1
-                0, 0, 1, 0, // 256
-                0, 0, 1, 1, // 257
+                // address- 0
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                // num_base_lots- 1, track_block true
+                0b1000_0000,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                1,
+                // 257
+                0,
+                0,
+                1,
+                1,
             ]
+        );
+
+        let decoded_order = SlotRestingOrder::decode(encoded_order);
+
+        assert_eq!(resting_order.trader_address, decoded_order.trader_address);
+        assert_eq!(resting_order.num_base_lots, decoded_order.num_base_lots);
+        assert_eq!(resting_order.track_block, decoded_order.track_block);
+        assert_eq!(
+            resting_order.last_valid_block_or_unix_timestamp_in_seconds,
+            decoded_order.last_valid_block_or_unix_timestamp_in_seconds
         );
     }
 
     #[test]
     fn test_decode_resting_order() {
         let slot: [u8; 32] = [
-            // 0x0000000000000000000000000000000000000001
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, // 1
-            0, 0, 0, 0, // 0
-            0, 0, 1, 1, // 256
+            // address- 0x000...1
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            // track_block false, max lots
+            0b0111_1111,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            0,
+            0,
+            1,
+            1, // 257
         ];
 
         let resting_order = SlotRestingOrder::decode(slot);
 
         let expected_address = address!("0000000000000000000000000000000000000001");
         assert_eq!(resting_order.trader_address, expected_address);
-        assert_eq!(resting_order.num_base_lots, 1);
-        assert_eq!(resting_order.last_valid_block, 0);
-        assert_eq!(resting_order.last_valid_unix_timestamp_in_seconds, 257);
+        assert_eq!(
+            resting_order.num_base_lots,
+            BaseLots::new(9223372036854775807)
+        );
+
+        assert_eq!(resting_order.track_block, false);
+        assert_eq!(
+            resting_order.last_valid_block_or_unix_timestamp_in_seconds,
+            257
+        );
+    }
+
+    #[test]
+    fn test_track_block_encoding() {
+        let resting_order_1 = SlotRestingOrder {
+            trader_address: Address::ZERO,
+            num_base_lots: BaseLots::new(0),
+            track_block: false,
+            last_valid_block_or_unix_timestamp_in_seconds: 0,
+        };
+        let encoded_1 = resting_order_1.encode();
+
+        assert_eq!(encoded_1[20], 0b0000_0000);
+        assert_eq!(&encoded_1[21..28], [0u8; 7]);
+
+        let resting_order_2 = SlotRestingOrder {
+            trader_address: Address::ZERO,
+            num_base_lots: BaseLots::new(0),
+            track_block: true,
+            last_valid_block_or_unix_timestamp_in_seconds: 0,
+        };
+        let encoded_2 = resting_order_2.encode();
+
+        assert_eq!(encoded_2[20], 0b1000_0000);
+        assert_eq!(&encoded_2[21..28], [0u8; 7]);
+
+        let resting_order_3 = SlotRestingOrder {
+            trader_address: Address::ZERO,
+            num_base_lots: BaseLots::new(9223372036854775807), // 2^63 - 1, max
+            track_block: false,
+            last_valid_block_or_unix_timestamp_in_seconds: 0,
+        };
+        let encoded_3 = resting_order_3.encode();
+
+        assert_eq!(encoded_3[20], 0b0111_1111);
+        assert_eq!(&encoded_3[21..28], [255u8; 7]);
+
+        let resting_order_4 = SlotRestingOrder {
+            trader_address: Address::ZERO,
+            num_base_lots: BaseLots::new(9223372036854775807), // 2^63 - 1, max
+            track_block: true,
+            last_valid_block_or_unix_timestamp_in_seconds: 0,
+        };
+        let encoded_4 = resting_order_4.encode();
+
+        assert_eq!(encoded_4[20], 0b1111_1111);
+        assert_eq!(&encoded_4[21..28], [255u8; 7]);
     }
 }
