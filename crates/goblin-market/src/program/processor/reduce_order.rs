@@ -4,8 +4,8 @@ use crate::{
     program::{try_withdraw, GoblinError, GoblinResult, ReduceOrderError},
     quantities::{BaseAtomsRaw, BaseLots, QuoteAtomsRaw},
     state::{
-        FIFOMarket, MatchingEngineResponse, OrderId, Side, SlotActions, SlotRestingOrder,
-        SlotStorage, TraderState, WritableMarket,
+        BitmapGroup, FIFOMarket, MatchingEngineResponse, OrderId, Side, SlotActions,
+        SlotRestingOrder, SlotStorage, TickIndices, TraderState, WritableMarket,
     },
     GoblinMarket,
 };
@@ -35,6 +35,17 @@ pub fn process_reduce_order(
     let mut trader_state = TraderState::read_from_slot(&slot_storage, trader);
     let mut order = SlotRestingOrder::new_from_slot(&slot_storage, order_id);
 
+    let TickIndices {
+        outer_index,
+        inner_index,
+    } = order_id.price_in_ticks.to_indices();
+
+    let mut bitmap_group = BitmapGroup::new_from_slot(&slot_storage, &outer_index);
+
+    let bitmap = bitmap_group.bitmap_at(inner_index);
+
+    // bitmap.flip(resting_order_index);
+
     // Mutate
     let MatchingEngineResponse {
         num_quote_lots_out,
@@ -44,6 +55,7 @@ pub fn process_reduce_order(
         .reduce_order(
             &mut trader_state,
             &mut order,
+            &mut bitmap_group,
             trader,
             side,
             order_id,

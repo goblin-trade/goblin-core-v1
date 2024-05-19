@@ -4,8 +4,8 @@ use crate::{
     parameters::{BASE_LOTS_PER_BASE_UNIT, TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT},
     quantities::{BaseLots, QuoteLots, WrapperU64},
     state::{
-        MatchingEngineResponse, OrderId, Side, SlotActions, SlotRestingOrder, SlotStorage,
-        TraderState, MARKET_STATE_KEY_SEED,
+        BitmapGroup, MatchingEngineResponse, OrderId, Side, SlotActions, SlotRestingOrder,
+        SlotStorage, TraderState, MARKET_STATE_KEY_SEED,
     },
 };
 
@@ -96,6 +96,7 @@ impl FIFOMarket {
         &self,
         trader_state: &mut TraderState,
         order: &mut SlotRestingOrder,
+        bitmap_group: &mut BitmapGroup,
         trader: Address,
         side: Side,
         order_id: &OrderId,
@@ -133,6 +134,9 @@ impl FIFOMarket {
                 order.clear_order();
 
                 // TODO update iterable tick map
+                // 1. Flip bit in bitmap
+                // 2. If BitmapGroup is cleared, remove the outer index from Index list
+                // let bitmap = bitmap_group.bitmap_at(0);
 
                 BaseLots::ZERO
             } else {
@@ -194,6 +198,7 @@ impl WritableMarket for FIFOMarket {
         &self,
         trader_state: &mut TraderState,
         order: &mut SlotRestingOrder,
+        bitmap_group: &mut BitmapGroup,
         trader: Address,
         side: Side,
         order_id: &OrderId,
@@ -203,6 +208,7 @@ impl WritableMarket for FIFOMarket {
         self.reduce_order_inner(
             trader_state,
             order,
+            bitmap_group,
             trader,
             side,
             order_id,

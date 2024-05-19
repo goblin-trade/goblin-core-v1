@@ -3,7 +3,8 @@ use stylus_sdk::alloy_primitives::Address;
 use crate::{
     quantities::{BaseLots, QuoteLots},
     state::{
-        MatchingEngineResponse, OrderId, Side, SlotRestingOrder, SlotStorage, TraderId, TraderState,
+        BitmapGroup, MatchingEngineResponse, OrderId, Side, SlotRestingOrder, SlotStorage,
+        TraderId, TraderState,
     },
 };
 
@@ -27,7 +28,9 @@ pub trait WritableMarket {
     ///
     /// # Arguments
     ///
-    /// * `slot_storage`
+    /// * `trader_state`
+    /// *  `order` - Resting order at slot
+    /// * `bitmap_group` - Bitmap group for the given outer index
     /// * `trader` - Reduce order for this trader
     /// * `side` - Order size in BaseLots
     /// * `order_id` - Order ID, i.e. tick and resting order index
@@ -38,6 +41,7 @@ pub trait WritableMarket {
         &self,
         trader_state: &mut TraderState,
         order: &mut SlotRestingOrder,
+        bitmap_group: &mut BitmapGroup,
         trader: Address,
         side: Side,
         order_id: &OrderId,
