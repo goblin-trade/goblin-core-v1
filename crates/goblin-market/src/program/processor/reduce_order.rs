@@ -4,7 +4,8 @@ use crate::{
     program::{try_withdraw, GoblinError, GoblinResult, ReduceOrderError},
     quantities::{BaseAtomsRaw, BaseLots, QuoteAtomsRaw},
     state::{
-        FIFOMarket, MatchingEngineResponse, OrderId, Side, SlotActions, SlotStorage, WritableMarket,
+        FIFOMarket, MatchingEngineResponse, OrderId, Side, SlotActions, SlotRestingOrder,
+        SlotStorage, TraderState, WritableMarket,
     },
     GoblinMarket,
 };
@@ -28,17 +29,21 @@ pub fn process_reduce_order(
 ) -> GoblinResult<()> {
     let trader = msg::sender();
 
-    // Load market
+    // Load states
     let mut slot_storage = SlotStorage::new();
     let market = FIFOMarket::read_from_slot(&slot_storage);
+    let mut trader_state = TraderState::read_from_slot(&slot_storage, trader);
+    let mut order = SlotRestingOrder::new_from_slot(&slot_storage, order_id);
 
+    // Mutate
     let MatchingEngineResponse {
         num_quote_lots_out,
         num_base_lots_out,
         ..
     } = market
         .reduce_order(
-            &mut slot_storage,
+            &mut trader_state,
+            &mut order,
             trader,
             side,
             order_id,
@@ -47,6 +52,12 @@ pub fn process_reduce_order(
         )
         .ok_or(GoblinError::ReduceOrderError(ReduceOrderError {}))?;
 
+    // Write states
+    trader_state.write_to_slot(&mut slot_storage, trader);
+    order.write_to_slot(&mut slot_storage, order_id)?;
+    SlotStorage::storage_flush_cache(true);
+
+    // Transfer
     if let Some(recipient) = recipient {
         let quote_amount_raw = QuoteAtomsRaw::from_lots(num_quote_lots_out);
         let base_amount_raw = BaseAtomsRaw::from_lots(num_base_lots_out);

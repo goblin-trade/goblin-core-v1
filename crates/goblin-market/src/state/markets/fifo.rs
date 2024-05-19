@@ -5,7 +5,7 @@ use crate::{
     quantities::{BaseLots, QuoteLots, WrapperU64},
     state::{
         MatchingEngineResponse, OrderId, Side, SlotActions, SlotRestingOrder, SlotStorage,
-        TraderId, TraderState, MARKET_STATE_KEY_SEED,
+        TraderState, MARKET_STATE_KEY_SEED,
     },
 };
 
@@ -94,7 +94,8 @@ impl FIFOMarket {
 
     fn reduce_order_inner(
         &self,
-        slot_storage: &mut SlotStorage,
+        trader_state: &mut TraderState,
+        order: &mut SlotRestingOrder,
         trader: Address,
         side: Side,
         order_id: &OrderId,
@@ -103,8 +104,6 @@ impl FIFOMarket {
         claim_funds: bool,
     ) -> Option<MatchingEngineResponse> {
         let removed_base_lots = {
-            let mut order = SlotRestingOrder::new_from_slot(slot_storage, order_id);
-
             // whether to remove order completely (clear slot), and lots to remove
             let (should_remove_order_from_book, base_lots_to_remove) = {
                 // Empty slot- order doesn't exist
@@ -142,7 +141,6 @@ impl FIFOMarket {
                 order.num_base_lots -= base_lots_to_remove;
                 order.num_base_lots
             };
-            order.write_to_slot(slot_storage, order_id).ok()?;
 
             // EMIT ExpiredOrder / Reduce
 
@@ -150,7 +148,6 @@ impl FIFOMarket {
         };
         // Update trader state
         let (num_quote_lots, num_base_lots) = {
-            let mut trader_state = TraderState::read_from_slot(slot_storage, trader);
             match side {
                 Side::Bid => {
                     let quote_lots = (order_id.price_in_ticks
@@ -158,13 +155,11 @@ impl FIFOMarket {
                         * removed_base_lots)
                         / BASE_LOTS_PER_BASE_UNIT;
                     trader_state.unlock_quote_lots(quote_lots);
-                    trader_state.write_to_slot(slot_storage, trader);
 
                     (quote_lots, BaseLots::ZERO)
                 }
                 Side::Ask => {
                     trader_state.unlock_base_lots(removed_base_lots);
-                    trader_state.write_to_slot(slot_storage, trader);
 
                     (QuoteLots::ZERO, removed_base_lots)
                 }
@@ -174,9 +169,7 @@ impl FIFOMarket {
         // We don't want to claim funds if an order is removed from the book during a self trade
         // or if the user specifically indicates that they don't want to claim funds.
         if claim_funds {
-            // This reads and updates TraderState again
-            // TODO optimize- pass TraderState as param
-            self.claim_funds(slot_storage, trader, num_quote_lots, num_base_lots)
+            self.claim_funds(trader_state, num_quote_lots, num_base_lots)
         } else {
             Some(MatchingEngineResponse::default())
         }
@@ -195,16 +188,13 @@ impl Market for FIFOMarket {
     fn get_sequence_number(&self) -> u64 {
         self.order_sequence_number
     }
-
-    fn get_trader_state(slot_storage: &SlotStorage, address: Address) -> TraderState {
-        TraderState::read_from_slot(slot_storage, address)
-    }
 }
 
 impl WritableMarket for FIFOMarket {
     fn reduce_order(
         &self,
-        slot_storage: &mut SlotStorage,
+        trader_state: &mut TraderState,
+        order: &mut SlotRestingOrder,
         trader: Address,
         side: Side,
         order_id: &OrderId,
@@ -212,7 +202,8 @@ impl WritableMarket for FIFOMarket {
         claim_funds: bool,
     ) -> Option<MatchingEngineResponse> {
         self.reduce_order_inner(
-            slot_storage,
+            trader_state,
+            order,
             trader,
             side,
             order_id,
@@ -224,8 +215,7 @@ impl WritableMarket for FIFOMarket {
 
     fn claim_funds(
         &self,
-        slot_storage: &mut SlotStorage,
-        trader: TraderId,
+        trader_state: &mut TraderState,
         num_quote_lots: QuoteLots,
         num_base_lots: BaseLots,
     ) -> Option<MatchingEngineResponse> {
@@ -234,15 +224,12 @@ impl WritableMarket for FIFOMarket {
             return None;
         }
         let (quote_lots_received, base_lots_received) = {
-            let mut trader_state = FIFOMarket::get_trader_state(slot_storage, trader);
-
             let quote_lots_free = num_quote_lots.min(trader_state.quote_lots_free);
             let base_lots_free = num_base_lots.min(trader_state.base_lots_free);
 
             // Update and write to slot
             trader_state.quote_lots_free -= quote_lots_free;
             trader_state.base_lots_free -= base_lots_free;
-            trader_state.write_to_slot(slot_storage, trader);
 
             (quote_lots_free, base_lots_free)
         };
@@ -253,15 +240,12 @@ impl WritableMarket for FIFOMarket {
         ))
     }
 
-    fn collect_fees(&mut self, slot_storage: &mut SlotStorage) -> QuoteLots {
+    fn collect_fees(&mut self) -> QuoteLots {
         let quote_lot_fees = self.unclaimed_quote_lot_fees;
 
         // Mark as claimed
         self.collected_quote_lot_fees += self.unclaimed_quote_lot_fees;
         self.unclaimed_quote_lot_fees = QuoteLots::ZERO;
-
-        // Write to slot
-        self.write_to_slot(slot_storage);
 
         // EMIT MarketEvent::Fee
 

@@ -20,14 +20,18 @@ use crate::{
 pub fn process_collect_fees(context: &mut GoblinMarket, recipient: Address) -> GoblinResult<()> {
     assert_valid_fee_collector()?;
 
+    // Read
     let mut slot_storage = SlotStorage::new();
     let mut market = FIFOMarket::read_from_slot(&slot_storage);
 
-    let num_quote_lots_out = market.collect_fees(&mut slot_storage);
+    // Mutate
+    let num_quote_lots_out = market.collect_fees();
 
-    // write market to slot
+    // Write
+    market.write_to_slot(&mut slot_storage);
     SlotStorage::storage_flush_cache(true);
 
+    // Transfer
     let quote_atoms_collected_raw = QuoteAtomsRaw::from_lots(num_quote_lots_out);
 
     maybe_invoke_withdraw(

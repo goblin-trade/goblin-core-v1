@@ -1,3 +1,4 @@
+#[cfg(test)]
 use core::fmt::Debug;
 
 use alloy_sol_types::sol;
@@ -126,7 +127,7 @@ pub enum GoblinError {
 
 #[cfg(test)]
 impl Debug for GoblinError {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    fn fmt(&self, _f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         Ok(())
     }
 }

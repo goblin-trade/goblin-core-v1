@@ -2,7 +2,9 @@ use stylus_sdk::alloy_primitives::Address;
 
 use crate::{
     quantities::{BaseLots, QuoteLots},
-    state::{MatchingEngineResponse, OrderId, Side, SlotStorage, TraderId, TraderState},
+    state::{
+        MatchingEngineResponse, OrderId, Side, SlotRestingOrder, SlotStorage, TraderId, TraderState,
+    },
 };
 
 pub trait RestingOrder {
@@ -18,8 +20,6 @@ pub trait Market {
     fn get_uncollected_fee_amount(&self) -> QuoteLots;
 
     fn get_sequence_number(&self) -> u64;
-
-    fn get_trader_state(slot_storage: &SlotStorage, address: Address) -> TraderState;
 }
 
 pub trait WritableMarket {
@@ -36,7 +36,8 @@ pub trait WritableMarket {
     ///
     fn reduce_order(
         &self,
-        slot_storage: &mut SlotStorage,
+        trader_state: &mut TraderState,
+        order: &mut SlotRestingOrder,
         trader: Address,
         side: Side,
         order_id: &OrderId,
@@ -59,12 +60,12 @@ pub trait WritableMarket {
     ///
     fn claim_funds(
         &self,
-        slot_storage: &mut SlotStorage,
-        trader: TraderId,
+        // slot_storage: &mut SlotStorage,
+        trader_state: &mut TraderState,
         num_quote_lots: QuoteLots,
         num_base_lots: BaseLots,
     ) -> Option<MatchingEngineResponse>;
 
     /// Collect protocol fees. Returns the amount of quote lots to claim
-    fn collect_fees(&mut self, slot_storage: &mut SlotStorage) -> QuoteLots;
+    fn collect_fees(&mut self) -> QuoteLots;
 }

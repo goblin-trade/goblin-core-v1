@@ -6,7 +6,9 @@ use crate::{
         token_utils::try_withdraw,
     },
     quantities::{BaseAtomsRaw, BaseLots, QuoteAtomsRaw, QuoteLots, WrapperU64},
-    state::{FIFOMarket, MatchingEngineResponse, SlotActions, SlotStorage, WritableMarket},
+    state::{
+        FIFOMarket, MatchingEngineResponse, SlotActions, SlotStorage, TraderState, WritableMarket,
+    },
     GoblinMarket,
 };
 
@@ -30,20 +32,25 @@ pub fn process_withdraw_funds(
 
     let trader = msg::sender();
 
-    // Load market
+    // Load states
     let mut slot_storage = SlotStorage::new();
     let market = FIFOMarket::read_from_slot(&slot_storage);
+    let mut trader_state = TraderState::read_from_slot(&slot_storage, trader);
 
+    // Mutate
     let MatchingEngineResponse {
         num_quote_lots_out,
         num_base_lots_out,
         ..
     } = market
-        .claim_funds(&mut slot_storage, trader, quote_lots, base_lots)
+        .claim_funds(&mut trader_state, quote_lots, base_lots)
         .ok_or(GoblinError::WithdrawFundsError(WithdrawFundsError {}))?;
 
+    // Write states
+    trader_state.write_to_slot(&mut slot_storage, trader);
     SlotStorage::storage_flush_cache(true);
 
+    // Transfer
     let quote_amount_raw = QuoteAtomsRaw::from_lots(num_quote_lots_out);
     let base_amount_raw = BaseAtomsRaw::from_lots(num_base_lots_out);
 
