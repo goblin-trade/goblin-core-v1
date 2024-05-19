@@ -11,6 +11,11 @@ pub struct IterableTickMap {
 }
 
 impl IterableTickMap {
+    // Fetch the required bitmap and flip it
+    // If the entire bitmap turns to 0, remove it from the list
+    // Alt design- don't set bitmap to 0, that clears the slot. Keep a separate list of closed bitmaps
+    pub fn remove_order() {}
+
     /// Insert a resting order at a tick
     /// Used for post orders
     pub fn insert(
@@ -31,28 +36,31 @@ impl IterableTickMap {
 
         match bitmap.best_free_index() {
             None => {
+                // Bitmap is full, no space to add order
                 return;
             }
             Some(resting_order_index) => {
                 // Check whether tick group will become activated. If yes then push to tick_group_list
                 let to_activate_group = !bitmap_group.is_active();
 
+                // update bitmap
+                bitmap.flip(resting_order_index.clone());
+                bitmap_group.update_bitmap(inner_index, &bitmap);
+                bitmap_group.write_to_slot(slot_storage, &outer_index);
+
+                // push outer index to index list
                 if to_activate_group {
                     // insert in tick_group_list at correct position
                     let mut index_list = IndexList {
                         side: side.clone(),
-                        size: self.ask_groups,
+                        size: self.get_group_count(side.clone()),
                     };
                     index_list.insert(slot_storage, outer_index.as_u16());
 
-                    self.increment_group_count(side);
-
-                    // update bitmap
-                    bitmap.flip(resting_order_index.clone());
-                    bitmap_group.update_bitmap(inner_index, &bitmap);
-                    bitmap_group.write_to_slot(slot_storage, &outer_index);
+                    self.increment_group_count(side.clone());
                 }
-                // Save order
+
+                // Save order- move outside?
                 let resting_order_key = OrderId {
                     price_in_ticks,
                     resting_order_index,
@@ -66,6 +74,13 @@ impl IterableTickMap {
         match side {
             Side::Bid => self.bid_groups += 1,
             Side::Ask => self.ask_groups += 1,
+        }
+    }
+
+    pub fn get_group_count(&self, side: Side) -> u16 {
+        match side {
+            Side::Bid => self.bid_groups,
+            Side::Ask => self.ask_groups,
         }
     }
 }
