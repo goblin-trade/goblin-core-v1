@@ -20,15 +20,16 @@ impl BitmapGroup {
     }
 
     /// Obtain Bitmap at a given index
-    pub fn bitmap_at(&self, inner_index: InnerIndex) -> Bitmap {
+    pub fn get_bitmap(&self, inner_index: &InnerIndex) -> Bitmap {
         Bitmap {
-            inner: self.inner[inner_index.as_usize()],
+            inner: &self.inner[inner_index.as_usize()],
         }
     }
 
-    /// Update orders at the given index
-    pub fn update_bitmap(&mut self, inner_index: InnerIndex, new_bitmap: &Bitmap) {
-        self.inner[inner_index.as_usize()] = new_bitmap.inner
+    pub fn get_bitmap_mut(&mut self, inner_index: &InnerIndex) -> MutableBitmap {
+        MutableBitmap {
+            inner: &mut self.inner[inner_index.as_usize()],
+        }
     }
 
     /// Whether the bitmap group is active. If the active state changes then
@@ -43,18 +44,53 @@ impl BitmapGroup {
     }
 }
 
-/// An 8 bit bitmap which tells about active resting orders at the given tick.
-#[derive(Copy, Clone)]
-pub struct Bitmap {
-    pub inner: u8,
+pub struct Bitmap<'a> {
+    pub inner: &'a u8,
 }
 
-impl Bitmap {
+impl Bitmap<'_> {
+    pub fn empty(&self) -> bool {
+        *self.inner == 0
+    }
+
     /// Whether a resting order is present at the given index
     pub fn order_present(&self, index: RestingOrderIndex) -> bool {
         // Use bitwise AND operation to check if the bit at the given index is set
         // If the bit is set, it means that an order is present at that index
-        (self.inner & (1 << index.as_u8())) != 0
+        (*self.inner & (1 << index.as_u8())) != 0
+    }
+
+    /// Find the best available slot with the lowest index
+    pub fn best_free_index(&self) -> Option<RestingOrderIndex> {
+        // Iterate through each bit starting from the least significant bit
+        for i in 0..8 {
+            let resting_order_index = RestingOrderIndex::new(i);
+            // Check if the bit at index `i` is 0
+            if !self.order_present(resting_order_index.clone()) {
+                return Some(resting_order_index);
+            }
+        }
+        // If all bits are 1, return None indicating no free index
+        None
+    }
+}
+
+/// An 8 bit bitmap which tells about active resting orders at the given tick.
+// #[derive(Copy, Clone)]
+pub struct MutableBitmap<'a> {
+    pub inner: &'a mut u8,
+}
+
+impl MutableBitmap<'_> {
+    pub fn empty(&self) -> bool {
+        *self.inner == 0
+    }
+
+    /// Whether a resting order is present at the given index
+    pub fn order_present(&self, index: RestingOrderIndex) -> bool {
+        // Use bitwise AND operation to check if the bit at the given index is set
+        // If the bit is set, it means that an order is present at that index
+        (*self.inner & (1 << index.as_u8())) != 0
     }
 
     /// Find the best available slot with the lowest index
@@ -72,9 +108,9 @@ impl Bitmap {
     }
 
     /// Flip the bit at the given index
-    pub fn flip(&mut self, resting_order_index: RestingOrderIndex) {
+    pub fn flip(&mut self, resting_order_index: &RestingOrderIndex) {
         // Use bitwise XOR operation with a mask to flip the bit at the given index
-        self.inner ^= 1 << resting_order_index.as_u8();
+        *self.inner ^= 1 << resting_order_index.as_u8();
     }
 }
 
@@ -110,11 +146,11 @@ mod test {
         let bitmap_group = BitmapGroup::new_from_slot(&slot_storage, &outer_index);
         assert_eq!(bitmap_group.inner, slot_bytes);
 
-        let bitmap_0 = bitmap_group.bitmap_at(InnerIndex::new(0));
-        let bitmap_1 = bitmap_group.bitmap_at(InnerIndex::new(1));
+        let bitmap_0 = bitmap_group.get_bitmap(&InnerIndex::new(0));
+        let bitmap_1 = bitmap_group.get_bitmap(&InnerIndex::new(1));
 
-        assert_eq!(bitmap_0.inner, 16);
-        assert_eq!(bitmap_1.inner, 17);
+        assert_eq!(*bitmap_0.inner, 16);
+        assert_eq!(*bitmap_1.inner, 17);
         let order_present_expected_0 = [false, false, false, false, true, false, false, false];
         let order_present_expected_1 = [true, false, false, false, true, false, false, false];
 
@@ -130,5 +166,16 @@ mod test {
                 order_present_expected_1[i as usize]
             );
         }
+    }
+
+    #[test]
+    fn bitmap_updates_affect_the_bitmap_group() {
+        let mut bitmap_group = BitmapGroup { inner: [0u8; 32] };
+
+        let mut bitmap = bitmap_group.get_bitmap_mut(&InnerIndex::new(0));
+        bitmap.flip(&RestingOrderIndex::new(0));
+
+        assert_eq!(*bitmap.inner, 1);
+        assert_eq!(bitmap_group.inner[0], 1);
     }
 }

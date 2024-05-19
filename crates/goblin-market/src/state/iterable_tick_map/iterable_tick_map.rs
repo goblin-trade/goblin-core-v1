@@ -32,7 +32,7 @@ impl IterableTickMap {
 
         let mut bitmap_group = BitmapGroup::new_from_slot(slot_storage, &outer_index);
 
-        let mut bitmap = bitmap_group.bitmap_at(inner_index.clone());
+        let bitmap = bitmap_group.get_bitmap(&inner_index);
 
         match bitmap.best_free_index() {
             None => {
@@ -44,8 +44,9 @@ impl IterableTickMap {
                 let to_activate_group = !bitmap_group.is_active();
 
                 // update bitmap
-                bitmap.flip(resting_order_index.clone());
-                bitmap_group.update_bitmap(inner_index, &bitmap);
+                let mut mutable_bitmap = bitmap_group.get_bitmap_mut(&inner_index);
+                mutable_bitmap.flip(&resting_order_index);
+
                 bitmap_group.write_to_slot(slot_storage, &outer_index);
 
                 // push outer index to index list

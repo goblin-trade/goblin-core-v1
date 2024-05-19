@@ -42,9 +42,11 @@ pub fn process_reduce_order(
 
     let mut bitmap_group = BitmapGroup::new_from_slot(&slot_storage, &outer_index);
 
-    let bitmap = bitmap_group.bitmap_at(inner_index);
+    let mut mutable_bitmap = bitmap_group.get_bitmap_mut(&inner_index);
 
-    // bitmap.flip(resting_order_index);
+    // maintain this pattern
+    // find index in the index_list here
+    // pass a closure that can remove the index
 
     // Mutate
     let MatchingEngineResponse {
@@ -55,7 +57,7 @@ pub fn process_reduce_order(
         .reduce_order(
             &mut trader_state,
             &mut order,
-            &mut bitmap_group,
+            &mut mutable_bitmap,
             trader,
             side,
             order_id,
@@ -63,6 +65,18 @@ pub fn process_reduce_order(
             recipient.is_some(),
         )
         .ok_or(GoblinError::ReduceOrderError(ReduceOrderError {}))?;
+
+    // TODO move inside FIFO
+    if !bitmap_group.is_active() {
+        bitmap_group.inner = [
+            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0,
+        ];
+    }
+
+    // Remove from list
+    // problem- the list is dynamic. I want to avoid passing `slot_storage`
+    // create a closure to fetch
 
     // Write states
     trader_state.write_to_slot(&mut slot_storage, trader);
