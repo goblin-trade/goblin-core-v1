@@ -1,11 +1,10 @@
 use stylus_sdk::alloy_primitives::Address;
 
 use crate::{
-    quantities::{BaseLots, Ticks, WrapperU64},
-    state::{
+    program::{ExceedRestingOrderSizeError, GoblinError}, quantities::{BaseLots, Ticks, WrapperU64}, require, state::{
         slot_storage::SlotKey, RestingOrder, SlotActions, SlotStorage, ORDERS_PER_TICK,
         RESTING_ORDER_KEY_SEED,
-    },
+    }
 };
 
 #[derive(Clone)]
@@ -109,7 +108,7 @@ impl SlotRestingOrder {
     }
 
     /// Encode as a 32 bit slot in big endian
-    pub fn encode(&self) -> [u8; 32] {
+    pub fn encode(&self) -> Result<[u8; 32], GoblinError> {
         let mut encoded_data = [0u8; 32];
 
         // Copy trader_address
@@ -117,6 +116,13 @@ impl SlotRestingOrder {
 
         // Encode num_base_lots in big-endian format
         let num_base_lots_bytes = self.num_base_lots.as_u64().to_be_bytes();
+
+        // ensure that num_base_lots is less than or equal to 2^63 - 1
+        // optimization- check LSB is 0 instead of doing a comparison operation
+        require!(
+            num_base_lots_bytes[0] & 0b1000_0000 == 0,
+            GoblinError::ExceedRestingOrderSizeError(ExceedRestingOrderSizeError {})
+        );
 
         encoded_data[20..28].copy_from_slice(&num_base_lots_bytes);
 
@@ -132,7 +138,7 @@ impl SlotRestingOrder {
                 .to_be_bytes(),
         );
 
-        encoded_data
+        Ok(encoded_data)
     }
 
     /// Load CBRestingOrder from slot storage
@@ -143,10 +149,12 @@ impl SlotRestingOrder {
     }
 
     /// Encode and save CBRestingOrder to slot
-    pub fn write_to_slot(&self, slot_storage: &mut SlotStorage, key: &OrderId) {
-        let encoded = self.encode();
+    pub fn write_to_slot(&self, slot_storage: &mut SlotStorage, key: &OrderId) -> Result<(), GoblinError> {
+        let encoded = self.encode()?;
 
         slot_storage.sstore(&key.get_key(), &encoded);
+
+        Ok(())
     }
 
     pub fn clear_order(&mut self) {
@@ -194,10 +202,28 @@ mod test {
     use super::SlotRestingOrder;
 
     #[test]
-    fn test_be_and_le() {
-        let num = 1u64;
-        println!("be {:?}", num.to_be_bytes());
-        println!("le {:?}", num.to_le_bytes());
+    fn highest_valid_base_lot_size() {
+        let resting_order = SlotRestingOrder {
+            trader_address: Address::ZERO,
+            num_base_lots: BaseLots::new(9223372036854775807),
+            track_block: false,
+            last_valid_block_or_unix_timestamp_in_seconds: 0,
+        };
+
+        resting_order.encode().unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn base_lot_size_overflow() {
+        let resting_order = SlotRestingOrder {
+            trader_address: Address::ZERO,
+            num_base_lots: BaseLots::new(9223372036854775807 + 1),
+            track_block: false,
+            last_valid_block_or_unix_timestamp_in_seconds: 0,
+        };
+
+        resting_order.encode().unwrap();
     }
 
     #[test]
@@ -209,7 +235,7 @@ mod test {
             last_valid_block_or_unix_timestamp_in_seconds: 257,
         };
 
-        let encoded_order = resting_order.encode();
+        let encoded_order = resting_order.encode().unwrap();
         assert_eq!(
             encoded_order,
             [
@@ -325,7 +351,7 @@ mod test {
             track_block: false,
             last_valid_block_or_unix_timestamp_in_seconds: 0,
         };
-        let encoded_1 = resting_order_1.encode();
+        let encoded_1 = resting_order_1.encode().unwrap();
 
         assert_eq!(encoded_1[20], 0b0000_0000);
         assert_eq!(&encoded_1[21..28], [0u8; 7]);
@@ -336,7 +362,7 @@ mod test {
             track_block: true,
             last_valid_block_or_unix_timestamp_in_seconds: 0,
         };
-        let encoded_2 = resting_order_2.encode();
+        let encoded_2 = resting_order_2.encode().unwrap();
 
         assert_eq!(encoded_2[20], 0b1000_0000);
         assert_eq!(&encoded_2[21..28], [0u8; 7]);
@@ -347,7 +373,7 @@ mod test {
             track_block: false,
             last_valid_block_or_unix_timestamp_in_seconds: 0,
         };
-        let encoded_3 = resting_order_3.encode();
+        let encoded_3 = resting_order_3.encode().unwrap();
 
         assert_eq!(encoded_3[20], 0b0111_1111);
         assert_eq!(&encoded_3[21..28], [255u8; 7]);
@@ -358,7 +384,7 @@ mod test {
             track_block: true,
             last_valid_block_or_unix_timestamp_in_seconds: 0,
         };
-        let encoded_4 = resting_order_4.encode();
+        let encoded_4 = resting_order_4.encode().unwrap();
 
         assert_eq!(encoded_4[20], 0b1111_1111);
         assert_eq!(&encoded_4[21..28], [255u8; 7]);

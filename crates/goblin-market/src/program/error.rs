@@ -1,9 +1,14 @@
+use core::fmt::Debug;
+
 use alloy_sol_types::sol;
 use stylus_sdk::prelude::*;
 
 sol! {
     // Invalid fee collector error
     error InvalidFeeCollector();
+
+    // Exceeded max size of 2^63 - 1 for size of base lots in a resting order
+    error ExceedRestingOrderSizeError();
 
     // Not used yet- to check
 
@@ -89,6 +94,7 @@ sol! {
 #[derive(SolidityError)]
 pub enum GoblinError {
     InvalidFeeCollector(InvalidFeeCollector),
+    ExceedRestingOrderSizeError(ExceedRestingOrderSizeError),
 
     InvalidInstructionData(InvalidInstructionData),
     InvalidMarketParameters(InvalidMarketParameters),
@@ -116,6 +122,13 @@ pub enum GoblinError {
     NonEmptyScratchBuffer(NonEmptyScratchBuffer),
     FailedToSerializeEvent(FailedToSerializeEvent),
     FailedToFlushBuffer(FailedToFlushBuffer),
+}
+
+#[cfg(test)]
+impl Debug for GoblinError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        Ok(())
+    }
 }
 
 pub type GoblinResult<T, E = GoblinError> = core::result::Result<T, E>;
