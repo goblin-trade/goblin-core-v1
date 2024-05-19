@@ -1,10 +1,13 @@
 use stylus_sdk::alloy_primitives::Address;
 
 use crate::{
-    program::{ExceedRestingOrderSizeError, GoblinError}, quantities::{BaseLots, Ticks, WrapperU64}, require, state::{
+    program::{ExceedRestingOrderSizeError, GoblinError},
+    quantities::{BaseLots, Ticks, WrapperU64},
+    require,
+    state::{
         slot_storage::SlotKey, RestingOrder, SlotActions, SlotStorage, ORDERS_PER_TICK,
         RESTING_ORDER_KEY_SEED,
-    }
+    },
 };
 
 #[derive(Clone)]
@@ -149,7 +152,11 @@ impl SlotRestingOrder {
     }
 
     /// Encode and save CBRestingOrder to slot
-    pub fn write_to_slot(&self, slot_storage: &mut SlotStorage, key: &OrderId) -> Result<(), GoblinError> {
+    pub fn write_to_slot(
+        &self,
+        slot_storage: &mut SlotStorage,
+        key: &OrderId,
+    ) -> Result<(), GoblinError> {
         let encoded = self.encode()?;
 
         slot_storage.sstore(&key.get_key(), &encoded);

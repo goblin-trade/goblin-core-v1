@@ -252,11 +252,11 @@ pub struct Ticks {
 
 // BaseLots have smaller max size than QuoteLots
 basic_u64!(QuoteLots, 64);
-basic_u64!(BaseLots, 64);
+basic_u64!(BaseLots, 64); // size limit imposed in RestingOrder::encode()
 
 // Discrete price unit (quote quantity per base quantity)
 // 16 bits from bitmap index, 5 bits from resting order index
-basic_u64!(Ticks, 21);
+basic_u64!(Ticks, 21); // TODO impose limit elsewhere
 
 // Quantities
 basic_u64_struct!(QuoteAtoms);

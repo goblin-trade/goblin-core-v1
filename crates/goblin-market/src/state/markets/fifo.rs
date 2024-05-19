@@ -4,8 +4,8 @@ use crate::{
     parameters::{BASE_LOTS_PER_BASE_UNIT, TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT},
     quantities::{BaseLots, QuoteLots, WrapperU64},
     state::{
-        MatchingEngineResponse, OrderId, Side, SlotActions, SlotRestingOrder,
-        SlotStorage, TraderId, TraderState, MARKET_STATE_KEY_SEED,
+        MatchingEngineResponse, OrderId, Side, SlotActions, SlotRestingOrder, SlotStorage,
+        TraderId, TraderState, MARKET_STATE_KEY_SEED,
     },
 };
 
@@ -142,7 +142,7 @@ impl FIFOMarket {
                 order.num_base_lots -= base_lots_to_remove;
                 order.num_base_lots
             };
-            order.write_to_slot(slot_storage, order_id);
+            order.write_to_slot(slot_storage, order_id).ok()?;
 
             // EMIT ExpiredOrder / Reduce
 
