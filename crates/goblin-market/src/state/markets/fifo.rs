@@ -130,8 +130,6 @@ impl FIFOMarket {
                 }
             };
             if should_remove_order_from_book {
-                // Clear order completely
-                // TODO optimize- don't free the slot. Put in placeholder data.
                 order.clear_order();
 
                 // TODO update iterable tick map

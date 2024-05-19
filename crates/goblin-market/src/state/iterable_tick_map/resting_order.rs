@@ -1,4 +1,4 @@
-use stylus_sdk::alloy_primitives::Address;
+use stylus_sdk::alloy_primitives::{address, Address};
 
 use crate::{
     program::{ExceedRestingOrderSizeError, GoblinError},
@@ -9,6 +9,8 @@ use crate::{
         RESTING_ORDER_KEY_SEED,
     },
 };
+
+const NULL_ADDRESS: Address = address!("0000000000000000000000000000000000000001");
 
 #[derive(Clone)]
 #[repr(transparent)]
@@ -165,14 +167,15 @@ impl SlotRestingOrder {
     }
 
     pub fn clear_order(&mut self) {
-        self.trader_address = Address::ZERO;
+        // Gas optimization- set address to 0x1. This way the slot is not cleared
+        self.trader_address = NULL_ADDRESS;
         self.num_base_lots = BaseLots::ZERO;
         self.track_block = false;
         self.last_valid_block_or_unix_timestamp_in_seconds = 0;
     }
 
     pub fn does_not_exist(&self) -> bool {
-        self.trader_address == Address::ZERO
+        self.trader_address == NULL_ADDRESS
     }
 }
 
