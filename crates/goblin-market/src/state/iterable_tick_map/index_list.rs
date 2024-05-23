@@ -15,7 +15,23 @@ use alloc::vec::Vec;
 /// Slot key to fetch a ListSlot
 ///
 /// The number of allowed indices per list is u16::MAX. Since one slot contains 16 indices,
-/// the max number of slots are 2^16 / 16 - 1 = 2^12 - 1
+/// the max number of slots are 2^16 / 16 - 1 = 2^12 - 1 = 4095
+///
+/// Griefing- There will only be enough gas to shift 10-20 slots at a time.
+/// What if someone stuffs the slots?
+/// Eg. If ETH is at 3700 and tick size is 0.01 USDC. There are 100 ticks between
+/// 3700 and 3701, which means 100 / 16 = 6.25 slots.
+///
+/// Solution- set tick size to 0.1. This way 10 slots equal 10 * 16 * 0.1 = $16 difference
+///
+/// There's also a game theory element. Ticks near the centre will be filled out eventually.
+/// Placing ticks at the end cost more and don't affect placing ticks at the centre.
+/// Market makers can be patient if they want to place orders further away from griefing orders.
+///
+/// Alternative- set a limit on the number of elements in a list. Allow eviction
+/// by more aggressive orders. However we are able to add more aggressive orders without
+/// extra cost in the current design. Problem arises when somebody wants to place
+/// an order further away.
 ///
 pub struct ListKey {
     /// Index of the ListSlot, max 2^12 - 1
@@ -61,6 +77,14 @@ impl ListSlot {
         let bytes = self.encode();
         slot_storage.sstore(&key.get_key(), &bytes);
     }
+
+    pub fn get(&self, index: usize) -> u16 {
+        self.inner[index]
+    }
+
+    pub fn set(&mut self, index: usize, value: u16) {
+        self.inner[index] = value;
+    }
 }
 
 /// High level structure for the index list with getter and setter functions
@@ -68,7 +92,8 @@ pub struct IndexList {
     /// Bid or ask
     pub side: Side,
 
-    /// Number of active outer indices
+    /// Number of active outer indices in the list
+    /// The number of slots is given as size / 16 and index of an item is given as size % 16
     pub size: u16,
 }
 
@@ -81,6 +106,65 @@ impl IndexList {
     /// such that elements at middle of the orderbook are at the end of the list.
     pub fn ascending(&self) -> bool {
         self.side == Side::Bid
+    }
+
+    /// Remove an outer index from the list
+    /// Items on the right are left shifted
+    ///
+    /// TODO remove multiple function?
+    pub fn remove(&mut self, slot_storage: &mut SlotStorage, value_to_remove: u16) {
+        // Save indices that fall to the right of the removed item in memory.
+        // These elements will be left shifted and written to slot.
+        let mut read_values = Vec::<u16>::new();
+
+        let mut current_slot = ListSlot::default();
+
+        // Loop through IndexList slot from behind
+        let mut i = self.size;
+        while i > 0 {
+            i -= 1;
+
+            let slot_index = i / 16;
+            let relative_index = i as usize % 16;
+
+            // Read and decode list slot if this is the first time, or we have entered a new slot
+            // If index = 15, the previous slot is exhausted. Need to load a new one.
+            if i == self.size - 1 || relative_index == 15 {
+                let key = ListKey { index: slot_index };
+
+                current_slot = ListSlot::new_from_slot(slot_storage, &key);
+            }
+            let current_value = current_slot.get(relative_index);
+
+            if current_value == value_to_remove {
+                // item to remove found
+                break;
+            } else {
+                read_values.push(current_value);
+            }
+        }
+        // update current slot, and all slots to the right
+        for j in 0..read_values.len() {
+            let absolute_index = i as usize + j;
+            let slot_index = absolute_index / 16;
+            let relative_index = absolute_index % 16;
+
+            current_slot.set(relative_index, read_values[j]);
+
+            // Slot fully populated or list exhausted
+            if relative_index == 15 || j == read_values.len() - 1 {
+                // Write
+                let key = ListKey {
+                    index: slot_index as u16,
+                };
+                current_slot.write_to_slot(slot_storage, &key);
+
+                if j != read_values.len() - 1 {
+                    // Prepare empty slot
+                    current_slot.inner = [0u16; 16];
+                }
+            }
+        }
     }
 
     /// Insert an index into the list
