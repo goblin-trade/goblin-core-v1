@@ -14,9 +14,6 @@ use super::{Market, WritableMarket};
 #[repr(C)]
 #[derive(Default, Debug, Copy, Clone, PartialEq, Eq)]
 pub struct FIFOMarket {
-    /// The sequence number of the next event.
-    order_sequence_number: u64,
-
     /// Amount of fees collected from the market in its lifetime, in quote lots.
     collected_quote_lot_fees: QuoteLots,
 
@@ -68,12 +65,11 @@ impl FIFOMarket {
 
     pub fn decode(slot: &[u8; 32]) -> Self {
         FIFOMarket {
-            order_sequence_number: u64::from_be_bytes(slot[0..8].try_into().unwrap()),
             collected_quote_lot_fees: QuoteLots::new(u64::from_be_bytes(
-                slot[8..16].try_into().unwrap(),
+                slot[0..8].try_into().unwrap(),
             )),
             unclaimed_quote_lot_fees: QuoteLots::new(u64::from_be_bytes(
-                slot[16..24].try_into().unwrap(),
+                slot[8..16].try_into().unwrap(),
             )),
         }
     }
@@ -81,9 +77,8 @@ impl FIFOMarket {
     pub fn encode(&self) -> [u8; 32] {
         let mut encoded_data = [0u8; 32];
 
-        encoded_data[0..8].copy_from_slice(&self.order_sequence_number.to_be_bytes());
-        encoded_data[8..16].copy_from_slice(&self.collected_quote_lot_fees.as_u64().to_be_bytes());
-        encoded_data[16..24].copy_from_slice(&self.unclaimed_quote_lot_fees.as_u64().to_be_bytes());
+        encoded_data[0..8].copy_from_slice(&self.collected_quote_lot_fees.as_u64().to_be_bytes());
+        encoded_data[8..16].copy_from_slice(&self.unclaimed_quote_lot_fees.as_u64().to_be_bytes());
 
         encoded_data
     }
@@ -190,10 +185,6 @@ impl Market for FIFOMarket {
     fn get_uncollected_fee_amount(&self) -> QuoteLots {
         self.unclaimed_quote_lot_fees
     }
-
-    fn get_sequence_number(&self) -> u64 {
-        self.order_sequence_number
-    }
 }
 
 impl WritableMarket for FIFOMarket {
@@ -227,10 +218,8 @@ impl WritableMarket for FIFOMarket {
         num_quote_lots: QuoteLots,
         num_base_lots: BaseLots,
     ) -> Option<MatchingEngineResponse> {
-        // Book not initialized
-        if self.get_sequence_number() == 0 {
-            return None;
-        }
+        // sequence_number = 0 case removed
+
         let (quote_lots_received, base_lots_received) = {
             let quote_lots_free = num_quote_lots.min(trader_state.quote_lots_free);
             let base_lots_free = num_base_lots.min(trader_state.base_lots_free);
@@ -270,7 +259,6 @@ mod test {
     #[test]
     fn test_encode_and_decode_market_state() {
         let market = FIFOMarket {
-            order_sequence_number: 1,
             collected_quote_lot_fees: QuoteLots::new(100),
             unclaimed_quote_lot_fees: QuoteLots::new(200),
         };

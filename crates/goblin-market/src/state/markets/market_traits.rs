@@ -19,8 +19,6 @@ pub trait Market {
     fn get_collected_fee_amount(&self) -> QuoteLots;
 
     fn get_uncollected_fee_amount(&self) -> QuoteLots;
-
-    fn get_sequence_number(&self) -> u64;
 }
 
 pub trait WritableMarket {

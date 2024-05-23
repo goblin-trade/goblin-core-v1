@@ -18,12 +18,4 @@ impl Side {
             Side::Ask => Side::Bid,
         }
     }
-
-    // TODO remove
-    pub fn from_order_sequence_number(order_id: u64) -> Self {
-        match order_id.leading_zeros() {
-            0 => Side::Bid,
-            _ => Side::Ask,
-        }
-    }
 }
