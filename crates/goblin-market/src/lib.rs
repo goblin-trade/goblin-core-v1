@@ -11,6 +11,7 @@ pub mod state;
 static ALLOC: mini_alloc::MiniAlloc = mini_alloc::MiniAlloc::INIT;
 
 use crate::program::GoblinResult;
+use alloc::vec::Vec;
 use program::{
     processor::{deposit, fees, withdraw},
     reduce_order,
@@ -35,8 +36,7 @@ impl GoblinMarket {
         quote_lots_to_deposit: u64,
         base_lots_to_deposit: u64,
     ) -> GoblinResult<()> {
-        deposit::process_deposit_funds(self, trader, quote_lots_to_deposit, base_lots_to_deposit)?;
-        Ok(())
+        deposit::process_deposit_funds(self, trader, quote_lots_to_deposit, base_lots_to_deposit)
     }
 
     pub fn withdraw_funds(
@@ -44,13 +44,11 @@ impl GoblinMarket {
         quote_lots_to_withdraw: u64,
         base_lots_to_withdraw: u64,
     ) -> GoblinResult<()> {
-        withdraw::process_withdraw_funds(self, quote_lots_to_withdraw, base_lots_to_withdraw)?;
-        Ok(())
+        withdraw::process_withdraw_funds(self, quote_lots_to_withdraw, base_lots_to_withdraw)
     }
 
     pub fn collect_fees(&mut self, recipient: Address) -> GoblinResult<()> {
-        fees::process_collect_fees(self, recipient)?;
-        Ok(())
+        fees::process_collect_fees(self, recipient)
     }
 
     pub fn reduce_order(
@@ -70,9 +68,7 @@ impl GoblinMarket {
             },
             BaseLots::new(size),
             Some(recipient),
-        )?;
-
-        Ok(())
+        )
     }
 
     pub fn reduce_order_with_free_funds(
@@ -91,8 +87,13 @@ impl GoblinMarket {
             },
             BaseLots::new(size),
             None,
-        )?;
+        )
+    }
 
+    pub fn cancel_multiple_orders_by_id_with_free_funds(
+        &mut self,
+        order_ids: Vec<B256>,
+    ) -> GoblinResult<()> {
         Ok(())
     }
 

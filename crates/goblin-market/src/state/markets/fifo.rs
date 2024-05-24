@@ -1,4 +1,4 @@
-use stylus_sdk::alloy_primitives::Address;
+use stylus_sdk::alloy_primitives::{Address, B256};
 
 use crate::{
     parameters::{BASE_LOTS_PER_BASE_UNIT, TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT},
@@ -157,16 +157,9 @@ impl FIFOMarket {
 
             let _base_lots_remaining = if should_remove_order_from_book {
                 order.clear_order();
-
                 mutable_bitmap.flip(&order_id.resting_order_index);
 
-                // TODO update iterable tick map
-                // 1. Flip bit in bitmap
-                // 2. If BitmapGroup is cleared, remove the outer index from Index list
-                // let bitmap = bitmap_group.bitmap_at(0);
-
-                let TickIndices { outer_index, .. } = order_id.price_in_ticks.to_indices();
-                remove_index_fn(outer_index.as_u16());
+                // index_list cleared outside
 
                 BaseLots::ZERO
             } else {
@@ -206,6 +199,14 @@ impl FIFOMarket {
         } else {
             Some(MatchingEngineResponse::default())
         }
+    }
+
+    pub fn cancel_multiple_orders_by_id(
+        &self,
+        trader_state: &mut TraderState,
+        trader: Address,
+    ) -> Option<MatchingEngineResponse> {
+        None
     }
 }
 

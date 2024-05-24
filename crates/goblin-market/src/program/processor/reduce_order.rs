@@ -36,6 +36,8 @@ pub fn process_reduce_order(
     let mut trader_state = TraderState::read_from_slot(&slot_storage, trader);
     let mut order = SlotRestingOrder::new_from_slot(&slot_storage, order_id);
 
+    // valid trader address checked inside reduce_order_inner()
+
     let TickIndices {
         outer_index,
         inner_index,

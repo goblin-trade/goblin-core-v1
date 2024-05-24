@@ -1,4 +1,7 @@
-use stylus_sdk::alloy_primitives::{address, Address};
+use stylus_sdk::{
+    abi::AbiType,
+    alloy_primitives::{address, Address, B256},
+};
 
 use crate::{
     program::{ExceedRestingOrderSizeError, GoblinError},

@@ -112,6 +112,12 @@ impl MutableBitmap<'_> {
         // Use bitwise XOR operation with a mask to flip the bit at the given index
         *self.inner ^= 1 << resting_order_index.as_u8();
     }
+
+    /// Clear the bit at the given index
+    pub fn clear(&mut self, resting_order_index: &RestingOrderIndex) {
+        // Use bitwise AND operation with 0 at the given index to clear the bit
+        *self.inner &= !(1 << resting_order_index.as_u8());
+    }
 }
 
 #[cfg(test)]
@@ -119,6 +125,26 @@ mod test {
     use crate::state::OuterIndex;
 
     use super::*;
+
+    #[test]
+    fn test_clear() {
+        let mut value = 0b0100_0001;
+        let mut bitmap = MutableBitmap { inner: &mut value };
+
+        bitmap.clear(&RestingOrderIndex::new(6));
+
+        assert_eq!(value, 0b0000_0001);
+    }
+
+    #[test]
+    fn test_flip() {
+        let mut value = 0b0000_0001;
+        let mut bitmap = MutableBitmap { inner: &mut value };
+
+        bitmap.flip(&RestingOrderIndex::new(6));
+
+        assert_eq!(value, 0b0100_0001);
+    }
 
     #[test]
     fn test_decode_group_from_empty_slot() {
