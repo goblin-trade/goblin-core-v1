@@ -11,6 +11,9 @@ sol! {
     // Exceeded max size of 2^63 - 1 for size of base lots in a resting order
     error ExceedRestingOrderSizeError();
 
+    // Exceed max tick size of 2^21 - 1
+    error ExceedTickSizeError();
+
     // Not used yet- to check
 
     // Invalid instruction data error
@@ -96,6 +99,7 @@ sol! {
 pub enum GoblinError {
     InvalidFeeCollector(InvalidFeeCollector),
     ExceedRestingOrderSizeError(ExceedRestingOrderSizeError),
+    ExceedTickSizeError(ExceedTickSizeError),
 
     InvalidInstructionData(InvalidInstructionData),
     InvalidMarketParameters(InvalidMarketParameters),

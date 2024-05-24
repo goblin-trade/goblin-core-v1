@@ -258,6 +258,8 @@ basic_u64!(BaseLots, 64); // size limit imposed in RestingOrder::encode()
 // 16 bits from bitmap index, 5 bits from resting order index
 basic_u64!(Ticks, 21); // TODO impose limit elsewhere
 
+pub const MAX_TICK: u64 = 2097151; // 2^21 - 1
+
 // Quantities
 basic_u64_struct!(QuoteAtoms);
 basic_u64_struct!(BaseAtoms);

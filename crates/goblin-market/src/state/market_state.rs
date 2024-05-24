@@ -1,4 +1,8 @@
-use crate::quantities::{QuoteLots, WrapperU64};
+use crate::{
+    program::{ExceedTickSizeError, GoblinError},
+    quantities::{QuoteLots, Ticks, WrapperU64, MAX_TICK},
+    require,
+};
 
 use super::{Side, SlotActions, SlotStorage, MARKET_STATE_KEY_SEED};
 
@@ -16,9 +20,13 @@ pub struct MarketState {
 
     /// The number of active outer indices for bids
     pub asks_outer_indices: u16,
-    // 160 bits left, enough for best bid and best ask tick
-    // alternative- just store inner_index for best bid and ask. This will only cost 2 bytes.
-    // Former solution more efficient, reduces shifting.
+
+    // These are encoded as u32. In practice they only need 21 bits, so this can be optimized
+    /// Price of the highest bid
+    pub best_bid_price: Ticks,
+
+    /// The lowest ask
+    pub best_ask_price: Ticks,
 }
 
 const MARKET_SLOT_KEY: [u8; 32] = [
@@ -73,10 +81,22 @@ impl MarketState {
             )),
             bids_outer_indices: u16::from_be_bytes(slot[16..18].try_into().unwrap()),
             asks_outer_indices: u16::from_be_bytes(slot[18..20].try_into().unwrap()),
+
+            // Tick: u21 was encoded in 20..23 in big endian
+            // Empty values to the left (LSB) in big endian
+            best_bid_price: Ticks::new(
+                // u64::from_be_bytes([0, 0, 0, 0, 0, slot[20], slot[21], slot[22]])
+                u32::from_be_bytes(slot[20..24].try_into().unwrap()) as u64,
+            ),
+
+            best_ask_price: Ticks::new(
+                // u64::from_be_bytes([0, 0, 0, 0, 0, slot[23], slot[24], slot[25]])
+                u32::from_be_bytes(slot[24..28].try_into().unwrap()) as u64,
+            ),
         }
     }
 
-    pub fn encode(&self) -> [u8; 32] {
+    pub fn encode(&self) -> Result<[u8; 32], GoblinError> {
         let mut encoded_data = [0u8; 32];
 
         encoded_data[0..8].copy_from_slice(&self.collected_quote_lot_fees.as_u64().to_be_bytes());
@@ -84,11 +104,24 @@ impl MarketState {
         encoded_data[16..18].copy_from_slice(&self.bids_outer_indices.to_be_bytes());
         encoded_data[18..20].copy_from_slice(&self.asks_outer_indices.to_be_bytes());
 
-        encoded_data
+        let best_bid_price = self.best_bid_price.as_u64();
+        let best_ask_price = self.best_ask_price.as_u64();
+
+        require!(
+            best_bid_price <= MAX_TICK && best_ask_price <= MAX_TICK,
+            GoblinError::ExceedTickSizeError(ExceedTickSizeError {})
+        );
+
+        encoded_data[20..24].copy_from_slice(&(best_bid_price as u32).to_be_bytes());
+        encoded_data[24..28].copy_from_slice(&(best_ask_price as u32).to_be_bytes());
+
+        Ok(encoded_data)
     }
 
-    pub fn write_to_slot(&self, slot_storage: &mut SlotStorage) {
-        slot_storage.sstore(&MARKET_SLOT_KEY, &self.encode());
+    pub fn write_to_slot(&self, slot_storage: &mut SlotStorage) -> Result<(), GoblinError> {
+        slot_storage.sstore(&MARKET_SLOT_KEY, &self.encode()?);
+
+        Ok(())
     }
 
     pub fn outer_index_length(&self, side: Side) -> u16 {
@@ -110,7 +143,7 @@ impl MarketState {
 
 #[cfg(test)]
 mod test {
-    use crate::quantities::{QuoteLots, WrapperU64};
+    use crate::quantities::{QuoteLots, Ticks, WrapperU64};
 
     use super::MarketState;
 
@@ -121,9 +154,11 @@ mod test {
             unclaimed_quote_lot_fees: QuoteLots::new(200),
             bids_outer_indices: 40,
             asks_outer_indices: 10,
+            best_bid_price: Ticks::new(40),
+            best_ask_price: Ticks::new(50),
         };
 
-        let encoded = market.encode();
+        let encoded = market.encode().unwrap();
         let decoded_market = MarketState::decode(&encoded);
 
         assert_eq!(market, decoded_market);
