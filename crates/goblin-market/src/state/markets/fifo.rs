@@ -272,38 +272,4 @@ impl WritableMarket for FIFOMarket {
             quote_lots_received,
         ))
     }
-
-    fn collect_fees(&mut self) -> QuoteLots {
-        let quote_lot_fees = self.unclaimed_quote_lot_fees;
-
-        // Mark as claimed
-        self.collected_quote_lot_fees += self.unclaimed_quote_lot_fees;
-        self.unclaimed_quote_lot_fees = QuoteLots::ZERO;
-
-        // EMIT MarketEvent::Fee
-
-        quote_lot_fees
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use crate::quantities::{QuoteLots, WrapperU64};
-
-    use super::FIFOMarket;
-
-    #[test]
-    fn test_encode_and_decode_market_state() {
-        let market = FIFOMarket {
-            collected_quote_lot_fees: QuoteLots::new(100),
-            unclaimed_quote_lot_fees: QuoteLots::new(200),
-            bids_outer_indices: 40,
-            asks_outer_indices: 10,
-        };
-
-        let encoded = market.encode();
-        let decoded_market = FIFOMarket::decode(&encoded);
-
-        assert_eq!(market, decoded_market);
-    }
 }

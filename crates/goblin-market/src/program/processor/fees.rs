@@ -2,6 +2,7 @@ use stylus_sdk::alloy_primitives::Address;
 
 use crate::program::checkers::assert_valid_fee_collector;
 use crate::quantities::QuoteAtomsRaw;
+use crate::state::{matching_engine, MatchingEngine};
 use crate::{
     parameters::QUOTE_TOKEN,
     program::{maybe_invoke_withdraw, GoblinResult},
@@ -20,16 +21,11 @@ use crate::{
 pub fn process_collect_fees(context: &mut GoblinMarket, recipient: Address) -> GoblinResult<()> {
     assert_valid_fee_collector()?;
 
-    // Read
-    let mut slot_storage = SlotStorage::new();
-    let mut market = FIFOMarket::read_from_slot(&slot_storage);
+    let mut matching_engine = MatchingEngine {
+        slot_storage: &mut SlotStorage::new(),
+    };
 
-    // Mutate
-    let num_quote_lots_out = market.collect_fees();
-
-    // Write
-    market.write_to_slot(&mut slot_storage);
-    SlotStorage::storage_flush_cache(true);
+    let num_quote_lots_out = matching_engine.collect_fees();
 
     // Transfer
     let quote_atoms_collected_raw = QuoteAtomsRaw::from_lots(num_quote_lots_out);
