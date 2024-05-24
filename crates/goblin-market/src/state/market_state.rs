@@ -16,6 +16,9 @@ pub struct MarketState {
 
     /// The number of active outer indices for bids
     pub asks_outer_indices: u16,
+    // 160 bits left, enough for best bid and best ask tick
+    // alternative- just store inner_index for best bid and ask. This will only cost 2 bytes.
+    // Former solution more efficient, reduces shifting.
 }
 
 const MARKET_SLOT_KEY: [u8; 32] = [

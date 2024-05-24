@@ -1,8 +1,15 @@
-use stylus_sdk::alloy_primitives::Address;
+use stylus_sdk::alloy_primitives::{Address, B256};
 
-use crate::quantities::{BaseLots, QuoteLots};
+use crate::{
+    parameters::{BASE_LOTS_PER_BASE_UNIT, TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT},
+    quantities::{BaseLots, QuoteLots},
+};
 
-use super::{MarketState, MatchingEngineResponse, SlotActions, SlotStorage, TraderState};
+use super::{
+    trader_state, MarketState, MatchingEngineResponse, OrderId, RestingOrder, Side, SlotActions,
+    SlotRestingOrder, SlotStorage, TraderState,
+};
+use alloc::vec::Vec;
 
 pub struct MatchingEngine<'a> {
     pub slot_storage: &'a mut SlotStorage,
@@ -49,23 +56,162 @@ impl MatchingEngine<'_> {
         let mut trader_state = TraderState::read_from_slot(self.slot_storage, trader);
 
         // Mutate
-
-        // sequence_number = 0 case removed
-        let (quote_lots_received, base_lots_received) = {
-            let quote_lots_free = num_quote_lots.min(trader_state.quote_lots_free);
-            let base_lots_free = num_base_lots.min(trader_state.base_lots_free);
-
-            // Update and write to slot
-            trader_state.quote_lots_free -= quote_lots_free;
-            trader_state.base_lots_free -= base_lots_free;
-
-            (quote_lots_free, base_lots_free)
-        };
+        let response = trader_state.claim_funds_inner(num_quote_lots, num_base_lots);
 
         // Write
         trader_state.write_to_slot(self.slot_storage, trader);
         SlotStorage::storage_flush_cache(true);
 
-        MatchingEngineResponse::new_withdraw(base_lots_received, quote_lots_received)
+        response
     }
+
+    pub fn reduce_order_inner(
+        &mut self,
+        trader_state: &mut TraderState,
+        trader: Address,
+        order_id: &[u8; 32],
+        side: Side,
+        size: Option<BaseLots>,
+        order_is_expired: bool,
+        claim_funds: bool,
+    ) -> Option<ReduceOrderInnerResponse> {
+        let mut order = SlotRestingOrder::new_from_raw_key(self.slot_storage, order_id);
+
+        let mut remove_order = false;
+
+        let removed_base_lots = {
+            // whether to remove order completely (clear slot), and lots to remove
+            let (should_remove_order_from_book, base_lots_to_remove) = {
+                // Empty slot- order doesn't exist
+                if order.does_not_exist() {
+                    return Some(ReduceOrderInnerResponse::default());
+                }
+
+                if order.trader_address != trader {
+                    return None;
+                }
+
+                let base_lots_to_remove = size
+                    .map(|s| s.min(order.num_base_lots))
+                    .unwrap_or(order.num_base_lots);
+
+                // If the order is tagged as expired, we remove it from the book regardless of the size.
+                if order_is_expired {
+                    (true, order.num_base_lots)
+                } else {
+                    (
+                        base_lots_to_remove == order.num_base_lots,
+                        base_lots_to_remove,
+                    )
+                }
+            };
+
+            let _base_lots_remaining = if should_remove_order_from_book {
+                order.clear_order();
+
+                remove_order = true;
+
+                // update bitmap and index_list externally
+                // mutable_bitmap.flip(&order_id.resting_order_index);
+
+                BaseLots::ZERO
+            } else {
+                // Reduce order
+                order.num_base_lots -= base_lots_to_remove;
+                order.num_base_lots
+            };
+
+            // EMIT ExpiredOrder / Reduce
+
+            base_lots_to_remove
+        };
+        let order_id_decoded = OrderId::decode(order_id);
+
+        // Store order state
+        order
+            .write_to_slot(self.slot_storage, &order_id_decoded)
+            .ok();
+
+        // We don't want to claim funds if an order is removed from the book during a self trade
+        // or if the user specifically indicates that they don't want to claim funds.
+        if claim_funds {
+            // Update trader state
+            let (num_quote_lots, num_base_lots) = {
+                match side {
+                    Side::Bid => {
+                        let quote_lots = (order_id_decoded.price_in_ticks
+                            * TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT
+                            * removed_base_lots)
+                            / BASE_LOTS_PER_BASE_UNIT;
+                        trader_state.unlock_quote_lots(quote_lots);
+
+                        (quote_lots, BaseLots::ZERO)
+                    }
+                    Side::Ask => {
+                        trader_state.unlock_base_lots(removed_base_lots);
+
+                        (QuoteLots::ZERO, removed_base_lots)
+                    }
+                }
+            };
+
+            Some(ReduceOrderInnerResponse {
+                // TODO externally write trader_state to slot
+                matching_engine_response: trader_state
+                    .claim_funds_inner(num_quote_lots, num_base_lots),
+                remove_order,
+            })
+        } else {
+            Some(ReduceOrderInnerResponse {
+                matching_engine_response: MatchingEngineResponse::default(),
+                remove_order,
+            })
+        }
+    }
+
+    pub fn cancel_multiple_orders_by_id_inner(
+        &mut self,
+        trader: Address,
+        orders_to_cancel: Vec<B256>,
+        claim_funds: bool,
+    ) {
+        // Call reduce_order_inner() for each order ID. Set size = None to empty the orders
+
+        // Read
+        let mut market = MarketState::read_from_slot(self.slot_storage);
+        let mut trader_state = TraderState::read_from_slot(self.slot_storage, trader);
+
+        // shared between orders- trader_state
+        // Do not pass bitmaps or index_list. We only need to update them if order is closed
+        // return a `closed: bool` to track this
+        for order_id_bytes in orders_to_cancel {
+            let order = SlotRestingOrder::new_from_raw_key(self.slot_storage, &order_id_bytes.0);
+
+            // How to know side?
+            // Technical flaw- we only track outer indices in index_list. A given
+            // BitmapGroup can be shared by both bids and asks.
+            // Design update- store best bid and best ask in market.
+            // The othermost outer_index is not stored in the index_lists. Rather it is
+            // derived from best bid / ask prices.
+
+            // Alt design- use 1 bit inside RestingOrder to track bid or ask. But this
+            // is redundant. The former design doesn't cost extra storage.
+
+            // let resp = self.reduce_order_inner(
+            //     &mut trader_state,
+            //     trader,
+            //     &order_id_bytes.0,
+            //     side,
+            //     None,
+            //     false,
+            //     claim_funds,
+            // );
+        }
+    }
+}
+
+#[derive(Default)]
+pub struct ReduceOrderInnerResponse {
+    pub matching_engine_response: MatchingEngineResponse,
+    pub remove_order: bool,
 }

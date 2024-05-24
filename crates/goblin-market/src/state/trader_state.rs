@@ -2,7 +2,7 @@ use stylus_sdk::alloy_primitives::Address;
 
 use crate::quantities::{BaseLots, QuoteLots, WrapperU64};
 
-use super::{SlotActions, SlotKey, SlotStorage, TRADER_STATE_KEY_SEED};
+use super::{MatchingEngineResponse, SlotActions, SlotKey, SlotStorage, TRADER_STATE_KEY_SEED};
 
 pub type TraderId = Address;
 
@@ -56,6 +56,25 @@ impl TraderState {
 
     pub fn write_to_slot(&self, slot_storage: &mut SlotStorage, trader_id: TraderId) {
         slot_storage.sstore(&trader_id.get_key(), &self.encode());
+    }
+
+    pub fn claim_funds_inner(
+        &mut self,
+        num_quote_lots: QuoteLots,
+        num_base_lots: BaseLots,
+    ) -> MatchingEngineResponse {
+        // sequence_number = 0 case removed
+        let (quote_lots_received, base_lots_received) = {
+            let quote_lots_free = num_quote_lots.min(self.quote_lots_free);
+            let base_lots_free = num_base_lots.min(self.base_lots_free);
+
+            self.quote_lots_free -= quote_lots_free;
+            self.base_lots_free -= base_lots_free;
+
+            (quote_lots_free, base_lots_free)
+        };
+
+        MatchingEngineResponse::new_withdraw(base_lots_received, quote_lots_received)
     }
 
     #[inline(always)]

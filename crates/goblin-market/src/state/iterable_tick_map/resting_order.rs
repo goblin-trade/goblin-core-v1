@@ -52,6 +52,15 @@ impl SlotKey for OrderId {
     }
 }
 
+impl OrderId {
+    pub fn decode(bytes: &[u8; 32]) -> Self {
+        OrderId {
+            price_in_ticks: Ticks::new(u64::from_be_bytes(bytes[1..9].try_into().unwrap())),
+            resting_order_index: RestingOrderIndex::new(bytes[9]),
+        }
+    }
+}
+
 /// Resting order on a 32 byte slot
 #[repr(C)]
 #[derive(Copy, Clone)]
@@ -152,6 +161,12 @@ impl SlotRestingOrder {
     /// Load CBRestingOrder from slot storage
     pub fn new_from_slot(slot_storage: &SlotStorage, key: &OrderId) -> Self {
         let slot = slot_storage.sload(&key.get_key());
+
+        SlotRestingOrder::decode(slot)
+    }
+
+    pub fn new_from_raw_key(slot_storage: &SlotStorage, key: &[u8; 32]) -> Self {
+        let slot = slot_storage.sload(key);
 
         SlotRestingOrder::decode(slot)
     }
