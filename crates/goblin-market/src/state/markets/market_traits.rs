@@ -47,25 +47,4 @@ pub trait WritableMarket {
         size: BaseLots,
         claim_funds: bool,
     ) -> Option<MatchingEngineResponse>;
-
-    /// Try to claim the given number of lots from a trader's state.
-    ///
-    /// There is no eviction in Goblin.
-    ///
-    /// # Parameters
-    ///
-    /// * `slot_storage`
-    /// * `trader` - The trader address
-    /// * `num_quote_lots` - Number of lots to withdraw. Pass 0 if none should be withdrawn.
-    /// Pass U64::MAX to withdraw all.
-    /// * `num_base_lots` - Number of lots to withdraw. Pass 0 if none should be withdrawn.
-    /// Pass U32::MAX to withdraw all. (max value of base_lots is U32::MAX)
-    ///
-    fn claim_funds(
-        &self,
-        // slot_storage: &mut SlotStorage,
-        trader_state: &mut TraderState,
-        num_quote_lots: QuoteLots,
-        num_base_lots: BaseLots,
-    ) -> Option<MatchingEngineResponse>;
 }

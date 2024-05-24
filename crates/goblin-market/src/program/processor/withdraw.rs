@@ -1,14 +1,9 @@
 use stylus_sdk::msg;
 
 use crate::{
-    program::{
-        error::{GoblinError, GoblinResult, WithdrawFundsError},
-        token_utils::try_withdraw,
-    },
+    program::{error::GoblinResult, token_utils::try_withdraw},
     quantities::{BaseAtomsRaw, BaseLots, QuoteAtomsRaw, QuoteLots, WrapperU64},
-    state::{
-        FIFOMarket, MatchingEngineResponse, SlotActions, SlotStorage, TraderState, WritableMarket,
-    },
+    state::{MatchingEngine, MatchingEngineResponse, SlotActions, SlotStorage},
     GoblinMarket,
 };
 
@@ -27,28 +22,20 @@ pub fn process_withdraw_funds(
     quote_lots_to_withdraw: u64,
     base_lots_to_withdraw: u64,
 ) -> GoblinResult<()> {
+    let trader = msg::sender();
+
     let quote_lots = QuoteLots::new(quote_lots_to_withdraw);
     let base_lots = BaseLots::new(base_lots_to_withdraw);
 
-    let trader = msg::sender();
+    let mut matching_engine = MatchingEngine {
+        slot_storage: &mut SlotStorage::new(),
+    };
 
-    // Load states
-    let mut slot_storage = SlotStorage::new();
-    let market = FIFOMarket::read_from_slot(&slot_storage);
-    let mut trader_state = TraderState::read_from_slot(&slot_storage, trader);
-
-    // Mutate
     let MatchingEngineResponse {
         num_quote_lots_out,
         num_base_lots_out,
         ..
-    } = market
-        .claim_funds(&mut trader_state, quote_lots, base_lots)
-        .ok_or(GoblinError::WithdrawFundsError(WithdrawFundsError {}))?;
-
-    // Write states
-    trader_state.write_to_slot(&mut slot_storage, trader);
-    SlotStorage::storage_flush_cache(true);
+    } = matching_engine.claim_funds(trader, quote_lots, base_lots);
 
     // Transfer
     let quote_amount_raw = QuoteAtomsRaw::from_lots(num_quote_lots_out);

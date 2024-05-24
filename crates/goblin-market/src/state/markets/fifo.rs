@@ -195,7 +195,9 @@ impl FIFOMarket {
         // We don't want to claim funds if an order is removed from the book during a self trade
         // or if the user specifically indicates that they don't want to claim funds.
         if claim_funds {
-            self.claim_funds(trader_state, num_quote_lots, num_base_lots)
+            // TODO re-enable- moved to MatchingEngine
+            // self.claim_funds(trader_state, num_quote_lots, num_base_lots)
+            None
         } else {
             Some(MatchingEngineResponse::default())
         }
@@ -245,31 +247,5 @@ impl WritableMarket for FIFOMarket {
             false,
             claim_funds,
         )
-    }
-
-    // TODO move to TraderState
-    fn claim_funds(
-        &self,
-        trader_state: &mut TraderState,
-        num_quote_lots: QuoteLots,
-        num_base_lots: BaseLots,
-    ) -> Option<MatchingEngineResponse> {
-        // sequence_number = 0 case removed
-
-        let (quote_lots_received, base_lots_received) = {
-            let quote_lots_free = num_quote_lots.min(trader_state.quote_lots_free);
-            let base_lots_free = num_base_lots.min(trader_state.base_lots_free);
-
-            // Update and write to slot
-            trader_state.quote_lots_free -= quote_lots_free;
-            trader_state.base_lots_free -= base_lots_free;
-
-            (quote_lots_free, base_lots_free)
-        };
-
-        Some(MatchingEngineResponse::new_withdraw(
-            base_lots_received,
-            quote_lots_received,
-        ))
     }
 }

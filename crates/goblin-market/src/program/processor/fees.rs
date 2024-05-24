@@ -2,11 +2,11 @@ use stylus_sdk::alloy_primitives::Address;
 
 use crate::program::checkers::assert_valid_fee_collector;
 use crate::quantities::QuoteAtomsRaw;
-use crate::state::{matching_engine, MatchingEngine};
+use crate::state::MatchingEngine;
 use crate::{
     parameters::QUOTE_TOKEN,
     program::{maybe_invoke_withdraw, GoblinResult},
-    state::{FIFOMarket, SlotActions, SlotStorage, WritableMarket},
+    state::{SlotActions, SlotStorage},
     GoblinMarket,
 };
 
