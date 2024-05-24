@@ -37,6 +37,7 @@ pub trait WritableMarket {
     ///
     fn reduce_order(
         &self,
+        remove_index_fn: &mut dyn FnMut(u16),
         trader_state: &mut TraderState,
         order: &mut SlotRestingOrder,
         mutable_bitmap: &mut MutableBitmap,

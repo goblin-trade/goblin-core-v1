@@ -4,8 +4,8 @@ use crate::{
     parameters::{BASE_LOTS_PER_BASE_UNIT, TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT},
     quantities::{BaseLots, QuoteLots, WrapperU64},
     state::{
-        BitmapGroup, MatchingEngineResponse, MutableBitmap, OrderId, Side, SlotActions,
-        SlotRestingOrder, SlotStorage, TraderState, MARKET_STATE_KEY_SEED,
+        MatchingEngineResponse, MutableBitmap, OrderId, Side, SlotActions, SlotRestingOrder,
+        SlotStorage, TickIndices, TraderState, MARKET_STATE_KEY_SEED,
     },
 };
 
@@ -19,6 +19,12 @@ pub struct FIFOMarket {
 
     /// Amount of unclaimed fees accrued to the market, in quote lots.
     unclaimed_quote_lot_fees: QuoteLots,
+
+    /// The number of active outer indices for bids
+    bids_outer_indices: u16,
+
+    /// The number of active outer indices for bids
+    asks_outer_indices: u16,
 }
 
 const MARKET_SLOT_KEY: [u8; 32] = [
@@ -71,6 +77,8 @@ impl FIFOMarket {
             unclaimed_quote_lot_fees: QuoteLots::new(u64::from_be_bytes(
                 slot[8..16].try_into().unwrap(),
             )),
+            bids_outer_indices: u16::from_be_bytes(slot[16..18].try_into().unwrap()),
+            asks_outer_indices: u16::from_be_bytes(slot[18..20].try_into().unwrap()),
         }
     }
 
@@ -79,6 +87,8 @@ impl FIFOMarket {
 
         encoded_data[0..8].copy_from_slice(&self.collected_quote_lot_fees.as_u64().to_be_bytes());
         encoded_data[8..16].copy_from_slice(&self.unclaimed_quote_lot_fees.as_u64().to_be_bytes());
+        encoded_data[16..18].copy_from_slice(&self.bids_outer_indices.to_be_bytes());
+        encoded_data[18..20].copy_from_slice(&self.asks_outer_indices.to_be_bytes());
 
         encoded_data
     }
@@ -87,8 +97,27 @@ impl FIFOMarket {
         slot_storage.sstore(&MARKET_SLOT_KEY, &self.encode());
     }
 
+    pub fn outer_index_length(&self, side: Side) -> u16 {
+        if side == Side::Bid {
+            self.bids_outer_indices
+        } else {
+            self.asks_outer_indices
+        }
+    }
+
+    pub fn set_outer_index_length(&mut self, side: Side, value: u16) {
+        if side == Side::Bid {
+            self.bids_outer_indices = value;
+        } else {
+            self.asks_outer_indices = value;
+        }
+    }
+
+    // TODO reduce multiple orders function- needed for cancelations
+    // This function doesn't depend on market, it can be moved elsewhere
     fn reduce_order_inner(
         &self,
+        remove_index_fn: &mut dyn FnMut(u16),
         trader_state: &mut TraderState,
         order: &mut SlotRestingOrder,
         mutable_bitmap: &mut MutableBitmap,
@@ -135,6 +164,9 @@ impl FIFOMarket {
                 // 1. Flip bit in bitmap
                 // 2. If BitmapGroup is cleared, remove the outer index from Index list
                 // let bitmap = bitmap_group.bitmap_at(0);
+
+                let TickIndices { outer_index, .. } = order_id.price_in_ticks.to_indices();
+                remove_index_fn(outer_index.as_u16());
 
                 BaseLots::ZERO
             } else {
@@ -190,6 +222,7 @@ impl Market for FIFOMarket {
 impl WritableMarket for FIFOMarket {
     fn reduce_order(
         &self,
+        remove_index_fn: &mut dyn FnMut(u16),
         trader_state: &mut TraderState,
         order: &mut SlotRestingOrder,
         mutable_bitmap: &mut MutableBitmap,
@@ -200,6 +233,7 @@ impl WritableMarket for FIFOMarket {
         claim_funds: bool,
     ) -> Option<MatchingEngineResponse> {
         self.reduce_order_inner(
+            remove_index_fn,
             trader_state,
             order,
             mutable_bitmap,
@@ -212,6 +246,7 @@ impl WritableMarket for FIFOMarket {
         )
     }
 
+    // TODO move to TraderState
     fn claim_funds(
         &self,
         trader_state: &mut TraderState,
@@ -261,6 +296,8 @@ mod test {
         let market = FIFOMarket {
             collected_quote_lot_fees: QuoteLots::new(100),
             unclaimed_quote_lot_fees: QuoteLots::new(200),
+            bids_outer_indices: 40,
+            asks_outer_indices: 10,
         };
 
         let encoded = market.encode();

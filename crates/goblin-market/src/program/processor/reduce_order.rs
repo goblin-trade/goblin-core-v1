@@ -1,10 +1,11 @@
+use index_list::IndexList;
 use stylus_sdk::{alloy_primitives::Address, msg};
 
 use crate::{
     program::{try_withdraw, GoblinError, GoblinResult, ReduceOrderError},
     quantities::{BaseAtomsRaw, BaseLots, QuoteAtomsRaw},
     state::{
-        BitmapGroup, FIFOMarket, MatchingEngineResponse, OrderId, Side, SlotActions,
+        index_list, BitmapGroup, FIFOMarket, MatchingEngineResponse, OrderId, Side, SlotActions,
         SlotRestingOrder, SlotStorage, TickIndices, TraderState, WritableMarket,
     },
     GoblinMarket,
@@ -31,7 +32,7 @@ pub fn process_reduce_order(
 
     // Load states
     let mut slot_storage = SlotStorage::new();
-    let market = FIFOMarket::read_from_slot(&slot_storage);
+    let mut market = FIFOMarket::read_from_slot(&slot_storage);
     let mut trader_state = TraderState::read_from_slot(&slot_storage, trader);
     let mut order = SlotRestingOrder::new_from_slot(&slot_storage, order_id);
 
@@ -41,12 +42,14 @@ pub fn process_reduce_order(
     } = order_id.price_in_ticks.to_indices();
 
     let mut bitmap_group = BitmapGroup::new_from_slot(&slot_storage, &outer_index);
-
     let mut mutable_bitmap = bitmap_group.get_bitmap_mut(&inner_index);
 
-    // maintain this pattern
-    // find index in the index_list here
-    // pass a closure that can remove the index
+    let outer_index_length = market.outer_index_length(side.clone());
+    let mut index_list = IndexList {
+        side: side.clone(),
+        size: outer_index_length,
+    };
+    let mut remove_index_fn = |index: u16| index_list.remove(&mut slot_storage, index);
 
     // Mutate
     let MatchingEngineResponse {
@@ -55,28 +58,32 @@ pub fn process_reduce_order(
         ..
     } = market
         .reduce_order(
+            &mut remove_index_fn,
             &mut trader_state,
             &mut order,
             &mut mutable_bitmap,
             trader,
-            side,
+            side.clone(),
             order_id,
             size,
             recipient.is_some(),
         )
         .ok_or(GoblinError::ReduceOrderError(ReduceOrderError {}))?;
 
-    // TODO move inside FIFO
+    // TODO refactor
     if !bitmap_group.is_active() {
+        // gas optimization- don't clear slot
         bitmap_group.inner = [
             1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0,
         ];
-    }
 
-    // Remove from list
-    // problem- the list is dynamic. I want to avoid passing `slot_storage`
-    // create a closure to fetch
+        // Remove from list
+        index_list.remove(&mut slot_storage, outer_index.as_u16());
+        market.set_outer_index_length(side.clone(), index_list.size);
+
+        market.write_to_slot(&mut slot_storage);
+    }
 
     // Write states
     trader_state.write_to_slot(&mut slot_storage, trader);

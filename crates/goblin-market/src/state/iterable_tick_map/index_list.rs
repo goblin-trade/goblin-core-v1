@@ -98,10 +98,6 @@ pub struct IndexList {
 }
 
 impl IndexList {
-    pub fn new(side: Side) -> Self {
-        IndexList { side, size: 0 }
-    }
-
     /// Outer indices are sorted in ascending order for bids and in descending order for asks,
     /// such that elements at middle of the orderbook are at the end of the list.
     pub fn ascending(&self) -> bool {
@@ -165,6 +161,8 @@ impl IndexList {
                 }
             }
         }
+
+        self.size -= 1;
     }
 
     /// Insert an index into the list
@@ -289,7 +287,7 @@ mod test {
 
         let side = Side::Bid;
 
-        let mut list = IndexList::new(side);
+        let mut list = IndexList { side, size: 0 };
 
         // 1. insert first item
         list.insert(&mut slot_storage, 1);
@@ -343,7 +341,7 @@ mod test {
 
         let side = Side::Ask;
 
-        let mut list = IndexList::new(side);
+        let mut list = IndexList { side, size: 0 };
 
         // 1. insert first item
         list.insert(&mut slot_storage, 4);
