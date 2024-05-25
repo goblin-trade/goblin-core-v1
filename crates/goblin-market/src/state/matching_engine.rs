@@ -6,8 +6,8 @@ use crate::{
 };
 
 use super::{
-    trader_state, MarketState, MatchingEngineResponse, OrderId, RestingOrder, Side, SlotActions,
-    SlotRestingOrder, SlotStorage, TraderState,
+    trader_state, BitmapGroup, MarketState, MatchingEngineResponse, OrderId, RestingOrder, Side,
+    SlotActions, SlotRestingOrder, SlotStorage, TraderState,
 };
 use alloc::vec::Vec;
 
@@ -181,6 +181,12 @@ impl MatchingEngine<'_> {
         let mut market = MarketState::read_from_slot(self.slot_storage);
         let mut trader_state = TraderState::read_from_slot(self.slot_storage, trader);
 
+        let mut bid_indices_to_remove = Vec::<u16>::new();
+        let mut ask_indices_to_remove = Vec::<u16>::new();
+
+        // Pass order IDs grouped by outer indices for efficient use of cache
+        let mut cached_bitmap_group: Option<BitmapGroup> = None;
+
         // shared between orders- trader_state
         // Do not pass bitmaps or index_list. We only need to update them if order is closed
         // return a `closed: bool` to track this
@@ -196,6 +202,9 @@ impl MatchingEngine<'_> {
 
             let order_id = OrderId::decode(&order_id_bytes);
             let side = order_id.side(market.best_bid_price, market.best_ask_price);
+            let order = SlotRestingOrder::new_from_slot(self.slot_storage, &order_id);
+
+            // Call reduce_order_inner()
 
             // let order = SlotRestingOrder::new_from_raw_key(self.slot_storage, &order_id_bytes.0);
             // let resp = self.reduce_order_inner(
@@ -207,7 +216,17 @@ impl MatchingEngine<'_> {
             //     false,
             //     claim_funds,
             // );
+
+            // If order was closed- look at matching_engine_resp and new size
+            // - read and update bitmap
+            // - if bitmap group becomes 0, queue outer index for removal
+            // - ensure that queued indices are in ascending / descending order
+            //  This forces the trader to pass them proper order for gas efficiency
+            if order.size() == 0 {}
         }
+
+        // use array of queued indices. Remove these from index_list
+        // update market state
     }
 }
 
