@@ -185,18 +185,19 @@ impl MatchingEngine<'_> {
         // Do not pass bitmaps or index_list. We only need to update them if order is closed
         // return a `closed: bool` to track this
         for order_id_bytes in orders_to_cancel {
-            let order = SlotRestingOrder::new_from_raw_key(self.slot_storage, &order_id_bytes.0);
+            // - Compare with best_bid_price and best_ask_price to know side
+            // - Behavior when one of the order is closed / belongs to a different trader?
+            // Unlike Phoenix, order IDs are reused.
+            // In phoenix- try to cancel other orders. Ignore failed cancelations (when orders).
+            // Since we don't have a way to cancel all orders, traders must lookup their addresses
+            // client side then attempt to cancel.
+            // `revert_if_fail` field for each order- revert TX if cancel fails (closed order, or belonging to other trader)
+            // - How to structure order IDs to optimize gas?
 
-            // How to know side?
-            // Technical flaw- we only track outer indices in index_list. A given
-            // BitmapGroup can be shared by both bids and asks.
-            // Design update- store best bid and best ask in market.
-            // The othermost outer_index is not stored in the index_lists. Rather it is
-            // derived from best bid / ask prices.
+            let order_id = OrderId::decode(&order_id_bytes);
+            let side = order_id.side(market.best_bid_price, market.best_ask_price);
 
-            // Alt design- use 1 bit inside RestingOrder to track bid or ask. But this
-            // is redundant. The former design doesn't cost extra storage.
-
+            // let order = SlotRestingOrder::new_from_raw_key(self.slot_storage, &order_id_bytes.0);
             // let resp = self.reduce_order_inner(
             //     &mut trader_state,
             //     trader,

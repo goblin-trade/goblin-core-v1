@@ -8,7 +8,7 @@ use crate::{
     quantities::{BaseLots, Ticks, WrapperU64},
     require,
     state::{
-        slot_storage::SlotKey, RestingOrder, SlotActions, SlotStorage, ORDERS_PER_TICK,
+        slot_storage::SlotKey, RestingOrder, Side, SlotActions, SlotStorage, ORDERS_PER_TICK,
         RESTING_ORDER_KEY_SEED,
     },
 };
@@ -57,6 +57,18 @@ impl OrderId {
         OrderId {
             price_in_ticks: Ticks::new(u64::from_be_bytes(bytes[1..9].try_into().unwrap())),
             resting_order_index: RestingOrderIndex::new(bytes[9]),
+        }
+    }
+
+    pub fn side(&self, best_bid_price: Ticks, best_ask_price: Ticks) -> Side {
+        if self.price_in_ticks >= best_ask_price {
+            Side::Ask
+        } else if self.price_in_ticks <= best_bid_price {
+            Side::Bid
+        } else {
+            // There are no active orders in the spread
+            // However there could be activated slots. Ensure that they are not tested here.
+            unreachable!()
         }
     }
 }
