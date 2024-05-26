@@ -8,6 +8,7 @@ use crate::state::{
 ///
 /// Bids and Asks have a common set of BitmapGroups because a resting order
 /// at a tick can't be on both sides at the same time.
+#[derive(Clone, Copy)]
 pub struct BitmapGroup {
     pub inner: [u8; 32],
 }
@@ -42,6 +43,19 @@ impl BitmapGroup {
     pub fn write_to_slot(&self, slot_storage: &mut SlotStorage, key: &OuterIndex) {
         slot_storage.sstore(&key.get_key(), &self.inner);
     }
+
+    /// Set a placeholder non-empty value so that the slot is not cleared
+    pub fn set_placeholder(&mut self) {
+        self.inner = [
+            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0,
+        ];
+    }
+}
+
+pub struct BitmapGroupWithIndex {
+    pub bitmap_group: BitmapGroup,
+    pub outer_index: OuterIndex,
 }
 
 pub struct Bitmap<'a> {

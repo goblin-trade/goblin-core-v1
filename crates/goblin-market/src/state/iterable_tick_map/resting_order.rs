@@ -8,8 +8,8 @@ use crate::{
     quantities::{BaseLots, Ticks, WrapperU64},
     require,
     state::{
-        slot_storage::SlotKey, RestingOrder, Side, SlotActions, SlotStorage, ORDERS_PER_TICK,
-        RESTING_ORDER_KEY_SEED,
+        slot_storage::SlotKey, MatchingEngineResponse, RestingOrder, Side, SlotActions,
+        SlotStorage, TraderState, ORDERS_PER_TICK, RESTING_ORDER_KEY_SEED,
     },
 };
 
@@ -196,6 +196,18 @@ impl SlotRestingOrder {
         Ok(())
     }
 
+    // pub fn remove(
+    //     &mut self,
+    //     trader_state: &mut TraderState,
+    //     trader: Address,
+    //     side: Side,
+    //     size: Option<BaseLots>,
+    //     order_is_expired: bool,
+    //     claim_funds: bool,
+    // ) -> Option<MatchingEngineResponse> {
+
+    // }
+
     pub fn clear_order(&mut self) {
         // Gas optimization- set address to 0x1. This way the slot is not cleared
         self.trader_address = NULL_ADDRESS;
@@ -204,8 +216,9 @@ impl SlotRestingOrder {
         self.last_valid_block_or_unix_timestamp_in_seconds = 0;
     }
 
+    // The order slot was never initialized or was cleared
     pub fn does_not_exist(&self) -> bool {
-        self.trader_address == NULL_ADDRESS
+        self.trader_address == Address::ZERO || self.trader_address == NULL_ADDRESS
     }
 }
 

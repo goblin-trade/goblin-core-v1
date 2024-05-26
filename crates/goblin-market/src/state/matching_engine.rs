@@ -2,12 +2,15 @@ use stylus_sdk::alloy_primitives::{Address, B256};
 
 use crate::{
     parameters::{BASE_LOTS_PER_BASE_UNIT, TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT},
+    program::GoblinError,
     quantities::{BaseLots, QuoteLots},
+    require,
 };
 
 use super::{
-    trader_state, BitmapGroup, MarketState, MatchingEngineResponse, OrderId, RestingOrder, Side,
-    SlotActions, SlotRestingOrder, SlotStorage, TraderState,
+    trader_state, BitmapGroup, BitmapGroupWithIndex, IndexList, ListSlot, MarketState,
+    MatchingEngineResponse, OrderId, OuterIndex, RestingOrder, Side, SlotActions, SlotRestingOrder,
+    SlotStorage, TickIndices, TraderState,
 };
 use alloc::vec::Vec;
 
@@ -69,13 +72,15 @@ impl MatchingEngine<'_> {
         &mut self,
         trader_state: &mut TraderState,
         trader: Address,
-        order_id: &[u8; 32],
+        // order_id: &[u8; 32],
+        order_id: &OrderId,
         side: Side,
         size: Option<BaseLots>,
         order_is_expired: bool,
         claim_funds: bool,
     ) -> Option<ReduceOrderInnerResponse> {
-        let mut order = SlotRestingOrder::new_from_raw_key(self.slot_storage, order_id);
+        // let mut order = SlotRestingOrder::new_from_raw_key(self.slot_storage, order_id);
+        let mut order = SlotRestingOrder::new_from_slot(self.slot_storage, order_id);
 
         let mut remove_order = false;
 
@@ -125,12 +130,9 @@ impl MatchingEngine<'_> {
 
             base_lots_to_remove
         };
-        let order_id_decoded = OrderId::decode(order_id);
 
         // Store order state
-        order
-            .write_to_slot(self.slot_storage, &order_id_decoded)
-            .ok();
+        order.write_to_slot(self.slot_storage, order_id).ok();
 
         // We don't want to claim funds if an order is removed from the book during a self trade
         // or if the user specifically indicates that they don't want to claim funds.
@@ -139,7 +141,7 @@ impl MatchingEngine<'_> {
             let (num_quote_lots, num_base_lots) = {
                 match side {
                     Side::Bid => {
-                        let quote_lots = (order_id_decoded.price_in_ticks
+                        let quote_lots = (order_id.price_in_ticks
                             * TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT
                             * removed_base_lots)
                             / BASE_LOTS_PER_BASE_UNIT;
@@ -174,59 +176,111 @@ impl MatchingEngine<'_> {
         trader: Address,
         orders_to_cancel: Vec<B256>,
         claim_funds: bool,
-    ) {
+    ) -> Option<MatchingEngineResponse> {
         // Call reduce_order_inner() for each order ID. Set size = None to empty the orders
 
         // Read
         let mut market = MarketState::read_from_slot(self.slot_storage);
         let mut trader_state = TraderState::read_from_slot(self.slot_storage, trader);
 
-        let mut bid_indices_to_remove = Vec::<u16>::new();
-        let mut ask_indices_to_remove = Vec::<u16>::new();
+        let mut quote_lots_released = QuoteLots::ZERO;
+        let mut base_lots_released = BaseLots::ZERO;
+
+        let mut bid_indices_to_remove = Vec::<OuterIndex>::new();
+        let mut ask_indices_to_remove = Vec::<OuterIndex>::new();
 
         // Pass order IDs grouped by outer indices for efficient use of cache
         let mut cached_bitmap_group: Option<BitmapGroup> = None;
+        let mut cached_outer_index: Option<OuterIndex> = None;
 
-        // shared between orders- trader_state
-        // Do not pass bitmaps or index_list. We only need to update them if order is closed
-        // return a `closed: bool` to track this
         for order_id_bytes in orders_to_cancel {
-            // - Compare with best_bid_price and best_ask_price to know side
-            // - Behavior when one of the order is closed / belongs to a different trader?
-            // Unlike Phoenix, order IDs are reused.
-            // In phoenix- try to cancel other orders. Ignore failed cancelations (when orders).
-            // Since we don't have a way to cancel all orders, traders must lookup their addresses
-            // client side then attempt to cancel.
-            // `revert_if_fail` field for each order- revert TX if cancel fails (closed order, or belonging to other trader)
-            // - How to structure order IDs to optimize gas?
-
             let order_id = OrderId::decode(&order_id_bytes);
             let side = order_id.side(market.best_bid_price, market.best_ask_price);
-            let order = SlotRestingOrder::new_from_slot(self.slot_storage, &order_id);
 
-            // Call reduce_order_inner()
+            if let Some(ReduceOrderInnerResponse {
+                matching_engine_response,
+                remove_order,
+            }) = self.reduce_order_inner(
+                &mut trader_state,
+                trader,
+                &order_id,
+                side.clone(),
+                None,
+                false,
+                claim_funds,
+            ) {
+                quote_lots_released += matching_engine_response.num_quote_lots_out;
+                base_lots_released += matching_engine_response.num_base_lots_out;
 
-            // let order = SlotRestingOrder::new_from_raw_key(self.slot_storage, &order_id_bytes.0);
-            // let resp = self.reduce_order_inner(
-            //     &mut trader_state,
-            //     trader,
-            //     &order_id_bytes.0,
-            //     side,
-            //     None,
-            //     false,
-            //     claim_funds,
-            // );
+                if remove_order {
+                    let TickIndices {
+                        outer_index,
+                        inner_index,
+                    } = order_id.price_in_ticks.to_indices();
 
-            // If order was closed- look at matching_engine_resp and new size
-            // - read and update bitmap
-            // - if bitmap group becomes 0, queue outer index for removal
-            // - ensure that queued indices are in ascending / descending order
-            //  This forces the trader to pass them proper order for gas efficiency
-            if order.size() == 0 {}
+                    // Update cache
+                    if cached_outer_index.is_none() || cached_outer_index.unwrap() != outer_index {
+                        cached_outer_index = Some(outer_index);
+                        cached_bitmap_group =
+                            Some(BitmapGroup::new_from_slot(self.slot_storage, &outer_index));
+                    }
+
+                    let mut bitmap_group = cached_bitmap_group.unwrap();
+                    let mut mutable_bitmap = bitmap_group.get_bitmap_mut(&inner_index);
+                    mutable_bitmap.clear(&order_id.resting_order_index);
+
+                    // If the group was cleared, this code will not be run again for spurious
+                    // order_ids because remove_order will be false
+                    if !bitmap_group.is_active() {
+                        let outer_index = cached_outer_index.unwrap();
+                        // Save to slot
+                        bitmap_group.set_placeholder();
+                        bitmap_group.write_to_slot(self.slot_storage, &outer_index);
+
+                        if side == Side::Bid {
+                            // Bids should be in descending order of price. Each subsequent order moves away
+                            // from the center
+                            if bid_indices_to_remove.last().is_some()
+                                && outer_index > *bid_indices_to_remove.last().unwrap()
+                            {
+                                return None;
+                            }
+                            bid_indices_to_remove.push(outer_index);
+                        } else {
+                            // Bids should be in ascending order of price. Each subsequent order moves away
+                            // from the center
+                            if ask_indices_to_remove.last().is_some()
+                                && outer_index < *ask_indices_to_remove.last().unwrap()
+                            {
+                                return None;
+                            }
+
+                            ask_indices_to_remove.push(outer_index);
+                        }
+                    }
+                }
+            }
         }
 
-        // use array of queued indices. Remove these from index_list
+        // bid_indices_to_remove is in descending order. Indices close to the
+        // centre are in the start
+        if !bid_indices_to_remove.is_empty() {
+            let mut read_values = Vec::<u16>::new();
+            let mut current_slot = ListSlot::default();
+
+            let bid_index_list = IndexList {
+                side: Side::Bid,
+                size: market.bids_outer_indices,
+            };
+
+            // TODO remove_multiple() function in IndexList
+        }
+
         // update market state
+
+        // write market state, trader state
+
+        None
     }
 }
 

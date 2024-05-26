@@ -10,6 +10,8 @@ use crate::{
     GoblinMarket,
 };
 
+/// TODO hack- we can have a single reduce_multiple_orders() function
+/// This can be used to reduce or cancel multiple orders at once
 pub fn process_multiple_orders_by_id(
     context: &mut GoblinMarket,
     order_ids: Vec<B256>,
