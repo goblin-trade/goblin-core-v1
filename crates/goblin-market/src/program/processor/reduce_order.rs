@@ -47,58 +47,59 @@ pub fn process_reduce_order(
     let mut mutable_bitmap = bitmap_group.get_bitmap_mut(&inner_index);
 
     let outer_index_length = market.outer_index_length(side.clone());
-    let mut index_list = IndexList {
-        side: side.clone(),
-        size: outer_index_length,
-    };
-    let mut remove_index_fn = |index: u16| index_list.remove(&mut slot_storage, index);
 
-    // Mutate
-    let MatchingEngineResponse {
-        num_quote_lots_out,
-        num_base_lots_out,
-        ..
-    } = market
-        .reduce_order(
-            &mut remove_index_fn,
-            &mut trader_state,
-            &mut order,
-            &mut mutable_bitmap,
-            trader,
-            side.clone(),
-            order_id,
-            size,
-            recipient.is_some(),
-        )
-        .ok_or(GoblinError::ReduceOrderError(ReduceOrderError {}))?;
+    // let mut index_list = IndexList {
+    //     side: side.clone(),
+    //     size: outer_index_length,
+    // };
+    // let mut remove_index_fn = |index: u16| index_list.remove(&mut slot_storage, index);
 
-    // TODO refactor
-    if !bitmap_group.is_active() {
-        // gas optimization- don't clear slot
-        bitmap_group.inner = [
-            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0,
-        ];
+    // // Mutate
+    // let MatchingEngineResponse {
+    //     num_quote_lots_out,
+    //     num_base_lots_out,
+    //     ..
+    // } = market
+    //     .reduce_order(
+    //         &mut remove_index_fn,
+    //         &mut trader_state,
+    //         &mut order,
+    //         &mut mutable_bitmap,
+    //         trader,
+    //         side.clone(),
+    //         order_id,
+    //         size,
+    //         recipient.is_some(),
+    //     )
+    //     .ok_or(GoblinError::ReduceOrderError(ReduceOrderError {}))?;
 
-        // Remove from list
-        index_list.remove(&mut slot_storage, outer_index.as_u16());
-        market.set_outer_index_length(side.clone(), index_list.size);
+    // // TODO refactor
+    // if !bitmap_group.is_active() {
+    //     // gas optimization- don't clear slot
+    //     bitmap_group.inner = [
+    //         1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    //         0, 0, 0,
+    //     ];
 
-        market.write_to_slot(&mut slot_storage);
-    }
+    //     // Remove from list
+    //     index_list.remove(&mut slot_storage, outer_index.as_u16());
+    //     market.set_outer_index_length(side.clone(), index_list.size);
 
-    // Write states
-    trader_state.write_to_slot(&mut slot_storage, trader);
-    order.write_to_slot(&mut slot_storage, order_id)?;
-    SlotStorage::storage_flush_cache(true);
+    //     market.write_to_slot(&mut slot_storage);
+    // }
 
-    // Transfer
-    if let Some(recipient) = recipient {
-        let quote_amount_raw = QuoteAtomsRaw::from_lots(num_quote_lots_out);
-        let base_amount_raw = BaseAtomsRaw::from_lots(num_base_lots_out);
+    // // Write states
+    // trader_state.write_to_slot(&mut slot_storage, trader);
+    // order.write_to_slot(&mut slot_storage, order_id)?;
+    // SlotStorage::storage_flush_cache(true);
 
-        try_withdraw(context, quote_amount_raw, base_amount_raw, recipient)?;
-    }
+    // // Transfer
+    // if let Some(recipient) = recipient {
+    //     let quote_amount_raw = QuoteAtomsRaw::from_lots(num_quote_lots_out);
+    //     let base_amount_raw = BaseAtomsRaw::from_lots(num_base_lots_out);
+
+    //     try_withdraw(context, quote_amount_raw, base_amount_raw, recipient)?;
+    // }
 
     Ok(())
 }

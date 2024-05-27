@@ -229,6 +229,17 @@ impl MatchingEngine<'_> {
                     let mut mutable_bitmap = bitmap_group.get_bitmap_mut(&inner_index);
                     mutable_bitmap.clear(&order_id.resting_order_index);
 
+                    // check whether the best_price must be shifted
+                    if side == Side::Bid
+                        && order_id.price_in_ticks == market.best_bid_price
+                        && mutable_bitmap.empty()
+                    {
+                        // find next active bitmap
+                        // but this could be cleared in subsequent loops
+                        // also the next best price could be present in another bitmap group
+                        // therefore new best price should be determined last
+                    }
+
                     // If the group was cleared, this code will not be run again for spurious
                     // order_ids because remove_order will be false
                     if !bitmap_group.is_active() {
@@ -265,16 +276,18 @@ impl MatchingEngine<'_> {
         // bid_indices_to_remove is in descending order. Indices close to the
         // centre are in the start
         if !bid_indices_to_remove.is_empty() {
-            let mut read_values = Vec::<u16>::new();
-            let mut current_slot = ListSlot::default();
-
-            let bid_index_list = IndexList {
+            let mut bid_index_list = IndexList {
+                slot_storage: &mut self.slot_storage,
                 side: Side::Bid,
-                size: market.bids_outer_indices,
+                size: &mut market.bids_outer_indices,
+                best_price: &mut market.best_bid_price,
             };
 
-            // TODO remove_multiple() function in IndexList
+            bid_index_list.remove_multiple(bid_indices_to_remove);
         }
+
+        // Update best price
+        // look at the outermost value of index_list
 
         // update market state
 
