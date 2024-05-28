@@ -31,6 +31,10 @@ impl Ticks {
             inner_index: InnerIndex::new((self.as_u64() % BITMAPS_PER_GROUP) as usize),
         }
     }
+
+    pub fn from_indices(outer_index: OuterIndex, inner_index: InnerIndex) -> Ticks {
+        Ticks::new(outer_index.as_u16() as u64 * BITMAPS_PER_GROUP + inner_index.as_usize() as u64)
+    }
 }
 
 /// Key to fetch a Bitmap group. A Bitmap consists of multiple Bitmaps

@@ -1,6 +1,6 @@
 use crate::state::{
     slot_storage::{SlotActions, SlotKey, SlotStorage},
-    InnerIndex, OuterIndex, RestingOrderIndex,
+    InnerIndex, OuterIndex, RestingOrderIndex, Side,
 };
 
 /// A BitmapGroup contains Bitmaps for 32 ticks in ascending order.
@@ -50,6 +50,36 @@ impl BitmapGroup {
             1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0,
         ];
+    }
+
+    pub fn get_best_inner_index(
+        &self,
+        side: Side,
+        old_best_inner_index: Option<InnerIndex>,
+    ) -> Option<InnerIndex> {
+        match side {
+            Side::Bid => {
+                let highest_index = old_best_inner_index.map(|i| i.as_usize()).unwrap_or(32);
+
+                // Start from the highest index and move backwards
+                for i in (0..highest_index).rev() {
+                    if self.inner[i] != 0 {
+                        return Some(InnerIndex::new(i));
+                    }
+                }
+            }
+            Side::Ask => {
+                let lowest_index = old_best_inner_index.map(|i| i.as_usize() + 1).unwrap_or(0);
+
+                // Start from the lowest index and move forwards
+                for i in lowest_index..32 {
+                    if self.inner[i] != 0 {
+                        return Some(InnerIndex::new(i));
+                    }
+                }
+            }
+        }
+        None
     }
 }
 

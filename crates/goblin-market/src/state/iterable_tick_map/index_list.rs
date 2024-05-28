@@ -11,7 +11,10 @@
 /// each ListItem contains 16 outer indices.
 use crate::{
     quantities::Ticks,
-    state::{OuterIndex, Side, SlotActions, SlotKey, SlotStorage, TickIndices, LIST_KEY_SEED},
+    state::{
+        slot_storage, OuterIndex, Side, SlotActions, SlotKey, SlotStorage, TickIndices,
+        LIST_KEY_SEED,
+    },
 };
 use alloc::vec::Vec;
 
@@ -94,20 +97,39 @@ impl ListSlot {
 pub struct IndexList<'a> {
     pub slot_storage: &'a mut SlotStorage,
 
-    /// Bid or ask
-    pub side: Side,
-
     /// Number of active outer indices in the list
     /// The number of slots is given as size / 16 and index of an item is given as size % 16
     pub size: &'a mut u16,
 
-    pub best_price: &'a mut Ticks,
+    /// Cached outer index closest to the centre
+    pub cached_best_outer_index: Option<OuterIndex>,
 }
 
 impl IndexList<'_> {
+    pub fn new<'a>(slot_storage: &'a mut SlotStorage, size: &'a mut u16) -> IndexList<'a> {
+        IndexList {
+            slot_storage,
+            size,
+            cached_best_outer_index: None,
+        }
+    }
+
+    pub fn get_best_outer_index(&mut self) -> OuterIndex {
+        if self.cached_best_outer_index.is_some() {
+            return self.cached_best_outer_index.unwrap();
+        } else {
+            let slot_index = *self.size / 16;
+            let relative_index = *self.size as usize % 16;
+
+            let key = ListKey { index: slot_index };
+            let current_slot = ListSlot::new_from_slot(self.slot_storage, &key);
+
+            current_slot.get(relative_index)
+        }
+    }
+
     // for now assume that the best outer index is also stored in list
     pub fn remove_multiple(&mut self, mut values_to_remove: Vec<OuterIndex>) {
-
         // cached values to be added back in the list. They are stored in the order opposit
         // of the index_list. I.e. for bids, inner values go to start of `read_values`
         let mut cached_values = Vec::<OuterIndex>::new();
@@ -156,6 +178,11 @@ impl IndexList<'_> {
                 };
                 current_slot.write_to_slot(self.slot_storage, &key);
                 current_slot.inner = [0u16; 16];
+            }
+
+            // Cache the best outer index
+            if j == cached_values.len() - 1 {
+                self.cached_best_outer_index = Some(value_to_add);
             }
         }
     }

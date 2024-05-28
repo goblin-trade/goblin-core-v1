@@ -5,8 +5,9 @@ use stylus_sdk::{
 };
 
 use crate::{
-    program::GoblinResult,
-    state::{FIFOMarket, OrderId, SlotActions, SlotStorage, TraderState},
+    program::{try_withdraw, GoblinResult},
+    quantities::{BaseAtomsRaw, QuoteAtomsRaw},
+    state::{MatchingEngine, MatchingEngineResponse, SlotActions, SlotStorage},
     GoblinMarket,
 };
 
@@ -17,25 +18,28 @@ pub fn process_multiple_orders_by_id(
     order_ids: Vec<B256>,
     recipient: Option<Address>,
 ) -> GoblinResult<()> {
-    let trader = msg::sender();
+    let mut matching_engine = MatchingEngine {
+        slot_storage: &mut SlotStorage::new(),
+    };
 
-    // Load states
-    let mut slot_storage = SlotStorage::new();
-    let mut market = FIFOMarket::read_from_slot(&slot_storage);
-    let mut trader_state = TraderState::read_from_slot(&slot_storage, trader);
+    let MatchingEngineResponse {
+        num_quote_lots_out,
+        num_base_lots_out,
+        ..
+    } = matching_engine
+        .cancel_multiple_orders_by_id_inner(msg::sender(), order_ids, recipient.is_some())
+        .unwrap_or_default();
+    // TODO should throw error instead of default when response is None?
+    // Look at None cases
 
-    // When cancelling multiple orders
-    // - market, trader state keeps getting updated in memory
-    // - multiple RestingOrders are modified
-    // - Variable number of `index_list` elements are updated
+    SlotStorage::storage_flush_cache(true);
 
-    // `index_list` updation should be optimized
-    // - keep caching and removing items until IDs to remove are exhausted
-    // - In reduce_order, read and update bitmap group only for orders that will be closed
-    // - Orders with the same outer_index share BitmapGroups. Do not double read BitmapGroups
+    if let Some(recipient) = recipient {
+        let quote_amount_raw = QuoteAtomsRaw::from_lots(num_quote_lots_out);
+        let base_amount_raw = BaseAtomsRaw::from_lots(num_base_lots_out);
 
-    // Alternative- modify index_list and market at the end, after seeing which orders were closed
-    // This keeps the code clean
+        try_withdraw(context, quote_amount_raw, base_amount_raw, recipient)?;
+    }
 
     Ok(())
 }

@@ -3,12 +3,12 @@ use stylus_sdk::alloy_primitives::{Address, B256};
 use crate::{
     parameters::{BASE_LOTS_PER_BASE_UNIT, TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT},
     program::GoblinError,
-    quantities::{BaseLots, QuoteLots},
+    quantities::{BaseLots, QuoteLots, Ticks},
     require,
 };
 
 use super::{
-    trader_state, BitmapGroup, BitmapGroupWithIndex, IndexList, ListSlot, MarketState,
+    trader_state, BitmapGroup, BitmapGroupWithIndex, IndexList, InnerIndex, ListSlot, MarketState,
     MatchingEngineResponse, OrderId, OuterIndex, RestingOrder, Side, SlotActions, SlotRestingOrder,
     SlotStorage, TickIndices, TraderState,
 };
@@ -72,20 +72,17 @@ impl MatchingEngine<'_> {
         &mut self,
         trader_state: &mut TraderState,
         trader: Address,
-        // order_id: &[u8; 32],
         order_id: &OrderId,
         side: Side,
         size: Option<BaseLots>,
         order_is_expired: bool,
         claim_funds: bool,
     ) -> Option<ReduceOrderInnerResponse> {
-        // let mut order = SlotRestingOrder::new_from_raw_key(self.slot_storage, order_id);
         let mut order = SlotRestingOrder::new_from_slot(self.slot_storage, order_id);
 
         let mut remove_order = false;
 
         let removed_base_lots = {
-            // whether to remove order completely (clear slot), and lots to remove
             let (should_remove_order_from_book, base_lots_to_remove) = {
                 // Empty slot- order doesn't exist
                 if order.does_not_exist() {
@@ -113,11 +110,7 @@ impl MatchingEngine<'_> {
 
             let _base_lots_remaining = if should_remove_order_from_book {
                 order.clear_order();
-
                 remove_order = true;
-
-                // update bitmap and index_list externally
-                // mutable_bitmap.flip(&order_id.resting_order_index);
 
                 BaseLots::ZERO
             } else {
@@ -158,7 +151,6 @@ impl MatchingEngine<'_> {
             };
 
             Some(ReduceOrderInnerResponse {
-                // TODO externally write trader_state to slot
                 matching_engine_response: trader_state
                     .claim_funds_inner(num_quote_lots, num_base_lots),
                 remove_order,
@@ -177,8 +169,6 @@ impl MatchingEngine<'_> {
         orders_to_cancel: Vec<B256>,
         claim_funds: bool,
     ) -> Option<MatchingEngineResponse> {
-        // Call reduce_order_inner() for each order ID. Set size = None to empty the orders
-
         // Read
         let mut market = MarketState::read_from_slot(self.slot_storage);
         let mut trader_state = TraderState::read_from_slot(self.slot_storage, trader);
@@ -229,17 +219,6 @@ impl MatchingEngine<'_> {
                     let mut mutable_bitmap = bitmap_group.get_bitmap_mut(&inner_index);
                     mutable_bitmap.clear(&order_id.resting_order_index);
 
-                    // check whether the best_price must be shifted
-                    if side == Side::Bid
-                        && order_id.price_in_ticks == market.best_bid_price
-                        && mutable_bitmap.empty()
-                    {
-                        // find next active bitmap
-                        // but this could be cleared in subsequent loops
-                        // also the next best price could be present in another bitmap group
-                        // therefore new best price should be determined last
-                    }
-
                     // If the group was cleared, this code will not be run again for spurious
                     // order_ids because remove_order will be false
                     if !bitmap_group.is_active() {
@@ -273,27 +252,63 @@ impl MatchingEngine<'_> {
             }
         }
 
-        // bid_indices_to_remove is in descending order. Indices close to the
-        // centre are in the start
-        if !bid_indices_to_remove.is_empty() {
-            let mut bid_index_list = IndexList {
-                slot_storage: &mut self.slot_storage,
-                side: Side::Bid,
-                size: &mut market.bids_outer_indices,
-                best_price: &mut market.best_bid_price,
+        // update index_list and best prices in market state
+        for (side, indices_to_remove, outer_indices_count, best_price) in [
+            (
+                Side::Bid,
+                &mut bid_indices_to_remove,
+                &mut market.bids_outer_indices,
+                &mut market.best_bid_price,
+            ),
+            (
+                Side::Ask,
+                &mut ask_indices_to_remove,
+                &mut market.asks_outer_indices,
+                &mut market.best_ask_price,
+            ),
+        ] {
+            let mut index_list = IndexList::new(self.slot_storage, outer_indices_count);
+
+            // Remove indices from index_list
+            if !indices_to_remove.is_empty() {
+                index_list.remove_multiple(indices_to_remove.clone());
+            }
+
+            // Find new best prices to be stored in MarketState
+
+            let best_outer_index = index_list.get_best_outer_index();
+
+            let TickIndices {
+                outer_index,
+                inner_index,
+            } = best_price.to_indices();
+
+            // Inner index of old best price
+            let old_best_inner_index = if best_outer_index == outer_index {
+                Some(inner_index)
+            } else {
+                // If the best_outer_index has changed, this is not needed
+                None
             };
 
-            bid_index_list.remove_multiple(bid_indices_to_remove);
+            let best_bitmap_group =
+                BitmapGroup::new_from_slot(self.slot_storage, &best_outer_index);
+
+            let best_inner_index = best_bitmap_group
+                .get_best_inner_index(side, old_best_inner_index)
+                .unwrap();
+
+            *best_price = Ticks::from_indices(outer_index, best_inner_index);
         }
 
-        // Update best price
-        // look at the outermost value of index_list
-
-        // update market state
-
         // write market state, trader state
+        market.write_to_slot(self.slot_storage).ok();
+        trader_state.write_to_slot(self.slot_storage, trader);
 
-        None
+        Some(MatchingEngineResponse::new_withdraw(
+            base_lots_released,
+            quote_lots_released,
+        ))
     }
 }
 

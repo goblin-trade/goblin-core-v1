@@ -5,8 +5,8 @@ use crate::{
     program::{try_withdraw, GoblinError, GoblinResult, ReduceOrderError},
     quantities::{BaseAtomsRaw, BaseLots, QuoteAtomsRaw},
     state::{
-        index_list, BitmapGroup, FIFOMarket, MatchingEngineResponse, OrderId, Side, SlotActions,
-        SlotRestingOrder, SlotStorage, TickIndices, TraderState, WritableMarket,
+        index_list, BitmapGroup, FIFOMarket, MatchingEngine, MatchingEngineResponse, OrderId, Side,
+        SlotActions, SlotRestingOrder, SlotStorage, TickIndices, TraderState, WritableMarket,
     },
     GoblinMarket,
 };
