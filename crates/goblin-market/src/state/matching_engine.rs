@@ -68,6 +68,15 @@ impl MatchingEngine<'_> {
         response
     }
 
+    /// Tries to reduce an order.
+    ///
+    /// Returns None if the order doesn't exist or belongs to another trader.
+    ///
+    /// # State updations
+    ///
+    /// - order: Updated and stored
+    /// - trader_state: Only updated
+    ///
     pub fn reduce_order_inner(
         &mut self,
         trader_state: &mut TraderState,
@@ -80,49 +89,41 @@ impl MatchingEngine<'_> {
     ) -> Option<ReduceOrderInnerResponse> {
         let mut order = SlotRestingOrder::new_from_slot(self.slot_storage, order_id);
 
-        let mut remove_order = false;
+        // Find lots to remove
+        let (should_remove_order_from_book, base_lots_to_remove) = {
+            // Order does not exist, or belongs to another trader
+            if order.trader_address != trader {
+                return None;
+            }
 
-        let removed_base_lots = {
-            let (should_remove_order_from_book, base_lots_to_remove) = {
-                // Empty slot- order doesn't exist
-                if order.does_not_exist() {
-                    return Some(ReduceOrderInnerResponse::default());
-                }
+            let base_lots_to_remove = size
+                .map(|s| s.min(order.num_base_lots))
+                .unwrap_or(order.num_base_lots);
 
-                if order.trader_address != trader {
-                    return None;
-                }
-
-                let base_lots_to_remove = size
-                    .map(|s| s.min(order.num_base_lots))
-                    .unwrap_or(order.num_base_lots);
-
-                // If the order is tagged as expired, we remove it from the book regardless of the size.
-                if order_is_expired {
-                    (true, order.num_base_lots)
-                } else {
-                    (
-                        base_lots_to_remove == order.num_base_lots,
-                        base_lots_to_remove,
-                    )
-                }
-            };
-
-            let _base_lots_remaining = if should_remove_order_from_book {
-                order.clear_order();
-                remove_order = true;
-
-                BaseLots::ZERO
+            // If the order is tagged as expired, we remove it from the book regardless of the size.
+            if order_is_expired {
+                (true, order.num_base_lots)
             } else {
-                // Reduce order
-                order.num_base_lots -= base_lots_to_remove;
-                order.num_base_lots
-            };
-
-            // EMIT ExpiredOrder / Reduce
-
-            base_lots_to_remove
+                (
+                    base_lots_to_remove == order.num_base_lots,
+                    base_lots_to_remove,
+                )
+            }
         };
+
+        // Mutate order
+        let _base_lots_remaining = if should_remove_order_from_book {
+            order.clear_order();
+
+            BaseLots::ZERO
+        } else {
+            // Reduce order
+            order.num_base_lots -= base_lots_to_remove;
+
+            order.num_base_lots
+        };
+
+        // EMIT ExpiredOrder / Reduce
 
         // Store order state
         order.write_to_slot(self.slot_storage, order_id).ok();
@@ -136,16 +137,16 @@ impl MatchingEngine<'_> {
                     Side::Bid => {
                         let quote_lots = (order_id.price_in_ticks
                             * TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT
-                            * removed_base_lots)
+                            * base_lots_to_remove)
                             / BASE_LOTS_PER_BASE_UNIT;
                         trader_state.unlock_quote_lots(quote_lots);
 
                         (quote_lots, BaseLots::ZERO)
                     }
                     Side::Ask => {
-                        trader_state.unlock_base_lots(removed_base_lots);
+                        trader_state.unlock_base_lots(base_lots_to_remove);
 
-                        (QuoteLots::ZERO, removed_base_lots)
+                        (QuoteLots::ZERO, base_lots_to_remove)
                     }
                 }
             };
@@ -153,16 +154,18 @@ impl MatchingEngine<'_> {
             Some(ReduceOrderInnerResponse {
                 matching_engine_response: trader_state
                     .claim_funds_inner(num_quote_lots, num_base_lots),
-                remove_order,
+                should_remove_order_from_book,
             })
         } else {
+            // No claim case- the order is reduced but no funds will be claimed
             Some(ReduceOrderInnerResponse {
                 matching_engine_response: MatchingEngineResponse::default(),
-                remove_order,
+                should_remove_order_from_book,
             })
         }
     }
 
+    /// Try to cancel multiple orders by ID
     pub fn cancel_multiple_orders_by_id_inner(
         &mut self,
         trader: Address,
@@ -189,7 +192,7 @@ impl MatchingEngine<'_> {
 
             if let Some(ReduceOrderInnerResponse {
                 matching_engine_response,
-                remove_order,
+                should_remove_order_from_book: remove_order,
             }) = self.reduce_order_inner(
                 &mut trader_state,
                 trader,
@@ -315,5 +318,5 @@ impl MatchingEngine<'_> {
 #[derive(Default)]
 pub struct ReduceOrderInnerResponse {
     pub matching_engine_response: MatchingEngineResponse,
-    pub remove_order: bool,
+    pub should_remove_order_from_book: bool,
 }
