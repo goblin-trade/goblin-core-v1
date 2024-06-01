@@ -166,6 +166,10 @@ impl MatchingEngine<'_> {
     }
 
     /// Try to cancel multiple orders by ID
+    ///
+    /// Current behavior- If one cancellation fails, try to cancel others.
+    ///
+    /// Order IDs should be grouped by outer_ids and by side for efficiency
     pub fn cancel_multiple_orders_by_id_inner(
         &mut self,
         trader: Address,
@@ -179,20 +183,21 @@ impl MatchingEngine<'_> {
         let mut quote_lots_released = QuoteLots::ZERO;
         let mut base_lots_released = BaseLots::ZERO;
 
+        // Outer indices to remove
         let mut bid_indices_to_remove = Vec::<OuterIndex>::new();
         let mut ask_indices_to_remove = Vec::<OuterIndex>::new();
 
-        // Pass order IDs grouped by outer indices for efficient use of cache
-        let mut cached_bitmap_group: Option<BitmapGroup> = None;
-        let mut cached_outer_index: Option<OuterIndex> = None;
+        let mut cached_bitmap_group: Option<(BitmapGroup, OuterIndex)> = None;
 
         for order_id_bytes in orders_to_cancel {
             let order_id = OrderId::decode(&order_id_bytes);
+
+            // market.best_bid_price updated in loop?
             let side = order_id.side(market.best_bid_price, market.best_ask_price);
 
             if let Some(ReduceOrderInnerResponse {
                 matching_engine_response,
-                should_remove_order_from_book: remove_order,
+                should_remove_order_from_book,
             }) = self.reduce_order_inner(
                 &mut trader_state,
                 trader,
@@ -205,43 +210,46 @@ impl MatchingEngine<'_> {
                 quote_lots_released += matching_engine_response.num_quote_lots_out;
                 base_lots_released += matching_engine_response.num_base_lots_out;
 
-                if remove_order {
+                // Order should be removed from the book. Flip its corresponding bitmap.
+                if should_remove_order_from_book {
                     let TickIndices {
                         outer_index,
                         inner_index,
                     } = order_id.price_in_ticks.to_indices();
 
-                    // Update cache
-                    if cached_outer_index.is_none() || cached_outer_index.unwrap() != outer_index {
-                        cached_outer_index = Some(outer_index);
-                        cached_bitmap_group =
-                            Some(BitmapGroup::new_from_slot(self.slot_storage, &outer_index));
+                    // SLOAD and cache the bitmap group. This saves us from duplicate SLOADs in future
+                    if cached_bitmap_group.is_none() || cached_bitmap_group.unwrap().1 != outer_index {
+
+                        // Write to slot before changing the cached bitmap group
+                        if let Some((old_bitmap_group, old_outer_index)) = cached_bitmap_group {
+                            old_bitmap_group.write_to_slot(self.slot_storage, &old_outer_index);
+                        }
+
+                        // Read new
+                        cached_bitmap_group = Some((
+                            BitmapGroup::new_from_slot(self.slot_storage, &outer_index),
+                            outer_index
+                        ));
                     }
 
-                    let mut bitmap_group = cached_bitmap_group.unwrap();
+                    let (mut bitmap_group, outer_index) = cached_bitmap_group.unwrap();
                     let mut mutable_bitmap = bitmap_group.get_bitmap_mut(&inner_index);
                     mutable_bitmap.clear(&order_id.resting_order_index);
 
-                    // If the group was cleared, this code will not be run again for spurious
-                    // order_ids because remove_order will be false
+                    // Remove outer index from index list if bitmap group is cleared
+                    // Outer indices of bitmap groups to be closed should be in descending order for bids and
+                    // in ascending order for asks.
                     if !bitmap_group.is_active() {
-                        let outer_index = cached_outer_index.unwrap();
-                        // Save to slot
-                        bitmap_group.set_placeholder();
-                        bitmap_group.write_to_slot(self.slot_storage, &outer_index);
 
                         if side == Side::Bid {
-                            // Bids should be in descending order of price. Each subsequent order moves away
-                            // from the center
                             if bid_indices_to_remove.last().is_some()
                                 && outer_index > *bid_indices_to_remove.last().unwrap()
                             {
                                 return None;
                             }
+
                             bid_indices_to_remove.push(outer_index);
                         } else {
-                            // Bids should be in ascending order of price. Each subsequent order moves away
-                            // from the center
                             if ask_indices_to_remove.last().is_some()
                                 && outer_index < *ask_indices_to_remove.last().unwrap()
                             {
@@ -253,6 +261,12 @@ impl MatchingEngine<'_> {
                     }
                 }
             }
+
+        }
+
+        // The last cached element is not written in the loop. It must be written at the end.
+        if let Some((old_bitmap_group, old_outer_index)) = cached_bitmap_group {
+            old_bitmap_group.write_to_slot(self.slot_storage, &old_outer_index);
         }
 
         // update index_list and best prices in market state
