@@ -8,9 +8,9 @@ use crate::{
 };
 
 use super::{
-    trader_state, BitmapGroup, BitmapGroupWithIndex, IndexList, InnerIndex, ListSlot, MarketState,
-    MatchingEngineResponse, OrderId, OuterIndex, RestingOrder, Side, SlotActions, SlotRestingOrder,
-    SlotStorage, TickIndices, TraderState,
+    market_state, trader_state, BitmapGroup, BitmapGroupWithIndex, IndexList, InnerIndex, ListSlot,
+    MarketState, MatchingEngineResponse, OrderId, OuterIndex, RestingOrder, Side, SlotActions,
+    SlotRestingOrder, SlotStorage, TickIndices, TraderState,
 };
 use alloc::vec::Vec;
 
@@ -74,7 +74,7 @@ impl MatchingEngine<'_> {
     ///
     /// # State updations
     ///
-    /// - order: Updated and stored
+    /// - order: Read, updated and stored
     /// - trader_state: Only updated
     ///
     pub fn reduce_order_inner(
@@ -167,32 +167,44 @@ impl MatchingEngine<'_> {
 
     /// Try to cancel multiple orders by ID
     ///
-    /// Current behavior- If one cancellation fails, try to cancel others.
+    /// It is possible that an order ID is already closed, and also occupied by
+    /// another trader. The current behavior is that if one cancellation fails,
+    /// continue trying to cancel others.
     ///
-    /// Order IDs should be grouped by outer_ids and by side for efficiency
+    /// Order IDs should be grouped by outer_ids and by side for efficiency.
+    ///
+    /// Cancellation involves
+    ///
+    /// - Updating trader state
+    /// - Closing the order slot
+    /// - Updating the bitmap
+    /// - Removing the outer index from index list if the outer index is closed
+    /// - Updating outer index sizes and best prices in market state
+    ///
+    /// Opportunity to use VM cache is limited to bitmap group. We need order IDs in
+    /// correct order for index list updations
+    ///
     pub fn cancel_multiple_orders_by_id_inner(
         &mut self,
         trader: Address,
         orders_to_cancel: Vec<B256>,
         claim_funds: bool,
     ) -> Option<MatchingEngineResponse> {
-        // Read
+        // Read states
         let mut market = MarketState::read_from_slot(self.slot_storage);
         let mut trader_state = TraderState::read_from_slot(self.slot_storage, trader);
 
         let mut quote_lots_released = QuoteLots::ZERO;
         let mut base_lots_released = BaseLots::ZERO;
 
-        // Outer indices to remove
-        let mut bid_indices_to_remove = Vec::<OuterIndex>::new();
-        let mut ask_indices_to_remove = Vec::<OuterIndex>::new();
-
         let mut cached_bitmap_group: Option<(BitmapGroup, OuterIndex)> = None;
+
+        let mut bid_index_list = IndexList::new(Side::Bid, market.bids_outer_indices);
+        let mut ask_index_list = IndexList::new(Side::Ask, market.asks_outer_indices);
 
         for order_id_bytes in orders_to_cancel {
             let order_id = OrderId::decode(&order_id_bytes);
 
-            // market.best_bid_price updated in loop?
             let side = order_id.side(market.best_bid_price, market.best_ask_price);
 
             if let Some(ReduceOrderInnerResponse {
@@ -218,9 +230,11 @@ impl MatchingEngine<'_> {
                     } = order_id.price_in_ticks.to_indices();
 
                     // SLOAD and cache the bitmap group. This saves us from duplicate SLOADs in future
-                    if cached_bitmap_group.is_none() || cached_bitmap_group.unwrap().1 != outer_index {
-
-                        // Write to slot before changing the cached bitmap group
+                    // Read a new bitmap group if no cache exists or if the outer index does not match
+                    if cached_bitmap_group.is_none()
+                        || cached_bitmap_group.unwrap().1 != outer_index
+                    {
+                        // Before reading a new bitmap group, write the currently cached one to slot
                         if let Some((old_bitmap_group, old_outer_index)) = cached_bitmap_group {
                             old_bitmap_group.write_to_slot(self.slot_storage, &old_outer_index);
                         }
@@ -228,7 +242,7 @@ impl MatchingEngine<'_> {
                         // Read new
                         cached_bitmap_group = Some((
                             BitmapGroup::new_from_slot(self.slot_storage, &outer_index),
-                            outer_index
+                            outer_index,
                         ));
                     }
 
@@ -240,28 +254,14 @@ impl MatchingEngine<'_> {
                     // Outer indices of bitmap groups to be closed should be in descending order for bids and
                     // in ascending order for asks.
                     if !bitmap_group.is_active() {
-
                         if side == Side::Bid {
-                            if bid_indices_to_remove.last().is_some()
-                                && outer_index > *bid_indices_to_remove.last().unwrap()
-                            {
-                                return None;
-                            }
-
-                            bid_indices_to_remove.push(outer_index);
+                            bid_index_list.remove(outer_index, self.slot_storage).ok();
                         } else {
-                            if ask_indices_to_remove.last().is_some()
-                                && outer_index < *ask_indices_to_remove.last().unwrap()
-                            {
-                                return None;
-                            }
-
-                            ask_indices_to_remove.push(outer_index);
+                            ask_index_list.remove(outer_index, self.slot_storage).ok();
                         }
                     }
                 }
             }
-
         }
 
         // The last cached element is not written in the loop. It must be written at the end.
@@ -269,54 +269,15 @@ impl MatchingEngine<'_> {
             old_bitmap_group.write_to_slot(self.slot_storage, &old_outer_index);
         }
 
-        // update index_list and best prices in market state
-        for (side, indices_to_remove, outer_indices_count, best_price) in [
-            (
-                Side::Bid,
-                &mut bid_indices_to_remove,
-                &mut market.bids_outer_indices,
-                &mut market.best_bid_price,
-            ),
-            (
-                Side::Ask,
-                &mut ask_indices_to_remove,
-                &mut market.asks_outer_indices,
-                &mut market.best_ask_price,
-            ),
-        ] {
-            let mut index_list = IndexList::new(self.slot_storage, outer_indices_count);
+        bid_index_list.write_to_slot(self.slot_storage);
+        ask_index_list.write_to_slot(self.slot_storage);
 
-            // Remove indices from index_list
-            if !indices_to_remove.is_empty() {
-                index_list.remove_multiple(indices_to_remove.clone());
-            }
+        // Update market state
+        market.bids_outer_indices = bid_index_list.size;
+        market.asks_outer_indices = ask_index_list.size;
 
-            // Find new best prices to be stored in MarketState
-
-            let best_outer_index = index_list.get_best_outer_index();
-
-            let TickIndices {
-                outer_index,
-                inner_index,
-            } = best_price.to_indices();
-
-            // Inner index of old best price
-            let old_best_inner_index = if best_outer_index == outer_index {
-                Some(inner_index)
-            } else {
-                // If the best_outer_index has changed, this is not needed
-                None
-            };
-
-            let best_bitmap_group =
-                BitmapGroup::new_from_slot(self.slot_storage, &best_outer_index);
-
-            let best_inner_index = best_bitmap_group
-                .get_best_inner_index(side, old_best_inner_index)
-                .unwrap();
-
-            *best_price = Ticks::from_indices(outer_index, best_inner_index);
-        }
+        market.update_best_price(&bid_index_list, self.slot_storage);
+        market.update_best_price(&ask_index_list, self.slot_storage);
 
         // write market state, trader state
         market.write_to_slot(self.slot_storage).ok();

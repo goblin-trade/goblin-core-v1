@@ -10,7 +10,9 @@
 /// Each tick group index is made of 2 bits in big endian format. This means that
 /// each ListItem contains 16 outer indices.
 use crate::{
+    program::{GoblinError, OrderIdsNotInOrderError},
     quantities::Ticks,
+    require,
     state::{
         slot_storage, OuterIndex, Side, SlotActions, SlotKey, SlotStorage, TickIndices,
         LIST_KEY_SEED,
@@ -94,98 +96,200 @@ impl ListSlot {
 }
 
 /// High level structure for the index list with getter and setter functions
-pub struct IndexList<'a> {
-    pub slot_storage: &'a mut SlotStorage,
+pub struct IndexList {
+    /// Whether list is for bids or asks
+    pub side: Side,
 
-    /// Number of active outer indices in the list
-    /// The number of slots is given as size / 16 and index of an item is given as size % 16
-    pub size: &'a mut u16,
+    /// Number of active outer indices in the list that have not been cached
+    /// The number of slots is found as size / 16 and index of an item is found as size % 16
+    pub size: u16,
+
+    /// Outer indices cached to memory. Used to temporarily store values when
+    /// removing an index. Values on right side of the removed value are stored here.
+    pub cached_values: Vec<OuterIndex>,
 
     /// Cached outer index closest to the centre
     pub cached_best_outer_index: Option<OuterIndex>,
+
+    /// Cached current slot
+    pub cached_slot: Option<ListSlot>,
 }
 
-impl IndexList<'_> {
-    pub fn new<'a>(slot_storage: &'a mut SlotStorage, size: &'a mut u16) -> IndexList<'a> {
+impl IndexList {
+    pub fn new(side: Side, size: u16) -> IndexList {
         IndexList {
-            slot_storage,
+            side,
             size,
+            cached_values: Vec::new(),
+
             cached_best_outer_index: None,
+            cached_slot: None,
         }
     }
 
-    pub fn get_best_outer_index(&mut self) -> OuterIndex {
+    /// Get the best outer index. This is the outermost value in this list with the greatest index.
+    ///
+    /// If remove() was called, only call this function after performing write_to_slot()
+    ///
+    pub fn get_best_outer_index(&self, slot_storage: &SlotStorage) -> OuterIndex {
         if self.cached_best_outer_index.is_some() {
             return self.cached_best_outer_index.unwrap();
         } else {
-            let slot_index = *self.size / 16;
-            let relative_index = *self.size as usize % 16;
+            // There is no cache if no index was removed from the list. We need to read from slot.
+            let slot_index = self.size / 16;
+            let relative_index = self.size as usize % 16;
 
             let key = ListKey { index: slot_index };
-            let current_slot = ListSlot::new_from_slot(self.slot_storage, &key);
+            let current_slot = ListSlot::new_from_slot(slot_storage, &key);
 
             current_slot.get(relative_index)
         }
     }
 
-    // for now assume that the best outer index is also stored in list
-    pub fn remove_multiple(&mut self, mut values_to_remove: Vec<OuterIndex>) {
-        // cached values to be added back in the list. They are stored in the order opposit
-        // of the index_list. I.e. for bids, inner values go to start of `read_values`
-        let mut cached_values = Vec::<OuterIndex>::new();
-        let mut current_slot = ListSlot::default();
+    /// Remove an outer index from the list
+    ///
+    /// The updated list is not stored. Call write_to_slot() to persist.
+    ///
+    /// # Arguments
+    ///
+    /// * `value_to_remove` - The outer index to remove
+    ///
+    pub fn remove(
+        &mut self,
+        value_to_remove: OuterIndex,
+        slot_storage: &SlotStorage,
+    ) -> Result<(), GoblinError> {
+        if let Some(outermost_index) = self.cached_values.last() {
+            require!(
+                (self.side == Side::Bid && value_to_remove < *outermost_index)
+                    || (self.side == Side::Ask && value_to_remove > *outermost_index),
+                GoblinError::OrderIdsNotInOrderError(OrderIdsNotInOrderError {})
+            );
+        }
 
-        // Loop through IndexList slot from behind
-        let mut i = *self.size;
-        while i > 0 && !values_to_remove.is_empty() {
-            i -= 1;
-            let slot_index = i / 16;
-            let relative_index = i as usize % 16;
+        // Keep reading from index list till the value_to_remove is found
+        // Cache items on the right
+        while self.size > 0 {
+            self.size -= 1;
 
-            // Load from slot
-            if i == *self.size - 1 || relative_index == 15 {
+            let slot_index = self.size / 16;
+            let relative_index = self.size as usize % 16;
+
+            // Load a new slot and cache it
+            if self.cached_slot.is_none() || relative_index == 15 {
                 let key = ListKey { index: slot_index };
-                current_slot = ListSlot::new_from_slot(self.slot_storage, &key);
+                self.cached_slot = Some(ListSlot::new_from_slot(slot_storage, &key));
             }
 
+            let current_slot = self.cached_slot.as_ref().unwrap();
             let current_value = current_slot.get(relative_index);
 
-            if current_value == *values_to_remove.last().unwrap() {
-                // item to remove found
-                values_to_remove.pop();
-                *self.size -= 1;
+            if current_value == value_to_remove {
+                break;
             } else {
-                cached_values.push(current_value);
+                self.cached_values.push(current_value);
             }
         }
 
-        // read from the end of read_values list. The end contains the smaller elements
-        // update current slot, and all slots to the right
-        for j in 0..cached_values.len() {
-            let value_to_add = cached_values[cached_values.len() - 1 - j];
+        Ok(())
+    }
 
-            let absolute_index = i as usize + j;
-            let slot_index = absolute_index / 16;
-            let relative_index = absolute_index % 16;
+    /// Write the cached index list to slot
+    ///
+    /// Values from `cached_values` are read one by one and written to current_slot.
+    /// current_slot is written to slot when its gets full or the `cached_values` list is exhausted.
+    ///
+    pub fn write_to_slot(&mut self, slot_storage: &mut SlotStorage) {
+        // begin with index self.size. Add elements from cached_values to list
+        for j in 0..self.cached_values.len() {
+            // Absolute index of the value to write
+            let index = self.size as usize + j;
+            let slot_index = index / 16;
+            let relative_index = index % 16;
 
+            let current_slot = self.cached_slot.as_mut().unwrap();
+
+            let value_to_add = self.cached_values.pop().unwrap();
             current_slot.set(relative_index, value_to_add);
 
-            // Slot fully populated or list exhausted
-            if j == cached_values.len() - 1 || relative_index == 15 {
+            if self.cached_values.is_empty() || relative_index == 15 {
                 // Write
-                let key = ListKey {
+                let slot_key = ListKey {
                     index: slot_index as u16,
                 };
-                current_slot.write_to_slot(self.slot_storage, &key);
+                current_slot.write_to_slot(slot_storage, &slot_key);
+
+                // Clear the in-memory slot
                 current_slot.inner = [0u16; 16];
             }
 
-            // Cache the best outer index
-            if j == cached_values.len() - 1 {
+            self.size += 1;
+
+            // Cache the best index after write is complete. This will be used in get_best_outer_index()
+            if self.cached_values.is_empty() {
                 self.cached_best_outer_index = Some(value_to_add);
             }
         }
     }
+
+    // for now assume that the best outer index is also stored in list
+    // pub fn remove_multiple(&mut self, mut values_to_remove: Vec<OuterIndex>) {
+    //     // cached values to be added back in the list. They are stored in the order opposite
+    //     // of the index_list. I.e. for bids, inner values go to start of `read_values`
+    //     let mut cached_values = Vec::<OuterIndex>::new();
+    //     let mut current_slot = ListSlot::default();
+
+    //     // Loop through IndexList slot from behind
+    //     let mut i = *self.size;
+    //     while i > 0 && !values_to_remove.is_empty() {
+    //         i -= 1;
+    //         let slot_index = i / 16;
+    //         let relative_index = i as usize % 16;
+
+    //         // Load from slot
+    //         if i == *self.size - 1 || relative_index == 15 {
+    //             let key = ListKey { index: slot_index };
+    //             current_slot = ListSlot::new_from_slot(self.slot_storage, &key);
+    //         }
+
+    //         let current_value = current_slot.get(relative_index);
+
+    //         if current_value == *values_to_remove.last().unwrap() {
+    //             // item to remove found
+    //             values_to_remove.pop();
+    //             *self.size -= 1;
+    //         } else {
+    //             cached_values.push(current_value);
+    //         }
+    //     }
+
+    //     // read from the end of read_values list. The end contains the smaller elements
+    //     // update current slot, and all slots to the right
+    //     for j in 0..cached_values.len() {
+    //         let value_to_add = cached_values[cached_values.len() - 1 - j];
+
+    //         let absolute_index = i as usize + j;
+    //         let slot_index = absolute_index / 16;
+    //         let relative_index = absolute_index % 16;
+
+    //         current_slot.set(relative_index, value_to_add);
+
+    //         // Slot fully populated or list exhausted
+    //         if j == cached_values.len() - 1 || relative_index == 15 {
+    //             // Write
+    //             let key = ListKey {
+    //                 index: slot_index as u16,
+    //             };
+    //             current_slot.write_to_slot(self.slot_storage, &key);
+    //             current_slot.inner = [0u16; 16];
+    //         }
+
+    //         // Cache the best outer index
+    //         if j == cached_values.len() - 1 {
+    //             self.cached_best_outer_index = Some(value_to_add);
+    //         }
+    //     }
+    // }
 
     // /// Remove an outer index from the list
     // /// Items on the right are left shifted

@@ -60,6 +60,11 @@ impl OrderId {
         }
     }
 
+    /// Find the side of an active resting order (not a new order being placed)
+    ///
+    /// An active bid cannot have a price more than the best bid price,
+    /// and an active ask cannot have a price lower than the best ask price.
+    ///
     pub fn side(&self, best_bid_price: Ticks, best_ask_price: Ticks) -> Side {
         if self.price_in_ticks >= best_ask_price {
             Side::Ask

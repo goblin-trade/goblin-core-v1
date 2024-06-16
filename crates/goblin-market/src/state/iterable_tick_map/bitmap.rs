@@ -52,14 +52,25 @@ impl BitmapGroup {
         ];
     }
 
-    pub fn get_best_inner_index(
+    /// Get the best active inner index in a bitmap group.
+    ///
+    /// Returns None if there is no active index. Externally ensure that this is called on an active
+    /// bitmap group.
+    ///
+    /// # Arguments
+    ///
+    /// * `side`
+    /// * `previous_inner_index` - The previous best inner index, optional. If no value is
+    /// provided search from the end. If provided, search beginning from this index.
+    ///
+    pub fn best_active_index(
         &self,
         side: Side,
-        old_best_inner_index: Option<InnerIndex>,
+        previous_inner_index: Option<InnerIndex>,
     ) -> Option<InnerIndex> {
         match side {
             Side::Bid => {
-                let highest_index = old_best_inner_index.map(|i| i.as_usize()).unwrap_or(32);
+                let highest_index = previous_inner_index.map(|i| i.as_usize()).unwrap_or(32);
 
                 // Start from the highest index and move backwards
                 for i in (0..highest_index).rev() {
@@ -69,7 +80,7 @@ impl BitmapGroup {
                 }
             }
             Side::Ask => {
-                let lowest_index = old_best_inner_index.map(|i| i.as_usize() + 1).unwrap_or(0);
+                let lowest_index = previous_inner_index.map(|i| i.as_usize() + 1).unwrap_or(0);
 
                 // Start from the lowest index and move forwards
                 for i in lowest_index..32 {

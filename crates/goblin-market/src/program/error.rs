@@ -14,6 +14,8 @@ sol! {
     // Exceed max tick size of 2^21 - 1
     error ExceedTickSizeError();
 
+    error OrderIdsNotInOrderError();
+
     // Not used yet- to check
 
     // Invalid instruction data error
@@ -100,6 +102,7 @@ pub enum GoblinError {
     InvalidFeeCollector(InvalidFeeCollector),
     ExceedRestingOrderSizeError(ExceedRestingOrderSizeError),
     ExceedTickSizeError(ExceedTickSizeError),
+    OrderIdsNotInOrderError(OrderIdsNotInOrderError),
 
     InvalidInstructionData(InvalidInstructionData),
     InvalidMarketParameters(InvalidMarketParameters),
