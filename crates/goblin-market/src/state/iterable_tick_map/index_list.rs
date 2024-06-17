@@ -57,7 +57,7 @@ impl SlotKey for ListKey {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct ListSlot {
     pub inner: [u16; 16],
 }
@@ -136,11 +136,20 @@ impl IndexList {
             return self.cached_best_outer_index.unwrap();
         } else {
             // There is no cache if no index was removed from the list. We need to read from slot.
-            let slot_index = self.size / 16;
-            let relative_index = self.size as usize % 16;
+            let slot_index = (self.size - 1) / 16;
+            let relative_index = (self.size - 1) as usize % 16;
+
+            #[cfg(test)]
+            println!(
+                "slot_index {}, relative_index {}",
+                slot_index, relative_index
+            );
 
             let key = ListKey { index: slot_index };
             let current_slot = ListSlot::new_from_slot(slot_storage, &key);
+
+            #[cfg(test)]
+            println!("got slot  {:?}", current_slot.inner);
 
             current_slot.get(relative_index)
         }
@@ -152,12 +161,13 @@ impl IndexList {
     ///
     /// # Arguments
     ///
+    /// * `slot_storage`
     /// * `value_to_remove` - The outer index to remove
     ///
     pub fn remove(
         &mut self,
-        value_to_remove: OuterIndex,
         slot_storage: &SlotStorage,
+        value_to_remove: OuterIndex,
     ) -> Result<(), GoblinError> {
         if let Some(outermost_index) = self.cached_values.last() {
             require!(
@@ -181,8 +191,11 @@ impl IndexList {
                 self.cached_slot = Some(ListSlot::new_from_slot(slot_storage, &key));
             }
 
-            let current_slot = self.cached_slot.as_ref().unwrap();
+            let current_slot = self.cached_slot.as_mut().unwrap();
             let current_value = current_slot.get(relative_index);
+
+            // Remove elements from current slot. Move them to `cached_values` stash
+            current_slot.set(relative_index, OuterIndex::new(0));
 
             if current_value == value_to_remove {
                 break;
@@ -194,42 +207,58 @@ impl IndexList {
         Ok(())
     }
 
-    /// Write the cached index list to slot
+    /// Write the cached index list to slot. The list is reconstructed from the current
+    /// cached slot and the cached stash of values.
     ///
-    /// Values from `cached_values` are read one by one and written to current_slot.
-    /// current_slot is written to slot when its gets full or the `cached_values` list is exhausted.
+    /// No-op if cached_slot is None, i.e. if remove() was never called.
     ///
     pub fn write_to_slot(&mut self, slot_storage: &mut SlotStorage) {
-        // begin with index self.size. Add elements from cached_values to list
-        for j in 0..self.cached_values.len() {
-            // Absolute index of the value to write
-            let index = self.size as usize + j;
-            let slot_index = index / 16;
-            let relative_index = index % 16;
+        // Absolute index of the value to write
 
-            let current_slot = self.cached_slot.as_mut().unwrap();
-
-            let value_to_add = self.cached_values.pop().unwrap();
-            current_slot.set(relative_index, value_to_add);
-
-            if self.cached_values.is_empty() || relative_index == 15 {
-                // Write
-                let slot_key = ListKey {
-                    index: slot_index as u16,
-                };
-                current_slot.write_to_slot(slot_storage, &slot_key);
-
-                // Clear the in-memory slot
-                current_slot.inner = [0u16; 16];
-            }
-
-            self.size += 1;
-
-            // Cache the best index after write is complete. This will be used in get_best_outer_index()
+        if let Some(cached_slot) = self.cached_slot.as_mut() {
+            // No stash case. Simply write the cached slot
             if self.cached_values.is_empty() {
-                self.cached_best_outer_index = Some(value_to_add);
+                let slot_key = ListKey {
+                    index: self.size / 16,
+                };
+
+                // Write cached slot
+                cached_slot.write_to_slot(slot_storage, &slot_key);
+            } else {
+                // Stash present. Write values one by one.
+                for index in (self.size as usize)..(self.size as usize + self.cached_values.len()) {
+                    let slot_index = index / 16;
+                    let relative_index = index % 16;
+
+                    let value_to_add = self.cached_values.pop().unwrap();
+                    cached_slot.set(relative_index, value_to_add);
+
+                    #[cfg(test)]
+                    println!("writing {} at index {}", value_to_add.as_u16(), index);
+
+                    if self.cached_values.is_empty() || relative_index == 15 {
+                        // Write
+                        let slot_key = ListKey {
+                            index: slot_index as u16,
+                        };
+                        cached_slot.write_to_slot(slot_storage, &slot_key);
+
+                        // Clear the in-memory slot for further writes
+                        cached_slot.inner = [0u16; 16];
+                    }
+
+                    self.size += 1;
+
+                    // Cache the best index after write is complete. This will be used in get_best_outer_index()
+                    // cached_best_outer_index is not stored if there was no cached stash
+                    if self.cached_values.is_empty() {
+                        self.cached_best_outer_index = Some(value_to_add);
+                    }
+                }
             }
         }
+
+        self.cached_slot = None;
     }
 
     // for now assume that the best outer index is also stored in list
@@ -471,6 +500,148 @@ mod test {
                 0, 0, 1, 0, 2, 0, 3, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 0,
             ]
+        );
+    }
+
+    #[test]
+    fn test_remove_outermost() {
+        let mut slot_storage = SlotStorage::new();
+
+        // Insert initial values in list
+        let mut list_slot = ListSlot {
+            inner: [0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        };
+        let list_key = ListKey { index: 0 };
+
+        list_slot.write_to_slot(&mut slot_storage, &list_key);
+
+        let side = Side::Bid;
+        let size = 4;
+        let mut index_list = IndexList::new(side, size);
+
+        let outer_index = index_list.get_best_outer_index(&slot_storage);
+        assert_eq!(outer_index.as_u16(), 3);
+
+        // Remove outermost value. Nothing gets pushed to cache
+        index_list
+            .remove(&slot_storage, OuterIndex::new(3))
+            .unwrap();
+        assert_eq!(index_list.size, 3);
+        assert_eq!(index_list.cached_values.len(), 0);
+        assert!(index_list.cached_best_outer_index.is_none());
+
+        assert_eq!(
+            index_list.cached_slot.as_ref().unwrap().inner,
+            [0, 1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        );
+
+        index_list.write_to_slot(&mut slot_storage);
+        assert_eq!(index_list.size, 3);
+        assert_eq!(index_list.cached_values.len(), 0);
+        assert!(index_list.cached_best_outer_index.is_none());
+        assert!(index_list.cached_slot.is_none());
+
+        list_slot = ListSlot::new_from_slot(&slot_storage, &list_key);
+        assert_eq!(
+            list_slot.inner,
+            [0, 1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,]
+        );
+    }
+
+    #[test]
+    fn test_remove_inner() {
+        let mut slot_storage = SlotStorage::new();
+
+        // Insert initial values in list
+        let mut list_slot = ListSlot {
+            inner: [0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        };
+        let list_key = ListKey { index: 0 };
+
+        list_slot.write_to_slot(&mut slot_storage, &list_key);
+
+        let side = Side::Bid;
+        let size = 4;
+        let mut index_list = IndexList::new(side, size);
+
+        // Remove an inner element. Values to the right of this value are cached
+        index_list
+            .remove(&slot_storage, OuterIndex::new(1))
+            .unwrap();
+
+        assert_eq!(index_list.size, 1);
+
+        let cached_values: Vec<u16> = index_list
+            .cached_values
+            .iter()
+            .map(|cached| cached.as_u16())
+            .collect();
+        assert_eq!(cached_values, vec![3, 2]);
+        assert!(index_list.cached_best_outer_index.is_none());
+
+        assert_eq!(
+            index_list.cached_slot.as_ref().unwrap().inner,
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        );
+
+        index_list.write_to_slot(&mut slot_storage);
+        assert_eq!(index_list.size, 3);
+        assert_eq!(index_list.cached_values.len(), 0);
+        assert_eq!(index_list.cached_best_outer_index.unwrap().as_u16(), 3);
+        assert!(index_list.cached_slot.is_none());
+
+        list_slot = ListSlot::new_from_slot(&slot_storage, &list_key);
+        assert_eq!(
+            list_slot.inner,
+            [0, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,]
+        );
+    }
+
+    #[test]
+    fn test_remove_inner_zero() {
+        let mut slot_storage = SlotStorage::new();
+
+        // Insert initial values in list
+        let mut list_slot = ListSlot {
+            inner: [0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        };
+        let list_key = ListKey { index: 0 };
+
+        list_slot.write_to_slot(&mut slot_storage, &list_key);
+
+        let side = Side::Bid;
+        let size = 4;
+        let mut index_list = IndexList::new(side, size);
+
+        // Remove an inner element. Values to the right of this value are cached
+        index_list
+            .remove(&slot_storage, OuterIndex::new(0))
+            .unwrap();
+        assert_eq!(index_list.size, 0);
+
+        let cached_values: Vec<u16> = index_list
+            .cached_values
+            .iter()
+            .map(|cached| cached.as_u16())
+            .collect();
+        assert_eq!(cached_values, vec![3, 2, 1]);
+        assert!(index_list.cached_best_outer_index.is_none());
+
+        assert_eq!(
+            index_list.cached_slot.as_ref().unwrap().inner,
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        );
+
+        index_list.write_to_slot(&mut slot_storage);
+        assert_eq!(index_list.size, 3);
+        assert_eq!(index_list.cached_values.len(), 0);
+        assert_eq!(index_list.cached_best_outer_index.unwrap().as_u16(), 3);
+        assert!(index_list.cached_slot.is_none());
+
+        list_slot = ListSlot::new_from_slot(&slot_storage, &list_key);
+        assert_eq!(
+            list_slot.inner,
+            [1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         );
     }
 

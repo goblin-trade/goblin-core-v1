@@ -255,9 +255,9 @@ impl MatchingEngine<'_> {
                     // in ascending order for asks.
                     if !bitmap_group.is_active() {
                         if side == Side::Bid {
-                            bid_index_list.remove(outer_index, self.slot_storage).ok();
+                            bid_index_list.remove(self.slot_storage, outer_index).ok();
                         } else {
-                            ask_index_list.remove(outer_index, self.slot_storage).ok();
+                            ask_index_list.remove(self.slot_storage, outer_index).ok();
                         }
                     }
                 }
