@@ -10,7 +10,7 @@
 /// Each tick group index is made of 2 bits in big endian format. This means that
 /// each ListItem contains 16 outer indices.
 use crate::{
-    program::{GoblinError, OrderIdsNotInOrderError},
+    program::{GoblinError, IndexNotFoundError, IndicesNotInOrderError},
     quantities::Ticks,
     require,
     state::{
@@ -173,7 +173,7 @@ impl IndexList {
             require!(
                 (self.side == Side::Bid && value_to_remove < *outermost_index)
                     || (self.side == Side::Ask && value_to_remove > *outermost_index),
-                GoblinError::OrderIdsNotInOrderError(OrderIdsNotInOrderError {})
+                GoblinError::IndicesNotInOrderError(IndicesNotInOrderError {})
             );
         }
 
@@ -199,8 +199,10 @@ impl IndexList {
 
             if current_value == value_to_remove {
                 break;
-            } else {
+            } else if self.size != 0 {
                 self.cached_values.push(current_value);
+            } else {
+                return Err(GoblinError::IndexNotFoundError(IndexNotFoundError {}));
             }
         }
 
@@ -538,6 +540,7 @@ mod test {
         index_list.write_to_slot(&mut slot_storage);
         assert_eq!(index_list.size, 3);
         assert_eq!(index_list.cached_values.len(), 0);
+        // No cached outer index since the stash was never populated
         assert!(index_list.cached_best_outer_index.is_none());
         assert!(index_list.cached_slot.is_none());
 
@@ -643,6 +646,256 @@ mod test {
             list_slot.inner,
             [1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         );
+    }
+
+    #[test]
+    fn test_remove_multiple_then_write() {
+        let mut slot_storage = SlotStorage::new();
+
+        // Insert initial values in list
+        let mut list_slot = ListSlot {
+            inner: [0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        };
+        let list_key = ListKey { index: 0 };
+
+        list_slot.write_to_slot(&mut slot_storage, &list_key);
+
+        let side = Side::Bid;
+        let size = 4;
+        let mut index_list = IndexList::new(side, size);
+
+        index_list
+            .remove(&slot_storage, OuterIndex::new(2))
+            .unwrap();
+
+        index_list
+            .remove(&slot_storage, OuterIndex::new(1))
+            .unwrap();
+
+        assert_eq!(index_list.size, 1);
+
+        let cached_values: Vec<u16> = index_list
+            .cached_values
+            .iter()
+            .map(|cached| cached.as_u16())
+            .collect();
+        assert_eq!(cached_values, vec![3]);
+        assert!(index_list.cached_best_outer_index.is_none());
+
+        assert_eq!(
+            index_list.cached_slot.as_ref().unwrap().inner,
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        );
+
+        index_list.write_to_slot(&mut slot_storage);
+
+        assert_eq!(index_list.size, 2);
+        assert_eq!(index_list.cached_values.len(), 0);
+        assert_eq!(index_list.cached_best_outer_index.unwrap().as_u16(), 3);
+        assert!(index_list.cached_slot.is_none());
+
+        list_slot = ListSlot::new_from_slot(&slot_storage, &list_key);
+        assert_eq!(
+            list_slot.inner,
+            [0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        );
+    }
+
+    #[test]
+    fn test_remove_single_across_two_slots() {
+        let mut slot_storage = SlotStorage::new();
+
+        let mut list_slot_0 = ListSlot {
+            inner: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+        };
+        let list_key_0 = ListKey { index: 0 };
+
+        list_slot_0.write_to_slot(&mut slot_storage, &list_key_0);
+
+        let mut list_slot_1 = ListSlot {
+            inner: [16, 17, 18, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        };
+        let list_key_1 = ListKey { index: 1 };
+
+        list_slot_1.write_to_slot(&mut slot_storage, &list_key_1);
+
+        let side = Side::Bid;
+        let size = 19;
+        let mut index_list = IndexList::new(side, size);
+
+        index_list
+            .remove(&slot_storage, OuterIndex::new(15))
+            .unwrap();
+
+        assert_eq!(index_list.size, 15);
+
+        let cached_values: Vec<u16> = index_list
+            .cached_values
+            .iter()
+            .map(|cached| cached.as_u16())
+            .collect();
+        assert_eq!(cached_values, vec![18, 17, 16]);
+        assert!(index_list.cached_best_outer_index.is_none());
+
+        assert_eq!(
+            index_list.cached_slot.as_ref().unwrap().inner,
+            [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 0]
+        );
+
+        index_list.write_to_slot(&mut slot_storage);
+
+        assert_eq!(index_list.size, 18);
+        assert_eq!(index_list.cached_values.len(), 0);
+        assert_eq!(index_list.cached_best_outer_index.unwrap().as_u16(), 18);
+        assert!(index_list.cached_slot.is_none());
+
+        list_slot_0 = ListSlot::new_from_slot(&slot_storage, &list_key_0);
+        assert_eq!(
+            list_slot_0.inner,
+            [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16]
+        );
+
+        list_slot_1 = ListSlot::new_from_slot(&slot_storage, &list_key_1);
+        assert_eq!(
+            list_slot_1.inner,
+            [17, 18, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        );
+    }
+
+    #[test]
+    fn test_remove_multiple_across_two_slots() {
+        let mut slot_storage = SlotStorage::new();
+
+        let mut list_slot_0 = ListSlot {
+            inner: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+        };
+        let list_key_0 = ListKey { index: 0 };
+
+        list_slot_0.write_to_slot(&mut slot_storage, &list_key_0);
+
+        let mut list_slot_1 = ListSlot {
+            inner: [16, 17, 18, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        };
+        let list_key_1 = ListKey { index: 1 };
+
+        list_slot_1.write_to_slot(&mut slot_storage, &list_key_1);
+
+        let side = Side::Bid;
+        let size = 19;
+        let mut index_list = IndexList::new(side, size);
+
+        index_list
+            .remove(&slot_storage, OuterIndex::new(17))
+            .unwrap();
+
+        index_list
+            .remove(&slot_storage, OuterIndex::new(14))
+            .unwrap();
+
+        assert_eq!(index_list.size, 14);
+
+        let cached_values: Vec<u16> = index_list
+            .cached_values
+            .iter()
+            .map(|cached| cached.as_u16())
+            .collect();
+        assert_eq!(cached_values, vec![18, 16, 15]);
+        assert!(index_list.cached_best_outer_index.is_none());
+
+        assert_eq!(
+            index_list.cached_slot.as_ref().unwrap().inner,
+            [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 0, 0]
+        );
+
+        index_list.write_to_slot(&mut slot_storage);
+
+        assert_eq!(index_list.size, 17);
+        assert_eq!(index_list.cached_values.len(), 0);
+        assert_eq!(index_list.cached_best_outer_index.unwrap().as_u16(), 18);
+        assert!(index_list.cached_slot.is_none());
+
+        list_slot_0 = ListSlot::new_from_slot(&slot_storage, &list_key_0);
+        assert_eq!(
+            list_slot_0.inner,
+            [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16]
+        );
+
+        list_slot_1 = ListSlot::new_from_slot(&slot_storage, &list_key_1);
+        assert_eq!(
+            list_slot_1.inner,
+            [18, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        );
+    }
+
+    #[test]
+    fn test_remove_multiple_fails_if_wrong_order_for_bids() {
+        let mut slot_storage = SlotStorage::new();
+
+        // Insert initial values in list
+        let list_slot = ListSlot {
+            inner: [0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        };
+        let list_key = ListKey { index: 0 };
+
+        list_slot.write_to_slot(&mut slot_storage, &list_key);
+
+        let side = Side::Bid;
+        let size = 4;
+        let mut index_list = IndexList::new(side, size);
+
+        index_list
+            .remove(&slot_storage, OuterIndex::new(2))
+            .unwrap();
+
+        assert!(index_list
+            .remove(&slot_storage, OuterIndex::new(3))
+            .is_err());
+    }
+
+    #[test]
+    fn test_remove_multiple_fails_if_wrong_order_for_asks() {
+        let mut slot_storage = SlotStorage::new();
+
+        // Insert initial values in list
+        let list_slot = ListSlot {
+            inner: [10, 9, 8, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        };
+        let list_key = ListKey { index: 0 };
+
+        list_slot.write_to_slot(&mut slot_storage, &list_key);
+
+        let side = Side::Ask;
+        let size = 4;
+        let mut index_list = IndexList::new(side, size);
+
+        index_list
+            .remove(&slot_storage, OuterIndex::new(9))
+            .unwrap();
+
+        assert!(index_list
+            .remove(&slot_storage, OuterIndex::new(8))
+            .is_err());
+    }
+
+    #[test]
+    fn test_remove_fails_if_value_not_found() {
+        let mut slot_storage = SlotStorage::new();
+
+        // Insert initial values in list
+        let list_slot = ListSlot {
+            inner: [0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        };
+        let list_key = ListKey { index: 0 };
+
+        list_slot.write_to_slot(&mut slot_storage, &list_key);
+
+        let side = Side::Bid;
+        let size = 4;
+        let mut index_list = IndexList::new(side, size);
+
+        assert!(index_list
+            .remove(&slot_storage, OuterIndex::new(100))
+            .is_err());
     }
 
     // #[test]

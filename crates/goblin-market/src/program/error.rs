@@ -14,7 +14,11 @@ sol! {
     // Exceed max tick size of 2^21 - 1
     error ExceedTickSizeError();
 
-    error OrderIdsNotInOrderError();
+    // Outer indices are not in correct order
+    error IndicesNotInOrderError();
+
+    // Outer index is not in list
+    error IndexNotFoundError();
 
     // Not used yet- to check
 
@@ -102,7 +106,8 @@ pub enum GoblinError {
     InvalidFeeCollector(InvalidFeeCollector),
     ExceedRestingOrderSizeError(ExceedRestingOrderSizeError),
     ExceedTickSizeError(ExceedTickSizeError),
-    OrderIdsNotInOrderError(OrderIdsNotInOrderError),
+    IndicesNotInOrderError(IndicesNotInOrderError),
+    IndexNotFoundError(IndexNotFoundError),
 
     InvalidInstructionData(InvalidInstructionData),
     InvalidMarketParameters(InvalidMarketParameters),
