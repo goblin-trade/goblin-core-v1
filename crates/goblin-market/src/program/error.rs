@@ -23,6 +23,10 @@ sol! {
     // Failed to reduce error. Thrown in revert_if_fail mode
     error FailedToReduce();
 
+    // Invalid number passed as FailedMultipleLimitOrderBehavior
+    error UndefinedFailedMultipleLimitOrderBehavior();
+
+
     // Not used yet- to check
 
     // Invalid instruction data error
@@ -112,6 +116,7 @@ pub enum GoblinError {
     IndicesNotInOrder(IndicesNotInOrder),
     IndexNotInList(IndexNotInList),
     FailedToReduce(FailedToReduce),
+    UndefinedFailedMultipleLimitOrderBehavior(UndefinedFailedMultipleLimitOrderBehavior),
 
     InvalidInstructionData(InvalidInstructionData),
     InvalidMarketParameters(InvalidMarketParameters),

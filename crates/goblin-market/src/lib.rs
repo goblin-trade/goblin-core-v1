@@ -13,8 +13,9 @@ static ALLOC: mini_alloc::MiniAlloc = mini_alloc::MiniAlloc::INIT;
 use crate::program::GoblinResult;
 use alloc::vec::Vec;
 use program::{
+    new_order,
     processor::{deposit, fees, withdraw},
-    reduce_multiple_orders,
+    reduce_multiple_orders, FailedMultipleLimitOrderBehavior,
 };
 use state::{SlotActions, SlotStorage, TraderState};
 use stylus_sdk::{
@@ -63,6 +64,37 @@ impl GoblinMarket {
         order_packets: Vec<B256>,
     ) -> GoblinResult<()> {
         reduce_multiple_orders::process_reduce_multiple_orders(self, order_packets, None)
+    }
+
+    /// Place multiple post-only orders. Used for market making
+    ///
+    /// # Arguments
+    ///
+    /// * `to` - Credit posted orders to this trader
+    /// * `failed_multiple_limit_order_behavior` - Trade behavior if one of the orders fails
+    /// * `bids`
+    /// * `asks`
+    /// * `client_order_id` - ID provided by trader to uniquely identify this order. It is only emitted
+    /// in the event and has no impact on trades. Pass 0 as the default value.
+    /// * `use_free_funds` - Whether to use free funds, or transfer new tokens in to place these orders
+    ///
+    pub fn place_multiple_post_only_orders(
+        &mut self,
+        to: Address,
+        failed_multiple_limit_order_behavior: u8,
+        bids: Vec<B256>,
+        asks: Vec<B256>,
+        client_order_id: u128,
+        use_free_funds: bool,
+    ) -> GoblinResult<()> {
+        new_order::process_multiple_new_orders(
+            to,
+            FailedMultipleLimitOrderBehavior::decode(failed_multiple_limit_order_behavior)?,
+            bids,
+            asks,
+            client_order_id,
+            use_free_funds,
+        )
     }
 
     // TODO how to return struct? Facing AbiType trait error

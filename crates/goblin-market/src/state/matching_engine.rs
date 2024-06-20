@@ -2,7 +2,10 @@ use stylus_sdk::alloy_primitives::{Address, B256};
 
 use crate::{
     parameters::{BASE_LOTS_PER_BASE_UNIT, TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT},
-    program::{FailedToReduce, GoblinError, GoblinResult, ReduceOrderPacket},
+    program::{
+        new_order::FailedMultipleLimitOrderBehavior, FailedToReduce, GoblinError, GoblinResult,
+        ReduceOrderPacket,
+    },
     quantities::{BaseLots, QuoteLots},
 };
 
@@ -299,6 +302,17 @@ impl MatchingEngine<'_> {
             base_lots_released,
             quote_lots_released,
         ))
+    }
+
+    pub fn place_multiple_new_orders(
+        &mut self,
+        trader: Address,
+        failed_multiple_limit_order_behavior: FailedMultipleLimitOrderBehavior,
+        bids: Vec<B256>,
+        asks: Vec<B256>,
+        client_order_id: u128,
+    ) -> GoblinResult<MatchingEngineResponse> {
+        Ok(MatchingEngineResponse::default())
     }
 }
 
