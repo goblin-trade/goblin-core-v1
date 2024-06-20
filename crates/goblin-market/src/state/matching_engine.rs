@@ -2,7 +2,7 @@ use stylus_sdk::alloy_primitives::{Address, B256};
 
 use crate::{
     parameters::{BASE_LOTS_PER_BASE_UNIT, TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT},
-    program::GoblinError,
+    program::{GoblinError, ReduceOrderPacket},
     quantities::{BaseLots, QuoteLots, Ticks},
     require,
 };
@@ -68,7 +68,7 @@ impl MatchingEngine<'_> {
         response
     }
 
-    /// Tries to reduce an order.
+    /// Try to reduce a resting order.
     ///
     /// Returns None if the order doesn't exist or belongs to another trader.
     ///
@@ -77,13 +77,23 @@ impl MatchingEngine<'_> {
     /// - order: Read, updated and stored
     /// - trader_state: Only updated
     ///
+    /// # Arguments
+    ///
+    /// * `trader_state`
+    /// * `trader`
+    /// * `order_id`
+    /// * `side`
+    /// * `lots_to_remove` - Try to reduce size by this many lots. Pass u64::MAX to close entire order
+    /// * `order_is_expired`
+    /// * `claim_funds`
+    ///
     pub fn reduce_order_inner(
         &mut self,
         trader_state: &mut TraderState,
         trader: Address,
         order_id: &OrderId,
         side: Side,
-        size: Option<BaseLots>,
+        lots_to_remove: BaseLots,
         order_is_expired: bool,
         claim_funds: bool,
     ) -> Option<ReduceOrderInnerResponse> {
@@ -96,14 +106,12 @@ impl MatchingEngine<'_> {
                 return None;
             }
 
-            let base_lots_to_remove = size
-                .map(|s| s.min(order.num_base_lots))
-                .unwrap_or(order.num_base_lots);
-
             // If the order is tagged as expired, we remove it from the book regardless of the size.
             if order_is_expired {
                 (true, order.num_base_lots)
             } else {
+                let base_lots_to_remove = order.num_base_lots.min(lots_to_remove);
+
                 (
                     base_lots_to_remove == order.num_base_lots,
                     base_lots_to_remove,
@@ -165,18 +173,18 @@ impl MatchingEngine<'_> {
         }
     }
 
-    /// Try to cancel multiple orders by ID
+    /// Try to reduce multiple orders by ID
     ///
     /// It is possible that an order ID is already closed, and also occupied by
-    /// another trader. The current behavior is that if one cancellation fails,
-    /// continue trying to cancel others.
+    /// another trader. The current behavior is that if one reduction fails,
+    /// continue trying to reduction others.
     ///
     /// Order IDs should be grouped by outer_ids and by side for efficiency.
     ///
-    /// Cancellation involves
+    /// Reduction involves
     ///
     /// - Updating trader state
-    /// - Closing the order slot
+    /// - Updating / closing the order slot
     /// - Updating the bitmap
     /// - Removing the outer index from index list if the outer index is closed
     /// - Updating outer index sizes and best prices in market state
@@ -184,12 +192,14 @@ impl MatchingEngine<'_> {
     /// Opportunity to use VM cache is limited to bitmap group. We need order IDs in
     /// correct order for index list updations
     ///
-    pub fn cancel_multiple_orders_by_id_inner(
+    pub fn reduce_multiple_orders_inner(
         &mut self,
         trader: Address,
-        orders_to_cancel: Vec<B256>,
+        order_packets: Vec<B256>,
         claim_funds: bool,
     ) -> Option<MatchingEngineResponse> {
+        // TODO change return type to return GoblinError
+        
         // Read states
         let mut market = MarketState::read_from_slot(self.slot_storage);
         let mut trader_state = TraderState::read_from_slot(self.slot_storage, trader);
@@ -202,8 +212,11 @@ impl MatchingEngine<'_> {
         let mut bid_index_list = IndexList::new(Side::Bid, market.bids_outer_indices);
         let mut ask_index_list = IndexList::new(Side::Ask, market.asks_outer_indices);
 
-        for order_id_bytes in orders_to_cancel {
-            let order_id = OrderId::decode(&order_id_bytes);
+        for order_packet_bytes in order_packets {
+            let ReduceOrderPacket {
+                order_id,
+                lots_to_remove: size,
+            } = ReduceOrderPacket::decode(&order_packet_bytes);
 
             let side = order_id.side(market.best_bid_price, market.best_ask_price);
 
@@ -215,7 +228,7 @@ impl MatchingEngine<'_> {
                 trader,
                 &order_id,
                 side.clone(),
-                None,
+                size,
                 false,
                 claim_funds,
             ) {

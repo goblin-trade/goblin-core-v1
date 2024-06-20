@@ -14,10 +14,9 @@ use crate::program::GoblinResult;
 use alloc::vec::Vec;
 use program::{
     processor::{deposit, fees, withdraw},
-    reduce_order,
+    reduce_multiple_orders,
 };
-use quantities::{BaseLots, Ticks, WrapperU64};
-use state::{OrderId, RestingOrderIndex, Side, SlotActions, SlotStorage, TraderState};
+use state::{SlotActions, SlotStorage, TraderState};
 use stylus_sdk::{
     alloy_primitives::{Address, B256},
     prelude::*,
@@ -51,50 +50,19 @@ impl GoblinMarket {
         fees::process_collect_fees(self, recipient)
     }
 
-    pub fn reduce_order(
+    pub fn reduce_multiple_orders(
         &mut self,
-        is_bid: bool,
-        price_in_ticks: u64,
-        resting_order_index: u8,
-        size: u64,
+        order_packets: Vec<B256>,
         recipient: Address,
     ) -> GoblinResult<()> {
-        reduce_order::process_reduce_order(
-            self,
-            Side::init(is_bid),
-            &OrderId {
-                price_in_ticks: Ticks::new(price_in_ticks),
-                resting_order_index: RestingOrderIndex::new(resting_order_index),
-            },
-            BaseLots::new(size),
-            Some(recipient),
-        )
+        reduce_multiple_orders::process_reduce_multiple_orders(self, order_packets, Some(recipient))
     }
 
-    pub fn reduce_order_with_free_funds(
+    pub fn reduce_multiple_orders_with_free_funds(
         &mut self,
-        is_bid: bool,
-        price_in_ticks: u64,
-        resting_order_index: u8,
-        size: u64,
+        order_packets: Vec<B256>,
     ) -> GoblinResult<()> {
-        reduce_order::process_reduce_order(
-            self,
-            Side::init(is_bid),
-            &OrderId {
-                price_in_ticks: Ticks::new(price_in_ticks),
-                resting_order_index: RestingOrderIndex::new(resting_order_index),
-            },
-            BaseLots::new(size),
-            None,
-        )
-    }
-
-    pub fn cancel_multiple_orders_by_id_with_free_funds(
-        &mut self,
-        order_ids: Vec<B256>,
-    ) -> GoblinResult<()> {
-        Ok(())
+        reduce_multiple_orders::process_reduce_multiple_orders(self, order_packets, None)
     }
 
     // TODO how to return struct? Facing AbiType trait error

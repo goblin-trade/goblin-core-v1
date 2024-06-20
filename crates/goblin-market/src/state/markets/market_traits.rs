@@ -21,30 +21,4 @@ pub trait Market {
     fn get_uncollected_fee_amount(&self) -> QuoteLots;
 }
 
-pub trait WritableMarket {
-    /// Try to reduce a resting order
-    ///
-    /// # Arguments
-    ///
-    /// * `trader_state`
-    /// *  `order` - Resting order at slot
-    /// * `bitmap_group` - Bitmap group for the given outer index
-    /// * `trader` - Reduce order for this trader
-    /// * `side` - Order size in BaseLots
-    /// * `order_id` - Order ID, i.e. tick and resting order index
-    /// * `size` - Reduce by this many base lots
-    /// * `recipient` - Optional. If provided, withdraw freed funds to this address.
-    ///
-    fn reduce_order(
-        &self,
-        remove_index_fn: &mut dyn FnMut(u16),
-        trader_state: &mut TraderState,
-        order: &mut SlotRestingOrder,
-        mutable_bitmap: &mut MutableBitmap,
-        trader: Address,
-        side: Side,
-        order_id: &OrderId,
-        size: BaseLots,
-        claim_funds: bool,
-    ) -> Option<MatchingEngineResponse>;
-}
+pub trait WritableMarket {}
