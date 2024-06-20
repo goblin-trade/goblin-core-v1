@@ -3,10 +3,11 @@ use stylus_sdk::alloy_primitives::{Address, B256};
 use crate::{
     parameters::{BASE_LOTS_PER_BASE_UNIT, TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT},
     program::{
-        new_order::FailedMultipleLimitOrderBehavior, FailedToReduce, GoblinError, GoblinResult,
-        ReduceOrderPacket,
+        new_order::{CondensedOrder, FailedMultipleLimitOrderBehavior},
+        FailedToReduce, GoblinError, GoblinResult, ReduceOrderPacket,
     },
     quantities::{BaseLots, QuoteLots},
+    require,
 };
 
 use super::{
@@ -216,7 +217,7 @@ impl MatchingEngine<'_> {
                 order_id,
                 lots_to_remove: size,
                 revert_if_fail,
-            } = ReduceOrderPacket::decode(&order_packet_bytes);
+            } = ReduceOrderPacket::decode(&order_packet_bytes.0);
 
             let side = order_id.side(market.best_bid_price, market.best_ask_price);
 
@@ -311,7 +312,37 @@ impl MatchingEngine<'_> {
         bids: Vec<B256>,
         asks: Vec<B256>,
         client_order_id: u128,
+        no_deposit: bool,
     ) -> GoblinResult<MatchingEngineResponse> {
+        // Read states
+        let mut market = MarketState::read_from_slot(self.slot_storage);
+        let mut trader_state = TraderState::read_from_slot(self.slot_storage, trader);
+
+        let mut quote_lots_to_deposit = QuoteLots::ZERO;
+        let mut base_lots_to_deposit = BaseLots::ZERO;
+
+        // Read quote and base lots available with trader
+        // free tokens + balance with trader
+        // Optimization- don't read balanceOf() beforehand
+        // Check balances if the requirement exceeds existing deposit and no_deposit is false
+
+        // orders at centre of the book are placed first, then move away.
+        // bids- descending order
+        // asks- ascending order
+        for (book_orders, side, mut last_price) in
+            [(&bids, Side::Bid, u64::MAX), (&asks, Side::Ask, 0)].iter()
+        {
+            for order_bytes in *book_orders {
+                let condensed_order = CondensedOrder::decode(&order_bytes.0);
+
+                // TODO 21 bit limit on tick
+
+                // if *side == Side::Bid {
+                //     require!()
+                // }
+            }
+        }
+
         Ok(MatchingEngineResponse::default())
     }
 }

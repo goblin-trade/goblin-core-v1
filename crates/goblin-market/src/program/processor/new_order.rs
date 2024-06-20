@@ -3,7 +3,7 @@ use stylus_sdk::alloy_primitives::{Address, B256};
 
 use crate::{
     program::{GoblinError, GoblinResult, UndefinedFailedMultipleLimitOrderBehavior},
-    quantities::{BaseLots, Ticks},
+    quantities::{BaseLots, Ticks, WrapperU64},
     state::{MatchingEngine, SlotActions, SlotStorage},
 };
 
@@ -59,8 +59,21 @@ impl FailedMultipleLimitOrderBehavior {
 pub struct CondensedOrder {
     pub price_in_ticks: Ticks,
     pub size_in_base_lots: BaseLots,
-    pub last_valid_block: Option<u32>,
-    pub last_valid_unix_timestamp_in_seconds: Option<u32>,
+    pub track_block: bool,
+    pub last_valid_block_or_unix_timestamp_in_seconds: u32,
+}
+
+impl CondensedOrder {
+    pub fn decode(bytes: &[u8; 32]) -> Self {
+        CondensedOrder {
+            price_in_ticks: Ticks::new(u64::from_be_bytes(bytes[0..8].try_into().unwrap())),
+            size_in_base_lots: BaseLots::new(u64::from_be_bytes(bytes[8..16].try_into().unwrap())),
+            track_block: (bytes[16] & 0b0000_0001) != 0,
+            last_valid_block_or_unix_timestamp_in_seconds: u32::from_be_bytes(
+                bytes[17..21].try_into().unwrap(),
+            ),
+        }
+    }
 }
 
 /// Create multiple new orders

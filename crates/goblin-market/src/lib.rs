@@ -51,6 +51,7 @@ impl GoblinMarket {
         fees::process_collect_fees(self, recipient)
     }
 
+    /// Reduce multiple orders and withdraw the funds to recipient address
     pub fn reduce_multiple_orders(
         &mut self,
         order_packets: Vec<B256>,
@@ -59,6 +60,7 @@ impl GoblinMarket {
         reduce_multiple_orders::process_reduce_multiple_orders(self, order_packets, Some(recipient))
     }
 
+    /// Reduce multiple orders. Retain the funds with the exchange
     pub fn reduce_multiple_orders_with_free_funds(
         &mut self,
         order_packets: Vec<B256>,
