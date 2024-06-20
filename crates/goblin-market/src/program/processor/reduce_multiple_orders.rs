@@ -32,13 +32,13 @@ impl ReduceOrderPacket {
 }
 
 /// Try to reduce one or more resting orders. Also used to cancel orders.
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `context`
 /// * `order_packets`
 /// * `recipient` - Transfer claimed funds to this address
-/// 
+///
 pub fn process_reduce_multiple_orders(
     context: &mut GoblinMarket,
     order_packets: Vec<B256>,
@@ -48,16 +48,17 @@ pub fn process_reduce_multiple_orders(
         slot_storage: &mut SlotStorage::new(),
     };
 
+    // State reads and writes are performed inside reduce_multiple_orders_inner()
+    // The number of slot reads is dynamic
     let MatchingEngineResponse {
         num_quote_lots_out,
         num_base_lots_out,
         ..
-    } = matching_engine
-        .reduce_multiple_orders_inner(msg::sender(), order_packets, recipient.is_some())
-        .unwrap_or_default();
-    // TODO should throw error instead of default when response is None?
-    // Look at None cases
-
+    } = matching_engine.reduce_multiple_orders_inner(
+        msg::sender(),
+        order_packets,
+        recipient.is_some(),
+    )?;
     SlotStorage::storage_flush_cache(true);
 
     if let Some(recipient) = recipient {

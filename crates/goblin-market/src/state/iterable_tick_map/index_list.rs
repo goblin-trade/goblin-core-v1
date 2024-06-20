@@ -10,13 +10,9 @@
 /// Each tick group index is made of 2 bits in big endian format. This means that
 /// each ListItem contains 16 outer indices.
 use crate::{
-    program::{GoblinError, IndexNotFoundError, IndicesNotInOrderError},
-    quantities::Ticks,
+    program::{GoblinError, GoblinResult, IndexNotFoundError, IndicesNotInOrderError},
     require,
-    state::{
-        slot_storage, OuterIndex, Side, SlotActions, SlotKey, SlotStorage, TickIndices,
-        LIST_KEY_SEED,
-    },
+    state::{OuterIndex, Side, SlotActions, SlotKey, SlotStorage, LIST_KEY_SEED},
 };
 use alloc::vec::Vec;
 
@@ -168,7 +164,7 @@ impl IndexList {
         &mut self,
         slot_storage: &SlotStorage,
         value_to_remove: OuterIndex,
-    ) -> Result<(), GoblinError> {
+    ) -> GoblinResult<()> {
         if let Some(outermost_index) = self.cached_values.last() {
             require!(
                 (self.side == Side::Bid && value_to_remove < *outermost_index)

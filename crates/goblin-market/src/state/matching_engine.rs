@@ -2,7 +2,7 @@ use stylus_sdk::alloy_primitives::{Address, B256};
 
 use crate::{
     parameters::{BASE_LOTS_PER_BASE_UNIT, TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT},
-    program::{GoblinError, ReduceOrderPacket},
+    program::{GoblinError, GoblinResult, ReduceOrderPacket},
     quantities::{BaseLots, QuoteLots, Ticks},
     require,
 };
@@ -197,9 +197,7 @@ impl MatchingEngine<'_> {
         trader: Address,
         order_packets: Vec<B256>,
         claim_funds: bool,
-    ) -> Option<MatchingEngineResponse> {
-        // TODO change return type to return GoblinError
-        
+    ) -> GoblinResult<MatchingEngineResponse> {
         // Read states
         let mut market = MarketState::read_from_slot(self.slot_storage);
         let mut trader_state = TraderState::read_from_slot(self.slot_storage, trader);
@@ -268,9 +266,9 @@ impl MatchingEngine<'_> {
                     // in ascending order for asks.
                     if !bitmap_group.is_active() {
                         if side == Side::Bid {
-                            bid_index_list.remove(self.slot_storage, outer_index).ok();
+                            bid_index_list.remove(self.slot_storage, outer_index)?;
                         } else {
-                            ask_index_list.remove(self.slot_storage, outer_index).ok();
+                            ask_index_list.remove(self.slot_storage, outer_index)?;
                         }
                     }
                 }
@@ -293,17 +291,16 @@ impl MatchingEngine<'_> {
         market.update_best_price(&ask_index_list, self.slot_storage);
 
         // write market state, trader state
-        market.write_to_slot(self.slot_storage).ok();
+        market.write_to_slot(self.slot_storage)?;
         trader_state.write_to_slot(self.slot_storage, trader);
 
-        Some(MatchingEngineResponse::new_withdraw(
+        Ok(MatchingEngineResponse::new_withdraw(
             base_lots_released,
             quote_lots_released,
         ))
     }
 }
 
-#[derive(Default)]
 pub struct ReduceOrderInnerResponse {
     pub matching_engine_response: MatchingEngineResponse,
     pub should_remove_order_from_book: bool,
