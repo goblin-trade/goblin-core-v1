@@ -25,7 +25,7 @@ pub fn process_collect_fees(context: &mut GoblinMarket, recipient: Address) -> G
         slot_storage: &mut SlotStorage::new(),
     };
 
-    let num_quote_lots_out = matching_engine.collect_fees();
+    let num_quote_lots_out = matching_engine.collect_fees()?;
 
     // Transfer
     let quote_atoms_collected_raw = QuoteAtomsRaw::from_lots(num_quote_lots_out);

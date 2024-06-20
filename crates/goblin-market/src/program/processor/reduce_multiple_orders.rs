@@ -15,8 +15,14 @@ use crate::{
 };
 
 pub struct ReduceOrderPacket {
+    // ID of order to reduce
     pub order_id: OrderId,
+
+    // Reduce at most these many lots. Pass u64::MAX to close
     pub lots_to_remove: BaseLots,
+
+    // Revert entire TX if reduction fails for this order
+    pub revert_if_fail: bool,
 }
 
 impl ReduceOrderPacket {
@@ -27,6 +33,7 @@ impl ReduceOrderPacket {
                 resting_order_index: RestingOrderIndex::new(bytes[8]),
             },
             lots_to_remove: BaseLots::new(u64::from_be_bytes(bytes[9..16].try_into().unwrap())),
+            revert_if_fail: (bytes[16] & 0b0000_0001) != 0,
         }
     }
 }

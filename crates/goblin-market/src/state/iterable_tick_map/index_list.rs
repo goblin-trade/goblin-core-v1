@@ -10,7 +10,7 @@
 /// Each tick group index is made of 2 bits in big endian format. This means that
 /// each ListItem contains 16 outer indices.
 use crate::{
-    program::{GoblinError, GoblinResult, IndexNotFoundError, IndicesNotInOrderError},
+    program::{GoblinError, GoblinResult, IndexNotInList, IndicesNotInOrder},
     require,
     state::{OuterIndex, Side, SlotActions, SlotKey, SlotStorage, LIST_KEY_SEED},
 };
@@ -169,7 +169,7 @@ impl IndexList {
             require!(
                 (self.side == Side::Bid && value_to_remove < *outermost_index)
                     || (self.side == Side::Ask && value_to_remove > *outermost_index),
-                GoblinError::IndicesNotInOrderError(IndicesNotInOrderError {})
+                GoblinError::IndicesNotInOrder(IndicesNotInOrder {})
             );
         }
 
@@ -198,7 +198,7 @@ impl IndexList {
             } else if self.size != 0 {
                 self.cached_values.push(current_value);
             } else {
-                return Err(GoblinError::IndexNotFoundError(IndexNotFoundError {}));
+                return Err(GoblinError::IndexNotInList(IndexNotInList {}));
             }
         }
 

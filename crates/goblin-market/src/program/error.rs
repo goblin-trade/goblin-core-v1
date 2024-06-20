@@ -9,16 +9,19 @@ sol! {
     error InvalidFeeCollector();
 
     // Exceeded max size of 2^63 - 1 for size of base lots in a resting order
-    error ExceedRestingOrderSizeError();
+    error ExceedRestingOrderSize();
 
     // Exceed max tick size of 2^21 - 1
-    error ExceedTickSizeError();
+    error ExceedTickSize();
 
     // Outer indices are not in correct order
-    error IndicesNotInOrderError();
+    error IndicesNotInOrder();
 
     // Outer index is not in list
-    error IndexNotFoundError();
+    error IndexNotInList();
+
+    // Failed to reduce error. Thrown in revert_if_fail mode
+    error FailedToReduce();
 
     // Not used yet- to check
 
@@ -104,10 +107,11 @@ sol! {
 #[derive(SolidityError)]
 pub enum GoblinError {
     InvalidFeeCollector(InvalidFeeCollector),
-    ExceedRestingOrderSizeError(ExceedRestingOrderSizeError),
-    ExceedTickSizeError(ExceedTickSizeError),
-    IndicesNotInOrderError(IndicesNotInOrderError),
-    IndexNotFoundError(IndexNotFoundError),
+    ExceedRestingOrderSize(ExceedRestingOrderSize),
+    ExceedTickSize(ExceedTickSize),
+    IndicesNotInOrder(IndicesNotInOrder),
+    IndexNotInList(IndexNotInList),
+    FailedToReduce(FailedToReduce),
 
     InvalidInstructionData(InvalidInstructionData),
     InvalidMarketParameters(InvalidMarketParameters),

@@ -2,15 +2,13 @@ use stylus_sdk::alloy_primitives::{Address, B256};
 
 use crate::{
     parameters::{BASE_LOTS_PER_BASE_UNIT, TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT},
-    program::{GoblinError, GoblinResult, ReduceOrderPacket},
-    quantities::{BaseLots, QuoteLots, Ticks},
-    require,
+    program::{FailedToReduce, GoblinError, GoblinResult, ReduceOrderPacket},
+    quantities::{BaseLots, QuoteLots},
 };
 
 use super::{
-    market_state, trader_state, BitmapGroup, BitmapGroupWithIndex, IndexList, InnerIndex, ListSlot,
-    MarketState, MatchingEngineResponse, OrderId, OuterIndex, RestingOrder, Side, SlotActions,
-    SlotRestingOrder, SlotStorage, TickIndices, TraderState,
+    BitmapGroup, IndexList, MarketState, MatchingEngineResponse, OrderId, OuterIndex, Side,
+    SlotActions, SlotRestingOrder, SlotStorage, TickIndices, TraderState,
 };
 use alloc::vec::Vec;
 
@@ -19,7 +17,7 @@ pub struct MatchingEngine<'a> {
 }
 
 impl MatchingEngine<'_> {
-    pub fn collect_fees(&mut self) -> QuoteLots {
+    pub fn collect_fees(&mut self) -> GoblinResult<QuoteLots> {
         // Read
         let mut market = MarketState::read_from_slot(self.slot_storage);
 
@@ -31,10 +29,10 @@ impl MatchingEngine<'_> {
         market.unclaimed_quote_lot_fees = QuoteLots::ZERO;
 
         // Write
-        market.write_to_slot(self.slot_storage);
+        market.write_to_slot(self.slot_storage)?;
         SlotStorage::storage_flush_cache(true);
 
-        quote_lot_fees
+        Ok(quote_lot_fees)
     }
 
     /// Try to claim the given number of lots from a trader's state.
@@ -214,6 +212,7 @@ impl MatchingEngine<'_> {
             let ReduceOrderPacket {
                 order_id,
                 lots_to_remove: size,
+                revert_if_fail,
             } = ReduceOrderPacket::decode(&order_packet_bytes);
 
             let side = order_id.side(market.best_bid_price, market.best_ask_price);
@@ -272,6 +271,8 @@ impl MatchingEngine<'_> {
                         }
                     }
                 }
+            } else if revert_if_fail {
+                return Err(GoblinError::FailedToReduce(FailedToReduce {}));
             }
         }
 

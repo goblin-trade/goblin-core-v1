@@ -4,7 +4,7 @@ use stylus_sdk::{
 };
 
 use crate::{
-    program::{ExceedRestingOrderSizeError, GoblinError},
+    program::{ExceedRestingOrderSize, GoblinError},
     quantities::{BaseLots, Ticks, WrapperU64},
     require,
     state::{
@@ -155,7 +155,7 @@ impl SlotRestingOrder {
         // optimization- check LSB is 0 instead of doing a comparison operation
         require!(
             num_base_lots_bytes[0] & 0b1000_0000 == 0,
-            GoblinError::ExceedRestingOrderSizeError(ExceedRestingOrderSizeError {})
+            GoblinError::ExceedRestingOrderSize(ExceedRestingOrderSize {})
         );
 
         encoded_data[20..28].copy_from_slice(&num_base_lots_bytes);

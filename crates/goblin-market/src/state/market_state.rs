@@ -1,5 +1,5 @@
 use crate::{
-    program::{ExceedTickSizeError, GoblinError},
+    program::{ExceedTickSize, GoblinError, GoblinResult},
     quantities::{QuoteLots, Ticks, WrapperU64, MAX_TICK},
     require,
 };
@@ -111,7 +111,7 @@ impl MarketState {
 
         require!(
             best_bid_price <= MAX_TICK && best_ask_price <= MAX_TICK,
-            GoblinError::ExceedTickSizeError(ExceedTickSizeError {})
+            GoblinError::ExceedTickSize(ExceedTickSize {})
         );
 
         encoded_data[20..24].copy_from_slice(&(best_bid_price as u32).to_be_bytes());
@@ -120,7 +120,7 @@ impl MarketState {
         Ok(encoded_data)
     }
 
-    pub fn write_to_slot(&self, slot_storage: &mut SlotStorage) -> Result<(), GoblinError> {
+    pub fn write_to_slot(&self, slot_storage: &mut SlotStorage) -> GoblinResult<()> {
         slot_storage.sstore(&MARKET_SLOT_KEY, &self.encode()?);
 
         Ok(())
