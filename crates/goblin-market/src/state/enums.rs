@@ -1,4 +1,4 @@
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Copy)]
 pub enum Side {
     Bid,
     Ask,
@@ -18,4 +18,11 @@ impl Side {
             Side::Ask => Side::Bid,
         }
     }
+}
+
+#[derive(Clone, Copy)]
+pub enum SelfTradeBehavior {
+    Abort,
+    CancelProvide,
+    DecrementTake,
 }

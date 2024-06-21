@@ -16,11 +16,19 @@ pub const BASE_TOKEN: Address = address!("82af49447d8a07e3bd95bd0d56f35241523fba
 pub const QUOTE_TOKEN: Address = address!("af88d065e77c8cC2239327C5EDb3A432268e5831");
 
 // Base token (ETH) unit is considered to have 10^8 atoms
-// 10^8 as U256 in big endian
+// Pass to U256::from_limbs() to obtain 10^8 as U256
 pub const BASE_DECIMALS_TO_IGNORE: [u64; 4] = [100000000, 0, 0, 0];
 
 // 0 decimals to ignore- 10^0 = 1
 pub const QUOTE_DECIMALS_TO_IGNORE: [u64; 4] = [1, 0, 0, 0];
+
+// Max allowed value of raw base atoms. Equals 1844674407370955161500000000
+// Dividing this number by BASE_DECIMALS_TO_IGNORE will give u64::MAX atoms
+pub const MAX_RAW_BASE_ATOMS: [u64; 4] = [18446744073609551616, 99999999, 0, 0];
+
+// Max allowed value of raw quote atoms. Equals 18446744073709551615 = u64::MAX
+// Dividing this number by BASE_DECIMALS_TO_IGNORE will give u64::MAX atoms
+pub const MAX_RAW_QUOTE_ATOMS: [u64; 4] = [18446744073709551615, 0, 0, 0];
 
 pub const BASE_LOT_SIZE: BaseAtomsPerBaseLot = BaseAtomsPerBaseLot { inner: 10_000 };
 pub const QUOTE_LOT_SIZE: QuoteAtomsPerQuoteLot = QuoteAtomsPerQuoteLot { inner: 1 };

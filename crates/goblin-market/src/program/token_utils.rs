@@ -7,7 +7,7 @@ use stylus_sdk::{
 use crate::{
     parameters::{BASE_TOKEN, QUOTE_TOKEN},
     program::error::GoblinResult,
-    quantities::{BaseAtomsRaw, QuoteAtomsRaw},
+    quantities::{BaseAtomsRaw, BaseLots, QuoteAtomsRaw, QuoteLots},
     GoblinMarket,
 };
 
@@ -18,6 +18,8 @@ sol_interface! {
         function transfer(address recipient, uint256 amount) external returns (bool);
 
         function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+
+        function allowance(address owner, address spender) external view returns (uint256);
     }
 }
 
@@ -77,4 +79,38 @@ pub fn try_deposit(
     maybe_invoke_deposit(context, base_amount.as_u256(), BASE_TOKEN, trader)?;
 
     Ok(())
+}
+
+/// ERC20 balance available to Goblin
+/// This is MIN(balance, allowance)
+///
+/// # Arguments
+///
+/// * `token_address`
+/// * `trader`
+///
+pub fn get_available_balance(
+    context: &GoblinMarket,
+    token_address: Address,
+    trader: Address,
+) -> U256 {
+    let token = IERC20::new(token_address);
+    let allowance = token
+        .allowance(context, trader, contract::address())
+        .unwrap();
+    let balance = token.balance_of(context, trader).unwrap();
+
+    allowance.min(balance)
+}
+
+pub fn get_approved_base_lots(context: &GoblinMarket, trader: Address) -> BaseLots {
+    let available_balance =
+        BaseAtomsRaw::from_u256(get_available_balance(context, BASE_TOKEN, trader));
+    available_balance.to_lots()
+}
+
+pub fn get_approved_quote_lots(context: &GoblinMarket, trader: Address) -> QuoteLots {
+    let available_balance =
+        QuoteAtomsRaw::from_u256(get_available_balance(context, QUOTE_TOKEN, trader));
+    available_balance.to_lots()
 }

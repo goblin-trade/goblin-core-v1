@@ -12,11 +12,21 @@ use stylus_sdk::alloy_primitives::U256;
 use stylus_sdk::console;
 
 use crate::parameters::{
-    BASE_DECIMALS_TO_IGNORE, BASE_LOT_SIZE, QUOTE_DECIMALS_TO_IGNORE, QUOTE_LOT_SIZE,
+    BASE_DECIMALS_TO_IGNORE, BASE_LOT_SIZE, MAX_RAW_BASE_ATOMS, MAX_RAW_QUOTE_ATOMS,
+    QUOTE_DECIMALS_TO_IGNORE, QUOTE_LOT_SIZE,
 };
+use crate::program::{GoblinError, GoblinResult, InvalidFeeCollector};
+use crate::require;
 
 pub trait WrapperU64 {
     fn new(value: u64) -> Self;
+    fn as_u64(&self) -> u64;
+}
+
+pub trait WrapperLimitedU64<E> {
+    fn new(value: u64) -> Result<Self, E>
+    where
+        Self: Sized;
     fn as_u64(&self) -> u64;
 }
 
@@ -166,6 +176,144 @@ macro_rules! basic_u64 {
     };
 }
 
+// GoblinResult;
+
+// macro_rules! limited_size_u64 {
+//     ($type_name:ident, $max_bits:expr, $error:expr) => {
+//         impl WrapperLimitedU64<$error> for $type_name {
+//             fn new(value: u64) -> Result<Self, $error> {
+//                 assert!($max_bits <= 64);
+
+//                 if $max_bits < 64 {
+//                     require!(
+//                         value < (1 << $max_bits),
+//                         $error
+//                     );
+//                 }
+
+//                 Ok($type_name { inner: value })
+
+//                 // $type_name { inner: value }
+//             }
+
+//             fn as_u64(&self) -> u64 {
+//                 self.inner
+//             }
+//         }
+
+//         impl $type_name {
+//             pub const ZERO: Self = $type_name { inner: 0 };
+//             pub const ONE: Self = $type_name { inner: 1 };
+//             // pub const MAX: Self = $type_name { inner: u64::MAX };
+//             pub const MAX: Self = $type_name {
+//                 inner: ((1u128 << $max_bits) - 1) as u64,
+//             };
+
+//             pub const MIN: Self = $type_name { inner: u64::MIN };
+//             pub fn as_u128(&self) -> u128 {
+//                 self.inner as u128
+//             }
+
+//             pub fn saturating_sub(self, other: Self) -> Self {
+//                 $type_name::new(self.inner.saturating_sub(other.inner))
+//             }
+
+//             pub fn unchecked_div<Divisor: WrapperU64, Quotient: WrapperU64>(
+//                 self,
+//                 other: Divisor,
+//             ) -> Quotient {
+//                 Quotient::new(self.inner / other.as_u64())
+//             }
+//         }
+
+//         // TODO remove
+//         impl Display for $type_name {
+//             fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+//                 self.inner.fmt(f)
+//             }
+//         }
+
+//         impl Mul for $type_name {
+//             type Output = Self;
+//             fn mul(self, other: Self) -> Self {
+//                 $type_name::new(self.inner * other.inner)
+//             }
+//         }
+
+//         impl Sum<$type_name> for $type_name {
+//             fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+//                 iter.fold($type_name::ZERO, |acc, x| acc + x)
+//             }
+//         }
+
+//         impl Add for $type_name {
+//             type Output = Self;
+//             fn add(self, other: Self) -> Self {
+//                 $type_name::new(self.inner + other.inner)
+//             }
+//         }
+
+//         impl AddAssign for $type_name {
+//             fn add_assign(&mut self, other: Self) {
+//                 *self = *self + other;
+//             }
+//         }
+
+//         impl Sub for $type_name {
+//             type Output = Self;
+
+//             fn sub(self, other: Self) -> Self {
+//                 $type_name::new(self.inner - other.inner)
+//             }
+//         }
+
+//         impl SubAssign for $type_name {
+//             fn sub_assign(&mut self, other: Self) {
+//                 *self = *self - other;
+//             }
+//         }
+
+//         impl Default for $type_name {
+//             fn default() -> Self {
+//                 Self::ZERO
+//             }
+//         }
+
+//         impl PartialEq for $type_name {
+//             fn eq(&self, other: &Self) -> bool {
+//                 self.inner == other.inner
+//             }
+//         }
+
+//         impl From<$type_name> for u64 {
+//             fn from(x: $type_name) -> u64 {
+//                 x.inner
+//             }
+//         }
+
+//         impl From<$type_name> for f64 {
+//             fn from(x: $type_name) -> f64 {
+//                 x.inner as f64
+//             }
+//         }
+
+//         impl Eq for $type_name {}
+
+//         // Below should only be used in tests.
+//         impl PartialEq<u64> for $type_name {
+//             fn eq(&self, other: &u64) -> bool {
+//                 self.inner == *other
+//             }
+//         }
+
+//         impl PartialEq<$type_name> for u64 {
+//             fn eq(&self, other: &$type_name) -> bool {
+//                 *self == other.inner
+//             }
+//         }
+//     };
+// }
+
 macro_rules! allow_multiply {
     ($type_1:ident, $type_2:ident, $type_result:ident) => {
         impl Mul<$type_2> for $type_1 {
@@ -258,6 +406,8 @@ basic_u64!(BaseLots, 64); // size limit imposed in RestingOrder::encode()
 // 16 bits from bitmap index, 5 bits from resting order index
 basic_u64!(Ticks, 21); // TODO impose limit elsewhere
 
+// limited_size_u64!(Ticks, 21, GoblinError::InvalidFeeCollector(InvalidFeeCollector {}));
+
 pub const MAX_TICK: u64 = 2097151; // 2^21 - 1
 
 // Quantities
@@ -330,79 +480,181 @@ pub struct BaseAtomsRaw {
 }
 
 impl QuoteAtomsRaw {
+    pub const MAX: Self = QuoteAtomsRaw {
+        inner: U256::from_limbs(MAX_RAW_QUOTE_ATOMS),
+    };
+
+    pub fn from_u256(value: U256) -> Self {
+        // capped to MAX_RAW_QUOTE_ATOMS
+        if value > QuoteAtomsRaw::MAX.as_u256() {
+            QuoteAtomsRaw::MAX
+        } else {
+            QuoteAtomsRaw { inner: value }
+        }
+    }
+
     pub fn as_u256(&self) -> U256 {
         self.inner
     }
 
     pub fn from_lots(lots: QuoteLots) -> Self {
-        QuoteAtomsRaw {
-            inner: U256::from((lots * QUOTE_LOT_SIZE).as_u64())
-                * U256::from_limbs(QUOTE_DECIMALS_TO_IGNORE),
-        }
+        // Edge case- if lots are so large such that raw atoms exceed QuoteAtomsRaw::MAX,
+        // they are capped to QuoteAtomsRaw::MAX
+        QuoteAtomsRaw::from_u256(
+            U256::from(lots.as_u64())
+                * U256::from(QUOTE_LOT_SIZE.as_u64()) // lots to atoms
+                * U256::from_limbs(QUOTE_DECIMALS_TO_IGNORE), // atoms to raw atoms
+        )
+    }
+
+    pub fn to_atoms(&self) -> QuoteAtoms {
+        // MAX value ensures that division by QUOTE_DECIMALS_TO_IGNORE fits in u64
+        QuoteAtoms::new((self.inner / U256::from_limbs(QUOTE_DECIMALS_TO_IGNORE)).as_limbs()[0])
+    }
+
+    pub fn to_lots(&self) -> QuoteLots {
+        self.to_atoms() / QUOTE_LOT_SIZE
     }
 }
 
+// BaseAtomsRaw: U256 can be a large value. We must ensure that BaseAtoms obtained after division
+// with BASE_DECIMALS_TO_IGNORE fits in u64
 impl BaseAtomsRaw {
+    pub const MAX: Self = BaseAtomsRaw {
+        inner: U256::from_limbs(MAX_RAW_BASE_ATOMS),
+    };
+
+    pub fn from_u256(value: U256) -> Self {
+        // capped to MAX_RAW_BASE_ATOMS
+        if value > BaseAtomsRaw::MAX.as_u256() {
+            BaseAtomsRaw::MAX
+        } else {
+            BaseAtomsRaw { inner: value }
+        }
+    }
+
     pub fn as_u256(&self) -> U256 {
         self.inner
     }
 
     pub fn from_lots(lots: BaseLots) -> Self {
-        BaseAtomsRaw {
-            inner: U256::from((lots * BASE_LOT_SIZE).as_u64())
-                * U256::from_limbs(BASE_DECIMALS_TO_IGNORE),
-        }
+        // Edge case- if lots are so large such that raw atoms exceed BaseAtomsRaw::MAX,
+        // they are capped to BaseAtomsRaw::MAX
+        BaseAtomsRaw::from_u256(
+            U256::from(lots.as_u64())
+                * U256::from(BASE_LOT_SIZE.as_u64()) // lots to atoms
+                * U256::from_limbs(BASE_DECIMALS_TO_IGNORE), // atoms to raw atoms
+        )
+    }
+
+    pub fn to_atoms(&self) -> BaseAtoms {
+        // MAX value ensures that division by BASE_DECIMALS_TO_IGNORE fits in u64
+        BaseAtoms::new((self.inner / U256::from_limbs(BASE_DECIMALS_TO_IGNORE)).as_limbs()[0])
+    }
+
+    pub fn to_lots(&self) -> BaseLots {
+        self.to_atoms() / BASE_LOT_SIZE
     }
 }
 
-#[test]
-fn test_new_constructor_macro() {
-    let base_lots_1 = BaseLots::new(5);
-    let base_lots_2 = BaseLots::new(10);
+#[cfg(test)]
+mod test {
+    use super::*;
 
-    assert_eq!(base_lots_1 + base_lots_2, BaseLots::new(15));
+    #[test]
+    fn test_new_constructor_macro() {
+        let base_lots_1 = BaseLots::new(5);
+        let base_lots_2 = BaseLots::new(10);
 
-    // Below code (correctly) fails to compile.
-    // let quote_lots_1 = QuoteLots::new(5);
-    // let result = quote_lots_1 + base_lots_1;
-}
+        assert_eq!(base_lots_1 + base_lots_2, BaseLots::new(15));
 
-#[test]
-fn test_multiply_macro() {
-    let base_units = BaseUnits::new(5);
-    let base_lots_per_base_unit = BaseLotsPerBaseUnit::new(100);
-    assert_eq!(base_units * base_lots_per_base_unit, BaseLots::new(500));
+        // Below code (correctly) fails to compile.
+        // let quote_lots_1 = QuoteLots::new(5);
+        // let result = quote_lots_1 + base_lots_1;
+    }
 
-    // Below code (correctly) fails to compile.
-    // let quote_units = QuoteUnits::new(5);
-    // let result = quote_units * base_lots_per_base_unit;
-}
+    #[test]
+    fn test_multiply_macro() {
+        let base_units = BaseUnits::new(5);
+        let base_lots_per_base_unit = BaseLotsPerBaseUnit::new(100);
+        assert_eq!(base_units * base_lots_per_base_unit, BaseLots::new(500));
 
-#[test]
-#[should_panic]
-fn test_tick_overflow() {
-    Ticks::new(u64::MAX);
-}
+        // Below code (correctly) fails to compile.
+        // let quote_units = QuoteUnits::new(5);
+        // let result = quote_units * base_lots_per_base_unit;
+    }
 
-#[test]
-fn test_max_values() {
-    assert_eq!(Ticks::MAX, 2097151); // 2^21 - 1
-    assert_eq!(BaseLots::MAX, 4294967295); // 2^32 - 1
-}
+    #[test]
+    #[should_panic]
+    fn test_tick_overflow() {
+        Ticks::new(u64::MAX);
+    }
 
-#[test]
-#[should_panic]
-fn test_tick_addition_overflow() {
-    println!("max tick {:?}", Ticks::MAX);
-    let tick = Ticks::new(2097151);
+    #[test]
+    fn test_max_values() {
+        assert_eq!(Ticks::MAX, 2097151); // 2^21 - 1
+        assert_eq!(BaseLots::MAX, 4294967295); // 2^32 - 1
+    }
 
-    let _added_tick = tick.add(Ticks::new(1));
-}
+    #[test]
+    #[should_panic]
+    fn test_tick_addition_overflow() {
+        println!("max tick {:?}", Ticks::MAX);
+        let tick = Ticks::new(2097151);
 
-#[test]
-#[should_panic]
-fn test_tick_multiplication_overflow() {
-    let tick = Ticks::new(2097151);
+        let _added_tick = tick.add(Ticks::new(1));
+    }
 
-    let _multiplied_tick = tick.mul(Ticks::new(2));
+    #[test]
+    #[should_panic]
+    fn test_tick_multiplication_overflow() {
+        let tick = Ticks::new(2097151);
+
+        let _multiplied_tick = tick.mul(Ticks::new(2));
+    }
+
+    #[test]
+    fn raw_atoms_to_lots() {
+        let lots = BaseLots::new(10);
+        let raw_atoms = BaseAtomsRaw::from_lots(lots);
+
+        let raw_atoms_u256 = raw_atoms.as_u256();
+        println!(
+            "raw_atoms_u256 {:?}, limbs {:?}",
+            raw_atoms_u256,
+            raw_atoms_u256.as_limbs()
+        );
+
+        let decoded_lots = raw_atoms.to_lots();
+    }
+
+    #[test]
+    fn get_max_size_for_base() {
+        let atoms = U256::from(u64::MAX);
+
+        let decimals_to_ignore = U256::from_limbs(BASE_DECIMALS_TO_IGNORE);
+
+        let max_raw_atoms = atoms * decimals_to_ignore;
+
+        println!(
+            "max_raw_atoms {:?}, limbs {:?}",
+            max_raw_atoms,
+            max_raw_atoms.as_limbs()
+        );
+    }
+
+    #[test]
+    fn get_max_size_for_quote() {
+        let atoms = U256::from(u64::MAX);
+
+        let decimals_to_ignore = U256::from_limbs(QUOTE_DECIMALS_TO_IGNORE);
+
+        let max_raw_atoms = atoms * decimals_to_ignore;
+
+        println!(
+            "max_raw_atoms {:?}, limbs {:?}",
+            max_raw_atoms,
+            max_raw_atoms.as_limbs()
+        );
+    }
 }

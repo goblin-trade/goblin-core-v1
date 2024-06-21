@@ -26,6 +26,8 @@ sol! {
     // Invalid number passed as FailedMultipleLimitOrderBehavior
     error UndefinedFailedMultipleLimitOrderBehavior();
 
+    // Prices of new post-only orders are not in correct order
+    error PricesNotInOrder();
 
     // Not used yet- to check
 
@@ -117,6 +119,7 @@ pub enum GoblinError {
     IndexNotInList(IndexNotInList),
     FailedToReduce(FailedToReduce),
     UndefinedFailedMultipleLimitOrderBehavior(UndefinedFailedMultipleLimitOrderBehavior),
+    PricesNotInOrder(PricesNotInOrder),
 
     InvalidInstructionData(InvalidInstructionData),
     InvalidMarketParameters(InvalidMarketParameters),

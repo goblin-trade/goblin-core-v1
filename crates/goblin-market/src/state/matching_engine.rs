@@ -3,16 +3,18 @@ use stylus_sdk::alloy_primitives::{Address, B256};
 use crate::{
     parameters::{BASE_LOTS_PER_BASE_UNIT, TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT},
     program::{
+        get_approved_base_lots, get_approved_quote_lots,
         new_order::{CondensedOrder, FailedMultipleLimitOrderBehavior},
-        FailedToReduce, GoblinError, GoblinResult, ReduceOrderPacket,
+        FailedToReduce, GoblinError, GoblinResult, PricesNotInOrder, ReduceOrderPacket,
     },
-    quantities::{BaseLots, QuoteLots},
-    require,
+    quantities::{BaseLots, QuoteLots, Ticks, WrapperU64, MAX_TICK},
+    require, GoblinMarket,
 };
 
 use super::{
-    BitmapGroup, IndexList, MarketState, MatchingEngineResponse, OrderId, OuterIndex, Side,
-    SlotActions, SlotRestingOrder, SlotStorage, TickIndices, TraderState,
+    matching_engine_response, BitmapGroup, IndexList, MarketState, MatchingEngineResponse, OrderId,
+    OrderPacket, OuterIndex, Side, SlotActions, SlotRestingOrder, SlotStorage, TickIndices,
+    TraderState,
 };
 use alloc::vec::Vec;
 
@@ -307,7 +309,9 @@ impl MatchingEngine<'_> {
 
     pub fn place_multiple_new_orders(
         &mut self,
+        context: &mut GoblinMarket,
         trader: Address,
+        to: Address,
         failed_multiple_limit_order_behavior: FailedMultipleLimitOrderBehavior,
         bids: Vec<B256>,
         asks: Vec<B256>,
@@ -325,21 +329,85 @@ impl MatchingEngine<'_> {
         // free tokens + balance with trader
         // Optimization- don't read balanceOf() beforehand
         // Check balances if the requirement exceeds existing deposit and no_deposit is false
+        let mut base_lots_available = trader_state.base_lots_free;
+        let mut quote_lots_available = trader_state.quote_lots_free;
+        // need to add approved balance not total balance
+
+        // Track whether token allowances have been read
+        let mut base_allowance_read = false;
+        let mut quote_allowance_read = false;
 
         // orders at centre of the book are placed first, then move away.
         // bids- descending order
         // asks- ascending order
-        for (book_orders, side, mut last_price) in
-            [(&bids, Side::Bid, u64::MAX), (&asks, Side::Ask, 0)].iter()
+        for (book_orders, side, mut last_price) in [
+            (&bids, Side::Bid, Ticks::new(MAX_TICK)),
+            (&asks, Side::Ask, Ticks::new(0)),
+        ]
+        .iter()
         {
             for order_bytes in *book_orders {
                 let condensed_order = CondensedOrder::decode(&order_bytes.0);
 
-                // TODO 21 bit limit on tick
+                // Ensure orders are in correct order- descending for bids and ascending for asks
+                if *side == Side::Bid {
+                    require!(
+                        condensed_order.price_in_ticks < last_price,
+                        GoblinError::PricesNotInOrder(PricesNotInOrder {})
+                    );
+                } else {
+                    require!(
+                        condensed_order.price_in_ticks > last_price,
+                        GoblinError::PricesNotInOrder(PricesNotInOrder {})
+                    );
 
-                // if *side == Side::Bid {
-                //     require!()
-                // }
+                    // Price can't exceed max
+                    require!(
+                        condensed_order.price_in_ticks <= Ticks::new(MAX_TICK),
+                        GoblinError::PricesNotInOrder(PricesNotInOrder {})
+                    );
+                }
+
+                let order_packet = OrderPacket::PostOnly {
+                    side: *side,
+                    price_in_ticks: condensed_order.price_in_ticks,
+                    num_base_lots: condensed_order.size_in_base_lots,
+                    client_order_id,
+                    reject_post_only: failed_multiple_limit_order_behavior.should_fail_on_cross(),
+                    use_only_deposited_funds: no_deposit,
+                    track_block: condensed_order.track_block,
+                    last_valid_block_or_unix_timestamp_in_seconds: condensed_order
+                        .last_valid_block_or_unix_timestamp_in_seconds,
+                    fail_silently_on_insufficient_funds: failed_multiple_limit_order_behavior
+                        .should_skip_orders_with_insufficient_funds(),
+                };
+
+                let matching_engine_response = {
+                    if failed_multiple_limit_order_behavior
+                        .should_skip_orders_with_insufficient_funds()
+                        && !order_packet_has_sufficient_funds(
+                            context,
+                            &order_packet,
+                            trader,
+                            &mut base_lots_available,
+                            &mut quote_lots_available,
+                            &mut base_allowance_read,
+                            &mut quote_allowance_read,
+                        )
+                    {
+                        // Skip this order if the trader does not have sufficient funds
+                        continue;
+                    }
+
+                    // matching_engine_response gives the number of tokens required
+                    // these are added and then compared in the end
+
+                    // TODO call place_order()
+                    MatchingEngineResponse::default()
+                };
+
+                // finally set last price
+                last_price = condensed_order.price_in_ticks;
             }
         }
 
@@ -350,4 +418,46 @@ impl MatchingEngine<'_> {
 pub struct ReduceOrderInnerResponse {
     pub matching_engine_response: MatchingEngineResponse,
     pub should_remove_order_from_book: bool,
+}
+
+fn order_packet_has_sufficient_funds(
+    context: &GoblinMarket,
+    order_packet: &OrderPacket,
+    trader: Address,
+    base_lots_available: &mut BaseLots,
+    quote_lots_available: &mut QuoteLots,
+    base_allowance_read: &mut bool,
+    quote_allowance_read: &mut bool,
+) -> bool {
+    match order_packet.side() {
+        Side::Ask => {
+            if *base_lots_available < order_packet.num_base_lots() {
+                // Lazy load available approved balance for base token
+                if !*base_allowance_read {
+                    *base_lots_available += get_approved_base_lots(context, trader);
+                    *base_allowance_read = true;
+                }
+
+                return *base_lots_available >= order_packet.num_base_lots();
+            }
+        }
+        Side::Bid => {
+            let quote_lots_required = order_packet.get_price_in_ticks()
+                * TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT
+                * order_packet.num_base_lots()
+                / BASE_LOTS_PER_BASE_UNIT;
+
+            if *quote_lots_available < quote_lots_required {
+                // Lazy load available approved balance for quote token
+                if !*quote_allowance_read {
+                    *quote_lots_available += get_approved_quote_lots(context, trader);
+
+                    *quote_allowance_read = true;
+                }
+
+                return *quote_lots_available >= quote_lots_required;
+            }
+        }
+    }
+    true
 }

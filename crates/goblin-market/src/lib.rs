@@ -90,6 +90,7 @@ impl GoblinMarket {
         use_free_funds: bool,
     ) -> GoblinResult<()> {
         new_order::process_multiple_new_orders(
+            self,
             to,
             FailedMultipleLimitOrderBehavior::decode(failed_multiple_limit_order_behavior)?,
             bids,

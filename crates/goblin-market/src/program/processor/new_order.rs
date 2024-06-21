@@ -5,6 +5,7 @@ use crate::{
     program::{GoblinError, GoblinResult, UndefinedFailedMultipleLimitOrderBehavior},
     quantities::{BaseLots, Ticks, WrapperU64},
     state::{MatchingEngine, SlotActions, SlotStorage},
+    GoblinMarket,
 };
 
 pub enum FailedMultipleLimitOrderBehavior {
@@ -57,9 +58,17 @@ impl FailedMultipleLimitOrderBehavior {
 }
 
 pub struct CondensedOrder {
+    // Order price in ticks
     pub price_in_ticks: Ticks,
+
+    // Order size
     pub size_in_base_lots: BaseLots,
+
+    // Whether to track block or unix timestamp
     pub track_block: bool,
+
+    // The last valid block or unix timestamp, depending on the value of
+    // track_block. Set value as 0 to disable FOK.
     pub last_valid_block_or_unix_timestamp_in_seconds: u32,
 }
 
@@ -87,6 +96,7 @@ impl CondensedOrder {
 /// know the best order belonging to the trader. AVOID
 /// Alternative- Cancel and place. If done atomically it will have the same or better index
 pub fn process_multiple_new_orders(
+    context: &mut GoblinMarket,
     to: Address,
     failed_multiple_limit_order_behavior: FailedMultipleLimitOrderBehavior,
     bids: Vec<B256>,
