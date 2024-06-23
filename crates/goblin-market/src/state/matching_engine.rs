@@ -1,4 +1,7 @@
-use stylus_sdk::alloy_primitives::{Address, B256};
+use stylus_sdk::{
+    alloy_primitives::{Address, B256},
+    block,
+};
 
 use crate::{
     parameters::{BASE_LOTS_PER_BASE_UNIT, TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT},
@@ -13,8 +16,8 @@ use crate::{
 
 use super::{
     matching_engine_response, BitmapGroup, IndexList, MarketState, MatchingEngineResponse, OrderId,
-    OrderPacket, OuterIndex, Side, SlotActions, SlotRestingOrder, SlotStorage, TickIndices,
-    TraderState,
+    OrderPacket, OrderPacketMetadata, OuterIndex, Side, SlotActions, SlotRestingOrder, SlotStorage,
+    TickIndices, TraderState,
 };
 use alloc::vec::Vec;
 
@@ -412,6 +415,59 @@ impl MatchingEngine<'_> {
         }
 
         Ok(MatchingEngineResponse::default())
+    }
+
+    fn place_order_inner(
+        market_state: &mut MarketState,
+        trader_state: &mut TraderState,
+        trader: Address,
+        to: Address,
+        order_packet: &mut OrderPacket,
+    ) -> Option<MatchingEngineResponse> {
+        let side = order_packet.side();
+        match side {
+            Side::Bid => {
+                if order_packet.get_price_in_ticks() == Ticks::ZERO {
+                    return None;
+                }
+            }
+            Side::Ask => {
+                if !order_packet.is_take_only() {
+                    let tick_price = order_packet.get_price_in_ticks();
+                    order_packet.set_price_in_ticks(tick_price.max(Ticks::ONE));
+                }
+            }
+        }
+
+        if order_packet.num_base_lots() == 0 && order_packet.num_quote_lots() == 0 {
+            // Either num_base_lots or num_quote_lots must be nonzero
+            return None;
+        }
+
+        // For IOC order types exactly one of num_quote_lots or num_base_lots needs to be specified.
+        if let OrderPacket::ImmediateOrCancel {
+            num_base_lots,
+            num_quote_lots,
+            ..
+        } = *order_packet
+        {
+            if num_base_lots > BaseLots::ZERO && num_quote_lots > QuoteLots::ZERO
+                || num_base_lots == BaseLots::ZERO && num_quote_lots == QuoteLots::ZERO
+            {
+                return None;
+            }
+        }
+
+        let current_block = block::number() as u32;
+        let current_unix_timestamp = block::timestamp() as u32;
+
+        if order_packet.is_expired(current_block, current_unix_timestamp) {
+            // Do not fail the transaction if the order is expired, but do not place or match the order
+            return Some(MatchingEngineResponse::default());
+        }
+
+        // Build resting_order and matching_engine_response
+        None
     }
 }
 

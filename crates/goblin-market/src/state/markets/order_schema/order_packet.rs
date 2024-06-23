@@ -3,6 +3,16 @@ use crate::{
     state::{SelfTradeBehavior, Side},
 };
 
+pub trait OrderPacketMetadata {
+    fn is_take_only(&self) -> bool {
+        self.is_ioc() || self.is_fok()
+    }
+    fn is_ioc(&self) -> bool;
+    fn is_fok(&self) -> bool;
+    fn is_post_only(&self) -> bool;
+    fn no_deposit_or_withdrawal(&self) -> bool;
+}
+
 #[derive(Copy, Clone)]
 pub enum OrderPacket {
     /// This order type is used to place a limit order on the book.
@@ -130,6 +140,49 @@ pub enum OrderPacket {
     },
 }
 
+impl OrderPacketMetadata for OrderPacket {
+    fn is_ioc(&self) -> bool {
+        matches!(self, OrderPacket::ImmediateOrCancel { .. })
+    }
+
+    fn is_fok(&self) -> bool {
+        match self {
+            &Self::ImmediateOrCancel {
+                num_base_lots,
+                num_quote_lots,
+                min_base_lots_to_fill,
+                min_quote_lots_to_fill,
+                ..
+            } => {
+                num_base_lots > BaseLots::ZERO && num_base_lots == min_base_lots_to_fill
+                    || num_quote_lots > QuoteLots::ZERO && num_quote_lots == min_quote_lots_to_fill
+            }
+            _ => false,
+        }
+    }
+
+    fn is_post_only(&self) -> bool {
+        matches!(self, OrderPacket::PostOnly { .. })
+    }
+
+    fn no_deposit_or_withdrawal(&self) -> bool {
+        match *self {
+            Self::PostOnly {
+                use_only_deposited_funds,
+                ..
+            } => use_only_deposited_funds,
+            Self::Limit {
+                use_only_deposited_funds,
+                ..
+            } => use_only_deposited_funds,
+            Self::ImmediateOrCancel {
+                use_only_deposited_funds,
+                ..
+            } => use_only_deposited_funds,
+        }
+    }
+}
+
 impl OrderPacket {
     pub fn side(&self) -> Side {
         match self {
@@ -234,5 +287,109 @@ impl OrderPacket {
                 })
             }
         }
+    }
+
+    pub fn set_price_in_ticks(&mut self, price_in_ticks: Ticks) {
+        match self {
+            Self::PostOnly {
+                price_in_ticks: old_price_in_ticks,
+                ..
+            } => *old_price_in_ticks = price_in_ticks,
+            Self::Limit {
+                price_in_ticks: old_price_in_ticks,
+                ..
+            } => *old_price_in_ticks = price_in_ticks,
+            Self::ImmediateOrCancel {
+                price_in_ticks: old_price_in_ticks,
+                ..
+            } => *old_price_in_ticks = Some(price_in_ticks),
+        }
+    }
+
+    pub fn get_last_valid_block(&self) -> Option<u32> {
+        match self {
+            Self::PostOnly {
+                track_block,
+                last_valid_block_or_unix_timestamp_in_seconds,
+                ..
+            } => get_last_valid_block(*track_block, *last_valid_block_or_unix_timestamp_in_seconds),
+            Self::Limit {
+                track_block,
+                last_valid_block_or_unix_timestamp_in_seconds,
+                ..
+            } => get_last_valid_block(*track_block, *last_valid_block_or_unix_timestamp_in_seconds),
+            Self::ImmediateOrCancel {
+                track_block,
+                last_valid_block_or_unix_timestamp_in_seconds,
+                ..
+            } => get_last_valid_block(*track_block, *last_valid_block_or_unix_timestamp_in_seconds),
+        }
+    }
+
+    pub fn get_last_valid_unix_timestamp_in_seconds(&self) -> Option<u32> {
+        match self {
+            Self::PostOnly {
+                track_block,
+                last_valid_block_or_unix_timestamp_in_seconds,
+                ..
+            } => get_last_valid_unix_timestamp(
+                *track_block,
+                *last_valid_block_or_unix_timestamp_in_seconds,
+            ),
+            Self::Limit {
+                track_block,
+                last_valid_block_or_unix_timestamp_in_seconds,
+                ..
+            } => get_last_valid_unix_timestamp(
+                *track_block,
+                *last_valid_block_or_unix_timestamp_in_seconds,
+            ),
+            Self::ImmediateOrCancel {
+                track_block,
+                last_valid_block_or_unix_timestamp_in_seconds,
+                ..
+            } => get_last_valid_unix_timestamp(
+                *track_block,
+                *last_valid_block_or_unix_timestamp_in_seconds,
+            ),
+        }
+    }
+
+    pub fn is_expired(&self, current_block: u32, current_unix_timestamp_in_seconds: u32) -> bool {
+        if let Some(last_valid_block) = self.get_last_valid_block() {
+            if current_block > last_valid_block {
+                return true;
+            }
+        }
+        if let Some(last_valid_unix_timestamp_in_seconds) =
+            self.get_last_valid_unix_timestamp_in_seconds()
+        {
+            if current_unix_timestamp_in_seconds > last_valid_unix_timestamp_in_seconds {
+                return true;
+            }
+        }
+        false
+    }
+}
+
+fn get_last_valid_block(
+    track_block: bool,
+    last_valid_block_or_unix_timestamp_in_seconds: u32,
+) -> Option<u32> {
+    if !track_block || last_valid_block_or_unix_timestamp_in_seconds == 0 {
+        None
+    } else {
+        Some(last_valid_block_or_unix_timestamp_in_seconds)
+    }
+}
+
+fn get_last_valid_unix_timestamp(
+    track_block: bool,
+    last_valid_block_or_unix_timestamp_in_seconds: u32,
+) -> Option<u32> {
+    if track_block || last_valid_block_or_unix_timestamp_in_seconds == 0 {
+        None
+    } else {
+        Some(last_valid_block_or_unix_timestamp_in_seconds)
     }
 }
