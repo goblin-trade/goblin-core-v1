@@ -2,6 +2,8 @@ use crate::state::{
     slot_storage::{SlotActions, SlotKey, SlotStorage},
     InnerIndex, OuterIndex, RestingOrderIndex, Side,
 };
+use alloc::boxed::Box;
+use core::ops::{Range, RangeInclusive};
 
 /// A BitmapGroup contains Bitmaps for 32 ticks in ascending order.
 /// A single Bitmap contains data of 8 resting orders.
@@ -52,6 +54,35 @@ impl BitmapGroup {
         ];
     }
 
+    /// Return an iterator to traverse bitmaps in a bitmap group
+    ///
+    /// Traversal is away from the centre. Move from top to bottom for bids (high to low) and from
+    /// bottom to top (low to high) for asks.
+    ///
+    /// # Arguments
+    ///
+    /// * `side`
+    /// * `previous_inner_index` - Begin traversal starting with this index (inclusive)
+    ///
+    pub fn bitmap_iterator(
+        &self,
+        side: Side,
+        previous_inner_index: Option<InnerIndex>,
+    ) -> Box<dyn Iterator<Item = usize>> {
+        match side {
+            // Top to bottom for bids
+            Side::Bid => {
+                let highest_index = previous_inner_index.map(|i| i.as_usize()).unwrap_or(31);
+                return Box::new((0..=highest_index).rev());
+            }
+            // Bottom to top for asks
+            Side::Ask => {
+                let lowest_index = previous_inner_index.map(|i| i.as_usize()).unwrap_or(0);
+                return Box::new(lowest_index..=31);
+            }
+        }
+    }
+
     /// Get the best active inner index in a bitmap group.
     ///
     /// Returns None if there is no active index. Externally ensure that this is called on an active
@@ -61,35 +92,19 @@ impl BitmapGroup {
     ///
     /// * `side`
     /// * `previous_inner_index` - The previous best inner index, optional. If no value is
-    /// provided search from the end. If provided, search beginning from this index.
+    /// provided search from the end. If provided, search beginning from this index (inclusive).
     ///
     pub fn best_active_index(
         &self,
         side: Side,
         previous_inner_index: Option<InnerIndex>,
     ) -> Option<InnerIndex> {
-        match side {
-            Side::Bid => {
-                let highest_index = previous_inner_index.map(|i| i.as_usize()).unwrap_or(32);
-
-                // Start from the highest index and move backwards
-                for i in (0..highest_index).rev() {
-                    if self.inner[i] != 0 {
-                        return Some(InnerIndex::new(i));
-                    }
-                }
-            }
-            Side::Ask => {
-                let lowest_index = previous_inner_index.map(|i| i.as_usize() + 1).unwrap_or(0);
-
-                // Start from the lowest index and move forwards
-                for i in lowest_index..32 {
-                    if self.inner[i] != 0 {
-                        return Some(InnerIndex::new(i));
-                    }
-                }
+        for i in self.bitmap_iterator(side, previous_inner_index) {
+            if self.inner[i] != 0 {
+                return Some(InnerIndex::new(i));
             }
         }
+
         None
     }
 }

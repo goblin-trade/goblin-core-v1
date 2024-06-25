@@ -167,6 +167,7 @@ impl MarketState {
             inner_index: old_inner_index,
         } = best_price.to_indices();
 
+        // Read bitmap group for the new outer index
         let bitmap_group = BitmapGroup::new_from_slot(slot_storage, &new_outer_index);
 
         // If outer index did not change, lookup in the same bitmap group starting from
@@ -181,8 +182,10 @@ impl MarketState {
         // 2- get new inner index
         // This should not return None because active orders are guaranteed in bitmap groups with active
         // outer indices
+        // previous_best_inner_index should be inclusive? What if an inner value is removed? Then best_price
+        // should not be updated
         let new_inner_index = bitmap_group
-            .best_active_index(index_list.side.clone(), previous_best_inner_index)
+            .best_active_index(index_list.side, previous_best_inner_index)
             .unwrap();
 
         // 3- update best price

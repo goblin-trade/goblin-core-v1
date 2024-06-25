@@ -16,10 +16,10 @@ use crate::{
 
 use super::{
     matching_engine_response, BitmapGroup, IndexList, MarketState, MatchingEngineResponse, OrderId,
-    OrderPacket, OrderPacketMetadata, OuterIndex, Side, SlotActions, SlotRestingOrder, SlotStorage,
-    TickIndices, TraderState,
+    OrderPacket, OrderPacketMetadata, OuterIndex, RestingOrder, RestingOrderIndex, Side,
+    SlotActions, SlotRestingOrder, SlotStorage, TickIndices, TraderState,
 };
-use alloc::vec::Vec;
+use alloc::{collections::btree_map::Range, vec::Vec};
 
 pub struct MatchingEngine<'a> {
     pub slot_storage: &'a mut SlotStorage,
@@ -297,6 +297,7 @@ impl MatchingEngine<'_> {
         market.bids_outer_indices = bid_index_list.size;
         market.asks_outer_indices = ask_index_list.size;
 
+        // TODO optimize- only run if one of the canceled orders had a price equal to the best price
         market.update_best_price(&bid_index_list, self.slot_storage);
         market.update_best_price(&ask_index_list, self.slot_storage);
 
@@ -418,6 +419,7 @@ impl MatchingEngine<'_> {
     }
 
     fn place_order_inner(
+        &mut self,
         market_state: &mut MarketState,
         trader_state: &mut TraderState,
         trader: Address,
@@ -467,7 +469,133 @@ impl MatchingEngine<'_> {
         }
 
         // Build resting_order and matching_engine_response
+        // let (resting_order, mut matching_engine_response) = if let OrderPacket::PostOnly {
+        //     price_in_ticks,
+        //     reject_post_only,
+        //     ..
+        // } = &mut order_packet
+        // {
+        //     // Handle cases where PostOnly order would cross the book
+        //     if let Some(ticks) = self.check_for_cross(
+        //         side,
+        //         *price_in_ticks,
+        //         current_block,
+        //         current_unix_timestamp,
+        //     ) {
+        //         if *reject_post_only {
+        //             phoenix_log!("PostOnly order crosses the book - order rejected");
+        //             return None;
+        //         } else {
+        //             match side {
+        //                 Side::Bid => {
+        //                     if ticks <= Ticks::ONE {
+        //                         phoenix_log!("PostOnly order crosses the book and can not be amended to a valid price - order rejected");
+        //                         return None;
+        //                     }
+        //                     *price_in_ticks = ticks - Ticks::ONE;
+        //                 }
+        //                 Side::Ask => {
+        //                     *price_in_ticks = ticks + Ticks::ONE;
+        //                 }
+        //             }
+        //             phoenix_log!("PostOnly order crosses the book - order amended");
+        //         }
+        //     }
+
+        //     (
+        //         FIFORestingOrder::new(
+        //             trader_index as u64,
+        //             order_packet.num_base_lots(),
+        //             order_packet.get_last_valid_slot(),
+        //             order_packet.get_last_valid_unix_timestamp_in_seconds(),
+        //         ),
+        //         MatchingEngineResponse::default(),
+        //     )
+        // };
+
         None
+    }
+
+    /// This function determines whether a PostOnly order crosses the book.
+    /// If the order crosses the book, the function returns the price of the best unexpired order
+    /// on the opposite side of the book in Ticks. Otherwise, it returns None.
+    ///
+    /// # Arguments
+    ///
+    /// * `side`
+    /// * `num_ticks`
+    /// * `current_block`
+    /// * `current_unix_timestamp_in_seconds`
+    ///
+    fn check_for_cross(
+        &self,
+        market_state: &mut MarketState,
+        side: Side,
+        num_ticks: Ticks,
+        current_block: u32,
+        current_unix_timestamp_in_seconds: u32,
+    ) -> Option<Ticks> {
+        let mut opposite_best_price = if side == Side::Bid {
+            market_state.best_bid_price
+        } else {
+            market_state.best_ask_price
+        };
+
+        let crosses = match side.opposite() {
+            Side::Bid => num_ticks <= market_state.best_bid_price,
+            Side::Ask => num_ticks >= market_state.best_ask_price,
+        };
+
+        return None;
+
+        // if !crosses {
+        //     return None;
+        // }
+
+        // Check if not expired
+        // Read bitmap
+        // loop {
+        //     let TickIndices { outer_index, inner_index } = opposite_best_price.to_indices();
+        //     let bitmap_group = BitmapGroup::new_from_slot(&self.slot_storage, &outer_index);
+
+        //     let range = if side.opposite() == Side::Bid {
+        //         (0..=inner_index.as_usize()).rev().into_iter()
+        //     } else {
+        //         (inner_index.as_usize()..32).into_iter()
+        //     };
+
+        //     for j in range {
+
+        //     }
+
+        //     // Loop in bitmaps
+        //     let bitmap = bitmap_group.get_bitmap(&inner_index);
+
+        //     for i in 0..8 {
+        //         let resting_order_index = RestingOrderIndex::new(i);
+        //         if bitmap.order_present(resting_order_index) {
+        //             let order_id = OrderId {
+        //                 price_in_ticks: opposite_best_price,
+        //                 resting_order_index
+
+        //             };
+        //             let resting_order = SlotRestingOrder::new_from_slot(&self.slot_storage, &order_id);
+        //             if !resting_order.expired(current_block, current_unix_timestamp_in_seconds) {
+        //                 return Some(opposite_best_price);
+        //             }
+        //         }
+        //     }
+
+        //     let bitmap_index = bitmap.best_free_index().unwrap();
+        // };
+
+        // Read best bid / best ask from market
+        // The book is crossed if price crosses the best bid / best ask
+        // Ensure that the best opposite order is not expired. Else we need to lookup for
+        // the best unexpired order and update market state
+        // loop {
+
+        // }
     }
 }
 
