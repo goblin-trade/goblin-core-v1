@@ -126,6 +126,18 @@ impl MarketState {
         Ok(())
     }
 
+    pub fn index_list_size(&self, side: Side) -> u16 {
+        if side == Side::Bid {
+            self.bids_outer_indices
+        } else {
+            self.asks_outer_indices
+        }
+    }
+
+    pub fn get_index_list(&self, side: Side) -> IndexList {
+        IndexList::new(side, self.index_list_size(side))
+    }
+
     pub fn outer_index_length(&self, side: Side) -> u16 {
         if side == Side::Bid {
             self.bids_outer_indices
@@ -190,6 +202,14 @@ impl MarketState {
 
         // 3- update best price
         *best_price = Ticks::from_indices(new_outer_index, new_inner_index);
+    }
+
+    pub fn best_price(&self, side: Side) -> Ticks {
+        if side == Side::Bid {
+            self.best_bid_price
+        } else {
+            self.best_ask_price
+        }
     }
 }
 

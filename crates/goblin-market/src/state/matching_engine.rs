@@ -15,9 +15,10 @@ use crate::{
 };
 
 use super::{
-    matching_engine_response, BitmapGroup, IndexList, MarketState, MatchingEngineResponse, OrderId,
-    OrderPacket, OrderPacketMetadata, OuterIndex, RestingOrder, RestingOrderIndex, Side,
-    SlotActions, SlotRestingOrder, SlotStorage, TickIndices, TraderState,
+    matching_engine_response, slot_storage, BitmapGroup, IndexList, InnerIndex, ListKey, ListSlot,
+    MarketState, MatchingEngineResponse, OrderId, OrderPacket, OrderPacketMetadata, OuterIndex,
+    RestingOrder, RestingOrderIndex, Side, SlotActions, SlotRestingOrder, SlotStorage, TickIndices,
+    TraderState,
 };
 use alloc::{collections::btree_map::Range, vec::Vec};
 
@@ -214,8 +215,8 @@ impl MatchingEngine<'_> {
 
         let mut cached_bitmap_group: Option<(BitmapGroup, OuterIndex)> = None;
 
-        let mut bid_index_list = IndexList::new(Side::Bid, market.bids_outer_indices);
-        let mut ask_index_list = IndexList::new(Side::Ask, market.asks_outer_indices);
+        let mut bid_index_list = market.get_index_list(Side::Bid);
+        let mut ask_index_list = market.get_index_list(Side::Ask);
 
         for order_packet_bytes in order_packets {
             let ReduceOrderPacket {
@@ -427,6 +428,7 @@ impl MatchingEngine<'_> {
         order_packet: &mut OrderPacket,
     ) -> Option<MatchingEngineResponse> {
         let side = order_packet.side();
+
         match side {
             Side::Bid => {
                 if order_packet.get_price_in_ticks() == Ticks::ZERO {
@@ -468,57 +470,48 @@ impl MatchingEngine<'_> {
             return Some(MatchingEngineResponse::default());
         }
 
+        let mut index_list = market_state.get_index_list(side);
+
         // Build resting_order and matching_engine_response
-        // let (resting_order, mut matching_engine_response) = if let OrderPacket::PostOnly {
+        if let OrderPacket::PostOnly {
+            price_in_ticks,
+            reject_post_only,
+            ..
+        } = order_packet
+        {
+            // Handle cases where PostOnly order would cross the book
+            // self.check_for_cross(
+            //     market_state,
+            //     &mut index_list,
+            //     *price_in_ticks,
+            //     current_block,
+            //     current_unix_timestamp,
+            // );
+        };
+
+        // if let OrderPacket::PostOnly {
         //     price_in_ticks,
         //     reject_post_only,
         //     ..
         // } = &mut order_packet
         // {
         //     // Handle cases where PostOnly order would cross the book
-        //     if let Some(ticks) = self.check_for_cross(
-        //         side,
-        //         *price_in_ticks,
-        //         current_block,
-        //         current_unix_timestamp,
-        //     ) {
-        //         if *reject_post_only {
-        //             phoenix_log!("PostOnly order crosses the book - order rejected");
-        //             return None;
-        //         } else {
-        //             match side {
-        //                 Side::Bid => {
-        //                     if ticks <= Ticks::ONE {
-        //                         phoenix_log!("PostOnly order crosses the book and can not be amended to a valid price - order rejected");
-        //                         return None;
-        //                     }
-        //                     *price_in_ticks = ticks - Ticks::ONE;
-        //                 }
-        //                 Side::Ask => {
-        //                     *price_in_ticks = ticks + Ticks::ONE;
-        //                 }
-        //             }
-        //             phoenix_log!("PostOnly order crosses the book - order amended");
-        //         }
-        //     }
-
-        //     (
-        //         FIFORestingOrder::new(
-        //             trader_index as u64,
-        //             order_packet.num_base_lots(),
-        //             order_packet.get_last_valid_slot(),
-        //             order_packet.get_last_valid_unix_timestamp_in_seconds(),
-        //         ),
-        //         MatchingEngineResponse::default(),
-        //     )
+        //     // self.check_for_cross(
+        //     //     side,
+        //     //     *price_in_ticks,
+        //     //     current_block,
+        //     //     current_unix_timestamp,
+        //     // );
         // };
 
         None
     }
 
     /// This function determines whether a PostOnly order crosses the book.
-    /// If the order crosses the book, the function returns the price of the best unexpired order
+    /// If the order crosses the book, the function returns the ID of the best unexpired order (price, index)
     /// on the opposite side of the book in Ticks. Otherwise, it returns None.
+    ///
+    /// The returned value will be worse than and not equal to price of the PostOnly order `num_ticks`
     ///
     /// # Arguments
     ///
@@ -529,73 +522,118 @@ impl MatchingEngine<'_> {
     ///
     fn check_for_cross(
         &self,
+        slot_storage: &mut SlotStorage,
         market_state: &mut MarketState,
         side: Side,
         num_ticks: Ticks,
         current_block: u32,
         current_unix_timestamp_in_seconds: u32,
-    ) -> Option<Ticks> {
-        let mut opposite_best_price = if side == Side::Bid {
-            market_state.best_bid_price
-        } else {
-            market_state.best_ask_price
-        };
+    ) -> Option<OrderId> {
+        // Index list on the opposite side
+        let index_list = market_state.get_index_list(side.opposite());
 
-        let crosses = match side.opposite() {
-            Side::Bid => num_ticks <= market_state.best_bid_price,
-            Side::Ask => num_ticks >= market_state.best_ask_price,
-        };
+        // TODO default best price if there are no orders is 0. TODO handle
+        let opposite_best_price = market_state.best_price(side.opposite());
+
+        // Book is empty
+        if index_list.size == 0 {
+            return None;
+        }
+
+        // No cross case
+        if (side == Side::Bid && opposite_best_price > num_ticks)
+            || (side == Side::Ask && opposite_best_price < num_ticks)
+        {
+            return None;
+        }
+
+        // Avoid duplicate SLOADs for a values with the same slot index
+        let mut cached_list_slot: Option<ListSlot> = None;
+
+        let mut orders_to_cancel = Vec::<RestingOrderIndex>::new();
+
+        // 1. Loop through outer indices in index list
+        for i in (0..index_list.size).rev() {
+            let slot_index = i / 16;
+            let relative_index = i as usize % 16;
+
+            // Load list slot if this is the first iteration or if values in the cached slot are
+            // completely read
+            if cached_list_slot.is_none() || relative_index == 15 {
+                let list_slot_key = ListKey { index: slot_index };
+                cached_list_slot = Some(ListSlot::new_from_slot(slot_storage, &list_slot_key));
+            }
+
+            // Read bitmap group for each outer index in the list slot
+            let outer_index = cached_list_slot.unwrap().get(relative_index);
+            let bitmap_group = BitmapGroup::new_from_slot(slot_storage, &outer_index);
+
+            // If this is the first bitmap being read, start from the inner index of the cached
+            // best opposite price
+            let previous_inner_index = if i == 0 {
+                Some(opposite_best_price.inner_index())
+            } else {
+                None
+            };
+
+            // 2. loop through bitmaps in the group
+            for j in bitmap_group.bitmap_iterator(index_list.side, previous_inner_index) {
+                let inner_index = InnerIndex::new(j);
+                let bitmap = bitmap_group.get_bitmap(&inner_index);
+
+                if !bitmap.empty() {
+                    let current_price = Ticks::from_indices(outer_index, inner_index);
+
+                    // cross condition- current price is more towards the centre
+                    let crosses = match side.opposite() {
+                        Side::Bid => current_price >= num_ticks,
+                        Side::Ask => current_price <= num_ticks,
+                    };
+
+                    if !crosses {
+                        break;
+                    } else {
+                        // This tick has active orders and gets crossed. Find orders that have
+                        // expired and close them.
+
+                        // Iterate through active bits in the bitmap
+                        let mut bits = *bitmap.inner;
+                        for k in 0..8 {
+                            // Read smallest bit
+                            if bits & 1 != 0 {
+                                // Resting order present
+                                let order_index = OrderId {
+                                    price_in_ticks: current_price,
+                                    resting_order_index: RestingOrderIndex::new(k),
+                                };
+                                let order =
+                                    SlotRestingOrder::new_from_slot(slot_storage, &order_index);
+
+                                // Order has expired, queue for removal
+                                if order.expired(current_block, current_unix_timestamp_in_seconds) {
+                                    orders_to_cancel.push(RestingOrderIndex::new(k));
+                                } else {
+                                    // Best uncrossed order found, return the key
+
+                                    if !orders_to_cancel.is_empty() {
+                                        // TODO call reduce multiple
+                                    }
+                                    return Some(order_index);
+                                }
+                            }
+                            // Right shift
+                            bits >>= 1;
+                        }
+                    }
+                }
+            }
+        }
+
+        if !orders_to_cancel.is_empty() {
+            // TODO call reduce multiple
+        }
 
         return None;
-
-        // if !crosses {
-        //     return None;
-        // }
-
-        // Check if not expired
-        // Read bitmap
-        // loop {
-        //     let TickIndices { outer_index, inner_index } = opposite_best_price.to_indices();
-        //     let bitmap_group = BitmapGroup::new_from_slot(&self.slot_storage, &outer_index);
-
-        //     let range = if side.opposite() == Side::Bid {
-        //         (0..=inner_index.as_usize()).rev().into_iter()
-        //     } else {
-        //         (inner_index.as_usize()..32).into_iter()
-        //     };
-
-        //     for j in range {
-
-        //     }
-
-        //     // Loop in bitmaps
-        //     let bitmap = bitmap_group.get_bitmap(&inner_index);
-
-        //     for i in 0..8 {
-        //         let resting_order_index = RestingOrderIndex::new(i);
-        //         if bitmap.order_present(resting_order_index) {
-        //             let order_id = OrderId {
-        //                 price_in_ticks: opposite_best_price,
-        //                 resting_order_index
-
-        //             };
-        //             let resting_order = SlotRestingOrder::new_from_slot(&self.slot_storage, &order_id);
-        //             if !resting_order.expired(current_block, current_unix_timestamp_in_seconds) {
-        //                 return Some(opposite_best_price);
-        //             }
-        //         }
-        //     }
-
-        //     let bitmap_index = bitmap.best_free_index().unwrap();
-        // };
-
-        // Read best bid / best ask from market
-        // The book is crossed if price crosses the best bid / best ask
-        // Ensure that the best opposite order is not expired. Else we need to lookup for
-        // the best unexpired order and update market state
-        // loop {
-
-        // }
     }
 }
 

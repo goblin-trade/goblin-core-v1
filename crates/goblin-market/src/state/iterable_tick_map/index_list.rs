@@ -53,7 +53,7 @@ impl SlotKey for ListKey {
     }
 }
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone, Copy)]
 pub struct ListSlot {
     pub inner: [u16; 16],
 }
@@ -109,6 +109,23 @@ pub struct IndexList {
 
     /// Cached current slot
     pub cached_slot: Option<ListSlot>,
+
+    /// The current index when iterating through values
+    pub current_index: Option<u16>,
+}
+
+impl Iterator for IndexList {
+    type Item = OuterIndex;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.current_index.is_none() {
+            self.current_index = Some(self.size - 1);
+        }
+
+        for i in (0..=self.current_index.unwrap()).rev() {}
+
+        todo!()
+    }
 }
 
 impl IndexList {
@@ -120,6 +137,7 @@ impl IndexList {
 
             cached_best_outer_index: None,
             cached_slot: None,
+            current_index: None,
         }
     }
 

@@ -24,11 +24,19 @@ pub struct TickIndices {
 }
 
 impl Ticks {
+    pub fn outer_index(&self) -> OuterIndex {
+        // Since max size of Ticks is 2^21 - 1, division by 2^5 ensures that it fits in u16
+        OuterIndex::new((self.as_u64() / BITMAPS_PER_GROUP) as u16)
+    }
+
+    pub fn inner_index(&self) -> InnerIndex {
+        InnerIndex::new((self.as_u64() % BITMAPS_PER_GROUP) as usize)
+    }
+
     pub fn to_indices(&self) -> TickIndices {
         TickIndices {
-            // Since max size of Ticks is 2^21 - 1, division by 2^5 ensures that it fits in u16
-            outer_index: OuterIndex::new((self.as_u64() / BITMAPS_PER_GROUP) as u16),
-            inner_index: InnerIndex::new((self.as_u64() % BITMAPS_PER_GROUP) as usize),
+            outer_index: self.outer_index(),
+            inner_index: self.inner_index(),
         }
     }
 
@@ -67,7 +75,7 @@ impl SlotKey for OuterIndex {
 }
 
 /// Key to fetch the bitmap within a bitmap group
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 #[repr(transparent)]
 pub struct InnerIndex {
     /// Relative position of the bitmap within the bitmap group
