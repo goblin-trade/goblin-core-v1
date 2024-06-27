@@ -8,8 +8,7 @@ use crate::{
     program::{try_withdraw, GoblinResult},
     quantities::{BaseAtomsRaw, BaseLots, QuoteAtomsRaw, Ticks, WrapperU64},
     state::{
-        MatchingEngine, MatchingEngineResponse, OrderId, RestingOrderIndex, SlotActions,
-        SlotStorage,
+        market_state, MarketState, MatchingEngine, MatchingEngineResponse, OrderId, RestingOrderIndex, SlotActions, SlotStorage
     },
     GoblinMarket,
 };
@@ -51,8 +50,12 @@ pub fn process_reduce_multiple_orders(
     order_packets: Vec<B256>,
     recipient: Option<Address>,
 ) -> GoblinResult<()> {
+    let slot_storage = &mut SlotStorage::new();
+
+    let market_state = &mut MarketState::read_from_slot(slot_storage);
+
     let mut matching_engine = MatchingEngine {
-        slot_storage: &mut SlotStorage::new(),
+        slot_storage,
     };
 
     // State reads and writes are performed inside reduce_multiple_orders_inner()
@@ -62,10 +65,12 @@ pub fn process_reduce_multiple_orders(
         num_base_lots_out,
         ..
     } = matching_engine.reduce_multiple_orders_inner(
+        market_state,
         msg::sender(),
         order_packets,
         recipient.is_some(),
     )?;
+    market_state.write_to_slot(slot_storage)?;
     SlotStorage::storage_flush_cache(true);
 
     if let Some(recipient) = recipient {
