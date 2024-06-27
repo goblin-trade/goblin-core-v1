@@ -429,7 +429,7 @@ impl MatchingEngine<'_> {
         num_ticks: Ticks,
         current_block: u32,
         current_unix_timestamp_in_seconds: u32,
-    ) -> Option<OrderId> {
+    ) -> GoblinResult<Option<OrderId>> {
         // Index list on the opposite side
         let mut index_list = market_state.get_index_list(side.opposite());
         let opposite_best_price = market_state.best_price(side.opposite());
@@ -439,7 +439,7 @@ impl MatchingEngine<'_> {
             || (side == Side::Bid && num_ticks < opposite_best_price)
             || (side == Side::Ask && num_ticks > opposite_best_price)
         {
-            return None;
+            return Ok(None);
         }
         // Now there is atleast one order that crosses
 
@@ -508,8 +508,8 @@ impl MatchingEngine<'_> {
                                     BaseLots::MAX,
                                     true,
                                     false,
-                                )?;
-                                order.write_to_slot(slot_storage, &order_id).ok();
+                                );
+                                order.write_to_slot(slot_storage, &order_id)?;
 
                                 trader_state.write_to_slot(self.slot_storage, order.trader_address);
                                 bitmap.clear(&resting_order_index);
@@ -525,10 +525,10 @@ impl MatchingEngine<'_> {
                                     || (side.opposite() == Side::Ask && current_price <= num_ticks)
                                 {
                                     // Unexpired crossing order
-                                    Some(order_id)
+                                    Ok(Some(order_id))
                                 } else {
                                     // Non-crossing order
-                                    None
+                                    Ok(None)
                                 };
                             }
                         }
@@ -544,7 +544,7 @@ impl MatchingEngine<'_> {
         }
         // Reached if all orders were expired
         index_list.write_to_slot(slot_storage);
-        return None;
+        return Ok(None);
     }
 }
 
