@@ -510,16 +510,13 @@ impl MatchingEngine<'_> {
     /// If the order crosses the book, the function returns the ID of the best unexpired
     /// crossing order (price, index) on the opposite side of the book. Otherwise, it returns None.
     ///
-    /// Loop through active orders on the opposite book starting from the centre
-    /// - If the order does not cross, exit
-    /// - If the order crosses but is expired, remove the order and continue to next iteration.
-    /// - If the order crosses and is live, then return this order's ID.
-    ///
-    /// Summary- Return the best unexpired crossing order, or none.
-    ///
+    /// The function closes all expired orders till an unexpired order is found.
+    /// Design difference- unlike Phoenix, this function can close expired orders that do not cross.
     ///
     /// # Arguments
     ///
+    /// * `slot_storage`
+    /// * `market_state`
     /// * `side`
     /// * `num_ticks`
     /// * `current_block`
@@ -536,33 +533,21 @@ impl MatchingEngine<'_> {
     ) -> Option<OrderId> {
         // Index list on the opposite side
         let mut index_list = market_state.get_index_list(side.opposite());
-
-        // Book is empty
-        if index_list.size == 0 {
-            return None;
-        }
-
-        // TODO default best price if there are no orders is 0. TODO handle
         let opposite_best_price = market_state.best_price(side.opposite());
 
-        // No cross case
-        if (side == Side::Bid && opposite_best_price > num_ticks)
-            || (side == Side::Ask && opposite_best_price < num_ticks)
+        if index_list.size == 0 // Book empty case
+            // No cross case
+            || (side == Side::Bid && num_ticks < opposite_best_price)
+            || (side == Side::Ask && num_ticks > opposite_best_price)
         {
             return None;
         }
-
-        let mut best_unexpired_crossed_order: Option<OrderId> = None;
+        // Now there is atleast one order that crosses
 
         // Avoid duplicate SLOADs for a values with the same slot index
         let mut cached_list_slot: Option<ListSlot> = None;
 
-        // 1. Loop through outer indices in index list
-        let last_i = index_list.size - 1;
-
-        // Important- we tested for no cross condition already.
-        // EVERY TICK CROSSES NOW
-        'outer_indices_loop: for i in (0..index_list.size).rev() {
+        for i in (0..index_list.size).rev() {
             let slot_index = i / 16;
             let relative_index = i as usize % 16;
 
@@ -577,7 +562,7 @@ impl MatchingEngine<'_> {
             let outer_index = cached_list_slot.unwrap().get(relative_index);
             let mut bitmap_group = BitmapGroup::new_from_slot(slot_storage, &outer_index);
 
-            // If this is the first bitmap being read, start from the inner index of the cached
+            // If this is the first bitmap group being read, start from the inner index of the cached
             // best opposite price
             let previous_inner_index = if i == 0 {
                 Some(opposite_best_price.inner_index())
@@ -586,99 +571,80 @@ impl MatchingEngine<'_> {
             };
 
             // 2. loop through bitmaps in the group
-            'inner_indices_loop: for j in bitmap_group.bitmap_iterator(index_list.side, previous_inner_index) {
+            for j in bitmap_group.bitmap_iterator(index_list.side, previous_inner_index) {
                 let inner_index = InnerIndex::new(j);
                 let mut bitmap = bitmap_group.get_bitmap_mut(&inner_index);
 
                 if !bitmap.empty() {
                     let current_price = Ticks::from_indices(outer_index, inner_index);
 
-                    // important- this has to cross
-                    // cross condition- current price is more towards the centre
-                    let crosses = match side.opposite() {
-                        Side::Bid => current_price >= num_ticks,
-                        Side::Ask => current_price <= num_ticks,
-                    };
+                    let mut bits = *bitmap.inner;
+                    for k in 0..8 {
+                        // Read smallest bit
+                        let bit = bits & 1;
 
-                    if !crosses {
-                        // If this is reached in a subsequent iteration after closing some expired
-                        // orders, there are pending writes
-                        bitmap_group.write_to_slot(slot_storage, &outer_index);
-                        break 'outer_indices_loop;
-                    } else {
-                        // This tick has active orders and gets crossed. Find orders that have
-                        // expired and close them.
+                        if bit != 0 {
+                            let resting_order_index = RestingOrderIndex::new(k);
 
-                        // 3. Iterate through active bits in the bitmap
-                        let mut bits = *bitmap.inner;
-                        for k in 0..8 {
-                            // Read smallest bit
-                            if bits & 1 != 0 {
-                                let resting_order_index = RestingOrderIndex::new(k);
+                            // Resting order present
+                            let order_id = OrderId {
+                                price_in_ticks: current_price,
+                                resting_order_index,
+                            };
+                            let order = SlotRestingOrder::new_from_slot(slot_storage, &order_id);
 
-                                // Resting order present
-                                let order_id = OrderId {
-                                    price_in_ticks: current_price,
-                                    resting_order_index,
-                                };
-                                let order =
-                                    SlotRestingOrder::new_from_slot(slot_storage, &order_id);
+                            // Remove expired order
+                            if order.expired(current_block, current_unix_timestamp_in_seconds) {
+                                let trader_state = &mut TraderState::read_from_slot(
+                                    &slot_storage,
+                                    order.trader_address,
+                                );
 
-                                // Order has expired, queue for removal
-                                if order.expired(current_block, current_unix_timestamp_in_seconds) {
-                                    let trader_state = &mut TraderState::read_from_slot(
-                                        &slot_storage,
-                                        order.trader_address
-                                    );
+                                // TODO update function- pass order externally, i.e. change into an order trait function
+                                // Duplicate order read
+                                self.reduce_order_inner(
+                                    trader_state,
+                                    order.trader_address,
+                                    &order_id,
+                                    side.opposite(),
+                                    BaseLots::MAX,
+                                    true,
+                                    false,
+                                )?;
+                                trader_state.write_to_slot(self.slot_storage, order.trader_address);
+                                bitmap.clear(&resting_order_index);
+                            } else {
+                                // Best unexpired order found. Write states and exit function
+                                // Since an active order is present at the current outer index,
+                                // do not remove it from the index list.
+                                bitmap_group.write_to_slot(slot_storage, &outer_index);
+                                index_list.write_to_slot(slot_storage);
 
-                                    self.reduce_order_inner(
-                                        trader_state,
-                                        order.trader_address,
-                                        &order_id,
-                                        side.opposite(),
-                                        BaseLots::MAX,
-                                        true,
-                                        false
-                                    )?;
-                                    trader_state.write_to_slot(self.slot_storage, order.trader_address);
-                                    bitmap.clear(&resting_order_index);
+                                return if (side.opposite() == Side::Bid
+                                    && current_price >= num_ticks)
+                                    || (side.opposite() == Side::Ask && current_price <= num_ticks)
+                                {
+                                    // Unexpired crossing order
+                                    Some(order_id)
                                 } else {
-                                    // Best unexpired crossing order found, exit loop
-                                    bitmap_group.write_to_slot(slot_storage, &outer_index);
-                                    best_unexpired_crossed_order = Some(order_id);
-                                    break 'outer_indices_loop;
-                                }
+                                    // Non-crossing order
+                                    None
+                                };
                             }
-                            // Right shift
-                            bits >>= 1;
                         }
-
-                        // state updates left
-                        // - write bitmap group: at the end of loop 1
-                        // - write index list: after loop 1
+                        // Right shift
+                        bits >>= 1;
                     }
                 }
             }
-            // in loop 1 (outer_indices_loop).
-            // Reached when the bitmap group has been traversed, or
-            // - a non-crossing tick was found,
-            // - or an unexpired crossing order was found
-
-            // Since we test for non-cross condition in the very beginning, a cross is guaranteed
-            // Write the bitmap group to slot
-
-            // If condition 2 or 3 are met, then we must exit the outer loop too.
-            //
-            // reached if
-            // bit
-
+            // Entire group traversed. The group only had expired orders which were removed
+            // Write the empty bitmap group and remove the outer index from index list
             bitmap_group.write_to_slot(slot_storage, &outer_index);
+            index_list.remove(slot_storage, outer_index).ok();
         }
-
-        // write index list
+        // Reached if all orders were expired
         index_list.write_to_slot(slot_storage);
-
-        return best_unexpired_crossed_order;
+        return None;
     }
 }
 

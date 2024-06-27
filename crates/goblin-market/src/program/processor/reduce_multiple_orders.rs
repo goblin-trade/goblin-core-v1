@@ -8,7 +8,8 @@ use crate::{
     program::{try_withdraw, GoblinResult},
     quantities::{BaseAtomsRaw, BaseLots, QuoteAtomsRaw, Ticks, WrapperU64},
     state::{
-        market_state, MarketState, MatchingEngine, MatchingEngineResponse, OrderId, RestingOrderIndex, SlotActions, SlotStorage
+        market_state, MarketState, MatchingEngine, MatchingEngineResponse, OrderId,
+        RestingOrderIndex, SlotActions, SlotStorage,
     },
     GoblinMarket,
 };
@@ -54,9 +55,7 @@ pub fn process_reduce_multiple_orders(
 
     let market_state = &mut MarketState::read_from_slot(slot_storage);
 
-    let mut matching_engine = MatchingEngine {
-        slot_storage,
-    };
+    let mut matching_engine = MatchingEngine { slot_storage };
 
     // State reads and writes are performed inside reduce_multiple_orders_inner()
     // The number of slot reads is dynamic
