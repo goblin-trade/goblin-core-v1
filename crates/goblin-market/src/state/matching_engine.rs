@@ -76,111 +76,6 @@ impl MatchingEngine<'_> {
         response
     }
 
-    /// Try to reduce a resting order.
-    ///
-    /// Returns None if the order doesn't exist or belongs to another trader.
-    ///
-    /// # State updations
-    ///
-    /// - order: Read, updated and stored
-    /// - trader_state: Only updated
-    ///
-    /// # Arguments
-    ///
-    /// * `trader_state`
-    /// * `trader`
-    /// * `order_id`
-    /// * `side`
-    /// * `lots_to_remove` - Try to reduce size by this many lots. Pass u64::MAX to close entire order
-    /// * `order_is_expired`
-    /// * `claim_funds`
-    ///
-    pub fn reduce_order_inner(
-        &mut self,
-        trader_state: &mut TraderState,
-        trader: Address,
-        order_id: &OrderId,
-        side: Side,
-        lots_to_remove: BaseLots,
-        order_is_expired: bool,
-        claim_funds: bool,
-    ) -> Option<ReduceOrderInnerResponse> {
-        let mut order = SlotRestingOrder::new_from_slot(self.slot_storage, order_id);
-
-        // Find lots to remove
-        let (should_remove_order_from_book, base_lots_to_remove) = {
-            // Order does not exist, or belongs to another trader
-            if order.trader_address != trader {
-                return None;
-            }
-
-            // If the order is tagged as expired, we remove it from the book regardless of the size.
-            if order_is_expired {
-                (true, order.num_base_lots)
-            } else {
-                let base_lots_to_remove = order.num_base_lots.min(lots_to_remove);
-
-                (
-                    base_lots_to_remove == order.num_base_lots,
-                    base_lots_to_remove,
-                )
-            }
-        };
-
-        // Mutate order
-        let _base_lots_remaining = if should_remove_order_from_book {
-            order.clear_order();
-
-            BaseLots::ZERO
-        } else {
-            // Reduce order
-            order.num_base_lots -= base_lots_to_remove;
-
-            order.num_base_lots
-        };
-
-        // EMIT ExpiredOrder / Reduce
-
-        // Store order state
-        order.write_to_slot(self.slot_storage, order_id).ok();
-
-        // We don't want to claim funds if an order is removed from the book during a self trade
-        // or if the user specifically indicates that they don't want to claim funds.
-        if claim_funds {
-            // Update trader state
-            let (num_quote_lots, num_base_lots) = {
-                match side {
-                    Side::Bid => {
-                        let quote_lots = (order_id.price_in_ticks
-                            * TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT
-                            * base_lots_to_remove)
-                            / BASE_LOTS_PER_BASE_UNIT;
-                        trader_state.unlock_quote_lots(quote_lots);
-
-                        (quote_lots, BaseLots::ZERO)
-                    }
-                    Side::Ask => {
-                        trader_state.unlock_base_lots(base_lots_to_remove);
-
-                        (QuoteLots::ZERO, base_lots_to_remove)
-                    }
-                }
-            };
-
-            Some(ReduceOrderInnerResponse {
-                matching_engine_response: trader_state
-                    .claim_funds_inner(num_quote_lots, num_base_lots),
-                should_remove_order_from_book,
-            })
-        } else {
-            // No claim case- the order is reduced but no funds will be claimed
-            Some(ReduceOrderInnerResponse {
-                matching_engine_response: MatchingEngineResponse::default(),
-                should_remove_order_from_book,
-            })
-        }
-    }
-
     /// Try to reduce multiple orders by ID
     ///
     /// It is possible that an order ID is already closed, and also occupied by
@@ -227,10 +122,12 @@ impl MatchingEngine<'_> {
 
             let side = order_id.side(market.best_bid_price, market.best_ask_price);
 
+            let mut order = SlotRestingOrder::new_from_slot(self.slot_storage, &order_id);
+
             if let Some(ReduceOrderInnerResponse {
                 matching_engine_response,
                 should_remove_order_from_book,
-            }) = self.reduce_order_inner(
+            }) = order.reduce_order(
                 &mut trader_state,
                 trader,
                 &order_id,
@@ -239,6 +136,8 @@ impl MatchingEngine<'_> {
                 false,
                 claim_funds,
             ) {
+                order.write_to_slot(self.slot_storage, &order_id)?;
+
                 quote_lots_released += matching_engine_response.num_quote_lots_out;
                 base_lots_released += matching_engine_response.num_base_lots_out;
 
@@ -600,9 +499,8 @@ impl MatchingEngine<'_> {
                                     order.trader_address,
                                 );
 
-                                // TODO update function- pass order externally, i.e. change into an order trait function
-                                // Duplicate order read
-                                self.reduce_order_inner(
+                                let mut order = SlotRestingOrder::new_from_slot(slot_storage, &order_id);
+                                order.reduce_order(
                                     trader_state,
                                     order.trader_address,
                                     &order_id,
@@ -611,6 +509,8 @@ impl MatchingEngine<'_> {
                                     true,
                                     false,
                                 )?;
+                                order.write_to_slot(slot_storage, &order_id).ok();
+
                                 trader_state.write_to_slot(self.slot_storage, order.trader_address);
                                 bitmap.clear(&resting_order_index);
                             } else {

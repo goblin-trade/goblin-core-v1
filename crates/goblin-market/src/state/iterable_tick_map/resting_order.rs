@@ -4,13 +4,9 @@ use stylus_sdk::{
 };
 
 use crate::{
-    program::{ExceedRestingOrderSize, GoblinError},
-    quantities::{BaseLots, Ticks, WrapperU64},
-    require,
-    state::{
-        slot_storage::SlotKey, MatchingEngineResponse, RestingOrder, Side, SlotActions,
-        SlotStorage, TraderState, ORDERS_PER_TICK, RESTING_ORDER_KEY_SEED,
-    },
+    parameters::{BASE_LOTS_PER_BASE_UNIT, TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT}, program::{ExceedRestingOrderSize, GoblinError}, quantities::{BaseLots, QuoteLots, Ticks, WrapperU64}, require, state::{
+        slot_storage::SlotKey, MatchingEngineResponse, ReduceOrderInnerResponse, RestingOrder, Side, SlotActions, SlotStorage, TraderState, ORDERS_PER_TICK, RESTING_ORDER_KEY_SEED
+    }
 };
 
 const NULL_ADDRESS: Address = address!("0000000000000000000000000000000000000001");
@@ -235,6 +231,102 @@ impl SlotRestingOrder {
             || (!self.track_block
                 && current_unix_timestamp_in_seconds
                     > self.last_valid_block_or_unix_timestamp_in_seconds)
+    }
+
+    /// Try to reduce a resting order. Returns None if the order doesn't exist
+    /// or belongs to another trader.
+    ///
+    /// Updates order and trader states, but doesn't write. Perform write externally.
+    ///
+    /// # Arguments
+    ///
+    /// * `trader_state`
+    /// * `trader`
+    /// * `order_id`
+    /// * `side`
+    /// * `lots_to_remove` - Try to reduce size by this many lots. Pass u64::MAX to close entire order
+    /// * `order_is_expired`
+    /// * `claim_funds`
+    ///
+    pub fn reduce_order(
+        &mut self,
+        trader_state: &mut TraderState,
+        trader: Address,
+        order_id: &OrderId,
+        side: Side,
+        lots_to_remove: BaseLots,
+        order_is_expired: bool,
+        claim_funds: bool,
+    ) -> Option<ReduceOrderInnerResponse> {
+        // Find lots to remove
+        let (should_remove_order_from_book, base_lots_to_remove) = {
+            // Order does not exist (blank slot), or belongs to another trader
+            if self.trader_address != trader {
+                return None;
+            }
+
+            // If the order is tagged as expired, we remove it from the book regardless of the size.
+            if order_is_expired {
+                (true, self.num_base_lots)
+            } else {
+                let base_lots_to_remove = self.num_base_lots.min(lots_to_remove);
+
+                (
+                    base_lots_to_remove == self.num_base_lots,
+                    base_lots_to_remove,
+                )
+            }
+        };
+
+        // Mutate order
+        let _base_lots_remaining = if should_remove_order_from_book {
+            self.clear_order();
+
+            BaseLots::ZERO
+        } else {
+            // Reduce order
+            self.num_base_lots -= base_lots_to_remove;
+
+            self.num_base_lots
+        };
+
+        // EMIT ExpiredOrder / Reduce
+
+        // We don't want to claim funds if an order is removed from the book during a self trade
+        // or if the user specifically indicates that they don't want to claim funds.
+        if claim_funds {
+            // Update trader state
+            let (num_quote_lots, num_base_lots) = {
+                match side {
+                    Side::Bid => {
+                        let quote_lots = (order_id.price_in_ticks
+                            * TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT
+                            * base_lots_to_remove)
+                            / BASE_LOTS_PER_BASE_UNIT;
+                        trader_state.unlock_quote_lots(quote_lots);
+
+                        (quote_lots, BaseLots::ZERO)
+                    }
+                    Side::Ask => {
+                        trader_state.unlock_base_lots(base_lots_to_remove);
+
+                        (QuoteLots::ZERO, base_lots_to_remove)
+                    }
+                }
+            };
+
+            Some(ReduceOrderInnerResponse {
+                matching_engine_response: trader_state
+                    .claim_funds_inner(num_quote_lots, num_base_lots),
+                should_remove_order_from_book,
+            })
+        } else {
+            // No claim case- the order is reduced but no funds will be claimed
+            Some(ReduceOrderInnerResponse {
+                matching_engine_response: MatchingEngineResponse::default(),
+                should_remove_order_from_book,
+            })
+        }
     }
 }
 
