@@ -3,7 +3,6 @@ use crate::state::{
     InnerIndex, OuterIndex, RestingOrderIndex, Side,
 };
 use alloc::boxed::Box;
-use core::ops::{Range, RangeInclusive};
 
 /// A BitmapGroup contains Bitmaps for 32 ticks in ascending order.
 /// A single Bitmap contains data of 8 resting orders.
@@ -16,7 +15,7 @@ pub struct BitmapGroup {
 }
 
 impl BitmapGroup {
-    pub fn new_from_slot(slot_storage: &SlotStorage, key: &OuterIndex) -> Self {
+    pub fn new_from_slot(slot_storage: &SlotStorage, key: OuterIndex) -> Self {
         BitmapGroup {
             inner: slot_storage.sload(&key.get_key()),
         }
@@ -220,7 +219,7 @@ mod test {
     fn test_decode_group_from_empty_slot() {
         let slot_storage = SlotStorage::new();
 
-        let bitmap_group = BitmapGroup::new_from_slot(&slot_storage, &OuterIndex::new(0));
+        let bitmap_group = BitmapGroup::new_from_slot(&slot_storage, OuterIndex::new(0));
 
         assert_eq!(bitmap_group.inner, [0u8; 32]);
     }
@@ -239,7 +238,7 @@ mod test {
 
         slot_storage.sstore(&outer_index.get_key(), &slot_bytes);
 
-        let bitmap_group = BitmapGroup::new_from_slot(&slot_storage, &outer_index);
+        let bitmap_group = BitmapGroup::new_from_slot(&slot_storage, outer_index);
         assert_eq!(bitmap_group.inner, slot_bytes);
 
         let bitmap_0 = bitmap_group.get_bitmap(&InnerIndex::new(0));

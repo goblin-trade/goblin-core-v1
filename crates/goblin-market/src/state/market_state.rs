@@ -180,7 +180,7 @@ impl MarketState {
         } = best_price.to_indices();
 
         // Read bitmap group for the new outer index
-        let bitmap_group = BitmapGroup::new_from_slot(slot_storage, &new_outer_index);
+        let bitmap_group = BitmapGroup::new_from_slot(slot_storage, new_outer_index);
 
         // If outer index did not change, lookup in the same bitmap group starting from
         // the old inner index

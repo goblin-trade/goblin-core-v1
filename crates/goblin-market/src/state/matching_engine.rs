@@ -122,7 +122,7 @@ impl MatchingEngine<'_> {
 
             let side = order_id.side(market.best_bid_price, market.best_ask_price);
 
-            let mut order = SlotRestingOrder::new_from_slot(self.slot_storage, &order_id);
+            let mut order = SlotRestingOrder::new_from_slot(self.slot_storage, order_id);
 
             if let Some(ReduceOrderInnerResponse {
                 matching_engine_response,
@@ -160,7 +160,7 @@ impl MatchingEngine<'_> {
 
                         // Read new
                         cached_bitmap_group = Some((
-                            BitmapGroup::new_from_slot(self.slot_storage, &outer_index),
+                            BitmapGroup::new_from_slot(self.slot_storage, outer_index),
                             outer_index,
                         ));
                     }
@@ -454,12 +454,12 @@ impl MatchingEngine<'_> {
             // completely read
             if cached_list_slot.is_none() || relative_index == 15 {
                 let list_slot_key = ListKey { index: slot_index };
-                cached_list_slot = Some(ListSlot::new_from_slot(slot_storage, &list_slot_key));
+                cached_list_slot = Some(ListSlot::new_from_slot(slot_storage, list_slot_key));
             }
 
             // Read bitmap group for each outer index in the list slot
             let outer_index = cached_list_slot.unwrap().get(relative_index);
-            let mut bitmap_group = BitmapGroup::new_from_slot(slot_storage, &outer_index);
+            let mut bitmap_group = BitmapGroup::new_from_slot(slot_storage, outer_index);
 
             // If this is the first bitmap group being read, start from the inner index of the cached
             // best opposite price
@@ -490,7 +490,7 @@ impl MatchingEngine<'_> {
                                 price_in_ticks: current_price,
                                 resting_order_index,
                             };
-                            let order = SlotRestingOrder::new_from_slot(slot_storage, &order_id);
+                            let order = SlotRestingOrder::new_from_slot(slot_storage, order_id);
 
                             // Remove expired order
                             if order.expired(current_block, current_unix_timestamp_in_seconds) {
@@ -499,7 +499,7 @@ impl MatchingEngine<'_> {
                                     order.trader_address,
                                 );
 
-                                let mut order = SlotRestingOrder::new_from_slot(slot_storage, &order_id);
+                                let mut order = SlotRestingOrder::new_from_slot(slot_storage, order_id);
                                 order.reduce_order(
                                     trader_state,
                                     order.trader_address,

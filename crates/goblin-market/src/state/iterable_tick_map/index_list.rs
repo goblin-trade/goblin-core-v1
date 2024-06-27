@@ -37,6 +37,8 @@ use alloc::vec::Vec;
 /// extra cost in the current design. Problem arises when somebody wants to place
 /// an order further away.
 ///
+#[derive(Clone, Copy)]
+#[repr(transparent)]
 pub struct ListKey {
     /// Index of the ListSlot, max 2^12 - 1
     pub index: u16,
@@ -60,7 +62,7 @@ pub struct ListSlot {
 
 impl ListSlot {
     /// Load from slot storage
-    pub fn new_from_slot(slot_storage: &SlotStorage, key: &ListKey) -> Self {
+    pub fn new_from_slot(slot_storage: &SlotStorage, key: ListKey) -> Self {
         let slot = slot_storage.sload(&key.get_key());
 
         ListSlot::decode(slot)
@@ -114,20 +116,6 @@ pub struct IndexList {
     pub current_index: Option<u16>,
 }
 
-impl Iterator for IndexList {
-    type Item = OuterIndex;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.current_index.is_none() {
-            self.current_index = Some(self.size - 1);
-        }
-
-        for i in (0..=self.current_index.unwrap()).rev() {}
-
-        todo!()
-    }
-}
-
 impl IndexList {
     pub fn new(side: Side, size: u16) -> IndexList {
         IndexList {
@@ -160,7 +148,7 @@ impl IndexList {
             );
 
             let key = ListKey { index: slot_index };
-            let current_slot = ListSlot::new_from_slot(slot_storage, &key);
+            let current_slot = ListSlot::new_from_slot(slot_storage, key);
 
             #[cfg(test)]
             println!("got slot  {:?}", current_slot.inner);
@@ -202,7 +190,7 @@ impl IndexList {
             // Load a new slot and cache it
             if self.cached_slot.is_none() || relative_index == 15 {
                 let key = ListKey { index: slot_index };
-                self.cached_slot = Some(ListSlot::new_from_slot(slot_storage, &key));
+                self.cached_slot = Some(ListSlot::new_from_slot(slot_storage, key));
             }
 
             let current_slot = self.cached_slot.as_mut().unwrap();
@@ -558,7 +546,7 @@ mod test {
         assert!(index_list.cached_best_outer_index.is_none());
         assert!(index_list.cached_slot.is_none());
 
-        list_slot = ListSlot::new_from_slot(&slot_storage, &list_key);
+        list_slot = ListSlot::new_from_slot(&slot_storage, list_key);
         assert_eq!(
             list_slot.inner,
             [0, 1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,]
@@ -607,7 +595,7 @@ mod test {
         assert_eq!(index_list.cached_best_outer_index.unwrap().as_u16(), 3);
         assert!(index_list.cached_slot.is_none());
 
-        list_slot = ListSlot::new_from_slot(&slot_storage, &list_key);
+        list_slot = ListSlot::new_from_slot(&slot_storage, list_key);
         assert_eq!(
             list_slot.inner,
             [0, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,]
@@ -655,7 +643,7 @@ mod test {
         assert_eq!(index_list.cached_best_outer_index.unwrap().as_u16(), 3);
         assert!(index_list.cached_slot.is_none());
 
-        list_slot = ListSlot::new_from_slot(&slot_storage, &list_key);
+        list_slot = ListSlot::new_from_slot(&slot_storage, list_key);
         assert_eq!(
             list_slot.inner,
             [1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
@@ -708,7 +696,7 @@ mod test {
         assert_eq!(index_list.cached_best_outer_index.unwrap().as_u16(), 3);
         assert!(index_list.cached_slot.is_none());
 
-        list_slot = ListSlot::new_from_slot(&slot_storage, &list_key);
+        list_slot = ListSlot::new_from_slot(&slot_storage, list_key);
         assert_eq!(
             list_slot.inner,
             [0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
@@ -763,13 +751,13 @@ mod test {
         assert_eq!(index_list.cached_best_outer_index.unwrap().as_u16(), 18);
         assert!(index_list.cached_slot.is_none());
 
-        list_slot_0 = ListSlot::new_from_slot(&slot_storage, &list_key_0);
+        list_slot_0 = ListSlot::new_from_slot(&slot_storage, list_key_0);
         assert_eq!(
             list_slot_0.inner,
             [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16]
         );
 
-        list_slot_1 = ListSlot::new_from_slot(&slot_storage, &list_key_1);
+        list_slot_1 = ListSlot::new_from_slot(&slot_storage, list_key_1);
         assert_eq!(
             list_slot_1.inner,
             [17, 18, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
@@ -828,13 +816,13 @@ mod test {
         assert_eq!(index_list.cached_best_outer_index.unwrap().as_u16(), 18);
         assert!(index_list.cached_slot.is_none());
 
-        list_slot_0 = ListSlot::new_from_slot(&slot_storage, &list_key_0);
+        list_slot_0 = ListSlot::new_from_slot(&slot_storage, list_key_0);
         assert_eq!(
             list_slot_0.inner,
             [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16]
         );
 
-        list_slot_1 = ListSlot::new_from_slot(&slot_storage, &list_key_1);
+        list_slot_1 = ListSlot::new_from_slot(&slot_storage, list_key_1);
         assert_eq!(
             list_slot_1.inner,
             [18, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]

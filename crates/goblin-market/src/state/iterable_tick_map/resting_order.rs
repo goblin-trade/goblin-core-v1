@@ -28,6 +28,7 @@ impl RestingOrderIndex {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct OrderId {
     /// Tick where order is placed
     pub price_in_ticks: Ticks,
@@ -172,7 +173,7 @@ impl SlotRestingOrder {
     }
 
     /// Load CBRestingOrder from slot storage
-    pub fn new_from_slot(slot_storage: &SlotStorage, key: &OrderId) -> Self {
+    pub fn new_from_slot(slot_storage: &SlotStorage, key: OrderId) -> Self {
         let slot = slot_storage.sload(&key.get_key());
 
         SlotRestingOrder::decode(slot)
