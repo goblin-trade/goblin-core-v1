@@ -211,6 +211,14 @@ impl MarketState {
             self.best_ask_price
         }
     }
+
+    pub fn set_best_price(&mut self, side: Side, price: Ticks) {
+        if side == Side::Bid {
+            self.best_bid_price = price;
+        } else {
+            self.best_ask_price = price;
+        }
+    }
 }
 
 #[cfg(test)]

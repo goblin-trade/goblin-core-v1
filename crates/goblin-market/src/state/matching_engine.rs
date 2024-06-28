@@ -581,6 +581,9 @@ impl MatchingEngine<'_> {
                                 bitmap_group.write_to_slot(self.slot_storage, &outer_index);
                                 index_list.write_to_slot(self.slot_storage);
 
+                                // Update best price in market state
+                                market_state.set_best_price(side.opposite(), current_price);
+
                                 return if (side.opposite() == Side::Bid
                                     && current_price >= num_ticks)
                                     || (side.opposite() == Side::Ask && current_price <= num_ticks)
@@ -601,7 +604,7 @@ impl MatchingEngine<'_> {
             // Entire group traversed. The group only had expired orders which were removed
             // Write the empty bitmap group and remove the outer index from index list
             bitmap_group.write_to_slot(self.slot_storage, &outer_index);
-            index_list.remove(self.slot_storage, outer_index).ok();
+            index_list.remove(self.slot_storage, outer_index)?;
         }
         // Reached if all orders were expired
         index_list.write_to_slot(self.slot_storage);
