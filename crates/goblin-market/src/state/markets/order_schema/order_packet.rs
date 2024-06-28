@@ -306,6 +306,31 @@ impl OrderPacket {
         }
     }
 
+    pub fn track_block(&self) -> bool {
+        match self {
+            Self::PostOnly { track_block, .. } => *track_block,
+            Self::Limit { track_block, .. } => *track_block,
+            Self::ImmediateOrCancel { track_block, .. } => *track_block,
+        }
+    }
+
+    pub fn last_valid_block_or_unix_timestamp_in_seconds(&self) -> u32 {
+        match self {
+            Self::PostOnly {
+                last_valid_block_or_unix_timestamp_in_seconds,
+                ..
+            } => *last_valid_block_or_unix_timestamp_in_seconds,
+            Self::Limit {
+                last_valid_block_or_unix_timestamp_in_seconds,
+                ..
+            } => *last_valid_block_or_unix_timestamp_in_seconds,
+            Self::ImmediateOrCancel {
+                last_valid_block_or_unix_timestamp_in_seconds,
+                ..
+            } => *last_valid_block_or_unix_timestamp_in_seconds,
+        }
+    }
+
     pub fn get_last_valid_block(&self) -> Option<u32> {
         match self {
             Self::PostOnly {

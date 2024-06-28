@@ -10,15 +10,16 @@ use crate::{
         new_order::{CondensedOrder, FailedMultipleLimitOrderBehavior},
         FailedToReduce, GoblinError, GoblinResult, PricesNotInOrder, ReduceOrderPacket,
     },
-    quantities::{BaseLots, QuoteLots, Ticks, WrapperU64, MAX_TICK},
+    quantities::{AdjustedQuoteLots, BaseLots, QuoteLots, Ticks, WrapperU64, MAX_TICK},
     require, GoblinMarket,
 };
 
 use super::{
-    matching_engine_response, slot_storage, BitmapGroup, IndexList, InnerIndex, ListKey, ListSlot,
-    MarketState, MatchingEngineResponse, OrderId, OrderPacket, OrderPacketMetadata, OuterIndex,
-    RestingOrder, RestingOrderIndex, Side, SlotActions, SlotRestingOrder, SlotStorage, TickIndices,
-    TraderState,
+    adjusted_quote_lot_budget_post_fee_adjustment_for_buys,
+    adjusted_quote_lot_budget_post_fee_adjustment_for_sells, matching_engine_response,
+    slot_storage, BitmapGroup, IndexList, InnerIndex, ListKey, ListSlot, MarketState,
+    MatchingEngineResponse, OrderId, OrderPacket, OrderPacketMetadata, OuterIndex, RestingOrder,
+    RestingOrderIndex, Side, SlotActions, SlotRestingOrder, SlotStorage, TickIndices, TraderState,
 };
 use alloc::{collections::btree_map::Range, vec::Vec};
 
@@ -317,6 +318,16 @@ impl MatchingEngine<'_> {
         Ok(MatchingEngineResponse::default())
     }
 
+    /// Try to execute an order packet
+    ///
+    /// # Arguments
+    ///
+    /// * `market_state`
+    /// * `trader_state`
+    /// * `trader` - The trader who sent the order
+    /// * `to` - Credit the output to this address
+    /// * `order_packet`
+    ///
     fn place_order_inner(
         &mut self,
         market_state: &mut MarketState,
@@ -324,18 +335,20 @@ impl MatchingEngine<'_> {
         trader: Address,
         to: Address,
         order_packet: &mut OrderPacket,
-    ) -> Option<MatchingEngineResponse> {
+    ) -> GoblinResult<Option<MatchingEngineResponse>> {
         let side = order_packet.side();
 
         match side {
             Side::Bid => {
                 if order_packet.get_price_in_ticks() == Ticks::ZERO {
-                    return None;
+                    // Bid price is too low
+                    return Ok(None);
                 }
             }
             Side::Ask => {
                 if !order_packet.is_take_only() {
                     let tick_price = order_packet.get_price_in_ticks();
+                    // Price cannot be zero. Set to 1
                     order_packet.set_price_in_ticks(tick_price.max(Ticks::ONE));
                 }
             }
@@ -343,7 +356,7 @@ impl MatchingEngine<'_> {
 
         if order_packet.num_base_lots() == 0 && order_packet.num_quote_lots() == 0 {
             // Either num_base_lots or num_quote_lots must be nonzero
-            return None;
+            return Ok(None);
         }
 
         // For IOC order types exactly one of num_quote_lots or num_base_lots needs to be specified.
@@ -356,7 +369,7 @@ impl MatchingEngine<'_> {
             if num_base_lots > BaseLots::ZERO && num_quote_lots > QuoteLots::ZERO
                 || num_base_lots == BaseLots::ZERO && num_quote_lots == QuoteLots::ZERO
             {
-                return None;
+                return Ok(None);
             }
         }
 
@@ -365,44 +378,92 @@ impl MatchingEngine<'_> {
 
         if order_packet.is_expired(current_block, current_unix_timestamp) {
             // Do not fail the transaction if the order is expired, but do not place or match the order
-            return Some(MatchingEngineResponse::default());
+            return Ok(Some(MatchingEngineResponse::default()));
         }
 
         let mut index_list = market_state.get_index_list(side);
 
         // Build resting_order and matching_engine_response
-        if let OrderPacket::PostOnly {
+        let (resting_order, mut matching_engine_response) = if let OrderPacket::PostOnly {
             price_in_ticks,
             reject_post_only,
             ..
         } = order_packet
         {
-            // Handle cases where PostOnly order would cross the book
-            // self.check_for_cross(
-            //     market_state,
-            //     &mut index_list,
-            //     *price_in_ticks,
-            //     current_block,
-            //     current_unix_timestamp,
-            // );
+            if let Some(order_id) = self.check_for_cross(
+                market_state,
+                side,
+                *price_in_ticks,
+                current_block,
+                current_unix_timestamp,
+            )? {
+                let ticks = order_id.price_in_ticks;
+
+                if *reject_post_only {
+                    // PostOnly order crosses the book- order rejected
+                    return Ok(None);
+                } else {
+                    // Try to amend order so it does not cross
+                    match side {
+                        Side::Bid => {
+                            if ticks <= Ticks::ONE {
+                                // PostOnly order crosses the book and can not be amended to a valid price- order rejected
+                                return Ok(None);
+                            }
+                            *price_in_ticks = ticks - Ticks::ONE;
+                        }
+                        Side::Ask => {
+                            if ticks == Ticks::MAX {
+                                // Prevent overflow
+                                return Ok(None);
+                            }
+                            *price_in_ticks = ticks + Ticks::ONE;
+                        }
+                    }
+                }
+            }
+            (
+                SlotRestingOrder::new(
+                    trader,
+                    order_packet.num_base_lots(),
+                    order_packet.track_block(),
+                    order_packet.last_valid_block_or_unix_timestamp_in_seconds(),
+                ),
+                MatchingEngineResponse::default(),
+            )
+        } else {
+            // Limit and IOC order types
+
+            let base_lot_budget = order_packet.base_lot_budget();
+            // Multiply the quote lot budget by the number of base lots per unit to get the number of
+            // adjusted quote lots (quote_lots * base_lots_per_base_unit)
+            let quote_lot_budget = order_packet.quote_lot_budget();
+
+            let adjusted_quote_lot_budget = match side {
+                // For buys, the adjusted quote lot budget is decreased by the max fee.
+                // This is because the fee is added to the quote lots spent after the matching is complete.
+                Side::Bid => quote_lot_budget.and_then(|quote_lot_budget| {
+                    adjusted_quote_lot_budget_post_fee_adjustment_for_buys(
+                        quote_lot_budget * BASE_LOTS_PER_BASE_UNIT,
+                    )
+                }),
+                // For sells, the adjusted quote lot budget is increased by the max fee.
+                // This is because the fee is subtracted from the quote lot received after the matching is complete.
+                Side::Ask => quote_lot_budget.and_then(|quote_lot_budget| {
+                    adjusted_quote_lot_budget_post_fee_adjustment_for_sells(
+                        quote_lot_budget * BASE_LOTS_PER_BASE_UNIT,
+                    )
+                }),
+            }
+            .unwrap_or_else(|| AdjustedQuoteLots::new(u64::MAX));
+
+            (
+                SlotRestingOrder::new_default(trader, BaseLots::ZERO),
+                MatchingEngineResponse::default(),
+            )
         };
 
-        // if let OrderPacket::PostOnly {
-        //     price_in_ticks,
-        //     reject_post_only,
-        //     ..
-        // } = &mut order_packet
-        // {
-        //     // Handle cases where PostOnly order would cross the book
-        //     // self.check_for_cross(
-        //     //     side,
-        //     //     *price_in_ticks,
-        //     //     current_block,
-        //     //     current_unix_timestamp,
-        //     // );
-        // };
-
-        None
+        Ok(None)
     }
 
     /// This function determines whether a PostOnly order crosses the book.
@@ -414,7 +475,6 @@ impl MatchingEngine<'_> {
     ///
     /// # Arguments
     ///
-    /// * `slot_storage`
     /// * `market_state`
     /// * `side`
     /// * `num_ticks`
@@ -423,7 +483,6 @@ impl MatchingEngine<'_> {
     ///
     fn check_for_cross(
         &mut self,
-        slot_storage: &mut SlotStorage,
         market_state: &mut MarketState,
         side: Side,
         num_ticks: Ticks,
@@ -454,12 +513,12 @@ impl MatchingEngine<'_> {
             // completely read
             if cached_list_slot.is_none() || relative_index == 15 {
                 let list_slot_key = ListKey { index: slot_index };
-                cached_list_slot = Some(ListSlot::new_from_slot(slot_storage, list_slot_key));
+                cached_list_slot = Some(ListSlot::new_from_slot(self.slot_storage, list_slot_key));
             }
 
             // Read bitmap group for each outer index in the list slot
             let outer_index = cached_list_slot.unwrap().get(relative_index);
-            let mut bitmap_group = BitmapGroup::new_from_slot(slot_storage, outer_index);
+            let mut bitmap_group = BitmapGroup::new_from_slot(self.slot_storage, outer_index);
 
             // If this is the first bitmap group being read, start from the inner index of the cached
             // best opposite price
@@ -490,16 +549,18 @@ impl MatchingEngine<'_> {
                                 price_in_ticks: current_price,
                                 resting_order_index,
                             };
-                            let order = SlotRestingOrder::new_from_slot(slot_storage, order_id);
+                            let order =
+                                SlotRestingOrder::new_from_slot(self.slot_storage, order_id);
 
                             // Remove expired order
                             if order.expired(current_block, current_unix_timestamp_in_seconds) {
                                 let trader_state = &mut TraderState::read_from_slot(
-                                    &slot_storage,
+                                    &self.slot_storage,
                                     order.trader_address,
                                 );
 
-                                let mut order = SlotRestingOrder::new_from_slot(slot_storage, order_id);
+                                let mut order =
+                                    SlotRestingOrder::new_from_slot(self.slot_storage, order_id);
                                 order.reduce_order(
                                     trader_state,
                                     order.trader_address,
@@ -509,7 +570,7 @@ impl MatchingEngine<'_> {
                                     true,
                                     false,
                                 );
-                                order.write_to_slot(slot_storage, &order_id)?;
+                                order.write_to_slot(self.slot_storage, &order_id)?;
 
                                 trader_state.write_to_slot(self.slot_storage, order.trader_address);
                                 bitmap.clear(&resting_order_index);
@@ -517,8 +578,8 @@ impl MatchingEngine<'_> {
                                 // Best unexpired order found. Write states and exit function
                                 // Since an active order is present at the current outer index,
                                 // do not remove it from the index list.
-                                bitmap_group.write_to_slot(slot_storage, &outer_index);
-                                index_list.write_to_slot(slot_storage);
+                                bitmap_group.write_to_slot(self.slot_storage, &outer_index);
+                                index_list.write_to_slot(self.slot_storage);
 
                                 return if (side.opposite() == Side::Bid
                                     && current_price >= num_ticks)
@@ -539,11 +600,11 @@ impl MatchingEngine<'_> {
             }
             // Entire group traversed. The group only had expired orders which were removed
             // Write the empty bitmap group and remove the outer index from index list
-            bitmap_group.write_to_slot(slot_storage, &outer_index);
-            index_list.remove(slot_storage, outer_index).ok();
+            bitmap_group.write_to_slot(self.slot_storage, &outer_index);
+            index_list.remove(self.slot_storage, outer_index).ok();
         }
         // Reached if all orders were expired
-        index_list.write_to_slot(slot_storage);
+        index_list.write_to_slot(self.slot_storage);
         return Ok(None);
     }
 }

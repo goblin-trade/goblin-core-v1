@@ -4,9 +4,14 @@ use stylus_sdk::{
 };
 
 use crate::{
-    parameters::{BASE_LOTS_PER_BASE_UNIT, TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT}, program::{ExceedRestingOrderSize, GoblinError}, quantities::{BaseLots, QuoteLots, Ticks, WrapperU64}, require, state::{
-        slot_storage::SlotKey, MatchingEngineResponse, ReduceOrderInnerResponse, RestingOrder, Side, SlotActions, SlotStorage, TraderState, ORDERS_PER_TICK, RESTING_ORDER_KEY_SEED
-    }
+    parameters::{BASE_LOTS_PER_BASE_UNIT, TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT},
+    program::{ExceedRestingOrderSize, GoblinError},
+    quantities::{BaseLots, QuoteLots, Ticks, WrapperU64},
+    require,
+    state::{
+        slot_storage::SlotKey, MatchingEngineResponse, ReduceOrderInnerResponse, RestingOrder,
+        Side, SlotActions, SlotStorage, TraderState, ORDERS_PER_TICK, RESTING_ORDER_KEY_SEED,
+    },
 };
 
 const NULL_ADDRESS: Address = address!("0000000000000000000000000000000000000001");
