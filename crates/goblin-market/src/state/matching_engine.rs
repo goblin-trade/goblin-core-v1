@@ -15,11 +15,7 @@ use crate::{
 };
 
 use super::{
-    adjusted_quote_lot_budget_post_fee_adjustment_for_buys,
-    adjusted_quote_lot_budget_post_fee_adjustment_for_sells, matching_engine_response,
-    slot_storage, BitmapGroup, IndexList, InnerIndex, ListKey, ListSlot, MarketState,
-    MatchingEngineResponse, OrderId, OrderPacket, OrderPacketMetadata, OuterIndex, RestingOrder,
-    RestingOrderIndex, Side, SlotActions, SlotRestingOrder, SlotStorage, TickIndices, TraderState,
+    adjusted_quote_lot_budget_post_fee_adjustment_for_buys, adjusted_quote_lot_budget_post_fee_adjustment_for_sells, matching_engine_response, slot_storage, BitmapGroup, IndexList, InflightOrder, InnerIndex, ListKey, ListSlot, MarketState, MatchingEngineResponse, OrderId, OrderPacket, OrderPacketMetadata, OuterIndex, RestingOrder, RestingOrderIndex, Side, SlotActions, SlotRestingOrder, SlotStorage, TickIndices, TraderState
 };
 use alloc::{collections::btree_map::Range, vec::Vec};
 
@@ -456,6 +452,17 @@ impl MatchingEngine<'_> {
                 }),
             }
             .unwrap_or_else(|| AdjustedQuoteLots::new(u64::MAX));
+
+            let mut inflight_order = InflightOrder::new(
+                side,
+                order_packet.self_trade_behavior(),
+                order_packet.get_price_in_ticks(),
+                order_packet.match_limit(),
+                base_lot_budget,
+                adjusted_quote_lot_budget,
+                order_packet.track_block(),
+                order_packet.last_valid_block_or_unix_timestamp_in_seconds(),
+            );
 
             (
                 SlotRestingOrder::new_default(trader, BaseLots::ZERO),

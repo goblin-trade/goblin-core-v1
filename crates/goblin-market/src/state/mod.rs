@@ -7,6 +7,7 @@ pub mod matching_engine;
 pub mod matching_engine_response;
 pub mod slot_storage;
 pub mod trader_state;
+pub mod inflight_order;
 
 pub use enums::*;
 pub use fees::*;
@@ -17,3 +18,4 @@ pub use matching_engine::*;
 pub use matching_engine_response::*;
 pub use slot_storage::*;
 pub use trader_state::*;
+pub use inflight_order::*;
