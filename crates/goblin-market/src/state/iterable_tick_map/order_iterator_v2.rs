@@ -1,19 +1,17 @@
 use crate::{
     quantities::Ticks,
-    state::{market_state, MarketState, RestingOrder, Side, SlotStorage},
+    state::{MarketState, RestingOrder, Side, SlotStorage},
 };
 
 use super::{
-    index_list, inner_indices, BitmapGroup, InnerIndex, ListKey, ListSlot, OrderId,
-    RestingOrderIndex, SlotRestingOrder,
+    inner_indices, BitmapGroup, InnerIndex, ListKey, ListSlot, OrderId, RestingOrderIndex,
+    SlotRestingOrder,
 };
 
 pub fn process_resting_orders(
     slot_storage: &mut SlotStorage,
     market_state: &mut MarketState,
     side: Side,
-    // outer_index_count: u16,
-    // best_price: Ticks,
     lambda_function: fn(resting_order: &mut SlotRestingOrder) -> bool,
 ) {
     let outer_index_count = market_state.outer_index_length(side);
@@ -28,17 +26,17 @@ pub fn process_resting_orders(
     let mut continue_reads = true;
 
     // 1. Loop through index slots
-    'outer: loop {
+    loop {
         let list_key = ListKey { index: slot_index };
         let mut list_slot = ListSlot::new_from_slot(slot_storage, list_key);
-        let mut list_slot_traversed = false;
+        let mut pending_list_slot_write = false;
 
         // 2. Loop through bitmap groups using relative index
         loop {
             let outer_index = list_slot.get(relative_index as usize);
             let mut bitmap_group = BitmapGroup::new_from_slot(slot_storage, outer_index);
 
-            let mut bitmap_group_traversed = false;
+            let mut pending_bitmap_group_write = false;
 
             // 3. Loop through bitmaps
             for i in inner_indices(side, previous_inner_index) {
@@ -54,8 +52,12 @@ pub fn process_resting_orders(
 
                     if order_present {
                         if !continue_reads {
-                            bitmap_group.write_to_slot(slot_storage, &outer_index);
-                            list_slot.write_to_slot(slot_storage, &list_key);
+                            if pending_bitmap_group_write {
+                                bitmap_group.write_to_slot(slot_storage, &outer_index);
+                            }
+                            if pending_list_slot_write {
+                                list_slot.write_to_slot(slot_storage, &list_key);
+                            }
                             market_state.set_best_price(side, price_in_ticks);
 
                             return;
@@ -74,42 +76,11 @@ pub fn process_resting_orders(
                         // Traversed Bitmap groups and ListSlots have been written already
                         if resting_order.size() != 0 {
                             market_state.set_best_price(side, price_in_ticks);
-
                             return;
                         }
-                        // if !continue_reads {
-                        //     // If reads are to be stopped, emit break and leave the loops.
-                        //     // Bitmap groups and index list must be updated since the update statements
-                        //     // at end of respective loops will not be encountered.
 
-                        //     // States to update
-                        //     // - bitmap group
-                        //     // - ListSlot
-                        //     // - MarketState: If resting_order.size() == 0
-                        //     //
-                        //     // resting_order.size() == 0 case is more complex. The bitmap group needs
-                        //     // to be updated. If the bitmap group closed then ListSlot will be updated too.
-                        //     // Further we need to discover the next active tick and write it to market state.
-                        //     // This discovery may require multiple iterations.
-
-                        //     if bitmap_group_traversed {
-                        //         if resting_order.size() == 0 {
-                        //             bitmap.clear(&resting_order_index);
-                        //         }
-                        //         bitmap_group.write_to_slot(slot_storage, &outer_index);
-                        //     }
-
-                        //     if resting_order.size() == 0 {
-                        //         // Special case- The resting order as well as the input amount is
-                        //         // completely exhausted. We need to find the next active resting order
-                        //         // and write its price in market state.
-                        //     }
-
-                        //     break 'outer;
-                        // }
-
-                        // bitmap.clear(&resting_order_index);
-                        // bitmap_group_traversed = true;
+                        bitmap.clear(&resting_order_index);
+                        pending_bitmap_group_write = true;
                     }
                 }
             }
@@ -122,7 +93,7 @@ pub fn process_resting_orders(
             bitmap_group.write_to_slot(slot_storage, &outer_index);
 
             list_slot.clear_index(&list_key);
-            list_slot_traversed = true;
+            pending_list_slot_write = true;
 
             if relative_index == 0 {
                 break;
