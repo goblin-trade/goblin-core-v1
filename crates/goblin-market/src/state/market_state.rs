@@ -84,6 +84,10 @@ impl MarketState {
             bids_outer_indices: u16::from_be_bytes(slot[16..18].try_into().unwrap()),
             asks_outer_indices: u16::from_be_bytes(slot[18..20].try_into().unwrap()),
 
+            // Question- default values for empty market?
+            // Reading empty slot will yield 0.
+            // When bids_outer_indices or asks_outer_indices is 0, we ignore these values
+
             // Tick: u21 was encoded in 20..23 in big endian
             // Empty values to the left (LSB) in big endian
             best_bid_price: Ticks::new(

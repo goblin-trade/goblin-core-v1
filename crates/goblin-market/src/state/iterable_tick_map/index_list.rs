@@ -97,6 +97,10 @@ impl ListSlot {
     pub fn clear(&mut self) {
         self.inner = [u16::MAX; 16];
     }
+
+    pub fn clear_index(&mut self, list_key: &ListKey) {
+        self.inner[list_key.index as usize] = u16::MAX;
+    }
 }
 
 /// High level structure for the index list with getter and setter functions
