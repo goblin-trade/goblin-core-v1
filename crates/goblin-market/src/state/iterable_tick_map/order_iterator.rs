@@ -1,11 +1,16 @@
-use crate::{quantities::Ticks, state::{slot_storage, BitmapGroup, InnerIndex, ListKey, ListSlot, OrderId, OuterIndex, RestingOrderIndex, Side, SlotRestingOrder, SlotStorage}};
+use crate::{
+    quantities::Ticks,
+    state::{
+        slot_storage, BitmapGroup, InnerIndex, ListKey, ListSlot, OrderId, OuterIndex,
+        RestingOrderIndex, Side, SlotRestingOrder, SlotStorage,
+    },
+};
 
 #[derive(Clone, Copy)]
 pub struct IteratedRestingOrder {
     pub resting_order: SlotRestingOrder,
-    pub order_id: OrderId
-    // pub outer_index: OuterIndex,
-    // pub inner_index: InnerIndex
+    pub order_id: OrderId, // pub outer_index: OuterIndex,
+                           // pub inner_index: InnerIndex
 }
 
 /// Iterate over resting orders in a book
@@ -18,7 +23,6 @@ pub struct OrderIterator<'a> {
     pub side: Side,
 
     // pub starting_price: Ticks,
-
     pub last_item: Option<IteratedRestingOrder>,
 
     pub cached_list_slot: Option<ListSlot>,
@@ -26,7 +30,6 @@ pub struct OrderIterator<'a> {
     pub bitmap_group: Option<BitmapGroup>,
 
     // These variables update as we traverse
-
     pub outer_index_count: u16,
 
     pub inner_index: Option<InnerIndex>,
@@ -45,7 +48,7 @@ impl<'a> OrderIterator<'a> {
         slot_storage: &'a mut SlotStorage,
         side: Side,
         outer_index_count: u16,
-        best_price: Ticks
+        best_price: Ticks,
     ) -> Self {
         let inner_index = best_price.inner_index();
 
@@ -57,7 +60,7 @@ impl<'a> OrderIterator<'a> {
             bitmap_group: None,
             outer_index_count,
             inner_index: Some(inner_index),
-            bit_index: None
+            bit_index: None,
         }
     }
 }
@@ -71,7 +74,11 @@ impl Iterator for OrderIterator<'_> {
         }
 
         // Better to update state externally in loop body?
-        if let Some(IteratedRestingOrder { resting_order, order_id }) = &mut self.last_item {
+        if let Some(IteratedRestingOrder {
+            resting_order,
+            order_id,
+        }) = &mut self.last_item
+        {
             // Remove this item
             resting_order.clear_order();
             resting_order.write_to_slot(self.slot_storage, order_id);
@@ -127,14 +134,14 @@ impl Iterator for OrderIterator<'_> {
 
         let order_id = OrderId {
             price_in_ticks: Ticks::from_indices(outer_index, inner_index),
-            resting_order_index: bit_index
+            resting_order_index: bit_index,
         };
 
         let resting_order = SlotRestingOrder::new_from_slot(self.slot_storage, order_id);
 
         let item = IteratedRestingOrder {
             resting_order,
-            order_id
+            order_id,
         };
 
         self.last_item = Some(item);
@@ -148,7 +155,6 @@ impl Iterator for OrderIterator<'_> {
         // If bit index is exhausted, set to None and advance inner index
         if self.bit_index.is_none() {
             self.inner_index = bitmap_group.best_active_index(self.side, self.inner_index);
-
         }
 
         // If bitmap group is exhausted, advance outer index (decrement count)

@@ -1,4 +1,5 @@
 use crate::{
+    program::GoblinError,
     quantities::Ticks,
     state::{MarketState, RestingOrder, Side, SlotStorage},
 };
@@ -13,16 +14,14 @@ pub fn process_resting_orders(
     market_state: &mut MarketState,
     side: Side,
     lambda_function: fn(resting_order: &mut SlotRestingOrder) -> bool,
-) {
-    let outer_index_count = market_state.outer_index_length(side);
-    let best_price = market_state.best_price(side);
-
-    // let mut current_outer_index_count = outer_index_count;
+) -> Result<(), GoblinError> {
+    let mut outer_index_count = market_state.outer_index_length(side);
+    let mut price_in_ticks = market_state.best_price(side);
+    let mut previous_inner_index = Some(price_in_ticks.inner_index());
     let mut slot_index = (outer_index_count - 1) / 16;
     let mut relative_index = (outer_index_count - 1) % 16;
 
-    let mut previous_inner_index = Some(best_price.inner_index());
-
+    // Set false to stop reading
     let mut continue_reads = true;
 
     // 1. Loop through index slots
@@ -41,9 +40,8 @@ pub fn process_resting_orders(
             // 3. Loop through bitmaps
             for i in inner_indices(side, previous_inner_index) {
                 let inner_index = InnerIndex::new(i);
+                price_in_ticks = Ticks::from_indices(outer_index, inner_index);
                 let mut bitmap = bitmap_group.get_bitmap_mut(&inner_index);
-
-                let price_in_ticks = Ticks::from_indices(outer_index, inner_index);
 
                 // 4. Loop through resting orders in the bitmap
                 for j in 0..8 {
@@ -59,8 +57,9 @@ pub fn process_resting_orders(
                                 list_slot.write_to_slot(slot_storage, &list_key);
                             }
                             market_state.set_best_price(side, price_in_ticks);
+                            market_state.set_outer_index_length(side, outer_index_count);
 
-                            return;
+                            return Ok(());
                         }
 
                         let order_id = OrderId {
@@ -71,12 +70,15 @@ pub fn process_resting_orders(
                             SlotRestingOrder::new_from_slot(slot_storage, order_id);
 
                         continue_reads = lambda_function(&mut resting_order);
+                        resting_order.write_to_slot(slot_storage, &order_id)?;
 
                         // The input amount is consumed, exit.
                         // Traversed Bitmap groups and ListSlots have been written already
                         if resting_order.size() != 0 {
                             market_state.set_best_price(side, price_in_ticks);
-                            return;
+                            market_state.set_outer_index_length(side, outer_index_count);
+
+                            return Ok(());
                         }
 
                         bitmap.clear(&resting_order_index);
@@ -94,6 +96,7 @@ pub fn process_resting_orders(
 
             list_slot.clear_index(&list_key);
             pending_list_slot_write = true;
+            outer_index_count -= 1;
 
             if relative_index == 0 {
                 break;
@@ -112,4 +115,6 @@ pub fn process_resting_orders(
         slot_index -= 1;
         relative_index = 15;
     }
+
+    Ok(())
 }

@@ -2,7 +2,6 @@ use crate::quantities::{AdjustedQuoteLots, BaseLots, QuoteLots, Ticks};
 
 use super::{SelfTradeBehavior, Side};
 
-
 #[derive(Copy, Clone)]
 pub(crate) struct InflightOrder {
     pub side: Side,
@@ -41,7 +40,6 @@ pub(crate) struct InflightOrder {
     // track_block. Set value as 0 to disable FOK.
     last_valid_block_or_unix_timestamp_in_seconds: u32,
 }
-
 
 impl InflightOrder {
     #[allow(clippy::too_many_arguments)]

@@ -496,45 +496,6 @@ impl MatchingEngine<'_> {
             return Ok(None);
         }
 
-        let iterator = OrderIterator::new(
-            self.slot_storage,
-            opposite_side,
-            market_state.outer_index_length(opposite_side),
-            opposite_best_price,
-        );
-
-        for IteratedRestingOrder {
-            resting_order,
-            order_id,
-        } in iterator
-        {
-            let resting_order_price = order_id.price_in_ticks;
-
-            // Check for cross
-            if (opposite_side == Side::Bid && num_ticks <= resting_order_price)
-                || (opposite_side == Side::Ask && num_ticks >= resting_order_price)
-            {
-                // Order crosses
-                if resting_order.expired(current_block, current_unix_timestamp_in_seconds) {
-                    // Remove from book
-
-                    // 1. Resting order cleared
-
-                    // 2. Update bitmap group
-                    // The group is written to slot when we read the next outer index, or when
-                    // we exit the loop
-
-                    // 3.
-                } else {
-                    // Traversal complete case- leftover state has to be written
-                    return Ok(Some(order_id));
-                }
-            } else {
-                // Traversal complete case- leftover state has to be written
-                break;
-            }
-        }
-
         return Ok(None);
     }
     /// This function determines whether a PostOnly order crosses the book.

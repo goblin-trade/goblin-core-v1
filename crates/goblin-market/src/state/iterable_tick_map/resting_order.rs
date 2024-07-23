@@ -209,7 +209,6 @@ impl SlotRestingOrder {
         key: &OrderId,
     ) -> Result<(), GoblinError> {
         let encoded = self.encode()?;
-
         slot_storage.sstore(&key.get_key(), &encoded);
 
         Ok(())
