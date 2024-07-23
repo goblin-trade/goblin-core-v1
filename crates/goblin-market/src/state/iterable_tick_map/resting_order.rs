@@ -1,3 +1,5 @@
+use core::ops::Add;
+
 use stylus_sdk::{
     abi::AbiType,
     alloy_primitives::{address, Address, B256},
@@ -30,6 +32,16 @@ impl RestingOrderIndex {
 
     pub fn as_u8(&self) -> u8 {
         self.inner
+    }
+}
+
+impl Add for RestingOrderIndex {
+    type Output = Self;
+
+    fn add(self, other: Self) -> Self {
+        RestingOrderIndex {
+            inner: self.inner.wrapping_add(other.inner),
+        }
     }
 }
 

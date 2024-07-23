@@ -15,7 +15,12 @@ use crate::{
 };
 
 use super::{
-    adjusted_quote_lot_budget_post_fee_adjustment_for_buys, adjusted_quote_lot_budget_post_fee_adjustment_for_sells, matching_engine_response, slot_storage, BitmapGroup, IndexList, InflightOrder, InnerIndex, ListKey, ListSlot, MarketState, MatchingEngineResponse, OrderId, OrderPacket, OrderPacketMetadata, OuterIndex, RestingOrder, RestingOrderIndex, Side, SlotActions, SlotRestingOrder, SlotStorage, TickIndices, TraderState
+    adjusted_quote_lot_budget_post_fee_adjustment_for_buys,
+    adjusted_quote_lot_budget_post_fee_adjustment_for_sells, inner_indices,
+    matching_engine_response, slot_storage, BitmapGroup, IndexList, InflightOrder, InnerIndex,
+    IteratedRestingOrder, ListKey, ListSlot, MarketState, MatchingEngineResponse, OrderId,
+    OrderIterator, OrderPacket, OrderPacketMetadata, OuterIndex, RestingOrder, RestingOrderIndex,
+    Side, SlotActions, SlotRestingOrder, SlotStorage, TickIndices, TraderState,
 };
 use alloc::{collections::btree_map::Range, vec::Vec};
 
@@ -473,6 +478,65 @@ impl MatchingEngine<'_> {
         Ok(None)
     }
 
+    fn check_for_cross_v2(
+        &mut self,
+        market_state: &mut MarketState,
+        side: Side,
+        num_ticks: Ticks,
+        current_block: u32,
+        current_unix_timestamp_in_seconds: u32,
+    ) -> GoblinResult<Option<OrderId>> {
+        let opposite_side = side.opposite();
+        let opposite_best_price = market_state.best_price(side.opposite());
+
+        // No cross case
+        if (side == Side::Bid && num_ticks < opposite_best_price)
+            || (side == Side::Ask && num_ticks > opposite_best_price)
+        {
+            return Ok(None);
+        }
+
+        let iterator = OrderIterator::new(
+            self.slot_storage,
+            opposite_side,
+            market_state.outer_index_length(opposite_side),
+            opposite_best_price,
+        );
+
+        for IteratedRestingOrder {
+            resting_order,
+            order_id,
+        } in iterator
+        {
+            let resting_order_price = order_id.price_in_ticks;
+
+            // Check for cross
+            if (opposite_side == Side::Bid && num_ticks <= resting_order_price)
+                || (opposite_side == Side::Ask && num_ticks >= resting_order_price)
+            {
+                // Order crosses
+                if resting_order.expired(current_block, current_unix_timestamp_in_seconds) {
+                    // Remove from book
+
+                    // 1. Resting order cleared
+
+                    // 2. Update bitmap group
+                    // The group is written to slot when we read the next outer index, or when
+                    // we exit the loop
+
+                    // 3.
+                } else {
+                    // Traversal complete case- leftover state has to be written
+                    return Ok(Some(order_id));
+                }
+            } else {
+                // Traversal complete case- leftover state has to be written
+                break;
+            }
+        }
+
+        return Ok(None);
+    }
     /// This function determines whether a PostOnly order crosses the book.
     /// If the order crosses the book, the function returns the ID of the best unexpired
     /// crossing order (price, index) on the opposite side of the book. Otherwise, it returns None.
@@ -536,7 +600,7 @@ impl MatchingEngine<'_> {
             };
 
             // 2. loop through bitmaps in the group
-            for j in bitmap_group.bitmap_iterator(index_list.side, previous_inner_index) {
+            for j in inner_indices(index_list.side, previous_inner_index) {
                 let inner_index = InnerIndex::new(j);
                 let mut bitmap = bitmap_group.get_bitmap_mut(&inner_index);
 

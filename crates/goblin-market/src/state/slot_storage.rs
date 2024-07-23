@@ -15,6 +15,7 @@ pub const RESTING_ORDER_KEY_SEED: u8 = 2;
 pub const TRADER_STATE_KEY_SEED: u8 = 3;
 pub const MARKET_STATE_KEY_SEED: u8 = 4;
 
+// #[derive(Clone)]
 pub struct SlotStorage {
     #[cfg(test)]
     inner: HashMap<[u8; 32], [u8; 32]>,

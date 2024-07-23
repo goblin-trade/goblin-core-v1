@@ -53,35 +53,6 @@ impl BitmapGroup {
         ];
     }
 
-    /// Return an iterator to traverse bitmaps in a bitmap group
-    ///
-    /// Traversal is away from the centre. Move from top to bottom for bids (high to low) and from
-    /// bottom to top (low to high) for asks.
-    ///
-    /// # Arguments
-    ///
-    /// * `side`
-    /// * `previous_inner_index` - Begin traversal starting with this index (inclusive)
-    ///
-    pub fn bitmap_iterator(
-        &self,
-        side: Side,
-        previous_inner_index: Option<InnerIndex>,
-    ) -> Box<dyn Iterator<Item = usize>> {
-        match side {
-            // Top to bottom for bids
-            Side::Bid => {
-                let highest_index = previous_inner_index.map(|i| i.as_usize()).unwrap_or(31);
-                return Box::new((0..=highest_index).rev());
-            }
-            // Bottom to top for asks
-            Side::Ask => {
-                let lowest_index = previous_inner_index.map(|i| i.as_usize()).unwrap_or(0);
-                return Box::new(lowest_index..=31);
-            }
-        }
-    }
-
     /// Get the best active inner index in a bitmap group.
     ///
     /// Returns None if there is no active index. Externally ensure that this is called on an active
@@ -98,7 +69,7 @@ impl BitmapGroup {
         side: Side,
         previous_inner_index: Option<InnerIndex>,
     ) -> Option<InnerIndex> {
-        for i in self.bitmap_iterator(side, previous_inner_index) {
+        for i in inner_indices(side, previous_inner_index) {
             if self.inner[i] != 0 {
                 return Some(InnerIndex::new(i));
             }
@@ -111,6 +82,34 @@ impl BitmapGroup {
 pub struct BitmapGroupWithIndex {
     pub bitmap_group: BitmapGroup,
     pub outer_index: OuterIndex,
+}
+
+/// Return an iterator to traverse bitmaps in a bitmap group
+///
+/// Traversal is away from the centre. Move from top to bottom for bids (high to low) and from
+/// bottom to top (low to high) for asks.
+///
+/// # Arguments
+///
+/// * `side`
+/// * `previous_inner_index` - Begin traversal starting with this index (inclusive)
+///
+pub fn inner_indices(
+    side: Side,
+    previous_inner_index: Option<InnerIndex>,
+) -> Box<dyn Iterator<Item = usize>> {
+    match side {
+        // Top to bottom for bids
+        Side::Bid => {
+            let highest_index = previous_inner_index.map(|i| i.as_usize()).unwrap_or(31);
+            return Box::new((0..=highest_index).rev());
+        }
+        // Bottom to top for asks
+        Side::Ask => {
+            let lowest_index = previous_inner_index.map(|i| i.as_usize()).unwrap_or(0);
+            return Box::new(lowest_index..=31);
+        }
+    }
 }
 
 pub struct Bitmap<'a> {
@@ -130,9 +129,9 @@ impl Bitmap<'_> {
     }
 
     /// Find the best available slot with the lowest index
-    pub fn best_free_index(&self) -> Option<RestingOrderIndex> {
+    pub fn best_free_index(&self, start: u8) -> Option<RestingOrderIndex> {
         // Iterate through each bit starting from the least significant bit
-        for i in 0..8 {
+        for i in start..8 {
             let resting_order_index = RestingOrderIndex::new(i);
             // Check if the bit at index `i` is 0
             if !self.order_present(resting_order_index.clone()) {

@@ -91,6 +91,12 @@ impl ListSlot {
     pub fn set(&mut self, index: usize, value: OuterIndex) {
         self.inner[index] = value.as_u16();
     }
+
+    // Sets a placeholder value for a ListSlot that has been completely traversed.
+    // We save gas by not writing 0 to slot, that way the slot is not cleared.
+    pub fn clear(&mut self) {
+        self.inner = [u16::MAX; 16];
+    }
 }
 
 /// High level structure for the index list with getter and setter functions
