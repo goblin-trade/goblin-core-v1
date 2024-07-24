@@ -12,17 +12,27 @@ use super::{
 pub fn process_resting_orders(
     slot_storage: &mut SlotStorage,
     market_state: &mut MarketState,
+    num_ticks: Ticks,
     side: Side,
-    lambda_function: fn(resting_order: &mut SlotRestingOrder) -> bool,
-) -> Result<(), GoblinError> {
+    current_block: u32,
+    current_unix_timestamp_in_seconds: u32,
+    lambda_function: fn(
+        resting_order: &mut SlotRestingOrder,
+        num_ticks: Ticks,
+        resting_order_price: Ticks,
+        side: Side,
+        current_block: u32,
+        current_unix_timestamp_in_seconds: u32,
+    ) -> LambdaResult,
+) -> Result<Option<OrderId>, GoblinError> {
     let mut outer_index_count = market_state.outer_index_length(side);
     let mut price_in_ticks = market_state.best_price(side);
     let mut previous_inner_index = Some(price_in_ticks.inner_index());
     let mut slot_index = (outer_index_count - 1) / 16;
     let mut relative_index = (outer_index_count - 1) % 16;
 
-    // Set false to stop reading
-    let mut continue_reads = true;
+    // let mut stop_reads: Option<bool> = None;
+    let mut lambda_result = LambdaResult::ContinueLoop;
 
     // 1. Loop through index slots
     loop {
@@ -49,7 +59,12 @@ pub fn process_resting_orders(
                     let order_present = bitmap.order_present(resting_order_index);
 
                     if order_present {
-                        if !continue_reads {
+                        let order_id = OrderId {
+                            price_in_ticks,
+                            resting_order_index,
+                        };
+
+                        if lambda_result != LambdaResult::ContinueLoop {
                             if pending_bitmap_group_write {
                                 bitmap_group.write_to_slot(slot_storage, &outer_index);
                             }
@@ -59,17 +74,26 @@ pub fn process_resting_orders(
                             market_state.set_best_price(side, price_in_ticks);
                             market_state.set_outer_index_length(side, outer_index_count);
 
-                            return Ok(());
+                            return match lambda_result {
+                                LambdaResult::ReturnNone => Ok(None),
+                                LambdaResult::ReturnOrderId => Ok(Some(order_id)),
+                                LambdaResult::ContinueLoop => unreachable!(),
+                            };
                         }
 
-                        let order_id = OrderId {
-                            price_in_ticks,
-                            resting_order_index,
-                        };
                         let mut resting_order =
                             SlotRestingOrder::new_from_slot(slot_storage, order_id);
 
-                        continue_reads = lambda_function(&mut resting_order);
+                        // lambda_result = lambda_function(&mut resting_order);
+                        lambda_result = lambda_function(
+                            &mut resting_order,
+                            num_ticks,
+                            price_in_ticks,
+                            side,
+                            current_block,
+                            current_unix_timestamp_in_seconds,
+                        );
+
                         resting_order.write_to_slot(slot_storage, &order_id)?;
 
                         // The input amount is consumed, exit.
@@ -78,7 +102,11 @@ pub fn process_resting_orders(
                             market_state.set_best_price(side, price_in_ticks);
                             market_state.set_outer_index_length(side, outer_index_count);
 
-                            return Ok(());
+                            return match lambda_result {
+                                LambdaResult::ReturnNone => Ok(None),
+                                LambdaResult::ReturnOrderId => Ok(Some(order_id)),
+                                LambdaResult::ContinueLoop => unreachable!(),
+                            };
                         }
 
                         bitmap.clear(&resting_order_index);
@@ -116,5 +144,37 @@ pub fn process_resting_orders(
         relative_index = 15;
     }
 
-    Ok(())
+    Ok(None)
+}
+
+#[derive(PartialEq, Eq)]
+pub enum LambdaResult {
+    ContinueLoop,
+    ReturnNone,
+    ReturnOrderId,
+}
+
+pub fn order_crosses(
+    resting_order: &mut SlotRestingOrder,
+    num_ticks: Ticks,
+    resting_order_price: Ticks,
+    side: Side,
+    current_block: u32,
+    current_unix_timestamp_in_seconds: u32,
+) -> LambdaResult {
+    let crosses = match side.opposite() {
+        Side::Bid => resting_order_price >= num_ticks,
+        Side::Ask => resting_order_price <= num_ticks,
+    };
+
+    if !crosses {
+        return LambdaResult::ReturnNone;
+    }
+
+    if resting_order.expired(current_block, current_unix_timestamp_in_seconds) {
+        resting_order.clear_order();
+        return LambdaResult::ContinueLoop;
+    }
+
+    return LambdaResult::ReturnOrderId;
 }

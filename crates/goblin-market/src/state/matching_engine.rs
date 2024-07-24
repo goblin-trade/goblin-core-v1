@@ -17,10 +17,11 @@ use crate::{
 use super::{
     adjusted_quote_lot_budget_post_fee_adjustment_for_buys,
     adjusted_quote_lot_budget_post_fee_adjustment_for_sells, inner_indices,
-    matching_engine_response, slot_storage, BitmapGroup, IndexList, InflightOrder, InnerIndex,
-    IteratedRestingOrder, ListKey, ListSlot, MarketState, MatchingEngineResponse, OrderId,
-    OrderIterator, OrderPacket, OrderPacketMetadata, OuterIndex, RestingOrder, RestingOrderIndex,
-    Side, SlotActions, SlotRestingOrder, SlotStorage, TickIndices, TraderState,
+    matching_engine_response, order_crosses, process_resting_orders, slot_storage, BitmapGroup,
+    IndexList, InflightOrder, InnerIndex, IteratedRestingOrder, ListKey, ListSlot, MarketState,
+    MatchingEngineResponse, OrderId, OrderIterator, OrderPacket, OrderPacketMetadata, OuterIndex,
+    RestingOrder, RestingOrderIndex, Side, SlotActions, SlotRestingOrder, SlotStorage, TickIndices,
+    TraderState,
 };
 use alloc::{collections::btree_map::Range, vec::Vec};
 
@@ -487,7 +488,16 @@ impl MatchingEngine<'_> {
         current_unix_timestamp_in_seconds: u32,
     ) -> GoblinResult<Option<OrderId>> {
         let opposite_side = side.opposite();
-        let opposite_best_price = market_state.best_price(side.opposite());
+        let opposite_best_price = market_state.best_price(opposite_side);
+        let outer_index_count = market_state.outer_index_length(opposite_side);
+
+        if outer_index_count == 0 // Book empty case
+            // No cross case
+            || (side == Side::Bid && num_ticks < opposite_best_price)
+            || (side == Side::Ask && num_ticks > opposite_best_price)
+        {
+            return Ok(None);
+        }
 
         // No cross case
         if (side == Side::Bid && num_ticks < opposite_best_price)
@@ -496,7 +506,15 @@ impl MatchingEngine<'_> {
             return Ok(None);
         }
 
-        return Ok(None);
+        process_resting_orders(
+            self.slot_storage,
+            market_state,
+            num_ticks,
+            side,
+            current_block,
+            current_unix_timestamp_in_seconds,
+            order_crosses,
+        )
     }
     /// This function determines whether a PostOnly order crosses the book.
     /// If the order crosses the book, the function returns the ID of the best unexpired
