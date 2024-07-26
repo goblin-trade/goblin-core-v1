@@ -3,7 +3,7 @@ use crate::quantities::{AdjustedQuoteLots, BaseLots, QuoteLots, Ticks};
 use super::{SelfTradeBehavior, Side};
 
 #[derive(Copy, Clone)]
-pub(crate) struct InflightOrder {
+pub struct InflightOrder {
     pub side: Side,
     pub self_trade_behavior: SelfTradeBehavior,
 

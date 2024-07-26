@@ -479,6 +479,18 @@ impl MatchingEngine<'_> {
         Ok(None)
     }
 
+    /// Match the inflight orders with crossing resting orders of the opposite side
+    fn match_order(
+        &mut self,
+        market_state: &mut MarketState,
+        inflight_order: &mut InflightOrder,
+        current_trader_address: Address,
+        current_block: u32,
+        current_unix_timestamp_in_seconds: u32,
+    ) {
+        let mut total_matched_adjusted_quote_lots = AdjustedQuoteLots::ZERO;
+    }
+
     fn check_for_cross_v2(
         &mut self,
         market_state: &mut MarketState,
@@ -494,13 +506,6 @@ impl MatchingEngine<'_> {
         if outer_index_count == 0 // Book empty case
             // No cross case
             || (side == Side::Bid && num_ticks < opposite_best_price)
-            || (side == Side::Ask && num_ticks > opposite_best_price)
-        {
-            return Ok(None);
-        }
-
-        // No cross case
-        if (side == Side::Bid && num_ticks < opposite_best_price)
             || (side == Side::Ask && num_ticks > opposite_best_price)
         {
             return Ok(None);

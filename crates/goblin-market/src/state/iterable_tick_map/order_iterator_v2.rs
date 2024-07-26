@@ -1,7 +1,10 @@
+use stylus_sdk::alloy_primitives::Address;
+
 use crate::{
-    program::GoblinError,
-    quantities::Ticks,
-    state::{MarketState, RestingOrder, Side, SlotStorage},
+    parameters::{BASE_LOTS_PER_BASE_UNIT, TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT},
+    program::{GoblinError, GoblinResult},
+    quantities::{AdjustedQuoteLots, BaseLots, QuoteLotsPerBaseUnit, Ticks},
+    state::{InflightOrder, MarketState, RestingOrder, Side, SlotStorage, TraderState},
 };
 
 use super::{
@@ -9,6 +12,11 @@ use super::{
     SlotRestingOrder,
 };
 
+/// Loops through subsequent resting orders, applying a lambda function on each.
+/// The loop moves to the next resting order if lambda function closes the current resting
+/// order and returns ContinueLooping.
+/// Returns the OrderId of the best active resting order remaining after the lambda function
+/// is applied.
 pub fn process_resting_orders(
     slot_storage: &mut SlotStorage,
     market_state: &mut MarketState,
@@ -24,7 +32,7 @@ pub fn process_resting_orders(
         current_block: u32,
         current_unix_timestamp_in_seconds: u32,
     ) -> LambdaResult,
-) -> Result<Option<OrderId>, GoblinError> {
+) -> GoblinResult<Option<OrderId>> {
     let mut outer_index_count = market_state.outer_index_length(side);
     let mut price_in_ticks = market_state.best_price(side);
     let mut previous_inner_index = Some(price_in_ticks.inner_index());
@@ -171,10 +179,204 @@ pub fn order_crosses(
         return LambdaResult::ReturnNone;
     }
 
+    // TODO fix- call reduce_order(). Currently we don't update trader state.
     if resting_order.expired(current_block, current_unix_timestamp_in_seconds) {
         resting_order.clear_order();
         return LambdaResult::ContinueLoop;
     }
 
     return LambdaResult::ReturnOrderId;
+}
+
+pub fn order_matches(
+    inflight_order: &mut InflightOrder,
+    resting_order: &mut SlotRestingOrder,
+    trader_state: &mut TraderState,
+    trader_address: Address,
+    num_ticks: Ticks,
+    order_id: OrderId,
+    total_matched_adjusted_quote_lots: &mut AdjustedQuoteLots,
+    current_block: u32,
+    current_unix_timestamp_in_seconds: u32,
+) -> LambdaResult {
+    if !inflight_order.in_progress() {
+        return LambdaResult::ReturnNone;
+    }
+
+    let num_base_lots_quoted = resting_order.num_base_lots;
+
+    let crosses = match inflight_order.side.opposite() {
+        Side::Bid => order_id.price_in_ticks >= num_ticks,
+        Side::Ask => order_id.price_in_ticks <= num_ticks,
+    };
+
+    if !crosses {
+        return LambdaResult::ReturnNone;
+    }
+
+    // 1. Resting order expired case
+    if resting_order.expired(current_block, current_unix_timestamp_in_seconds) {
+        resting_order.clear_order();
+        inflight_order.match_limit -= 1;
+        return LambdaResult::ContinueLoop;
+    }
+
+    // 2. Self trade case
+    if trader_address == resting_order.trader_address {
+        match inflight_order.self_trade_behavior {
+            crate::state::SelfTradeBehavior::Abort => return LambdaResult::ReturnNone,
+            crate::state::SelfTradeBehavior::CancelProvide => {
+                // Cancel the resting order without charging fees.
+
+                if resting_order
+                    .reduce_order(
+                        trader_state,
+                        trader_address,
+                        &order_id,
+                        inflight_order.side.opposite(),
+                        BaseLots::MAX,
+                        false,
+                        false,
+                    )
+                    .is_none()
+                {
+                    return LambdaResult::ReturnNone;
+                }
+
+                inflight_order.match_limit -= 1;
+            }
+            crate::state::SelfTradeBehavior::DecrementTake => {
+                // Match against the maker order, but don't add fees
+                // Similar matching logic is used later, but here the amount matched is
+                // not added to total_matched_adjusted_quote_lots
+                let base_lots_removed = inflight_order
+                    .base_lot_budget
+                    .min(
+                        inflight_order
+                            .adjusted_quote_lot_budget
+                            .unchecked_div::<QuoteLotsPerBaseUnit, BaseLots>(
+                                order_id.price_in_ticks * TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT,
+                            ),
+                    )
+                    .min(num_base_lots_quoted);
+
+                if resting_order
+                    .reduce_order(
+                        trader_state,
+                        trader_address,
+                        &order_id,
+                        inflight_order.side.opposite(),
+                        base_lots_removed,
+                        false,
+                        false,
+                    )
+                    .is_none()
+                {
+                    return LambdaResult::ReturnNone;
+                }
+
+                // In the case that the self trade behavior is DecrementTake, we decrement the
+                // the base lot and adjusted quote lot budgets accordingly
+                inflight_order.base_lot_budget = inflight_order
+                    .base_lot_budget
+                    .saturating_sub(base_lots_removed);
+                inflight_order.adjusted_quote_lot_budget =
+                    inflight_order.adjusted_quote_lot_budget.saturating_sub(
+                        TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT
+                            * order_id.price_in_ticks
+                            * base_lots_removed,
+                    );
+                // Self trades will count towards the match limit
+                inflight_order.match_limit -= 1;
+
+                // Update inflight_order.should_terminate, then call continue
+                // Input completely exhausted but resting order remains. There is no need
+                // to read the next resting order. Setting set_terminate = true will cause
+                // the next resting order to be evaluated
+                // inflight_order.should_terminate = base_lots_removed < num_base_lots_quoted;
+
+                // Both are exhausted case (==)- we need to read the next item.
+                // That is handled correctly
+                if base_lots_removed < num_base_lots_quoted {
+                    return LambdaResult::ReturnOrderId;
+                }
+            }
+        }
+
+        return LambdaResult::ContinueLoop;
+    }
+
+    // General case (non-self trade)
+
+    let num_adjusted_quote_lots_quoted =
+        order_id.price_in_ticks * TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT * num_base_lots_quoted;
+
+    // Use matched_base_lots and matched_adjusted_quote_lots to update the
+    // inflight order and trader state
+    let (matched_base_lots, matched_adjusted_quote_lots, order_remaining_base_lots) = {
+        // Check if the inflight order's budget is exhausted
+        // Compare inflight order's budgets with quoted lots
+        let has_remaining_adjusted_quote_lots =
+            num_adjusted_quote_lots_quoted <= inflight_order.adjusted_quote_lot_budget;
+        let has_remaining_base_lots = num_base_lots_quoted <= inflight_order.base_lot_budget;
+
+        // Budget exceeds quote. Clear the resting order.
+        // Stop iterating by returning LambdaResult::ReturnOrderId
+        if has_remaining_base_lots && has_remaining_adjusted_quote_lots {
+            resting_order.clear_order();
+            (
+                num_base_lots_quoted,
+                num_adjusted_quote_lots_quoted,
+                BaseLots::ZERO,
+            )
+        } else {
+            // If the order's budget is exhausted, we match as much as we can
+            let base_lots_to_remove = inflight_order.base_lot_budget.min(
+                inflight_order
+                    .adjusted_quote_lot_budget
+                    .unchecked_div::<QuoteLotsPerBaseUnit, BaseLots>(
+                        order_id.price_in_ticks * TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT,
+                    ),
+            );
+            let adjusted_quote_lots_to_remove = order_id.price_in_ticks
+                * TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT
+                * base_lots_to_remove;
+
+            resting_order.num_base_lots -= base_lots_to_remove;
+            // If this clause is reached, we make ensure that the loop terminates
+            // as the order has been fully filled
+            inflight_order.should_terminate = true;
+            (
+                base_lots_to_remove,
+                adjusted_quote_lots_to_remove,
+                resting_order.num_base_lots,
+            )
+        }
+    };
+
+    // Deplete the inflight order's budget by the amount matched
+    inflight_order.process_match(matched_adjusted_quote_lots, matched_base_lots);
+
+    // Increment the matched adjusted quote lots for fee calculation
+    *total_matched_adjusted_quote_lots += matched_adjusted_quote_lots;
+
+    // EMIT fill event
+
+    // Update the maker's state to reflect the match
+    match inflight_order.side {
+        Side::Bid => trader_state.process_limit_sell(
+            matched_base_lots,
+            matched_adjusted_quote_lots / BASE_LOTS_PER_BASE_UNIT,
+        ),
+        Side::Ask => trader_state.process_limit_buy(
+            matched_adjusted_quote_lots / BASE_LOTS_PER_BASE_UNIT,
+            matched_base_lots,
+        ),
+    }
+
+    if order_remaining_base_lots == BaseLots::ZERO {
+        LambdaResult::ReturnOrderId
+    } else {
+        LambdaResult::ContinueLoop
+    }
 }
