@@ -511,15 +511,17 @@ impl MatchingEngine<'_> {
             return Ok(None);
         }
 
-        process_resting_orders(
-            self.slot_storage,
-            market_state,
-            num_ticks,
-            side,
-            current_block,
-            current_unix_timestamp_in_seconds,
-            order_crosses,
-        )
+        // process_resting_orders(
+        //     self.slot_storage,
+        //     market_state,
+        //     num_ticks,
+        //     side,
+        //     current_block,
+        //     current_unix_timestamp_in_seconds,
+        //     order_crosses,
+        // )
+
+        Ok(None)
     }
     /// This function determines whether a PostOnly order crosses the book.
     /// If the order crosses the book, the function returns the ID of the best unexpired

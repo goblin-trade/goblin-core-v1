@@ -164,38 +164,49 @@ pub enum LambdaResult {
 
 pub fn order_crosses(
     resting_order: &mut SlotRestingOrder,
-    num_ticks: Ticks,
-    resting_order_price: Ticks,
+    trader_state: &mut TraderState,
+    order_id: OrderId,
     side: Side,
+    limit_price_in_ticks: Ticks,
     current_block: u32,
     current_unix_timestamp_in_seconds: u32,
 ) -> LambdaResult {
     let crosses = match side.opposite() {
-        Side::Bid => resting_order_price >= num_ticks,
-        Side::Ask => resting_order_price <= num_ticks,
+        Side::Bid => order_id.price_in_ticks >= limit_price_in_ticks,
+        Side::Ask => order_id.price_in_ticks <= limit_price_in_ticks,
     };
 
     if !crosses {
         return LambdaResult::ReturnNone;
     }
 
-    // TODO fix- call reduce_order(). Currently we don't update trader state.
     if resting_order.expired(current_block, current_unix_timestamp_in_seconds) {
-        resting_order.clear_order();
+        resting_order
+            .reduce_order(
+                trader_state,
+                resting_order.trader_address,
+                &order_id,
+                side.opposite(),
+                BaseLots::MAX,
+                true,
+                false,
+            )
+            .unwrap();
         return LambdaResult::ContinueLoop;
     }
 
     return LambdaResult::ReturnOrderId;
 }
 
-pub fn order_matches(
+pub fn match_resting_order(
     inflight_order: &mut InflightOrder,
-    resting_order: &mut SlotRestingOrder,
-    trader_state: &mut TraderState,
-    trader_address: Address,
-    num_ticks: Ticks,
-    order_id: OrderId,
     total_matched_adjusted_quote_lots: &mut AdjustedQuoteLots,
+
+    resting_order: &mut SlotRestingOrder,
+    maker_state: &mut TraderState,
+    taker_address: Address,
+    order_id: OrderId,
+    limit_price_in_ticks: Ticks,
     current_block: u32,
     current_unix_timestamp_in_seconds: u32,
 ) -> LambdaResult {
@@ -206,8 +217,8 @@ pub fn order_matches(
     let num_base_lots_quoted = resting_order.num_base_lots;
 
     let crosses = match inflight_order.side.opposite() {
-        Side::Bid => order_id.price_in_ticks >= num_ticks,
-        Side::Ask => order_id.price_in_ticks <= num_ticks,
+        Side::Bid => order_id.price_in_ticks >= limit_price_in_ticks,
+        Side::Ask => order_id.price_in_ticks <= limit_price_in_ticks,
     };
 
     if !crosses {
@@ -222,7 +233,7 @@ pub fn order_matches(
     }
 
     // 2. Self trade case
-    if trader_address == resting_order.trader_address {
+    if taker_address == resting_order.trader_address {
         match inflight_order.self_trade_behavior {
             crate::state::SelfTradeBehavior::Abort => return LambdaResult::ReturnNone,
             crate::state::SelfTradeBehavior::CancelProvide => {
@@ -230,8 +241,8 @@ pub fn order_matches(
 
                 if resting_order
                     .reduce_order(
-                        trader_state,
-                        trader_address,
+                        maker_state,
+                        taker_address,
                         &order_id,
                         inflight_order.side.opposite(),
                         BaseLots::MAX,
@@ -262,8 +273,8 @@ pub fn order_matches(
 
                 if resting_order
                     .reduce_order(
-                        trader_state,
-                        trader_address,
+                        maker_state,
+                        taker_address,
                         &order_id,
                         inflight_order.side.opposite(),
                         base_lots_removed,
@@ -364,11 +375,11 @@ pub fn order_matches(
 
     // Update the maker's state to reflect the match
     match inflight_order.side {
-        Side::Bid => trader_state.process_limit_sell(
+        Side::Bid => maker_state.process_limit_sell(
             matched_base_lots,
             matched_adjusted_quote_lots / BASE_LOTS_PER_BASE_UNIT,
         ),
-        Side::Ask => trader_state.process_limit_buy(
+        Side::Ask => maker_state.process_limit_buy(
             matched_adjusted_quote_lots / BASE_LOTS_PER_BASE_UNIT,
             matched_base_lots,
         ),
