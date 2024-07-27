@@ -704,7 +704,7 @@ impl MatchingEngine<'_> {
         limit_price_in_ticks: Ticks,
         current_block: u32,
         current_unix_timestamp_in_seconds: u32,
-    ) -> GoblinResult<Option<OrderId>> {
+    ) -> Option<OrderId> {
         let opposite_side = side.opposite();
         let opposite_best_price = market_state.best_price(opposite_side);
         let outer_index_count = market_state.outer_index_length(opposite_side);
@@ -714,7 +714,7 @@ impl MatchingEngine<'_> {
             || (side == Side::Bid && limit_price_in_ticks < opposite_best_price)
             || (side == Side::Ask && limit_price_in_ticks > opposite_best_price)
         {
-            return Ok(None);
+            return None;
         }
 
         let handle_cross = |order_id: OrderId, resting_order: &mut SlotRestingOrder| {
@@ -759,7 +759,7 @@ impl MatchingEngine<'_> {
         //     order_crosses,
         // )
 
-        Ok(None)
+        None
     }
 
     /// This function determines whether a PostOnly order crosses the book.

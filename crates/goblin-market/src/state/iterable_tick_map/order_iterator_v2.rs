@@ -2,7 +2,6 @@ use stylus_sdk::alloy_primitives::Address;
 
 use crate::{
     parameters::{BASE_LOTS_PER_BASE_UNIT, TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT},
-    program::{GoblinError, GoblinResult},
     quantities::{AdjustedQuoteLots, BaseLots, QuoteLotsPerBaseUnit, Ticks},
     state::{InflightOrder, MarketState, RestingOrder, Side, SlotStorage, TraderState},
 };
@@ -34,7 +33,7 @@ pub fn process_resting_orders(
         current_block: u32,
         current_unix_timestamp_in_seconds: u32,
     ) -> LambdaResult,
-) -> GoblinResult<Option<OrderId>> {
+) -> Option<OrderId> {
     let mut outer_index_count = market_state.outer_index_length(side);
     let mut price_in_ticks = market_state.best_price(side);
     let mut previous_inner_index = Some(price_in_ticks.inner_index());
@@ -85,8 +84,8 @@ pub fn process_resting_orders(
                             market_state.set_outer_index_length(side, outer_index_count);
 
                             return match lambda_result {
-                                LambdaResult::ReturnNone => Ok(None),
-                                LambdaResult::ReturnOrderId => Ok(Some(order_id)),
+                                LambdaResult::ReturnNone => None,
+                                LambdaResult::ReturnOrderId => Some(order_id),
                                 LambdaResult::ContinueLoop => unreachable!(),
                             };
                         }
@@ -104,7 +103,9 @@ pub fn process_resting_orders(
                             current_unix_timestamp_in_seconds,
                         );
 
-                        resting_order.write_to_slot(slot_storage, &order_id)?;
+                        resting_order
+                            .write_to_slot(slot_storage, &order_id)
+                            .unwrap();
 
                         // The input amount is consumed, exit.
                         // Traversed Bitmap groups and ListSlots have been written already
@@ -113,8 +114,8 @@ pub fn process_resting_orders(
                             market_state.set_outer_index_length(side, outer_index_count);
 
                             return match lambda_result {
-                                LambdaResult::ReturnNone => Ok(None),
-                                LambdaResult::ReturnOrderId => Ok(Some(order_id)),
+                                LambdaResult::ReturnNone => None,
+                                LambdaResult::ReturnOrderId => Some(order_id),
                                 LambdaResult::ContinueLoop => unreachable!(),
                             };
                         }
@@ -154,7 +155,7 @@ pub fn process_resting_orders(
         relative_index = 15;
     }
 
-    Ok(None)
+    None
 }
 
 #[derive(PartialEq, Eq)]

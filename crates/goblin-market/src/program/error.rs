@@ -1,4 +1,4 @@
-#[cfg(test)]
+// #[cfg(test)]
 use core::fmt::Debug;
 
 use alloy_sol_types::sol;
@@ -149,10 +149,10 @@ pub enum GoblinError {
     FailedToFlushBuffer(FailedToFlushBuffer),
 }
 
-#[cfg(test)]
+// #[cfg(test)]
 impl Debug for GoblinError {
-    fn fmt(&self, _f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        Ok(())
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "GoblinError")
     }
 }
 
