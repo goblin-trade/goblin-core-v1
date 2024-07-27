@@ -24,6 +24,8 @@ pub fn process_resting_orders(
     side: Side,
     current_block: u32,
     current_unix_timestamp_in_seconds: u32,
+
+    // Find a way to call a closure such that we can pass variable number of arguments
     lambda_function: fn(
         resting_order: &mut SlotRestingOrder,
         num_ticks: Ticks,
@@ -181,6 +183,7 @@ pub fn order_crosses(
     }
 
     if resting_order.expired(current_block, current_unix_timestamp_in_seconds) {
+        // TODO write trader state
         resting_order
             .reduce_order(
                 trader_state,
@@ -227,6 +230,7 @@ pub fn match_resting_order(
 
     // 1. Resting order expired case
     if resting_order.expired(current_block, current_unix_timestamp_in_seconds) {
+        // TODO call .reduce(), write trader state to slot
         resting_order.clear_order();
         inflight_order.match_limit -= 1;
         return LambdaResult::ContinueLoop;
@@ -239,6 +243,7 @@ pub fn match_resting_order(
             crate::state::SelfTradeBehavior::CancelProvide => {
                 // Cancel the resting order without charging fees.
 
+                // TODO write maker state
                 if resting_order
                     .reduce_order(
                         maker_state,
@@ -271,6 +276,7 @@ pub fn match_resting_order(
                     )
                     .min(num_base_lots_quoted);
 
+                // TODO write maker_state
                 if resting_order
                     .reduce_order(
                         maker_state,
