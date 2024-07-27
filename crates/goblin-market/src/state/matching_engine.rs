@@ -491,11 +491,17 @@ impl MatchingEngine<'_> {
         current_block: u32,
         current_unix_timestamp_in_seconds: u32,
     ) {
+        let mut abort = false;
         let mut total_matched_adjusted_quote_lots = AdjustedQuoteLots::ZERO;
+        let opposite_side = inflight_order.side.opposite();
 
-        let handle_match = |order_id: OrderId, resting_order: &mut SlotRestingOrder| {
+        let mut handle_match = |order_id: OrderId,
+                                resting_order: &mut SlotRestingOrder,
+                                slot_storage: &mut SlotStorage| {
+            // TODO avoid- this leads to wasted SLOAD
+            // Instead check in the last iteration and return true to stop
             if !inflight_order.in_progress() {
-                return LambdaResult::ReturnNone;
+                return true;
             }
 
             let num_base_lots_quoted = resting_order.num_base_lots;
@@ -506,11 +512,11 @@ impl MatchingEngine<'_> {
             };
 
             if !crosses {
-                return LambdaResult::ReturnNone;
+                return true;
             }
 
             let mut maker_state =
-                TraderState::read_from_slot(self.slot_storage, resting_order.trader_address);
+                TraderState::read_from_slot(slot_storage, resting_order.trader_address);
 
             // 1. Resting order expired case
             if resting_order.expired(current_block, current_unix_timestamp_in_seconds) {
@@ -525,16 +531,19 @@ impl MatchingEngine<'_> {
                         false,
                     )
                     .unwrap();
-                maker_state.write_to_slot(self.slot_storage, resting_order.trader_address);
+                maker_state.write_to_slot(slot_storage, resting_order.trader_address);
                 inflight_order.match_limit -= 1;
 
-                return LambdaResult::ContinueLoop;
+                return false;
             }
 
             // 2. Self trade case
             if taker_address == resting_order.trader_address {
                 match inflight_order.self_trade_behavior {
-                    crate::state::SelfTradeBehavior::Abort => return LambdaResult::ReturnNone,
+                    crate::state::SelfTradeBehavior::Abort => {
+                        abort = true;
+                        return true;
+                    }
                     crate::state::SelfTradeBehavior::CancelProvide => {
                         // Cancel the resting order without charging fees.
 
@@ -549,7 +558,7 @@ impl MatchingEngine<'_> {
                                 false,
                             )
                             .unwrap();
-                        maker_state.write_to_slot(self.slot_storage, resting_order.trader_address);
+                        maker_state.write_to_slot(slot_storage, resting_order.trader_address);
 
                         inflight_order.match_limit -= 1;
                     }
@@ -581,7 +590,7 @@ impl MatchingEngine<'_> {
                             )
                             .unwrap();
 
-                        maker_state.write_to_slot(self.slot_storage, resting_order.trader_address);
+                        maker_state.write_to_slot(slot_storage, resting_order.trader_address);
 
                         // In the case that the self trade behavior is DecrementTake, we decrement the
                         // the base lot and adjusted quote lot budgets accordingly
@@ -603,14 +612,18 @@ impl MatchingEngine<'_> {
                         // the next resting order to be evaluated
                         // inflight_order.should_terminate = base_lots_removed < num_base_lots_quoted;
 
-                        // Both are exhausted case (==)- we need to read the next item.
-                        // That is handled correctly
-                        if base_lots_removed < num_base_lots_quoted {
-                            return LambdaResult::ReturnOrderId;
-                        }
+                        inflight_order.should_terminate = base_lots_removed < num_base_lots_quoted;
+
+                        // // Both are exhausted case (==)- we need to read the next item.
+                        // // That is handled correctly
+                        // if base_lots_removed < num_base_lots_quoted {
+                        //     // return LambdaResult::ReturnOrderId;
+                        //     return false;
+                        // }
                     }
                 }
-                return LambdaResult::ContinueLoop;
+                // return LambdaResult::ContinueLoop;
+                return false;
             }
 
             let num_adjusted_quote_lots_quoted = order_id.price_in_ticks
@@ -628,7 +641,6 @@ impl MatchingEngine<'_> {
                     num_base_lots_quoted <= inflight_order.base_lot_budget;
 
                 // Budget exceeds quote. Clear the resting order.
-                // Stop iterating by returning LambdaResult::ReturnOrderId
                 if has_remaining_base_lots && has_remaining_adjusted_quote_lots {
                     resting_order.clear_order();
                     (
@@ -681,12 +693,15 @@ impl MatchingEngine<'_> {
                 ),
             }
 
-            if order_remaining_base_lots == BaseLots::ZERO {
-                LambdaResult::ReturnOrderId
-            } else {
-                LambdaResult::ContinueLoop
-            }
+            order_remaining_base_lots == BaseLots::ZERO
         };
+
+        process_resting_orders(
+            self.slot_storage,
+            market_state,
+            opposite_side,
+            &mut handle_match,
+        );
 
         // Fees are updated based on the total amount matched
 
@@ -717,19 +732,24 @@ impl MatchingEngine<'_> {
             return None;
         }
 
-        let handle_cross = |order_id: OrderId, resting_order: &mut SlotRestingOrder| {
+        let mut crossing_tick: Option<OrderId> = None;
+
+        let mut handle_cross = |order_id: OrderId,
+                                resting_order: &mut SlotRestingOrder,
+                                slot_storage: &mut SlotStorage| {
             let crosses = match side.opposite() {
                 Side::Bid => order_id.price_in_ticks >= limit_price_in_ticks,
                 Side::Ask => order_id.price_in_ticks <= limit_price_in_ticks,
             };
 
             if !crosses {
-                return LambdaResult::ReturnNone;
+                // return LambdaResult::ReturnNone;
+                return true;
             }
 
             if resting_order.expired(current_block, current_unix_timestamp_in_seconds) {
                 let mut trader_state =
-                    TraderState::read_from_slot(self.slot_storage, resting_order.trader_address);
+                    TraderState::read_from_slot(slot_storage, resting_order.trader_address);
 
                 resting_order
                     .reduce_order(
@@ -742,24 +762,23 @@ impl MatchingEngine<'_> {
                         false,
                     )
                     .unwrap();
-                trader_state.write_to_slot(self.slot_storage, resting_order.trader_address);
+                trader_state.write_to_slot(slot_storage, resting_order.trader_address);
 
-                return LambdaResult::ContinueLoop;
+                return false;
             }
 
-            return LambdaResult::ReturnOrderId;
+            crossing_tick = Some(order_id);
+            return true;
         };
-        // process_resting_orders(
-        //     self.slot_storage,
-        //     market_state,
-        //     num_ticks,
-        //     side,
-        //     current_block,
-        //     current_unix_timestamp_in_seconds,
-        //     order_crosses,
-        // )
 
-        None
+        process_resting_orders(
+            self.slot_storage,
+            market_state,
+            opposite_side,
+            &mut handle_cross,
+        );
+
+        crossing_tick
     }
 
     /// This function determines whether a PostOnly order crosses the book.
