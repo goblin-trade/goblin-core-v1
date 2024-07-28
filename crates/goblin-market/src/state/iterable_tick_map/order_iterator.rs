@@ -1,171 +1,129 @@
 use crate::{
     quantities::Ticks,
-    state::{
-        slot_storage, BitmapGroup, InnerIndex, ListKey, ListSlot, OrderId, OuterIndex,
-        RestingOrderIndex, Side, SlotRestingOrder, SlotStorage,
-    },
+    state::{MarketState, RestingOrder, Side, SlotStorage},
 };
 
-#[derive(Clone, Copy)]
-pub struct IteratedRestingOrder {
-    pub resting_order: SlotRestingOrder,
-    pub order_id: OrderId, // pub outer_index: OuterIndex,
-                           // pub inner_index: InnerIndex
-}
+use super::{
+    inner_indices, BitmapGroup, InnerIndex, ListKey, ListSlot, OrderId, RestingOrderIndex,
+    SlotRestingOrder,
+};
 
-/// Iterate over resting orders in a book
+/// Loops through subsequent resting orders, applying a lambda function on each.
 ///
-/// Whenever next is called, the preceding value should be deleted
-// #[derive(Clone)]
-pub struct OrderIterator<'a> {
-    pub slot_storage: &'a mut SlotStorage,
+/// - Traversed resting orders are removed from bitmap groups and the index list.
+/// The market state is updated accordingly.
+/// - Looping stops if lambda function returns true.
+///
+pub fn process_resting_orders(
+    slot_storage: &mut SlotStorage,
+    market_state: &mut MarketState,
+    side: Side,
+    lambda: &mut dyn FnMut(OrderId, &mut SlotRestingOrder, &mut SlotStorage) -> bool,
+) {
+    let mut outer_index_count = market_state.outer_index_length(side);
+    let mut price_in_ticks = market_state.best_price(side);
+    let mut previous_inner_index = Some(price_in_ticks.inner_index());
+    let mut slot_index = (outer_index_count - 1) / 16;
+    let mut relative_index = (outer_index_count - 1) % 16;
+    let mut stop = false;
 
-    pub side: Side,
+    // 1. Loop through index slots
+    loop {
+        let list_key = ListKey { index: slot_index };
+        let mut list_slot = ListSlot::new_from_slot(slot_storage, list_key);
+        let mut pending_list_slot_write = false;
 
-    // pub starting_price: Ticks,
-    pub last_item: Option<IteratedRestingOrder>,
+        // 2. Loop through bitmap groups using relative index
+        loop {
+            let outer_index = list_slot.get(relative_index as usize);
+            let mut bitmap_group = BitmapGroup::new_from_slot(slot_storage, outer_index);
 
-    pub cached_list_slot: Option<ListSlot>,
+            let mut pending_bitmap_group_write = false;
 
-    pub bitmap_group: Option<BitmapGroup>,
+            // 3. Loop through bitmaps
+            for i in inner_indices(side, previous_inner_index) {
+                let inner_index = InnerIndex::new(i);
+                price_in_ticks = Ticks::from_indices(outer_index, inner_index);
+                let mut bitmap = bitmap_group.get_bitmap_mut(&inner_index);
 
-    // These variables update as we traverse
-    pub outer_index_count: u16,
+                // 4. Loop through resting orders in the bitmap
+                for j in 0..8 {
+                    let resting_order_index = RestingOrderIndex::new(j);
+                    let order_present = bitmap.order_present(resting_order_index);
 
-    pub inner_index: Option<InnerIndex>,
+                    if order_present {
+                        let order_id = OrderId {
+                            price_in_ticks,
+                            resting_order_index,
+                        };
 
-    pub bit_index: Option<RestingOrderIndex>,
-}
+                        if stop {
+                            if pending_bitmap_group_write {
+                                bitmap_group.write_to_slot(slot_storage, &outer_index);
+                            }
+                            if pending_list_slot_write {
+                                list_slot.write_to_slot(slot_storage, &list_key);
+                            }
+                            market_state.set_best_price(side, price_in_ticks);
+                            market_state.set_outer_index_length(side, outer_index_count);
 
-// impl<'a> OrderIterator<'a> {
-//     pub fn new(slot_storage: &'a mut SlotStorage) -> Self {
-//         OrderIterator { slot_storage }
-//     }
-// }
+                            return;
+                        }
 
-impl<'a> OrderIterator<'a> {
-    pub fn new(
-        slot_storage: &'a mut SlotStorage,
-        side: Side,
-        outer_index_count: u16,
-        best_price: Ticks,
-    ) -> Self {
-        let inner_index = best_price.inner_index();
+                        let mut resting_order =
+                            SlotRestingOrder::new_from_slot(slot_storage, order_id);
 
-        OrderIterator {
-            slot_storage,
-            side,
-            last_item: None,
-            cached_list_slot: None,
-            bitmap_group: None,
-            outer_index_count,
-            inner_index: Some(inner_index),
-            bit_index: None,
-        }
-    }
-}
+                        stop = lambda(order_id, &mut resting_order, slot_storage);
 
-impl Iterator for OrderIterator<'_> {
-    type Item = IteratedRestingOrder;
+                        resting_order
+                            .write_to_slot(slot_storage, &order_id)
+                            .unwrap();
 
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.outer_index_count == 0 {
-            return None;
-        }
+                        if stop && resting_order.size() != 0 {
+                            if pending_bitmap_group_write {
+                                bitmap_group.write_to_slot(slot_storage, &outer_index);
+                            }
+                            if pending_list_slot_write {
+                                list_slot.write_to_slot(slot_storage, &list_key);
+                            }
+                            market_state.set_best_price(side, price_in_ticks);
+                            market_state.set_outer_index_length(side, outer_index_count);
 
-        // Better to update state externally in loop body?
-        if let Some(IteratedRestingOrder {
-            resting_order,
-            order_id,
-        }) = &mut self.last_item
-        {
-            // Remove this item
-            resting_order.clear_order();
-            resting_order.write_to_slot(self.slot_storage, order_id);
+                            return;
+                        }
 
-            // Update bitmap
-            let mut bitmap_group = self.bitmap_group.unwrap();
-            let mut bitmap = bitmap_group.get_bitmap_mut(&order_id.price_in_ticks.inner_index());
-            bitmap.flip(&order_id.resting_order_index);
+                        bitmap.clear(&resting_order_index);
+                        pending_bitmap_group_write = true;
+                    }
+                }
+            }
+            // Previous inner index is only used for the first active tick
+            if previous_inner_index.is_some() {
+                previous_inner_index = None;
+            }
 
-            // Not optimal- should only write when group changes
-            bitmap_group.write_to_slot(self.slot_storage, &order_id.price_in_ticks.outer_index());
-        }
+            // Empty bitmap group written to slot
+            bitmap_group.write_to_slot(slot_storage, &outer_index);
 
-        let outer_index_position = self.outer_index_count - 1;
+            list_slot.clear_index(&list_key);
+            pending_list_slot_write = true;
+            outer_index_count -= 1;
 
-        // Index of a slot item. A slot item holds upto 16 outer indices
-        let slot_index = outer_index_position / 16;
-
-        // Relative index inside a slot item
-        let relative_index = outer_index_position as usize % 16;
-
-        // Read the outer index
-
-        // Load list slot if this is the first iteration or if values in the cached slot are
-        // completely read
-        if self.cached_list_slot.is_none() || relative_index == 15 {
-            let list_slot_key = ListKey { index: slot_index };
-            self.cached_list_slot = Some(ListSlot::new_from_slot(self.slot_storage, list_slot_key));
-        }
-
-        let list_slot = self.cached_list_slot.unwrap();
-
-        // Read outer index from list
-        let outer_index = list_slot.get(relative_index);
-
-        // Only update if new outer index was read
-        if self.bitmap_group.is_none() {
-            self.bitmap_group = Some(BitmapGroup::new_from_slot(self.slot_storage, outer_index));
-        }
-
-        // Read group with inner index
-        let bitmap_group = self.bitmap_group.unwrap();
-
-        if self.inner_index.is_none() {
-            // Guaranteed to hold a value
-            self.inner_index = bitmap_group.best_active_index(self.side, None);
-        }
-        let inner_index = self.inner_index.unwrap();
-
-        let bitmap = bitmap_group.get_bitmap(&inner_index);
-
-        let bit_index = self.bit_index.unwrap_or(bitmap.best_free_index(0).unwrap());
-
-        let order_id = OrderId {
-            price_in_ticks: Ticks::from_indices(outer_index, inner_index),
-            resting_order_index: bit_index,
-        };
-
-        let resting_order = SlotRestingOrder::new_from_slot(self.slot_storage, order_id);
-
-        let item = IteratedRestingOrder {
-            resting_order,
-            order_id,
-        };
-
-        self.last_item = Some(item);
-
-        // Update variables to read the next item
-        // The next state variables cannot be known without the current ones, threfore
-        // these are updated last
-
-        self.bit_index = bitmap.best_free_index(bit_index.as_u8() + 1);
-
-        // If bit index is exhausted, set to None and advance inner index
-        if self.bit_index.is_none() {
-            self.inner_index = bitmap_group.best_active_index(self.side, self.inner_index);
+            if relative_index == 0 {
+                break;
+            }
+            relative_index -= 1;
         }
 
-        // If bitmap group is exhausted, advance outer index (decrement count)
-        if self.inner_index.is_none() {
-            // Bitmap group is exhausted, write to slot
-            bitmap_group.write_to_slot(self.slot_storage, &outer_index);
-            self.bitmap_group = None;
+        // All orders for the slot index have been purged
+        // Empty list slot written to slot
+        list_slot.write_to_slot(slot_storage, &list_key);
 
-            self.outer_index_count -= 1;
+        if slot_index == 0 {
+            break;
         }
-
-        Some(item)
+        // Move to the next ListSlot. Reset the relative index.
+        slot_index -= 1;
+        relative_index = 15;
     }
 }
