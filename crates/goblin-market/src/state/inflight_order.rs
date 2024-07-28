@@ -5,10 +5,8 @@ use super::{SelfTradeBehavior, Side};
 #[derive(Copy, Clone)]
 pub struct InflightOrder {
     pub side: Side,
-    pub self_trade_behavior: SelfTradeBehavior,
 
-    /// If this is set to true, then the matching should terminate
-    pub should_terminate: bool,
+    pub self_trade_behavior: SelfTradeBehavior,
 
     /// This is the most aggressive price than an order can be filled at
     pub limit_price_in_ticks: Ticks,
@@ -56,7 +54,6 @@ impl InflightOrder {
         InflightOrder {
             side,
             self_trade_behavior,
-            should_terminate: false,
             limit_price_in_ticks,
             match_limit,
             base_lot_budget,
@@ -74,7 +71,6 @@ impl InflightOrder {
         self.base_lot_budget > BaseLots::ZERO
             && self.adjusted_quote_lot_budget > AdjustedQuoteLots::ZERO
             && self.match_limit > 0
-            && !self.should_terminate
     }
 
     pub(crate) fn process_match(

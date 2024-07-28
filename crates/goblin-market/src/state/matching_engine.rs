@@ -498,12 +498,6 @@ impl MatchingEngine<'_> {
         let mut handle_match = |order_id: OrderId,
                                 resting_order: &mut SlotRestingOrder,
                                 slot_storage: &mut SlotStorage| {
-            // TODO avoid- this leads to wasted SLOAD
-            // Instead check in the last iteration and return true to stop
-            if !inflight_order.in_progress() {
-                return true;
-            }
-
             let num_base_lots_quoted = resting_order.num_base_lots;
 
             let crosses = match inflight_order.side.opposite() {
@@ -534,7 +528,8 @@ impl MatchingEngine<'_> {
                 maker_state.write_to_slot(slot_storage, resting_order.trader_address);
                 inflight_order.match_limit -= 1;
 
-                return false;
+                // If match limit is exhausted, this returns false to stop
+                return !inflight_order.in_progress();
             }
 
             // 2. Self trade case
@@ -605,25 +600,9 @@ impl MatchingEngine<'_> {
                             );
                         // Self trades will count towards the match limit
                         inflight_order.match_limit -= 1;
-
-                        // Update inflight_order.should_terminate, then call continue
-                        // Input completely exhausted but resting order remains. There is no need
-                        // to read the next resting order. Setting set_terminate = true will cause
-                        // the next resting order to be evaluated
-                        // inflight_order.should_terminate = base_lots_removed < num_base_lots_quoted;
-
-                        inflight_order.should_terminate = base_lots_removed < num_base_lots_quoted;
-
-                        // // Both are exhausted case (==)- we need to read the next item.
-                        // // That is handled correctly
-                        // if base_lots_removed < num_base_lots_quoted {
-                        //     // return LambdaResult::ReturnOrderId;
-                        //     return false;
-                        // }
                     }
                 }
-                // return LambdaResult::ContinueLoop;
-                return false;
+                return !inflight_order.in_progress();
             }
 
             let num_adjusted_quote_lots_quoted = order_id.price_in_ticks
@@ -632,7 +611,7 @@ impl MatchingEngine<'_> {
 
             // Use matched_base_lots and matched_adjusted_quote_lots to update the
             // inflight order and trader state
-            let (matched_base_lots, matched_adjusted_quote_lots, order_remaining_base_lots) = {
+            let (matched_base_lots, matched_adjusted_quote_lots) = {
                 // Check if the inflight order's budget is exhausted
                 // Compare inflight order's budgets with quoted lots
                 let has_remaining_adjusted_quote_lots =
@@ -643,11 +622,7 @@ impl MatchingEngine<'_> {
                 // Budget exceeds quote. Clear the resting order.
                 if has_remaining_base_lots && has_remaining_adjusted_quote_lots {
                     resting_order.clear_order();
-                    (
-                        num_base_lots_quoted,
-                        num_adjusted_quote_lots_quoted,
-                        BaseLots::ZERO,
-                    )
+                    (num_base_lots_quoted, num_adjusted_quote_lots_quoted)
                 } else {
                     // If the order's budget is exhausted, we match as much as we can
                     let base_lots_to_remove = inflight_order.base_lot_budget.min(
@@ -662,14 +637,8 @@ impl MatchingEngine<'_> {
                         * base_lots_to_remove;
 
                     resting_order.num_base_lots -= base_lots_to_remove;
-                    // If this clause is reached, we make ensure that the loop terminates
-                    // as the order has been fully filled
-                    inflight_order.should_terminate = true;
-                    (
-                        base_lots_to_remove,
-                        adjusted_quote_lots_to_remove,
-                        resting_order.num_base_lots,
-                    )
+
+                    (base_lots_to_remove, adjusted_quote_lots_to_remove)
                 }
             };
 
@@ -693,7 +662,7 @@ impl MatchingEngine<'_> {
                 ),
             }
 
-            order_remaining_base_lots == BaseLots::ZERO
+            !inflight_order.in_progress()
         };
 
         process_resting_orders(
