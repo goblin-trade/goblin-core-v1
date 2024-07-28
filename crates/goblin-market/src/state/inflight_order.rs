@@ -32,11 +32,11 @@ pub struct InflightOrder {
     pub quote_lot_fees: QuoteLots,
 
     // Whether to track block or unix timestamp
-    track_block: bool,
+    pub track_block: bool,
 
     // The last valid block or unix timestamp, depending on the value of
     // track_block. Set value as 0 to disable FOK.
-    last_valid_block_or_unix_timestamp_in_seconds: u32,
+    pub last_valid_block_or_unix_timestamp_in_seconds: u32,
 }
 
 impl InflightOrder {

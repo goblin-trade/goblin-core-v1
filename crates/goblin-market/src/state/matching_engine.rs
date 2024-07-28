@@ -481,7 +481,12 @@ impl MatchingEngine<'_> {
         Ok(None)
     }
 
-    /// Match the inflight orders with crossing resting orders of the opposite side
+    /// Match the inflight order with crossing resting orders of the opposite side.
+    ///
+    /// Returns a SlotRestingOrder which for
+    /// - Limit case: should be posted as a resting order
+    /// - IOC case: is used to validate fill conditions
+    ///
     fn match_order(
         &mut self,
         market_state: &mut MarketState,
@@ -489,7 +494,7 @@ impl MatchingEngine<'_> {
         taker_address: Address,
         current_block: u32,
         current_unix_timestamp_in_seconds: u32,
-    ) {
+    ) -> Option<SlotRestingOrder> {
         let mut abort = false;
         let mut total_matched_adjusted_quote_lots = AdjustedQuoteLots::ZERO;
         let opposite_side = inflight_order.side.opposite();
@@ -671,6 +676,10 @@ impl MatchingEngine<'_> {
             &mut handle_match,
         );
 
+        if abort {
+            return None;
+        }
+
         // Fees are updated based on the total amount matched
 
         inflight_order.quote_lot_fees =
@@ -678,6 +687,14 @@ impl MatchingEngine<'_> {
                 / BASE_LOTS_PER_BASE_UNIT;
 
         market_state.unclaimed_quote_lot_fees += inflight_order.quote_lot_fees;
+
+        Some(SlotRestingOrder {
+            trader_address: taker_address,
+            num_base_lots: inflight_order.base_lot_budget,
+            track_block: inflight_order.track_block,
+            last_valid_block_or_unix_timestamp_in_seconds: inflight_order
+                .last_valid_block_or_unix_timestamp_in_seconds,
+        })
     }
 
     /// This function determines whether a PostOnly order crosses the book.
