@@ -339,14 +339,15 @@ impl MatchingEngine<'_> {
         trader: Address,
         to: Address,
         order_packet: &mut OrderPacket,
-    ) -> GoblinResult<Option<MatchingEngineResponse>> {
+    ) -> Option<(Option<OrderId>, MatchingEngineResponse)> {
         let side = order_packet.side();
 
+        // Validate and try to correct tick price
         match side {
             Side::Bid => {
                 if order_packet.get_price_in_ticks() == Ticks::ZERO {
                     // Bid price is too low
-                    return Ok(None);
+                    return None;
                 }
             }
             Side::Ask => {
@@ -358,11 +359,13 @@ impl MatchingEngine<'_> {
             }
         }
 
+        // Validate lots
         if order_packet.num_base_lots() == 0 && order_packet.num_quote_lots() == 0 {
             // Either num_base_lots or num_quote_lots must be nonzero
-            return Ok(None);
+            return None;
         }
 
+        // Validate IOC case
         // For IOC order types exactly one of num_quote_lots or num_base_lots needs to be specified.
         if let OrderPacket::ImmediateOrCancel {
             num_base_lots,
@@ -373,21 +376,22 @@ impl MatchingEngine<'_> {
             if num_base_lots > BaseLots::ZERO && num_quote_lots > QuoteLots::ZERO
                 || num_base_lots == BaseLots::ZERO && num_quote_lots == QuoteLots::ZERO
             {
-                return Ok(None);
+                return None;
             }
         }
 
         let current_block = block::number() as u32;
         let current_unix_timestamp = block::timestamp() as u32;
 
+        // Fail if order packet expired
         if order_packet.is_expired(current_block, current_unix_timestamp) {
             // Do not fail the transaction if the order is expired, but do not place or match the order
-            return Ok(Some(MatchingEngineResponse::default()));
+            return Some((None, MatchingEngineResponse::default()));
         }
 
         let mut index_list = market_state.get_index_list(side);
 
-        // Build resting_order and matching_engine_response
+        // Generate resting_order and matching_engine_response
         let (resting_order, mut matching_engine_response) = if let OrderPacket::PostOnly {
             price_in_ticks,
             reject_post_only,
@@ -405,22 +409,19 @@ impl MatchingEngine<'_> {
 
                 if *reject_post_only {
                     // PostOnly order crosses the book- order rejected
-                    return Ok(None);
+                    return None;
                 } else {
                     // Try to amend order so it does not cross
                     match side {
                         Side::Bid => {
                             if ticks <= Ticks::ONE {
                                 // PostOnly order crosses the book and can not be amended to a valid price- order rejected
-                                return Ok(None);
+                                return None;
                             }
                             *price_in_ticks = ticks - Ticks::ONE;
                         }
                         Side::Ask => {
-                            if ticks == Ticks::MAX {
-                                // Prevent overflow
-                                return Ok(None);
-                            }
+                            // The MAX tick can never cross. No need to have ticks == Ticks::MAX case
                             *price_in_ticks = ticks + Ticks::ONE;
                         }
                     }
@@ -472,11 +473,79 @@ impl MatchingEngine<'_> {
                 order_packet.last_valid_block_or_unix_timestamp_in_seconds(),
             );
 
-            (
-                SlotRestingOrder::new_default(trader, BaseLots::ZERO),
-                MatchingEngineResponse::default(),
-            )
+            // Gives the number of unmatched base lots
+            // For limit orders- place a new resting order with this amount
+            // For IOC- test against threshold
+            let resting_order = self
+                .match_order(
+                    market_state,
+                    &mut inflight_order,
+                    trader,
+                    current_block,
+                    current_unix_timestamp,
+                )
+                .map_or_else(|| None, Some)?;
+
+            // matched_adjusted_quote_lots is rounded down to the nearest tick for buys and up for
+            // sells to yield a whole number of matched_quote_lots.
+            let matched_quote_lots = match side {
+                // We add the quote_lot_fees to account for the fee being paid on a buy order
+                Side::Bid => {
+                    (round_adjusted_quote_lots_up(inflight_order.matched_adjusted_quote_lots)
+                        / BASE_LOTS_PER_BASE_UNIT)
+                        + inflight_order.quote_lot_fees
+                }
+                // We subtract the quote_lot_fees to account for the fee being paid on a sell order
+                Side::Ask => {
+                    (round_adjusted_quote_lots_down(inflight_order.matched_adjusted_quote_lots)
+                        / BASE_LOTS_PER_BASE_UNIT)
+                        - inflight_order.quote_lot_fees
+                }
+            };
+            let matching_engine_response = match side {
+                Side::Bid => MatchingEngineResponse::new_from_buy(
+                    matched_quote_lots,
+                    inflight_order.matched_base_lots,
+                ),
+                Side::Ask => MatchingEngineResponse::new_from_sell(
+                    inflight_order.matched_base_lots,
+                    matched_quote_lots,
+                ),
+            };
+
+            // EMIT FillSummary
+
+            (resting_order, matching_engine_response)
         };
+
+        if let OrderPacket::ImmediateOrCancel {
+            min_base_lots_to_fill,
+            min_quote_lots_to_fill,
+            ..
+        } = order_packet
+        {
+            // For IOC orders, if the order's minimum fill requirements are not met, then
+            // the order is voided
+            if matching_engine_response.num_base_lots() < *min_base_lots_to_fill
+                || matching_engine_response.num_quote_lots() < *min_quote_lots_to_fill
+            {
+                // IOC order failed to meet minimum fill requirements.
+                return None;
+            }
+        } else {
+            // PostOnly and limit case- place an order on the book
+
+            let price_in_ticks = order_packet.get_price_in_ticks();
+
+            // Check whether tick is full by reading bitmap
+            // Current bitmap can be returned from iterator
+            let order_id = self.get_best_available_order_id(
+                market_state,
+                side,
+                price_in_ticks,
+                order_packet.amend_x_ticks(),
+            );
+        }
 
         Ok(None)
     }
@@ -695,6 +764,85 @@ impl MatchingEngine<'_> {
             last_valid_block_or_unix_timestamp_in_seconds: inflight_order
                 .last_valid_block_or_unix_timestamp_in_seconds,
         })
+    }
+
+    /// Find the best available free order ID where a resting order can be placed, at `price` or worse.
+    /// Returns None if no space is available for the given number of amendments.
+    pub fn get_best_available_order_id(
+        &mut self,
+        market_state: &MarketState,
+        side: Side,
+        price_in_ticks: Ticks,
+        amend_x_ticks: u8,
+    ) -> Option<OrderId> {
+        let outer_index_of_price = price_in_ticks.outer_index();
+
+        let outer_index_count = market_state.outer_index_length(side);
+        let mut slot_index = (outer_index_count - 1) / 16;
+        let mut relative_index = (outer_index_count - 1) % 16;
+
+        let mut ticks_to_traverse = amend_x_ticks;
+
+        // 1. Loop through index slots
+        loop {
+            let list_key = ListKey { index: slot_index };
+            let list_slot = ListSlot::new_from_slot(self.slot_storage, list_key);
+
+            // 2. Loop through bitmap groups using relative index
+            loop {
+                let outer_index = list_slot.get(relative_index as usize);
+
+                if (side == Side::Bid && outer_index > outer_index_of_price)
+                    || (side == Side::Ask && outer_index < outer_index_of_price)
+                {
+                    break;
+                }
+
+                let bitmap_group = BitmapGroup::new_from_slot(self.slot_storage, outer_index);
+
+                let previous_inner_index = if outer_index == outer_index_of_price {
+                    Some(price_in_ticks.inner_index())
+                } else {
+                    None
+                };
+
+                // 3. Loop through bitmaps
+                for i in inner_indices(side, previous_inner_index) {
+                    let inner_index = InnerIndex::new(i);
+                    let current_price = Ticks::from_indices(outer_index, inner_index);
+                    let bitmap = bitmap_group.get_bitmap(&inner_index);
+
+                    // 4. Find best free resting order index
+                    let best_free_index = bitmap.best_free_index(0);
+
+                    if let Some(resting_order_index) = best_free_index {
+                        return Some(OrderId {
+                            price_in_ticks: current_price,
+                            resting_order_index,
+                        });
+                    }
+
+                    if ticks_to_traverse == 0 {
+                        return None;
+                    }
+                    ticks_to_traverse -= 1;
+
+                    if relative_index == 0 {
+                        break;
+                    }
+                    relative_index -= 1;
+                }
+            }
+
+            if slot_index == 0 {
+                break;
+            }
+            // Move to the next ListSlot. Reset the relative index.
+            slot_index -= 1;
+            relative_index = 15;
+        }
+
+        None
     }
 
     /// This function determines whether a PostOnly order crosses the book.

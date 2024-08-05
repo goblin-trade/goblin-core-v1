@@ -47,6 +47,10 @@ pub enum OrderPacket {
 
         /// If this is set, the order will fail silently if there are insufficient funds
         fail_silently_on_insufficient_funds: bool,
+
+        /// If price_on_ticks has no available slots, try placing the order at a less aggresive
+        /// price (away from the centre) by amending the price by these many ticks.
+        amend_x_ticks: u8,
     },
 
     /// This order type is used to place a limit order on the book
@@ -84,6 +88,10 @@ pub enum OrderPacket {
 
         /// If this is set, the order will fail silently if there are insufficient funds
         fail_silently_on_insufficient_funds: bool,
+
+        /// If price_on_ticks has no available slots, try placing the order at a less aggresive
+        /// price (away from the centre) by amending the price by these many ticks.
+        amend_x_ticks: u8,
     },
 
     /// This order type is used to place an order that will be matched against existing resting orders
@@ -273,6 +281,16 @@ impl OrderPacket {
                 self_trade_behavior,
                 ..
             } => *self_trade_behavior,
+        }
+    }
+
+    pub fn amend_x_ticks(&self) -> u8 {
+        match self {
+            Self::PostOnly { amend_x_ticks, .. } => *amend_x_ticks,
+            Self::Limit { amend_x_ticks, .. } => *amend_x_ticks,
+            Self::ImmediateOrCancel { .. } => {
+                panic!("ImmediateOrCancel orders do not have amend_x_ticks field")
+            }
         }
     }
 

@@ -117,7 +117,7 @@ pub struct Bitmap<'a> {
 }
 
 impl Bitmap<'_> {
-    pub fn empty(&self) -> bool {
+    pub fn is_empty(&self) -> bool {
         *self.inner == 0
     }
 
@@ -150,7 +150,7 @@ pub struct MutableBitmap<'a> {
 }
 
 impl MutableBitmap<'_> {
-    pub fn empty(&self) -> bool {
+    pub fn is_empty(&self) -> bool {
         *self.inner == 0
     }
 
