@@ -1,3 +1,6 @@
+use core::ops::AddAssign;
+use core::ops::SubAssign;
+
 use crate::{
     quantities::{Ticks, WrapperU64},
     state::{SlotKey, BITMAP_GROUP_SEED},
@@ -50,10 +53,26 @@ impl Ticks {
 #[repr(transparent)]
 pub struct OuterIndex {
     /// Index of bitmap group
-    inner: u16,
+    pub inner: u16,
+}
+
+impl SubAssign for OuterIndex {
+    fn sub_assign(&mut self, other: OuterIndex) {
+        self.inner -= other.inner;
+    }
+}
+
+impl AddAssign for OuterIndex {
+    fn add_assign(&mut self, other: OuterIndex) {
+        self.inner += other.inner;
+    }
 }
 
 impl OuterIndex {
+    pub const ZERO: Self = OuterIndex { inner: 0 };
+    pub const ONE: Self = OuterIndex { inner: 1 };
+    pub const MAX: Self = OuterIndex { inner: u16::MAX };
+
     pub fn new(inner: u16) -> Self {
         OuterIndex { inner }
     }

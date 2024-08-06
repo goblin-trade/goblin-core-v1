@@ -4,7 +4,10 @@ use stylus_sdk::{
 };
 
 use crate::{
-    parameters::{BASE_LOTS_PER_BASE_UNIT, TAKER_FEE_BPS, TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT},
+    parameters::{
+        BASE_LOTS_PER_BASE_UNIT, BASE_LOT_SIZE, TAKER_FEE_BPS,
+        TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT,
+    },
     program::{
         get_approved_base_lots, get_approved_quote_lots,
         new_order::{CondensedOrder, FailedMultipleLimitOrderBehavior},
@@ -540,11 +543,21 @@ impl MatchingEngine<'_> {
             // Check whether tick is full by reading bitmap
             // Current bitmap can be returned from iterator
             let order_id = self.get_best_available_order_id(
-                market_state,
                 side,
                 price_in_ticks,
                 order_packet.amend_x_ticks(),
             );
+
+            if order_id.is_none() {
+                // No space for order, exit
+                return None;
+            }
+
+            if resting_order.num_base_lots > BaseLots::ZERO {
+                // Add new order to the book
+                // Insert the resting order (we are in postOnly and limit branch of if)
+                // Insertion will update the index list, bitmap group, market state and resting order
+            }
         }
 
         Ok(None)
@@ -766,80 +779,74 @@ impl MatchingEngine<'_> {
         })
     }
 
-    /// Find the best available free order ID where a resting order can be placed, at `price` or worse.
+    /// Find the best available free order ID where a resting order can be placed,
+    /// at `price` or better (away from centre).
     /// Returns None if no space is available for the given number of amendments.
+    ///
+    /// # Arguments
+    ///
+    /// * `side`
+    /// * `price_in_ticks`
+    /// * `amend_x_ticks`- If no slots are available at `price_in_ticks`, check for free
+    /// slots away from the centre by these many ticks.
+    ///
     pub fn get_best_available_order_id(
         &mut self,
-        market_state: &MarketState,
         side: Side,
         price_in_ticks: Ticks,
         amend_x_ticks: u8,
     ) -> Option<OrderId> {
-        let outer_index_of_price = price_in_ticks.outer_index();
+        let TickIndices {
+            outer_index,
+            inner_index,
+        } = price_in_ticks.to_indices();
 
-        let outer_index_count = market_state.outer_index_length(side);
-        let mut slot_index = (outer_index_count - 1) / 16;
-        let mut relative_index = (outer_index_count - 1) % 16;
-
+        let mut current_outer_index = outer_index;
         let mut ticks_to_traverse = amend_x_ticks;
 
-        // 1. Loop through index slots
+        // 1. Loop through bitmap groups
         loop {
-            let list_key = ListKey { index: slot_index };
-            let list_slot = ListSlot::new_from_slot(self.slot_storage, list_key);
+            let bitmap_group = BitmapGroup::new_from_slot(self.slot_storage, current_outer_index);
 
-            // 2. Loop through bitmap groups using relative index
-            loop {
-                let outer_index = list_slot.get(relative_index as usize);
+            let previous_inner_index = if current_outer_index == outer_index {
+                Some(inner_index)
+            } else {
+                None
+            };
 
-                if (side == Side::Bid && outer_index > outer_index_of_price)
-                    || (side == Side::Ask && outer_index < outer_index_of_price)
-                {
-                    break;
-                }
+            // 2. Loop through bitmaps
+            for i in inner_indices(side, previous_inner_index) {
+                let current_inner_index = InnerIndex::new(i);
+                let price_in_ticks = Ticks::from_indices(outer_index, current_inner_index);
+                let bitmap = bitmap_group.get_bitmap(&current_inner_index);
 
-                let bitmap_group = BitmapGroup::new_from_slot(self.slot_storage, outer_index);
+                // 3. Loop through resting order IDs
+                let best_free_index = bitmap.best_free_index(0);
 
-                let previous_inner_index = if outer_index == outer_index_of_price {
-                    Some(price_in_ticks.inner_index())
-                } else {
-                    None
+                if let Some(resting_order_index) = best_free_index {
+                    return Some(OrderId {
+                        price_in_ticks,
+                        resting_order_index,
+                    });
                 };
 
-                // 3. Loop through bitmaps
-                for i in inner_indices(side, previous_inner_index) {
-                    let inner_index = InnerIndex::new(i);
-                    let current_price = Ticks::from_indices(outer_index, inner_index);
-                    let bitmap = bitmap_group.get_bitmap(&inner_index);
-
-                    // 4. Find best free resting order index
-                    let best_free_index = bitmap.best_free_index(0);
-
-                    if let Some(resting_order_index) = best_free_index {
-                        return Some(OrderId {
-                            price_in_ticks: current_price,
-                            resting_order_index,
-                        });
-                    }
-
-                    if ticks_to_traverse == 0 {
-                        return None;
-                    }
-                    ticks_to_traverse -= 1;
-
-                    if relative_index == 0 {
-                        break;
-                    }
-                    relative_index -= 1;
+                if ticks_to_traverse == 0 {
+                    return None;
                 }
+                ticks_to_traverse -= 1;
             }
 
-            if slot_index == 0 {
-                break;
+            if side == Side::Bid {
+                if current_outer_index == OuterIndex::ZERO {
+                    break;
+                }
+                current_outer_index -= OuterIndex::ONE;
+            } else {
+                if current_outer_index == OuterIndex::MAX {
+                    break;
+                }
+                current_outer_index += OuterIndex::ONE;
             }
-            // Move to the next ListSlot. Reset the relative index.
-            slot_index -= 1;
-            relative_index = 15;
         }
 
         None
