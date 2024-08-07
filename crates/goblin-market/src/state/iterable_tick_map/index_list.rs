@@ -94,6 +94,8 @@ impl ListSlot {
 
     // Sets a placeholder value for a ListSlot that has been completely traversed.
     // We save gas by not writing 0 to slot, that way the slot is not cleared.
+    //
+    // TODO check behavior when order_iterator removes items. Empty slots are being cleared.
     pub fn clear(&mut self) {
         self.inner = [u16::MAX; 16];
     }

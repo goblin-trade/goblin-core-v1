@@ -9,7 +9,7 @@ use alloc::boxed::Box;
 ///
 /// Bids and Asks have a common set of BitmapGroups because a resting order
 /// at a tick can't be on both sides at the same time.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default)]
 pub struct BitmapGroup {
     pub inner: [u8; 32],
 }
@@ -185,6 +185,12 @@ impl MutableBitmap<'_> {
     pub fn clear(&mut self, resting_order_index: &RestingOrderIndex) {
         // Use bitwise AND operation with 0 at the given index to clear the bit
         *self.inner &= !(1 << resting_order_index.as_u8());
+    }
+
+    /// Activate (set to 1) the bit at the given index
+    pub fn activate(&mut self, resting_order_index: &RestingOrderIndex) {
+        // Use bitwise OR operation to set the bit at the given index
+        *self.inner |= 1 << resting_order_index.as_u8();
     }
 }
 

@@ -557,10 +557,158 @@ impl MatchingEngine<'_> {
                 // Add new order to the book
                 // Insert the resting order (we are in postOnly and limit branch of if)
                 // Insertion will update the index list, bitmap group, market state and resting order
+
+                // resting_order.write_to_slot(slot_storage, key)
             }
         }
 
         Ok(None)
+    }
+
+    fn insert_order_in_book(
+        &mut self,
+        market_state: &mut MarketState,
+        resting_order: &SlotRestingOrder,
+        side: Side,
+        order_id: &OrderId,
+    ) -> GoblinResult<()> {
+        // Write resting order to slot
+        resting_order.write_to_slot(self.slot_storage, order_id)?;
+
+        // Update best market price
+        if side == Side::Bid && order_id.price_in_ticks > market_state.best_bid_price {
+            market_state.best_bid_price = order_id.price_in_ticks;
+        }
+
+        if side == Side::Ask && order_id.price_in_ticks < market_state.best_ask_price {
+            market_state.best_ask_price = order_id.price_in_ticks;
+        }
+
+        // Try to insert outer index in index list
+        let TickIndices {
+            outer_index,
+            inner_index,
+        } = order_id.price_in_ticks.to_indices();
+        let inserted = self.insert_to_index_list(market_state, outer_index, side);
+
+        let mut bitmap_group = if inserted {
+            // The bitmap group was previously in 'cleared' state. Remove the placeholder value
+            BitmapGroup::default()
+        } else {
+            BitmapGroup::new_from_slot(self.slot_storage, outer_index)
+        };
+
+        let mut bitmap = bitmap_group.get_bitmap_mut(&inner_index);
+        bitmap.activate(&order_id.resting_order_index);
+        bitmap_group.write_to_slot(self.slot_storage, &outer_index);
+
+        Ok(())
+    }
+
+    // Try to insert an outer index in the index list.
+    // Returns true if insertion was necessary, returns false if the outer index
+    // is already present.
+    //
+    // TODO move to index_list.rs and cleanup that file
+    //
+    // # Arguments
+    //
+    // * `market_state`
+    // * `outer_index` - The value to insert
+    // * `side`
+    //
+    fn insert_to_index_list(
+        &mut self,
+        market_state: &MarketState,
+        outer_index: OuterIndex,
+        side: Side,
+    ) -> bool {
+        let outer_index_count = market_state.outer_index_length(side);
+
+        let initial_slot_index = (outer_index_count - 1) / 16;
+        let mut slot_index = initial_slot_index;
+        let mut relative_index = (outer_index_count - 1) % 16;
+
+        let mut outer_index_stack = Vec::<OuterIndex>::new();
+        let mut to_insert = false;
+
+        let mut list_slot =
+            ListSlot::new_from_slot(self.slot_storage, ListKey { index: slot_index });
+
+        // 1. Loop through index slots
+        'list_loop: loop {
+            if slot_index != initial_slot_index {
+                let list_key = ListKey { index: slot_index };
+                list_slot = ListSlot::new_from_slot(self.slot_storage, list_key);
+            }
+
+            // 2. Loop through outer indices in the list slot
+            loop {
+                let current_outer_index = list_slot.get(relative_index as usize);
+
+                if current_outer_index == outer_index {
+                    // Outer index is already present, no need to insert. Exit from loop,
+                    // to_insert remains false
+                    break 'list_loop;
+                } else if (side == Side::Bid && current_outer_index > outer_index)
+                    || (side == Side::Ask && current_outer_index < outer_index)
+                {
+                    outer_index_stack.push(current_outer_index);
+                } else {
+                    to_insert = true;
+                    break 'list_loop;
+                }
+
+                if relative_index == 0 {
+                    break;
+                }
+                relative_index -= 1;
+            }
+
+            if slot_index == 0 {
+                break;
+            }
+            // Move to the next ListSlot. Reset the relative index.
+            slot_index -= 1;
+            relative_index = 15;
+        }
+
+        if !to_insert {
+            return false;
+        }
+
+        // Insert push stack to loop
+        outer_index_stack.push(outer_index);
+
+        let new_list_size = outer_index_count + 1;
+        let final_slot_index_exclusive = new_list_size / 16;
+        let starting_slot_index = slot_index;
+        let mut starting_relative_index = relative_index;
+
+        for slot_index in starting_slot_index..final_slot_index_exclusive {
+            if slot_index != starting_slot_index {
+                list_slot =
+                    ListSlot::new_from_slot(self.slot_storage, ListKey { index: slot_index });
+                starting_relative_index = 0;
+            }
+
+            let final_relative_index_exclusive = if slot_index == final_slot_index_exclusive - 1 {
+                new_list_size % 16
+            } else {
+                16
+            };
+
+            for relative_index in starting_relative_index..final_relative_index_exclusive {
+                list_slot.set(relative_index as usize, outer_index_stack.pop().unwrap());
+            }
+            list_slot.write_to_slot(
+                self.slot_storage,
+                &ListKey {
+                    index: relative_index,
+                },
+            );
+        }
+        true
     }
 
     /// Match the inflight order with crossing resting orders of the opposite side.
