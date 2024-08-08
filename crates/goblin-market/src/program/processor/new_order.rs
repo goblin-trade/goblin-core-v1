@@ -70,6 +70,10 @@ pub struct CondensedOrder {
     // The last valid block or unix timestamp, depending on the value of
     // track_block. Set value as 0 to disable FOK.
     pub last_valid_block_or_unix_timestamp_in_seconds: u32,
+
+    /// If price_on_ticks has no available slots, try placing the order at a less aggresive
+    /// price (away from the centre) by amending the price by these many ticks.
+    pub amend_x_ticks: u8,
 }
 
 impl CondensedOrder {
@@ -81,6 +85,7 @@ impl CondensedOrder {
             last_valid_block_or_unix_timestamp_in_seconds: u32::from_be_bytes(
                 bytes[17..21].try_into().unwrap(),
             ),
+            amend_x_ticks: bytes[21],
         }
     }
 }

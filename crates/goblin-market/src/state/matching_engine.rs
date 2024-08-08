@@ -291,6 +291,7 @@ impl MatchingEngine<'_> {
                         .last_valid_block_or_unix_timestamp_in_seconds,
                     fail_silently_on_insufficient_funds: failed_multiple_limit_order_behavior
                         .should_skip_orders_with_insufficient_funds(),
+                    amend_x_ticks: condensed_order.amend_x_ticks,
                 };
 
                 let matching_engine_response = {
@@ -332,7 +333,6 @@ impl MatchingEngine<'_> {
     /// * `market_state`
     /// * `trader_state`
     /// * `trader` - The trader who sent the order
-    /// * `to` - Credit the output to this address
     /// * `order_packet`
     ///
     fn place_order_inner(
@@ -340,7 +340,6 @@ impl MatchingEngine<'_> {
         market_state: &mut MarketState,
         trader_state: &mut TraderState,
         trader: Address,
-        to: Address,
         order_packet: &mut OrderPacket,
     ) -> Option<(Option<OrderId>, MatchingEngineResponse)> {
         let side = order_packet.side();
@@ -391,8 +390,6 @@ impl MatchingEngine<'_> {
             // Do not fail the transaction if the order is expired, but do not place or match the order
             return Some((None, MatchingEngineResponse::default()));
         }
-
-        let mut index_list = market_state.get_index_list(side);
 
         // Generate resting_order and matching_engine_response
         let (resting_order, mut matching_engine_response) = if let OrderPacket::PostOnly {
@@ -521,6 +518,8 @@ impl MatchingEngine<'_> {
             (resting_order, matching_engine_response)
         };
 
+        let mut placed_order_id: Option<OrderId> = None;
+
         if let OrderPacket::ImmediateOrCancel {
             min_base_lots_to_fill,
             min_quote_lots_to_fill,
@@ -542,27 +541,110 @@ impl MatchingEngine<'_> {
 
             // Check whether tick is full by reading bitmap
             // Current bitmap can be returned from iterator
-            let order_id = self.get_best_available_order_id(
+            placed_order_id = self.get_best_available_order_id(
                 side,
                 price_in_ticks,
                 order_packet.amend_x_ticks(),
             );
 
-            if order_id.is_none() {
-                // No space for order, exit
-                return None;
-            }
+            match placed_order_id {
+                None => {
+                    // No space for order, exit
+                    return None;
+                }
+                Some(order_id) => {
+                    if resting_order.num_base_lots > BaseLots::ZERO {
+                        // Add new order to the book
+                        // Insert the resting order (we are in postOnly and limit branch of if)
+                        // Insertion will update the index list, bitmap group, market state and resting order
 
-            if resting_order.num_base_lots > BaseLots::ZERO {
-                // Add new order to the book
-                // Insert the resting order (we are in postOnly and limit branch of if)
-                // Insertion will update the index list, bitmap group, market state and resting order
+                        self.insert_order_in_book(market_state, &resting_order, side, &order_id)
+                            .ok()
+                            .map_or_else(|| None, Some)?;
 
-                // resting_order.write_to_slot(slot_storage, key)
+                        // Update trader state and matching engine response
+                        match side {
+                            Side::Bid => {
+                                let quote_lots_to_lock = (TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT
+                                    * order_id.price_in_ticks
+                                    * resting_order.num_base_lots)
+                                    / BASE_LOTS_PER_BASE_UNIT;
+                                let quote_lots_free_to_use =
+                                    quote_lots_to_lock.min(trader_state.quote_lots_free);
+                                trader_state.use_free_quote_lots(quote_lots_free_to_use);
+                                trader_state.lock_quote_lots(quote_lots_to_lock);
+                                matching_engine_response.post_quote_lots(quote_lots_to_lock);
+                                matching_engine_response
+                                    .use_free_quote_lots(quote_lots_free_to_use);
+                            }
+                            Side::Ask => {
+                                let base_lots_free_to_use =
+                                    resting_order.num_base_lots.min(trader_state.base_lots_free);
+                                trader_state.use_free_base_lots(base_lots_free_to_use);
+                                trader_state.lock_base_lots(resting_order.num_base_lots);
+                                matching_engine_response
+                                    .post_base_lots(resting_order.num_base_lots);
+                                matching_engine_response.use_free_base_lots(base_lots_free_to_use);
+                            }
+                        }
+
+                        // EMIT Place
+                        // EMIT TimeInForce if this is a time in force order
+                    }
+                }
             }
         }
 
-        Ok(None)
+        // Limit and post-only branch ends
+        // Update the trader state and matching engine response
+
+        // Check if trader has free lots
+        match side {
+            Side::Bid => {
+                let quote_lots_free_to_use = trader_state
+                    .quote_lots_free
+                    .min(matching_engine_response.num_quote_lots());
+                trader_state.use_free_quote_lots(quote_lots_free_to_use);
+                matching_engine_response.use_free_quote_lots(quote_lots_free_to_use);
+            }
+            Side::Ask => {
+                let base_lots_free_to_use = trader_state
+                    .base_lots_free
+                    .min(matching_engine_response.num_base_lots());
+                trader_state.use_free_base_lots(base_lots_free_to_use);
+                matching_engine_response.use_free_base_lots(base_lots_free_to_use);
+            }
+        }
+
+        // If the order crosses and only uses deposited funds, then add the matched funds back to the trader's free funds
+        // Set the matching_engine_response lots_out to zero to set token withdrawals to zero
+        if order_packet.no_deposit_or_withdrawal() {
+            match side {
+                Side::Bid => {
+                    trader_state.deposit_free_base_lots(matching_engine_response.num_base_lots_out);
+                    matching_engine_response.num_base_lots_out = BaseLots::ZERO;
+                }
+                Side::Ask => {
+                    trader_state
+                        .deposit_free_quote_lots(matching_engine_response.num_quote_lots_out);
+                    matching_engine_response.num_quote_lots_out = QuoteLots::ZERO;
+                }
+            }
+
+            // Check if trader has enough deposited funds to process the order
+            if !matching_engine_response.verify_no_deposit() {
+                // Trader does not have enough deposited funds to process order
+                return None;
+            }
+
+            // Check that the matching engine response does not withdraw any base or quote lots
+            if !matching_engine_response.verify_no_withdrawal() {
+                // Matching engine response withdraws base or quote lots
+                return None;
+            }
+        }
+
+        Some((placed_order_id, matching_engine_response))
     }
 
     fn insert_order_in_book(
