@@ -17,7 +17,8 @@ use program::{
     processor::{deposit, fees, withdraw},
     reduce_multiple_orders, FailedMultipleLimitOrderBehavior,
 };
-use state::{SlotActions, SlotStorage, TraderState};
+use quantities::{BaseLots, Ticks, WrapperU64};
+use state::{OrderPacket, SelfTradeBehavior, Side, SlotActions, SlotStorage, TraderState};
 use stylus_sdk::{
     alloy_primitives::{Address, B256},
     prelude::*,
@@ -98,6 +99,38 @@ impl GoblinMarket {
             client_order_id,
             use_free_funds,
         )
+    }
+
+    /// Place a limit order on the book
+    ///
+    /// # Arguments
+    ///
+    pub fn place_limit_order(
+        &mut self,
+        is_bid: bool,
+        price_in_ticks: u64,
+        num_base_lots: u64,
+        self_trade_behavior: u8,
+        match_limit: u64,
+        client_order_id: u128,
+        track_block: bool,
+        last_valid_block_or_unix_timestamp_in_seconds: u32,
+        fail_silently_on_insufficient_funds: bool,
+        amend_x_ticks: u8,
+    ) {
+        let packet = OrderPacket::Limit {
+            side: Side::from(is_bid),
+            price_in_ticks: Ticks::new(price_in_ticks),
+            num_base_lots: BaseLots::new(num_base_lots),
+            self_trade_behavior: SelfTradeBehavior::from(self_trade_behavior),
+            match_limit,
+            client_order_id,
+            use_only_deposited_funds: false,
+            track_block,
+            last_valid_block_or_unix_timestamp_in_seconds,
+            fail_silently_on_insufficient_funds,
+            amend_x_ticks,
+        };
     }
 
     // TODO how to return struct? Facing AbiType trait error

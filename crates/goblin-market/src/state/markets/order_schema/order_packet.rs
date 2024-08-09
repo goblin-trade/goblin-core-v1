@@ -1,6 +1,13 @@
+use stylus_sdk::alloy_primitives::Address;
+
 use crate::{
+    parameters::{
+        BASE_LOTS_PER_BASE_UNIT, BASE_LOT_SIZE, BASE_TOKEN, TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT,
+    },
+    program::{get_available_balance, get_available_base_lots, get_available_quote_lots},
     quantities::{BaseLots, QuoteLots, Ticks},
-    state::{SelfTradeBehavior, Side},
+    state::{SelfTradeBehavior, Side, TraderState},
+    GoblinMarket,
 };
 
 pub trait OrderPacketMetadata {
@@ -68,8 +75,8 @@ pub enum OrderPacket {
         /// How the matching engine should handle a self trade
         self_trade_behavior: SelfTradeBehavior,
 
-        /// Number of orders to match against. If this is `None` there is no limit
-        match_limit: Option<u64>,
+        /// Number of orders to match against. Pass u64::MAX to have no limit (this is the default)
+        match_limit: u64,
 
         /// Client order id used to identify the order in the response to the client
         client_order_id: u128,
@@ -265,7 +272,7 @@ impl OrderPacket {
     pub fn match_limit(&self) -> u64 {
         match self {
             Self::PostOnly { .. } => u64::MAX,
-            Self::Limit { match_limit, .. } => match_limit.unwrap_or(u64::MAX),
+            Self::Limit { match_limit, .. } => *match_limit,
             Self::ImmediateOrCancel { match_limit, .. } => match_limit.unwrap_or(u64::MAX),
         }
     }
@@ -412,6 +419,70 @@ impl OrderPacket {
             }
         }
         false
+    }
+
+    pub fn has_sufficient_funds_v2(
+        &self,
+        context: &mut GoblinMarket,
+        trader_state: &TraderState,
+        trader: Address,
+    ) -> bool {
+        let base_lots_free = trader_state.base_lots_free;
+        let quote_lots_free = trader_state.quote_lots_free;
+
+        match self.side() {
+            Side::Ask => {
+                if base_lots_free < self.num_base_lots() {
+                    // Gas optimization- only perform cross contract call if trader state
+                    // balance is insufficient
+                    let available_base_lots = get_available_base_lots(context, trader);
+                    if base_lots_free + available_base_lots < self.num_base_lots() {
+                        return false;
+                    }
+                }
+            }
+            Side::Bid => {
+                let quote_lots_required = self.get_price_in_ticks()
+                    * TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT
+                    * self.num_base_lots()
+                    / BASE_LOTS_PER_BASE_UNIT;
+
+                if quote_lots_free < quote_lots_required {
+                    let available_quote_lots = get_available_quote_lots(context, trader);
+                    if quote_lots_free + available_quote_lots < quote_lots_required {
+                        return false;
+                    }
+                }
+            }
+        }
+        true
+    }
+
+    pub fn has_sufficient_funds(
+        &self,
+        base_lots_available: BaseLots,
+        quote_lots_available: QuoteLots,
+    ) -> bool {
+        match self.side() {
+            Side::Ask => {
+                if base_lots_available < self.num_base_lots() {
+                    // Insufficient funds
+                    return false;
+                }
+            }
+            Side::Bid => {
+                let quote_lots_required = self.get_price_in_ticks()
+                    * TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT
+                    * self.num_base_lots()
+                    / BASE_LOTS_PER_BASE_UNIT;
+
+                if quote_lots_available < quote_lots_required {
+                    // Insufficient funds
+                    return false;
+                }
+            }
+        }
+        true
     }
 }
 

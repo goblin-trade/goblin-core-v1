@@ -103,13 +103,13 @@ pub fn get_available_balance(
     allowance.min(balance)
 }
 
-pub fn get_approved_base_lots(context: &GoblinMarket, trader: Address) -> BaseLots {
+pub fn get_available_base_lots(context: &GoblinMarket, trader: Address) -> BaseLots {
     let available_balance =
         BaseAtomsRaw::from_u256(get_available_balance(context, BASE_TOKEN, trader));
     available_balance.to_lots()
 }
 
-pub fn get_approved_quote_lots(context: &GoblinMarket, trader: Address) -> QuoteLots {
+pub fn get_available_quote_lots(context: &GoblinMarket, trader: Address) -> QuoteLots {
     let available_balance =
         QuoteAtomsRaw::from_u256(get_available_balance(context, QUOTE_TOKEN, trader));
     available_balance.to_lots()

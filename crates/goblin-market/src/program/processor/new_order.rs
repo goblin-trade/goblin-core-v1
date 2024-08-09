@@ -2,9 +2,12 @@ use alloc::vec::Vec;
 use stylus_sdk::alloy_primitives::{Address, B256};
 
 use crate::{
-    program::{GoblinError, GoblinResult, UndefinedFailedMultipleLimitOrderBehavior},
+    parameters::{BASE_LOT_SIZE, QUOTE_LOT_SIZE},
+    program::{
+        GoblinError, GoblinResult, NewOrderError, UndefinedFailedMultipleLimitOrderBehavior,
+    },
     quantities::{BaseLots, Ticks, WrapperU64},
-    state::{MatchingEngine, SlotActions, SlotStorage},
+    state::{MarketState, MatchingEngine, OrderPacket, SlotActions, SlotStorage, TraderState},
     GoblinMarket,
 };
 
@@ -111,6 +114,51 @@ pub fn process_multiple_new_orders(
 ) -> GoblinResult<()> {
     let mut matching_engine = MatchingEngine {
         slot_storage: &mut SlotStorage::new(),
+    };
+
+    Ok(())
+}
+
+/// Process a single, IOC, Post-only or limit order for both deposit and no-deposit cases
+pub fn process_new_order(
+    context: &mut GoblinMarket,
+    order_packet: &mut OrderPacket,
+    trader: Address,
+) -> GoblinResult<()> {
+    let slot_storage = &mut SlotStorage::new();
+    let mut market_state = MarketState::read_from_slot(slot_storage);
+    let mut trader_state = TraderState::read_from_slot(slot_storage, trader);
+
+    let (
+        quote_atoms_to_withdraw,
+        quote_atoms_to_deposit,
+        base_atoms_to_withdraw,
+        base_atoms_to_deposit,
+    ) = {
+        // If the order should fail silently on insufficient funds, and the trader does not have
+        // sufficient funds for the order, return silently without modifying the book.
+        if order_packet.fail_silently_on_insufficient_funds()
+            && !order_packet.has_sufficient_funds_v2(context, &trader_state, trader)
+        {
+            return Ok(());
+        }
+
+        let mut matching_engine = MatchingEngine { slot_storage };
+
+        let (order_id, matching_engine_response) = matching_engine
+            .place_order_inner(&mut market_state, &mut trader_state, trader, order_packet)
+            .ok_or(GoblinError::NewOrderError(NewOrderError {}))?;
+
+        if let Some(order_id) = order_id {
+            // TODO push resting order at order_id
+        }
+
+        (
+            matching_engine_response.num_quote_lots_out * QUOTE_LOT_SIZE,
+            matching_engine_response.get_deposit_amount_bid_in_quote_lots() * QUOTE_LOT_SIZE,
+            matching_engine_response.num_base_lots_out * BASE_LOT_SIZE,
+            matching_engine_response.get_deposit_amount_ask_in_base_lots() * BASE_LOT_SIZE,
+        )
     };
 
     Ok(())

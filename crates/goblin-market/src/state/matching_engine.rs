@@ -9,7 +9,7 @@ use crate::{
         TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT,
     },
     program::{
-        get_approved_base_lots, get_approved_quote_lots,
+        get_available_base_lots, get_available_quote_lots,
         new_order::{CondensedOrder, FailedMultipleLimitOrderBehavior},
         FailedToReduce, GoblinError, GoblinResult, PricesNotInOrder, ReduceOrderPacket,
     },
@@ -326,7 +326,7 @@ impl MatchingEngine<'_> {
         Ok(MatchingEngineResponse::default())
     }
 
-    /// Try to execute an order packet
+    /// Try to execute an order packet and place an order
     ///
     /// # Arguments
     ///
@@ -335,7 +335,7 @@ impl MatchingEngine<'_> {
     /// * `trader` - The trader who sent the order
     /// * `order_packet`
     ///
-    fn place_order_inner(
+    pub fn place_order_inner(
         &mut self,
         market_state: &mut MarketState,
         trader_state: &mut TraderState,
@@ -1184,7 +1184,7 @@ fn order_packet_has_sufficient_funds(
             if *base_lots_available < order_packet.num_base_lots() {
                 // Lazy load available approved balance for base token
                 if !*base_allowance_read {
-                    *base_lots_available += get_approved_base_lots(context, trader);
+                    *base_lots_available += get_available_base_lots(context, trader);
                     *base_allowance_read = true;
                 }
 
@@ -1200,7 +1200,7 @@ fn order_packet_has_sufficient_funds(
             if *quote_lots_available < quote_lots_required {
                 // Lazy load available approved balance for quote token
                 if !*quote_allowance_read {
-                    *quote_lots_available += get_approved_quote_lots(context, trader);
+                    *quote_lots_available += get_available_quote_lots(context, trader);
 
                     *quote_allowance_read = true;
                 }
