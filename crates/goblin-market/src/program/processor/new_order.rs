@@ -7,9 +7,17 @@ use crate::{
         GoblinError, GoblinResult, NewOrderError, UndefinedFailedMultipleLimitOrderBehavior,
     },
     quantities::{BaseLots, Ticks, WrapperU64},
-    state::{MarketState, MatchingEngine, OrderPacket, SlotActions, SlotStorage, TraderState},
+    state::{
+        MarketState, MatchingEngine, OrderId, OrderPacket, SlotActions, SlotRestingOrder,
+        SlotStorage, TraderState,
+    },
     GoblinMarket,
 };
+
+pub struct OrderToInsert {
+    pub order_id: OrderId,
+    pub resting_order: SlotRestingOrder,
+}
 
 pub enum FailedMultipleLimitOrderBehavior {
     /// Orders will never cross the spread. Instead they will be amended to the closest non-crossing price.
@@ -145,12 +153,22 @@ pub fn process_new_order(
 
         let mut matching_engine = MatchingEngine { slot_storage };
 
-        let (order_id, matching_engine_response) = matching_engine
+        let (order_to_insert, matching_engine_response) = matching_engine
             .place_order_inner(&mut market_state, &mut trader_state, trader, order_packet)
             .ok_or(GoblinError::NewOrderError(NewOrderError {}))?;
 
-        if let Some(order_id) = order_id {
+        if let Some(OrderToInsert {
+            order_id,
+            resting_order,
+        }) = order_to_insert
+        {
             // TODO push resting order at order_id
+            matching_engine.insert_order_in_book(
+                &mut market_state,
+                &resting_order,
+                order_packet.side(),
+                &order_id,
+            )?;
         }
 
         (

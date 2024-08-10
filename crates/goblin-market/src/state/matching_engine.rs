@@ -11,7 +11,8 @@ use crate::{
     program::{
         get_available_base_lots, get_available_quote_lots,
         new_order::{CondensedOrder, FailedMultipleLimitOrderBehavior},
-        FailedToReduce, GoblinError, GoblinResult, PricesNotInOrder, ReduceOrderPacket,
+        FailedToReduce, GoblinError, GoblinResult, OrderToInsert, PricesNotInOrder,
+        ReduceOrderPacket,
     },
     quantities::{
         AdjustedQuoteLots, BaseLots, BaseLotsPerBaseUnit, QuoteLots, QuoteLotsPerBaseUnit, Ticks,
@@ -341,7 +342,7 @@ impl MatchingEngine<'_> {
         trader_state: &mut TraderState,
         trader: Address,
         order_packet: &mut OrderPacket,
-    ) -> Option<(Option<OrderId>, MatchingEngineResponse)> {
+    ) -> Option<(Option<OrderToInsert>, MatchingEngineResponse)> {
         let side = order_packet.side();
 
         // Validate and try to correct tick price
@@ -518,7 +519,7 @@ impl MatchingEngine<'_> {
             (resting_order, matching_engine_response)
         };
 
-        let mut placed_order_id: Option<OrderId> = None;
+        let mut order_to_insert: Option<OrderToInsert> = None;
 
         if let OrderPacket::ImmediateOrCancel {
             min_base_lots_to_fill,
@@ -541,7 +542,7 @@ impl MatchingEngine<'_> {
 
             // Check whether tick is full by reading bitmap
             // Current bitmap can be returned from iterator
-            placed_order_id = self.get_best_available_order_id(
+            let placed_order_id = self.get_best_available_order_id(
                 side,
                 price_in_ticks,
                 order_packet.amend_x_ticks(),
@@ -554,13 +555,12 @@ impl MatchingEngine<'_> {
                 }
                 Some(order_id) => {
                     if resting_order.num_base_lots > BaseLots::ZERO {
-                        // Add new order to the book
-                        // Insert the resting order (we are in postOnly and limit branch of if)
-                        // Insertion will update the index list, bitmap group, market state and resting order
-
-                        self.insert_order_in_book(market_state, &resting_order, side, &order_id)
-                            .ok()
-                            .map_or_else(|| None, Some)?;
+                        // Queue resting order for insertion, update states and matching engine response
+                        // This happens only in limit and post-only case, not IOC
+                        order_to_insert = Some(OrderToInsert {
+                            order_id,
+                            resting_order,
+                        });
 
                         // Update trader state and matching engine response
                         match side {
@@ -644,10 +644,10 @@ impl MatchingEngine<'_> {
             }
         }
 
-        Some((placed_order_id, matching_engine_response))
+        Some((order_to_insert, matching_engine_response))
     }
 
-    fn insert_order_in_book(
+    pub fn insert_order_in_book(
         &mut self,
         market_state: &mut MarketState,
         resting_order: &SlotRestingOrder,
