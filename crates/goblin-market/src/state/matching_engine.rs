@@ -648,12 +648,22 @@ impl MatchingEngine<'_> {
         Some((order_to_insert, matching_engine_response))
     }
 
-    pub fn insert_order_in_book_bulk(
+    /// Insert multiple resting orders in the book
+    /// This is used to write multiple post-only orders.
+    ///
+    /// # Arguments
+    ///
+    /// * `market_state`
+    /// * `side`
+    /// * `orders`
+    ///
+    pub fn insert_orders_in_book_bulk(
         &mut self,
         market_state: &mut MarketState,
         side: Side,
         orders: Vec<OrderToInsert>,
     ) -> GoblinResult<()> {
+        // 1. Update market state
         // Optimization- since the first element is closest to the centre, we only need
         // to check the first element against the current best price.
         // Update the best price if necessary.
@@ -673,24 +683,60 @@ impl MatchingEngine<'_> {
             return Ok(());
         }
 
-        // Bulk insert outer indices
-        // This will give an array of bool, telling whether an index was inserted or whether
-        // it was already present
-        for OrderToInsert {
-            order_id,
-            resting_order,
-        } in orders
-        {
-            // Write resting order to slot
+        let mut last_outer_index = None;
+        let mut bitmap_group = BitmapGroup::default();
+
+        // Process orders and handle bitmap updates
+        for (
+            OrderToInsert {
+                order_id,
+                resting_order,
+            },
+            inserted,
+        ) in orders.iter().zip(
+            // 2. Insert into index list
+            self.insert_to_index_list_bulk(
+                market_state,
+                side,
+                orders
+                    .iter()
+                    .map(|o| o.order_id.price_in_ticks.outer_index())
+                    .collect(),
+            ),
+        ) {
+            // 3. Write resting order to slot
             resting_order.write_to_slot(self.slot_storage, &order_id)?;
 
-            // Try to insert outer index in index list
             let TickIndices {
                 outer_index,
                 inner_index,
             } = order_id.price_in_ticks.to_indices();
-            let inserted = self.insert_to_index_list(market_state, outer_index, side);
+
+            if last_outer_index != Some(outer_index) {
+                // New index encountered. Write bitmap group belonging to the old index to slot.
+                if let Some(last_index) = last_outer_index {
+                    bitmap_group.write_to_slot(self.slot_storage, &last_index);
+                }
+
+                bitmap_group = if inserted {
+                    BitmapGroup::default()
+                } else {
+                    BitmapGroup::new_from_slot(self.slot_storage, outer_index)
+                };
+
+                last_outer_index = Some(outer_index);
+            }
+
+            // 4. Flip tick in bitmap
+            let mut bitmap = bitmap_group.get_bitmap_mut(&inner_index);
+            bitmap.activate(&order_id.resting_order_index);
         }
+
+        // Write the final bitmap group to the slot storage
+        if let Some(outer_index) = last_outer_index {
+            bitmap_group.write_to_slot(self.slot_storage, &outer_index);
+        }
+
         Ok(())
     }
 
