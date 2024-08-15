@@ -29,6 +29,7 @@ use super::{
     OrderPacket, OrderPacketMetadata, OuterIndex, RestingOrder, RestingOrderIndex, Side,
     SlotActions, SlotRestingOrder, SlotStorage, TickIndices, TraderState,
 };
+use alloc::vec;
 use alloc::{collections::btree_map::Range, vec::Vec};
 
 pub struct MatchingEngine<'a> {
@@ -647,6 +648,52 @@ impl MatchingEngine<'_> {
         Some((order_to_insert, matching_engine_response))
     }
 
+    pub fn insert_order_in_book_bulk(
+        &mut self,
+        market_state: &mut MarketState,
+        side: Side,
+        orders: Vec<OrderToInsert>,
+    ) -> GoblinResult<()> {
+        // Optimization- since the first element is closest to the centre, we only need
+        // to check the first element against the current best price.
+        // Update the best price if necessary.
+        if let Some(first_order) = orders.get(0) {
+            let order_id = first_order.order_id;
+
+            // Update best market price
+            if side == Side::Bid && order_id.price_in_ticks > market_state.best_bid_price {
+                market_state.best_bid_price = order_id.price_in_ticks;
+            }
+
+            if side == Side::Ask && order_id.price_in_ticks < market_state.best_ask_price {
+                market_state.best_ask_price = order_id.price_in_ticks;
+            }
+        } else {
+            // No orders
+            return Ok(());
+        }
+
+        // Bulk insert outer indices
+        // This will give an array of bool, telling whether an index was inserted or whether
+        // it was already present
+        for OrderToInsert {
+            order_id,
+            resting_order,
+        } in orders
+        {
+            // Write resting order to slot
+            resting_order.write_to_slot(self.slot_storage, &order_id)?;
+
+            // Try to insert outer index in index list
+            let TickIndices {
+                outer_index,
+                inner_index,
+            } = order_id.price_in_ticks.to_indices();
+            let inserted = self.insert_to_index_list(market_state, outer_index, side);
+        }
+        Ok(())
+    }
+
     pub fn insert_order_in_book(
         &mut self,
         market_state: &mut MarketState,
@@ -674,7 +721,8 @@ impl MatchingEngine<'_> {
         let inserted = self.insert_to_index_list(market_state, outer_index, side);
 
         let mut bitmap_group = if inserted {
-            // The bitmap group was previously in 'cleared' state. Remove the placeholder value
+            // The bitmap group could be in 'cleared' state with placeholder bits. We need
+            // to start with empty bits
             BitmapGroup::default()
         } else {
             BitmapGroup::new_from_slot(self.slot_storage, outer_index)
@@ -685,6 +733,150 @@ impl MatchingEngine<'_> {
         bitmap_group.write_to_slot(self.slot_storage, &outer_index);
 
         Ok(())
+    }
+
+    /// Insert a vector of outer indices in the outer indices list
+    ///
+    /// Returns a bool array telling which index was inserted (true case), and which one was
+    /// already present in the list (false case)
+    ///
+    /// # Arguments
+    ///
+    /// * `market_state`
+    /// * `side`
+    /// * `input_list`
+    ///
+    pub fn insert_to_index_list_bulk(
+        &mut self,
+        market_state: &MarketState,
+        side: Side,
+        input_list: Vec<OuterIndex>,
+    ) -> Vec<bool> {
+        let input_list_size = input_list.len();
+
+        let mut result = vec![false; input_list_size];
+
+        if input_list_size == 0 {
+            return result;
+        }
+        let mut input_list_index = 0;
+
+        let outer_index_count = market_state.outer_index_length(side);
+
+        let initial_slot_index = (outer_index_count - 1) / 16;
+        let mut slot_index = initial_slot_index;
+        let mut relative_index = (outer_index_count - 1) % 16;
+
+        let mut outer_index_stack = Vec::<OuterIndex>::new();
+        let mut to_insert = false;
+
+        let mut list_slot =
+            ListSlot::new_from_slot(self.slot_storage, ListKey { index: slot_index });
+
+        // 1. Loop through index slots to generate outer_index_stack and find indices
+        'list_loop: loop {
+            // List slot for the first slot index is already loaded, don't read again
+            if slot_index != initial_slot_index {
+                let list_key = ListKey { index: slot_index };
+                list_slot = ListSlot::new_from_slot(self.slot_storage, list_key);
+            }
+
+            // 2. Loop through outer indices in the list slot
+            loop {
+                // 3. Loop through values_to_insert to get the next non-duplicate outer index
+                let mut outer_index = input_list.get(input_list_index).unwrap();
+                loop {
+                    let last_stacked_outer_index = outer_index_stack.last();
+
+                    if last_stacked_outer_index.is_some_and(|last_stacked_outer_index| {
+                        last_stacked_outer_index == outer_index
+                    }) {
+                        if input_list_index == input_list_size - 1 {
+                            break 'list_loop;
+                        }
+                        input_list_index += 1;
+                        outer_index = input_list.get(input_list_index).unwrap();
+                    } else {
+                        break;
+                    }
+                }
+
+                let current_outer_index = list_slot.get(relative_index as usize);
+
+                // Case 1- need to travel deeper in index list
+                if (side == Side::Bid && current_outer_index > *outer_index)
+                    || (side == Side::Ask && current_outer_index < *outer_index)
+                {
+                    // Need to traverse further
+                    // Stack the item read from the index list
+                    outer_index_stack.push(current_outer_index);
+                } else {
+                    // Case 2- insert the index at this position
+                    if current_outer_index != *outer_index {
+                        outer_index_stack.push(*outer_index);
+                        result[input_list_index] = true;
+                        to_insert = true;
+                    }
+
+                    // General case- either insert or the value is already present
+                    // Try to move to the next item in the input list
+                    if input_list_index == input_list_size - 1 {
+                        break 'list_loop;
+                    }
+                    input_list_index += 1;
+                }
+                if relative_index == 0 {
+                    break;
+                }
+                relative_index -= 1;
+            }
+
+            if slot_index == 0 {
+                break;
+            }
+            // Move to the next ListSlot. Reset the relative index.
+            slot_index -= 1;
+            relative_index = 15;
+        }
+
+        if !to_insert {
+            return result;
+        }
+
+        // 2. Write the stack to the list
+        let new_list_size = slot_index * 16 + relative_index + 1 + outer_index_stack.len() as u16;
+
+        // Start from one position ahead of the last read item
+        let starting_slot_index = slot_index + (relative_index + 1) / 16;
+        let mut starting_relative_index = (relative_index + 1) % 16;
+
+        let final_slot_index = (new_list_size - 1) / 16;
+
+        for slot_index in starting_slot_index..=final_slot_index {
+            // Avoid duplicate slot load for starting_slot_index
+            if slot_index != starting_slot_index {
+                list_slot = ListSlot::default();
+                starting_relative_index = 0;
+            }
+
+            let final_relative_index = if slot_index == final_slot_index {
+                (new_list_size - 1) % 16
+            } else {
+                16
+            };
+
+            for relative_index in starting_relative_index..=final_relative_index {
+                list_slot.set(relative_index as usize, outer_index_stack.pop().unwrap());
+            }
+            list_slot.write_to_slot(
+                self.slot_storage,
+                &ListKey {
+                    index: relative_index,
+                },
+            );
+        }
+
+        result
     }
 
     // Try to insert an outer index in the index list.
@@ -717,8 +909,10 @@ impl MatchingEngine<'_> {
         let mut list_slot =
             ListSlot::new_from_slot(self.slot_storage, ListKey { index: slot_index });
 
-        // 1. Loop through index slots
+        // 1. Loop through index slots to generate outer_index_stack and find indices
+        // slot_index in (0..=initial_slot_index).rev()
         'list_loop: loop {
+            // List slot for the first slot index is already loaded, don't read again
             if slot_index != initial_slot_index {
                 let list_key = ListKey { index: slot_index };
                 list_slot = ListSlot::new_from_slot(self.slot_storage, list_key);
@@ -737,6 +931,7 @@ impl MatchingEngine<'_> {
                 {
                     outer_index_stack.push(current_outer_index);
                 } else {
+                    // Insert at this index
                     to_insert = true;
                     break 'list_loop;
                 }
@@ -759,28 +954,34 @@ impl MatchingEngine<'_> {
             return false;
         }
 
-        // Insert push stack to loop
+        // 2. Add the outer index to add to the stack
         outer_index_stack.push(outer_index);
 
+        // 3. Write the stack to the list
         let new_list_size = outer_index_count + 1;
-        let final_slot_index_exclusive = new_list_size / 16;
-        let starting_slot_index = slot_index;
-        let mut starting_relative_index = relative_index;
 
-        for slot_index in starting_slot_index..final_slot_index_exclusive {
+        // if new_list_size = 1 then final_slot_index_exclusive will become 0.
+        // But we want to iterate across slot 0.
+        let final_slot_index = (new_list_size - 1) / 16;
+
+        // Start from one position ahead of the last read item
+        let mut starting_relative_index = (relative_index + 1) % 16;
+        let starting_slot_index = slot_index + (relative_index + 1) / 16;
+
+        for slot_index in starting_slot_index..=final_slot_index {
+            // Avoid duplicate slot load for starting_slot_index
             if slot_index != starting_slot_index {
-                list_slot =
-                    ListSlot::new_from_slot(self.slot_storage, ListKey { index: slot_index });
+                list_slot = ListSlot::default();
                 starting_relative_index = 0;
             }
 
-            let final_relative_index_exclusive = if slot_index == final_slot_index_exclusive - 1 {
-                new_list_size % 16
+            let final_relative_index = if slot_index == final_slot_index {
+                (new_list_size - 1) % 16
             } else {
                 16
             };
 
-            for relative_index in starting_relative_index..final_relative_index_exclusive {
+            for relative_index in starting_relative_index..=final_relative_index {
                 list_slot.set(relative_index as usize, outer_index_stack.pop().unwrap());
             }
             list_slot.write_to_slot(

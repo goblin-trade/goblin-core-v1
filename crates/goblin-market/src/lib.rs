@@ -13,7 +13,7 @@ static ALLOC: mini_alloc::MiniAlloc = mini_alloc::MiniAlloc::INIT;
 use crate::program::GoblinResult;
 use alloc::vec::Vec;
 use program::{
-    new_order,
+    new_order, process_new_order,
     processor::{deposit, fees, withdraw},
     reduce_multiple_orders, FailedMultipleLimitOrderBehavior,
 };
@@ -21,6 +21,7 @@ use quantities::{BaseLots, Ticks, WrapperU64};
 use state::{OrderPacket, SelfTradeBehavior, Side, SlotActions, SlotStorage, TraderState};
 use stylus_sdk::{
     alloy_primitives::{Address, B256},
+    msg,
     prelude::*,
 };
 
@@ -117,8 +118,8 @@ impl GoblinMarket {
         last_valid_block_or_unix_timestamp_in_seconds: u32,
         fail_silently_on_insufficient_funds: bool,
         amend_x_ticks: u8,
-    ) {
-        let packet = OrderPacket::Limit {
+    ) -> GoblinResult<()> {
+        let mut order_packet = OrderPacket::Limit {
             side: Side::from(is_bid),
             price_in_ticks: Ticks::new(price_in_ticks),
             num_base_lots: BaseLots::new(num_base_lots),
@@ -131,6 +132,8 @@ impl GoblinMarket {
             fail_silently_on_insufficient_funds,
             amend_x_ticks,
         };
+
+        process_new_order(self, &mut order_packet, msg::sender())
     }
 
     // TODO how to return struct? Facing AbiType trait error

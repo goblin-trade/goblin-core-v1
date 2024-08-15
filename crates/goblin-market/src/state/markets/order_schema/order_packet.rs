@@ -421,7 +421,7 @@ impl OrderPacket {
         false
     }
 
-    pub fn has_sufficient_funds_v2(
+    pub fn has_sufficient_funds(
         &self,
         context: &mut GoblinMarket,
         trader_state: &TraderState,
@@ -452,33 +452,6 @@ impl OrderPacket {
                     if quote_lots_free + available_quote_lots < quote_lots_required {
                         return false;
                     }
-                }
-            }
-        }
-        true
-    }
-
-    pub fn has_sufficient_funds(
-        &self,
-        base_lots_available: BaseLots,
-        quote_lots_available: QuoteLots,
-    ) -> bool {
-        match self.side() {
-            Side::Ask => {
-                if base_lots_available < self.num_base_lots() {
-                    // Insufficient funds
-                    return false;
-                }
-            }
-            Side::Bid => {
-                let quote_lots_required = self.get_price_in_ticks()
-                    * TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT
-                    * self.num_base_lots()
-                    / BASE_LOTS_PER_BASE_UNIT;
-
-                if quote_lots_available < quote_lots_required {
-                    // Insufficient funds
-                    return false;
                 }
             }
         }
