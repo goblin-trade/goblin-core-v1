@@ -119,8 +119,10 @@ pub fn place_multiple_new_orders(
     let slot_storage = &mut SlotStorage::new();
 
     // Read states
-    let mut market = MarketState::read_from_slot(slot_storage);
+    let mut market_state = MarketState::read_from_slot(slot_storage);
     let mut trader_state = TraderState::read_from_slot(slot_storage, trader);
+
+    let mut matching_engine = MatchingEngine { slot_storage };
 
     let mut quote_lots_to_deposit = QuoteLots::ZERO;
     let mut base_lots_to_deposit = BaseLots::ZERO;
@@ -131,6 +133,8 @@ pub fn place_multiple_new_orders(
     let mut quote_lots_available = trader_state.quote_lots_free;
     let mut base_allowance_read = false;
     let mut quote_allowance_read = false;
+
+    let mut price_of_first_placed_order: Option<Ticks> = None;
 
     // orders at centre of the book are placed first, then move away.
     // bids- descending order
@@ -163,7 +167,7 @@ pub fn place_multiple_new_orders(
                 );
             }
 
-            let order_packet = OrderPacket::PostOnly {
+            let mut order_packet = OrderPacket::PostOnly {
                 side: *side,
                 price_in_ticks: condensed_order.price_in_ticks,
                 num_base_lots: condensed_order.size_in_base_lots,
@@ -197,11 +201,46 @@ pub fn place_multiple_new_orders(
                 // these are added and then compared in the end
 
                 // TODO call place_order()
-                MatchingEngineResponse::default()
-            };
+                let (order_to_insert, matching_engine_response) = matching_engine
+                    .place_order_inner(
+                        &mut market_state,
+                        &mut trader_state,
+                        trader,
+                        &mut order_packet,
+                        price_of_first_placed_order,
+                    )
+                    .ok_or(GoblinError::NewOrderError(NewOrderError {}))?;
 
+                // Set the price for the first order only
+                // The first order is the most aggressive so we don't need to compare
+                // price with other orders.
+                if price_of_first_placed_order.is_none() {
+                    // order_to_insert is guaranteed to be Some() for post-only orders
+                    price_of_first_placed_order =
+                        order_to_insert.map(|order| order.order_id.price_in_ticks);
+                }
+
+                matching_engine_response
+            };
             // finally set last price
             last_price = condensed_order.price_in_ticks;
+
+            let quote_lots_deposited =
+                matching_engine_response.get_deposit_amount_bid_in_quote_lots();
+            let base_lots_deposited =
+                matching_engine_response.get_deposit_amount_ask_in_base_lots();
+
+            if failed_multiple_limit_order_behavior.should_skip_orders_with_insufficient_funds() {
+                // Decrement the available funds by the amount that was deposited after each iteration
+                // This should never underflow, but if it does, the program will panic and the transaction will fail
+                quote_lots_available -=
+                    quote_lots_deposited + matching_engine_response.num_free_quote_lots_used;
+                base_lots_available -=
+                    base_lots_deposited + matching_engine_response.num_free_base_lots_used;
+            }
+
+            quote_lots_to_deposit += quote_lots_deposited;
+            base_lots_to_deposit += base_lots_deposited;
         }
     }
 
@@ -253,7 +292,13 @@ pub fn process_new_order(
         let mut matching_engine = MatchingEngine { slot_storage };
 
         let (order_to_insert, matching_engine_response) = matching_engine
-            .place_order_inner(&mut market_state, &mut trader_state, trader, order_packet)
+            .place_order_inner(
+                &mut market_state,
+                &mut trader_state,
+                trader,
+                order_packet,
+                None,
+            )
             .ok_or(GoblinError::NewOrderError(NewOrderError {}))?;
 
         if let Some(OrderToInsert {

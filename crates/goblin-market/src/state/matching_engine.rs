@@ -338,6 +338,7 @@ impl MatchingEngine<'_> {
         trader_state: &mut TraderState,
         trader: Address,
         order_packet: &mut OrderPacket,
+        price_of_last_placed_order: Option<Ticks>,
     ) -> Option<(Option<OrderToInsert>, MatchingEngineResponse)> {
         let side = order_packet.side();
 
@@ -395,15 +396,20 @@ impl MatchingEngine<'_> {
             ..
         } = order_packet
         {
-            if let Some(order_id) = self.check_for_cross(
+            // If the subsequent order crosses too, set the price equal to the last price
+            if let Some(price_of_last_placed_order) = price_of_last_placed_order {
+                if (side == Side::Bid && *price_in_ticks > price_of_last_placed_order)
+                    || (side == Side::Ask && *price_in_ticks < price_of_last_placed_order)
+                {
+                    *price_in_ticks = price_of_last_placed_order;
+                }
+            } else if let Some(ticks) = self.check_for_cross(
                 market_state,
                 side,
                 *price_in_ticks,
                 current_block,
                 current_unix_timestamp,
             ) {
-                let ticks = order_id.price_in_ticks;
-
                 if *reject_post_only {
                     // PostOnly order crosses the book- order rejected
                     return None;
@@ -424,6 +430,7 @@ impl MatchingEngine<'_> {
                     }
                 }
             }
+
             (
                 SlotRestingOrder::new(
                     trader,
@@ -1325,7 +1332,7 @@ impl MatchingEngine<'_> {
     }
 
     /// This function determines whether a PostOnly order crosses the book.
-    /// If the order crosses the book, the function returns the ID of the best unexpired
+    /// If the order crosses the book, the function returns the price of the best unexpired
     /// crossing order (price, index) on the opposite side of the book. Otherwise, it returns None.
     ///
     /// The function closes all expired orders till an unexpired order is found.
@@ -1345,7 +1352,7 @@ impl MatchingEngine<'_> {
         limit_price_in_ticks: Ticks,
         current_block: u32,
         current_unix_timestamp_in_seconds: u32,
-    ) -> Option<OrderId> {
+    ) -> Option<Ticks> {
         let opposite_side = side.opposite();
         let opposite_best_price = market_state.best_price(opposite_side);
         let outer_index_count = market_state.outer_index_length(opposite_side);
@@ -1358,7 +1365,7 @@ impl MatchingEngine<'_> {
             return None;
         }
 
-        let mut crossing_tick: Option<OrderId> = None;
+        let mut crossing_tick: Option<Ticks> = None;
 
         let mut handle_cross = |order_id: OrderId,
                                 resting_order: &mut SlotRestingOrder,
@@ -1392,10 +1399,11 @@ impl MatchingEngine<'_> {
                 return false;
             }
 
-            crossing_tick = Some(order_id);
+            crossing_tick = Some(order_id.price_in_ticks);
             return true;
         };
 
+        //
         process_resting_orders(
             self.slot_storage,
             market_state,
