@@ -1,16 +1,17 @@
 use alloc::vec::Vec;
-use stylus_sdk::alloy_primitives::{Address, B256};
+use stylus_sdk::alloy_primitives::{Address, FixedBytes, B256};
 
 use crate::{
     parameters::{BASE_TOKEN, QUOTE_TOKEN},
     program::{
         maybe_invoke_deposit, maybe_invoke_withdraw, GoblinError, GoblinResult, NewOrderError,
-        UndefinedFailedMultipleLimitOrderBehavior,
+        PricesNotInOrder,
     },
-    quantities::{BaseAtomsRaw, BaseLots, QuoteAtomsRaw, Ticks, WrapperU64},
+    quantities::{BaseAtomsRaw, BaseLots, QuoteAtomsRaw, QuoteLots, Ticks, WrapperU64, MAX_TICK},
+    require,
     state::{
-        MarketState, MatchingEngine, OrderId, OrderPacket, OrderPacketMetadata, Side, SlotActions,
-        SlotRestingOrder, SlotStorage, TraderState,
+        MarketState, MatchingEngine, MatchingEngineResponse, OrderId, OrderPacket,
+        OrderPacketMetadata, Side, SlotActions, SlotRestingOrder, SlotStorage, TraderState,
     },
     GoblinMarket,
 };
@@ -39,19 +40,22 @@ pub enum FailedMultipleLimitOrderBehavior {
     SkipOnInsufficientFundsAndFailOnCross = 3,
 }
 
-impl FailedMultipleLimitOrderBehavior {
-    pub fn decode(value: u8) -> GoblinResult<FailedMultipleLimitOrderBehavior> {
+impl From<u8> for FailedMultipleLimitOrderBehavior {
+    fn from(value: u8) -> Self {
         match value {
-            0 => Ok(FailedMultipleLimitOrderBehavior::FailOnInsufficientFundsAndAmendOnCross),
-            1 => Ok(FailedMultipleLimitOrderBehavior::FailOnInsufficientFundsAndFailOnCross),
-            2 => Ok(FailedMultipleLimitOrderBehavior::SkipOnInsufficientFundsAndAmendOnCross),
-            3 => Ok(FailedMultipleLimitOrderBehavior::SkipOnInsufficientFundsAndFailOnCross),
-            _ => Err(GoblinError::UndefinedFailedMultipleLimitOrderBehavior(
-                UndefinedFailedMultipleLimitOrderBehavior {},
-            )),
+            0 => FailedMultipleLimitOrderBehavior::FailOnInsufficientFundsAndAmendOnCross,
+            1 => FailedMultipleLimitOrderBehavior::FailOnInsufficientFundsAndFailOnCross,
+            2 => FailedMultipleLimitOrderBehavior::SkipOnInsufficientFundsAndAmendOnCross,
+            3 => FailedMultipleLimitOrderBehavior::SkipOnInsufficientFundsAndFailOnCross,
+            _ => panic!(
+                "Invalid value for  FailedMultipleLimitOrderBehavior: {}",
+                value
+            ),
         }
     }
+}
 
+impl FailedMultipleLimitOrderBehavior {
     pub fn should_fail_on_cross(&self) -> bool {
         matches!(
             self,
@@ -88,8 +92,8 @@ pub struct CondensedOrder {
     pub amend_x_ticks: u8,
 }
 
-impl CondensedOrder {
-    pub fn decode(bytes: &[u8; 32]) -> Self {
+impl From<&FixedBytes<22>> for CondensedOrder {
+    fn from(bytes: &FixedBytes<22>) -> Self {
         CondensedOrder {
             price_in_ticks: Ticks::new(u64::from_be_bytes(bytes[0..8].try_into().unwrap())),
             size_in_base_lots: BaseLots::new(u64::from_be_bytes(bytes[8..16].try_into().unwrap())),
@@ -102,28 +106,104 @@ impl CondensedOrder {
     }
 }
 
-/// Create multiple new orders
-///
-/// Each order request is (price in ticks, size in base lots, side)
-/// The order ID is derived by reading index list and bitmaps.
-/// Note- Side must be known. We don't want an order intended as a bid being placed as an ask.
-///
-/// Increase feature- placing order at the same price increases the order
-/// But this will require us to read the RestingOrder slots one by one to
-/// know the best order belonging to the trader. AVOID
-/// Alternative- Cancel and place. If done atomically it will have the same or better index
-pub fn process_multiple_new_orders(
+pub fn place_multiple_new_orders(
     context: &mut GoblinMarket,
+    trader: Address,
     to: Address,
     failed_multiple_limit_order_behavior: FailedMultipleLimitOrderBehavior,
-    bids: Vec<B256>,
-    asks: Vec<B256>,
+    bids: Vec<FixedBytes<22>>,
+    asks: Vec<FixedBytes<22>>,
     client_order_id: u128,
-    use_free_funds: bool,
+    no_deposit: bool,
 ) -> GoblinResult<()> {
-    let mut matching_engine = MatchingEngine {
-        slot_storage: &mut SlotStorage::new(),
-    };
+    let slot_storage = &mut SlotStorage::new();
+
+    // Read states
+    let mut market = MarketState::read_from_slot(slot_storage);
+    let mut trader_state = TraderState::read_from_slot(slot_storage, trader);
+
+    let mut quote_lots_to_deposit = QuoteLots::ZERO;
+    let mut base_lots_to_deposit = BaseLots::ZERO;
+
+    // Read quote and base lots available with trader
+    // Lazy load ERC20 balances
+    let mut base_lots_available = trader_state.base_lots_free;
+    let mut quote_lots_available = trader_state.quote_lots_free;
+    let mut base_allowance_read = false;
+    let mut quote_allowance_read = false;
+
+    // orders at centre of the book are placed first, then move away.
+    // bids- descending order
+    // asks- ascending order
+    for (book_orders, side, mut last_price) in [
+        (&bids, Side::Bid, Ticks::new(MAX_TICK)),
+        (&asks, Side::Ask, Ticks::new(0)),
+    ]
+    .iter()
+    {
+        for order_bytes in *book_orders {
+            let condensed_order = CondensedOrder::from(order_bytes);
+
+            // Ensure orders are in correct order- descending for bids and ascending for asks
+            if *side == Side::Bid {
+                require!(
+                    condensed_order.price_in_ticks < last_price,
+                    GoblinError::PricesNotInOrder(PricesNotInOrder {})
+                );
+            } else {
+                require!(
+                    condensed_order.price_in_ticks > last_price,
+                    GoblinError::PricesNotInOrder(PricesNotInOrder {})
+                );
+
+                // Price can't exceed max
+                require!(
+                    condensed_order.price_in_ticks <= Ticks::new(MAX_TICK),
+                    GoblinError::PricesNotInOrder(PricesNotInOrder {})
+                );
+            }
+
+            let order_packet = OrderPacket::PostOnly {
+                side: *side,
+                price_in_ticks: condensed_order.price_in_ticks,
+                num_base_lots: condensed_order.size_in_base_lots,
+                client_order_id,
+                reject_post_only: failed_multiple_limit_order_behavior.should_fail_on_cross(),
+                use_only_deposited_funds: no_deposit,
+                track_block: condensed_order.track_block,
+                last_valid_block_or_unix_timestamp_in_seconds: condensed_order
+                    .last_valid_block_or_unix_timestamp_in_seconds,
+                fail_silently_on_insufficient_funds: failed_multiple_limit_order_behavior
+                    .should_skip_orders_with_insufficient_funds(),
+                amend_x_ticks: condensed_order.amend_x_ticks,
+            };
+
+            let matching_engine_response = {
+                if failed_multiple_limit_order_behavior.should_skip_orders_with_insufficient_funds()
+                    && !order_packet.has_sufficient_funds(
+                        context,
+                        trader,
+                        &mut base_lots_available,
+                        &mut quote_lots_available,
+                        &mut base_allowance_read,
+                        &mut quote_allowance_read,
+                    )
+                {
+                    // Skip this order if the trader does not have sufficient funds
+                    continue;
+                }
+
+                // matching_engine_response gives the number of tokens required
+                // these are added and then compared in the end
+
+                // TODO call place_order()
+                MatchingEngineResponse::default()
+            };
+
+            // finally set last price
+            last_price = condensed_order.price_in_ticks;
+        }
+    }
 
     Ok(())
 }
@@ -155,12 +235,21 @@ pub fn process_new_order(
     ) = {
         // If the order should fail silently on insufficient funds, and the trader does not have
         // sufficient funds for the order, return silently without modifying the book.
-        if order_packet.fail_silently_on_insufficient_funds()
-            && !order_packet.has_sufficient_funds(context, &trader_state, trader)
-        {
-            return Ok(());
-        }
+        if order_packet.fail_silently_on_insufficient_funds() {
+            let mut base_lots_available = trader_state.base_lots_free;
+            let mut quote_lots_available = trader_state.quote_lots_free;
 
+            if !order_packet.has_sufficient_funds(
+                context,
+                trader,
+                &mut base_lots_available,
+                &mut quote_lots_available,
+                &mut false,
+                &mut false,
+            ) {
+                return Ok(());
+            }
+        }
         let mut matching_engine = MatchingEngine { slot_storage };
 
         let (order_to_insert, matching_engine_response) = matching_engine

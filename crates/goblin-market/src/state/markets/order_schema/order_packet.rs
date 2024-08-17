@@ -423,22 +423,23 @@ impl OrderPacket {
 
     pub fn has_sufficient_funds(
         &self,
-        context: &mut GoblinMarket,
-        trader_state: &TraderState,
+        context: &GoblinMarket,
         trader: Address,
+        base_lots_available: &mut BaseLots,
+        quote_lots_available: &mut QuoteLots,
+        base_allowance_read: &mut bool,
+        quote_allowance_read: &mut bool,
     ) -> bool {
-        let base_lots_free = trader_state.base_lots_free;
-        let quote_lots_free = trader_state.quote_lots_free;
-
         match self.side() {
             Side::Ask => {
-                if base_lots_free < self.num_base_lots() {
-                    // Gas optimization- only perform cross contract call if trader state
-                    // balance is insufficient
-                    let available_base_lots = get_available_base_lots(context, trader);
-                    if base_lots_free + available_base_lots < self.num_base_lots() {
-                        return false;
+                if *base_lots_available < self.num_base_lots() {
+                    // Lazy load available approved balance for base token
+                    if !*base_allowance_read {
+                        *base_lots_available += get_available_base_lots(context, trader);
+                        *base_allowance_read = true;
                     }
+
+                    return *base_lots_available >= self.num_base_lots();
                 }
             }
             Side::Bid => {
@@ -447,11 +448,15 @@ impl OrderPacket {
                     * self.num_base_lots()
                     / BASE_LOTS_PER_BASE_UNIT;
 
-                if quote_lots_free < quote_lots_required {
-                    let available_quote_lots = get_available_quote_lots(context, trader);
-                    if quote_lots_free + available_quote_lots < quote_lots_required {
-                        return false;
+                if *quote_lots_available < quote_lots_required {
+                    // Lazy load available approved balance for quote token
+                    if !*quote_allowance_read {
+                        *quote_lots_available += get_available_quote_lots(context, trader);
+
+                        *quote_allowance_read = true;
                     }
+
+                    return *quote_lots_available >= quote_lots_required;
                 }
             }
         }

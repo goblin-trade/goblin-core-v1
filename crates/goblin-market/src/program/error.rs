@@ -23,9 +23,6 @@ sol! {
     // Failed to reduce error. Thrown in revert_if_fail mode
     error FailedToReduce();
 
-    // Invalid number passed as FailedMultipleLimitOrderBehavior
-    error UndefinedFailedMultipleLimitOrderBehavior();
-
     // Prices of new post-only orders are not in correct order
     error PricesNotInOrder();
 
@@ -118,7 +115,6 @@ pub enum GoblinError {
     IndicesNotInOrder(IndicesNotInOrder),
     IndexNotInList(IndexNotInList),
     FailedToReduce(FailedToReduce),
-    UndefinedFailedMultipleLimitOrderBehavior(UndefinedFailedMultipleLimitOrderBehavior),
     PricesNotInOrder(PricesNotInOrder),
 
     InvalidInstructionData(InvalidInstructionData),

@@ -13,14 +13,14 @@ static ALLOC: mini_alloc::MiniAlloc = mini_alloc::MiniAlloc::INIT;
 use crate::program::GoblinResult;
 use alloc::vec::Vec;
 use program::{
-    new_order, process_new_order,
+    place_multiple_new_orders, process_new_order,
     processor::{deposit, fees, withdraw},
     reduce_multiple_orders, FailedMultipleLimitOrderBehavior,
 };
 use quantities::{BaseLots, Ticks, WrapperU64};
 use state::{OrderPacket, SelfTradeBehavior, Side, SlotActions, SlotStorage, TraderState};
 use stylus_sdk::{
-    alloy_primitives::{Address, B256},
+    alloy_primitives::{Address, FixedBytes, B256},
     msg,
     prelude::*,
 };
@@ -86,15 +86,17 @@ impl GoblinMarket {
         &mut self,
         to: Address,
         failed_multiple_limit_order_behavior: u8,
-        bids: Vec<B256>,
-        asks: Vec<B256>,
+        bids: Vec<FixedBytes<22>>,
+        asks: Vec<FixedBytes<22>>,
+        // gg: Vec<FixedBytes<22>>,
         client_order_id: u128,
         use_free_funds: bool,
     ) -> GoblinResult<()> {
-        new_order::process_multiple_new_orders(
+        place_multiple_new_orders(
             self,
+            msg::sender(),
             to,
-            FailedMultipleLimitOrderBehavior::decode(failed_multiple_limit_order_behavior)?,
+            FailedMultipleLimitOrderBehavior::from(failed_multiple_limit_order_behavior),
             bids,
             asks,
             client_order_id,
