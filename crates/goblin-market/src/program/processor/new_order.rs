@@ -87,14 +87,10 @@ pub struct CondensedOrder {
     // The last valid block or unix timestamp, depending on the value of
     // track_block. Set value as 0 to disable FOK.
     pub last_valid_block_or_unix_timestamp_in_seconds: u32,
-
-    /// If price_on_ticks has no available slots, try placing the order at a less aggresive
-    /// price (away from the centre) by amending the price by these many ticks.
-    pub amend_x_ticks: u8,
 }
 
-impl From<&FixedBytes<22>> for CondensedOrder {
-    fn from(bytes: &FixedBytes<22>) -> Self {
+impl From<&FixedBytes<21>> for CondensedOrder {
+    fn from(bytes: &FixedBytes<21>) -> Self {
         CondensedOrder {
             price_in_ticks: Ticks::new(u64::from_be_bytes(bytes[0..8].try_into().unwrap())),
             size_in_base_lots: BaseLots::new(u64::from_be_bytes(bytes[8..16].try_into().unwrap())),
@@ -102,7 +98,6 @@ impl From<&FixedBytes<22>> for CondensedOrder {
             last_valid_block_or_unix_timestamp_in_seconds: u32::from_be_bytes(
                 bytes[17..21].try_into().unwrap(),
             ),
-            amend_x_ticks: bytes[21],
         }
     }
 }
@@ -112,10 +107,11 @@ pub fn place_multiple_new_orders(
     trader: Address,
     to: Address,
     failed_multiple_limit_order_behavior: FailedMultipleLimitOrderBehavior,
-    bids: Vec<FixedBytes<22>>,
-    asks: Vec<FixedBytes<22>>,
+    bids: Vec<FixedBytes<21>>,
+    asks: Vec<FixedBytes<21>>,
     client_order_id: u128,
     no_deposit: bool,
+    tick_offset: u8,
 ) -> GoblinResult<()> {
     let slot_storage = &mut SlotStorage::new();
 
@@ -182,7 +178,7 @@ pub fn place_multiple_new_orders(
                     .last_valid_block_or_unix_timestamp_in_seconds,
                 fail_silently_on_insufficient_funds: failed_multiple_limit_order_behavior
                     .should_skip_orders_with_insufficient_funds(),
-                amend_x_ticks: condensed_order.amend_x_ticks,
+                tick_offset,
             };
 
             let matching_engine_response = {

@@ -55,9 +55,10 @@ pub enum OrderPacket {
         /// If this is set, the order will fail silently if there are insufficient funds
         fail_silently_on_insufficient_funds: bool,
 
-        /// If price_on_ticks has no available slots, try placing the order at a less aggresive
-        /// price (away from the centre) by amending the price by these many ticks.
-        amend_x_ticks: u8,
+        /// Specifies the number of ticks to adjust the price when the current price level (price_on_ticks)
+        /// has no available slots. This adjustment moves the order to a less aggressive price, further
+        /// away from the market center, in an attempt to find an available slot.
+        tick_offset: u8,
     },
 
     /// This order type is used to place a limit order on the book
@@ -96,9 +97,10 @@ pub enum OrderPacket {
         /// If this is set, the order will fail silently if there are insufficient funds
         fail_silently_on_insufficient_funds: bool,
 
-        /// If price_on_ticks has no available slots, try placing the order at a less aggresive
-        /// price (away from the centre) by amending the price by these many ticks.
-        amend_x_ticks: u8,
+        /// Specifies the number of ticks to adjust the price when the current price level (price_on_ticks)
+        /// has no available slots. This adjustment moves the order to a less aggressive price, further
+        /// away from the market center, in an attempt to find an available slot.
+        tick_offset: u8,
     },
 
     /// This order type is used to place an order that will be matched against existing resting orders
@@ -291,12 +293,12 @@ impl OrderPacket {
         }
     }
 
-    pub fn amend_x_ticks(&self) -> u8 {
+    pub fn tick_offset(&self) -> u8 {
         match self {
-            Self::PostOnly { amend_x_ticks, .. } => *amend_x_ticks,
-            Self::Limit { amend_x_ticks, .. } => *amend_x_ticks,
+            Self::PostOnly { tick_offset, .. } => *tick_offset,
+            Self::Limit { tick_offset, .. } => *tick_offset,
             Self::ImmediateOrCancel { .. } => {
-                panic!("ImmediateOrCancel orders do not have amend_x_ticks field")
+                panic!("ImmediateOrCancel orders do not have tick_offset field")
             }
         }
     }

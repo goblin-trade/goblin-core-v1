@@ -1195,7 +1195,7 @@ impl MatchingEngine<'_> {
         } = price_in_ticks.to_indices();
 
         let mut current_outer_index = outer_index;
-        let mut ticks_to_traverse = order_packet.amend_x_ticks();
+        let mut ticks_to_traverse = order_packet.tick_offset();
 
         // 1. Loop through bitmap groups
         loop {

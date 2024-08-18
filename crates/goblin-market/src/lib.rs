@@ -74,23 +74,25 @@ impl GoblinMarket {
     ///
     /// # Arguments
     ///
-    /// * `to` - Credit posted orders to this trader
-    /// * `failed_multiple_limit_order_behavior` - Trade behavior if one of the orders fails
     /// * `bids`
     /// * `asks`
+    /// * `failed_multiple_limit_order_behavior` - Trade behavior if one of the orders fails
+    /// * `tick_offset` - Specifies the number of ticks to adjust the price when the current price level (price_on_ticks)
+    /// has no available slots. This adjustment moves the order to a less aggressive price, further
+    /// away from the market center, in an attempt to find an available slot.
     /// * `client_order_id` - ID provided by trader to uniquely identify this order. It is only emitted
     /// in the event and has no impact on trades. Pass 0 as the default value.
     /// * `use_free_funds` - Whether to use free funds, or transfer new tokens in to place these orders
-    ///
+    /// * `to` - Credit posted orders to this trader
     pub fn place_multiple_post_only_orders(
         &mut self,
-        to: Address,
+        bids: Vec<FixedBytes<21>>,
+        asks: Vec<FixedBytes<21>>,
         failed_multiple_limit_order_behavior: u8,
-        bids: Vec<FixedBytes<22>>,
-        asks: Vec<FixedBytes<22>>,
-        // gg: Vec<FixedBytes<22>>,
+        tick_offset: u8,
         client_order_id: u128,
         use_free_funds: bool,
+        to: Address,
     ) -> GoblinResult<()> {
         place_multiple_new_orders(
             self,
@@ -101,6 +103,7 @@ impl GoblinMarket {
             asks,
             client_order_id,
             use_free_funds,
+            tick_offset,
         )
     }
 
@@ -119,7 +122,7 @@ impl GoblinMarket {
         track_block: bool,
         last_valid_block_or_unix_timestamp_in_seconds: u32,
         fail_silently_on_insufficient_funds: bool,
-        amend_x_ticks: u8,
+        tick_offset: u8,
     ) -> GoblinResult<()> {
         let mut order_packet = OrderPacket::Limit {
             side: Side::from(is_bid),
@@ -132,7 +135,7 @@ impl GoblinMarket {
             track_block,
             last_valid_block_or_unix_timestamp_in_seconds,
             fail_silently_on_insufficient_funds,
-            amend_x_ticks,
+            tick_offset,
         };
 
         process_new_order(self, &mut order_packet, msg::sender())
