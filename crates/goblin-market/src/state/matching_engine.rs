@@ -25,9 +25,9 @@ use super::{
     adjusted_quote_lot_budget_post_fee_adjustment_for_buys,
     adjusted_quote_lot_budget_post_fee_adjustment_for_sells, compute_fee, inner_indices,
     matching_engine_response, process_resting_orders, slot_storage, BitmapGroup, IndexList,
-    InflightOrder, InnerIndex, ListKey, ListSlot, MarketState, MatchingEngineResponse, OrderId,
-    OrderPacket, OrderPacketMetadata, OuterIndex, RestingOrder, RestingOrderIndex, Side,
-    SlotActions, SlotRestingOrder, SlotStorage, TickIndices, TraderState,
+    InflightOrder, InnerIndex, ListKey, ListSlot, MarketState, MatchingEngineResponse,
+    MutableBitmap, OrderId, OrderPacket, OrderPacketMetadata, OuterIndex, RestingOrder,
+    RestingOrderIndex, Side, SlotActions, SlotRestingOrder, SlotStorage, TickIndices, TraderState,
 };
 use alloc::vec;
 use alloc::{collections::btree_map::Range, vec::Vec};
@@ -339,6 +339,7 @@ impl MatchingEngine<'_> {
         trader: Address,
         order_packet: &mut OrderPacket,
         price_of_last_placed_order: Option<Ticks>,
+        last_order: Option<OrderToInsert>,
     ) -> Option<(Option<OrderToInsert>, MatchingEngineResponse)> {
         let side = order_packet.side();
 
@@ -540,20 +541,14 @@ impl MatchingEngine<'_> {
             }
         } else {
             // PostOnly and limit case- place an order on the book
-
-            let price_in_ticks = order_packet.get_price_in_ticks();
-
-            // Check whether tick is full by reading bitmap
-            // Current bitmap can be returned from iterator
-            let placed_order_id = self.get_best_available_order_id(
-                side,
-                price_in_ticks,
-                order_packet.amend_x_ticks(),
-            );
+            // Get best available slot to place the order
+            let placed_order_id = self.get_best_available_order_id(&order_packet, last_order);
 
             match placed_order_id {
                 None => {
                     // No space for order, exit
+                    // Multiple orders behavior is handled outside
+                    // Currently the entire TX fails
                     return None;
                 }
                 Some(order_id) => {
@@ -1271,17 +1266,38 @@ impl MatchingEngine<'_> {
     ///
     pub fn get_best_available_order_id(
         &mut self,
-        side: Side,
-        price_in_ticks: Ticks,
-        amend_x_ticks: u8,
+        order_packet: &OrderPacket,
+        last_order: Option<OrderToInsert>,
     ) -> Option<OrderId> {
+        let price_in_ticks = order_packet.get_price_in_ticks();
+        let side = order_packet.side();
+
+        let mut skip_bit_for_last_order = false;
+
+        if let Some(OrderToInsert {
+            order_id,
+            resting_order,
+        }) = last_order
+        {
+            if order_id.price_in_ticks == price_in_ticks {
+                if resting_order.track_block == order_packet.track_block()
+                    && resting_order.last_valid_block_or_unix_timestamp_in_seconds
+                        == order_packet.last_valid_block_or_unix_timestamp_in_seconds()
+                {
+                    return Some(order_id);
+                } else {
+                    skip_bit_for_last_order = true;
+                }
+            }
+        }
+
         let TickIndices {
             outer_index,
             inner_index,
         } = price_in_ticks.to_indices();
 
         let mut current_outer_index = outer_index;
-        let mut ticks_to_traverse = amend_x_ticks;
+        let mut ticks_to_traverse = order_packet.amend_x_ticks();
 
         // 1. Loop through bitmap groups
         loop {
@@ -1297,10 +1313,29 @@ impl MatchingEngine<'_> {
             for i in inner_indices(side, previous_inner_index) {
                 let current_inner_index = InnerIndex::new(i);
                 let price_in_ticks = Ticks::from_indices(outer_index, current_inner_index);
-                let bitmap = bitmap_group.get_bitmap(&current_inner_index);
 
                 // 3. Loop through resting order IDs
-                let best_free_index = bitmap.best_free_index(0);
+                let best_free_index = if skip_bit_for_last_order {
+                    // Mark as false. This is a one time operation for the first bitmap group
+                    skip_bit_for_last_order = false;
+
+                    // Construct a virtual bitmap which includes activated bit from the last order
+                    let mut bitmap_raw = bitmap_group.inner[current_inner_index.as_usize()];
+                    let mut virtual_bitmap = MutableBitmap {
+                        inner: &mut bitmap_raw,
+                    };
+                    let relative_index_of_last_order =
+                        last_order.unwrap().order_id.resting_order_index;
+                    virtual_bitmap.activate(&relative_index_of_last_order);
+
+                    // Lookup from relative_index_of_last_order. This index is filled so it
+                    // will be skipped.
+                    virtual_bitmap.best_free_index(relative_index_of_last_order.as_u8())
+                } else {
+                    let bitmap = bitmap_group.get_bitmap(&current_inner_index);
+
+                    bitmap.best_free_index(0)
+                };
 
                 if let Some(resting_order_index) = best_free_index {
                     return Some(OrderId {

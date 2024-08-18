@@ -18,13 +18,18 @@ use crate::{
 
 const NULL_ADDRESS: Address = address!("0000000000000000000000000000000000000001");
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 #[repr(transparent)]
 pub struct RestingOrderIndex {
     inner: u8,
 }
 
 impl RestingOrderIndex {
+    pub const ZERO: RestingOrderIndex = RestingOrderIndex { inner: 0 };
+    pub const MIN: RestingOrderIndex = RestingOrderIndex::ZERO;
+    pub const ONE: RestingOrderIndex = RestingOrderIndex { inner: 1 };
+    pub const MAX: RestingOrderIndex = RestingOrderIndex { inner: 7 };
+
     pub fn new(inner: u8) -> Self {
         assert!(inner < ORDERS_PER_TICK);
         RestingOrderIndex { inner }

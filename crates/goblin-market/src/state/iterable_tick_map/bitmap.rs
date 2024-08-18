@@ -112,6 +112,7 @@ pub fn inner_indices(
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct Bitmap<'a> {
     pub inner: &'a u8,
 }
@@ -162,9 +163,9 @@ impl MutableBitmap<'_> {
     }
 
     /// Find the best available slot with the lowest index
-    pub fn best_free_index(&self) -> Option<RestingOrderIndex> {
+    pub fn best_free_index(&self, start: u8) -> Option<RestingOrderIndex> {
         // Iterate through each bit starting from the least significant bit
-        for i in 0..8 {
+        for i in start..8 {
             let resting_order_index = RestingOrderIndex::new(i);
             // Check if the bit at index `i` is 0
             if !self.order_present(resting_order_index.clone()) {

@@ -16,6 +16,7 @@ use crate::{
     GoblinMarket,
 };
 
+#[derive(Clone, Copy)]
 pub struct OrderToInsert {
     pub order_id: OrderId,
     pub resting_order: SlotRestingOrder,
@@ -134,7 +135,13 @@ pub fn place_multiple_new_orders(
     let mut base_allowance_read = false;
     let mut quote_allowance_read = false;
 
+    // Price of the first placed and most aggressive order
+    // This is only set once in the first iteration
     let mut price_of_first_placed_order: Option<Ticks> = None;
+
+    // Order ID of the last placed order. It is used the find the best
+    // available order ID for the current order.
+    let mut last_order_id: Option<OrderId> = None;
 
     // orders at centre of the book are placed first, then move away.
     // bids- descending order
@@ -208,16 +215,20 @@ pub fn place_multiple_new_orders(
                         trader,
                         &mut order_packet,
                         price_of_first_placed_order,
+                        last_order_id,
                     )
                     .ok_or(GoblinError::NewOrderError(NewOrderError {}))?;
+
+                last_order_id = order_to_insert.as_ref().map(|order| order.order_id);
 
                 // Set the price for the first order only
                 // The first order is the most aggressive so we don't need to compare
                 // price with other orders.
                 if price_of_first_placed_order.is_none() {
                     // order_to_insert is guaranteed to be Some() for post-only orders
-                    price_of_first_placed_order =
-                        order_to_insert.map(|order| order.order_id.price_in_ticks);
+                    price_of_first_placed_order = order_to_insert
+                        .as_ref()
+                        .map(|order| order.order_id.price_in_ticks);
                 }
 
                 matching_engine_response
