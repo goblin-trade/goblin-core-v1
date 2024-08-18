@@ -220,109 +220,6 @@ impl MatchingEngine<'_> {
         ))
     }
 
-    // pub fn place_multiple_new_orders(
-    //     &mut self,
-    //     context: &mut GoblinMarket,
-    //     trader: Address,
-    //     to: Address,
-    //     failed_multiple_limit_order_behavior: FailedMultipleLimitOrderBehavior,
-    //     bids: Vec<FixedBytes<22>>,
-    //     asks: Vec<FixedBytes<22>>,
-    //     client_order_id: u128,
-    //     no_deposit: bool,
-    // ) -> GoblinResult<MatchingEngineResponse> {
-    //     // Read states
-    //     let mut market = MarketState::read_from_slot(self.slot_storage);
-    //     let mut trader_state = TraderState::read_from_slot(self.slot_storage, trader);
-
-    //     let mut quote_lots_to_deposit = QuoteLots::ZERO;
-    //     let mut base_lots_to_deposit = BaseLots::ZERO;
-
-    //     // Read quote and base lots available with trader
-    //     // Lazy load ERC20 balances
-    //     let mut base_lots_available = trader_state.base_lots_free;
-    //     let mut quote_lots_available = trader_state.quote_lots_free;
-    //     let mut base_allowance_read = false;
-    //     let mut quote_allowance_read = false;
-
-    //     // orders at centre of the book are placed first, then move away.
-    //     // bids- descending order
-    //     // asks- ascending order
-    //     for (book_orders, side, mut last_price) in [
-    //         (&bids, Side::Bid, Ticks::new(MAX_TICK)),
-    //         (&asks, Side::Ask, Ticks::new(0)),
-    //     ]
-    //     .iter()
-    //     {
-    //         for order_bytes in *book_orders {
-    //             let condensed_order = CondensedOrder::from(order_bytes);
-
-    //             // Ensure orders are in correct order- descending for bids and ascending for asks
-    //             if *side == Side::Bid {
-    //                 require!(
-    //                     condensed_order.price_in_ticks < last_price,
-    //                     GoblinError::PricesNotInOrder(PricesNotInOrder {})
-    //                 );
-    //             } else {
-    //                 require!(
-    //                     condensed_order.price_in_ticks > last_price,
-    //                     GoblinError::PricesNotInOrder(PricesNotInOrder {})
-    //                 );
-
-    //                 // Price can't exceed max
-    //                 require!(
-    //                     condensed_order.price_in_ticks <= Ticks::new(MAX_TICK),
-    //                     GoblinError::PricesNotInOrder(PricesNotInOrder {})
-    //                 );
-    //             }
-
-    //             let order_packet = OrderPacket::PostOnly {
-    //                 side: *side,
-    //                 price_in_ticks: condensed_order.price_in_ticks,
-    //                 num_base_lots: condensed_order.size_in_base_lots,
-    //                 client_order_id,
-    //                 reject_post_only: failed_multiple_limit_order_behavior.should_fail_on_cross(),
-    //                 use_only_deposited_funds: no_deposit,
-    //                 track_block: condensed_order.track_block,
-    //                 last_valid_block_or_unix_timestamp_in_seconds: condensed_order
-    //                     .last_valid_block_or_unix_timestamp_in_seconds,
-    //                 fail_silently_on_insufficient_funds: failed_multiple_limit_order_behavior
-    //                     .should_skip_orders_with_insufficient_funds(),
-    //                 amend_x_ticks: condensed_order.amend_x_ticks,
-    //             };
-
-    //             let matching_engine_response = {
-    //                 if failed_multiple_limit_order_behavior
-    //                     .should_skip_orders_with_insufficient_funds()
-    //                     && !order_packet_has_sufficient_funds(
-    //                         context,
-    //                         &order_packet,
-    //                         trader,
-    //                         &mut base_lots_available,
-    //                         &mut quote_lots_available,
-    //                         &mut base_allowance_read,
-    //                         &mut quote_allowance_read,
-    //                     )
-    //                 {
-    //                     // Skip this order if the trader does not have sufficient funds
-    //                     continue;
-    //                 }
-
-    //                 // matching_engine_response gives the number of tokens required
-    //                 // these are added and then compared in the end
-
-    //                 // TODO call place_order()
-    //                 MatchingEngineResponse::default()
-    //             };
-
-    //             // finally set last price
-    //             last_price = condensed_order.price_in_ticks;
-    //         }
-    //     }
-
-    //     Ok(MatchingEngineResponse::default())
-    // }
-
     /// Try to execute an order packet and place an order
     ///
     /// # Arguments
@@ -331,6 +228,7 @@ impl MatchingEngine<'_> {
     /// * `trader_state`
     /// * `trader` - The trader who sent the order
     /// * `order_packet`
+    /// * `last_order` - The last placed order, if placing multiple post-only orders
     ///
     pub fn place_order_inner(
         &mut self,
@@ -338,7 +236,6 @@ impl MatchingEngine<'_> {
         trader_state: &mut TraderState,
         trader: Address,
         order_packet: &mut OrderPacket,
-        price_of_last_placed_order: Option<Ticks>,
         last_order: Option<OrderToInsert>,
     ) -> Option<(Option<OrderToInsert>, MatchingEngineResponse)> {
         let side = order_packet.side();
@@ -398,11 +295,13 @@ impl MatchingEngine<'_> {
         } = order_packet
         {
             // If the subsequent order crosses too, set the price equal to the last price
-            if let Some(price_of_last_placed_order) = price_of_last_placed_order {
-                if (side == Side::Bid && *price_in_ticks > price_of_last_placed_order)
-                    || (side == Side::Ask && *price_in_ticks < price_of_last_placed_order)
+            if let Some(last_order) = last_order {
+                let last_price = last_order.order_id.price_in_ticks;
+
+                if (side == Side::Bid && *price_in_ticks > last_price)
+                    || (side == Side::Ask && *price_in_ticks < last_price)
                 {
-                    *price_in_ticks = price_of_last_placed_order;
+                    *price_in_ticks = last_price;
                 }
             } else if let Some(ticks) = self.check_for_cross(
                 market_state,
@@ -542,9 +441,10 @@ impl MatchingEngine<'_> {
         } else {
             // PostOnly and limit case- place an order on the book
             // Get best available slot to place the order
-            let placed_order_id = self.get_best_available_order_id(&order_packet, last_order);
+            let best_available_order_id =
+                self.get_best_available_order_id(&order_packet, last_order);
 
-            match placed_order_id {
+            match best_available_order_id {
                 None => {
                     // No space for order, exit
                     // Multiple orders behavior is handled outside
@@ -1259,10 +1159,8 @@ impl MatchingEngine<'_> {
     ///
     /// # Arguments
     ///
-    /// * `side`
-    /// * `price_in_ticks`
-    /// * `amend_x_ticks`- If no slots are available at `price_in_ticks`, check for free
-    /// slots away from the centre by these many ticks.
+    /// * `order_packet`
+    /// * `last_order` - The last order, if placing multiple post-only orders
     ///
     pub fn get_best_available_order_id(
         &mut self,
