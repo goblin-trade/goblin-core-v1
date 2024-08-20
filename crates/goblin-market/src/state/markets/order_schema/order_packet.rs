@@ -36,9 +36,8 @@ pub enum OrderPacket {
         /// Client order id used to identify the order in the response to the client
         client_order_id: u128,
 
-        /// Flag for whether or not to reject the order if it would immediately match or amend it to the best non-crossing price
-        /// Default value is true
-        reject_post_only: bool,
+        /// Whether to fail the order if it crosses, or to amend it to the best non-crossing price
+        fail_on_cross: bool,
 
         /// Flag for whether or not the order should only use funds that are already
         /// credited in the trader state. This saves gas.

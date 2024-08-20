@@ -15,7 +15,7 @@ use alloc::vec::Vec;
 use program::{
     place_multiple_new_orders, process_new_order,
     processor::{deposit, fees, withdraw},
-    reduce_multiple_orders, FailedMultipleLimitOrderBehavior,
+    reduce_multiple_orders,
 };
 use quantities::{BaseLots, Ticks, WrapperU64};
 use state::{OrderPacket, SelfTradeBehavior, Side, SlotActions, SlotStorage, TraderState};
@@ -87,7 +87,9 @@ impl GoblinMarket {
         &mut self,
         bids: Vec<FixedBytes<21>>,
         asks: Vec<FixedBytes<21>>,
-        failed_multiple_limit_order_behavior: u8,
+        // failed_multiple_limit_order_behavior: u8,
+        fail_on_cross: bool,
+        skip_on_insufficient_funds: bool,
         tick_offset: u8,
         client_order_id: u128,
         use_free_funds: bool,
@@ -97,7 +99,8 @@ impl GoblinMarket {
             self,
             msg::sender(),
             to,
-            FailedMultipleLimitOrderBehavior::from(failed_multiple_limit_order_behavior),
+            fail_on_cross,
+            skip_on_insufficient_funds,
             bids,
             asks,
             client_order_id,

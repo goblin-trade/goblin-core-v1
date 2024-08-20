@@ -22,58 +22,6 @@ pub struct OrderToInsert {
     pub resting_order: SlotRestingOrder,
 }
 
-pub enum FailedMultipleLimitOrderBehavior {
-    /// Orders will never cross the spread. Instead they will be amended to the closest non-crossing price.
-    /// The entire transaction will fail if matching engine returns None for any order, which indicates an error.
-    ///
-    /// If an order has insufficient funds, the entire transaction will fail.
-    FailOnInsufficientFundsAndAmendOnCross = 0,
-
-    /// If any order crosses the spread or has insufficient funds, the entire transaction will fail.
-    FailOnInsufficientFundsAndFailOnCross = 1,
-
-    /// Orders will be skipped if the user has insufficient funds.
-    /// Crossing orders will be amended to the closest non-crossing price.
-    SkipOnInsufficientFundsAndAmendOnCross = 2,
-
-    /// Orders will be skipped if the user has insufficient funds.
-    /// If any order crosses the spread, the entire transaction will fail.
-    SkipOnInsufficientFundsAndFailOnCross = 3,
-}
-
-impl From<u8> for FailedMultipleLimitOrderBehavior {
-    fn from(value: u8) -> Self {
-        match value {
-            0 => FailedMultipleLimitOrderBehavior::FailOnInsufficientFundsAndAmendOnCross,
-            1 => FailedMultipleLimitOrderBehavior::FailOnInsufficientFundsAndFailOnCross,
-            2 => FailedMultipleLimitOrderBehavior::SkipOnInsufficientFundsAndAmendOnCross,
-            3 => FailedMultipleLimitOrderBehavior::SkipOnInsufficientFundsAndFailOnCross,
-            _ => panic!(
-                "Invalid value for  FailedMultipleLimitOrderBehavior: {}",
-                value
-            ),
-        }
-    }
-}
-
-impl FailedMultipleLimitOrderBehavior {
-    pub fn should_fail_on_cross(&self) -> bool {
-        matches!(
-            self,
-            FailedMultipleLimitOrderBehavior::FailOnInsufficientFundsAndFailOnCross
-                | FailedMultipleLimitOrderBehavior::SkipOnInsufficientFundsAndFailOnCross
-        )
-    }
-
-    pub fn should_skip_orders_with_insufficient_funds(&self) -> bool {
-        matches!(
-            self,
-            FailedMultipleLimitOrderBehavior::SkipOnInsufficientFundsAndAmendOnCross
-                | FailedMultipleLimitOrderBehavior::SkipOnInsufficientFundsAndFailOnCross
-        )
-    }
-}
-
 pub struct CondensedOrder {
     // Order price in ticks
     pub price_in_ticks: Ticks,
@@ -106,7 +54,8 @@ pub fn place_multiple_new_orders(
     context: &mut GoblinMarket,
     trader: Address,
     to: Address,
-    failed_multiple_limit_order_behavior: FailedMultipleLimitOrderBehavior,
+    fail_on_cross: bool,
+    skip_on_insufficient_funds: bool,
     bids: Vec<FixedBytes<21>>,
     asks: Vec<FixedBytes<21>>,
     client_order_id: u128,
@@ -174,13 +123,12 @@ pub fn place_multiple_new_orders(
                 price_in_ticks: condensed_order.price_in_ticks,
                 num_base_lots: condensed_order.size_in_base_lots,
                 client_order_id,
-                reject_post_only: failed_multiple_limit_order_behavior.should_fail_on_cross(),
+                fail_on_cross,
                 use_only_deposited_funds: no_deposit,
                 track_block: condensed_order.track_block,
                 last_valid_block_or_unix_timestamp_in_seconds: condensed_order
                     .last_valid_block_or_unix_timestamp_in_seconds,
-                fail_silently_on_insufficient_funds: failed_multiple_limit_order_behavior
-                    .should_skip_orders_with_insufficient_funds(),
+                fail_silently_on_insufficient_funds: skip_on_insufficient_funds,
                 tick_offset,
             };
 
@@ -243,7 +191,7 @@ pub fn place_multiple_new_orders(
             let base_lots_deposited =
                 matching_engine_response.get_deposit_amount_ask_in_base_lots();
 
-            if failed_multiple_limit_order_behavior.should_skip_orders_with_insufficient_funds() {
+            if skip_on_insufficient_funds {
                 // Decrement the available funds by the amount that was deposited after each iteration
                 // This should never underflow, but if it does, the program will panic and the transaction will fail
                 quote_lots_available -=

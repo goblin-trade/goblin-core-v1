@@ -9,10 +9,8 @@ use crate::{
         TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT,
     },
     program::{
-        get_available_base_lots, get_available_quote_lots,
-        new_order::{CondensedOrder, FailedMultipleLimitOrderBehavior},
-        FailedToReduce, GoblinError, GoblinResult, OrderToInsert, PricesNotInOrder,
-        ReduceOrderPacket,
+        get_available_base_lots, get_available_quote_lots, FailedToReduce, GoblinError,
+        GoblinResult, OrderToInsert, PricesNotInOrder, ReduceOrderPacket,
     },
     quantities::{
         AdjustedQuoteLots, BaseLots, BaseLotsPerBaseUnit, QuoteLots, QuoteLotsPerBaseUnit, Ticks,
@@ -290,7 +288,7 @@ impl MatchingEngine<'_> {
         // Generate resting_order and matching_engine_response
         let (resting_order, mut matching_engine_response) = if let OrderPacket::PostOnly {
             price_in_ticks,
-            reject_post_only,
+            fail_on_cross,
             ..
         } = order_packet
         {
@@ -310,7 +308,7 @@ impl MatchingEngine<'_> {
                 current_block,
                 current_unix_timestamp,
             ) {
-                if *reject_post_only {
+                if *fail_on_cross {
                     // PostOnly order crosses the book- order rejected
                     return None;
                 } else {
