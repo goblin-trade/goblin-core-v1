@@ -40,9 +40,8 @@ pub enum OrderPacket {
         /// Default value is true
         reject_post_only: bool,
 
-        /// Flag for whether or not the order should only use funds that are already in the account
-        /// Using only deposited funds will allow the trader to pass in less accounts per instruction and
-        /// save transaction space as well as compute. This is only for traders who have a seat
+        /// Flag for whether or not the order should only use funds that are already
+        /// credited in the trader state. This saves gas.
         use_only_deposited_funds: bool,
 
         // Whether to track block or unix timestamp
@@ -82,9 +81,8 @@ pub enum OrderPacket {
         /// Client order id used to identify the order in the response to the client
         client_order_id: u128,
 
-        /// Flag for whether or not the order should only use funds that are already in the account.
-        /// Using only deposited funds will allow the trader to pass in less accounts per instruction and
-        /// save transaction space as well as compute. This is only for traders who have a seat
+        /// Flag for whether or not the order should only use funds that are already
+        /// credited in the trader state. This saves gas.
         use_only_deposited_funds: bool,
 
         // Whether to track block or unix timestamp
@@ -140,12 +138,11 @@ pub enum OrderPacket {
         /// Number of orders to match against. If set to `None`, there is no limit.
         match_limit: Option<u64>,
 
-        /// Client order id used to identify the order in the program's inner instruction data.
+        /// Client order id used to identify the order in the response to the client
         client_order_id: u128,
 
-        /// Flag for whether or not the order should only use funds that are already in the account.
-        /// Using only deposited funds will allow the trader to pass in less accounts per instruction and
-        /// save transaction space as well as compute. This is only for traders who have a seat
+        /// Flag for whether or not the order should only use funds that are already
+        /// credited in the trader state. This saves gas.
         use_only_deposited_funds: bool,
 
         // Whether to track block or unix timestamp
