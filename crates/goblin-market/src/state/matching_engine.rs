@@ -294,7 +294,7 @@ impl MatchingEngine<'_> {
             ..
         } = order_packet
         {
-            // If the subsequent order crosses too, set the price equal to the last price
+            // If the current order crosses too, set the price equal to the last price
             if let Some(last_order) = last_order {
                 let last_price = last_order.order_id.price_in_ticks;
 
@@ -1160,7 +1160,8 @@ impl MatchingEngine<'_> {
     /// # Arguments
     ///
     /// * `order_packet`
-    /// * `last_order` - The last order, if placing multiple post-only orders
+    /// * `last_order` - The last order, if placing multiple post-only orders. If order id
+    /// and expiry params match, then return the same order id as the last order.
     ///
     pub fn get_best_available_order_id(
         &mut self,
@@ -1170,6 +1171,8 @@ impl MatchingEngine<'_> {
         let price_in_ticks = order_packet.get_price_in_ticks();
         let side = order_packet.side();
 
+        // If the current and last order have the same order ID but different expiry
+        // params, then construct a virtual bitmap where bit for the previous order is turned on.
         let mut skip_bit_for_last_order = false;
 
         if let Some(OrderToInsert {
@@ -1178,6 +1181,8 @@ impl MatchingEngine<'_> {
         }) = last_order
         {
             if order_id.price_in_ticks == price_in_ticks {
+                // If expiry parameters are the same, then return same order id as
+                // the previous order so that the two orders can be merged.
                 if resting_order.track_block == order_packet.track_block()
                     && resting_order.last_valid_block_or_unix_timestamp_in_seconds
                         == order_packet.last_valid_block_or_unix_timestamp_in_seconds()

@@ -146,18 +146,19 @@ pub fn place_multiple_new_orders(
             let condensed_order = CondensedOrder::from(order_bytes);
 
             // Ensure orders are in correct order- descending for bids and ascending for asks
+            // Orders with same price are allowed.
+            // Orders with the same price and expiry parameters are combined
             if *side == Side::Bid {
-                // TODO allow orders with same order ID if expiry params differ
                 if let Some(last_order) = last_order {
                     require!(
-                        condensed_order.price_in_ticks < last_order.order_id.price_in_ticks,
+                        condensed_order.price_in_ticks <= last_order.order_id.price_in_ticks,
                         GoblinError::PricesNotInOrder(PricesNotInOrder {})
                     );
                 }
             } else {
                 if let Some(last_order) = last_order {
                     require!(
-                        condensed_order.price_in_ticks > last_order.order_id.price_in_ticks,
+                        condensed_order.price_in_ticks >= last_order.order_id.price_in_ticks,
                         GoblinError::PricesNotInOrder(PricesNotInOrder {})
                     );
                 }
