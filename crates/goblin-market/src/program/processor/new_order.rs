@@ -257,6 +257,23 @@ pub fn place_multiple_new_orders(
         }
     }
 
+    if !no_deposit {
+        maybe_invoke_deposit(
+            context,
+            QuoteAtomsRaw::from_lots(quote_lots_to_deposit).as_u256(),
+            QUOTE_TOKEN,
+            trader,
+        )?;
+        maybe_invoke_deposit(
+            context,
+            BaseAtomsRaw::from_lots(base_lots_to_deposit).as_u256(),
+            BASE_TOKEN,
+            trader,
+        )?;
+    }
+    // base_lots_to_deposit and quote_lots_to_deposit are guaranteed to be 0 in
+    // no deposit case. place_order_inner() checks for verify_no_deposit()
+
     Ok(())
 }
 

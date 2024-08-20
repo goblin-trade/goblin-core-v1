@@ -530,14 +530,10 @@ impl MatchingEngine<'_> {
             }
 
             // Check if trader has enough deposited funds to process the order
-            if !matching_engine_response.verify_no_deposit() {
-                // Trader does not have enough deposited funds to process order
-                return None;
-            }
-
-            // Check that the matching engine response does not withdraw any base or quote lots
-            if !matching_engine_response.verify_no_withdrawal() {
-                // Matching engine response withdraws base or quote lots
+            // and no tokens are withdrawn
+            if !matching_engine_response.verify_no_deposit()
+                || !matching_engine_response.verify_no_withdrawal()
+            {
                 return None;
             }
         }
