@@ -1,4 +1,4 @@
-use core::ops::Add;
+use core::ops::{Add, AddAssign};
 
 use stylus_sdk::{
     abi::AbiType,
@@ -50,7 +50,7 @@ impl Add for RestingOrderIndex {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 pub struct OrderId {
     /// Tick where order is placed
     pub price_in_ticks: Ticks,
@@ -106,6 +106,21 @@ pub struct SlotRestingOrder {
 
     pub track_block: bool,                                  // 1
     pub last_valid_block_or_unix_timestamp_in_seconds: u32, // 32
+}
+
+impl AddAssign for SlotRestingOrder {
+    /// Adds the `num_base_lots` of another `SlotRestingOrder` to this one.
+    ///
+    /// # Safety
+    /// You must ensure externally that both `SlotRestingOrder` instances
+    /// have the same `trader_address` and `last_valid_block_or_unix_timestamp_in_seconds`.
+    ///
+    /// # Arguments
+    /// * `other` - Another `SlotRestingOrder` whose `num_base_lots` will be added.
+    fn add_assign(&mut self, other: Self) {
+        // External validation required for address and expiry equality
+        self.num_base_lots += other.num_base_lots;
+    }
 }
 
 impl SlotRestingOrder {
@@ -219,17 +234,18 @@ impl SlotRestingOrder {
         Ok(())
     }
 
-    // pub fn remove(
-    //     &mut self,
-    //     trader_state: &mut TraderState,
-    //     trader: Address,
-    //     side: Side,
-    //     size: Option<BaseLots>,
-    //     order_is_expired: bool,
-    //     claim_funds: bool,
-    // ) -> Option<MatchingEngineResponse> {
-
-    // }
+    /// Adds the `num_base_lots` of another `SlotRestingOrder` to this one.
+    ///
+    /// # Safety
+    /// This function assumes that both `SlotRestingOrder` instances have the same `trader_address`
+    /// and `last_valid_block_or_unix_timestamp_in_seconds`. It does not check these fields.
+    ///
+    /// # Arguments
+    /// * `other` - A reference to the other `SlotRestingOrder` whose `num_base_lots` will be added.
+    pub fn merge_order(&mut self, other: &SlotRestingOrder) {
+        // External validation required for address and expiry equality
+        self.num_base_lots += other.num_base_lots;
+    }
 
     pub fn clear_order(&mut self) {
         // Gas optimization- set address to 0x1. This way the slot is not cleared

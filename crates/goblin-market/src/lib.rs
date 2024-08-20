@@ -77,9 +77,8 @@ impl GoblinMarket {
     /// * `bids`
     /// * `asks`
     /// * `failed_multiple_limit_order_behavior` - Trade behavior if one of the orders fails
-    /// * `tick_offset` - Specifies the number of ticks to adjust the price when the current price level (price_on_ticks)
-    /// has no available slots. This adjustment moves the order to a less aggressive price, further
-    /// away from the market center, in an attempt to find an available slot.
+    /// * `tick_offset` - Adjust the price by given number of ticks if there are no slots available
+    /// at current price. The entire TX fails if a single resting order can't be offsetted.
     /// * `client_order_id` - ID provided by trader to uniquely identify this order. It is only emitted
     /// in the event and has no impact on trades. Pass 0 as the default value.
     /// * `use_free_funds` - Whether to use free funds, or transfer new tokens in to place these orders

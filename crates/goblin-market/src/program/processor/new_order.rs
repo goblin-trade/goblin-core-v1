@@ -131,34 +131,36 @@ pub fn place_multiple_new_orders(
     let mut base_allowance_read = false;
     let mut quote_allowance_read = false;
 
-    // The last placed order. Used to optimize check_for_cross() and for finding the best
-    // available order ID for the current order.
+    // The last placed order. Used to
+    // - ensure orders are sorted
+    // - optimize check_for_cross() using sorted property
+    // - find the best available order ID for the current order
+    // - merge with the current order, if they have the same order ID and expiry params
     let mut last_order: Option<OrderToInsert> = None;
 
     // orders at centre of the book are placed first, then move away.
     // bids- descending order
     // asks- ascending order
-    for (book_orders, side, mut last_price) in [
-        (&bids, Side::Bid, Ticks::new(MAX_TICK)),
-        (&asks, Side::Ask, Ticks::new(0)),
-    ]
-    .iter()
-    {
+    for (book_orders, side) in [(&bids, Side::Bid), (&asks, Side::Ask)].iter() {
         for order_bytes in *book_orders {
             let condensed_order = CondensedOrder::from(order_bytes);
 
             // Ensure orders are in correct order- descending for bids and ascending for asks
             if *side == Side::Bid {
-                require!(
-                    condensed_order.price_in_ticks < last_price,
-                    GoblinError::PricesNotInOrder(PricesNotInOrder {})
-                );
+                // TODO allow orders with same order ID if expiry params differ
+                if let Some(last_order) = last_order {
+                    require!(
+                        condensed_order.price_in_ticks < last_order.order_id.price_in_ticks,
+                        GoblinError::PricesNotInOrder(PricesNotInOrder {})
+                    );
+                }
             } else {
-                require!(
-                    condensed_order.price_in_ticks > last_price,
-                    GoblinError::PricesNotInOrder(PricesNotInOrder {})
-                );
-
+                if let Some(last_order) = last_order {
+                    require!(
+                        condensed_order.price_in_ticks > last_order.order_id.price_in_ticks,
+                        GoblinError::PricesNotInOrder(PricesNotInOrder {})
+                    );
+                }
                 // Price can't exceed max
                 require!(
                     condensed_order.price_in_ticks <= Ticks::new(MAX_TICK),
@@ -208,12 +210,32 @@ pub fn place_multiple_new_orders(
                     )
                     .ok_or(GoblinError::NewOrderError(NewOrderError {}))?;
 
-                last_order = order_to_insert;
+                if let Some(ref mut last_order) = last_order {
+                    let new_order = order_to_insert.unwrap();
+
+                    if last_order.order_id == new_order.order_id {
+                        // Combine resting orders
+                        last_order
+                            .resting_order
+                            .merge_order(&new_order.resting_order);
+                    } else {
+                        // Write the old order to slot and cache the new order
+                        write_order(*last_order);
+                        *last_order = new_order;
+                    }
+                } else {
+                    last_order = order_to_insert;
+                }
 
                 matching_engine_response
             };
-            // finally set last price
-            last_price = condensed_order.price_in_ticks;
+
+            // Write the last order after the loop ends
+            if let Some(last_order_value) = last_order {
+                write_order(last_order_value);
+                // Clear the value. The bid should not be used in the asks loop.
+                last_order = None;
+            }
 
             let quote_lots_deposited =
                 matching_engine_response.get_deposit_amount_bid_in_quote_lots();
@@ -235,6 +257,10 @@ pub fn place_multiple_new_orders(
     }
 
     Ok(())
+}
+
+fn write_order(order: OrderToInsert) {
+    todo!()
 }
 
 /// Process a single, IOC, Post-only or limit order for both deposit and no-deposit cases
