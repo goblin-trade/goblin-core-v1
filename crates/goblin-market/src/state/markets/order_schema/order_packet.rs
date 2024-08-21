@@ -109,11 +109,11 @@ pub enum OrderPacket {
     ImmediateOrCancel {
         side: Side,
 
-        /// The most aggressive price an order can be matched at. For example, if there is an IOC buy order
+        /// The most aggressive (worst) price an order can be matched at. For example, if there is an IOC buy order
         /// to purchase 10 lots with the tick_per_lot parameter set to 10, then the order will never
-        /// be matched at a price higher than 10 quote ticks per base unit. If this value is None, then the order
-        /// is treated as a market order.
-        price_in_ticks: Option<Ticks>,
+        /// be matched at a price higher than 10 quote ticks per base unit.
+        /// To run a market order without price limit, pass u64::MAX for bids and 0 for asks.
+        price_in_ticks: Ticks,
 
         /// The number of base lots to fill against the order book. Either this parameter or the `num_quote_lots`
         /// parameter must be set to a nonzero value.
@@ -134,8 +134,8 @@ pub enum OrderPacket {
         /// How the matching engine should handle a self trade.
         self_trade_behavior: SelfTradeBehavior,
 
-        /// Number of orders to match against. If set to `None`, there is no limit.
-        match_limit: Option<u64>,
+        /// Number of orders to match against. Pass u64::MAX to have no limit (this is the default)
+        match_limit: u64,
 
         /// Client order id used to identify the order in the response to the client
         client_order_id: u128,
@@ -271,7 +271,7 @@ impl OrderPacket {
         match self {
             Self::PostOnly { .. } => u64::MAX,
             Self::Limit { match_limit, .. } => *match_limit,
-            Self::ImmediateOrCancel { match_limit, .. } => match_limit.unwrap_or(u64::MAX),
+            Self::ImmediateOrCancel { match_limit, .. } => *match_limit,
         }
     }
 
@@ -303,12 +303,7 @@ impl OrderPacket {
         match self {
             Self::PostOnly { price_in_ticks, .. } => *price_in_ticks,
             Self::Limit { price_in_ticks, .. } => *price_in_ticks,
-            Self::ImmediateOrCancel { price_in_ticks, .. } => {
-                price_in_ticks.unwrap_or(match self.side() {
-                    Side::Bid => Ticks::MAX,
-                    Side::Ask => Ticks::MIN,
-                })
-            }
+            Self::ImmediateOrCancel { price_in_ticks, .. } => *price_in_ticks,
         }
     }
 
@@ -325,7 +320,7 @@ impl OrderPacket {
             Self::ImmediateOrCancel {
                 price_in_ticks: old_price_in_ticks,
                 ..
-            } => *old_price_in_ticks = Some(price_in_ticks),
+            } => *old_price_in_ticks = price_in_ticks,
         }
     }
 

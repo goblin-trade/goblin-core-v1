@@ -17,7 +17,7 @@ use program::{
     processor::{deposit, fees, withdraw},
     reduce_multiple_orders,
 };
-use quantities::{BaseLots, Ticks, WrapperU64};
+use quantities::{BaseLots, QuoteLots, Ticks, WrapperU64};
 use state::{OrderPacket, SelfTradeBehavior, Side, SlotActions, SlotStorage, TraderState};
 use stylus_sdk::{
     alloy_primitives::{Address, FixedBytes, B256},
@@ -109,9 +109,90 @@ impl GoblinMarket {
         )
     }
 
+    /// Place an IOC order. This is also known as a taker order and swap.
+    ///
+    /// # Arguments
+    ///
+    /// * `is_bid`- Whether a bid or an ask
+    /// * `price_in_ticks` - The worst price against which the order can be matched against.
+    /// Matching stops if this price is reached. To run a market order without price limit,
+    /// pass u64::MAX for bids and 0 for asks.
+    /// * `num_lots_in` - Number of lots to be traded in.
+    /// * `min_lots_to_fill` - Minimum output lots to be filled.
+    /// * `self_trade_behavior` - How the matching engine should handle a self trade.
+    /// * `match_limit` - Number of orders to match against.
+    /// Pass u64::MAX to have no limit (this is the default)
+    /// * `client_order_id` - Client order id used to identify the order in the response to the client
+    /// * `track_block`
+    /// * `last_valid_block_or_unix_timestamp_in_seconds`
+    /// * `use_only_deposited_funds` - Whether to only use trader funds deposited with
+    /// the exchange, or whether to transfer in new tokens.
+    ///
+    pub fn place_ioc_order(
+        &mut self,
+        is_bid: bool,
+        price_in_ticks: u64,
+        num_lots_in: u64,
+        min_lots_to_fill: u64,
+        self_trade_behavior: u8,
+        match_limit: u64,
+        client_order_id: u128,
+        track_block: bool,
+        last_valid_block_or_unix_timestamp_in_seconds: u32,
+        use_only_deposited_funds: bool,
+    ) -> GoblinResult<()> {
+        let (num_base_lots, num_quote_lots, min_base_lots_to_fill, min_quote_lots_to_fill) =
+            if is_bid {
+                // bid (buy)- quote token in, base token out
+                (
+                    BaseLots::ZERO,
+                    QuoteLots::new(num_lots_in),
+                    BaseLots::new(min_lots_to_fill),
+                    QuoteLots::ZERO,
+                )
+            } else {
+                (
+                    BaseLots::new(num_lots_in),
+                    QuoteLots::ZERO,
+                    BaseLots::ZERO,
+                    QuoteLots::new(min_lots_to_fill),
+                )
+            };
+
+        let mut order_packet = OrderPacket::ImmediateOrCancel {
+            side: Side::from(is_bid),
+            price_in_ticks: Ticks::new(price_in_ticks),
+            num_base_lots,
+            num_quote_lots,
+            min_base_lots_to_fill,
+            min_quote_lots_to_fill,
+            self_trade_behavior: SelfTradeBehavior::from(self_trade_behavior),
+            match_limit,
+            client_order_id,
+            use_only_deposited_funds,
+            track_block,
+            last_valid_block_or_unix_timestamp_in_seconds,
+        };
+
+        process_new_order(self, &mut order_packet, msg::sender())
+    }
+
     /// Place a limit order on the book
     ///
     /// # Arguments
+    ///
+    /// * `is_bid`- Whether a bid or an ask
+    /// * `price_in_ticks`
+    /// * `num_base_lots`
+    /// * `self_trade_behavior`
+    /// * `match_limit`
+    /// * `client_order_id`
+    /// * `track_block`
+    /// * `last_valid_block_or_unix_timestamp_in_seconds`
+    /// * `fail_silently_on_insufficient_funds`
+    /// * `tick_offset`
+    /// * `use_only_deposited_funds` - Whether to only use trader funds deposited with
+    /// the exchange, or whether to transfer in new tokens.
     ///
     pub fn place_limit_order(
         &mut self,
@@ -125,6 +206,7 @@ impl GoblinMarket {
         last_valid_block_or_unix_timestamp_in_seconds: u32,
         fail_silently_on_insufficient_funds: bool,
         tick_offset: u8,
+        use_only_deposited_funds: bool,
     ) -> GoblinResult<()> {
         let mut order_packet = OrderPacket::Limit {
             side: Side::from(is_bid),
@@ -133,7 +215,52 @@ impl GoblinMarket {
             self_trade_behavior: SelfTradeBehavior::from(self_trade_behavior),
             match_limit,
             client_order_id,
-            use_only_deposited_funds: false,
+            use_only_deposited_funds,
+            track_block,
+            last_valid_block_or_unix_timestamp_in_seconds,
+            fail_silently_on_insufficient_funds,
+            tick_offset,
+        };
+
+        process_new_order(self, &mut order_packet, msg::sender())
+    }
+
+    /// Place a limit order on the book
+    ///
+    /// # Arguments
+    ///
+    /// * `is_bid`- Whether a bid or an ask
+    /// * `price_in_ticks`
+    /// * `num_base_lots`
+    /// * `fail_on_cross`
+    /// * `client_order_id`
+    /// * `track_block`
+    /// * `last_valid_block_or_unix_timestamp_in_seconds`
+    /// * `fail_silently_on_insufficient_funds`
+    /// * `tick_offset`
+    /// * `use_only_deposited_funds` - Whether to only use trader funds deposited with
+    /// the exchange, or whether to transfer in new tokens.
+    ///
+    pub fn place_post_only_order(
+        &mut self,
+        is_bid: bool,
+        price_in_ticks: u64,
+        num_base_lots: u64,
+        fail_on_cross: bool,
+        client_order_id: u128,
+        track_block: bool,
+        last_valid_block_or_unix_timestamp_in_seconds: u32,
+        fail_silently_on_insufficient_funds: bool,
+        tick_offset: u8,
+        use_only_deposited_funds: bool,
+    ) -> GoblinResult<()> {
+        let mut order_packet = OrderPacket::PostOnly {
+            side: Side::from(is_bid),
+            price_in_ticks: Ticks::new(price_in_ticks),
+            num_base_lots: BaseLots::new(num_base_lots),
+            client_order_id,
+            fail_on_cross,
+            use_only_deposited_funds,
             track_block,
             last_valid_block_or_unix_timestamp_in_seconds,
             fail_silently_on_insufficient_funds,

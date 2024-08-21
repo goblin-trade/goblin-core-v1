@@ -1352,48 +1352,6 @@ pub struct ReduceOrderInnerResponse {
     pub should_remove_order_from_book: bool,
 }
 
-fn order_packet_has_sufficient_funds(
-    context: &GoblinMarket,
-    order_packet: &OrderPacket,
-    trader: Address,
-    base_lots_available: &mut BaseLots,
-    quote_lots_available: &mut QuoteLots,
-    base_allowance_read: &mut bool,
-    quote_allowance_read: &mut bool,
-) -> bool {
-    match order_packet.side() {
-        Side::Ask => {
-            if *base_lots_available < order_packet.num_base_lots() {
-                // Lazy load available approved balance for base token
-                if !*base_allowance_read {
-                    *base_lots_available += get_available_base_lots(context, trader);
-                    *base_allowance_read = true;
-                }
-
-                return *base_lots_available >= order_packet.num_base_lots();
-            }
-        }
-        Side::Bid => {
-            let quote_lots_required = order_packet.get_price_in_ticks()
-                * TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT
-                * order_packet.num_base_lots()
-                / BASE_LOTS_PER_BASE_UNIT;
-
-            if *quote_lots_available < quote_lots_required {
-                // Lazy load available approved balance for quote token
-                if !*quote_allowance_read {
-                    *quote_lots_available += get_available_quote_lots(context, trader);
-
-                    *quote_allowance_read = true;
-                }
-
-                return *quote_lots_available >= quote_lots_required;
-            }
-        }
-    }
-    true
-}
-
 /// Adjusted quote lots, rounded up to the nearest multiple of base_lots_per_base_unit
 pub fn round_adjusted_quote_lots_up(
     num_adjusted_quote_lots: AdjustedQuoteLots,
