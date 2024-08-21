@@ -574,7 +574,7 @@ impl MatchingEngine<'_> {
             return Ok(());
         }
 
-        let mut last_outer_index = None;
+        let mut last_outer_index: Option<OuterIndex> = None;
         let mut bitmap_group = BitmapGroup::default();
 
         // Process orders and handle bitmap updates

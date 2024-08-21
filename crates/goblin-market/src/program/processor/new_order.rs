@@ -179,13 +179,6 @@ pub fn place_multiple_new_orders(
                 matching_engine_response
             };
 
-            // Write the last order after the loop ends
-            if let Some(last_order_value) = last_order {
-                write_order(last_order_value);
-                // Clear the value. The bid should not be used in the asks loop.
-                last_order = None;
-            }
-
             let quote_lots_deposited =
                 matching_engine_response.get_deposit_amount_bid_in_quote_lots();
             let base_lots_deposited =
@@ -202,6 +195,12 @@ pub fn place_multiple_new_orders(
 
             quote_lots_to_deposit += quote_lots_deposited;
             base_lots_to_deposit += base_lots_deposited;
+        }
+        // Write the last order after the loop ends
+        if let Some(last_order_value) = last_order {
+            write_order(last_order_value);
+            // Clear the value. The bid should not be used in the asks loop.
+            last_order = None;
         }
     }
 
