@@ -3,11 +3,10 @@ use crate::state::SlotStorage;
 use super::{ListKey, ListSlot, OuterIndex};
 
 pub struct IndexListIterator<'a> {
-    pub outer_index_count: u16,
     pub slot_storage: &'a mut SlotStorage, // Reference to the slot storage
     pub slot_index: u16,
     pub relative_index: u16,
-    pub current_index: u16,
+    pub last_element_read: bool,
     pub list_slot: Option<ListSlot>, // Cache the current list_slot
 }
 
@@ -17,12 +16,11 @@ impl<'a> IndexListIterator<'a> {
         let relative_index = (outer_index_count - 1) % 16;
 
         Self {
-            outer_index_count,
             slot_storage,
             slot_index,
             relative_index,
-            current_index: outer_index_count,
-            list_slot: None, // Initialize with None
+            last_element_read: false, // Initialize with false
+            list_slot: None,          // Initialize with None
         }
     }
 }
@@ -31,12 +29,10 @@ impl<'a> Iterator for IndexListIterator<'a> {
     type Item = (u16, u16, OuterIndex, ListSlot);
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.current_index == 0 {
+        // Check if all elements have been read
+        if self.last_element_read {
             return None;
         }
-
-        // Decrement current index
-        self.current_index -= 1;
 
         // Check if we need to load a new list_slot
         if self.list_slot.is_none() || self.relative_index == 15 {
@@ -64,8 +60,10 @@ impl<'a> Iterator for IndexListIterator<'a> {
         if self.relative_index == 0 {
             if self.slot_index > 0 {
                 self.slot_index -= 1;
+                self.relative_index = 15;
+            } else {
+                self.last_element_read = true; // Mark that the last element has been read
             }
-            self.relative_index = 15;
         } else {
             self.relative_index -= 1;
         }
