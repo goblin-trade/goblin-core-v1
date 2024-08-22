@@ -55,7 +55,7 @@ impl SlotKey for ListKey {
     }
 }
 
-#[derive(Default, Debug, Clone, Copy)]
+#[derive(Default, Debug, Clone, Copy, PartialEq)]
 pub struct ListSlot {
     pub inner: [u16; 16],
 }
