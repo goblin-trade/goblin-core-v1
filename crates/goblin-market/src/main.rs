@@ -1,4 +1,4 @@
-#![cfg_attr(not(feature = "export-abi"), no_main)]
+#![cfg_attr(all(not(feature = "export-abi"), not(test)), no_main)]
 
 #[cfg(feature = "export-abi")]
 fn main() {
