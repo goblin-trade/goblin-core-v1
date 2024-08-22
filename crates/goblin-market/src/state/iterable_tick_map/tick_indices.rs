@@ -49,7 +49,7 @@ impl Ticks {
 }
 
 /// Key to fetch a Bitmap group. A Bitmap consists of multiple Bitmaps
-#[derive(Clone, Copy, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, PartialEq, PartialOrd, Debug)]
 #[repr(transparent)]
 pub struct OuterIndex {
     /// Index of bitmap group
