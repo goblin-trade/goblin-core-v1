@@ -1,6 +1,7 @@
 use core::ops::AddAssign;
 use core::ops::SubAssign;
 
+use crate::state::Side;
 use crate::{
     quantities::{Ticks, WrapperU64},
     state::{SlotKey, BITMAP_GROUP_SEED},
@@ -79,6 +80,13 @@ impl OuterIndex {
 
     pub fn as_u16(&self) -> u16 {
         self.inner
+    }
+
+    pub fn is_closer_to_center(&self, side: Side, other: OuterIndex) -> bool {
+        match side {
+            Side::Bid => other > *self,
+            Side::Ask => other < *self,
+        }
     }
 }
 
