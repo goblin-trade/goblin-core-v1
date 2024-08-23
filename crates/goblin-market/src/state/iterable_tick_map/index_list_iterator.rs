@@ -4,42 +4,35 @@ use super::{ListKey, ListSlot, OuterIndex};
 
 pub struct IndexListIterator<'a> {
     pub slot_storage: &'a mut SlotStorage, // Reference to the slot storage
-    pub slot_index: u16,
-    pub relative_index: u16,
-    pub last_element_read: bool,
-    pub list_slot: Option<ListSlot>, // Cache the current list_slot
+    pub outer_index_count: u16,            // Remaining elements to iterate
+    pub list_slot: Option<ListSlot>,       // Cache the current list_slot
 }
 
 impl<'a> IndexListIterator<'a> {
     pub fn new(outer_index_count: u16, slot_storage: &'a mut SlotStorage) -> Self {
-        let slot_index = (outer_index_count - 1) / 16;
-        let relative_index = (outer_index_count - 1) % 16;
-
         Self {
             slot_storage,
-            slot_index,
-            relative_index,
-            last_element_read: false, // Initialize with false
-            list_slot: None,          // Initialize with None
+            outer_index_count,
+            list_slot: None, // Initialize with None
         }
     }
 }
 
 impl<'a> Iterator for IndexListIterator<'a> {
-    // Slot index, relative index, list slot for the outer index, and the outer index itself
     type Item = (u16, u16, ListSlot, OuterIndex);
 
     fn next(&mut self) -> Option<Self::Item> {
-        // Check if all elements have been read
-        if self.last_element_read {
-            return None;
+        if self.outer_index_count == 0 {
+            return None; // End iteration if no elements left
         }
 
+        // Calculate slot index and relative index
+        let slot_index = (self.outer_index_count - 1) / 16;
+        let relative_index = (self.outer_index_count - 1) % 16;
+
         // Check if we need to load a new list_slot
-        if self.list_slot.is_none() || self.relative_index == 15 {
-            let list_key = ListKey {
-                index: self.slot_index,
-            };
+        if self.list_slot.is_none() || relative_index == 15 {
+            let list_key = ListKey { index: slot_index };
             self.list_slot = Some(ListSlot::new_from_slot(self.slot_storage, list_key));
         }
 
@@ -47,27 +40,13 @@ impl<'a> Iterator for IndexListIterator<'a> {
         let list_slot = self.list_slot.as_ref().unwrap();
 
         // Read the outer index from the list slot
-        let current_outer_index = list_slot.get(self.relative_index as usize);
+        let current_outer_index = list_slot.get(relative_index as usize);
 
-        // Save the current slot_index and relative_index to return
-        let result = (
-            self.slot_index,
-            self.relative_index,
-            *list_slot,
-            current_outer_index,
-        );
+        // Prepare the result
+        let result = (slot_index, relative_index, *list_slot, current_outer_index);
 
-        // Update relative_index and slot_index for next iteration
-        if self.relative_index == 0 {
-            if self.slot_index > 0 {
-                self.slot_index -= 1;
-                self.relative_index = 15;
-            } else {
-                self.last_element_read = true; // Mark that the last element has been read
-            }
-        } else {
-            self.relative_index -= 1;
-        }
+        // Decrement the outer_index_count for the next iteration
+        self.outer_index_count -= 1;
 
         Some(result)
     }
@@ -79,6 +58,14 @@ mod tests {
 
     use super::*;
 
+    #[test]
+    fn test_empty_list() {
+        let mut slot_storage = SlotStorage::new();
+        let outer_index_count = 0;
+        let mut iterator = IndexListIterator::new(outer_index_count, &mut slot_storage);
+
+        assert!(iterator.next().is_none());
+    }
     #[test]
     fn test_iterator_single_slot() {
         let mut slot_storage = SlotStorage::new();

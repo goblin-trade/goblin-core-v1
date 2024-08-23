@@ -1,5 +1,6 @@
 pub mod bitmap;
 pub mod constants;
+pub mod index_inserter;
 pub mod index_list;
 pub mod index_list_iterator;
 pub mod insert_orders;
@@ -10,6 +11,7 @@ pub mod tick_indices;
 
 pub use bitmap::*;
 pub use constants::*;
+pub use index_inserter::*;
 pub use index_list::*;
 pub use index_list_iterator::*;
 pub use insert_orders::*;
