@@ -62,70 +62,50 @@ impl<'a> IndexListInsertion<'a> {
         true
     }
 
-    // fn is_closer_to_center(
-    //     &self,
-    //     current_outer_index: OuterIndex,
-    //     new_outer_index: OuterIndex,
-    // ) -> bool {
-    //     match self.side {
-    //         Side::Bid => new_outer_index > current_outer_index,
-    //         Side::Ask => new_outer_index < current_outer_index,
-    //     }
-    // }
+    /// Write cached indices to slot
+    ///
+    /// This must be called after calling prepare() atlreast once, else the function fails
+    /// because index_list_iterator.list_slot.unwrap() will throw error
+    ///
+    pub fn commit(&mut self) {
+        if self.cache.is_empty() {
+            return;
+        }
 
-    // pub fn commit(&mut self) {
-    //     let mut current_slot_index = self.index_list_iterator.slot_index;
-    //     let mut current_relative_index = self.index_list_iterator.relative_index;
+        let start_slot_index = self.index_list_iterator.outer_index_count / 16;
+        // let mut start_relative_index = self.index_list_iterator.outer_index_count % 16;
 
-    //     let mut current_list_slot =
-    //         self.index_list_iterator
-    //             .list_slot
-    //             .take()
-    //             .unwrap_or_else(|| {
-    //                 ListSlot::new_from_slot(
-    //                     self.index_list_iterator.slot_storage,
-    //                     ListKey {
-    //                         index: current_slot_index as u16,
-    //                     },
-    //                 )
-    //             });
+        let size_after_insertions =
+            self.index_list_iterator.outer_index_count + self.cache.len() as u16;
 
-    //     for &outer_index in self.cache.iter().rev() {
-    //         // Set the value in the current list slot
-    //         current_list_slot.set(current_relative_index as usize, outer_index);
+        let final_slot_index_inclusive = (size_after_insertions - 1) / 16;
 
-    //         // Move to the next index position
-    //         if current_relative_index == 0 {
-    //             // Write the current slot to storage
-    //             current_list_slot.write_to_slot(
-    //                 self.index_list_iterator.slot_storage,
-    //                 &ListKey {
-    //                     index: current_slot_index as u16,
-    //                 },
-    //             );
+        for slot_index in start_slot_index..=final_slot_index_inclusive {
+            let (mut list_slot, start_relative_index) = if slot_index == start_slot_index {
+                (
+                    self.index_list_iterator.list_slot.unwrap(),
+                    self.index_list_iterator.outer_index_count % 16,
+                )
+            } else {
+                (ListSlot::default(), 0)
+            };
 
-    //             // Move to the previous slot
-    //             current_slot_index -= 1;
-    //             current_relative_index = 15;
+            let final_relative_index_inclusive = if slot_index == final_slot_index_inclusive - 1 {
+                (size_after_insertions - 1) % 16
+            } else {
+                16
+            };
 
-    //             // Load or create a new slot
-    //             current_list_slot = ListSlot::default();
-    //         } else {
-    //             current_relative_index -= 1;
-    //         }
-    //     }
+            for relative_index in start_relative_index..=final_relative_index_inclusive {
+                list_slot.set(relative_index as usize, self.cache.pop().unwrap());
+            }
 
-    //     // Write the last slot if needed
-    //     current_list_slot.write_to_slot(
-    //         self.index_list_iterator.slot_storage,
-    //         &ListKey {
-    //             index: current_slot_index as u16,
-    //         },
-    //     );
-
-    //     // Clear the cache
-    //     self.cache.clear();
-    // }
+            list_slot.write_to_slot(
+                self.index_list_iterator.slot_storage,
+                &ListKey { index: slot_index },
+            );
+        }
+    }
 }
 
 #[cfg(test)]
