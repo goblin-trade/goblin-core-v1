@@ -10,8 +10,9 @@ use crate::{
     quantities::{BaseAtomsRaw, BaseLots, QuoteAtomsRaw, QuoteLots, Ticks, WrapperU64, MAX_TICK},
     require,
     state::{
-        MarketState, MatchingEngine, MatchingEngineResponse, OrderId, OrderPacket,
-        OrderPacketMetadata, Side, SlotActions, SlotRestingOrder, SlotStorage, TraderState,
+        index_inserter, IndexListInsertion, MarketState, MatchingEngine, MatchingEngineResponse,
+        OrderId, OrderPacket, OrderPacketMetadata, Side, SlotActions, SlotRestingOrder,
+        SlotStorage, TraderState,
     },
     GoblinMarket,
 };
@@ -90,7 +91,15 @@ pub fn place_multiple_new_orders(
     // orders at centre of the book are placed first, then move away.
     // bids- descending order
     // asks- ascending order
-    for (book_orders, side) in [(&bids, Side::Bid), (&asks, Side::Ask)].iter() {
+    for (book_orders, side, outer_index_count) in [
+        (&bids, Side::Bid, market_state.bids_outer_indices),
+        (&asks, Side::Ask, market_state.asks_outer_indices),
+    ]
+    .iter()
+    {
+        let mut order_inserter =
+            IndexListInsertion::new(*side, *outer_index_count, matching_engine.slot_storage);
+
         for order_bytes in *book_orders {
             let condensed_order = CondensedOrder::from(order_bytes);
 
@@ -168,8 +177,14 @@ pub fn place_multiple_new_orders(
                             .resting_order
                             .merge_order(&new_order.resting_order);
                     } else {
-                        // Write the old order to slot and cache the new order
-                        write_order(*last_order);
+                        // TODO Write the old order to slot and cache the new order
+                        order_inserter.insert_resting_order(
+                            &mut market_state,
+                            &last_order.resting_order,
+                            &last_order.order_id,
+                        );
+
+                        write_resting_order(*last_order);
                         *last_order = new_order;
                     }
                 } else {
@@ -198,7 +213,7 @@ pub fn place_multiple_new_orders(
         }
         // Write the last order after the loop ends
         if let Some(last_order_value) = last_order {
-            write_order(last_order_value);
+            write_resting_order(last_order_value);
             // Clear the value. The bid should not be used in the asks loop.
             last_order = None;
         }
@@ -222,10 +237,6 @@ pub fn place_multiple_new_orders(
     // no deposit case. place_order_inner() checks for verify_no_deposit()
 
     Ok(())
-}
-
-fn write_order(order: OrderToInsert) {
-    todo!()
 }
 
 /// Process a single, IOC, Post-only or limit order for both deposit and no-deposit cases
@@ -336,4 +347,8 @@ pub fn process_new_order(
     }
 
     Ok(())
+}
+
+fn write_resting_order(order: OrderToInsert) {
+    todo!()
 }

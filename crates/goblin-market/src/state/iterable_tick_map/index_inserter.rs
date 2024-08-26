@@ -1,5 +1,5 @@
-use super::{IndexListIterator, ListKey, ListSlot, OuterIndex};
-use crate::state::{Side, SlotStorage};
+use super::{IndexListIterator, ListKey, ListSlot, OrderId, OuterIndex, SlotRestingOrder};
+use crate::state::{MarketState, Side, SlotStorage};
 use alloc::vec::Vec;
 
 pub struct IndexListInsertion<'a> {
@@ -17,6 +17,14 @@ impl<'a> IndexListInsertion<'a> {
             cache: Vec::new(),
             side,
         }
+    }
+
+    pub fn insert_resting_order(
+        &mut self,
+        market_state: &mut MarketState,
+        resting_order: &SlotRestingOrder,
+        order_id: &OrderId,
+    ) {
     }
 
     pub fn prepare(&mut self, outer_index: OuterIndex) -> bool {
