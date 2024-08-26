@@ -10,7 +10,7 @@ pub struct IndexListInsertion<'a> {
 
 impl<'a> IndexListInsertion<'a> {
     pub fn new(side: Side, outer_index_count: u16, slot_storage: &'a mut SlotStorage) -> Self {
-        let index_list_iterator = IndexListIterator::new(outer_index_count, slot_storage);
+        let index_list_iterator = IndexListIterator::new(outer_index_count, side, slot_storage);
 
         Self {
             index_list_iterator,
@@ -78,6 +78,7 @@ impl<'a> IndexListInsertion<'a> {
 ///
 pub fn write_prepared_indices(
     slot_storage: &mut SlotStorage,
+    side: Side,
     cache: &mut Vec<OuterIndex>,
     unread_count: u16,
     first_list_slot: ListSlot,
@@ -109,7 +110,13 @@ pub fn write_prepared_indices(
             list_slot.set(relative_index as usize, outer_index);
         }
 
-        list_slot.write_to_slot(slot_storage, &ListKey { index: slot_index });
+        list_slot.write_to_slot(
+            slot_storage,
+            &ListKey {
+                index: slot_index,
+                side,
+            },
+        );
     }
 }
 
@@ -161,7 +168,13 @@ mod tests {
         {
             let mut list_slot = ListSlot::default();
             list_slot.set(0, OuterIndex::new(100));
-            list_slot.write_to_slot(&mut slot_storage, &ListKey { index: 0 });
+            list_slot.write_to_slot(
+                &mut slot_storage,
+                &ListKey {
+                    index: 0,
+                    side: Side::Bid,
+                },
+            );
         }
 
         let mut insertion = IndexListInsertion::new(Side::Bid, 1, &mut slot_storage);
@@ -179,7 +192,13 @@ mod tests {
         {
             let mut list_slot = ListSlot::default();
             list_slot.set(0, OuterIndex::new(100));
-            list_slot.write_to_slot(&mut slot_storage, &ListKey { index: 0 });
+            list_slot.write_to_slot(
+                &mut slot_storage,
+                &ListKey {
+                    index: 0,
+                    side: Side::Bid,
+                },
+            );
         }
 
         let mut insertion = IndexListInsertion::new(Side::Bid, 1, &mut slot_storage);
@@ -200,7 +219,13 @@ mod tests {
         {
             let mut list_slot = ListSlot::default();
             list_slot.set(0, OuterIndex::new(100));
-            list_slot.write_to_slot(&mut slot_storage, &ListKey { index: 0 });
+            list_slot.write_to_slot(
+                &mut slot_storage,
+                &ListKey {
+                    index: 0,
+                    side: Side::Bid,
+                },
+            );
         }
 
         let mut insertion = IndexListInsertion::new(Side::Bid, 1, &mut slot_storage);
@@ -248,15 +273,16 @@ mod tests {
     #[test]
     fn test_prepare_ask_equal_index() {
         let mut slot_storage = SlotStorage::new();
+        let side = Side::Ask;
 
         // Setup the initial slot storage with one item
         {
             let mut list_slot = ListSlot::default();
             list_slot.set(0, OuterIndex::new(100));
-            list_slot.write_to_slot(&mut slot_storage, &ListKey { index: 0 });
+            list_slot.write_to_slot(&mut slot_storage, &ListKey { index: 0, side });
         }
 
-        let mut insertion = IndexListInsertion::new(Side::Ask, 1, &mut slot_storage);
+        let mut insertion = IndexListInsertion::new(side, 1, &mut slot_storage);
 
         // Attempt to insert the same index
         assert!(!insertion.prepare(OuterIndex::new(100)));
@@ -266,15 +292,16 @@ mod tests {
     #[test]
     fn test_prepare_ask_closer_to_center() {
         let mut slot_storage = SlotStorage::new();
+        let side = Side::Ask;
 
         // Setup the initial slot storage with one item
         {
             let mut list_slot = ListSlot::default();
             list_slot.set(0, OuterIndex::new(100));
-            list_slot.write_to_slot(&mut slot_storage, &ListKey { index: 0 });
+            list_slot.write_to_slot(&mut slot_storage, &ListKey { index: 0, side });
         }
 
-        let mut insertion = IndexListInsertion::new(Side::Ask, 1, &mut slot_storage);
+        let mut insertion = IndexListInsertion::new(side, 1, &mut slot_storage);
 
         // Insert an index closer to the center
         assert!(insertion.prepare(OuterIndex::new(50)));
@@ -287,15 +314,16 @@ mod tests {
     #[test]
     fn test_prepare_ask_away_from_center() {
         let mut slot_storage = SlotStorage::new();
+        let side = Side::Ask;
 
         // Setup the initial slot storage with one item
         {
             let mut list_slot = ListSlot::default();
             list_slot.set(0, OuterIndex::new(100));
-            list_slot.write_to_slot(&mut slot_storage, &ListKey { index: 0 });
+            list_slot.write_to_slot(&mut slot_storage, &ListKey { index: 0, side });
         }
 
-        let mut insertion = IndexListInsertion::new(Side::Ask, 1, &mut slot_storage);
+        let mut insertion = IndexListInsertion::new(side, 1, &mut slot_storage);
 
         // Insert an index further away from the center
         assert!(insertion.prepare(OuterIndex::new(150)));
@@ -313,11 +341,18 @@ mod tests {
         let mut cache = vec![OuterIndex::new(1), OuterIndex::new(2), OuterIndex::new(3)];
         let unread_count = 0;
         let first_list_slot = ListSlot::default();
+        let side = Side::Ask;
 
-        write_prepared_indices(&mut slot_storage, &mut cache, unread_count, first_list_slot);
+        write_prepared_indices(
+            &mut slot_storage,
+            side,
+            &mut cache,
+            unread_count,
+            first_list_slot,
+        );
 
         // Validate the contents of the first slot
-        let result_slot = ListSlot::new_from_slot(&slot_storage, ListKey { index: 0 });
+        let result_slot = ListSlot::new_from_slot(&slot_storage, ListKey { index: 0, side });
         assert_eq!(result_slot.get(0), OuterIndex::new(3));
         assert_eq!(result_slot.get(1), OuterIndex::new(2));
         assert_eq!(result_slot.get(2), OuterIndex::new(1));
@@ -329,17 +364,30 @@ mod tests {
     #[test]
     fn test_write_prepared_indices_with_unread_count() {
         let mut slot_storage = SlotStorage::new();
+        let side = Side::Bid;
         let mut first_list_slot = ListSlot::default();
         first_list_slot.set(0, OuterIndex::new(100)); // Existing unread index
-        first_list_slot.write_to_slot(&mut slot_storage, &ListKey { index: 0 });
+        first_list_slot.write_to_slot(
+            &mut slot_storage,
+            &ListKey {
+                index: 0,
+                side: Side::Bid,
+            },
+        );
 
         let mut cache = vec![OuterIndex::new(300), OuterIndex::new(200)];
         let unread_count = 1;
 
-        write_prepared_indices(&mut slot_storage, &mut cache, unread_count, first_list_slot);
+        write_prepared_indices(
+            &mut slot_storage,
+            side,
+            &mut cache,
+            unread_count,
+            first_list_slot,
+        );
 
         // Validate the contents of the first slot
-        let result_slot = ListSlot::new_from_slot(&slot_storage, ListKey { index: 0 });
+        let result_slot = ListSlot::new_from_slot(&slot_storage, ListKey { index: 0, side });
         assert_eq!(result_slot.get(0), OuterIndex::new(100)); // Unread index
         assert_eq!(result_slot.get(1), OuterIndex::new(200));
         assert_eq!(result_slot.get(2), OuterIndex::new(300));
@@ -351,6 +399,8 @@ mod tests {
     #[test]
     fn test_write_prepared_indices_multi_slot() {
         let mut slot_storage = SlotStorage::new();
+        let side = Side::Ask;
+
         let mut cache = vec![
             OuterIndex::new(1),
             OuterIndex::new(2),
@@ -375,16 +425,22 @@ mod tests {
         let unread_count = 0;
         let first_list_slot = ListSlot::default();
 
-        write_prepared_indices(&mut slot_storage, &mut cache, unread_count, first_list_slot);
+        write_prepared_indices(
+            &mut slot_storage,
+            side,
+            &mut cache,
+            unread_count,
+            first_list_slot,
+        );
 
         // Validate the contents of the first slot
-        let result_slot_0 = ListSlot::new_from_slot(&slot_storage, ListKey { index: 0 });
+        let result_slot_0 = ListSlot::new_from_slot(&slot_storage, ListKey { index: 0, side });
         for i in 0..16 {
             assert_eq!(result_slot_0.get(i), OuterIndex::new(19 - i as u16));
         }
 
         // Validate the contents of the second slot
-        let result_slot_1 = ListSlot::new_from_slot(&slot_storage, ListKey { index: 1 });
+        let result_slot_1 = ListSlot::new_from_slot(&slot_storage, ListKey { index: 1, side });
         assert_eq!(result_slot_1.get(0), OuterIndex::new(3));
         assert_eq!(result_slot_1.get(1), OuterIndex::new(2));
         assert_eq!(result_slot_1.get(2), OuterIndex::new(1));
@@ -396,13 +452,18 @@ mod tests {
     #[test]
     fn test_write_prepared_indices_multi_slot_with_slot_0_partially_full() {
         let mut slot_storage = SlotStorage::new();
+        let side = Side::Ask;
+
+        let slot_key_0 = ListKey { index: 0, side };
+        let slot_key_1 = ListKey { index: 1, side };
 
         // Prepopulate the first slot with some existing values (partially full)
         let mut first_list_slot = ListSlot::default();
+
         for i in 0..8 {
             first_list_slot.set(i, OuterIndex::new(100 + i as u16));
         }
-        first_list_slot.write_to_slot(&mut slot_storage, &ListKey { index: 0 });
+        first_list_slot.write_to_slot(&mut slot_storage, &slot_key_0);
 
         let mut cache = vec![
             OuterIndex::new(1),
@@ -421,10 +482,16 @@ mod tests {
         let unread_count = 8; // 8 unread items are already in slot 0
 
         // Write the cache to the slot storage
-        write_prepared_indices(&mut slot_storage, &mut cache, unread_count, first_list_slot);
+        write_prepared_indices(
+            &mut slot_storage,
+            side,
+            &mut cache,
+            unread_count,
+            first_list_slot,
+        );
 
         // Validate the contents of the first slot
-        let result_slot_0 = ListSlot::new_from_slot(&slot_storage, ListKey { index: 0 });
+        let result_slot_0 = ListSlot::new_from_slot(&slot_storage, slot_key_0);
         // First 8 elements should be untouched
         for i in 0..8 {
             assert_eq!(result_slot_0.get(i), OuterIndex::new(100 + i as u16));
@@ -435,7 +502,7 @@ mod tests {
         }
 
         // Validate there are no additional slots written
-        let result_slot_1 = ListSlot::new_from_slot(&slot_storage, ListKey { index: 1 });
+        let result_slot_1 = ListSlot::new_from_slot(&slot_storage, slot_key_1);
         for i in 0..4 {
             assert_eq!(result_slot_1.get(i), OuterIndex::new(4 - i as u16));
         }
@@ -448,13 +515,17 @@ mod tests {
     #[test]
     fn test_write_prepared_indices_multi_slot_with_slot_0_completely_full() {
         let mut slot_storage = SlotStorage::new();
+        let side = Side::Ask;
+        let slot_key_0 = ListKey { index: 0, side };
+        let slot_key_1 = ListKey { index: 1, side };
+        let slot_key_2 = ListKey { index: 2, side };
 
         // Prepopulate the first slot with some existing values (completely full)
         let mut first_list_slot = ListSlot::default();
         for i in 0..16 {
             first_list_slot.set(i, OuterIndex::new(100 + i as u16));
         }
-        first_list_slot.write_to_slot(&mut slot_storage, &ListKey { index: 0 });
+        first_list_slot.write_to_slot(&mut slot_storage, &slot_key_0);
 
         let mut cache = vec![
             OuterIndex::new(1),
@@ -494,30 +565,39 @@ mod tests {
         let unread_count = 16;
 
         // Write the cache to the slot storage
-        write_prepared_indices(&mut slot_storage, &mut cache, unread_count, first_list_slot);
+        write_prepared_indices(
+            &mut slot_storage,
+            side,
+            &mut cache,
+            unread_count,
+            first_list_slot,
+        );
 
         // Validate the contents of the first slot
-        let result_slot_0 = ListSlot::new_from_slot(&slot_storage, ListKey { index: 0 });
+        let result_slot_0 = ListSlot::new_from_slot(&slot_storage, slot_key_0);
         for i in 0..16 {
             assert_eq!(result_slot_0.get(i), OuterIndex::new(100 + i as u16)); // Descending order
         }
 
         // Validate the contents of the second slot
-        let result_slot_1 = ListSlot::new_from_slot(&slot_storage, ListKey { index: 1 });
+        let result_slot_1 = ListSlot::new_from_slot(&slot_storage, slot_key_1);
         for i in 0..16 {
             assert_eq!(result_slot_1.get(i), OuterIndex::new(32 - i as u16));
         }
 
         // Validate the contents of the third slot
-        let result_slot_1 = ListSlot::new_from_slot(&slot_storage, ListKey { index: 2 });
+        let result_slot_2 = ListSlot::new_from_slot(&slot_storage, slot_key_2);
         for i in 0..16 {
-            assert_eq!(result_slot_1.get(i), OuterIndex::new(16 - i as u16));
+            assert_eq!(result_slot_2.get(i), OuterIndex::new(16 - i as u16));
         }
     }
 
     #[test]
     fn test_write_prepared_indices_edge_case_exact_slot() {
         let mut slot_storage = SlotStorage::new();
+        let side = Side::Ask;
+        let slot_key_0 = ListKey { index: 0, side };
+
         let mut cache = vec![
             OuterIndex::new(1),
             OuterIndex::new(2),
@@ -539,10 +619,16 @@ mod tests {
         let unread_count = 0;
         let first_list_slot = ListSlot::default();
 
-        write_prepared_indices(&mut slot_storage, &mut cache, unread_count, first_list_slot);
+        write_prepared_indices(
+            &mut slot_storage,
+            side,
+            &mut cache,
+            unread_count,
+            first_list_slot,
+        );
 
         // Validate the contents of the first slot
-        let result_slot = ListSlot::new_from_slot(&slot_storage, ListKey { index: 0 });
+        let result_slot = ListSlot::new_from_slot(&slot_storage, slot_key_0);
         for i in 0..16 {
             assert_eq!(result_slot.get(i), OuterIndex::new(16 - i as u16));
         }
@@ -551,17 +637,26 @@ mod tests {
     #[test]
     fn test_write_prepared_indices_empty_cache() {
         let mut slot_storage = SlotStorage::new();
+        let side = Side::Ask;
+        let slot_key_0 = ListKey { index: 0, side };
+
         let mut first_list_slot = ListSlot::default();
         first_list_slot.set(0, OuterIndex::new(100)); // Existing unread index
-        first_list_slot.write_to_slot(&mut slot_storage, &ListKey { index: 0 });
+        first_list_slot.write_to_slot(&mut slot_storage, &slot_key_0);
 
         let mut cache = vec![];
         let unread_count = 1;
 
-        write_prepared_indices(&mut slot_storage, &mut cache, unread_count, first_list_slot);
+        write_prepared_indices(
+            &mut slot_storage,
+            side,
+            &mut cache,
+            unread_count,
+            first_list_slot,
+        );
 
         // Validate that nothing has changed
-        let result_slot = ListSlot::new_from_slot(&slot_storage, ListKey { index: 0 });
+        let result_slot = ListSlot::new_from_slot(&slot_storage, slot_key_0);
         assert_eq!(result_slot.get(0), OuterIndex::new(100)); // Unread index
         for i in 1..16 {
             assert_eq!(result_slot.get(i), OuterIndex::new(0)); // Default empty value
@@ -571,18 +666,27 @@ mod tests {
     #[test]
     fn test_write_prepared_indices_partial_slot_with_unread() {
         let mut slot_storage = SlotStorage::new();
+        let side = Side::Bid;
+        let slot_key_0 = ListKey { index: 0, side };
+
         let mut first_list_slot = ListSlot::default();
         first_list_slot.set(0, OuterIndex::new(100)); // Existing unread index
         first_list_slot.set(1, OuterIndex::new(200)); // Another unread index
-        first_list_slot.write_to_slot(&mut slot_storage, &ListKey { index: 0 });
+        first_list_slot.write_to_slot(&mut slot_storage, &slot_key_0);
 
         let mut cache = vec![OuterIndex::new(300), OuterIndex::new(400)];
         let unread_count = 2;
 
-        write_prepared_indices(&mut slot_storage, &mut cache, unread_count, first_list_slot);
+        write_prepared_indices(
+            &mut slot_storage,
+            side,
+            &mut cache,
+            unread_count,
+            first_list_slot,
+        );
 
         // Validate the contents of the first slot
-        let result_slot = ListSlot::new_from_slot(&slot_storage, ListKey { index: 0 });
+        let result_slot = ListSlot::new_from_slot(&slot_storage, slot_key_0);
         assert_eq!(result_slot.get(0), OuterIndex::new(100)); // Unread index
         assert_eq!(result_slot.get(1), OuterIndex::new(200)); // Unread index
         assert_eq!(result_slot.get(2), OuterIndex::new(400));

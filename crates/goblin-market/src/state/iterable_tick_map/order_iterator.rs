@@ -30,7 +30,10 @@ pub fn process_resting_orders(
 
     // 1. Loop through index slots
     loop {
-        let list_key = ListKey { index: slot_index };
+        let list_key = ListKey {
+            index: slot_index,
+            side,
+        };
         let mut list_slot = ListSlot::new_from_slot(slot_storage, list_key);
         let mut pending_list_slot_write = false;
 

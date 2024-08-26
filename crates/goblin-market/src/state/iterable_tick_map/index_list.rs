@@ -38,10 +38,12 @@ use alloc::vec::Vec;
 /// an order further away.
 ///
 #[derive(Clone, Copy)]
-#[repr(transparent)]
 pub struct ListKey {
     /// Index of the ListSlot, max 2^12 - 1
     pub index: u16,
+
+    /// Whether bid or index slot
+    pub side: Side,
 }
 
 impl SlotKey for ListKey {
@@ -49,7 +51,8 @@ impl SlotKey for ListKey {
         let mut key = [0u8; 32];
 
         key[0] = LIST_KEY_SEED;
-        key[1..3].copy_from_slice(&self.index.to_be_bytes());
+        key[1] = (self.side == Side::Bid) as u8;
+        key[2..4].copy_from_slice(&self.index.to_be_bytes());
 
         key
     }
@@ -159,7 +162,10 @@ impl IndexList {
                 slot_index, relative_index
             );
 
-            let key = ListKey { index: slot_index };
+            let key = ListKey {
+                index: slot_index,
+                side: self.side,
+            };
             let current_slot = ListSlot::new_from_slot(slot_storage, key);
 
             #[cfg(test)]
@@ -201,7 +207,10 @@ impl IndexList {
 
             // Load a new slot and cache it
             if self.cached_slot.is_none() || relative_index == 15 {
-                let key = ListKey { index: slot_index };
+                let key = ListKey {
+                    index: slot_index,
+                    side: self.side,
+                };
                 self.cached_slot = Some(ListSlot::new_from_slot(slot_storage, key));
             }
 
@@ -236,6 +245,7 @@ impl IndexList {
             if self.cached_values.is_empty() {
                 let slot_key = ListKey {
                     index: self.size / 16,
+                    side: self.side,
                 };
 
                 // Write cached slot
@@ -256,6 +266,7 @@ impl IndexList {
                         // Write
                         let slot_key = ListKey {
                             index: slot_index as u16,
+                            side: self.side,
                         };
                         cached_slot.write_to_slot(slot_storage, &slot_key);
 
@@ -522,16 +533,16 @@ mod test {
     #[test]
     fn test_remove_outermost() {
         let mut slot_storage = SlotStorage::new();
+        let side = Side::Bid;
 
         // Insert initial values in list
         let mut list_slot = ListSlot {
             inner: [0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         };
-        let list_key = ListKey { index: 0 };
+        let list_key = ListKey { index: 0, side };
 
         list_slot.write_to_slot(&mut slot_storage, &list_key);
 
-        let side = Side::Bid;
         let size = 4;
         let mut index_list = IndexList::new(side, size);
 
@@ -568,16 +579,16 @@ mod test {
     #[test]
     fn test_remove_inner() {
         let mut slot_storage = SlotStorage::new();
+        let side = Side::Bid;
 
         // Insert initial values in list
         let mut list_slot = ListSlot {
             inner: [0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         };
-        let list_key = ListKey { index: 0 };
+        let list_key = ListKey { index: 0, side };
 
         list_slot.write_to_slot(&mut slot_storage, &list_key);
 
-        let side = Side::Bid;
         let size = 4;
         let mut index_list = IndexList::new(side, size);
 
@@ -617,16 +628,16 @@ mod test {
     #[test]
     fn test_remove_inner_zero() {
         let mut slot_storage = SlotStorage::new();
+        let side = Side::Bid;
 
         // Insert initial values in list
         let mut list_slot = ListSlot {
             inner: [0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         };
-        let list_key = ListKey { index: 0 };
+        let list_key = ListKey { index: 0, side };
 
         list_slot.write_to_slot(&mut slot_storage, &list_key);
 
-        let side = Side::Bid;
         let size = 4;
         let mut index_list = IndexList::new(side, size);
 
@@ -665,16 +676,16 @@ mod test {
     #[test]
     fn test_remove_multiple_then_write() {
         let mut slot_storage = SlotStorage::new();
+        let side = Side::Bid;
 
         // Insert initial values in list
         let mut list_slot = ListSlot {
             inner: [0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         };
-        let list_key = ListKey { index: 0 };
+        let list_key = ListKey { index: 0, side };
 
         list_slot.write_to_slot(&mut slot_storage, &list_key);
 
-        let side = Side::Bid;
         let size = 4;
         let mut index_list = IndexList::new(side, size);
 
@@ -718,22 +729,22 @@ mod test {
     #[test]
     fn test_remove_single_across_two_slots() {
         let mut slot_storage = SlotStorage::new();
+        let side = Side::Bid;
 
         let mut list_slot_0 = ListSlot {
             inner: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
         };
-        let list_key_0 = ListKey { index: 0 };
+        let list_key_0 = ListKey { index: 0, side };
 
         list_slot_0.write_to_slot(&mut slot_storage, &list_key_0);
 
         let mut list_slot_1 = ListSlot {
             inner: [16, 17, 18, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         };
-        let list_key_1 = ListKey { index: 1 };
+        let list_key_1 = ListKey { index: 1, side };
 
         list_slot_1.write_to_slot(&mut slot_storage, &list_key_1);
 
-        let side = Side::Bid;
         let size = 19;
         let mut index_list = IndexList::new(side, size);
 
@@ -779,22 +790,22 @@ mod test {
     #[test]
     fn test_remove_multiple_across_two_slots() {
         let mut slot_storage = SlotStorage::new();
+        let side = Side::Bid;
 
         let mut list_slot_0 = ListSlot {
             inner: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
         };
-        let list_key_0 = ListKey { index: 0 };
+        let list_key_0 = ListKey { index: 0, side };
 
         list_slot_0.write_to_slot(&mut slot_storage, &list_key_0);
 
         let mut list_slot_1 = ListSlot {
             inner: [16, 17, 18, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         };
-        let list_key_1 = ListKey { index: 1 };
+        let list_key_1 = ListKey { index: 1, side };
 
         list_slot_1.write_to_slot(&mut slot_storage, &list_key_1);
 
-        let side = Side::Bid;
         let size = 19;
         let mut index_list = IndexList::new(side, size);
 
@@ -844,16 +855,16 @@ mod test {
     #[test]
     fn test_remove_multiple_fails_if_wrong_order_for_bids() {
         let mut slot_storage = SlotStorage::new();
+        let side = Side::Bid;
 
         // Insert initial values in list
         let list_slot = ListSlot {
             inner: [0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         };
-        let list_key = ListKey { index: 0 };
+        let list_key = ListKey { index: 0, side };
 
         list_slot.write_to_slot(&mut slot_storage, &list_key);
 
-        let side = Side::Bid;
         let size = 4;
         let mut index_list = IndexList::new(side, size);
 
@@ -869,16 +880,16 @@ mod test {
     #[test]
     fn test_remove_multiple_fails_if_wrong_order_for_asks() {
         let mut slot_storage = SlotStorage::new();
+        let side = Side::Ask;
 
         // Insert initial values in list
         let list_slot = ListSlot {
             inner: [10, 9, 8, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         };
-        let list_key = ListKey { index: 0 };
+        let list_key = ListKey { index: 0, side };
 
         list_slot.write_to_slot(&mut slot_storage, &list_key);
 
-        let side = Side::Ask;
         let size = 4;
         let mut index_list = IndexList::new(side, size);
 
@@ -894,16 +905,16 @@ mod test {
     #[test]
     fn test_remove_fails_if_value_not_found() {
         let mut slot_storage = SlotStorage::new();
+        let side = Side::Bid;
 
         // Insert initial values in list
         let list_slot = ListSlot {
             inner: [0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         };
-        let list_key = ListKey { index: 0 };
+        let list_key = ListKey { index: 0, side };
 
         list_slot.write_to_slot(&mut slot_storage, &list_key);
 
-        let side = Side::Bid;
         let size = 4;
         let mut index_list = IndexList::new(side, size);
 

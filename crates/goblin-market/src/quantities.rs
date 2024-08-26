@@ -593,6 +593,7 @@ mod test {
     #[test]
     fn test_max_values() {
         assert_eq!(Ticks::MAX, 2097151); // 2^21 - 1
+                                         // TODO fix
         assert_eq!(BaseLots::MAX, 4294967295); // 2^32 - 1
     }
 

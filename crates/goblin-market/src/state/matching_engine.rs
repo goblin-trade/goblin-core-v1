@@ -691,13 +691,22 @@ pub fn insert_to_index_list_bulk(
     let mut outer_index_stack = Vec::<OuterIndex>::new();
     let mut to_insert = false;
 
-    let mut list_slot = ListSlot::new_from_slot(slot_storage, ListKey { index: slot_index });
+    let mut list_slot = ListSlot::new_from_slot(
+        slot_storage,
+        ListKey {
+            index: slot_index,
+            side,
+        },
+    );
 
     // 1. Loop through index slots to generate outer_index_stack and find indices
     'list_loop: loop {
         // List slot for the first slot index is already loaded, don't read again
         if slot_index != initial_slot_index {
-            let list_key = ListKey { index: slot_index };
+            let list_key = ListKey {
+                index: slot_index,
+                side,
+            };
             list_slot = ListSlot::new_from_slot(slot_storage, list_key);
         }
 
@@ -792,6 +801,7 @@ pub fn insert_to_index_list_bulk(
             slot_storage,
             &ListKey {
                 index: relative_index,
+                side,
             },
         );
     }
@@ -826,14 +836,23 @@ fn insert_to_index_list(
     let mut outer_index_stack = Vec::<OuterIndex>::new();
     let mut to_insert = false;
 
-    let mut list_slot = ListSlot::new_from_slot(slot_storage, ListKey { index: slot_index });
+    let mut list_slot = ListSlot::new_from_slot(
+        slot_storage,
+        ListKey {
+            index: slot_index,
+            side,
+        },
+    );
 
     // 1. Loop through index slots to generate outer_index_stack and find indices
     // slot_index in (0..=initial_slot_index).rev()
     'list_loop: loop {
         // List slot for the first slot index is already loaded, don't read again
         if slot_index != initial_slot_index {
-            let list_key = ListKey { index: slot_index };
+            let list_key = ListKey {
+                index: slot_index,
+                side,
+            };
             list_slot = ListSlot::new_from_slot(slot_storage, list_key);
         }
 
@@ -907,6 +926,7 @@ fn insert_to_index_list(
             slot_storage,
             &ListKey {
                 index: relative_index,
+                side,
             },
         );
     }

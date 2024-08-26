@@ -1,4 +1,4 @@
-use crate::state::SlotStorage;
+use crate::state::{Side, SlotStorage};
 
 use super::{ListKey, ListSlot, OuterIndex};
 
@@ -6,14 +6,16 @@ pub struct IndexListIterator<'a> {
     pub slot_storage: &'a mut SlotStorage, // Reference to the slot storage
     pub outer_index_count: u16,            // Remaining elements to iterate
     pub list_slot: Option<ListSlot>,       // Cache the current list_slot
+    pub side: Side,
 }
 
 impl<'a> IndexListIterator<'a> {
-    pub fn new(outer_index_count: u16, slot_storage: &'a mut SlotStorage) -> Self {
+    pub fn new(outer_index_count: u16, side: Side, slot_storage: &'a mut SlotStorage) -> Self {
         Self {
             slot_storage,
             outer_index_count,
             list_slot: None, // Initialize with None
+            side,
         }
     }
 }
@@ -32,7 +34,10 @@ impl<'a> Iterator for IndexListIterator<'a> {
 
         // Check if we need to load a new list_slot
         if self.list_slot.is_none() || relative_index == 15 {
-            let list_key = ListKey { index: slot_index };
+            let list_key = ListKey {
+                index: slot_index,
+                side: self.side,
+            };
             self.list_slot = Some(ListSlot::new_from_slot(self.slot_storage, list_key));
         }
 
@@ -62,22 +67,25 @@ mod tests {
     fn test_empty_list() {
         let mut slot_storage = SlotStorage::new();
         let outer_index_count = 0;
-        let mut iterator = IndexListIterator::new(outer_index_count, &mut slot_storage);
+        let side = Side::Bid;
 
+        let mut iterator = IndexListIterator::new(outer_index_count, side, &mut slot_storage);
         assert!(iterator.next().is_none());
     }
     #[test]
     fn test_iterator_single_slot() {
         let mut slot_storage = SlotStorage::new();
-        let mut list_slot = ListSlot::new_from_slot(&slot_storage, ListKey { index: 0 });
+        let side = Side::Bid;
+        let slot_key = ListKey { index: 0, side };
+        let mut list_slot = ListSlot::new_from_slot(&slot_storage, slot_key);
 
         // Fill the list_slot with some values for testing
         list_slot.inner = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
-        list_slot.write_to_slot(&mut slot_storage, &ListKey { index: 0 });
+        list_slot.write_to_slot(&mut slot_storage, &slot_key);
 
         // We are mocking the behavior, so just test that the iterator works
         let outer_index_count = 16; // Only one slot needed
-        let mut iterator = IndexListIterator::new(outer_index_count, &mut slot_storage);
+        let mut iterator = IndexListIterator::new(outer_index_count, side, &mut slot_storage);
 
         let expected_results = vec![
             (0, 15, list_slot, OuterIndex::new(16)),
@@ -109,15 +117,17 @@ mod tests {
     #[test]
     fn test_iterator_single_slot_partially_full() {
         let mut slot_storage = SlotStorage::new();
-        let mut list_slot = ListSlot::new_from_slot(&slot_storage, ListKey { index: 0 });
+        let side = Side::Bid;
+        let slot_key = ListKey { index: 0, side };
+        let mut list_slot = ListSlot::new_from_slot(&slot_storage, slot_key);
 
         // Fill the list_slot with some values for testing
         list_slot.inner = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, u16::MAX];
-        list_slot.write_to_slot(&mut slot_storage, &ListKey { index: 0 });
+        list_slot.write_to_slot(&mut slot_storage, &slot_key);
 
         // We are mocking the behavior, so just test that the iterator works
         let outer_index_count = 15; // Only one slot needed
-        let mut iterator = IndexListIterator::new(outer_index_count, &mut slot_storage);
+        let mut iterator = IndexListIterator::new(outer_index_count, side, &mut slot_storage);
 
         let expected_results = vec![
             (0, 14, list_slot, OuterIndex::new(15)),
@@ -148,20 +158,23 @@ mod tests {
     #[test]
     fn test_iterator_multiple_slots() {
         let mut slot_storage = SlotStorage::new();
+        let side = Side::Bid;
+        let slot_key_0 = ListKey { index: 0, side };
 
-        let mut list_slot_0 = ListSlot::new_from_slot(&slot_storage, ListKey { index: 0 });
+        let mut list_slot_0 = ListSlot::new_from_slot(&slot_storage, slot_key_0);
         list_slot_0.inner = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
-        list_slot_0.write_to_slot(&mut slot_storage, &ListKey { index: 0 });
+        list_slot_0.write_to_slot(&mut slot_storage, &slot_key_0);
 
-        let mut list_slot_1 = ListSlot::new_from_slot(&slot_storage, ListKey { index: 1 });
+        let slot_key_1 = ListKey { index: 1, side };
+        let mut list_slot_1 = ListSlot::new_from_slot(&slot_storage, slot_key_1);
         list_slot_1.inner = [
             17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
         ];
-        list_slot_1.write_to_slot(&mut slot_storage, &ListKey { index: 1 });
+        list_slot_1.write_to_slot(&mut slot_storage, &slot_key_1);
 
         // Mock outer index count that spans across two slots
         let outer_index_count = 32;
-        let mut iterator = IndexListIterator::new(outer_index_count, &mut slot_storage);
+        let mut iterator = IndexListIterator::new(outer_index_count, side, &mut slot_storage);
 
         let expected_results = vec![
             (1, 15, list_slot_1, OuterIndex::new(32)),
@@ -209,12 +222,15 @@ mod tests {
     #[test]
     fn test_iterator_multiple_slots_partially_full() {
         let mut slot_storage = SlotStorage::new();
+        let side = Side::Bid;
+        let slot_key_0 = ListKey { index: 0, side };
+        let slot_key_1 = ListKey { index: 1, side };
 
-        let mut list_slot_0 = ListSlot::new_from_slot(&slot_storage, ListKey { index: 0 });
+        let mut list_slot_0 = ListSlot::new_from_slot(&slot_storage, slot_key_0);
         list_slot_0.inner = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
-        list_slot_0.write_to_slot(&mut slot_storage, &ListKey { index: 0 });
+        list_slot_0.write_to_slot(&mut slot_storage, &slot_key_0);
 
-        let mut list_slot_1 = ListSlot::new_from_slot(&slot_storage, ListKey { index: 1 });
+        let mut list_slot_1 = ListSlot::new_from_slot(&slot_storage, slot_key_1);
         list_slot_1.inner = [
             17,
             18,
@@ -233,11 +249,11 @@ mod tests {
             31,
             u16::MAX,
         ];
-        list_slot_1.write_to_slot(&mut slot_storage, &ListKey { index: 1 });
+        list_slot_1.write_to_slot(&mut slot_storage, &slot_key_1);
 
         // Mock outer index count that spans across two slots
         let outer_index_count = 31;
-        let mut iterator = IndexListIterator::new(outer_index_count, &mut slot_storage);
+        let mut iterator = IndexListIterator::new(outer_index_count, side, &mut slot_storage);
 
         let expected_results = vec![
             (1, 14, list_slot_1, OuterIndex::new(31)),
@@ -284,15 +300,17 @@ mod tests {
     #[test]
     fn test_iterator_single_slot_descending_for_asks() {
         let mut slot_storage = SlotStorage::new();
-        let mut list_slot = ListSlot::new_from_slot(&slot_storage, ListKey { index: 0 });
+        let side = Side::Bid;
+        let slot_key = ListKey { index: 0, side };
+        let mut list_slot = ListSlot::new_from_slot(&slot_storage, slot_key);
 
         // Fill the list_slot with some values for testing
         list_slot.inner = [16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
-        list_slot.write_to_slot(&mut slot_storage, &ListKey { index: 0 });
+        list_slot.write_to_slot(&mut slot_storage, &slot_key);
 
         // We are mocking the behavior, so just test that the iterator works
         let outer_index_count = 16; // Only one slot needed
-        let mut iterator = IndexListIterator::new(outer_index_count, &mut slot_storage);
+        let mut iterator = IndexListIterator::new(outer_index_count, side, &mut slot_storage);
 
         let expected_results = vec![
             (0, 15, list_slot, OuterIndex::new(1)),

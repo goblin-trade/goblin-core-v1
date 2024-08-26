@@ -1,9 +1,6 @@
 use core::ops::{Add, AddAssign};
 
-use stylus_sdk::{
-    abi::AbiType,
-    alloy_primitives::{address, Address, B256},
-};
+use stylus_sdk::alloy_primitives::{address, Address};
 
 use crate::{
     parameters::{BASE_LOTS_PER_BASE_UNIT, TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT},
