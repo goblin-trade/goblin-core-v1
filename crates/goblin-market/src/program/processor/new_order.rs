@@ -1,5 +1,5 @@
 use alloc::vec::Vec;
-use stylus_sdk::alloy_primitives::{Address, FixedBytes, B256};
+use stylus_sdk::alloy_primitives::{Address, FixedBytes};
 
 use crate::{
     parameters::{BASE_TOKEN, QUOTE_TOKEN},
@@ -10,9 +10,8 @@ use crate::{
     quantities::{BaseAtomsRaw, BaseLots, QuoteAtomsRaw, QuoteLots, Ticks, WrapperU64, MAX_TICK},
     require,
     state::{
-        index_inserter, IndexListInsertion, MarketState, MatchingEngine, MatchingEngineResponse,
-        OrderId, OrderPacket, OrderPacketMetadata, Side, SlotActions, SlotRestingOrder,
-        SlotStorage, TraderState,
+        matching_engine, IndexListInsertion, MarketState, OrderId, OrderPacket,
+        OrderPacketMetadata, Side, SlotActions, SlotRestingOrder, SlotStorage, TraderState,
     },
     GoblinMarket,
 };
@@ -69,8 +68,6 @@ pub fn place_multiple_new_orders(
     let mut market_state = MarketState::read_from_slot(slot_storage);
     let mut trader_state = TraderState::read_from_slot(slot_storage, trader);
 
-    let mut matching_engine = MatchingEngine { slot_storage };
-
     let mut quote_lots_to_deposit = QuoteLots::ZERO;
     let mut base_lots_to_deposit = BaseLots::ZERO;
 
@@ -97,8 +94,7 @@ pub fn place_multiple_new_orders(
     ]
     .iter()
     {
-        let mut order_inserter =
-            IndexListInsertion::new(*side, *outer_index_count, matching_engine.slot_storage);
+        let mut order_inserter = IndexListInsertion::new(*side, *outer_index_count, slot_storage);
 
         for order_bytes in *book_orders {
             let condensed_order = CondensedOrder::from(order_bytes);
@@ -158,8 +154,9 @@ pub fn place_multiple_new_orders(
 
                 // matching_engine_response gives the number of tokens required
                 // these are added and then compared in the end
-                let (order_to_insert, matching_engine_response) = matching_engine
-                    .place_order_inner(
+                let (order_to_insert, matching_engine_response) =
+                    matching_engine::place_order_inner(
+                        order_inserter.index_list_iterator.slot_storage,
                         &mut market_state,
                         &mut trader_state,
                         trader,
@@ -281,24 +278,24 @@ pub fn process_new_order(
                 return Ok(());
             }
         }
-        let mut matching_engine = MatchingEngine { slot_storage };
 
-        let (order_to_insert, matching_engine_response) = matching_engine
-            .place_order_inner(
-                &mut market_state,
-                &mut trader_state,
-                trader,
-                order_packet,
-                None,
-            )
-            .ok_or(GoblinError::NewOrderError(NewOrderError {}))?;
+        let (order_to_insert, matching_engine_response) = matching_engine::place_order_inner(
+            slot_storage,
+            &mut market_state,
+            &mut trader_state,
+            trader,
+            order_packet,
+            None,
+        )
+        .ok_or(GoblinError::NewOrderError(NewOrderError {}))?;
 
         if let Some(OrderToInsert {
             order_id,
             resting_order,
         }) = order_to_insert
         {
-            matching_engine.insert_order_in_book(
+            matching_engine::insert_order_in_book(
+                slot_storage,
                 &mut market_state,
                 &resting_order,
                 side,

@@ -3,9 +3,11 @@ use stylus_sdk::msg;
 use crate::{
     program::{error::GoblinResult, token_utils::try_withdraw},
     quantities::{BaseAtomsRaw, BaseLots, QuoteAtomsRaw, QuoteLots, WrapperU64},
-    state::{MatchingEngine, MatchingEngineResponse, SlotActions, SlotStorage},
+    state::{MatchingEngineResponse, SlotActions, SlotStorage},
     GoblinMarket,
 };
+
+use crate::state::matching_engine;
 
 /// Withdraw from free funds
 ///
@@ -27,15 +29,13 @@ pub fn process_withdraw_funds(
     let quote_lots = QuoteLots::new(quote_lots_to_withdraw);
     let base_lots = BaseLots::new(base_lots_to_withdraw);
 
-    let mut matching_engine = MatchingEngine {
-        slot_storage: &mut SlotStorage::new(),
-    };
+    let slot_storage = &mut SlotStorage::new();
 
     let MatchingEngineResponse {
         num_quote_lots_out,
         num_base_lots_out,
         ..
-    } = matching_engine.claim_funds(trader, quote_lots, base_lots);
+    } = matching_engine::claim_funds(slot_storage, trader, quote_lots, base_lots);
 
     // Transfer
     let quote_amount_raw = QuoteAtomsRaw::from_lots(num_quote_lots_out);
