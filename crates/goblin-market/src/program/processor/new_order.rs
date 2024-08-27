@@ -10,8 +10,8 @@ use crate::{
     quantities::{BaseAtomsRaw, BaseLots, QuoteAtomsRaw, QuoteLots, Ticks, WrapperU64, MAX_TICK},
     require,
     state::{
-        matching_engine, IndexListInsertion, MarketState, OrderId, OrderPacket,
-        OrderPacketMetadata, Side, SlotActions, SlotRestingOrder, SlotStorage, TraderState, GG,
+        matching_engine, IndexListInserter, MarketState, OrderId, OrderPacket, OrderPacketMetadata,
+        Side, SlotActions, SlotRestingOrder, SlotStorage, TraderState,
     },
     GoblinMarket,
 };
@@ -94,7 +94,7 @@ pub fn place_multiple_new_orders(
     ]
     .iter()
     {
-        let mut order_inserter = IndexListInsertion::new(*side, *outer_index_count, slot_storage);
+        let mut order_inserter = IndexListInserter::new(*side, *outer_index_count);
 
         for order_bytes in *book_orders {
             let condensed_order = CondensedOrder::from(order_bytes);
@@ -175,29 +175,15 @@ pub fn place_multiple_new_orders(
                             .resting_order
                             .merge_order(&new_order.resting_order);
                     } else {
-                        // TODO Write the old order to slot and cache the new order
+                        // Write the old order to slot and cache the new order
+                        order_inserter.insert_resting_order(
+                            slot_storage,
+                            &mut market_state,
+                            &last_order.resting_order,
+                            &last_order.order_id,
+                        )?;
 
-                        last_order
-                            .resting_order
-                            .write_to_slot(slot_storage, &last_order.order_id)?;
-
-                        let mut gg = GG {};
-                        gg.something(slot_storage);
-
-                        // order_inserter.gg(slot_storage);
-
-                        // Diagnosis- I'm able to pass mutable slot storage. The issue is because
-                        // of the nested struct that uses an immutable borrow. Move it outside.
-
-                        // order_inserter.insert_resting_order(
-                        //     slot_storage,
-                        //     &mut market_state,
-                        //     &last_order.resting_order,
-                        //     &last_order.order_id,
-                        // );
-
-                        // write_resting_order(*last_order);
-                        // *last_order = new_order;
+                        *last_order = new_order;
                     }
                 } else {
                     last_order = order_to_insert;
@@ -223,12 +209,22 @@ pub fn place_multiple_new_orders(
             quote_lots_to_deposit += quote_lots_deposited;
             base_lots_to_deposit += base_lots_deposited;
         }
+
         // Write the last order after the loop ends
         if let Some(last_order_value) = last_order {
-            write_resting_order(last_order_value);
+            // write_resting_order(last_order_value);
+            order_inserter.insert_resting_order(
+                slot_storage,
+                &mut market_state,
+                &last_order_value.resting_order,
+                &last_order_value.order_id,
+            )?;
             // Clear the value. The bid should not be used in the asks loop.
             last_order = None;
         }
+
+        // Write cached outer indices to slot
+        order_inserter.write_prepared_indices(slot_storage);
     }
 
     if !no_deposit {
