@@ -1152,7 +1152,7 @@ fn match_order(
 /// and expiry params match, then return the same order id as the last order.
 ///
 pub fn get_best_available_order_id(
-    slot_storage: &mut SlotStorage,
+    slot_storage: &SlotStorage,
     order_packet: &OrderPacket,
     last_order: Option<OrderToInsert>,
 ) -> Option<OrderId> {

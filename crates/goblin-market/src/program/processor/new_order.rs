@@ -11,7 +11,7 @@ use crate::{
     require,
     state::{
         matching_engine, IndexListInsertion, MarketState, OrderId, OrderPacket,
-        OrderPacketMetadata, Side, SlotActions, SlotRestingOrder, SlotStorage, TraderState,
+        OrderPacketMetadata, Side, SlotActions, SlotRestingOrder, SlotStorage, TraderState, GG,
     },
     GoblinMarket,
 };
@@ -156,7 +156,8 @@ pub fn place_multiple_new_orders(
                 // these are added and then compared in the end
                 let (order_to_insert, matching_engine_response) =
                     matching_engine::place_order_inner(
-                        order_inserter.index_list_iterator.slot_storage,
+                        // order_inserter.index_list_iterator.slot_storage,
+                        slot_storage,
                         &mut market_state,
                         &mut trader_state,
                         trader,
@@ -175,14 +176,28 @@ pub fn place_multiple_new_orders(
                             .merge_order(&new_order.resting_order);
                     } else {
                         // TODO Write the old order to slot and cache the new order
-                        order_inserter.insert_resting_order(
-                            &mut market_state,
-                            &last_order.resting_order,
-                            &last_order.order_id,
-                        );
 
-                        write_resting_order(*last_order);
-                        *last_order = new_order;
+                        last_order
+                            .resting_order
+                            .write_to_slot(slot_storage, &last_order.order_id)?;
+
+                        let mut gg = GG {};
+                        gg.something(slot_storage);
+
+                        // order_inserter.gg(slot_storage);
+
+                        // Diagnosis- I'm able to pass mutable slot storage. The issue is because
+                        // of the nested struct that uses an immutable borrow. Move it outside.
+
+                        // order_inserter.insert_resting_order(
+                        //     slot_storage,
+                        //     &mut market_state,
+                        //     &last_order.resting_order,
+                        //     &last_order.order_id,
+                        // );
+
+                        // write_resting_order(*last_order);
+                        // *last_order = new_order;
                     }
                 } else {
                     last_order = order_to_insert;

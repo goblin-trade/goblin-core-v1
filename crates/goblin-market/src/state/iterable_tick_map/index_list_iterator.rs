@@ -3,14 +3,14 @@ use crate::state::{Side, SlotStorage};
 use super::{ListKey, ListSlot, OuterIndex};
 
 pub struct IndexListIterator<'a> {
-    pub slot_storage: &'a mut SlotStorage, // Reference to the slot storage
-    pub outer_index_count: u16,            // Remaining elements to iterate
-    pub list_slot: Option<ListSlot>,       // Cache the current list_slot
+    pub slot_storage: &'a SlotStorage, // Reference to the slot storage
+    pub outer_index_count: u16,        // Remaining elements to iterate
+    pub list_slot: Option<ListSlot>,   // Cache the current list_slot
     pub side: Side,
 }
 
 impl<'a> IndexListIterator<'a> {
-    pub fn new(outer_index_count: u16, side: Side, slot_storage: &'a mut SlotStorage) -> Self {
+    pub fn new(outer_index_count: u16, side: Side, slot_storage: &'a SlotStorage) -> Self {
         Self {
             slot_storage,
             outer_index_count,
