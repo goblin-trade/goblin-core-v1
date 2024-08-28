@@ -2,12 +2,11 @@ use core::ops::AddAssign;
 use core::ops::SubAssign;
 
 use crate::state::Side;
+use crate::state::BITMAPS_PER_GROUP;
 use crate::{
     quantities::{Ticks, WrapperU64},
     state::{SlotKey, BITMAP_GROUP_SEED},
 };
-
-use super::BITMAPS_PER_GROUP;
 
 /// To read orders at a tick we need two to derive variables. The `group_key` gives
 /// the bitmap group in the tick's bitmap belongs. The `bitmap_key` gives the location

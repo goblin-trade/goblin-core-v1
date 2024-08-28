@@ -1,6 +1,6 @@
-use crate::state::{Side, SlotStorage};
+use crate::state::{OuterIndex, Side, SlotStorage};
 
-use super::{ListKey, ListSlot, OuterIndex};
+use super::{ListKey, ListSlot};
 
 /// Read outer indices from the index list, end first.
 /// In an index list, indices closer to the centre are at the end while

@@ -1,7 +1,7 @@
-use super::{BitmapGroup, IndexListReader, ListKey, ListSlot, OuterIndex, TickIndices};
+use super::{BitmapGroup, IndexListReader, ListKey, ListSlot};
 use crate::{
     program::GoblinResult,
-    state::{MarketState, OrderId, Side, SlotRestingOrder, SlotStorage},
+    state::{MarketState, OrderId, OuterIndex, Side, SlotRestingOrder, SlotStorage, TickIndices},
 };
 use alloc::vec::Vec;
 

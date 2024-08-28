@@ -1,11 +1,12 @@
 use crate::{
     quantities::Ticks,
     state::{
-        MarketState, OrderId, RestingOrder, RestingOrderIndex, Side, SlotRestingOrder, SlotStorage,
+        InnerIndex, MarketState, OrderId, RestingOrder, RestingOrderIndex, Side, SlotRestingOrder,
+        SlotStorage,
     },
 };
 
-use super::{inner_indices, BitmapGroup, InnerIndex, ListKey, ListSlot};
+use super::{inner_indices, BitmapGroup, ListKey, ListSlot};
 
 /// Loops through subsequent resting orders, applying a lambda function on each.
 ///

@@ -8,8 +8,8 @@ use crate::{
     quantities::{BaseLots, QuoteLots, Ticks, WrapperU64},
     require,
     state::{
-        slot_storage::SlotKey, MatchingEngineResponse, ReduceOrderInnerResponse, RestingOrder,
-        Side, SlotActions, SlotStorage, TraderState, ORDERS_PER_TICK, RESTING_ORDER_KEY_SEED,
+        slot_storage::SlotKey, MatchingEngineResponse, ReduceOrderInnerResponse, Side, SlotActions,
+        SlotStorage, TraderState, ORDERS_PER_TICK, RESTING_ORDER_KEY_SEED,
     },
 };
 
@@ -363,6 +363,13 @@ impl SlotRestingOrder {
             })
         }
     }
+}
+
+pub trait RestingOrder {
+    fn size(&self) -> u64;
+    fn last_valid_block(&self) -> Option<u32>;
+    fn last_valid_unix_timestamp_in_seconds(&self) -> Option<u32>;
+    // fn is_expired(&self, current_slot: u32, current_unix_timestamp_in_seconds: u32) -> bool;
 }
 
 impl RestingOrder for SlotRestingOrder {

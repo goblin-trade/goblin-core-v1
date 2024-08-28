@@ -197,8 +197,6 @@ impl MutableBitmap<'_> {
 
 #[cfg(test)]
 mod test {
-    use crate::state::OuterIndex;
-
     use super::*;
 
     #[test]
