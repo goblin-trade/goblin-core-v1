@@ -1,44 +1,28 @@
-use super::{BitmapGroup, IndexListReader, ListKey, ListSlot};
-use crate::{
-    program::GoblinResult,
-    state::{MarketState, OrderId, OuterIndex, Side, SlotRestingOrder, SlotStorage, TickIndices},
-};
+use super::{IndexListReader, ListKey, ListSlot};
+use crate::state::{OuterIndex, Side, SlotStorage};
 use alloc::vec::Vec;
 
 /// Enables bulk insertion of outer indices in the index list
 pub struct IndexListInserter {
-    // Indicates whether it's for Bids or Asks
-    pub side: Side,
-
     /// Iterator to read saved values from list
-    pub index_list_iterator: IndexListReader,
+    pub index_list_reader: IndexListReader,
 
     /// List of cached outer indices which will be written back to slots.
     /// Contains values to be inserted and values popped from index list reader
     /// in the correct order of insertion.
     pub cache: Vec<OuterIndex>,
-
-    // Variables to optimize writing of resting orders
-    /// The current bitmap group pending a write. This allows us to perform multiple
-    /// updates in a bitmap group with a single slot load. This value is written to slot
-    /// when a new outer index is encountered.
-    pub bitmap_group: BitmapGroup,
-
-    /// Outer index corresponding to `bitmap_group`
-    pub last_outer_index: Option<OuterIndex>,
 }
 
 impl IndexListInserter {
     pub fn new(side: Side, outer_index_count: u16) -> Self {
-        let index_list_iterator = IndexListReader::new(outer_index_count, side);
-
         Self {
-            index_list_iterator,
+            index_list_reader: IndexListReader::new(outer_index_count, side),
             cache: Vec::new(),
-            side,
-            last_outer_index: None,
-            bitmap_group: BitmapGroup::default(),
         }
+    }
+
+    pub fn side(&self) -> Side {
+        self.index_list_reader.side
     }
 
     /// Prepare an outer index for insertion in the index list
@@ -57,7 +41,7 @@ impl IndexListInserter {
             }
 
             // If the last element in cache is closer to the center than outer_index, insert before it
-            if last_pushed_outer_index.is_closer_to_center(self.side, outer_index) {
+            if last_pushed_outer_index.is_closer_to_center(self.side(), outer_index) {
                 self.cache.pop(); // Remove the last pushed index
                 self.cache.push(outer_index);
                 self.cache.push(last_pushed_outer_index); // Push it back after the new index
@@ -67,7 +51,7 @@ impl IndexListInserter {
 
         // Iterate through the list to find the correct position
         while let Some((_slot_index, _relative_index, _list_slot, current_outer_index)) =
-            self.index_list_iterator.next(slot_storage)
+            self.index_list_reader.next(slot_storage)
         {
             // If the outer_index is already in the list, only insert once
             if current_outer_index == outer_index {
@@ -76,7 +60,7 @@ impl IndexListInserter {
             }
 
             // If outer_index is closer to the center, insert before current_outer_index
-            if current_outer_index.is_closer_to_center(self.side, outer_index) {
+            if current_outer_index.is_closer_to_center(self.side(), outer_index) {
                 self.cache.push(outer_index);
                 self.cache.push(current_outer_index);
                 return true;
@@ -91,79 +75,14 @@ impl IndexListInserter {
         true
     }
 
-    pub fn insert_resting_order(
-        &mut self,
-        slot_storage: &mut SlotStorage,
-        market_state: &mut MarketState,
-        resting_order: &SlotRestingOrder,
-        order_id: &OrderId,
-    ) -> GoblinResult<()> {
-        // 1. Update market state
-        // Optimization- since the first element is closest to the centre, we only need
-        // to check the first element against the current best price.
-        // Update the best price if necessary.
-        if self.cache.len() == 0 {
-            // Update best market price
-            if self.side == Side::Bid && order_id.price_in_ticks > market_state.best_bid_price {
-                market_state.best_bid_price = order_id.price_in_ticks;
-            }
-
-            if self.side == Side::Ask && order_id.price_in_ticks < market_state.best_ask_price {
-                market_state.best_ask_price = order_id.price_in_ticks;
-            }
-        }
-
-        // 2. Write resting order to slot
-        resting_order.write_to_slot(slot_storage, &order_id)?;
-
-        let TickIndices {
-            outer_index,
-            inner_index,
-        } = order_id.price_in_ticks.to_indices();
-
-        // 3. Try to insert outer index in list
-        // Find whether it was inserted or whether it was already present
-        let needs_insertion = self.prepare(slot_storage, outer_index);
-
-        // 4. Load bitmap group
-        // Outer index changed or first iteration- load bitmap group
-        if self.last_outer_index != Some(outer_index) {
-            // Outer index changed. Write bitmap group belonging to the old index to slot.
-            self.write_last_bitmap_group(slot_storage);
-
-            self.bitmap_group = if needs_insertion {
-                BitmapGroup::default()
-            } else {
-                BitmapGroup::new_from_slot(slot_storage, outer_index)
-            };
-
-            self.last_outer_index = Some(outer_index);
-        }
-
-        // 5. Flip tick in bitmap
-        let mut bitmap = self.bitmap_group.get_bitmap_mut(&inner_index);
-        bitmap.activate(&order_id.resting_order_index);
-
-        Ok(())
-    }
-
-    /// Write cached bitmap group to slot
-    /// This should be called when the outer index changes during looping, and when the loop is complete
-    pub fn write_last_bitmap_group(&self, slot_storage: &mut SlotStorage) {
-        if let Some(last_index) = self.last_outer_index {
-            self.bitmap_group.write_to_slot(slot_storage, &last_index);
-        }
-    }
-
+    /// Write prepared indices to slot
     pub fn write_prepared_indices(&mut self, slot_storage: &mut SlotStorage) {
-        self.write_last_bitmap_group(slot_storage);
-
         write_prepared_indices(
             slot_storage,
-            self.side,
+            self.side(),
             &mut self.cache,
-            self.index_list_iterator.outer_index_count,
-            self.index_list_iterator.list_slot,
+            self.index_list_reader.outer_index_count,
+            self.index_list_reader.list_slot,
         );
     }
 }

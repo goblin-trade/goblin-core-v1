@@ -7,7 +7,7 @@ use super::{ListKey, ListSlot};
 /// indices that are away are at the beginning of the list.
 pub struct IndexListReader {
     /// Whether bid or ask. There are two lists, one for bids and one for asks.
-    side: Side,
+    pub side: Side,
 
     /// Number of indices yet to be read
     pub outer_index_count: u16,
