@@ -94,7 +94,7 @@ pub fn place_multiple_new_orders(
     ]
     .iter()
     {
-        let mut order_inserter = IndexListInserter::new(*side, *outer_index_count);
+        let mut index_list_inserter = IndexListInserter::new(*side, *outer_index_count);
 
         for order_bytes in *book_orders {
             let condensed_order = CondensedOrder::from(order_bytes);
@@ -176,7 +176,7 @@ pub fn place_multiple_new_orders(
                             .merge_order(&new_order.resting_order);
                     } else {
                         // Write the old order to slot and cache the new order
-                        order_inserter.insert_resting_order(
+                        index_list_inserter.insert_resting_order(
                             slot_storage,
                             &mut market_state,
                             &last_order.resting_order,
@@ -212,8 +212,7 @@ pub fn place_multiple_new_orders(
 
         // Write the last order after the loop ends
         if let Some(last_order_value) = last_order {
-            // write_resting_order(last_order_value);
-            order_inserter.insert_resting_order(
+            index_list_inserter.insert_resting_order(
                 slot_storage,
                 &mut market_state,
                 &last_order_value.resting_order,
@@ -224,7 +223,7 @@ pub fn place_multiple_new_orders(
         }
 
         // Write cached outer indices to slot
-        order_inserter.write_prepared_indices(slot_storage);
+        index_list_inserter.write_prepared_indices(slot_storage);
     }
 
     if !no_deposit {
@@ -305,13 +304,17 @@ pub fn process_new_order(
             resting_order,
         }) = order_to_insert
         {
-            matching_engine::insert_order_in_book(
+            let mut index_list_inserter =
+                IndexListInserter::new(side, market_state.outer_index_length(side));
+
+            index_list_inserter.insert_resting_order(
                 slot_storage,
                 &mut market_state,
                 &resting_order,
-                side,
                 &order_id,
             )?;
+
+            index_list_inserter.write_prepared_indices(slot_storage);
         }
 
         (
@@ -355,8 +358,4 @@ pub fn process_new_order(
     }
 
     Ok(())
-}
-
-fn write_resting_order(order: OrderToInsert) {
-    todo!()
 }
