@@ -9,7 +9,7 @@ use alloc::boxed::Box;
 ///
 /// Bids and Asks have a common set of BitmapGroups because a resting order
 /// at a tick can't be on both sides at the same time.
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Default, PartialEq, Debug)]
 pub struct BitmapGroup {
     pub inner: [u8; 32],
 }

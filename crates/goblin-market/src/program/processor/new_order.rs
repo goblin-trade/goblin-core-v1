@@ -223,7 +223,7 @@ pub fn place_multiple_new_orders(
         }
 
         // Write cached outer indices to slot
-        resting_order_inserter.write_prepared_indices(slot_storage);
+        resting_order_inserter.write_prepared_indices(slot_storage, &mut market_state);
     }
 
     if !no_deposit {
@@ -312,7 +312,7 @@ pub fn process_new_order(
                 &resting_order,
                 &order_id,
             )?;
-            resting_order_inserter.write_prepared_indices(slot_storage);
+            resting_order_inserter.write_prepared_indices(slot_storage, &mut market_state);
         }
 
         (

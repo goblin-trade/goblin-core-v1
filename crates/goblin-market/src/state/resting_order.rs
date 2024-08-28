@@ -96,7 +96,7 @@ impl OrderId {
 
 /// Resting order on a 32 byte slot
 #[repr(C)]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct SlotRestingOrder {
     pub trader_address: Address, // 20 bytes = 160 bits
     pub num_base_lots: BaseLots, // 63
