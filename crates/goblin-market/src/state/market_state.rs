@@ -150,7 +150,7 @@ impl MarketState {
         }
     }
 
-    /// Update the best price for a bid or ask
+    /// Update the best price for a bid or ask by looping through bitmap groups
     ///
     /// The current best price is found by reading the outer index from index_list and
     /// the inner index from the bitmap corresponding to this outer index
@@ -208,11 +208,28 @@ impl MarketState {
         }
     }
 
+    // TODO remove. This is only used in index_list.rs
     pub fn set_best_price(&mut self, side: Side, price: Ticks) {
         if side == Side::Bid {
             self.best_bid_price = price;
         } else {
             self.best_ask_price = price;
+        }
+    }
+
+    /// Update the best price if the new price is closer to the centre
+    ///
+    /// # Arguments
+    ///
+    /// * `side`
+    /// * `price_in_ticks`
+    ///
+    pub fn try_set_best_price(&mut self, side: Side, price_in_ticks: Ticks) {
+        if side == Side::Bid && price_in_ticks > self.best_bid_price {
+            self.best_bid_price = price_in_ticks;
+        }
+        if side == Side::Ask && price_in_ticks < self.best_ask_price {
+            self.best_ask_price = price_in_ticks;
         }
     }
 }

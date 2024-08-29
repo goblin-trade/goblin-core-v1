@@ -14,6 +14,13 @@ pub struct BitmapInserter {
 }
 
 impl BitmapInserter {
+    pub fn new() -> Self {
+        BitmapInserter {
+            bitmap_group: BitmapGroup::default(),
+            last_outer_index: None,
+        }
+    }
+
     /// Write cached bitmap group to slot
     /// This should be called when the outer index changes during looping,
     /// and when the loop is complete
@@ -40,7 +47,7 @@ impl BitmapInserter {
         &mut self,
         slot_storage: &mut SlotStorage,
         order_id: &OrderId,
-        group_is_empty: bool,
+        bitmap_group_is_empty: bool,
     ) {
         let TickIndices {
             outer_index,
@@ -53,7 +60,7 @@ impl BitmapInserter {
             // Outer index changed. Flush the old bitmap group to slot.
             self.write_last_bitmap_group(slot_storage);
 
-            self.bitmap_group = if group_is_empty {
+            self.bitmap_group = if bitmap_group_is_empty {
                 BitmapGroup::default()
             } else {
                 BitmapGroup::new_from_slot(slot_storage, outer_index)

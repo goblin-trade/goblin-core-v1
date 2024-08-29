@@ -1,9 +1,9 @@
 use crate::{
     program::GoblinResult,
-    state::{MarketState, OrderId, OuterIndex, Side, SlotRestingOrder, SlotStorage, TickIndices},
+    state::{MarketState, OrderId, Side, SlotRestingOrder, SlotStorage},
 };
 
-use super::{BitmapGroup, IndexListInserter};
+use super::{BitmapInserter, IndexListInserter};
 
 /// Inserts resting orders to slot
 ///
@@ -18,37 +18,23 @@ use super::{BitmapGroup, IndexListInserter};
 /// Multiple updates to a bitmap group are batched.
 ///
 pub struct RestingOrderInserter {
-    /// Index list inserter
+    /// Index list inserter- to insert outer indices in index lists and for writing them to slot
     pub index_list_inserter: IndexListInserter,
 
-    /// The current bitmap group pending a write. This allows us to perform multiple
-    /// updates in a bitmap group with a single slot load. This value is written to slot
-    /// when a new outer index is encountered.
-    pub bitmap_group: BitmapGroup,
-
-    /// Outer index corresponding to `bitmap_group`
-    pub last_outer_index: Option<OuterIndex>,
+    /// Bitmap inserter- to activate bits in bitmap groups and writing them to slot
+    pub bitmap_inserter: BitmapInserter,
 }
 
 impl RestingOrderInserter {
     pub fn new(side: Side, outer_index_count: u16) -> Self {
         RestingOrderInserter {
             index_list_inserter: IndexListInserter::new(side, outer_index_count),
-            bitmap_group: BitmapGroup::default(),
-            last_outer_index: None,
+            bitmap_inserter: BitmapInserter::new(),
         }
     }
 
     pub fn side(&self) -> Side {
         self.index_list_inserter.side()
-    }
-
-    /// Write cached bitmap group to slot
-    /// This should be called when the outer index changes during looping, and when the loop is complete
-    pub fn write_last_bitmap_group(&self, slot_storage: &mut SlotStorage) {
-        if let Some(last_index) = self.last_outer_index {
-            self.bitmap_group.write_to_slot(slot_storage, &last_index);
-        }
     }
 
     /// Write a resting order to slot and prepare for insertion of its outer index
@@ -71,49 +57,27 @@ impl RestingOrderInserter {
         order_id: &OrderId,
     ) -> GoblinResult<()> {
         // 1. Update market state
-        // Optimization- since the first element is closest to the centre, we only need
+        //
+        // Since the first element is closest to the centre, we only need
         // to check the first element against the current best price.
+        //
+        // Outer index length in market state is updated in write_prepared_indices()
+        //
         if self.index_list_inserter.cache.len() == 0 {
-            // Update best market price
-            if self.side() == Side::Bid && order_id.price_in_ticks > market_state.best_bid_price {
-                market_state.best_bid_price = order_id.price_in_ticks;
-            }
-
-            if self.side() == Side::Ask && order_id.price_in_ticks < market_state.best_ask_price {
-                market_state.best_ask_price = order_id.price_in_ticks;
-            }
+            market_state.try_set_best_price(self.side(), order_id.price_in_ticks);
         }
 
         // 2. Write resting order to slot
         resting_order.write_to_slot(slot_storage, &order_id)?;
 
-        let TickIndices {
-            outer_index,
-            inner_index,
-        } = order_id.price_in_ticks.to_indices();
-
         // 3. Try to insert outer index in list
         // Find whether it was inserted or whether it was already present
+        let outer_index = order_id.price_in_ticks.outer_index();
         let needs_insertion = self.index_list_inserter.prepare(slot_storage, outer_index);
 
-        // 4. Load bitmap group
-        // Outer index changed or first iteration- load bitmap group
-        if self.last_outer_index != Some(outer_index) {
-            // Outer index changed. Write bitmap group belonging to the old index to slot.
-            self.write_last_bitmap_group(slot_storage);
-
-            self.bitmap_group = if needs_insertion {
-                BitmapGroup::default()
-            } else {
-                BitmapGroup::new_from_slot(slot_storage, outer_index)
-            };
-
-            self.last_outer_index = Some(outer_index);
-        }
-
-        // 5. Flip tick in bitmap
-        let mut bitmap = self.bitmap_group.get_bitmap_mut(&inner_index);
-        bitmap.activate(&order_id.resting_order_index);
+        // 4. Update bitmap
+        self.bitmap_inserter
+            .activate(slot_storage, order_id, needs_insertion);
 
         Ok(())
     }
@@ -132,7 +96,7 @@ impl RestingOrderInserter {
         slot_storage: &mut SlotStorage,
         market_state: &mut MarketState,
     ) {
-        self.write_last_bitmap_group(slot_storage);
+        self.bitmap_inserter.write_last_bitmap_group(slot_storage);
 
         market_state.set_outer_index_length(
             self.side(),
@@ -151,7 +115,7 @@ mod tests {
 
     use crate::{
         quantities::{BaseLots, QuoteLots, Ticks, WrapperU64},
-        state::{ListKey, ListSlot, RestingOrderIndex, SlotActions},
+        state::{BitmapGroup, ListKey, ListSlot, RestingOrderIndex, SlotActions, TickIndices},
     };
 
     use super::*;
@@ -203,8 +167,14 @@ mod tests {
         assert_eq!(resting_order, read_resting_order);
 
         // 3. Check cached values
-        assert_eq!(outer_index, inserter.last_outer_index.unwrap());
-        let bitmap = inserter.bitmap_group.get_bitmap(&inner_index);
+        assert_eq!(
+            outer_index,
+            inserter.bitmap_inserter.last_outer_index.unwrap()
+        );
+        let bitmap = inserter
+            .bitmap_inserter
+            .bitmap_group
+            .get_bitmap(&inner_index);
         assert_eq!(0b00000001, *bitmap.inner);
 
         assert_eq!(1, inserter.index_list_inserter.cache.len());
