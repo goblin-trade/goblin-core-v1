@@ -99,7 +99,9 @@ pub fn place_multiple_new_orders(
         for order_bytes in *book_orders {
             let condensed_order = CondensedOrder::from(order_bytes);
 
-            // Ensure orders are in correct order- descending for bids and ascending for asks
+            // Ensure orders are in correct order, i.e. moving away from the centre.
+            // Descending for bids and ascending for asks.
+            //
             // Orders with same price are allowed.
             // Orders with the same price and expiry parameters are combined
             if *side == Side::Bid {

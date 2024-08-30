@@ -2,7 +2,11 @@ use super::{IndexListReader, ListKey, ListSlot};
 use crate::state::{OuterIndex, Side, SlotStorage};
 use alloc::vec::Vec;
 
-/// Enables bulk insertion of outer indices in the index list
+/// Enables bulk insertion of outer indices in the index list.
+/// Successive inserted orders should move away from the centre, i.e.
+/// - insert bids in descending order
+/// - insert asks in ascending order
+///
 pub struct IndexListInserter {
     /// Iterator to read saved values from list
     pub index_list_reader: IndexListReader,
