@@ -4,6 +4,7 @@ use alloc::vec::Vec;
 
 /// Enables bulk insertion of outer indices in the index list.
 /// Successive inserted orders should move away from the centre, i.e.
+///
 /// - insert bids in descending order
 /// - insert asks in ascending order
 ///

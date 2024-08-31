@@ -82,27 +82,24 @@ impl GoblinMarket {
     /// * `client_order_id` - ID provided by trader to uniquely identify this order. It is only emitted
     /// in the event and has no impact on trades. Pass 0 as the default value.
     /// * `use_free_funds` - Whether to use free funds, or transfer new tokens in to place these orders
-    /// * `to` - Credit posted orders to this trader
+    ///
     pub fn place_multiple_post_only_orders(
         &mut self,
         bids: Vec<FixedBytes<21>>,
         asks: Vec<FixedBytes<21>>,
-        // failed_multiple_limit_order_behavior: u8,
         fail_on_cross: bool,
         skip_on_insufficient_funds: bool,
         tick_offset: u8,
         client_order_id: u128,
         use_free_funds: bool,
-        to: Address,
     ) -> GoblinResult<()> {
         place_multiple_new_orders(
             self,
-            msg::sender(),
-            to,
-            fail_on_cross,
-            skip_on_insufficient_funds,
             bids,
             asks,
+            msg::sender(),
+            fail_on_cross,
+            skip_on_insufficient_funds,
             client_order_id,
             use_free_funds,
             tick_offset,

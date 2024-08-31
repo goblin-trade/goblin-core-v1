@@ -52,12 +52,11 @@ impl From<&FixedBytes<21>> for CondensedOrder {
 
 pub fn place_multiple_new_orders(
     context: &mut GoblinMarket,
-    trader: Address,
-    to: Address,
-    fail_on_cross: bool,
-    skip_on_insufficient_funds: bool,
     bids: Vec<FixedBytes<21>>,
     asks: Vec<FixedBytes<21>>,
+    trader: Address,
+    fail_on_cross: bool,
+    skip_on_insufficient_funds: bool,
     client_order_id: u128,
     no_deposit: bool,
     tick_offset: u8,
