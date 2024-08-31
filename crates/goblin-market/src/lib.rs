@@ -95,21 +95,25 @@ impl GoblinMarket {
         fees::process_collect_fees(self, msg::sender(), recipient)
     }
 
-    /// Reduce multiple orders and withdraw the funds to recipient address
+    /// Try to reduce or cancel one or more resting orders. Pass MAX amount to cancel an order.
+    ///
+    /// # Arguments
+    ///
+    /// * `order_packets`
+    /// * `claim_funds` - Whether to claim ERC20 tokens to wallet, or whether to credit
+    /// them to trader state
+    ///
     pub fn reduce_multiple_orders(
         &mut self,
-        order_packets: Vec<B256>,
-        recipient: Address,
+        order_packets: Vec<FixedBytes<17>>,
+        claim_funds: bool,
     ) -> GoblinResult<()> {
-        reduce_multiple_orders::process_reduce_multiple_orders(self, order_packets, Some(recipient))
-    }
-
-    /// Reduce multiple orders. Retain the funds with the exchange
-    pub fn reduce_multiple_orders_with_free_funds(
-        &mut self,
-        order_packets: Vec<B256>,
-    ) -> GoblinResult<()> {
-        reduce_multiple_orders::process_reduce_multiple_orders(self, order_packets, None)
+        reduce_multiple_orders::process_reduce_multiple_orders(
+            self,
+            msg::sender(),
+            order_packets,
+            claim_funds,
+        )
     }
 
     /// Place multiple post-only orders. Used for market making
