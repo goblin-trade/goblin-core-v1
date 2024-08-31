@@ -19,57 +19,7 @@ use super::{
     MatchingEngineResponse, MutableBitmap, OrderId, OrderPacket, OrderPacketMetadata, OuterIndex,
     Side, SlotActions, SlotRestingOrder, SlotStorage, TickIndices, TraderState,
 };
-use alloc::vec;
 use alloc::vec::Vec;
-
-pub fn collect_fees(slot_storage: &mut SlotStorage) -> GoblinResult<QuoteLots> {
-    // Read
-    let mut market = MarketState::read_from_slot(slot_storage);
-
-    // Mutate
-    let quote_lot_fees = market.unclaimed_quote_lot_fees;
-
-    // Mark as claimed
-    market.collected_quote_lot_fees += market.unclaimed_quote_lot_fees;
-    market.unclaimed_quote_lot_fees = QuoteLots::ZERO;
-
-    // Write
-    market.write_to_slot(slot_storage)?;
-    SlotStorage::storage_flush_cache(true);
-
-    Ok(quote_lot_fees)
-}
-
-/// Try to claim the given number of lots from a trader's state.
-///
-/// There is no eviction in Goblin.
-///
-/// # Parameters
-///
-/// * `trader` - The trader address
-/// * `num_quote_lots` - Number of lots to withdraw. Pass 0 if none should be withdrawn.
-/// Pass U64::MAX to withdraw all.
-/// * `num_base_lots` - Number of lots to withdraw. Pass 0 if none should be withdrawn.
-/// Pass U32::MAX to withdraw all. (max value of base_lots is U32::MAX)
-///
-pub fn claim_funds(
-    slot_storage: &mut SlotStorage,
-    trader: Address,
-    num_quote_lots: QuoteLots,
-    num_base_lots: BaseLots,
-) -> MatchingEngineResponse {
-    // Read
-    let mut trader_state = TraderState::read_from_slot(slot_storage, trader);
-
-    // Mutate
-    let response = trader_state.claim_funds_inner(num_quote_lots, num_base_lots);
-
-    // Write
-    trader_state.write_to_slot(slot_storage, trader);
-    SlotStorage::storage_flush_cache(true);
-
-    response
-}
 
 /// Try to reduce multiple orders by ID
 ///

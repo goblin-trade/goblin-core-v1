@@ -9,7 +9,7 @@ use super::{
 };
 
 #[repr(C)]
-#[derive(Default, Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Default, Debug, PartialEq)]
 pub struct MarketState {
     /// Amount of fees collected from the market in its lifetime, in quote lots.
     pub collected_quote_lot_fees: QuoteLots,

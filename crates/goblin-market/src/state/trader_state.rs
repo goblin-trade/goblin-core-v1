@@ -18,7 +18,7 @@ impl SlotKey for TraderId {
 }
 
 #[repr(C)]
-#[derive(Default, Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Default, Debug, PartialEq)]
 pub struct TraderState {
     pub quote_lots_locked: QuoteLots,
     pub quote_lots_free: QuoteLots,

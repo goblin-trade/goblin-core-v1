@@ -1,49 +1,52 @@
-use stylus_sdk::msg;
+use stylus_sdk::alloy_primitives::Address;
 
 use crate::{
     program::{error::GoblinResult, token_utils::try_withdraw},
-    quantities::{BaseAtomsRaw, BaseLots, QuoteAtomsRaw, QuoteLots, WrapperU64},
-    state::{MatchingEngineResponse, SlotActions, SlotStorage},
+    quantities::{BaseAtomsRaw, BaseLots, QuoteAtomsRaw, QuoteLots},
+    state::{MatchingEngineResponse, SlotActions, SlotStorage, TraderState},
     GoblinMarket,
 };
 
-use crate::state::matching_engine;
-
-/// Withdraw from free funds
+/// Withdraw free funds for a given trader
 ///
 /// # Arguments
 ///
-/// * `quote_lots_to_withdraw` - Quote lots to withdraw. Pass u64::MAX to withdraw all
-/// * `base_lots_to_withdraw` - Base lots to withdraw. Pass u32::MAX to withdraw all
-///
-/// TODO check- quote amount for deposits could be u64. Just make sure that max amount in
-/// resting orders is u32
+/// * `trader` - Withdraw funds from this trader
+/// * `recipient` - Credit to this wallet
+/// * `num_quote_lots` - Number of lots to withdraw. Pass 0 if none should be withdrawn.
+/// Pass U64::MAX to withdraw all.
+/// * `num_base_lots` - Number of lots to withdraw. Pass 0 if none should be withdrawn.
+/// Pass U64::MAX to withdraw all.
 ///
 pub fn process_withdraw_funds(
     context: &mut GoblinMarket,
-    quote_lots_to_withdraw: u64,
-    base_lots_to_withdraw: u64,
+    trader: Address,
+    recipient: Address,
+    quote_lots: QuoteLots,
+    base_lots: BaseLots,
 ) -> GoblinResult<()> {
-    let trader = msg::sender();
-
-    let quote_lots = QuoteLots::new(quote_lots_to_withdraw);
-    let base_lots = BaseLots::new(base_lots_to_withdraw);
-
     let slot_storage = &mut SlotStorage::new();
 
+    // Read
+    let mut trader_state = TraderState::read_from_slot(slot_storage, trader);
+
+    // Mutate
     let MatchingEngineResponse {
         num_quote_lots_out,
         num_base_lots_out,
         ..
-    } = matching_engine::claim_funds(slot_storage, trader, quote_lots, base_lots);
+    } = trader_state.claim_funds_inner(quote_lots, base_lots);
+
+    // Write
+    trader_state.write_to_slot(slot_storage, trader);
+    SlotStorage::storage_flush_cache(true);
 
     // Transfer
     let quote_amount_raw = QuoteAtomsRaw::from_lots(num_quote_lots_out);
     let base_amount_raw = BaseAtomsRaw::from_lots(num_base_lots_out);
+    try_withdraw(context, quote_amount_raw, base_amount_raw, recipient)?;
 
-    try_withdraw(context, quote_amount_raw, base_amount_raw, trader)?;
+    // There is no eviction
 
     Ok(())
 }
-
-// There is no eviction

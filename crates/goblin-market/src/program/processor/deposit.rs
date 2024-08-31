@@ -3,20 +3,29 @@ use stylus_sdk::alloy_primitives::Address;
 
 use crate::{
     program::{try_deposit, GoblinResult},
-    quantities::{BaseAtomsRaw, BaseLots, QuoteAtomsRaw, QuoteLots, WrapperU64},
+    quantities::{BaseAtomsRaw, BaseLots, QuoteAtomsRaw, QuoteLots},
     state::{slot_storage, TraderState},
     GoblinMarket,
 };
 
+/// Deposit funds into the trader account. These funds can be used to trade
+/// with lower gas costs because ERC20 transfers are avoided.
+///
+/// A wallet can credit funds to another trader.
+///
+/// # Arguments
+///
+/// * `context`
+/// * `trader` - Credit funds to this trader. A wallet can credit funds to another trader.
+/// * `quote_lots`
+/// * `base_lots`
+///
 pub fn process_deposit_funds(
     context: &mut GoblinMarket,
     trader: Address,
-    quote_lots_to_deposit: u64,
-    base_lots_to_deposit: u64,
+    quote_lots: QuoteLots,
+    base_lots: BaseLots,
 ) -> GoblinResult<()> {
-    let quote_lots = QuoteLots::new(quote_lots_to_deposit);
-    let base_lots = BaseLots::new(base_lots_to_deposit);
-
     // Read
     let mut slot_storage = SlotStorage::new();
     let mut trader_state = TraderState::read_from_slot(&slot_storage, trader);

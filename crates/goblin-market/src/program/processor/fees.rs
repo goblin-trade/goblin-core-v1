@@ -1,8 +1,10 @@
 use stylus_sdk::alloy_primitives::Address;
 
-use crate::program::checkers::assert_valid_fee_collector;
-use crate::quantities::QuoteAtomsRaw;
-use crate::state::matching_engine;
+use crate::parameters::FEE_COLLECTOR;
+use crate::program::{GoblinError, InvalidFeeCollector};
+use crate::quantities::{QuoteAtomsRaw, QuoteLots};
+use crate::require;
+use crate::state::MarketState;
 use crate::{
     parameters::QUOTE_TOKEN,
     program::{maybe_invoke_withdraw, GoblinResult},
@@ -12,21 +14,36 @@ use crate::{
 
 /// Collect protocol fees
 ///
-/// msg::sender() should be the FEE_COLLECTOR
-///
 /// # Parameters
 ///
+/// * `fee_collector` - Address of the fee collector authority
 /// * `recipient` - Transfer fees to this address
 ///
-pub fn process_collect_fees(context: &mut GoblinMarket, recipient: Address) -> GoblinResult<()> {
-    assert_valid_fee_collector()?;
+pub fn process_collect_fees(
+    context: &mut GoblinMarket,
+    fee_collector: Address,
+    recipient: Address,
+) -> GoblinResult<()> {
+    require!(
+        fee_collector == FEE_COLLECTOR,
+        GoblinError::InvalidFeeCollector(InvalidFeeCollector {})
+    );
 
     let slot_storage = &mut SlotStorage::new();
-    let num_quote_lots_out = matching_engine::collect_fees(slot_storage)?;
+    // Read
+    let mut market = MarketState::read_from_slot(slot_storage);
+    let num_quote_lots_out = market.unclaimed_quote_lot_fees;
+
+    // Mutate- Mark as claimed
+    market.collected_quote_lot_fees += market.unclaimed_quote_lot_fees;
+    market.unclaimed_quote_lot_fees = QuoteLots::ZERO;
+
+    // Write
+    market.write_to_slot(slot_storage)?;
+    SlotStorage::storage_flush_cache(true);
 
     // Transfer
     let quote_atoms_collected_raw = QuoteAtomsRaw::from_lots(num_quote_lots_out);
-
     maybe_invoke_withdraw(
         context,
         quote_atoms_collected_raw.as_u256(),

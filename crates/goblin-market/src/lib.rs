@@ -32,25 +32,67 @@ sol_storage! {
 
 #[external]
 impl GoblinMarket {
+    /// Deposit funds into the trader account. These funds can be used to trade
+    /// with lower gas costs because ERC20 transfers are avoided.
+    ///
+    /// A wallet can credit funds to another trader.
+    ///
+    /// # Arguments
+    ///
+    /// * `trader` - Credit funds to this trader. A wallet can credit funds to another trader.
+    /// * `quote_lots`
+    /// * `base_lots`
+    ///
     pub fn deposit_funds(
         &mut self,
         trader: Address,
-        quote_lots_to_deposit: u64,
-        base_lots_to_deposit: u64,
+        quote_lots: u64,
+        base_lots: u64,
     ) -> GoblinResult<()> {
-        deposit::process_deposit_funds(self, trader, quote_lots_to_deposit, base_lots_to_deposit)
+        deposit::process_deposit_funds(
+            self,
+            trader,
+            QuoteLots::new(quote_lots),
+            BaseLots::new(base_lots),
+        )
     }
 
+    /// Withdraw free funds for a given trader
+    ///
+    /// # Arguments
+    ///
+    /// * `trader` - Withdraw funds from this trader
+    /// * `recipient` - Credit to this wallet
+    /// * `num_quote_lots` - Number of lots to withdraw. Pass 0 if none should be withdrawn.
+    /// Pass U64::MAX to withdraw all.
+    /// * `num_base_lots` - Number of lots to withdraw. Pass 0 if none should be withdrawn.
+    /// Pass U64::MAX to withdraw all.
+    ///
     pub fn withdraw_funds(
         &mut self,
-        quote_lots_to_withdraw: u64,
-        base_lots_to_withdraw: u64,
+        recipient: Address,
+        quote_lots: u64,
+        base_lots: u64,
     ) -> GoblinResult<()> {
-        withdraw::process_withdraw_funds(self, quote_lots_to_withdraw, base_lots_to_withdraw)
+        withdraw::process_withdraw_funds(
+            self,
+            msg::sender(),
+            recipient,
+            QuoteLots::new(quote_lots),
+            BaseLots::new(base_lots),
+        )
     }
 
+    /// Collect protocol fees
+    ///
+    /// Only callable by the FEE_COLLECTOR
+    ///
+    /// # Parameters
+    ///
+    /// * `recipient` - Transfer fees to this address
+    ///
     pub fn collect_fees(&mut self, recipient: Address) -> GoblinResult<()> {
-        fees::process_collect_fees(self, recipient)
+        fees::process_collect_fees(self, msg::sender(), recipient)
     }
 
     /// Reduce multiple orders and withdraw the funds to recipient address
