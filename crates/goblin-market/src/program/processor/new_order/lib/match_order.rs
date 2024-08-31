@@ -87,7 +87,6 @@ pub fn match_order(
                             false,
                         )
                         .unwrap();
-                    maker_state.write_to_slot(slot_storage, resting_order.trader_address);
 
                     inflight_order.match_limit -= 1;
                 }
@@ -118,8 +117,6 @@ pub fn match_order(
                         )
                         .unwrap();
 
-                    maker_state.write_to_slot(slot_storage, resting_order.trader_address);
-
                     // In the case that the self trade behavior is DecrementTake, we decrement the
                     // the base lot and adjusted quote lot budgets accordingly
                     inflight_order.base_lot_budget = inflight_order
@@ -135,6 +132,7 @@ pub fn match_order(
                     inflight_order.match_limit -= 1;
                 }
             }
+            maker_state.write_to_slot(slot_storage, resting_order.trader_address);
             return !inflight_order.in_progress();
         }
 

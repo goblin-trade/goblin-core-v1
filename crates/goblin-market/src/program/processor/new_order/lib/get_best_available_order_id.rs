@@ -13,6 +13,7 @@ use crate::{
 ///
 /// # Arguments
 ///
+/// * `slot_storage` - Read only mode
 /// * `order_packet`
 /// * `last_order` - The last order, if placing multiple post-only orders. If order id
 /// and expiry params match, then return the same order id as the last order.

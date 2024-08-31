@@ -55,12 +55,12 @@ pub fn check_for_cross(
         }
 
         if resting_order.expired(current_block, current_unix_timestamp_in_seconds) {
-            let mut trader_state =
+            let mut maker_state =
                 TraderState::read_from_slot(slot_storage, resting_order.trader_address);
 
             resting_order
                 .reduce_order(
-                    &mut trader_state,
+                    &mut maker_state,
                     resting_order.trader_address,
                     &order_id,
                     side.opposite(),
@@ -69,7 +69,7 @@ pub fn check_for_cross(
                     false,
                 )
                 .unwrap();
-            trader_state.write_to_slot(slot_storage, resting_order.trader_address);
+            maker_state.write_to_slot(slot_storage, resting_order.trader_address);
 
             return false;
         }
@@ -77,8 +77,6 @@ pub fn check_for_cross(
         crossing_tick = Some(order_id.price_in_ticks);
         return true;
     };
-
-    //
     process_resting_orders(slot_storage, market_state, opposite_side, &mut handle_cross);
 
     crossing_tick

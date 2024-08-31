@@ -24,6 +24,22 @@ pub struct OrderToInsert {
     pub resting_order: SlotRestingOrder,
 }
 
+/// Place multiple post-only orders. Used for market making
+///
+/// # Arguments
+///
+/// * `bids`
+/// * `asks`
+/// * `trader` - Place orders for this wallet
+/// * `fail_on_cross` - Whether to fail on cross or whether to amend to amend the price.
+/// * `skip_on_insufficient_funds` - Whether to skip orders with insufficient funds,
+/// or whether to revert the whole TX.
+/// * `tick_offset` - Adjust the price by given number of ticks if there are no slots available
+/// at current price. The entire TX fails if a single resting order can't be offsetted.
+/// * `client_order_id` - ID provided by trader to uniquely identify this order. It is only emitted
+/// in the event and has no impact on trades. Pass 0 as the default value.
+/// * `use_free_funds` - Whether to only use free funds, or transfer new tokens in to place these orders
+///
 pub fn place_multiple_new_orders(
     context: &mut GoblinMarket,
     bids: Vec<FixedBytes<21>>,
@@ -31,9 +47,9 @@ pub fn place_multiple_new_orders(
     trader: Address,
     fail_on_cross: bool,
     skip_on_insufficient_funds: bool,
+    tick_offset: u8,
     client_order_id: u128,
     no_deposit: bool,
-    tick_offset: u8,
 ) -> GoblinResult<()> {
     let slot_storage = &mut SlotStorage::new();
 
@@ -200,6 +216,12 @@ pub fn place_multiple_new_orders(
         resting_order_inserter.write_prepared_indices(slot_storage, &mut market_state);
     }
 
+    // Write state
+    // TODO check other writes in check_for_cross()
+    market_state.write_to_slot(slot_storage)?;
+    trader_state.write_to_slot(slot_storage, trader);
+    SlotStorage::storage_flush_cache(true);
+
     if !no_deposit {
         maybe_invoke_deposit(
             context,
@@ -298,6 +320,11 @@ pub fn process_new_order(
             BaseAtomsRaw::from_lots(matching_engine_response.get_deposit_amount_ask_in_base_lots()),
         )
     };
+
+    // Write state
+    market_state.write_to_slot(slot_storage)?;
+    trader_state.write_to_slot(slot_storage, trader);
+    SlotStorage::storage_flush_cache(true);
 
     if !order_packet.no_deposit_or_withdrawal() {
         match side {

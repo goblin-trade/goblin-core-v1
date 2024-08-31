@@ -122,12 +122,14 @@ impl GoblinMarket {
     ///
     /// * `bids`
     /// * `asks`
-    /// * `failed_multiple_limit_order_behavior` - Trade behavior if one of the orders fails
+    /// * `fail_on_cross` - Whether to fail on cross or whether to amend to amend the price.
+    /// * `skip_on_insufficient_funds` - Whether to skip orders with insufficient funds,
+    /// or whether to revert the whole TX.
     /// * `tick_offset` - Adjust the price by given number of ticks if there are no slots available
     /// at current price. The entire TX fails if a single resting order can't be offsetted.
     /// * `client_order_id` - ID provided by trader to uniquely identify this order. It is only emitted
     /// in the event and has no impact on trades. Pass 0 as the default value.
-    /// * `use_free_funds` - Whether to use free funds, or transfer new tokens in to place these orders
+    /// * `use_free_funds` - Whether to only use free funds, or transfer new tokens in to place these orders
     ///
     pub fn place_multiple_post_only_orders(
         &mut self,
@@ -146,9 +148,9 @@ impl GoblinMarket {
             msg::sender(),
             fail_on_cross,
             skip_on_insufficient_funds,
+            tick_offset,
             client_order_id,
             use_free_funds,
-            tick_offset,
         )
     }
 
