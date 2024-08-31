@@ -1,9 +1,7 @@
 pub mod enums;
-pub mod fees;
 pub mod inflight_order;
 pub mod iterable_tick_map;
 pub mod market_state;
-pub mod matching_engine;
 pub mod matching_engine_response;
 pub mod order_packet;
 pub mod resting_order;
@@ -12,11 +10,9 @@ pub mod tick_indices;
 pub mod trader_state;
 
 pub use enums::*;
-pub use fees::*;
 pub use inflight_order::*;
 pub use iterable_tick_map::*;
 pub use market_state::*;
-pub use matching_engine::*;
 pub use matching_engine_response::*;
 pub use order_packet::*;
 pub use resting_order::*;

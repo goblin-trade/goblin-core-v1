@@ -13,8 +13,8 @@
 /// fees will be subtracted after matching is complete.
 ///
 use crate::{
-    parameters::TAKER_FEE_BPS,
-    quantities::{AdjustedQuoteLots, WrapperU64},
+    parameters::{BASE_LOTS_PER_BASE_UNIT, TAKER_FEE_BPS},
+    quantities::{AdjustedQuoteLots, BaseLotsPerBaseUnit, QuoteLots, WrapperU64},
 };
 
 /// Round up the fee to the nearest adjusted quote lot
@@ -57,4 +57,21 @@ pub fn adjusted_quote_lot_budget_post_fee_adjustment_for_sells(
     u64::try_from(size_in_adjusted_quote_lots.as_u128() * u64::MAX as u128 / fee_adjustment)
         .ok()
         .map(AdjustedQuoteLots::new)
+}
+
+/// Adjusted quote lots, rounded up to the nearest multiple of base_lots_per_base_unit
+pub fn round_adjusted_quote_lots_up(
+    num_adjusted_quote_lots: AdjustedQuoteLots,
+) -> AdjustedQuoteLots {
+    ((num_adjusted_quote_lots + AdjustedQuoteLots::new(BASE_LOTS_PER_BASE_UNIT.as_u64() - 1))
+        .unchecked_div::<BaseLotsPerBaseUnit, QuoteLots>(BASE_LOTS_PER_BASE_UNIT))
+        * BASE_LOTS_PER_BASE_UNIT
+}
+
+/// Adjusted quote lots, rounded down to the nearest multiple of base_lots_per_base_unit
+pub fn round_adjusted_quote_lots_down(
+    num_adjusted_quote_lots: AdjustedQuoteLots,
+) -> AdjustedQuoteLots {
+    num_adjusted_quote_lots.unchecked_div::<BaseLotsPerBaseUnit, QuoteLots>(BASE_LOTS_PER_BASE_UNIT)
+        * BASE_LOTS_PER_BASE_UNIT
 }

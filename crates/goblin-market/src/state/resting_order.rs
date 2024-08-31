@@ -8,8 +8,8 @@ use crate::{
     quantities::{BaseLots, QuoteLots, Ticks, WrapperU64},
     require,
     state::{
-        slot_storage::SlotKey, MatchingEngineResponse, ReduceOrderInnerResponse, Side, SlotActions,
-        SlotStorage, TraderState, ORDERS_PER_TICK, RESTING_ORDER_KEY_SEED,
+        slot_storage::SlotKey, MatchingEngineResponse, Side, SlotActions, SlotStorage, TraderState,
+        ORDERS_PER_TICK, RESTING_ORDER_KEY_SEED,
     },
 };
 
@@ -394,6 +394,11 @@ impl RestingOrder for SlotRestingOrder {
     }
 
     // TODO is_expired() function
+}
+
+pub struct ReduceOrderInnerResponse {
+    pub matching_engine_response: MatchingEngineResponse,
+    pub should_remove_order_from_book: bool,
 }
 
 #[cfg(test)]

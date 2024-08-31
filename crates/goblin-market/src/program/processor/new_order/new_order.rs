@@ -10,44 +10,18 @@ use crate::{
     quantities::{BaseAtomsRaw, BaseLots, QuoteAtomsRaw, QuoteLots, Ticks, WrapperU64, MAX_TICK},
     require,
     state::{
-        matching_engine, MarketState, OrderId, OrderPacket, OrderPacketMetadata,
-        RestingOrderInserter, Side, SlotActions, SlotRestingOrder, SlotStorage, TraderState,
+        MarketState, OrderId, OrderPacket, OrderPacketMetadata, RestingOrderInserter, Side,
+        SlotActions, SlotRestingOrder, SlotStorage, TraderState,
     },
     GoblinMarket,
 };
+
+use super::{place_order_inner, CondensedOrder};
 
 #[derive(Clone, Copy)]
 pub struct OrderToInsert {
     pub order_id: OrderId,
     pub resting_order: SlotRestingOrder,
-}
-
-pub struct CondensedOrder {
-    // Order price in ticks
-    pub price_in_ticks: Ticks,
-
-    // Order size
-    pub size_in_base_lots: BaseLots,
-
-    // Whether to track block or unix timestamp
-    pub track_block: bool,
-
-    // The last valid block or unix timestamp, depending on the value of
-    // track_block. Set value as 0 to disable FOK.
-    pub last_valid_block_or_unix_timestamp_in_seconds: u32,
-}
-
-impl From<&FixedBytes<21>> for CondensedOrder {
-    fn from(bytes: &FixedBytes<21>) -> Self {
-        CondensedOrder {
-            price_in_ticks: Ticks::new(u64::from_be_bytes(bytes[0..8].try_into().unwrap())),
-            size_in_base_lots: BaseLots::new(u64::from_be_bytes(bytes[8..16].try_into().unwrap())),
-            track_block: (bytes[16] & 0b0000_0001) != 0,
-            last_valid_block_or_unix_timestamp_in_seconds: u32::from_be_bytes(
-                bytes[17..21].try_into().unwrap(),
-            ),
-        }
-    }
 }
 
 pub fn place_multiple_new_orders(
@@ -155,17 +129,16 @@ pub fn place_multiple_new_orders(
 
                 // matching_engine_response gives the number of tokens required
                 // these are added and then compared in the end
-                let (order_to_insert, matching_engine_response) =
-                    matching_engine::place_order_inner(
-                        // order_inserter.index_list_iterator.slot_storage,
-                        slot_storage,
-                        &mut market_state,
-                        &mut trader_state,
-                        trader,
-                        &mut order_packet,
-                        last_order,
-                    )
-                    .ok_or(GoblinError::NewOrderError(NewOrderError {}))?;
+                let (order_to_insert, matching_engine_response) = place_order_inner(
+                    // order_inserter.index_list_iterator.slot_storage,
+                    slot_storage,
+                    &mut market_state,
+                    &mut trader_state,
+                    trader,
+                    &mut order_packet,
+                    last_order,
+                )
+                .ok_or(GoblinError::NewOrderError(NewOrderError {}))?;
 
                 if let Some(ref mut last_order) = last_order {
                     let new_order = order_to_insert.unwrap();
@@ -290,7 +263,7 @@ pub fn process_new_order(
             }
         }
 
-        let (order_to_insert, matching_engine_response) = matching_engine::place_order_inner(
+        let (order_to_insert, matching_engine_response) = place_order_inner(
             slot_storage,
             &mut market_state,
             &mut trader_state,
