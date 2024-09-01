@@ -95,7 +95,9 @@ impl IndexListInserter {
 /// Write cached indices to slot
 ///
 /// This must be called after calling prepare() atlreast once, else the function fails
-/// because index_list_iterator.list_slot.unwrap() will throw error
+/// because index_list_iterator.list_slot.unwrap() will throw error.
+///
+/// Indices are written from the left (start) to right.
 ///
 pub fn write_prepared_indices(
     slot_storage: &mut SlotStorage,

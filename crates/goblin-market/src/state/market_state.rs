@@ -131,10 +131,10 @@ impl MarketState {
     }
 
     pub fn get_index_list(&self, side: Side) -> IndexList {
-        IndexList::new(side, self.outer_index_length(side))
+        IndexList::new(side, self.outer_index_count(side))
     }
 
-    pub fn outer_index_length(&self, side: Side) -> u16 {
+    pub fn outer_index_count(&self, side: Side) -> u16 {
         if side == Side::Bid {
             self.bids_outer_indices
         } else {

@@ -4,6 +4,7 @@ pub mod constants;
 pub mod index_list;
 pub mod index_list_inserter;
 pub mod index_list_reader;
+pub mod index_list_remover;
 pub mod process_resting_orders;
 pub mod resting_order_inserter;
 
@@ -13,5 +14,6 @@ pub use constants::*;
 pub use index_list::*;
 pub use index_list_inserter::*;
 pub use index_list_reader::*;
+pub use index_list_remover::*;
 pub use process_resting_orders::*;
 pub use resting_order_inserter::*;

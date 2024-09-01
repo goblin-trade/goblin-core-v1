@@ -301,7 +301,7 @@ pub fn process_new_order(
         }) = order_to_insert
         {
             let mut resting_order_inserter =
-                RestingOrderInserter::new(side, market_state.outer_index_length(side));
+                RestingOrderInserter::new(side, market_state.outer_index_count(side));
             resting_order_inserter.insert_resting_order(
                 slot_storage,
                 &mut market_state,

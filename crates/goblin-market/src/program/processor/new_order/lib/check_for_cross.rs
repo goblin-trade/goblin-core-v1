@@ -30,7 +30,7 @@ pub fn check_for_cross(
 ) -> Option<Ticks> {
     let opposite_side = side.opposite();
     let opposite_best_price = market_state.best_price(opposite_side);
-    let outer_index_count = market_state.outer_index_length(opposite_side);
+    let outer_index_count = market_state.outer_index_count(opposite_side);
 
     if outer_index_count == 0 // Book empty case
             // No cross case

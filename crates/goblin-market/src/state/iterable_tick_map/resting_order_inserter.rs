@@ -154,7 +154,7 @@ mod tests {
             last_valid_block_or_unix_timestamp_in_seconds: 0,
         };
 
-        let mut inserter = RestingOrderInserter::new(side, market_state.outer_index_length(side));
+        let mut inserter = RestingOrderInserter::new(side, market_state.outer_index_count(side));
 
         inserter
             .insert_resting_order(slot_storage, &mut market_state, &resting_order, &order_id)
@@ -247,7 +247,7 @@ mod tests {
             last_valid_block_or_unix_timestamp_in_seconds: 0,
         };
 
-        let mut inserter = RestingOrderInserter::new(side, market_state.outer_index_length(side));
+        let mut inserter = RestingOrderInserter::new(side, market_state.outer_index_count(side));
 
         inserter
             .insert_resting_order(
@@ -354,7 +354,7 @@ mod tests {
             last_valid_block_or_unix_timestamp_in_seconds: 0,
         };
 
-        let mut inserter = RestingOrderInserter::new(side, market_state.outer_index_length(side));
+        let mut inserter = RestingOrderInserter::new(side, market_state.outer_index_count(side));
 
         inserter
             .insert_resting_order(
@@ -467,7 +467,7 @@ mod tests {
             last_valid_block_or_unix_timestamp_in_seconds: 0,
         };
 
-        let mut inserter = RestingOrderInserter::new(side, market_state.outer_index_length(side));
+        let mut inserter = RestingOrderInserter::new(side, market_state.outer_index_count(side));
 
         inserter
             .insert_resting_order(
@@ -597,7 +597,7 @@ mod tests {
             last_valid_block_or_unix_timestamp_in_seconds: 0,
         };
 
-        let mut inserter = RestingOrderInserter::new(side, market_state.outer_index_length(side));
+        let mut inserter = RestingOrderInserter::new(side, market_state.outer_index_count(side));
 
         inserter
             .insert_resting_order(slot_storage, &mut market_state, &resting_order, &order_id_1)
@@ -689,7 +689,7 @@ mod tests {
             last_valid_block_or_unix_timestamp_in_seconds: 0,
         };
 
-        let mut inserter = RestingOrderInserter::new(side, market_state.outer_index_length(side));
+        let mut inserter = RestingOrderInserter::new(side, market_state.outer_index_count(side));
 
         inserter
             .insert_resting_order(slot_storage, &mut market_state, &resting_order, &order_id_1)
@@ -811,7 +811,7 @@ mod tests {
             last_valid_block_or_unix_timestamp_in_seconds: 0,
         };
 
-        let mut inserter = RestingOrderInserter::new(side, market_state.outer_index_length(side));
+        let mut inserter = RestingOrderInserter::new(side, market_state.outer_index_count(side));
 
         inserter
             .insert_resting_order(slot_storage, &mut market_state, &resting_order, &order_id_1)
