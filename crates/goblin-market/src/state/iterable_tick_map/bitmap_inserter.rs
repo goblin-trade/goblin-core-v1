@@ -2,7 +2,7 @@ use crate::state::{OrderId, OuterIndex, SlotStorage, TickIndices};
 
 use super::BitmapGroup;
 
-/// Facilitates efficient batch updation of bitmap groups
+/// Facilitates efficient batch activations in bitmap groups
 pub struct BitmapInserter {
     /// The current bitmap group pending a write. This allows us to perform multiple
     /// updates in a bitmap group with a single slot load. This value is written to slot
@@ -31,7 +31,7 @@ impl BitmapInserter {
     }
 
     /// Turn on a bit at a given (outer index, inner index, resting order index)
-    /// If the outer index changes then the previous bitmap is written
+    /// If the outer index changes then the previous bitmap is overwritten
     ///
     /// write_last_bitmap_group() must be called after activations are complete to write
     /// the last bitmap group to slot.

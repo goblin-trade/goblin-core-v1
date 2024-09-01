@@ -141,12 +141,12 @@ pub fn reduce_multiple_orders_inner(
 
         let side = order_id.side(market_state.best_bid_price, market_state.best_ask_price);
 
-        let mut order = SlotRestingOrder::new_from_slot(slot_storage, order_id);
+        let mut resting_order = SlotRestingOrder::new_from_slot(slot_storage, order_id);
 
         if let Some(ReduceOrderInnerResponse {
             matching_engine_response,
             should_remove_order_from_book,
-        }) = order.reduce_order(
+        }) = resting_order.reduce_order(
             trader_state,
             trader,
             &order_id,
@@ -155,7 +155,7 @@ pub fn reduce_multiple_orders_inner(
             false,
             claim_funds,
         ) {
-            order.write_to_slot(slot_storage, &order_id)?;
+            resting_order.write_to_slot(slot_storage, &order_id)?;
 
             quote_lots_released += matching_engine_response.num_quote_lots_out;
             base_lots_released += matching_engine_response.num_base_lots_out;
