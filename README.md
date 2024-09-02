@@ -1,7 +1,3 @@
-# Important
-
-TODO investigate `SlotStorage::storage_flush_cache()`. Don't remember.
-
 # Steps
 
 ```sh

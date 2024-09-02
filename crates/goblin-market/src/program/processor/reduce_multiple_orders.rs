@@ -132,6 +132,8 @@ pub fn reduce_multiple_orders_inner(
     let mut bid_index_list = market_state.get_index_list(Side::Bid);
     let mut ask_index_list = market_state.get_index_list(Side::Ask);
 
+    // TODO ensure orders are in descending order for bids and in ascending order
+    // for asks, i.e. moving away from the centre
     for order_packet_bytes in order_packets {
         let ReduceOrderPacket {
             order_id,
@@ -143,6 +145,25 @@ pub fn reduce_multiple_orders_inner(
 
         let mut resting_order = SlotRestingOrder::new_from_slot(slot_storage, order_id);
 
+        // Edge cases lead to None branch
+        // - Order was cleared (0 base lots, i.e. cleared in bitmap)
+        // - Order doesn't belong to trader
+        //
+        // Problem with new design. We no longer write cleared resting orders to slot.
+        // Instead we simply turn off the bitmap.
+        // This means that when we are reducing orders, we cannot read the resting order directly.
+        // We first need to see whether the order exists in the bitmap.
+        //
+        // Tradeoff
+        // - Pro: Reduced slot writes
+        // - Con: Bitmap group must be read before reading resting orders.
+        //
+        // Access pattern
+        // - Removing resting order clears will save gas when matching, and when canceling orders.
+        // These are the two biggest use patterns.
+        // - Reducing orders, i.e. reducing size but not closing is a minor use case. Most market
+        // makers will cancel.
+        //
         if let Some(ReduceOrderInnerResponse {
             matching_engine_response,
             should_remove_order_from_book,
@@ -155,12 +176,11 @@ pub fn reduce_multiple_orders_inner(
             false,
             claim_funds,
         ) {
-            resting_order.write_to_slot(slot_storage, &order_id)?;
-
             quote_lots_released += matching_engine_response.num_quote_lots_out;
             base_lots_released += matching_engine_response.num_base_lots_out;
 
             // Order should be removed from the book. Flip its corresponding bitmap.
+            // No need to write cleared resting order to slot
             if should_remove_order_from_book {
                 let TickIndices {
                     outer_index,
@@ -196,6 +216,9 @@ pub fn reduce_multiple_orders_inner(
                         ask_index_list.remove(slot_storage, outer_index)?;
                     }
                 }
+            } else {
+                // Write reduced resting order to slot
+                resting_order.write_to_slot(slot_storage, &order_id)?;
             }
         } else if revert_if_fail {
             return Err(GoblinError::FailedToReduce(FailedToReduce {}));

@@ -150,6 +150,8 @@ pub fn match_order(
 
             // Budget exceeds quote. Clear the resting order.
             if has_remaining_base_lots && has_remaining_adjusted_quote_lots {
+                // TODO remove clear_order() function. No need to clear closed orders,
+                // simply clear its corresponding bitmap slot.
                 resting_order.clear_order();
                 (num_base_lots_quoted, num_adjusted_quote_lots_quoted)
             } else {

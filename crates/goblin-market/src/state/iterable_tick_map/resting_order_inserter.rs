@@ -14,9 +14,6 @@ use super::{BitmapInserter, IndexListInserter};
 /// 3. Index list- Insert outer index if not present
 /// 4. Bitmap group- Flip bit corresponding to the order
 ///
-/// It caches the last read bitmap group and its outer index to minimize slot writes.
-/// Multiple updates to a bitmap group are batched.
-///
 pub struct RestingOrderInserter {
     /// Index list inserter- to insert outer indices in index lists and for writing them to slot
     pub index_list_inserter: IndexListInserter,

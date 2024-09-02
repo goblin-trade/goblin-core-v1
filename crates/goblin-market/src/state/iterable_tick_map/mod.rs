@@ -8,6 +8,7 @@ pub mod index_list_reader;
 pub mod index_list_remover;
 pub mod process_resting_orders;
 pub mod resting_order_inserter;
+pub mod resting_order_remover;
 
 pub use bitmap::*;
 pub use bitmap_inserter::*;
@@ -19,3 +20,4 @@ pub use index_list_reader::*;
 pub use index_list_remover::*;
 pub use process_resting_orders::*;
 pub use resting_order_inserter::*;
+pub use resting_order_remover::*;

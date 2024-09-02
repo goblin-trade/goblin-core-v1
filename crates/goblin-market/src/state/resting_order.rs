@@ -244,6 +244,9 @@ impl SlotRestingOrder {
         self.num_base_lots += other.num_base_lots;
     }
 
+    // TODO remove. No need to write cleared resting orders to slot, let them be.
+    // Updating bitmaps is enough.
+    // TODO update match_order()
     pub fn clear_order(&mut self) {
         // Gas optimization- set address to 0x1. This way the slot is not cleared
         self.trader_address = NULL_ADDRESS;
@@ -295,6 +298,11 @@ impl SlotRestingOrder {
     ) -> Option<ReduceOrderInnerResponse> {
         // Find lots to remove
         let (should_remove_order_from_book, base_lots_to_remove) = {
+            // Order is empty. Its bitmap position is already cleared
+            if self.num_base_lots == BaseLots::ZERO {
+                return None;
+            }
+
             // Order does not exist (blank slot), or belongs to another trader
             if self.trader_address != trader {
                 return None;
@@ -315,6 +323,7 @@ impl SlotRestingOrder {
 
         // Mutate order
         let _base_lots_remaining = if should_remove_order_from_book {
+            // TODO investigate. If resting order is cleared, no need to write it to slot.
             self.clear_order();
 
             BaseLots::ZERO
