@@ -15,7 +15,7 @@ use crate::{
 
 const NULL_ADDRESS: Address = address!("0000000000000000000000000000000000000001");
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
 #[repr(transparent)]
 pub struct RestingOrderIndex {
     inner: u8,
@@ -47,7 +47,7 @@ impl Add for RestingOrderIndex {
     }
 }
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub struct OrderId {
     /// Tick where order is placed
     pub price_in_ticks: Ticks,
@@ -91,6 +91,39 @@ impl OrderId {
             // However there could be activated slots. Ensure that they are not tested here.
             unreachable!()
         }
+    }
+}
+
+// Asks are sorted in ascending order of price
+#[derive(PartialEq, Eq, Debug, Clone, Copy, Ord, PartialOrd)]
+pub struct AskOrderId {
+    pub inner: OrderId,
+}
+
+// Bids are sorted in descending order of price
+#[derive(PartialEq, Eq, Debug, Clone, Copy)]
+pub struct BidOrderId {
+    pub inner: OrderId,
+}
+
+impl PartialOrd for BidOrderId {
+    fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for BidOrderId {
+    fn cmp(&self, other: &Self) -> core::cmp::Ordering {
+        // Compare `Ticks` in descending order
+        other
+            .inner
+            .price_in_ticks
+            .cmp(&self.inner.price_in_ticks)
+            .then_with(|| {
+                self.inner
+                    .resting_order_index
+                    .cmp(&other.inner.resting_order_index)
+            })
     }
 }
 
@@ -411,12 +444,11 @@ pub struct ReduceOrderInnerResponse {
 }
 
 #[cfg(test)]
-mod test {
-    use stylus_sdk::alloy_primitives::{address, Address};
-
-    use crate::quantities::{BaseLots, WrapperU64};
-
+mod tests {
     use super::SlotRestingOrder;
+    use super::*;
+    use crate::quantities::{BaseLots, WrapperU64};
+    use stylus_sdk::alloy_primitives::{address, Address};
 
     #[test]
     fn highest_valid_base_lot_size() {
@@ -605,5 +637,97 @@ mod test {
 
         assert_eq!(encoded_4[20], 0b1111_1111);
         assert_eq!(&encoded_4[21..28], [255u8; 7]);
+    }
+
+    #[test]
+    fn test_ask_order_id_sorting() {
+        let ask1 = AskOrderId {
+            inner: OrderId {
+                price_in_ticks: Ticks::new(100),
+                resting_order_index: RestingOrderIndex::new(1),
+            },
+        };
+        let ask2 = AskOrderId {
+            inner: OrderId {
+                price_in_ticks: Ticks::new(200),
+                resting_order_index: RestingOrderIndex::new(2),
+            },
+        };
+
+        assert!(ask1 < ask2);
+
+        let mut asks = vec![ask2, ask1];
+        asks.sort();
+
+        assert_eq!(asks, vec![ask1, ask2]);
+    }
+
+    #[test]
+    fn test_bid_order_id_sorting() {
+        let bid1 = BidOrderId {
+            inner: OrderId {
+                price_in_ticks: Ticks::new(100),
+                resting_order_index: RestingOrderIndex::new(1),
+            },
+        };
+        let bid2 = BidOrderId {
+            inner: OrderId {
+                price_in_ticks: Ticks::new(200),
+                resting_order_index: RestingOrderIndex::new(2),
+            },
+        };
+
+        assert!(bid2 < bid1);
+
+        let mut bids = vec![bid1, bid2];
+        bids.sort();
+
+        assert_eq!(bids, vec![bid2, bid1]);
+    }
+
+    #[test]
+    fn test_ask_order_id_resting_order_index_tiebreaker() {
+        let ask1 = AskOrderId {
+            inner: OrderId {
+                price_in_ticks: Ticks::new(100),
+                resting_order_index: RestingOrderIndex::new(1),
+            },
+        };
+        let ask2 = AskOrderId {
+            inner: OrderId {
+                price_in_ticks: Ticks::new(100),
+                resting_order_index: RestingOrderIndex::new(2),
+            },
+        };
+
+        assert!(ask1 < ask2);
+
+        let mut asks = vec![ask2, ask1];
+        asks.sort();
+
+        assert_eq!(asks, vec![ask1, ask2]);
+    }
+
+    #[test]
+    fn test_bid_order_id_resting_order_index_tiebreaker() {
+        let bid1 = BidOrderId {
+            inner: OrderId {
+                price_in_ticks: Ticks::new(200),
+                resting_order_index: RestingOrderIndex::new(1),
+            },
+        };
+        let bid2 = BidOrderId {
+            inner: OrderId {
+                price_in_ticks: Ticks::new(200),
+                resting_order_index: RestingOrderIndex::new(2),
+            },
+        };
+
+        assert!(bid1 < bid2);
+
+        let mut bids = vec![bid2, bid1];
+        bids.sort();
+
+        assert_eq!(bids, vec![bid1, bid2]);
     }
 }

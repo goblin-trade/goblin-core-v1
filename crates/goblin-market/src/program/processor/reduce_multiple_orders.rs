@@ -2,12 +2,13 @@ use alloc::vec::Vec;
 use stylus_sdk::alloy_primitives::{Address, FixedBytes};
 
 use crate::{
-    program::{try_withdraw, FailedToReduce, GoblinError, GoblinResult},
+    program::{try_withdraw, FailedToReduce, GoblinError, GoblinResult, PricesNotInOrder},
     quantities::{BaseAtomsRaw, BaseLots, QuoteAtomsRaw, QuoteLots, Ticks, WrapperU64},
+    require,
     state::{
-        BitmapGroup, MarketState, MatchingEngineResponse, OrderId, OuterIndex,
-        ReduceOrderInnerResponse, RestingOrderIndex, Side, SlotActions, SlotRestingOrder,
-        SlotStorage, TickIndices, TraderState,
+        AskOrderId, BidOrderId, BitmapGroup, MarketState, MatchingEngineResponse, OrderId,
+        OuterIndex, ReduceOrderInnerResponse, RestingOrderIndex, Side, SlotActions,
+        SlotRestingOrder, SlotStorage, TickIndices, TraderState,
     },
     GoblinMarket,
 };
@@ -132,16 +133,30 @@ pub fn reduce_multiple_orders_inner(
     let mut bid_index_list = market_state.get_index_list(Side::Bid);
     let mut ask_index_list = market_state.get_index_list(Side::Ask);
 
+    let mut order_id_checker = OrderIdChecker::new();
+
+    let mut last_bid_order_id: Option<BidOrderId> = None;
+    let mut last_ask_order_id: Option<AskOrderId> = None;
+
     // TODO ensure orders are in descending order for bids and in ascending order
     // for asks, i.e. moving away from the centre
     for order_packet_bytes in order_packets {
         let ReduceOrderPacket {
             order_id,
-            lots_to_remove: size,
+            lots_to_remove,
             revert_if_fail,
         } = ReduceOrderPacket::from(&order_packet_bytes);
 
+        let TickIndices {
+            outer_index,
+            inner_index,
+        } = order_id.price_in_ticks.to_indices();
+
         let side = order_id.side(market_state.best_bid_price, market_state.best_ask_price);
+
+        // Ensure that successive order IDs move away from the center and that
+        // duplicate values are not passed
+        order_id_checker.check(order_id, side)?;
 
         let mut resting_order = SlotRestingOrder::new_from_slot(slot_storage, order_id);
 
@@ -171,8 +186,8 @@ pub fn reduce_multiple_orders_inner(
             trader_state,
             trader,
             &order_id,
-            side.clone(),
-            size,
+            side,
+            lots_to_remove,
             false,
             claim_funds,
         ) {
@@ -182,11 +197,6 @@ pub fn reduce_multiple_orders_inner(
             // Order should be removed from the book. Flip its corresponding bitmap.
             // No need to write cleared resting order to slot
             if should_remove_order_from_book {
-                let TickIndices {
-                    outer_index,
-                    inner_index,
-                } = order_id.price_in_ticks.to_indices();
-
                 // SLOAD and cache the bitmap group. This saves us from duplicate SLOADs in future
                 // Read a new bitmap group if no cache exists or if the outer index does not match
                 if cached_bitmap_group.is_none() || cached_bitmap_group.unwrap().1 != outer_index {
@@ -245,4 +255,42 @@ pub fn reduce_multiple_orders_inner(
         base_lots_released,
         quote_lots_released,
     ))
+}
+
+/// Ensures that successive order ids to remove are in correct order
+///
+/// Successive IDs must be in ascending order for asks and in descending order for bids
+struct OrderIdChecker {
+    last_bid_order_id: Option<BidOrderId>,
+    last_ask_order_id: Option<AskOrderId>,
+}
+
+impl OrderIdChecker {
+    pub fn new() -> Self {
+        OrderIdChecker {
+            last_bid_order_id: None,
+            last_ask_order_id: None,
+        }
+    }
+
+    pub fn check(&mut self, order_id: OrderId, side: Side) -> GoblinResult<()> {
+        if side == Side::Bid && self.last_bid_order_id.is_some() {
+            let bid_order_id = BidOrderId { inner: order_id };
+            require!(
+                bid_order_id < self.last_bid_order_id.unwrap(),
+                GoblinError::PricesNotInOrder(PricesNotInOrder {})
+            );
+            self.last_bid_order_id = Some(bid_order_id);
+        }
+        if side == Side::Ask && self.last_ask_order_id.is_some() {
+            let ask_order_id = AskOrderId { inner: order_id };
+            require!(
+                ask_order_id < self.last_ask_order_id.unwrap(),
+                GoblinError::PricesNotInOrder(PricesNotInOrder {})
+            );
+            self.last_ask_order_id = Some(ask_order_id);
+        }
+
+        Ok(())
+    }
 }

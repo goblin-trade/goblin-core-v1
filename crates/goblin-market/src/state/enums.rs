@@ -14,13 +14,6 @@ impl From<bool> for Side {
 }
 
 impl Side {
-    // pub fn init(is_bid: bool) -> Self {
-    //     match is_bid {
-    //         true => Side::Bid,
-    //         false => Self::Ask,
-    //     }
-    // }
-
     pub fn opposite(&self) -> Self {
         match *self {
             Side::Bid => Side::Ask,

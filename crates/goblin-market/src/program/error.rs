@@ -23,7 +23,7 @@ sol! {
     // Failed to reduce error. Thrown in revert_if_fail mode
     error FailedToReduce();
 
-    // Prices of new post-only orders are not in correct order
+    // Prices of new post-only orders / orders to reduce are not in correct order
     error PricesNotInOrder();
 
     // Not used yet- to check
