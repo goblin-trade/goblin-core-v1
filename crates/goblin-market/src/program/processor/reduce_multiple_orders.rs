@@ -6,8 +6,8 @@ use crate::{
     quantities::{BaseAtomsRaw, BaseLots, QuoteAtomsRaw, QuoteLots, Ticks, WrapperU64},
     require,
     state::{
-        AskOrderId, BidOrderId, BitmapGroup, MarketState, MatchingEngineResponse, OrderId,
-        OuterIndex, ReduceOrderInnerResponse, RestingOrderIndex, Side, SlotActions,
+        AskOrderId, BidOrderId, BitmapGroup, BitmapReader, MarketState, MatchingEngineResponse,
+        OrderId, OuterIndex, ReduceOrderInnerResponse, RestingOrderIndex, Side, SlotActions,
         SlotRestingOrder, SlotStorage, TickIndices, TraderState,
     },
     GoblinMarket,
@@ -132,12 +132,11 @@ pub fn reduce_multiple_orders_inner(
 
     let mut bid_index_list = market_state.get_index_list(Side::Bid);
     let mut ask_index_list = market_state.get_index_list(Side::Ask);
-
     let mut order_id_checker = OrderIdChecker::new();
-
-    let mut last_bid_order_id: Option<BidOrderId> = None;
-    let mut last_ask_order_id: Option<AskOrderId> = None;
-
+    let mut order_exists_checker = OrderExistsChecker::new(
+        market_state.bids_outer_indices,
+        market_state.asks_outer_indices,
+    );
     // TODO ensure orders are in descending order for bids and in ascending order
     // for asks, i.e. moving away from the centre
     for order_packet_bytes in order_packets {
@@ -151,89 +150,107 @@ pub fn reduce_multiple_orders_inner(
             outer_index,
             inner_index,
         } = order_id.price_in_ticks.to_indices();
-
         let side = order_id.side(market_state.best_bid_price, market_state.best_ask_price);
 
         // Ensure that successive order IDs move away from the center and that
         // duplicate values are not passed
         order_id_checker.check(order_id, side)?;
 
-        let mut resting_order = SlotRestingOrder::new_from_slot(slot_storage, order_id);
+        let order_exists = order_exists_checker.order_exists(slot_storage, side, order_id);
 
-        // Edge cases lead to None branch
-        // - Order was cleared (0 base lots, i.e. cleared in bitmap)
-        // - Order doesn't belong to trader
-        //
-        // Problem with new design. We no longer write cleared resting orders to slot.
-        // Instead we simply turn off the bitmap.
-        // This means that when we are reducing orders, we cannot read the resting order directly.
-        // We first need to see whether the order exists in the bitmap.
-        //
-        // Tradeoff
-        // - Pro: Reduced slot writes
-        // - Con: Bitmap group must be read before reading resting orders.
-        //
-        // Access pattern
-        // - Removing resting order clears will save gas when matching, and when canceling orders.
-        // These are the two biggest use patterns.
-        // - Reducing orders, i.e. reducing size but not closing is a minor use case. Most market
-        // makers will cancel.
-        //
-        if let Some(ReduceOrderInnerResponse {
-            matching_engine_response,
-            should_remove_order_from_book,
-        }) = resting_order.reduce_order(
-            trader_state,
-            trader,
-            &order_id,
-            side,
-            lots_to_remove,
-            false,
-            claim_funds,
-        ) {
-            quote_lots_released += matching_engine_response.num_quote_lots_out;
-            base_lots_released += matching_engine_response.num_base_lots_out;
+        if order_exists {
+            let mut resting_order = SlotRestingOrder::new_from_slot(slot_storage, order_id);
 
-            // Order should be removed from the book. Flip its corresponding bitmap.
-            // No need to write cleared resting order to slot
-            if should_remove_order_from_book {
-                // SLOAD and cache the bitmap group. This saves us from duplicate SLOADs in future
-                // Read a new bitmap group if no cache exists or if the outer index does not match
-                if cached_bitmap_group.is_none() || cached_bitmap_group.unwrap().1 != outer_index {
-                    // Before reading a new bitmap group, write the currently cached one to slot
-                    if let Some((old_bitmap_group, old_outer_index)) = cached_bitmap_group {
-                        old_bitmap_group.write_to_slot(slot_storage, &old_outer_index);
-                    }
+            if let Some(ReduceOrderInnerResponse {
+                matching_engine_response,
+                should_remove_order_from_book,
+            }) = resting_order.reduce_order(
+                trader_state,
+                trader,
+                &order_id,
+                side,
+                lots_to_remove,
+                false,
+                claim_funds,
+            ) {
+                quote_lots_released += matching_engine_response.num_quote_lots_out;
+                base_lots_released += matching_engine_response.num_base_lots_out;
 
-                    // Read new
-                    cached_bitmap_group = Some((
-                        BitmapGroup::new_from_slot(slot_storage, outer_index),
-                        outer_index,
-                    ));
+                if should_remove_order_from_book {
+                    // TODO deactivate slot
+                    // TODO update best market price
+                } else {
+                    resting_order.write_to_slot(slot_storage, &order_id)?;
                 }
-
-                let (mut bitmap_group, outer_index) = cached_bitmap_group.unwrap();
-                let mut mutable_bitmap = bitmap_group.get_bitmap_mut(&inner_index);
-                mutable_bitmap.clear(&order_id.resting_order_index);
-
-                // Remove outer index from index list if bitmap group is cleared
-                // Outer indices of bitmap groups to be closed should be in descending order for bids and
-                // in ascending order for asks.
-                if !bitmap_group.is_active() {
-                    if side == Side::Bid {
-                        bid_index_list.remove(slot_storage, outer_index)?;
-                    } else {
-                        ask_index_list.remove(slot_storage, outer_index)?;
-                    }
-                }
-            } else {
-                // Write reduced resting order to slot
-                resting_order.write_to_slot(slot_storage, &order_id)?;
+            } else if revert_if_fail {
+                // None case- when order doesn't belong to trader
+                return Err(GoblinError::FailedToReduce(FailedToReduce {}));
             }
         } else if revert_if_fail {
+            // When order is not present
             return Err(GoblinError::FailedToReduce(FailedToReduce {}));
         }
+
+        // let mut resting_order = SlotRestingOrder::new_from_slot(slot_storage, order_id);
+
+        // if let Some(ReduceOrderInnerResponse {
+        //     matching_engine_response,
+        //     should_remove_order_from_book,
+        // }) = resting_order.reduce_order(
+        //     trader_state,
+        //     trader,
+        //     &order_id,
+        //     side,
+        //     lots_to_remove,
+        //     false,
+        //     claim_funds,
+        // ) {
+        //     quote_lots_released += matching_engine_response.num_quote_lots_out;
+        //     base_lots_released += matching_engine_response.num_base_lots_out;
+
+        //     // Order should be removed from the book. Flip its corresponding bitmap.
+        //     // No need to write cleared resting order to slot
+        //     if should_remove_order_from_book {
+        //         // SLOAD and cache the bitmap group. This saves us from duplicate SLOADs in future
+        //         // Read a new bitmap group if no cache exists or if the outer index does not match
+        //         if cached_bitmap_group.is_none() || cached_bitmap_group.unwrap().1 != outer_index {
+        //             // Before reading a new bitmap group, write the currently cached one to slot
+        //             if let Some((old_bitmap_group, old_outer_index)) = cached_bitmap_group {
+        //                 old_bitmap_group.write_to_slot(slot_storage, &old_outer_index);
+        //             }
+
+        //             // Read new
+        //             cached_bitmap_group = Some((
+        //                 BitmapGroup::new_from_slot(slot_storage, outer_index),
+        //                 outer_index,
+        //             ));
+        //         }
+
+        //         let (mut bitmap_group, outer_index) = cached_bitmap_group.unwrap();
+        //         let mut mutable_bitmap = bitmap_group.get_bitmap_mut(&inner_index);
+        //         mutable_bitmap.clear(&order_id.resting_order_index);
+
+        //         // Remove outer index from index list if bitmap group is cleared
+        //         // Outer indices of bitmap groups to be closed should be in descending order for bids and
+        //         // in ascending order for asks.
+        //         if !bitmap_group.is_active() {
+        //             if side == Side::Bid {
+        //                 bid_index_list.remove(slot_storage, outer_index)?;
+        //             } else {
+        //                 ask_index_list.remove(slot_storage, outer_index)?;
+        //             }
+        //         }
+        //     } else {
+        //         // Write reduced resting order to slot
+        //         resting_order.write_to_slot(slot_storage, &order_id)?;
+        //     }
+        // } else if revert_if_fail {
+        //     return Err(GoblinError::FailedToReduce(FailedToReduce {}));
+        // }
     }
+
+    // TODO write cached index list to slot
+    // resting_order_remover.write_prepared_indices()
 
     // The last cached element is not written in the loop. It must be written at the end.
     if let Some((old_bitmap_group, old_outer_index)) = cached_bitmap_group {
@@ -292,5 +309,35 @@ impl OrderIdChecker {
         }
 
         Ok(())
+    }
+}
+
+struct OrderExistsChecker {
+    bid_bitmap_reader: BitmapReader,
+    ask_bitmap_reader: BitmapReader,
+}
+
+impl OrderExistsChecker {
+    pub fn new(bids_outer_indices: u16, asks_outer_indices: u16) -> Self {
+        OrderExistsChecker {
+            bid_bitmap_reader: BitmapReader::new(bids_outer_indices, Side::Bid),
+            ask_bitmap_reader: BitmapReader::new(asks_outer_indices, Side::Ask),
+        }
+    }
+
+    fn reader(&mut self, side: Side) -> &mut BitmapReader {
+        match side {
+            Side::Bid => &mut self.bid_bitmap_reader,
+            Side::Ask => &mut self.ask_bitmap_reader,
+        }
+    }
+
+    pub fn order_exists(
+        &mut self,
+        slot_storage: &mut SlotStorage,
+        side: Side,
+        order_id: OrderId,
+    ) -> bool {
+        self.reader(side).order_present(slot_storage, order_id)
     }
 }

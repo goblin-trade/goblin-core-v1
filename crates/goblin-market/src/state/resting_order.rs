@@ -331,12 +331,7 @@ impl SlotRestingOrder {
     ) -> Option<ReduceOrderInnerResponse> {
         // Find lots to remove
         let (should_remove_order_from_book, base_lots_to_remove) = {
-            // Order is empty. Its bitmap position is already cleared
-            if self.num_base_lots == BaseLots::ZERO {
-                return None;
-            }
-
-            // Order does not exist (blank slot), or belongs to another trader
+            // Order belongs to another trader
             if self.trader_address != trader {
                 return None;
             }

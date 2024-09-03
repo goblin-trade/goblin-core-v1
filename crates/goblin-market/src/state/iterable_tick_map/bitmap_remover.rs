@@ -1,4 +1,4 @@
-use crate::state::{OrderId, OuterIndex, SlotStorage, TickIndices};
+use crate::state::{InnerIndex, OrderId, OuterIndex, RestingOrderIndex, SlotStorage, TickIndices};
 
 use super::BitmapGroup;
 
@@ -30,6 +30,36 @@ impl BitmapRemover {
         }
     }
 
+    /// Loads a new bitmap group for the new outer index. The previous group is flushed.
+    /// No-op if outer index does not change
+    ///
+    /// Externally ensure that we always move away from the centre
+    ///
+    pub fn set_outer_index(&mut self, slot_storage: &mut SlotStorage, outer_index: OuterIndex) {
+        if self.last_outer_index != Some(outer_index) {
+            // Outer index changed. Flush the old bitmap group to slot.
+            self.write_last_bitmap_group(slot_storage);
+            self.bitmap_group = BitmapGroup::new_from_slot(slot_storage, outer_index);
+            self.last_outer_index = Some(outer_index);
+        }
+    }
+
+    /// Whether a resting order is present at given (inner_index, resting_order_index)
+    pub fn order_present(
+        &self,
+        inner_index: InnerIndex,
+        resting_order_index: RestingOrderIndex,
+    ) -> bool {
+        assert!(
+            self.last_outer_index.is_some(),
+            "Outer index is None, no bitmap group loaded"
+        );
+
+        let bitmap = self.bitmap_group.get_bitmap(&inner_index);
+
+        bitmap.order_present(resting_order_index)
+    }
+
     /// Turn off a bit at a given (outer index, inner index, resting order index)
     /// If the outer index changes, then the previous bitmap is overwritten
     ///
@@ -49,14 +79,7 @@ impl BitmapRemover {
 
         // If last outer index has not changed, re-use the cached bitmap group.
         // Else load anew and update the cache.
-        if self.last_outer_index != Some(outer_index) {
-            // Outer index changed. Flush the old bitmap group to slot.
-            self.write_last_bitmap_group(slot_storage);
-
-            self.bitmap_group = BitmapGroup::new_from_slot(slot_storage, outer_index);
-
-            self.last_outer_index = Some(outer_index);
-        }
+        self.set_outer_index(slot_storage, outer_index);
 
         let mut bitmap = self.bitmap_group.get_bitmap_mut(&inner_index);
         bitmap.clear(&order_id.resting_order_index);
