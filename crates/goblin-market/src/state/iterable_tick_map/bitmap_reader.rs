@@ -30,19 +30,19 @@ impl BitmapReader {
         } = price_in_ticks.to_indices();
 
         // Set the outer index in bitmap remover
-        if self.bitmap_remover.last_outer_index != Some(outer_index) {
-            // Traverse the index list to search for outer index
-            let outer_index_found = self
-                .index_list_reader
-                .find_outer_index(slot_storage, outer_index);
+        // if self.bitmap_remover.last_outer_index != Some(outer_index) {
+        //     // Traverse the index list to search for outer index
+        //     let outer_index_found = self
+        //         .index_list_reader
+        //         .find_outer_index(slot_storage, outer_index);
 
-            if !outer_index_found {
-                return false;
-            }
+        //     if !outer_index_found {
+        //         return false;
+        //     }
 
-            self.bitmap_remover
-                .set_outer_index(slot_storage, outer_index);
-        }
+        //     self.bitmap_remover
+        //         .set_outer_index(slot_storage, outer_index);
+        // }
 
         // Now check in bitmap group
         return self
