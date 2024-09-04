@@ -11,6 +11,10 @@ pub struct BitmapRemover {
 
     /// Outer index corresponding to `bitmap_group`
     pub last_outer_index: Option<OuterIndex>,
+
+    /// Whether the bitmap group was updated in memory and is pending a write.
+    /// write_last_bitmap_group() should write to slot only if this is true.
+    pub pending_write: bool,
 }
 
 impl BitmapRemover {
@@ -18,15 +22,20 @@ impl BitmapRemover {
         BitmapRemover {
             bitmap_group: BitmapGroup::default(),
             last_outer_index: None,
+            pending_write: false,
         }
     }
 
     /// Write cached bitmap group to slot
     /// This should be called when the outer index changes during looping,
     /// and when the loop is complete
-    pub fn write_last_bitmap_group(&self, slot_storage: &mut SlotStorage) {
+    pub fn write_last_bitmap_group(&mut self, slot_storage: &mut SlotStorage) {
+        if !self.pending_write {
+            return;
+        }
         if let Some(last_index) = self.last_outer_index {
             self.bitmap_group.write_to_slot(slot_storage, &last_index);
+            self.pending_write = false;
         }
     }
 
@@ -66,6 +75,9 @@ impl BitmapRemover {
     /// write_last_bitmap_group() must be called after deactivations are complete to write
     /// the last bitmap group to slot.
     ///
+    /// Externally ensure that the bit at `order_id` is active, else `pending_write` is
+    /// set to true leading to a wasted slot write.
+    ///
     /// # Arguments
     ///
     /// * `slot_storage`
@@ -83,6 +95,7 @@ impl BitmapRemover {
 
         let mut bitmap = self.bitmap_group.get_bitmap_mut(&inner_index);
         bitmap.clear(&order_id.resting_order_index);
+        self.pending_write = true;
     }
 }
 
@@ -98,7 +111,6 @@ mod tests {
     #[test]
     fn deactivate_on_blank_bitmap_group() {
         let slot_storage = &mut SlotStorage::new();
-
         let mut remover = BitmapRemover::new();
 
         let order_id = OrderId {
@@ -111,6 +123,7 @@ mod tests {
         // 1. Deactivate and check
         remover.deactivate(slot_storage, &order_id);
         assert_eq!(outer_index, remover.last_outer_index.unwrap());
+        assert!(remover.pending_write);
 
         // Expected bitmap group is still blank since it was already off
         let expected_bitmap_group = BitmapGroup::default();
@@ -120,7 +133,9 @@ mod tests {
         assert_eq!(BitmapGroup::default(), read_bitmap_group);
 
         // 2. Write to slot and check
+        // Since pending_write is true, this will lead to a wasted slot write
         remover.write_last_bitmap_group(slot_storage);
+        assert!(!remover.pending_write);
         read_bitmap_group = BitmapGroup::new_from_slot(slot_storage, outer_index);
         assert_eq!(expected_bitmap_group, read_bitmap_group);
     }
@@ -143,6 +158,7 @@ mod tests {
 
         // 1. Deactivate and check
         remover.deactivate(slot_storage, &order_id);
+        assert!(remover.pending_write);
         assert_eq!(
             order_id.price_in_ticks.outer_index(),
             remover.last_outer_index.unwrap()
@@ -157,6 +173,7 @@ mod tests {
 
         // 2. Write to slot and check
         remover.write_last_bitmap_group(slot_storage);
+        assert!(!remover.pending_write);
         read_bitmap_group =
             BitmapGroup::new_from_slot(slot_storage, order_id.price_in_ticks.outer_index());
         assert_eq!(expected_bitmap_group, read_bitmap_group);
@@ -186,6 +203,8 @@ mod tests {
         remover.deactivate(slot_storage, &order_id_0);
         remover.deactivate(slot_storage, &order_id_1);
 
+        assert!(remover.pending_write);
+
         let outer_index = order_id_0.price_in_ticks.outer_index();
         assert_eq!(outer_index, remover.last_outer_index.unwrap());
 
@@ -197,6 +216,7 @@ mod tests {
 
         // 2. Write to slot and check
         remover.write_last_bitmap_group(slot_storage);
+        assert!(!remover.pending_write);
         read_bitmap_group = BitmapGroup::new_from_slot(slot_storage, outer_index);
         assert_eq!(expected_bitmap_group, read_bitmap_group);
     }

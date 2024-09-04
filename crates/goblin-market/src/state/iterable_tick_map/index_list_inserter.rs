@@ -21,7 +21,7 @@ pub struct IndexListInserter {
 impl IndexListInserter {
     pub fn new(side: Side, outer_index_count: u16) -> Self {
         Self {
-            index_list_reader: IndexListReader::new(outer_index_count, side),
+            index_list_reader: IndexListReader::new(side, outer_index_count),
             cache: Vec::new(),
         }
     }

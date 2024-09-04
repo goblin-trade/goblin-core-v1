@@ -31,19 +31,39 @@ pub struct IndexListRemover {
 
     /// Tracks whether the searched outer index was found
     pub found_outer_index: Option<OuterIndex>,
+
+    /// Whether one or more outer index was removed and the slots are pending a write.
+    /// There are cases when we lookup outer indices with `find_outer_index()` but
+    /// there are no updates to write.
+    pub pending_write: bool,
 }
 
 impl IndexListRemover {
     pub fn new(side: Side, outer_index_count: u16) -> Self {
         Self {
-            index_list_reader: IndexListReader::new(outer_index_count, side),
+            index_list_reader: IndexListReader::new(side, outer_index_count),
             cache: Vec::new(),
             found_outer_index: None,
+            pending_write: false,
         }
     }
 
     pub fn side(&self) -> Side {
         self.index_list_reader.side
+    }
+
+    /// The total length of index list after accounting for removals
+    pub fn index_list_length(&self) -> u16 {
+        self.index_list_reader.outer_index_count
+            + self.cache.len() as u16
+            + u16::from(self.found_outer_index.is_some())
+    }
+
+    /// Clears `found_outer_index`, pushing the value to cache
+    pub fn try_flush_found_outer_index_to_cache(&mut self) {
+        if let Some(found_outer_index) = self.found_outer_index.take() {
+            self.cache.push(found_outer_index);
+        }
     }
 
     /// Searches for the outer index in the index list.
@@ -62,14 +82,14 @@ impl IndexListRemover {
         slot_storage: &SlotStorage,
         outer_index: OuterIndex,
     ) -> bool {
-        if let Some(found_outer_index) = self.found_outer_index {
-            if found_outer_index == outer_index {
-                return true;
-            }
-
-            self.cache.push(found_outer_index);
-            self.found_outer_index = None;
+        if self
+            .found_outer_index
+            .is_some_and(|found_outer_index| found_outer_index == outer_index)
+        {
+            return true;
         }
+        // Flush the old value of `found_outer_index` to cache
+        self.try_flush_found_outer_index_to_cache();
 
         while let Some((_slot_index, _relative_index, _list_slot, current_outer_index)) =
             self.index_list_reader.next(slot_storage)
@@ -97,6 +117,7 @@ impl IndexListRemover {
     pub fn remove(&mut self, slot_storage: &SlotStorage, outer_index: OuterIndex) -> bool {
         // Find the element, then clear the found value
         if self.find_outer_index(slot_storage, outer_index) {
+            self.pending_write = true;
             self.found_outer_index = None;
             return true;
         }
@@ -104,7 +125,15 @@ impl IndexListRemover {
     }
 
     /// Write prepared indices to slot after removal
+    /// Externally ensure that `remove()` is called before writing to slot.
+    /// Calling `write_prepared_indices()` after `find_outer_index()` will result
+    /// in `found_outer_index`.
     pub fn write_prepared_indices(&mut self, slot_storage: &mut SlotStorage) {
+        if !self.pending_write {
+            return;
+        }
+
+        self.try_flush_found_outer_index_to_cache();
         write_prepared_indices(
             slot_storage,
             self.side(),
@@ -157,6 +186,34 @@ mod tests {
         assert_eq!(remover.index_list_reader.outer_index_count, 0);
         assert_eq!(remover.cache, vec![]);
         assert_eq!(remover.found_outer_index, Some(OuterIndex::new(100)));
+    }
+
+    #[test]
+    fn test_try_write_when_there_are_no_removals() {
+        let mut slot_storage = SlotStorage::new();
+        let list_key = ListKey {
+            index: 0,
+            side: Side::Bid,
+        };
+        // Setup the initial slot storage with one item
+        let mut list_slot = ListSlot::default();
+        list_slot.set(0, OuterIndex::new(100));
+        list_slot.write_to_slot(&mut slot_storage, &list_key);
+
+        let mut remover = IndexListRemover::new(Side::Bid, 1);
+
+        // Find the existing element
+        let found = remover.find_outer_index(&slot_storage, OuterIndex::new(100));
+        assert!(found);
+        assert_eq!(remover.index_list_reader.outer_index_count, 0);
+        assert_eq!(remover.cache, vec![]);
+        assert_eq!(remover.found_outer_index, Some(OuterIndex::new(100)));
+        assert_eq!(remover.pending_write, false);
+
+        remover.write_prepared_indices(&mut slot_storage);
+
+        let read_list_slot = ListSlot::new_from_slot(&slot_storage, list_key);
+        assert_eq!(read_list_slot, list_slot);
     }
 
     #[test]
@@ -222,6 +279,7 @@ mod tests {
 
         // Try to remove from an empty list
         let removed = remover.remove(&slot_storage, OuterIndex::new(100));
+        assert_eq!(remover.index_list_length(), 0);
         assert!(!removed);
         assert_eq!(remover.cache, vec![]);
     }
@@ -247,6 +305,7 @@ mod tests {
 
         // Attempt to remove an element that does not exist
         let removed = remover.remove(&slot_storage, OuterIndex::new(200));
+        assert_eq!(remover.index_list_length(), 1);
         assert!(!removed);
         assert_eq!(remover.cache, vec![OuterIndex::new(100)]);
     }
@@ -315,6 +374,7 @@ mod tests {
 
         // Remove the middle element (200)
         let removed = remover.remove(&slot_storage, OuterIndex::new(200));
+        assert_eq!(remover.index_list_length(), 2);
         assert!(removed);
         assert_eq!(remover.cache, vec![OuterIndex::new(300)]);
         assert_eq!(remover.index_list_reader.outer_index_count, 1);
@@ -329,7 +389,6 @@ mod tests {
                 side: Side::Bid,
             },
         );
-        println!("result slot {:?}", result_slot);
         // Ghost values due to cached slot
         assert_eq!(
             vec![100, 300, 300, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],

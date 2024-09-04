@@ -6,9 +6,9 @@ use crate::{
     quantities::{BaseAtomsRaw, BaseLots, QuoteAtomsRaw, QuoteLots, Ticks, WrapperU64},
     require,
     state::{
-        AskOrderId, BidOrderId, BitmapGroup, BitmapReader, MarketState, MatchingEngineResponse,
-        OrderId, OuterIndex, ReduceOrderInnerResponse, RestingOrderIndex, Side, SlotActions,
-        SlotRestingOrder, SlotStorage, TickIndices, TraderState,
+        AskOrderId, BidOrderId, BitmapGroup, MarketState, MatchingEngineResponse, OrderId,
+        OuterIndex, ReduceOrderInnerResponse, RestingOrderIndex, RestingOrderSearcherAndRemover,
+        Side, SlotActions, SlotRestingOrder, SlotStorage, TickIndices, TraderState,
     },
     GoblinMarket,
 };
@@ -313,19 +313,19 @@ impl OrderIdChecker {
 }
 
 struct OrderExistsChecker {
-    bid_bitmap_reader: BitmapReader,
-    ask_bitmap_reader: BitmapReader,
+    bid_bitmap_reader: RestingOrderSearcherAndRemover,
+    ask_bitmap_reader: RestingOrderSearcherAndRemover,
 }
 
 impl OrderExistsChecker {
     pub fn new(bids_outer_indices: u16, asks_outer_indices: u16) -> Self {
         OrderExistsChecker {
-            bid_bitmap_reader: BitmapReader::new(bids_outer_indices, Side::Bid),
-            ask_bitmap_reader: BitmapReader::new(asks_outer_indices, Side::Ask),
+            bid_bitmap_reader: RestingOrderSearcherAndRemover::new(bids_outer_indices, Side::Bid),
+            ask_bitmap_reader: RestingOrderSearcherAndRemover::new(asks_outer_indices, Side::Ask),
         }
     }
 
-    fn reader(&mut self, side: Side) -> &mut BitmapReader {
+    fn reader(&mut self, side: Side) -> &mut RestingOrderSearcherAndRemover {
         match side {
             Side::Bid => &mut self.bid_bitmap_reader,
             Side::Ask => &mut self.ask_bitmap_reader,
