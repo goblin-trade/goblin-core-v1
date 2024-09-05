@@ -8,6 +8,22 @@ pub struct GroupPosition {
     pub resting_order_index: RestingOrderIndex,
 }
 
+impl GroupPosition {
+    pub fn count(&self, side: Side) -> u8 {
+        let GroupPosition {
+            inner_index,
+            resting_order_index,
+        } = self;
+
+        match side {
+            Side::Bid => {
+                (31 - inner_index.as_usize() as u8) * 8 + (8 - resting_order_index.as_u8())
+            }
+            Side::Ask => (inner_index.as_usize() as u8) * 8 + (resting_order_index.as_u8() + 1),
+        }
+    }
+}
+
 /// Efficient iterator to loop through coordinates (inner index, resting order index)
 /// of a bitmap group.
 ///
@@ -68,8 +84,12 @@ impl Iterator for GroupPositionIterator {
     }
 }
 
+/// Iterator to find coordinates of active bits in a bitmap group
 pub struct BitmapIterator<'a> {
+    /// The bitmap group to search
     bitmap_group: &'a BitmapGroup,
+
+    /// Iterator to obtain bitmap group coordinates
     group_position_iterator: GroupPositionIterator,
 }
 
@@ -147,6 +167,43 @@ mod tests {
     }
 
     #[test]
+    fn test_get_indices_for_asks_with_count_10() {
+        let side = Side::Ask;
+        let count = 10;
+
+        let mut iterator = GroupPositionIterator::new(side, count);
+
+        for i in 10..=255 {
+            let bit_index = match side {
+                Side::Bid => 255 - 1 - i,
+                Side::Ask => i,
+            };
+
+            let expected_inner_index = InnerIndex::new(bit_index as usize / 8);
+            let expected_resting_order_index = RestingOrderIndex::new(bit_index % 8);
+
+            let GroupPosition {
+                inner_index,
+                resting_order_index,
+            } = iterator.next().unwrap();
+
+            println!(
+                "inner_index {:?}, resting_order_index {:?}",
+                inner_index, resting_order_index
+            );
+
+            assert_eq!(inner_index, expected_inner_index);
+            assert_eq!(resting_order_index, expected_resting_order_index);
+
+            if i == 255 {
+                assert_eq!(iterator.count, 0);
+            } else {
+                assert_eq!(iterator.count, i + 1);
+            }
+        }
+    }
+
+    #[test]
     fn test_get_indices_for_bids() {
         let side = Side::Bid;
         let count = 0;
@@ -154,6 +211,46 @@ mod tests {
         let mut iterator = GroupPositionIterator::new(side, count);
 
         for i in 0..=255 {
+            let bit_index = match side {
+                Side::Bid => 255 - i,
+                Side::Ask => i,
+            };
+
+            let expected_inner_index = InnerIndex::new(bit_index as usize / 8);
+            let expected_resting_order_index = RestingOrderIndex::new(match side {
+                Side::Bid => 7 - (bit_index % 8),
+                Side::Ask => bit_index % 8,
+            });
+
+            let GroupPosition {
+                inner_index,
+                resting_order_index,
+            } = iterator.next().unwrap();
+
+            println!(
+                "inner_index {:?}, resting_order_index {:?}",
+                inner_index, resting_order_index
+            );
+
+            assert_eq!(inner_index, expected_inner_index);
+            assert_eq!(resting_order_index, expected_resting_order_index);
+
+            if i == 255 {
+                assert_eq!(iterator.count, 0);
+            } else {
+                assert_eq!(iterator.count, i + 1);
+            }
+        }
+    }
+
+    #[test]
+    fn test_get_indices_for_bids_with_count_10() {
+        let side = Side::Bid;
+        let count = 10;
+
+        let mut iterator = GroupPositionIterator::new(side, count);
+
+        for i in 10..=255 {
             let bit_index = match side {
                 Side::Bid => 255 - i,
                 Side::Ask => i,
