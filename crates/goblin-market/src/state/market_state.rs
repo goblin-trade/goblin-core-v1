@@ -75,6 +75,9 @@ impl MarketState {
 
     pub fn decode(slot: &[u8; 32]) -> Self {
         MarketState {
+            // TODO use 32 bits for collected and uncollected fees?
+            // We could have some roll-over mechanism. Else if u32 will take long
+            // enough we can stick to 32 bits.
             collected_quote_lot_fees: QuoteLots::new(u64::from_be_bytes(
                 slot[0..8].try_into().unwrap(),
             )),
@@ -99,6 +102,8 @@ impl MarketState {
                 // u64::from_be_bytes([0, 0, 0, 0, 0, slot[23], slot[24], slot[25]])
                 u32::from_be_bytes(slot[24..28].try_into().unwrap()) as u64,
             ),
+            // If resting order index (0-7) were stored, we need 3 * 2 = 6 bits
+            // but only 4 are free
         }
     }
 

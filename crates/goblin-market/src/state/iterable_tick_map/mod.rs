@@ -1,5 +1,6 @@
 pub mod bitmap;
 pub mod bitmap_inserter;
+pub mod bitmap_iterator;
 pub mod bitmap_remover;
 pub mod constants;
 pub mod index_list;
@@ -13,6 +14,7 @@ pub mod resting_order_searcher_and_remover;
 
 pub use bitmap::*;
 pub use bitmap_inserter::*;
+pub use bitmap_iterator::*;
 pub use bitmap_remover::*;
 pub use constants::*;
 pub use index_list::*;

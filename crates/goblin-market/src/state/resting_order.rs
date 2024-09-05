@@ -9,43 +9,13 @@ use crate::{
     require,
     state::{
         slot_storage::SlotKey, MatchingEngineResponse, Side, SlotActions, SlotStorage, TraderState,
-        ORDERS_PER_TICK, RESTING_ORDER_KEY_SEED,
+        RESTING_ORDER_KEY_SEED,
     },
 };
 
+use super::RestingOrderIndex;
+
 const NULL_ADDRESS: Address = address!("0000000000000000000000000000000000000001");
-
-#[derive(Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
-#[repr(transparent)]
-pub struct RestingOrderIndex {
-    inner: u8,
-}
-
-impl RestingOrderIndex {
-    pub const ZERO: RestingOrderIndex = RestingOrderIndex { inner: 0 };
-    pub const MIN: RestingOrderIndex = RestingOrderIndex::ZERO;
-    pub const ONE: RestingOrderIndex = RestingOrderIndex { inner: 1 };
-    pub const MAX: RestingOrderIndex = RestingOrderIndex { inner: 7 };
-
-    pub fn new(inner: u8) -> Self {
-        assert!(inner < ORDERS_PER_TICK);
-        RestingOrderIndex { inner }
-    }
-
-    pub fn as_u8(&self) -> u8 {
-        self.inner
-    }
-}
-
-impl Add for RestingOrderIndex {
-    type Output = Self;
-
-    fn add(self, other: Self) -> Self {
-        RestingOrderIndex {
-            inner: self.inner.wrapping_add(other.inner),
-        }
-    }
-}
 
 #[derive(Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub struct OrderId {

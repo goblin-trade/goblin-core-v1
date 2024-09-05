@@ -1,4 +1,6 @@
-use crate::state::{MarketState, OrderId, Side, SlotStorage, TickIndices};
+use crate::state::{
+    InnerIndex, MarketState, OrderId, RestingOrderIndex, Side, SlotStorage, TickIndices,
+};
 
 use super::{BitmapRemover, IndexListRemover};
 
@@ -81,7 +83,12 @@ impl RestingOrderSearcherAndRemover {
     /// Externally ensure that order_ids are in correct order and that order_present()
     /// was called before remove_order() for the given order ID
     ///
-    pub fn remove_order(&mut self, slot_storage: &mut SlotStorage, order_id: OrderId) {
+    pub fn remove_order(
+        &mut self,
+        slot_storage: &mut SlotStorage,
+        order_id: OrderId,
+        market_state: &mut MarketState,
+    ) {
         let OrderId {
             price_in_ticks,
             resting_order_index,
@@ -96,6 +103,9 @@ impl RestingOrderSearcherAndRemover {
             self.index_list_remover.remove(slot_storage, outer_index);
 
             // TODO update best price in market state
+            // if order_id == market.best_order_id, find the next best order id
+            // by looping through bitmap groups
+            if market_state.best_price(self.side()) == order_id.price_in_ticks {}
         }
     }
 

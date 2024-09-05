@@ -1,9 +1,15 @@
-use crate::state::{InnerIndex, OrderId, OuterIndex, RestingOrderIndex, SlotStorage, TickIndices};
+use crate::state::{
+    InnerIndex, OrderId, OuterIndex, RestingOrderIndex, Side, SlotStorage, TickIndices,
+};
 
 use super::BitmapGroup;
 
 /// Facilitates efficient batch deactivations in bitmap groups
 pub struct BitmapRemover {
+    /// Whether for bids or asks
+    /// Traverse upwards (ascending) for asks and downwards (descending) for bids
+    // pub side: Side,
+
     /// The current bitmap group pending a write. This allows us to perform multiple
     /// updates in a bitmap group with a single slot load. This value is written to slot
     /// when a new outer index is encountered.
@@ -97,6 +103,11 @@ impl BitmapRemover {
         bitmap.clear(&order_id.resting_order_index);
         self.pending_write = true;
     }
+
+    // pub fn next_best_in_group(&self, index_to_exclude: Option<(InnerIndex, RestingOrderIndex)>) {
+    //     self.bitmap_group
+    //         .best_active_index(side, previous_inner_index)
+    // }
 }
 
 #[cfg(test)]

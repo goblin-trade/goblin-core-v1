@@ -14,6 +14,8 @@ use super::{inner_indices, BitmapGroup, ListKey, ListSlot};
 /// The market state is updated accordingly.
 /// - Looping stops if lambda function returns true.
 ///
+/// TODO replace with iterator. Avoid raw loops, use the newly created iterators.
+///
 pub fn process_resting_orders(
     slot_storage: &mut SlotStorage,
     market_state: &mut MarketState,

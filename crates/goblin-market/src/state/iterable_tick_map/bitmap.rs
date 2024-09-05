@@ -69,6 +69,7 @@ impl BitmapGroup {
         side: Side,
         previous_inner_index: Option<InnerIndex>,
     ) -> Option<InnerIndex> {
+        // TODO use iterable instead of inner_indices()
         for i in inner_indices(side, previous_inner_index) {
             if self.inner[i] != 0 {
                 return Some(InnerIndex::new(i));
@@ -79,15 +80,12 @@ impl BitmapGroup {
     }
 }
 
-pub struct BitmapGroupWithIndex {
-    pub bitmap_group: BitmapGroup,
-    pub outer_index: OuterIndex,
-}
-
 /// Return an iterator to traverse bitmaps in a bitmap group
 ///
 /// Traversal is away from the centre. Move from top to bottom for bids (high to low) and from
 /// bottom to top (low to high) for asks.
+///
+/// TODO replace with an iterator with .next()
 ///
 /// # Arguments
 ///
@@ -112,7 +110,7 @@ pub fn inner_indices(
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Bitmap<'a> {
     pub inner: &'a u8,
 }
