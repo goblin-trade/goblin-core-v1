@@ -17,8 +17,9 @@ impl GroupPosition {
 
         match side {
             Side::Bid => {
-                (31 - inner_index.as_usize() as u8) * 8 + (8 - resting_order_index.as_u8())
+                (31 - inner_index.as_usize() as u8) * 8 + (resting_order_index.as_u8() + 1)
             }
+
             Side::Ask => (inner_index.as_usize() as u8) * 8 + (resting_order_index.as_u8() + 1),
         }
     }
@@ -85,7 +86,7 @@ impl Iterator for GroupPositionIterator {
 }
 
 /// Iterator to find coordinates of active bits in a bitmap group
-pub struct BitmapGroupIterator<'a> {
+pub struct BitmapIterator<'a> {
     /// The bitmap group to search
     bitmap_group: &'a BitmapGroup,
 
@@ -93,16 +94,16 @@ pub struct BitmapGroupIterator<'a> {
     group_position_iterator: GroupPositionIterator,
 }
 
-impl<'a> BitmapGroupIterator<'a> {
+impl<'a> BitmapIterator<'a> {
     pub fn new(bitmap_group: &'a BitmapGroup, side: Side, size: u8) -> Self {
-        BitmapGroupIterator {
+        BitmapIterator {
             bitmap_group,
             group_position_iterator: GroupPositionIterator::new(side, size),
         }
     }
 }
 
-impl<'a> Iterator for BitmapGroupIterator<'a> {
+impl<'a> Iterator for BitmapIterator<'a> {
     type Item = GroupPosition;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -111,6 +112,11 @@ impl<'a> Iterator for BitmapGroupIterator<'a> {
             resting_order_index,
         }) = self.group_position_iterator.next()
         {
+            #[cfg(test)]
+            println!(
+                "inner_index {:?}, resting_order_index {:?}",
+                inner_index, resting_order_index
+            );
             let bitmap = self.bitmap_group.get_bitmap(&inner_index);
 
             if bitmap.order_present(resting_order_index) {
@@ -291,7 +297,7 @@ mod tests {
         let side = Side::Ask;
         let count = 0;
 
-        let mut iterator = BitmapGroupIterator::new(&bitmap_group, side, count);
+        let mut iterator = BitmapIterator::new(&bitmap_group, side, count);
         assert_eq!(
             iterator.next().unwrap(),
             GroupPosition {
@@ -329,7 +335,7 @@ mod tests {
         let count = last_position.count(side);
         assert_eq!(count, 1);
 
-        let mut iterator = BitmapGroupIterator::new(&bitmap_group, side, count);
+        let mut iterator = BitmapIterator::new(&bitmap_group, side, count);
         assert_eq!(
             iterator.next().unwrap(),
             GroupPosition {
@@ -356,7 +362,7 @@ mod tests {
         let side = Side::Ask;
         let count = 0;
 
-        let mut iterator = BitmapGroupIterator::new(&bitmap_group, side, count);
+        let mut iterator = BitmapIterator::new(&bitmap_group, side, count);
         assert_eq!(
             iterator.next().unwrap(),
             GroupPosition {
@@ -387,7 +393,7 @@ mod tests {
         };
         let count = last_position.count(side);
 
-        let mut iterator = BitmapGroupIterator::new(&bitmap_group, side, count);
+        let mut iterator = BitmapIterator::new(&bitmap_group, side, count);
         assert_eq!(
             iterator.next().unwrap(),
             GroupPosition {
@@ -407,7 +413,7 @@ mod tests {
         let side = Side::Ask;
         let count = 0;
 
-        let mut iterator = BitmapGroupIterator::new(&bitmap_group, side, count);
+        let mut iterator = BitmapIterator::new(&bitmap_group, side, count);
         assert_eq!(
             iterator.next().unwrap(),
             GroupPosition {
@@ -440,11 +446,180 @@ mod tests {
         let count = last_position.count(side);
         assert_eq!(count, 10);
 
-        let mut iterator = BitmapGroupIterator::new(&bitmap_group, side, count);
+        let mut iterator = BitmapIterator::new(&bitmap_group, side, count);
         assert_eq!(
             iterator.next().unwrap(),
             GroupPosition {
                 inner_index: InnerIndex::new(10),
+                resting_order_index: RestingOrderIndex::MAX
+            }
+        );
+        assert!(iterator.next().is_none());
+    }
+
+    #[test]
+    fn test_bitmap_group_iterator_bids_same_bitmap_no_last_position() {
+        let mut bitmap_group = BitmapGroup::default();
+        bitmap_group.inner[31] = 0b10000011; // InnerIndex::MAX
+
+        let side = Side::Bid;
+        let count = 0;
+
+        let mut iterator = BitmapIterator::new(&bitmap_group, side, count);
+        assert_eq!(
+            iterator.next().unwrap(),
+            GroupPosition {
+                inner_index: InnerIndex::new(31),
+                resting_order_index: RestingOrderIndex::new(0)
+            }
+        );
+        assert_eq!(
+            iterator.next().unwrap(),
+            GroupPosition {
+                inner_index: InnerIndex::new(31),
+                resting_order_index: RestingOrderIndex::new(1)
+            }
+        );
+        assert_eq!(
+            iterator.next().unwrap(),
+            GroupPosition {
+                inner_index: InnerIndex::new(31),
+                resting_order_index: RestingOrderIndex::new(7)
+            }
+        );
+        assert!(iterator.next().is_none());
+    }
+
+    #[test]
+    fn test_bitmap_group_iterator_bids_same_bitmap_with_last_position() {
+        let mut bitmap_group = BitmapGroup::default();
+        bitmap_group.inner[31] = 0b10000011; // InnerIndex::MAX
+
+        let side = Side::Bid;
+        let last_position = GroupPosition {
+            inner_index: InnerIndex::new(31),
+            resting_order_index: RestingOrderIndex::new(0),
+        };
+        let count = last_position.count(side);
+        assert_eq!(count, 1);
+
+        let mut iterator = BitmapIterator::new(&bitmap_group, side, count);
+        assert_eq!(
+            iterator.next().unwrap(),
+            GroupPosition {
+                inner_index: InnerIndex::new(31),
+                resting_order_index: RestingOrderIndex::new(1)
+            }
+        );
+        assert_eq!(
+            iterator.next().unwrap(),
+            GroupPosition {
+                inner_index: InnerIndex::new(31),
+                resting_order_index: RestingOrderIndex::new(7)
+            }
+        );
+        assert!(iterator.next().is_none());
+    }
+
+    #[test]
+    fn test_bitmap_group_iterator_bids_consecutive_bitmaps_no_last_position() {
+        let mut bitmap_group = BitmapGroup::default();
+        bitmap_group.inner[31] = 0b00000001; // InnerIndex::MAX
+        bitmap_group.inner[30] = 0b10000000;
+
+        let side = Side::Bid;
+        let count = 0;
+
+        let mut iterator = BitmapIterator::new(&bitmap_group, side, count);
+        assert_eq!(
+            iterator.next().unwrap(),
+            GroupPosition {
+                inner_index: InnerIndex::new(31),
+                resting_order_index: RestingOrderIndex::new(0)
+            }
+        );
+        assert_eq!(
+            iterator.next().unwrap(),
+            GroupPosition {
+                inner_index: InnerIndex::new(30),
+                resting_order_index: RestingOrderIndex::new(7)
+            }
+        );
+        assert!(iterator.next().is_none());
+    }
+
+    #[test]
+    fn test_bitmap_group_iterator_bids_consecutive_bitmaps_with_last_position() {
+        let mut bitmap_group = BitmapGroup::default();
+        bitmap_group.inner[31] = 0b00000001; // InnerIndex::MAX
+        bitmap_group.inner[30] = 0b10000000;
+
+        let side = Side::Bid;
+        let last_position = GroupPosition {
+            inner_index: InnerIndex::new(31),
+            resting_order_index: RestingOrderIndex::new(0),
+        };
+        let count = last_position.count(side);
+        assert_eq!(count, 1);
+
+        let mut iterator = BitmapIterator::new(&bitmap_group, side, count);
+        assert_eq!(
+            iterator.next().unwrap(),
+            GroupPosition {
+                inner_index: InnerIndex::new(30),
+                resting_order_index: RestingOrderIndex::new(7)
+            }
+        );
+        assert!(iterator.next().is_none());
+    }
+
+    #[test]
+    fn test_bitmap_group_iterator_bids_non_consecutive_bitmaps_no_last_position() {
+        let mut bitmap_group = BitmapGroup::default();
+        bitmap_group.inner[31] = 0b00000001; // InnerIndex::MAX
+        bitmap_group.inner[21] = 0b00000001;
+
+        let side = Side::Bid;
+        let count = 0;
+
+        let mut iterator = BitmapIterator::new(&bitmap_group, side, count);
+        assert_eq!(
+            iterator.next().unwrap(),
+            GroupPosition {
+                inner_index: InnerIndex::new(31),
+                resting_order_index: RestingOrderIndex::new(0)
+            }
+        );
+        assert_eq!(
+            iterator.next().unwrap(),
+            GroupPosition {
+                inner_index: InnerIndex::new(21),
+                resting_order_index: RestingOrderIndex::new(0)
+            }
+        );
+        assert!(iterator.next().is_none());
+    }
+
+    #[test]
+    fn test_bitmap_group_iterator_bids_non_consecutive_bitmaps_with_last_position() {
+        let mut bitmap_group = BitmapGroup::default();
+        bitmap_group.inner[31] = 0b00000001; // InnerIndex::MAX
+        bitmap_group.inner[30] = 0b00000010;
+        bitmap_group.inner[21] = 0b10000000;
+
+        let side = Side::Bid;
+        let last_position = GroupPosition {
+            inner_index: InnerIndex::new(30),
+            resting_order_index: RestingOrderIndex::new(1),
+        };
+        let count = last_position.count(side);
+        assert_eq!(count, 10);
+
+        let mut iterator = BitmapIterator::new(&bitmap_group, side, count);
+        assert_eq!(
+            iterator.next().unwrap(),
+            GroupPosition {
+                inner_index: InnerIndex::new(21),
                 resting_order_index: RestingOrderIndex::MAX
             }
         );
