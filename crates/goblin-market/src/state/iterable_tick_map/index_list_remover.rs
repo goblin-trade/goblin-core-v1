@@ -52,6 +52,14 @@ impl IndexListRemover {
         self.index_list_reader.side
     }
 
+    /// Traverse one position in the list
+    /// The previous `found_outer_index` will be removed from list os it is discarded
+    pub fn slide(&mut self, slot_storage: &SlotStorage) {
+        self.found_outer_index.take();
+
+        let gg = self.index_list_reader.next(slot_storage);
+    }
+
     /// The total length of index list after accounting for removals
     pub fn index_list_length(&self) -> u16 {
         self.index_list_reader.outer_index_count
