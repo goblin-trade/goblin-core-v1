@@ -161,6 +161,7 @@ impl SubAssign for InnerIndex {
 
 /// Loop across inner indices in a bitmap group
 /// TODO use InnerIndexIterator and RestingOrderIndexIterator in place of raw loops
+/// TODO remove Option<>. Use `count` and `done` fields
 pub struct InnerIndexIterator {
     /// Side determines looping direction.
     /// - Bids: Top to bottom (descending)

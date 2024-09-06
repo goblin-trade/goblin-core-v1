@@ -13,7 +13,7 @@ use crate::{
     },
 };
 
-use super::RestingOrderIndex;
+use super::{GroupPosition, OuterIndex, RestingOrderIndex};
 
 const NULL_ADDRESS: Address = address!("0000000000000000000000000000000000000001");
 
@@ -60,6 +60,13 @@ impl OrderId {
             // There are no active orders in the spread
             // However there could be activated slots. Ensure that they are not tested here.
             unreachable!()
+        }
+    }
+
+    pub fn from_group_position(group_position: GroupPosition, outer_index: OuterIndex) -> Self {
+        OrderId {
+            price_in_ticks: Ticks::from_indices(outer_index, group_position.inner_index),
+            resting_order_index: group_position.resting_order_index,
         }
     }
 }

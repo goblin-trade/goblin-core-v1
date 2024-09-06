@@ -24,7 +24,7 @@ pub struct RestingOrderSearcherAndRemover {
 impl RestingOrderSearcherAndRemover {
     pub fn new(outer_index_count: u16, side: Side) -> Self {
         RestingOrderSearcherAndRemover {
-            bitmap_remover: BitmapRemover::new(),
+            bitmap_remover: BitmapRemover::new(side),
             index_list_remover: IndexListRemover::new(side, outer_index_count),
         }
     }
@@ -72,6 +72,9 @@ impl RestingOrderSearcherAndRemover {
             .order_present(inner_index, resting_order_index);
     }
 
+    /// Move one position down the index list and load the corresponding bitmap group
+    pub fn slide(&mut self) {}
+
     /// Marks a resting order as removed
     ///
     /// This involves
@@ -99,13 +102,39 @@ impl RestingOrderSearcherAndRemover {
         } = price_in_ticks.to_indices();
 
         self.bitmap_remover.deactivate(slot_storage, &order_id);
+
         if !self.bitmap_remover.bitmap_group.is_active() {
             self.index_list_remover.remove(slot_storage, outer_index);
+        }
 
-            // TODO update best price in market state
-            // if order_id == market.best_order_id, find the next best order id
-            // by looping through bitmap groups
-            if market_state.best_price(self.side()) == order_id.price_in_ticks {}
+        // if order_id == market.best_order_id, find the next best order id
+        // by looping through bitmap groups
+        if market_state.best_price(self.side()) == order_id.price_in_ticks {
+            // Currently we can only find next best bit within a group
+            // We need to find the 'next best bit' across groups. We need to traverse
+            // outer indices.
+            // We can't simply move up or down bitmaps. We may have to traverse
+            // the index list to obtain outer indices of active bitmaps
+            //
+            // If the outermost value was removed then we need to loop from beginning
+            // of the index list. This means reading cached values from index_list_remover
+            //
+            // RestingOrderSearcherAndRemover already combines these two. The outer index
+            // within BitmapRemover is the index we searched
+            //
+            // Property- if an order is removed on the outermost tick, then its outermost
+            // index is present in `found_outer_index` and the index cache is empty.
+            // Need a slide function to move down one outer index and its corresponding bitmap
+            // slide()
+            // - Commit bitmap group. It should be empty.
+            // - Read next outer index. Drop `found_outer_index` because this group was
+            // closed.
+            //
+            // Question- do we write closed bitmap groups to slot with a placeholder,
+            // or we simply drop the outer index?
+            // In order to know whether there's a placeholder, we still need to read
+            // outer index. Therefore placeholder is unnecessary. If a non-empty bitmap
+            // group is being closed, its slot data is guaranteed to be non-empty.
         }
     }
 

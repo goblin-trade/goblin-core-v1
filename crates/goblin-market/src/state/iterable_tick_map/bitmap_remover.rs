@@ -1,14 +1,15 @@
-use crate::state::{
-    InnerIndex, OrderId, OuterIndex, RestingOrderIndex, Side, SlotStorage, TickIndices,
+use crate::{
+    quantities::Ticks,
+    state::{InnerIndex, OrderId, OuterIndex, RestingOrderIndex, Side, SlotStorage, TickIndices},
 };
 
-use super::BitmapGroup;
+use super::{BitmapGroup, BitmapIterator, GroupPosition};
 
 /// Facilitates efficient batch deactivations in bitmap groups
 pub struct BitmapRemover {
     /// Whether for bids or asks
     /// Traverse upwards (ascending) for asks and downwards (descending) for bids
-    // pub side: Side,
+    pub side: Side,
 
     /// The current bitmap group pending a write. This allows us to perform multiple
     /// updates in a bitmap group with a single slot load. This value is written to slot
@@ -24,8 +25,9 @@ pub struct BitmapRemover {
 }
 
 impl BitmapRemover {
-    pub fn new() -> Self {
+    pub fn new(side: Side) -> Self {
         BitmapRemover {
+            side,
             bitmap_group: BitmapGroup::default(),
             last_outer_index: None,
             pending_write: false,
@@ -102,6 +104,31 @@ impl BitmapRemover {
         let mut bitmap = self.bitmap_group.get_bitmap_mut(&inner_index);
         bitmap.clear(&order_id.resting_order_index);
         self.pending_write = true;
+
+        // TODO call get_next_active_bit() directly from here and return the
+        // discovered order_id
+    }
+
+    // TODO get best_active_bit() function using bitmap_iterator
+    pub fn get_next_active_bit(
+        &mut self,
+        position_to_exclude: Option<GroupPosition>,
+    ) -> Option<OrderId> {
+        if let Some(outer_index) = self.last_outer_index {
+            let mut bitmap_iterator = BitmapIterator::new_from_group_position(
+                &self.bitmap_group,
+                self.side,
+                position_to_exclude,
+            );
+            let next_active_position = bitmap_iterator.next();
+
+            let next_order_id = next_active_position
+                .map(|group_position| OrderId::from_group_position(group_position, outer_index));
+
+            next_order_id
+        } else {
+            None
+        }
     }
 
     // pub fn next_best_in_group(&self, index_to_exclude: Option<(InnerIndex, RestingOrderIndex)>) {
@@ -114,15 +141,15 @@ impl BitmapRemover {
 mod tests {
     use crate::{
         quantities::{Ticks, WrapperU64},
-        state::{BitmapGroup, OrderId, RestingOrderIndex, SlotActions, SlotStorage},
+        state::{BitmapGroup, OrderId, RestingOrderIndex, Side, SlotActions, SlotStorage},
     };
 
-    use super::BitmapRemover;
+    use super::*;
 
     #[test]
     fn deactivate_on_blank_bitmap_group() {
         let slot_storage = &mut SlotStorage::new();
-        let mut remover = BitmapRemover::new();
+        let mut remover = BitmapRemover::new(Side::Bid);
 
         let order_id = OrderId {
             price_in_ticks: Ticks::ZERO,
@@ -155,7 +182,7 @@ mod tests {
     fn deactivate_single_order() {
         let slot_storage = &mut SlotStorage::new();
 
-        let mut remover = BitmapRemover::new();
+        let mut remover = BitmapRemover::new(Side::Bid);
 
         let order_id = OrderId {
             price_in_ticks: Ticks::ZERO,
@@ -194,7 +221,7 @@ mod tests {
     fn deactivate_two_orders_on_same_tick() {
         let slot_storage = &mut SlotStorage::new();
 
-        let mut remover = BitmapRemover::new();
+        let mut remover = BitmapRemover::new(Side::Bid);
 
         let order_id_0 = OrderId {
             price_in_ticks: Ticks::ZERO,
@@ -236,7 +263,7 @@ mod tests {
     fn deactivate_two_orders_on_different_inner_indices_on_same_bitmap_group() {
         let slot_storage = &mut SlotStorage::new();
 
-        let mut remover = BitmapRemover::new();
+        let mut remover = BitmapRemover::new(Side::Bid);
 
         let order_id_0 = OrderId {
             price_in_ticks: Ticks::ZERO,
@@ -276,7 +303,7 @@ mod tests {
     fn deactivate_two_orders_on_different_bitmap_groups() {
         let slot_storage = &mut SlotStorage::new();
 
-        let mut remover = BitmapRemover::new();
+        let mut remover = BitmapRemover::new(Side::Bid);
 
         let order_id_0 = OrderId {
             price_in_ticks: Ticks::ZERO,

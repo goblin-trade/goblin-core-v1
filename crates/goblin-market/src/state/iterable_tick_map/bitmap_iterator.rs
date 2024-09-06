@@ -15,6 +15,7 @@ impl GroupPosition {
             resting_order_index,
         } = self;
 
+        // Resting orders always begin from left to right so the latter part is the same
         match side {
             Side::Bid => {
                 (31 - inner_index.as_usize() as u8) * 8 + (resting_order_index.as_u8() + 1)
@@ -95,10 +96,25 @@ pub struct BitmapIterator<'a> {
 }
 
 impl<'a> BitmapIterator<'a> {
-    pub fn new(bitmap_group: &'a BitmapGroup, side: Side, size: u8) -> Self {
+    pub fn new(bitmap_group: &'a BitmapGroup, side: Side, count: u8) -> Self {
         BitmapIterator {
             bitmap_group,
-            group_position_iterator: GroupPositionIterator::new(side, size),
+            group_position_iterator: GroupPositionIterator::new(side, count),
+        }
+    }
+
+    pub fn new_from_group_position(
+        bitmap_group: &'a BitmapGroup,
+        side: Side,
+        group_position: Option<GroupPosition>,
+    ) -> Self {
+        let count = group_position
+            .map(|group_position| group_position.count(side))
+            .unwrap_or(0);
+
+        BitmapIterator {
+            bitmap_group,
+            group_position_iterator: GroupPositionIterator::new(side, count),
         }
     }
 }
