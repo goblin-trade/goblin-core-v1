@@ -55,9 +55,7 @@ impl IndexListInserter {
         }
 
         // Iterate through the list to find the correct position
-        while let Some((_slot_index, _relative_index, _list_slot, current_outer_index)) =
-            self.index_list_reader.next(slot_storage)
-        {
+        while let Some(current_outer_index) = self.index_list_reader.next(slot_storage) {
             // If the outer_index is already in the list, only insert once
             if current_outer_index == outer_index {
                 self.cache.push(current_outer_index);

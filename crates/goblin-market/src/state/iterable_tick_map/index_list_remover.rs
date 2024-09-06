@@ -99,9 +99,7 @@ impl IndexListRemover {
         // Flush the old value of `found_outer_index` to cache
         self.try_flush_found_outer_index_to_cache();
 
-        while let Some((_slot_index, _relative_index, _list_slot, current_outer_index)) =
-            self.index_list_reader.next(slot_storage)
-        {
+        while let Some(current_outer_index) = self.index_list_reader.next(slot_storage) {
             // Check if the current outer index matches the sought index
             if current_outer_index == outer_index {
                 // Mark the outer index as found

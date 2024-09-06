@@ -29,24 +29,28 @@ impl IndexListReader {
         }
     }
 
+    pub fn slot_index(&self) -> u16 {
+        (self.outer_index_count - 1) / 16
+    }
+
+    pub fn relative_index(&self) -> u16 {
+        (self.outer_index_count - 1) % 16
+    }
+
     /// Read the next outer index
     ///
     /// # Arguments
     ///
     /// * slot_storage
     ///
-    /// # Returns
-    ///
-    /// The coordinates (slot index, relative index, list_slot) and value of the outer index
-    ///
-    pub fn next(&mut self, slot_storage: &SlotStorage) -> Option<(u16, u16, ListSlot, OuterIndex)> {
+    pub fn next(&mut self, slot_storage: &SlotStorage) -> Option<OuterIndex> {
         if self.outer_index_count == 0 {
-            return None; // End iteration if no elements left
+            return None;
         }
 
-        // Calculate slot index and relative index
-        let slot_index = (self.outer_index_count - 1) / 16;
-        let relative_index = (self.outer_index_count - 1) % 16;
+        // TODO don't remove -1 from slot_index() or relative_index() else this will break
+        let slot_index = self.slot_index();
+        let relative_index = self.relative_index();
 
         // Check if we need to load a new list_slot
         if self.list_slot.is_none() || relative_index == 15 {
@@ -57,19 +61,12 @@ impl IndexListReader {
             self.list_slot = Some(ListSlot::new_from_slot(slot_storage, list_key));
         }
 
-        // Safe to unwrap because we just initialized it if it was None
         let list_slot = self.list_slot.as_ref().unwrap();
-
-        // Read the outer index from the list slot
         let current_outer_index = list_slot.get(relative_index as usize);
 
-        // Prepare the result
-        let result = (slot_index, relative_index, *list_slot, current_outer_index);
-
-        // Decrement the outer_index_count for the next iteration
         self.outer_index_count -= 1;
 
-        Some(result)
+        Some(current_outer_index)
     }
 }
 
@@ -87,7 +84,6 @@ mod tests {
 
         let mut reader = IndexListReader::new(side, outer_index_count);
         assert!(reader.next(&slot_storage).is_none());
-
         assert!(reader.list_slot.is_none());
     }
 
@@ -126,8 +122,14 @@ mod tests {
         ];
 
         for expected in expected_results {
+            // Obtain slot_index() and relative_index() of the upcoming value by calling
+            // it before .next()
+            assert_eq!(reader.slot_index(), expected.0);
+            assert_eq!(reader.relative_index(), expected.1);
+
             let result = reader.next(&slot_storage).unwrap();
-            assert_eq!(result, expected);
+            assert_eq!(result, expected.3);
+            assert_eq!(reader.list_slot, Some(expected.2));
         }
 
         assert!(reader.next(&slot_storage).is_none());
@@ -167,8 +169,14 @@ mod tests {
         ];
 
         for expected in expected_results {
+            // Obtain slot_index() and relative_index() of the upcoming value by calling
+            // it before .next()
+            assert_eq!(reader.slot_index(), expected.0);
+            assert_eq!(reader.relative_index(), expected.1);
+
             let result = reader.next(&slot_storage).unwrap();
-            assert_eq!(result, expected);
+            assert_eq!(result, expected.3);
+            assert_eq!(reader.list_slot, Some(expected.2));
         }
 
         assert!(reader.next(&slot_storage).is_none());
@@ -231,8 +239,12 @@ mod tests {
         ];
 
         for expected in expected_results {
+            assert_eq!(reader.slot_index(), expected.0);
+            assert_eq!(reader.relative_index(), expected.1);
+
             let result = reader.next(&slot_storage).unwrap();
-            assert_eq!(result, expected);
+            assert_eq!(result, expected.3);
+            assert_eq!(reader.list_slot, Some(expected.2));
         }
 
         assert!(reader.next(&slot_storage).is_none());
@@ -309,8 +321,12 @@ mod tests {
         ];
 
         for expected in expected_results {
+            assert_eq!(iterator.slot_index(), expected.0);
+            assert_eq!(iterator.relative_index(), expected.1);
+
             let result = iterator.next(&slot_storage).unwrap();
-            assert_eq!(result, expected);
+            assert_eq!(result, expected.3);
+            assert_eq!(iterator.list_slot, Some(expected.2));
         }
 
         assert!(iterator.next(&slot_storage).is_none());
@@ -351,8 +367,12 @@ mod tests {
         ];
 
         for expected in expected_results {
+            assert_eq!(iterator.slot_index(), expected.0);
+            assert_eq!(iterator.relative_index(), expected.1);
+
             let result = iterator.next(&slot_storage).unwrap();
-            assert_eq!(result, expected);
+            assert_eq!(result, expected.3);
+            assert_eq!(iterator.list_slot, Some(expected.2));
         }
 
         assert!(iterator.next(&slot_storage).is_none());
