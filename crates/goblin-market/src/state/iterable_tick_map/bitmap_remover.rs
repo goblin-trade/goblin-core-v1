@@ -109,7 +109,12 @@ impl BitmapRemover {
         // discovered order_id
     }
 
-    // TODO get best_active_bit() function using bitmap_iterator
+    // Get next active bit in the bitmap group, given a starting position to exclude
+    //
+    // # Arguments
+    //
+    // * `position_to_exclude` - Starting position to exclude
+    //
     pub fn get_next_active_bit(
         &mut self,
         position_to_exclude: Option<GroupPosition>,

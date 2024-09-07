@@ -48,7 +48,6 @@ impl IndexListReader {
             return None;
         }
 
-        // TODO don't remove -1 from slot_index() or relative_index() else this will break
         let slot_index = self.slot_index();
         let relative_index = self.relative_index();
 

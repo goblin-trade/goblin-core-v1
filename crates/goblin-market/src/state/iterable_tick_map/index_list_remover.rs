@@ -54,10 +54,16 @@ impl IndexListRemover {
 
     /// Traverse one position in the list
     /// The previous `found_outer_index` will be removed from list os it is discarded
-    pub fn slide(&mut self, slot_storage: &SlotStorage) {
-        self.found_outer_index.take();
+    ///
+    /// This operation is illegal when we have traversed into the list. It is legal
+    /// only if no value was looked up or only if the outermost value was looked first
+    ///
+    pub fn slide(&mut self, slot_storage: &SlotStorage) -> Option<OuterIndex> {
+        // TODO remove assert, enforce externally
+        assert!(self.cache.is_empty(), "Cannot slide with non-empty cache");
+        self.found_outer_index = self.index_list_reader.next(slot_storage);
 
-        let gg = self.index_list_reader.next(slot_storage);
+        self.found_outer_index
     }
 
     /// The total length of index list after accounting for removals

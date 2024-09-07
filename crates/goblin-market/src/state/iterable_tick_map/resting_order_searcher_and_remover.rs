@@ -2,7 +2,7 @@ use crate::state::{
     InnerIndex, MarketState, OrderId, RestingOrderIndex, Side, SlotStorage, TickIndices,
 };
 
-use super::{BitmapRemover, IndexListRemover};
+use super::{BitmapRemover, GroupPosition, IndexListRemover};
 
 /// Removes resting orders from slot. The resting order itself is not written, instead
 /// we update the bitmaps and index list to mark the order as cleared.
@@ -73,7 +73,34 @@ impl RestingOrderSearcherAndRemover {
     }
 
     /// Move one position down the index list and load the corresponding bitmap group
-    pub fn slide(&mut self) {}
+    pub fn slide(&mut self, slot_storage: &mut SlotStorage) -> bool {
+        if let Some(next_outer_index) = self.index_list_remover.slide(slot_storage) {
+            self.bitmap_remover
+                .set_outer_index(slot_storage, next_outer_index);
+
+            return true;
+        }
+        false
+    }
+
+    /// Find the next active bit across all active bitmaps
+    pub fn get_next_active_bit_in_all_groups(
+        &mut self,
+        slot_storage: &mut SlotStorage,
+        mut position_to_exclude: Option<GroupPosition>,
+    ) -> Option<OrderId> {
+        loop {
+            if let Some(order_id) = self.bitmap_remover.get_next_active_bit(position_to_exclude) {
+                return Some(order_id);
+            }
+            position_to_exclude = None;
+
+            if !self.slide(slot_storage) {
+                // If slide fails then we have reached end of the list
+                return None;
+            }
+        }
+    }
 
     /// Marks a resting order as removed
     ///
@@ -106,6 +133,9 @@ impl RestingOrderSearcherAndRemover {
         if !self.bitmap_remover.bitmap_group.is_active() {
             self.index_list_remover.remove(slot_storage, outer_index);
         }
+
+        // TODO move this to a separate function.
+        // This shouldn't be part of this struct
 
         // if order_id == market.best_order_id, find the next best order id
         // by looping through bitmap groups
