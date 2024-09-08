@@ -1,4 +1,4 @@
-use crate::state::{InnerIndex, RestingOrderIndex, Side};
+use crate::state::{InnerIndex, OrderId, RestingOrderIndex, Side};
 
 use super::BitmapGroup;
 
@@ -22,6 +22,15 @@ impl GroupPosition {
             }
 
             Side::Ask => (inner_index.as_usize() as u8) * 8 + (resting_order_index.as_u8() + 1),
+        }
+    }
+}
+
+impl From<&OrderId> for GroupPosition {
+    fn from(value: &OrderId) -> Self {
+        GroupPosition {
+            inner_index: value.price_in_ticks.inner_index(),
+            resting_order_index: value.resting_order_index,
         }
     }
 }

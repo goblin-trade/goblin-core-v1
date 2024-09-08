@@ -33,7 +33,9 @@ impl RestingOrderSearcherAndRemover {
         self.index_list_remover.side()
     }
 
-    /// Checks whether an order is present at the given order ID
+    /// Checks whether an order is present at the given order ID.
+    /// The bitmap group is updated if the outer index does not match.
+    ///
     /// Externally ensure that order IDs move away from the centre
     ///
     /// # Arguments
@@ -51,9 +53,8 @@ impl RestingOrderSearcherAndRemover {
             inner_index,
         } = price_in_ticks.to_indices();
 
-        // 1. Setup outer index and bitmap group in bitmap remover
+        // Read the bitmap group and outer index corresponding to order_id
         if self.bitmap_remover.last_outer_index != Some(outer_index) {
-            // 2. Check whether outer index exists in index list
             let outer_index_present = self
                 .index_list_remover
                 .find_outer_index(slot_storage, outer_index);
@@ -73,6 +74,9 @@ impl RestingOrderSearcherAndRemover {
     }
 
     /// Move one position down the index list and load the corresponding bitmap group
+    ///
+    /// TODO This is a special case of slide used to find next best price. It is only called when
+    /// we're on the outermost bitmap group.
     pub fn slide(&mut self, slot_storage: &mut SlotStorage) -> bool {
         if let Some(next_outer_index) = self.index_list_remover.slide(slot_storage) {
             self.bitmap_remover
@@ -84,6 +88,10 @@ impl RestingOrderSearcherAndRemover {
     }
 
     /// Find the next active bit across all active bitmaps
+    ///
+    /// TODO this is a special case to find next best price. All of the traversed
+    /// outer indices should be closed.
+    ///
     pub fn get_next_active_bit_in_all_groups(
         &mut self,
         slot_storage: &mut SlotStorage,
@@ -101,6 +109,17 @@ impl RestingOrderSearcherAndRemover {
             }
         }
     }
+
+    /// Remove an order from the current bitmap group
+    pub fn deactivate_in_current(&mut self, group_position: GroupPosition) {
+        self.bitmap_remover.deactivate_in_current(group_position);
+    }
+
+    pub fn get_best_inner_index_in_current(&self) {}
+
+    // TODO function to get best inner index across all groups
+    // Find best price in current. If not found, slide
+    pub fn get_best_price_in_current(&self) {}
 
     /// Marks a resting order as removed
     ///

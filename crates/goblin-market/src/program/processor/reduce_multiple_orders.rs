@@ -6,9 +6,10 @@ use crate::{
     quantities::{BaseAtomsRaw, BaseLots, QuoteAtomsRaw, QuoteLots, Ticks, WrapperU64},
     require,
     state::{
-        AskOrderId, BidOrderId, BitmapGroup, MarketState, MatchingEngineResponse, OrderId,
-        OuterIndex, ReduceOrderInnerResponse, RestingOrderIndex, RestingOrderSearcherAndRemover,
-        Side, SlotActions, SlotRestingOrder, SlotStorage, TickIndices, TraderState,
+        AskOrderId, BidOrderId, BitmapGroup, GroupPosition, MarketState, MatchingEngineResponse,
+        OrderId, OuterIndex, ReduceOrderInnerResponse, RestingOrderIndex,
+        RestingOrderSearcherAndRemover, Side, SlotActions, SlotRestingOrder, SlotStorage,
+        TickIndices, TraderState,
     },
     GoblinMarket,
 };
@@ -340,4 +341,31 @@ impl OrderExistsChecker {
     ) -> bool {
         self.reader(side).order_present(slot_storage, order_id)
     }
+
+    pub fn remove_order(
+        &mut self,
+        slot_storage: &mut SlotStorage,
+        side: Side,
+        order_id: OrderId,
+        // group_position: GroupPosition,
+    ) {
+        let group_position = GroupPosition::from(&order_id);
+        self.reader(side).deactivate_in_current(group_position);
+    }
+}
+
+fn remove_order_from_book(
+    reader: &mut RestingOrderSearcherAndRemover,
+    slot_storage: &mut SlotStorage,
+    order_id: OrderId,
+) {
+    let group_position = GroupPosition::from(&order_id);
+
+    // Since the order was looked up before, we're already on the correct bitmap group and outer index
+    // Deactivate at current group position
+    reader.deactivate_in_current(group_position);
+
+    // If deactivated order was the outermost order
+    // - Find next active bit in all groups
+    // - Update market price
 }

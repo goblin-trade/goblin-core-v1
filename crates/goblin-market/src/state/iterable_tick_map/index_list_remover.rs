@@ -29,8 +29,11 @@ pub struct IndexListRemover {
     /// Contains values to be retained after removal.
     pub cache: Vec<OuterIndex>,
 
-    /// Tracks whether the searched outer index was found
-    pub found_outer_index: Option<OuterIndex>,
+    /// Staging area to efficiently lookup and remove outer indices. It is set with `slide()`
+    /// where we read the outermost outer index. There are two possibilities for this staged value
+    /// 1. `cached_outer_index` was the value being searched for removal. Remove it.
+    /// 2. Slide futher. This will update `cached_outer_index`
+    pub cached_outer_index: Option<OuterIndex>,
 
     /// Whether one or more outer index was removed and the slots are pending a write.
     /// There are cases when we lookup outer indices with `find_outer_index()` but
@@ -43,7 +46,7 @@ impl IndexListRemover {
         Self {
             index_list_reader: IndexListReader::new(side, outer_index_count),
             cache: Vec::new(),
-            found_outer_index: None,
+            cached_outer_index: None,
             pending_write: false,
         }
     }
@@ -52,7 +55,14 @@ impl IndexListRemover {
         self.index_list_reader.side
     }
 
-    /// Traverse one position in the list
+    /// The total length of index list after accounting for removals
+    pub fn index_list_length(&self) -> u16 {
+        self.index_list_reader.outer_index_count
+            + self.cache.len() as u16
+            + u16::from(self.cached_outer_index.is_some())
+    }
+
+    /// Traverse one position down the list
     /// The previous `found_outer_index` will be removed from list os it is discarded
     ///
     /// This operation is illegal when we have traversed into the list. It is legal
@@ -61,23 +71,30 @@ impl IndexListRemover {
     pub fn slide(&mut self, slot_storage: &SlotStorage) -> Option<OuterIndex> {
         // TODO remove assert, enforce externally
         assert!(self.cache.is_empty(), "Cannot slide with non-empty cache");
-        self.found_outer_index = self.index_list_reader.next(slot_storage);
+        self.cached_outer_index = self.index_list_reader.next(slot_storage);
 
-        self.found_outer_index
+        self.cached_outer_index
     }
 
-    /// The total length of index list after accounting for removals
-    pub fn index_list_length(&self) -> u16 {
-        self.index_list_reader.outer_index_count
-            + self.cache.len() as u16
-            + u16::from(self.found_outer_index.is_some())
-    }
-
-    /// Clears `found_outer_index`, pushing the value to cache
-    pub fn try_flush_found_outer_index_to_cache(&mut self) {
-        if let Some(found_outer_index) = self.found_outer_index.take() {
+    /// Pushes `found_outer_index` to cache and clears the value
+    pub fn flush_cached_outer_index(&mut self) {
+        if let Some(found_outer_index) = self.cached_outer_index.take() {
             self.cache.push(found_outer_index);
         }
+    }
+
+    pub fn slide_v2(
+        &mut self,
+        slot_storage: &SlotStorage,
+        save_old_index: bool,
+    ) -> Option<OuterIndex> {
+        if save_old_index {
+            self.flush_cached_outer_index();
+        }
+
+        self.cached_outer_index = self.index_list_reader.next(slot_storage);
+
+        self.cached_outer_index
     }
 
     /// Searches for the outer index in the index list.
@@ -97,24 +114,32 @@ impl IndexListRemover {
         outer_index: OuterIndex,
     ) -> bool {
         if self
-            .found_outer_index
-            .is_some_and(|found_outer_index| found_outer_index == outer_index)
+            .cached_outer_index
+            .is_some_and(|cached_outer_index| cached_outer_index == outer_index)
         {
             return true;
         }
-        // Flush the old value of `found_outer_index` to cache
-        self.try_flush_found_outer_index_to_cache();
 
-        while let Some(current_outer_index) = self.index_list_reader.next(slot_storage) {
-            // Check if the current outer index matches the sought index
+        while let Some(current_outer_index) = self.slide_v2(slot_storage, true) {
             if current_outer_index == outer_index {
-                // Mark the outer index as found
-                self.found_outer_index = Some(current_outer_index);
                 return true;
             }
-            // Cache indices that do not match
-            self.cache.push(current_outer_index);
         }
+
+        // // Flush the old value of `found_outer_index` to cache
+        // self.flush_cached_outer_index();
+
+        // // Different from slide(). In slide we don't push value to cache, instead we clear it
+        // while let Some(current_outer_index) = self.index_list_reader.next(slot_storage) {
+        //     // Check if the current outer index matches the sought index
+        //     if current_outer_index == outer_index {
+        //         // Mark the outer index as found
+        //         self.cached_outer_index = Some(current_outer_index);
+        //         return true;
+        //     }
+        //     // Cache indices that do not match
+        //     self.cache.push(current_outer_index);
+        // }
 
         false
     }
@@ -130,7 +155,7 @@ impl IndexListRemover {
         // Find the element, then clear the found value
         if self.find_outer_index(slot_storage, outer_index) {
             self.pending_write = true;
-            self.found_outer_index = None;
+            self.cached_outer_index = None;
             return true;
         }
         false
@@ -145,7 +170,7 @@ impl IndexListRemover {
             return;
         }
 
-        self.try_flush_found_outer_index_to_cache();
+        self.flush_cached_outer_index();
         write_prepared_indices(
             slot_storage,
             self.side(),
@@ -197,7 +222,7 @@ mod tests {
         assert!(found);
         assert_eq!(remover.index_list_reader.outer_index_count, 0);
         assert_eq!(remover.cache, vec![]);
-        assert_eq!(remover.found_outer_index, Some(OuterIndex::new(100)));
+        assert_eq!(remover.cached_outer_index, Some(OuterIndex::new(100)));
     }
 
     #[test]
@@ -219,7 +244,7 @@ mod tests {
         assert!(found);
         assert_eq!(remover.index_list_reader.outer_index_count, 0);
         assert_eq!(remover.cache, vec![]);
-        assert_eq!(remover.found_outer_index, Some(OuterIndex::new(100)));
+        assert_eq!(remover.cached_outer_index, Some(OuterIndex::new(100)));
         assert_eq!(remover.pending_write, false);
 
         remover.write_prepared_indices(&mut slot_storage);
@@ -252,7 +277,7 @@ mod tests {
         assert!(!found);
         assert_eq!(remover.index_list_reader.outer_index_count, 0);
         assert_eq!(remover.cache, vec![OuterIndex::new(100)]);
-        assert_eq!(remover.found_outer_index, None);
+        assert_eq!(remover.cached_outer_index, None);
     }
 
     #[test]
@@ -281,7 +306,7 @@ mod tests {
         assert!(found);
         assert_eq!(remover.index_list_reader.outer_index_count, 1);
         assert_eq!(remover.cache, vec![OuterIndex::new(300)]);
-        assert_eq!(remover.found_outer_index, Some(OuterIndex::new(200)));
+        assert_eq!(remover.cached_outer_index, Some(OuterIndex::new(200)));
     }
 
     #[test]
@@ -660,11 +685,11 @@ mod tests {
         let found = remover.find_outer_index(&slot_storage, OuterIndex::new(200));
         assert!(found);
         assert_eq!(remover.cache, vec![OuterIndex::new(300)]);
-        assert_eq!(remover.found_outer_index, Some(OuterIndex::new(200)));
+        assert_eq!(remover.cached_outer_index, Some(OuterIndex::new(200)));
 
         remover.remove(&mut slot_storage, OuterIndex::new(200));
         assert_eq!(remover.cache, vec![OuterIndex::new(300)]);
-        assert!(remover.found_outer_index.is_none());
+        assert!(remover.cached_outer_index.is_none());
 
         // Verify the state after write
         remover.write_prepared_indices(&mut slot_storage);
@@ -699,7 +724,7 @@ mod tests {
         assert!(found);
         assert_eq!(remover.index_list_reader.outer_index_count, 1);
         assert_eq!(remover.cache, vec![OuterIndex::new(300)]);
-        assert_eq!(remover.found_outer_index, Some(OuterIndex::new(200)));
+        assert_eq!(remover.cached_outer_index, Some(OuterIndex::new(200)));
 
         remover.remove(&mut slot_storage, OuterIndex::new(100));
         assert_eq!(remover.index_list_reader.outer_index_count, 0);
@@ -707,7 +732,7 @@ mod tests {
             remover.cache,
             vec![OuterIndex::new(300), OuterIndex::new(200)]
         );
-        assert!(remover.found_outer_index.is_none());
+        assert!(remover.cached_outer_index.is_none());
 
         // Verify the state after write
         remover.write_prepared_indices(&mut slot_storage);

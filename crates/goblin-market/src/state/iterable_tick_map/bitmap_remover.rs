@@ -77,6 +77,17 @@ impl BitmapRemover {
         bitmap.order_present(resting_order_index)
     }
 
+    /// Deactivate an order in the current bitmap group
+    ///
+    /// Externally ensure that `last_outer_index` is not None
+    pub fn deactivate_in_current(&mut self, group_position: GroupPosition) {
+        let mut bitmap = self
+            .bitmap_group
+            .get_bitmap_mut(&group_position.inner_index);
+        bitmap.clear(&group_position.resting_order_index);
+        self.pending_write = true;
+    }
+
     /// Turn off a bit at a given (outer index, inner index, resting order index)
     /// If the outer index changes, then the previous bitmap is overwritten
     ///
@@ -101,12 +112,10 @@ impl BitmapRemover {
         // Else load anew and update the cache.
         self.set_outer_index(slot_storage, outer_index);
 
-        let mut bitmap = self.bitmap_group.get_bitmap_mut(&inner_index);
-        bitmap.clear(&order_id.resting_order_index);
-        self.pending_write = true;
-
-        // TODO call get_next_active_bit() directly from here and return the
-        // discovered order_id
+        self.deactivate_in_current(GroupPosition {
+            inner_index,
+            resting_order_index: order_id.resting_order_index,
+        });
     }
 
     // Get next active bit in the bitmap group, given a starting position to exclude
