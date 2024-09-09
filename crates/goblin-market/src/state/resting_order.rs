@@ -13,7 +13,7 @@ use crate::{
     },
 };
 
-use super::{GroupPosition, OuterIndex, RestingOrderIndex};
+use super::{GroupPosition, MarketState, OuterIndex, RestingOrderIndex};
 
 const NULL_ADDRESS: Address = address!("0000000000000000000000000000000000000001");
 
@@ -51,10 +51,10 @@ impl OrderId {
     /// An active bid cannot have a price more than the best bid price,
     /// and an active ask cannot have a price lower than the best ask price.
     ///
-    pub fn side(&self, best_bid_price: Ticks, best_ask_price: Ticks) -> Side {
-        if self.price_in_ticks >= best_ask_price {
+    pub fn side(&self, market_state: &MarketState) -> Side {
+        if self.price_in_ticks >= market_state.best_ask_price {
             Side::Ask
-        } else if self.price_in_ticks <= best_bid_price {
+        } else if self.price_in_ticks <= market_state.best_bid_price {
             Side::Bid
         } else {
             // There are no active orders in the spread

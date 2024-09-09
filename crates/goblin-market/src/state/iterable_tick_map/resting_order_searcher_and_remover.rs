@@ -78,9 +78,7 @@ impl RestingOrderSearcherAndRemover {
     /// Move one position down the index list and load the corresponding bitmap group
     ///
     /// Externally ensure that this is only called when we're on the outermost outer index.
-    ///
-    /// TODO This is a special case of slide used to find next best price. It is only called when
-    /// we're on the outermost bitmap group.
+    /// This way there is no `found_outer_index` to push to the cache.
     ///
     pub fn slide(&mut self, slot_storage: &mut SlotStorage) -> bool {
         if let Some(next_outer_index) = self.index_list_remover.slide(slot_storage) {
@@ -132,6 +130,8 @@ impl RestingOrderSearcherAndRemover {
     ) {
         let group_position = GroupPosition::from(&order_id);
         self.bitmap_remover.deactivate_in_current(group_position);
+
+        // TODO update index list if bitmap group was closed
 
         if order_id.price_in_ticks == market_state.best_price(self.side()) {
             // Obtain and set new best price.

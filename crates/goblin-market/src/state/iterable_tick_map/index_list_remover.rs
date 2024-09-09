@@ -62,31 +62,15 @@ impl IndexListRemover {
             + u16::from(self.cached_outer_index.is_some())
     }
 
-    /// Traverse one position down the list
+    /// Traverse one position down the list, pushing the `found_outer_index` to cache
+    /// if it exists.
     ///
-    /// Externally ensure that this is only called when we're on the outermost outer index.
+    /// # Arguments
     ///
-    /// The previous `found_outer_index` will be removed from list os it is discarded
-    ///
-    /// This operation is illegal when we have traversed into the list. It is legal
-    /// only if no value was looked up or only if the outermost value was looked first
+    /// * `slot_storage`
     ///
     pub fn slide(&mut self, slot_storage: &SlotStorage) -> Option<OuterIndex> {
-        // TODO remove assert, enforce externally
-        assert!(self.cache.is_empty(), "Cannot slide with non-empty cache");
-
-        self.cached_outer_index = self.index_list_reader.next(slot_storage);
-        self.cached_outer_index
-    }
-
-    pub fn slide_v2(
-        &mut self,
-        slot_storage: &SlotStorage,
-        save_old_index: bool,
-    ) -> Option<OuterIndex> {
-        if save_old_index {
-            self.flush_cached_outer_index();
-        }
+        self.flush_cached_outer_index();
 
         self.cached_outer_index = self.index_list_reader.next(slot_storage);
         self.cached_outer_index
@@ -119,7 +103,7 @@ impl IndexListRemover {
             return true;
         }
 
-        while let Some(current_outer_index) = self.slide_v2(slot_storage, true) {
+        while let Some(current_outer_index) = self.slide(slot_storage) {
             if current_outer_index == outer_index {
                 return true;
             }
@@ -128,6 +112,8 @@ impl IndexListRemover {
     }
 
     /// Prepare the index list by removing the specified outer index
+    ///
+    /// TODO update. No need to call find_outer_index() again
     ///
     /// # Arguments
     ///

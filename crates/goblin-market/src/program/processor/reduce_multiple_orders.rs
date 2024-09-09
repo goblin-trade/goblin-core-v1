@@ -6,10 +6,9 @@ use crate::{
     quantities::{BaseAtomsRaw, BaseLots, QuoteAtomsRaw, QuoteLots, Ticks, WrapperU64},
     require,
     state::{
-        AskOrderId, BidOrderId, BitmapGroup, GroupPosition, MarketState, MatchingEngineResponse,
-        OrderId, OuterIndex, ReduceOrderInnerResponse, RestingOrderIndex,
-        RestingOrderSearcherAndRemover, Side, SlotActions, SlotRestingOrder, SlotStorage,
-        TickIndices, TraderState,
+        AskOrderId, BidOrderId, MarketState, MatchingEngineResponse, OrderId,
+        ReduceOrderInnerResponse, RestingOrderIndex, RestingOrderSearcherAndRemover, Side,
+        SlotActions, SlotRestingOrder, SlotStorage, TraderState,
     },
     GoblinMarket,
 };
@@ -129,17 +128,13 @@ pub fn reduce_multiple_orders_inner(
     let mut quote_lots_released = QuoteLots::ZERO;
     let mut base_lots_released = BaseLots::ZERO;
 
-    let mut cached_bitmap_group: Option<(BitmapGroup, OuterIndex)> = None;
+    // let mut order_id_checker = OrderIdChecker::new();
 
-    let mut bid_index_list = market_state.get_index_list(Side::Bid);
-    let mut ask_index_list = market_state.get_index_list(Side::Ask);
-    let mut order_id_checker = OrderIdChecker::new();
-    let mut order_exists_checker = OrderExistsChecker::new(
+    let mut processor = RemoveMultipleProcessor::new(
         market_state.bids_outer_indices,
         market_state.asks_outer_indices,
     );
-    // TODO ensure orders are in descending order for bids and in ascending order
-    // for asks, i.e. moving away from the centre
+
     for order_packet_bytes in order_packets {
         let ReduceOrderPacket {
             order_id,
@@ -147,19 +142,14 @@ pub fn reduce_multiple_orders_inner(
             revert_if_fail,
         } = ReduceOrderPacket::from(&order_packet_bytes);
 
-        let TickIndices {
-            outer_index,
-            inner_index,
-        } = order_id.price_in_ticks.to_indices();
-        let side = order_id.side(market_state.best_bid_price, market_state.best_ask_price);
-
         // Ensure that successive order IDs move away from the center and that
         // duplicate values are not passed
-        order_id_checker.check(order_id, side)?;
+        let side = order_id.side(market_state);
+        processor.check_correct_order(order_id, side)?;
 
-        let order_exists = order_exists_checker.order_exists(slot_storage, side, order_id);
+        let order_present = processor.order_present(slot_storage, side, order_id);
 
-        if order_exists {
+        if order_present {
             let mut resting_order = SlotRestingOrder::new_from_slot(slot_storage, order_id);
 
             if let Some(ReduceOrderInnerResponse {
@@ -178,8 +168,7 @@ pub fn reduce_multiple_orders_inner(
                 base_lots_released += matching_engine_response.num_base_lots_out;
 
                 if should_remove_order_from_book {
-                    // TODO deactivate slot
-                    // TODO update best market price
+                    processor.remove_order(slot_storage, market_state, side, order_id);
                 } else {
                     resting_order.write_to_slot(slot_storage, &order_id)?;
                 }
@@ -191,83 +180,9 @@ pub fn reduce_multiple_orders_inner(
             // When order is not present
             return Err(GoblinError::FailedToReduce(FailedToReduce {}));
         }
-
-        // let mut resting_order = SlotRestingOrder::new_from_slot(slot_storage, order_id);
-
-        // if let Some(ReduceOrderInnerResponse {
-        //     matching_engine_response,
-        //     should_remove_order_from_book,
-        // }) = resting_order.reduce_order(
-        //     trader_state,
-        //     trader,
-        //     &order_id,
-        //     side,
-        //     lots_to_remove,
-        //     false,
-        //     claim_funds,
-        // ) {
-        //     quote_lots_released += matching_engine_response.num_quote_lots_out;
-        //     base_lots_released += matching_engine_response.num_base_lots_out;
-
-        //     // Order should be removed from the book. Flip its corresponding bitmap.
-        //     // No need to write cleared resting order to slot
-        //     if should_remove_order_from_book {
-        //         // SLOAD and cache the bitmap group. This saves us from duplicate SLOADs in future
-        //         // Read a new bitmap group if no cache exists or if the outer index does not match
-        //         if cached_bitmap_group.is_none() || cached_bitmap_group.unwrap().1 != outer_index {
-        //             // Before reading a new bitmap group, write the currently cached one to slot
-        //             if let Some((old_bitmap_group, old_outer_index)) = cached_bitmap_group {
-        //                 old_bitmap_group.write_to_slot(slot_storage, &old_outer_index);
-        //             }
-
-        //             // Read new
-        //             cached_bitmap_group = Some((
-        //                 BitmapGroup::new_from_slot(slot_storage, outer_index),
-        //                 outer_index,
-        //             ));
-        //         }
-
-        //         let (mut bitmap_group, outer_index) = cached_bitmap_group.unwrap();
-        //         let mut mutable_bitmap = bitmap_group.get_bitmap_mut(&inner_index);
-        //         mutable_bitmap.clear(&order_id.resting_order_index);
-
-        //         // Remove outer index from index list if bitmap group is cleared
-        //         // Outer indices of bitmap groups to be closed should be in descending order for bids and
-        //         // in ascending order for asks.
-        //         if !bitmap_group.is_active() {
-        //             if side == Side::Bid {
-        //                 bid_index_list.remove(slot_storage, outer_index)?;
-        //             } else {
-        //                 ask_index_list.remove(slot_storage, outer_index)?;
-        //             }
-        //         }
-        //     } else {
-        //         // Write reduced resting order to slot
-        //         resting_order.write_to_slot(slot_storage, &order_id)?;
-        //     }
-        // } else if revert_if_fail {
-        //     return Err(GoblinError::FailedToReduce(FailedToReduce {}));
-        // }
     }
 
-    // TODO write cached index list to slot
-    // resting_order_remover.write_prepared_indices()
-
-    // The last cached element is not written in the loop. It must be written at the end.
-    if let Some((old_bitmap_group, old_outer_index)) = cached_bitmap_group {
-        old_bitmap_group.write_to_slot(slot_storage, &old_outer_index);
-    }
-
-    bid_index_list.write_to_slot(slot_storage);
-    ask_index_list.write_to_slot(slot_storage);
-
-    // Update market state
-    market_state.bids_outer_indices = bid_index_list.size;
-    market_state.asks_outer_indices = ask_index_list.size;
-
-    // TODO optimize- only run if one of the canceled orders had a price equal to the best price
-    market_state.update_best_price(&bid_index_list, slot_storage);
-    market_state.update_best_price(&ask_index_list, slot_storage);
+    processor.write_prepared_indices(slot_storage, market_state);
 
     Ok(MatchingEngineResponse::new_withdraw(
         base_lots_released,
@@ -275,23 +190,34 @@ pub fn reduce_multiple_orders_inner(
     ))
 }
 
-/// Ensures that successive order ids to remove are in correct order
-///
-/// Successive IDs must be in ascending order for asks and in descending order for bids
-struct OrderIdChecker {
+struct RemoveMultipleProcessor {
     last_bid_order_id: Option<BidOrderId>,
     last_ask_order_id: Option<AskOrderId>,
+    bid_bitmap_reader: RestingOrderSearcherAndRemover,
+    ask_bitmap_reader: RestingOrderSearcherAndRemover,
 }
 
-impl OrderIdChecker {
-    pub fn new() -> Self {
-        OrderIdChecker {
+impl RemoveMultipleProcessor {
+    pub fn new(bids_outer_indices: u16, asks_outer_indices: u16) -> Self {
+        RemoveMultipleProcessor {
+            bid_bitmap_reader: RestingOrderSearcherAndRemover::new(bids_outer_indices, Side::Bid),
+            ask_bitmap_reader: RestingOrderSearcherAndRemover::new(asks_outer_indices, Side::Ask),
             last_bid_order_id: None,
             last_ask_order_id: None,
         }
     }
 
-    pub fn check(&mut self, order_id: OrderId, side: Side) -> GoblinResult<()> {
+    fn reader(&mut self, side: Side) -> &mut RestingOrderSearcherAndRemover {
+        match side {
+            Side::Bid => &mut self.bid_bitmap_reader,
+            Side::Ask => &mut self.ask_bitmap_reader,
+        }
+    }
+
+    /// Ensures that successive order ids to remove are in correct order
+    ///
+    /// Successive IDs must be in ascending order for asks and in descending order for bids
+    pub fn check_correct_order(&mut self, order_id: OrderId, side: Side) -> GoblinResult<()> {
         if side == Side::Bid && self.last_bid_order_id.is_some() {
             let bid_order_id = BidOrderId { inner: order_id };
             require!(
@@ -311,29 +237,8 @@ impl OrderIdChecker {
 
         Ok(())
     }
-}
 
-struct OrderExistsChecker {
-    bid_bitmap_reader: RestingOrderSearcherAndRemover,
-    ask_bitmap_reader: RestingOrderSearcherAndRemover,
-}
-
-impl OrderExistsChecker {
-    pub fn new(bids_outer_indices: u16, asks_outer_indices: u16) -> Self {
-        OrderExistsChecker {
-            bid_bitmap_reader: RestingOrderSearcherAndRemover::new(bids_outer_indices, Side::Bid),
-            ask_bitmap_reader: RestingOrderSearcherAndRemover::new(asks_outer_indices, Side::Ask),
-        }
-    }
-
-    fn reader(&mut self, side: Side) -> &mut RestingOrderSearcherAndRemover {
-        match side {
-            Side::Bid => &mut self.bid_bitmap_reader,
-            Side::Ask => &mut self.ask_bitmap_reader,
-        }
-    }
-
-    pub fn order_exists(
+    pub fn order_present(
         &mut self,
         slot_storage: &mut SlotStorage,
         side: Side,
@@ -345,41 +250,22 @@ impl OrderExistsChecker {
     pub fn remove_order(
         &mut self,
         slot_storage: &mut SlotStorage,
+        market_state: &mut MarketState,
         side: Side,
         order_id: OrderId,
-        // group_position: GroupPosition,
     ) {
-        let group_position = GroupPosition::from(&order_id);
-        self.reader(side).deactivate_in_current(group_position);
+        self.reader(side)
+            .remove_order(slot_storage, market_state, order_id)
     }
-}
 
-/// Marks a resting order as removed
-///
-/// This involves
-///
-/// 1. Deactivating its bit in bitmap group
-/// 2. Removing the outer index if the bitmap group was turned off
-/// 3. Updating best market price
-///
-/// Externally ensure that order_ids are in correct order and that order_present()
-/// was called before remove_order() for the given order ID
-///
-fn remove_order_from_book(
-    reader: &mut RestingOrderSearcherAndRemover,
-    slot_storage: &mut SlotStorage,
-    market_state: &mut MarketState,
-    side: Side,
-    order_id: OrderId,
-) {
-    let group_position = GroupPosition::from(&order_id);
-
-    // Since the order was looked up before, we're already on the correct bitmap group and outer index
-    // Deactivate at current group position
-    reader.deactivate_in_current(group_position);
-
-    if order_id.price_in_ticks == market_state.best_price(side) {
-        // The best price could change if an order from the outermost tick is removed
-        market_state.set_best_price(side, reader.get_best_price(slot_storage));
+    pub fn write_prepared_indices(
+        &mut self,
+        slot_storage: &mut SlotStorage,
+        market_state: &mut MarketState,
+    ) {
+        self.bid_bitmap_reader
+            .write_prepared_indices(slot_storage, market_state);
+        self.ask_bitmap_reader
+            .write_prepared_indices(slot_storage, market_state);
     }
 }

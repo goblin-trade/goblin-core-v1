@@ -4,9 +4,7 @@ use crate::{
     require,
 };
 
-use super::{
-    BitmapGroup, IndexList, Side, SlotActions, SlotStorage, TickIndices, MARKET_STATE_KEY_SEED,
-};
+use super::{Side, SlotActions, SlotStorage, MARKET_STATE_KEY_SEED};
 
 #[repr(C)]
 #[derive(Default, Debug, PartialEq)]
@@ -135,10 +133,6 @@ impl MarketState {
         Ok(())
     }
 
-    pub fn get_index_list(&self, side: Side) -> IndexList {
-        IndexList::new(side, self.outer_index_count(side))
-    }
-
     pub fn outer_index_count(&self, side: Side) -> u16 {
         if side == Side::Bid {
             self.bids_outer_indices
@@ -155,56 +149,6 @@ impl MarketState {
         }
     }
 
-    /// Update the best price for a bid or ask by looping through bitmap groups
-    ///
-    /// The current best price is found by reading the outer index from index_list and
-    /// the inner index from the bitmap corresponding to this outer index
-    ///
-    /// # Arguments
-    ///
-    /// * `index_list`
-    /// * `slot_storage`
-    ///
-    pub fn update_best_price(&mut self, index_list: &IndexList, slot_storage: &SlotStorage) {
-        let best_price = if index_list.side == Side::Bid {
-            &mut self.best_bid_price
-        } else {
-            &mut self.best_ask_price
-        };
-
-        // 1- get new outer index
-        let new_outer_index = index_list.get_best_outer_index(slot_storage);
-
-        let TickIndices {
-            outer_index: old_outer_index,
-            inner_index: old_inner_index,
-        } = best_price.to_indices();
-
-        // Read bitmap group for the new outer index
-        let bitmap_group = BitmapGroup::new_from_slot(slot_storage, new_outer_index);
-
-        // If outer index did not change, lookup in the same bitmap group starting from
-        // the old inner index
-        let previous_best_inner_index = if new_outer_index == old_outer_index {
-            Some(old_inner_index)
-        } else {
-            // If the best_outer_index has changed, this is not needed
-            None
-        };
-
-        // 2- get new inner index
-        // This should not return None because active orders are guaranteed in bitmap groups with active
-        // outer indices
-        // previous_best_inner_index should be inclusive? What if an inner value is removed? Then best_price
-        // should not be updated
-        let new_inner_index = bitmap_group
-            .best_active_inner_index(index_list.side, previous_best_inner_index)
-            .unwrap();
-
-        // 3- update best price
-        *best_price = Ticks::from_indices(new_outer_index, new_inner_index);
-    }
-
     pub fn best_price(&self, side: Side) -> Ticks {
         if side == Side::Bid {
             self.best_bid_price
@@ -213,7 +157,13 @@ impl MarketState {
         }
     }
 
-    // TODO remove. This is only used in index_list.rs
+    /// Update the best price
+    ///
+    /// # Arguments
+    ///
+    /// * `side`
+    /// * `price_in_ticks`
+    ///
     pub fn set_best_price(&mut self, side: Side, price: Ticks) {
         if side == Side::Bid {
             self.best_bid_price = price;
