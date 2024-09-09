@@ -63,6 +63,9 @@ impl IndexListRemover {
     }
 
     /// Traverse one position down the list
+    ///
+    /// Externally ensure that this is only called when we're on the outermost outer index.
+    ///
     /// The previous `found_outer_index` will be removed from list os it is discarded
     ///
     /// This operation is illegal when we have traversed into the list. It is legal
@@ -71,16 +74,9 @@ impl IndexListRemover {
     pub fn slide(&mut self, slot_storage: &SlotStorage) -> Option<OuterIndex> {
         // TODO remove assert, enforce externally
         assert!(self.cache.is_empty(), "Cannot slide with non-empty cache");
+
         self.cached_outer_index = self.index_list_reader.next(slot_storage);
-
         self.cached_outer_index
-    }
-
-    /// Pushes `found_outer_index` to cache and clears the value
-    pub fn flush_cached_outer_index(&mut self) {
-        if let Some(found_outer_index) = self.cached_outer_index.take() {
-            self.cache.push(found_outer_index);
-        }
     }
 
     pub fn slide_v2(
@@ -93,8 +89,14 @@ impl IndexListRemover {
         }
 
         self.cached_outer_index = self.index_list_reader.next(slot_storage);
-
         self.cached_outer_index
+    }
+
+    /// Pushes `found_outer_index` to cache and clears the value
+    pub fn flush_cached_outer_index(&mut self) {
+        if let Some(found_outer_index) = self.cached_outer_index.take() {
+            self.cache.push(found_outer_index);
+        }
     }
 
     /// Searches for the outer index in the index list.
@@ -113,10 +115,7 @@ impl IndexListRemover {
         slot_storage: &SlotStorage,
         outer_index: OuterIndex,
     ) -> bool {
-        if self
-            .cached_outer_index
-            .is_some_and(|cached_outer_index| cached_outer_index == outer_index)
-        {
+        if self.cached_outer_index == Some(outer_index) {
             return true;
         }
 
@@ -125,22 +124,6 @@ impl IndexListRemover {
                 return true;
             }
         }
-
-        // // Flush the old value of `found_outer_index` to cache
-        // self.flush_cached_outer_index();
-
-        // // Different from slide(). In slide we don't push value to cache, instead we clear it
-        // while let Some(current_outer_index) = self.index_list_reader.next(slot_storage) {
-        //     // Check if the current outer index matches the sought index
-        //     if current_outer_index == outer_index {
-        //         // Mark the outer index as found
-        //         self.cached_outer_index = Some(current_outer_index);
-        //         return true;
-        //     }
-        //     // Cache indices that do not match
-        //     self.cache.push(current_outer_index);
-        // }
-
         false
     }
 

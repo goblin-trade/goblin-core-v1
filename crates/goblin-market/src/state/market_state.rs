@@ -198,7 +198,7 @@ impl MarketState {
         // previous_best_inner_index should be inclusive? What if an inner value is removed? Then best_price
         // should not be updated
         let new_inner_index = bitmap_group
-            .best_active_index(index_list.side, previous_best_inner_index)
+            .best_active_inner_index(index_list.side, previous_best_inner_index)
             .unwrap();
 
         // 3- update best price

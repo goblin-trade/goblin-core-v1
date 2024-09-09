@@ -1,3 +1,4 @@
+pub mod active_inner_indices_iterator;
 pub mod bitmap;
 pub mod bitmap_inserter;
 pub mod bitmap_iterator;
@@ -11,6 +12,7 @@ pub mod process_resting_orders;
 pub mod resting_order_inserter;
 pub mod resting_order_searcher_and_remover;
 
+pub use active_inner_indices_iterator::*;
 pub use bitmap::*;
 pub use bitmap_inserter::*;
 pub use bitmap_iterator::*;

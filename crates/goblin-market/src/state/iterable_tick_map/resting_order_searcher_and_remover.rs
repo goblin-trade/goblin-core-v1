@@ -1,5 +1,6 @@
-use crate::state::{
-    InnerIndex, MarketState, OrderId, RestingOrderIndex, Side, SlotStorage, TickIndices,
+use crate::{
+    quantities::Ticks,
+    state::{MarketState, OrderId, Side, SlotStorage, TickIndices},
 };
 
 use super::{BitmapRemover, GroupPosition, IndexListRemover};
@@ -68,15 +69,19 @@ impl RestingOrderSearcherAndRemover {
         }
 
         // Now check in bitmap group
-        return self
-            .bitmap_remover
-            .order_present(inner_index, resting_order_index);
+        return self.bitmap_remover.order_present(GroupPosition {
+            inner_index,
+            resting_order_index,
+        });
     }
 
     /// Move one position down the index list and load the corresponding bitmap group
     ///
+    /// Externally ensure that this is only called when we're on the outermost outer index.
+    ///
     /// TODO This is a special case of slide used to find next best price. It is only called when
     /// we're on the outermost bitmap group.
+    ///
     pub fn slide(&mut self, slot_storage: &mut SlotStorage) -> bool {
         if let Some(next_outer_index) = self.index_list_remover.slide(slot_storage) {
             self.bitmap_remover
@@ -87,103 +92,53 @@ impl RestingOrderSearcherAndRemover {
         false
     }
 
-    /// Find the next active bit across all active bitmaps
+    /// Get the next best active price tick
     ///
-    /// TODO this is a special case to find next best price. All of the traversed
-    /// outer indices should be closed.
+    /// Externally ensure that this is only called when we're on the outermost outer index.
+    /// This condition is necessary for self.slide()
     ///
-    pub fn get_next_active_bit_in_all_groups(
-        &mut self,
-        slot_storage: &mut SlotStorage,
-        mut position_to_exclude: Option<GroupPosition>,
-    ) -> Option<OrderId> {
+    pub fn get_best_price(&mut self, slot_storage: &mut SlotStorage) -> Ticks {
         loop {
-            if let Some(order_id) = self.bitmap_remover.get_next_active_bit(position_to_exclude) {
-                return Some(order_id);
+            if let Some(best_price) = self.bitmap_remover.get_best_price_in_current() {
+                return best_price;
             }
-            position_to_exclude = None;
 
             if !self.slide(slot_storage) {
-                // If slide fails then we have reached end of the list
-                return None;
+                return match self.side() {
+                    Side::Bid => Ticks::ZERO,
+                    Side::Ask => Ticks::MAX,
+                };
             }
         }
     }
 
-    /// Remove an order from the current bitmap group
-    pub fn deactivate_in_current(&mut self, group_position: GroupPosition) {
-        self.bitmap_remover.deactivate_in_current(group_position);
-    }
-
-    pub fn get_best_inner_index_in_current(&self) {}
-
-    // TODO function to get best inner index across all groups
-    // Find best price in current. If not found, slide
-    pub fn get_best_price_in_current(&self) {}
-
-    /// Marks a resting order as removed
+    /// Remove an order from the book and update the best price in market state
     ///
     /// This involves
     ///
-    /// 1. Deactivating its bit in bitmap group
-    /// 2. Removing the outer index if the bitmap group was turned off
-    /// 3. Updating best market price
+    /// 1. Deactivating bit in bitmap group
+    /// 2. Updating the best market price if the outermost tick was closed
+    /// 2. Removing the outer index if the outermost bitmap group was closed
     ///
-    /// Externally ensure that order_ids are in correct order and that order_present()
-    /// was called before remove_order() for the given order ID
+    /// Externally ensure that the order's outer index is loaded correctly. `order_present()`
+    /// must be called before calling `remove_order()`. Since we're at the same bitmap group,
+    /// we can simply deactivate the bit at `group_position`.
     ///
     pub fn remove_order(
         &mut self,
         slot_storage: &mut SlotStorage,
-        order_id: OrderId,
         market_state: &mut MarketState,
+        order_id: OrderId,
     ) {
-        let OrderId {
-            price_in_ticks,
-            resting_order_index,
-        } = order_id;
-        let TickIndices {
-            outer_index,
-            inner_index,
-        } = price_in_ticks.to_indices();
+        let group_position = GroupPosition::from(&order_id);
+        self.bitmap_remover.deactivate_in_current(group_position);
 
-        self.bitmap_remover.deactivate(slot_storage, &order_id);
+        if order_id.price_in_ticks == market_state.best_price(self.side()) {
+            // Obtain and set new best price.
+            // If the outermost group was closed then this loads a new group.
 
-        if !self.bitmap_remover.bitmap_group.is_active() {
-            self.index_list_remover.remove(slot_storage, outer_index);
-        }
-
-        // TODO move this to a separate function.
-        // This shouldn't be part of this struct
-
-        // if order_id == market.best_order_id, find the next best order id
-        // by looping through bitmap groups
-        if market_state.best_price(self.side()) == order_id.price_in_ticks {
-            // Currently we can only find next best bit within a group
-            // We need to find the 'next best bit' across groups. We need to traverse
-            // outer indices.
-            // We can't simply move up or down bitmaps. We may have to traverse
-            // the index list to obtain outer indices of active bitmaps
-            //
-            // If the outermost value was removed then we need to loop from beginning
-            // of the index list. This means reading cached values from index_list_remover
-            //
-            // RestingOrderSearcherAndRemover already combines these two. The outer index
-            // within BitmapRemover is the index we searched
-            //
-            // Property- if an order is removed on the outermost tick, then its outermost
-            // index is present in `found_outer_index` and the index cache is empty.
-            // Need a slide function to move down one outer index and its corresponding bitmap
-            // slide()
-            // - Commit bitmap group. It should be empty.
-            // - Read next outer index. Drop `found_outer_index` because this group was
-            // closed.
-            //
-            // Question- do we write closed bitmap groups to slot with a placeholder,
-            // or we simply drop the outer index?
-            // In order to know whether there's a placeholder, we still need to read
-            // outer index. Therefore placeholder is unnecessary. If a non-empty bitmap
-            // group is being closed, its slot data is guaranteed to be non-empty.
+            let new_best_price = self.get_best_price(slot_storage);
+            market_state.set_best_price(self.side(), new_best_price);
         }
     }
 
@@ -203,7 +158,7 @@ impl RestingOrderSearcherAndRemover {
         slot_storage: &mut SlotStorage,
         market_state: &mut MarketState,
     ) {
-        self.bitmap_remover.write_last_bitmap_group(slot_storage);
+        self.bitmap_remover.flush_bitmap_group(slot_storage);
         market_state
             .set_outer_index_length(self.side(), self.index_list_remover.index_list_length());
         self.index_list_remover.write_prepared_indices(slot_storage);

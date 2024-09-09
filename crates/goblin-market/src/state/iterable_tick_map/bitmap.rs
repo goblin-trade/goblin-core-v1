@@ -4,6 +4,8 @@ use crate::state::{
 };
 use alloc::boxed::Box;
 
+use super::InnerIndexIterator;
+
 /// A BitmapGroup contains Bitmaps for 32 ticks in ascending order.
 /// A single Bitmap contains data of 8 resting orders.
 ///
@@ -64,7 +66,7 @@ impl BitmapGroup {
     /// * `previous_inner_index` - The previous best inner index, optional. If no value is
     /// provided search from the end. If provided, search beginning from this index (inclusive).
     ///
-    pub fn best_active_index(
+    pub fn best_active_inner_index(
         &self,
         side: Side,
         previous_inner_index: Option<InnerIndex>,
@@ -76,6 +78,17 @@ impl BitmapGroup {
             }
         }
 
+        None
+    }
+
+    pub fn best_active_inner_index_v2(&self, side: Side) -> Option<InnerIndex> {
+        let mut inner_index_iterator = InnerIndexIterator::new(side);
+
+        while let Some(inner_index) = inner_index_iterator.next() {
+            if self.inner[inner_index.as_usize()] != 0 {
+                return Some(inner_index);
+            }
+        }
         None
     }
 }

@@ -66,3 +66,11 @@ cargo stylus deploy --wasm-file ./target/wasm32-unknown-unknown/release/goblin_f
 # works once- something got deployed. But no code
 cast send 0x665bC3e8596e36E47dD831D6A49Aa985f585E1dA "initializeMarket()" --rpc-url 'https://stylus-testnet.arbitrum.io/rpc' --private-key $PRIVATE_KEY
 ```
+
+# Order in removals
+
+Order removal is designed to minimize slot writes.
+
+- If a `SlotRestingOrder` is closed, we don't write the cleared value to slot. Instead we just turn off the bit in BitmapGroup.
+- If a `BitmapGroup` is closed, don't write the cleared value to slot. Instead remove its outer index from index list.
+- If a `ListSlot` in the index list is closed, don't write the cleared value to slot. Instead just update other list slots and decrement count in `MarketState`

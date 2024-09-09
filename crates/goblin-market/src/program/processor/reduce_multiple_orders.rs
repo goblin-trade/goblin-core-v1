@@ -354,9 +354,22 @@ impl OrderExistsChecker {
     }
 }
 
+/// Marks a resting order as removed
+///
+/// This involves
+///
+/// 1. Deactivating its bit in bitmap group
+/// 2. Removing the outer index if the bitmap group was turned off
+/// 3. Updating best market price
+///
+/// Externally ensure that order_ids are in correct order and that order_present()
+/// was called before remove_order() for the given order ID
+///
 fn remove_order_from_book(
     reader: &mut RestingOrderSearcherAndRemover,
     slot_storage: &mut SlotStorage,
+    market_state: &mut MarketState,
+    side: Side,
     order_id: OrderId,
 ) {
     let group_position = GroupPosition::from(&order_id);
@@ -365,7 +378,8 @@ fn remove_order_from_book(
     // Deactivate at current group position
     reader.deactivate_in_current(group_position);
 
-    // If deactivated order was the outermost order
-    // - Find next active bit in all groups
-    // - Update market price
+    if order_id.price_in_ticks == market_state.best_price(side) {
+        // The best price could change if an order from the outermost tick is removed
+        market_state.set_best_price(side, reader.get_best_price(slot_storage));
+    }
 }
