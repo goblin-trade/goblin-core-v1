@@ -42,20 +42,13 @@ impl BitmapGroup {
         self.inner != [0u8; 32]
     }
 
-    /// Write to slot
-    pub fn write_to_slot(&self, slot_storage: &mut SlotStorage, key: &OuterIndex) {
-        slot_storage.sstore(&key.get_key(), &self.inner);
+    /// Whether the bitmap group has active resting orders at the given inner index
+    pub fn inner_index_is_active(&self, inner_index: InnerIndex) -> bool {
+        self.inner[inner_index.as_usize()] != 0
     }
 
-    /// Set a placeholder non-empty value so that the slot is not cleared
-    pub fn set_placeholder(&mut self) {
-        self.inner = [
-            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0,
-        ];
-    }
-
-    /// Get the best active inner index in a bitmap group.
+    /// Get the best active inner index in a bitmap group, beginning
+    /// from an optional starting position (inclusive)
     ///
     /// Returns None if there is no active index. Externally ensure that this is called on an active
     /// bitmap group.
@@ -63,34 +56,39 @@ impl BitmapGroup {
     /// # Arguments
     ///
     /// * `side`
-    /// * `previous_inner_index` - The previous best inner index, optional. If no value is
-    /// provided search from the end. If provided, search beginning from this index (inclusive).
+    /// * `starting_index` - Search beginning from this index (inclusive) if Some,
+    /// else begin lookup from the edge of the bitmap group.
     ///
     pub fn best_active_inner_index(
         &self,
         side: Side,
-        previous_inner_index: Option<InnerIndex>,
+        starting_index: Option<InnerIndex>,
     ) -> Option<InnerIndex> {
-        // TODO use iterable instead of inner_indices()
-        for i in inner_indices(side, previous_inner_index) {
-            if self.inner[i] != 0 {
-                return Some(InnerIndex::new(i));
-            }
-        }
-
-        None
-    }
-
-    // TODO remove v1 function
-    pub fn best_active_inner_index_v2(&self, side: Side) -> Option<InnerIndex> {
-        let mut inner_index_iterator = InnerIndexIterator::new(side);
+        let mut inner_index_iterator =
+            InnerIndexIterator::new_with_starting_index(side, starting_index);
 
         while let Some(inner_index) = inner_index_iterator.next() {
-            if self.inner[inner_index.as_usize()] != 0 {
+            if self.inner_index_is_active(inner_index) {
                 return Some(inner_index);
             }
         }
         None
+    }
+
+    /// Write to slot
+    pub fn write_to_slot(&self, slot_storage: &mut SlotStorage, key: &OuterIndex) {
+        slot_storage.sstore(&key.get_key(), &self.inner);
+    }
+
+    /// Set a placeholder non-empty value so that the slot is not cleared
+    ///
+    /// TODO remove. We no longer clear bitmap groups. We simply remove its outer
+    /// index from index list
+    pub fn set_placeholder(&mut self) {
+        self.inner = [
+            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0,
+        ];
     }
 }
 
@@ -99,7 +97,7 @@ impl BitmapGroup {
 /// Traversal is away from the centre. Move from top to bottom for bids (high to low) and from
 /// bottom to top (low to high) for asks.
 ///
-/// TODO replace with an iterator with .next()
+/// TODO replace with an InnerIndexIterator
 ///
 /// # Arguments
 ///

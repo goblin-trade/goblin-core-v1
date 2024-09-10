@@ -1,8 +1,8 @@
 use crate::{
     quantities::Ticks,
     state::{
-        bitmap_group::BitmapGroup, read::bitmap_iterator::GroupPosition, OuterIndex, Side,
-        SlotStorage,
+        bitmap_group::BitmapGroup, read::bitmap_iterator::GroupPosition, InnerIndex, OuterIndex,
+        Side, SlotStorage,
     },
 };
 
@@ -58,11 +58,19 @@ impl BitmapRemover {
         self.pending_write = true;
     }
 
-    // Get price of the best active order in the current bitmap group
-    pub fn get_best_price_in_current(&self) -> Option<Ticks> {
+    // Get price of the best active order in the current bitmap group,
+    // beginning from a given position
+    //
+    // # Arguments
+    //
+    /// * `starting_index` - Search beginning from this index (inclusive) if Some,
+    /// else begin lookup from the edge of the bitmap group.
+    ///
+    pub fn get_best_price_in_current(&self, starting_index: Option<InnerIndex>) -> Option<Ticks> {
         if let (Some(outer_index), Some(inner_index)) = (
             self.last_outer_index,
-            self.bitmap_group.best_active_inner_index_v2(self.side),
+            self.bitmap_group
+                .best_active_inner_index(self.side, starting_index),
         ) {
             Some(Ticks::from_indices(outer_index, inner_index))
         } else {

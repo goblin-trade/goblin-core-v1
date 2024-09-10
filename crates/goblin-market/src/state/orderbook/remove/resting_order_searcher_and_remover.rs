@@ -1,7 +1,8 @@
 use crate::{
     quantities::Ticks,
     state::{
-        read::bitmap_iterator::GroupPosition, MarketState, OrderId, Side, SlotStorage, TickIndices,
+        read::bitmap_iterator::GroupPosition, InnerIndex, MarketState, OrderId, Side, SlotStorage,
+        TickIndices,
     },
 };
 
@@ -98,13 +99,31 @@ impl RestingOrderSearcherAndRemover {
     /// Externally ensure that this is only called when we're on the outermost outer index.
     /// This condition is necessary for self.slide()
     ///
-    pub fn get_best_price(&mut self, slot_storage: &mut SlotStorage) -> Ticks {
+    /// # Arguments
+    ///
+    /// * `slot_storage`
+    ///
+    /// * `starting_index` - Lookup from this inner index and onwards (inclusive)
+    /// in the first bitmap group. Rest of the bitmap groups are searched from the edges.
+    ///
+    pub fn get_best_price(
+        &mut self,
+        slot_storage: &mut SlotStorage,
+        mut starting_index: Option<InnerIndex>,
+    ) -> Ticks {
         loop {
-            if let Some(best_price) = self.bitmap_remover.get_best_price_in_current() {
+            if let Some(best_price) = self
+                .bitmap_remover
+                .get_best_price_in_current(starting_index)
+            {
                 return best_price;
             }
 
-            if !self.slide_outer_index_and_bitmap_group(slot_storage) {
+            let slide_success = self.slide_outer_index_and_bitmap_group(slot_storage);
+            // Lookup from beginning in remaining bitmap groups
+            starting_index = None;
+
+            if !slide_success {
                 // Return default values if the index list is exhausted
                 return match self.side() {
                     Side::Bid => Ticks::ZERO,
@@ -141,10 +160,13 @@ impl RestingOrderSearcherAndRemover {
         }
 
         if order_id.price_in_ticks == market_state.best_price(self.side()) {
-            // Obtain and set new best price.
-            // If the outermost group was closed then this loads a new group.
-
-            let new_best_price = self.get_best_price(slot_storage);
+            // - Obtain and set new best price.
+            // - If the outermost group was closed then this loads a new group.
+            // - Look for active ticks at `order_id.price_in_ticks` and worse,
+            // because we don't want to include active ticks on the same
+            // bitmap belonging to the opposite side.
+            let new_best_price =
+                self.get_best_price(slot_storage, Some(order_id.price_in_ticks.inner_index()));
             market_state.set_best_price(self.side(), new_best_price);
         }
     }
