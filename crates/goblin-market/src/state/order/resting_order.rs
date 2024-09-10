@@ -4,10 +4,13 @@ use stylus_sdk::alloy_primitives::{address, Address};
 
 use crate::{
     parameters::{BASE_LOTS_PER_BASE_UNIT, TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT},
-    program::{ExceedRestingOrderSize, GoblinError},
+    program::{
+        types::matching_engine_response::MatchingEngineResponse, ExceedRestingOrderSize,
+        GoblinError,
+    },
     quantities::{BaseLots, QuoteLots, WrapperU64},
     require,
-    state::{MatchingEngineResponse, Side, SlotActions, SlotKey, SlotStorage, TraderState},
+    state::{Side, SlotActions, SlotKey, SlotStorage, TraderState},
 };
 
 use super::order_id::OrderId;

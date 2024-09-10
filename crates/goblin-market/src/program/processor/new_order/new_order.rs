@@ -4,15 +4,16 @@ use stylus_sdk::alloy_primitives::{Address, FixedBytes};
 use crate::{
     parameters::{BASE_TOKEN, QUOTE_TOKEN},
     program::{
-        maybe_invoke_deposit, maybe_invoke_withdraw, GoblinError, GoblinResult, NewOrderError,
-        PricesNotInOrder,
+        maybe_invoke_deposit, maybe_invoke_withdraw,
+        types::order_packet::{OrderPacket, OrderPacketMetadata},
+        GoblinError, GoblinResult, NewOrderError, PricesNotInOrder,
     },
     quantities::{BaseAtomsRaw, BaseLots, QuoteAtomsRaw, QuoteLots, Ticks, WrapperU64, MAX_TICK},
     require,
     state::{
         insert::resting_order_inserter::RestingOrderInserter,
         order::{order_id::OrderId, resting_order::SlotRestingOrder},
-        MarketState, OrderPacket, OrderPacketMetadata, Side, SlotActions, SlotStorage, TraderState,
+        MarketState, Side, SlotActions, SlotStorage, TraderState,
     },
     GoblinMarket,
 };

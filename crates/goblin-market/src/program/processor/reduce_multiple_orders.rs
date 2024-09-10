@@ -2,7 +2,10 @@ use alloc::vec::Vec;
 use stylus_sdk::alloy_primitives::{Address, FixedBytes};
 
 use crate::{
-    program::{try_withdraw, FailedToReduce, GoblinError, GoblinResult, PricesNotInOrder},
+    program::{
+        try_withdraw, types::matching_engine_response::MatchingEngineResponse, FailedToReduce,
+        GoblinError, GoblinResult, PricesNotInOrder,
+    },
     quantities::{BaseAtomsRaw, BaseLots, QuoteAtomsRaw, QuoteLots, Ticks, WrapperU64},
     require,
     state::{
@@ -12,8 +15,7 @@ use crate::{
             sorted_order_id::{AskOrderId, BidOrderId},
         },
         remove::resting_order_searcher_and_remover::RestingOrderSearcherAndRemover,
-        MarketState, MatchingEngineResponse, RestingOrderIndex, Side, SlotActions, SlotStorage,
-        TraderState,
+        MarketState, RestingOrderIndex, Side, SlotActions, SlotStorage, TraderState,
     },
     GoblinMarket,
 };

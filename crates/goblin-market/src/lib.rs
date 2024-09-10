@@ -16,9 +16,10 @@ use program::{
     place_multiple_new_orders, process_new_order,
     processor::{deposit, fees, withdraw},
     reduce_multiple_orders,
+    types::order_packet::OrderPacket,
 };
 use quantities::{BaseLots, QuoteLots, Ticks, WrapperU64};
-use state::{OrderPacket, SelfTradeBehavior, Side, SlotActions, SlotStorage, TraderState};
+use state::{SelfTradeBehavior, Side, SlotActions, SlotStorage, TraderState};
 use stylus_sdk::{
     alloy_primitives::{Address, FixedBytes, B256},
     msg,

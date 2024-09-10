@@ -1,10 +1,10 @@
 use crate::{
-    program::OrderToInsert,
+    program::{types::order_packet::OrderPacket, OrderToInsert},
     quantities::Ticks,
     state::{
         bitmap_group::{inner_indices, BitmapGroup, MutableBitmap},
         order::order_id::OrderId,
-        InnerIndex, OrderPacket, OuterIndex, Side, SlotStorage, TickIndices,
+        InnerIndex, OuterIndex, Side, SlotStorage, TickIndices,
     },
 };
 

@@ -1,8 +1,11 @@
 use stylus_sdk::alloy_primitives::Address;
 
-use crate::quantities::{BaseLots, QuoteLots, WrapperU64};
+use crate::{
+    program::types::matching_engine_response::MatchingEngineResponse,
+    quantities::{BaseLots, QuoteLots, WrapperU64},
+};
 
-use super::{MatchingEngineResponse, SlotActions, SlotKey, SlotStorage, TRADER_STATE_KEY_SEED};
+use super::{SlotActions, SlotKey, SlotStorage, TRADER_STATE_KEY_SEED};
 
 pub type TraderId = Address;
 

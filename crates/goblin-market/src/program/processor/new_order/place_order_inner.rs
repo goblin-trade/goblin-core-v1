@@ -2,10 +2,14 @@ use stylus_sdk::{alloy_primitives::Address, block};
 
 use crate::{
     parameters::{BASE_LOTS_PER_BASE_UNIT, TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT},
+    program::types::{
+        matching_engine_response::MatchingEngineResponse,
+        order_packet::{OrderPacket, OrderPacketMetadata},
+    },
     quantities::{AdjustedQuoteLots, BaseLots, QuoteLots, Ticks, WrapperU64},
     state::{
-        order::resting_order::SlotRestingOrder, InflightOrder, MarketState, MatchingEngineResponse,
-        OrderPacket, OrderPacketMetadata, Side, SlotStorage, TraderState,
+        order::resting_order::SlotRestingOrder, InflightOrder, MarketState, Side, SlotStorage,
+        TraderState,
     },
 };
 

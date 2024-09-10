@@ -1,9 +1,12 @@
 use stylus_sdk::alloy_primitives::Address;
 
 use crate::{
-    program::{error::GoblinResult, token_utils::try_withdraw},
+    program::{
+        error::GoblinResult, token_utils::try_withdraw,
+        types::matching_engine_response::MatchingEngineResponse,
+    },
     quantities::{BaseAtomsRaw, BaseLots, QuoteAtomsRaw, QuoteLots},
-    state::{MatchingEngineResponse, SlotActions, SlotStorage, TraderState},
+    state::{SlotActions, SlotStorage, TraderState},
     GoblinMarket,
 };
 
