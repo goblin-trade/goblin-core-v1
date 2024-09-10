@@ -1,8 +1,8 @@
 use crate::{
     quantities::{BaseLots, Ticks},
     state::{
-        process_resting_orders, MarketState, OrderId, Side, SlotRestingOrder, SlotStorage,
-        TraderState,
+        process_resting_orders::process_resting_orders, MarketState, OrderId, Side,
+        SlotRestingOrder, SlotStorage, TraderState,
     },
 };
 

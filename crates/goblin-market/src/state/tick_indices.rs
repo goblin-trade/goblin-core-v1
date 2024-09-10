@@ -4,11 +4,12 @@ use core::ops::Sub;
 use core::ops::SubAssign;
 
 use crate::state::Side;
-use crate::state::BITMAPS_PER_GROUP;
 use crate::{
     quantities::{Ticks, WrapperU64},
     state::{SlotKey, BITMAP_GROUP_SEED},
 };
+
+use super::BITMAPS_PER_GROUP;
 
 /// To read orders at a tick we need two to derive variables. The `group_key` gives
 /// the bitmap group in the tick's bitmap belongs. The `bitmap_key` gives the location
@@ -162,6 +163,8 @@ impl SubAssign for InnerIndex {
 /// Loop across inner indices in a bitmap group
 /// TODO use InnerIndexIterator and RestingOrderIndexIterator in place of raw loops
 /// TODO remove Option<>. Use `count` and `done` fields
+///
+/// TODO duplicate in inner_indices_iterator.rs
 pub struct InnerIndexIterator {
     /// Side determines looping direction.
     /// - Bids: Top to bottom (descending)

@@ -1,9 +1,11 @@
 use crate::{
     quantities::Ticks,
-    state::{MarketState, OrderId, Side, SlotStorage, TickIndices},
+    state::{
+        read::bitmap_iterator::GroupPosition, MarketState, OrderId, Side, SlotStorage, TickIndices,
+    },
 };
 
-use super::{BitmapRemover, GroupPosition, IndexListRemover};
+use super::{bitmap_remover::BitmapRemover, index_list_remover::IndexListRemover};
 
 /// Removes resting orders from slot. The resting order itself is not written, instead
 /// we update the bitmaps and index list to mark the order as cleared.

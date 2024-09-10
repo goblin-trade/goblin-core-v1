@@ -1,5 +1,7 @@
-use super::{write_index_list, IndexListReader};
-use crate::state::{OuterIndex, Side, SlotStorage};
+use crate::state::{
+    read::index_list_reader::IndexListReader, write_index_list::write_index_list, OuterIndex, Side,
+    SlotStorage,
+};
 use alloc::vec::Vec;
 
 /// Enables bulk insertion of outer indices in the index list.

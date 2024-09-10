@@ -3,7 +3,7 @@ use crate::{
     state::{MarketState, OrderId, Side, SlotRestingOrder, SlotStorage},
 };
 
-use super::{BitmapInserter, IndexListInserter};
+use super::{bitmap_inserter::BitmapInserter, index_list_inserter::IndexListInserter};
 
 /// Inserts resting orders to slot
 ///

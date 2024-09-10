@@ -1,5 +1,6 @@
 use crate::state::{bitmap_group::BitmapGroup, InnerIndex, OrderId, RestingOrderIndex, Side};
 
+// TODO move to same file having OrderId
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct GroupPosition {
     pub inner_index: InnerIndex,

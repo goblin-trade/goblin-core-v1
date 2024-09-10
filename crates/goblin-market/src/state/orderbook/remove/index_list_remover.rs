@@ -1,7 +1,8 @@
-use crate::state::{OuterIndex, Side, SlotStorage};
+use crate::state::{
+    read::index_list_reader::IndexListReader, write_index_list::write_index_list, OuterIndex, Side,
+    SlotStorage,
+};
 use alloc::vec::Vec;
-
-use super::{write_index_list, IndexListReader};
 
 /// Enables bulk removal of outer indices from the index list.
 /// Successive removed orders should be away from the center, i.e.,

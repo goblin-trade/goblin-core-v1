@@ -1,4 +1,4 @@
-use core::ops::{Add, AddAssign};
+use core::ops::AddAssign;
 
 use stylus_sdk::alloy_primitives::{address, Address};
 
@@ -13,7 +13,7 @@ use crate::{
     },
 };
 
-use super::{GroupPosition, MarketState, OuterIndex, RestingOrderIndex};
+use super::{read::bitmap_iterator::GroupPosition, MarketState, OuterIndex, RestingOrderIndex};
 
 const NULL_ADDRESS: Address = address!("0000000000000000000000000000000000000001");
 
