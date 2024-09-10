@@ -1,7 +1,7 @@
 use crate::state::{OuterIndex, Side, SlotStorage};
 use alloc::vec::Vec;
 
-use super::{write_prepared_indices, IndexListReader};
+use super::{write_index_list, IndexListReader};
 
 /// Enables bulk removal of outer indices from the index list.
 /// Successive removed orders should be away from the center, i.e.,
@@ -127,13 +127,14 @@ impl IndexListRemover {
     /// Externally ensure that `remove()` is called before writing to slot.
     /// Calling `write_prepared_indices()` after `find_outer_index()` will result
     /// in `found_outer_index`.
-    pub fn write_prepared_indices(&mut self, slot_storage: &mut SlotStorage) {
+    ///
+    pub fn write_index_list(&mut self, slot_storage: &mut SlotStorage) {
         if !self.pending_write {
             return;
         }
 
         self.flush_cached_outer_index();
-        write_prepared_indices(
+        write_index_list(
             slot_storage,
             self.side(),
             &mut self.cache,
@@ -258,7 +259,7 @@ mod tests {
         assert_eq!(remover.cached_outer_index, Some(OuterIndex::new(100)));
         assert_eq!(remover.pending_write, false);
 
-        remover.write_prepared_indices(&mut slot_storage);
+        remover.write_index_list(&mut slot_storage);
 
         let read_list_slot = ListSlot::new_from_slot(&slot_storage, list_key);
         assert_eq!(read_list_slot, list_slot);
@@ -328,7 +329,7 @@ mod tests {
         assert_eq!(remover.cached_outer_index, None);
         assert!(remover.pending_write);
 
-        remover.write_prepared_indices(&mut slot_storage);
+        remover.write_index_list(&mut slot_storage);
         let read_list_slot = ListSlot::new_from_slot(&slot_storage, list_key);
 
         let mut expected_list_slot = ListSlot::default();
@@ -526,7 +527,7 @@ mod tests {
         // No need of a write since we only removed the outermost value
         assert!(!remover.pending_write);
 
-        remover.write_prepared_indices(&mut slot_storage);
+        remover.write_index_list(&mut slot_storage);
         let read_list_slot = ListSlot::new_from_slot(&slot_storage, list_key);
         // Ghost value 200 at i = 1 due to no write case
         assert_eq!(
@@ -557,7 +558,7 @@ mod tests {
         // No need of a write since we only removed the outermost value
         assert!(!remover.pending_write);
 
-        remover.write_prepared_indices(&mut slot_storage);
+        remover.write_index_list(&mut slot_storage);
         let read_list_slot_0 = ListSlot::new_from_slot(&slot_storage, list_key_0);
         let read_list_slot_1 = ListSlot::new_from_slot(&slot_storage, list_key_1);
         assert_eq!(
@@ -590,7 +591,7 @@ mod tests {
         // We need to write because cache was non-empty
         assert!(remover.pending_write);
 
-        remover.write_prepared_indices(&mut slot_storage);
+        remover.write_index_list(&mut slot_storage);
         let read_list_slot = ListSlot::new_from_slot(&slot_storage, list_key);
         // Ghost value 200 at i = 1 due to same slot write case
         assert_eq!(
@@ -622,7 +623,7 @@ mod tests {
         // We need to write because cache was non-empty
         assert!(remover.pending_write);
 
-        remover.write_prepared_indices(&mut slot_storage);
+        remover.write_index_list(&mut slot_storage);
         let read_list_slot_0 = ListSlot::new_from_slot(&slot_storage, list_key_0);
         let read_list_slot_1 = ListSlot::new_from_slot(&slot_storage, list_key_1);
         assert_eq!(
@@ -658,7 +659,7 @@ mod tests {
         // We need to write because cache was non-empty
         assert!(remover.pending_write);
 
-        remover.write_prepared_indices(&mut slot_storage);
+        remover.write_index_list(&mut slot_storage);
         let read_list_slot_0 = ListSlot::new_from_slot(&slot_storage, list_key_0);
         let read_list_slot_1 = ListSlot::new_from_slot(&slot_storage, list_key_1);
         assert_eq!(
@@ -697,7 +698,7 @@ mod tests {
 
         // We need to write because cache was non-empty
         assert!(remover.pending_write);
-        remover.write_prepared_indices(&mut slot_storage);
+        remover.write_index_list(&mut slot_storage);
 
         let read_list_slot_0 = ListSlot::new_from_slot(&slot_storage, list_key_0);
         let read_list_slot_1 = ListSlot::new_from_slot(&slot_storage, list_key_1);

@@ -101,8 +101,7 @@ impl RestingOrderInserter {
                 + self.index_list_inserter.cache.len() as u16,
         );
 
-        self.index_list_inserter
-            .write_prepared_indices(slot_storage);
+        self.index_list_inserter.write_index_list(slot_storage);
     }
 }
 

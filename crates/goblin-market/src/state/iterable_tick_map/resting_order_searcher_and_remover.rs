@@ -166,6 +166,6 @@ impl RestingOrderSearcherAndRemover {
         self.bitmap_remover.flush_bitmap_group(slot_storage);
         market_state
             .set_outer_index_length(self.side(), self.index_list_remover.index_list_length());
-        self.index_list_remover.write_prepared_indices(slot_storage);
+        self.index_list_remover.write_index_list(slot_storage);
     }
 }

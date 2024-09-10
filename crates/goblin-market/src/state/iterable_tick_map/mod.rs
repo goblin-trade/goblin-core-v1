@@ -11,6 +11,7 @@ pub mod index_list_remover;
 pub mod process_resting_orders;
 pub mod resting_order_inserter;
 pub mod resting_order_searcher_and_remover;
+pub mod write_index_list;
 
 pub use active_inner_indices_iterator::*;
 pub use bitmap::*;
@@ -25,3 +26,4 @@ pub use index_list_remover::*;
 pub use process_resting_orders::*;
 pub use resting_order_inserter::*;
 pub use resting_order_searcher_and_remover::*;
+pub use write_index_list::*;
