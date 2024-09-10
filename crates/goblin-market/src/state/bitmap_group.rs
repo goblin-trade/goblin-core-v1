@@ -4,7 +4,7 @@ use crate::state::{
 };
 use alloc::boxed::Box;
 
-use super::inner_indices_iterator::InnerIndexIterator;
+use super::iterators::inner_indices_iterator::InnerIndexIterator;
 
 /// A BitmapGroup contains Bitmaps for 32 ticks in ascending order.
 /// A single Bitmap contains data of 8 resting orders.
@@ -67,6 +67,7 @@ impl BitmapGroup {
         let mut inner_index_iterator =
             InnerIndexIterator::new_with_starting_index(side, starting_index);
 
+        // Should I write iterator for active inner indices?
         while let Some(inner_index) = inner_index_iterator.next() {
             if self.inner_index_is_active(inner_index) {
                 return Some(inner_index);

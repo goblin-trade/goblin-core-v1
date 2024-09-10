@@ -136,13 +136,7 @@ impl<'a> Iterator for BitmapIterator<'a> {
             resting_order_index,
         }) = self.group_position_iterator.next()
         {
-            #[cfg(test)]
-            println!(
-                "inner_index {:?}, resting_order_index {:?}",
-                inner_index, resting_order_index
-            );
             let bitmap = self.bitmap_group.get_bitmap(&inner_index);
-
             if bitmap.order_present(resting_order_index) {
                 return Some(GroupPosition {
                     inner_index,

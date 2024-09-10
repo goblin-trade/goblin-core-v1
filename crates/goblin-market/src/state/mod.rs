@@ -3,6 +3,7 @@ pub mod constants;
 pub mod enums;
 pub mod index_list;
 pub mod inflight_order;
+pub mod iterators;
 pub mod market_state;
 pub mod matching_engine_response;
 pub mod order_packet;
