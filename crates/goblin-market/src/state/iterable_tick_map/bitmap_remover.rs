@@ -74,7 +74,7 @@ impl BitmapRemover {
     ///
     /// Externally ensure that we always move away from the centre
     ///
-    pub fn set_outer_index(&mut self, slot_storage: &mut SlotStorage, outer_index: OuterIndex) {
+    pub fn load_outer_index(&mut self, slot_storage: &mut SlotStorage, outer_index: OuterIndex) {
         if self.last_outer_index == Some(outer_index) {
             return;
         }

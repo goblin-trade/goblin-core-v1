@@ -65,7 +65,7 @@ impl RestingOrderSearcherAndRemover {
             }
 
             self.bitmap_remover
-                .set_outer_index(slot_storage, outer_index);
+                .load_outer_index(slot_storage, outer_index);
         }
 
         // Now check in bitmap group
@@ -80,10 +80,11 @@ impl RestingOrderSearcherAndRemover {
     /// Externally ensure that this is only called when we're on the outermost outer index.
     /// This way there is no `found_outer_index` to push to the cache.
     ///
-    pub fn slide(&mut self, slot_storage: &mut SlotStorage) -> bool {
-        if let Some(next_outer_index) = self.index_list_remover.slide(slot_storage) {
+    pub fn slide_outer_index_and_bitmap_group(&mut self, slot_storage: &mut SlotStorage) -> bool {
+        self.index_list_remover.slide(slot_storage);
+        if let Some(next_outer_index) = self.index_list_remover.cached_outer_index {
             self.bitmap_remover
-                .set_outer_index(slot_storage, next_outer_index);
+                .load_outer_index(slot_storage, next_outer_index);
 
             return true;
         }
@@ -101,7 +102,8 @@ impl RestingOrderSearcherAndRemover {
                 return best_price;
             }
 
-            if !self.slide(slot_storage) {
+            if !self.slide_outer_index_and_bitmap_group(slot_storage) {
+                // Return default values if the index list is exhausted
                 return match self.side() {
                     Side::Bid => Ticks::ZERO,
                     Side::Ask => Ticks::MAX,
@@ -131,7 +133,10 @@ impl RestingOrderSearcherAndRemover {
         let group_position = GroupPosition::from(&order_id);
         self.bitmap_remover.deactivate_in_current(group_position);
 
-        // TODO update index list if bitmap group was closed
+        // Remove cached outer index if the bitmap group was closed
+        if !self.bitmap_remover.bitmap_group.is_active() {
+            self.index_list_remover.remove_cached_index();
+        }
 
         if order_id.price_in_ticks == market_state.best_price(self.side()) {
             // Obtain and set new best price.

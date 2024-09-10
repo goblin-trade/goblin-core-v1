@@ -15,11 +15,17 @@ use super::{write_prepared_indices, IndexListReader};
 ///
 /// Ghost values are produced when
 ///
-/// 1. A slot was supposed to close. Instead values in the slot remain.
+/// 1. A slot was supposed to close. Instead all values in the slot become ghost
+/// values. We can simply decrement outer index count in the market state and
+/// ignore these values.
 ///
-/// 2. Values are removed from the outermost slot but all values are not cleared.
-/// Ghost values are because of the cached list slot. Values on right of the
-/// removed values are copied into the space, but they are not cleared.
+/// 2. Special case of (1) where there is no slot write. The last value of the outermost was removed.
+/// There is no need to perform any slot write, simply decrement the outer index count.
+///
+/// 3. When the 'currently cached slot' does not close. Values that were supposed to
+/// get be shifted left instead get duplicated to the left without leaving their
+/// original place. Note- this can combine with (1) when we the inner slot does not
+/// close but the outer slot does.
 ///
 pub struct IndexListRemover {
     /// Iterator to read saved values from list
@@ -62,18 +68,16 @@ impl IndexListRemover {
             + u16::from(self.cached_outer_index.is_some())
     }
 
-    /// Traverse one position down the list, pushing the `found_outer_index` to cache
-    /// if it exists.
+    /// Traverse one position down the list pushing the previous `cached_outer_index` to cache
+    /// if it exists and writing the read outer index to `cached_outer_index`.
     ///
     /// # Arguments
     ///
     /// * `slot_storage`
     ///
-    pub fn slide(&mut self, slot_storage: &SlotStorage) -> Option<OuterIndex> {
+    pub fn slide(&mut self, slot_storage: &SlotStorage) {
         self.flush_cached_outer_index();
-
         self.cached_outer_index = self.index_list_reader.next(slot_storage);
-        self.cached_outer_index
     }
 
     /// Pushes `found_outer_index` to cache and clears the value
@@ -99,38 +103,27 @@ impl IndexListRemover {
         slot_storage: &SlotStorage,
         outer_index: OuterIndex,
     ) -> bool {
-        if self.cached_outer_index == Some(outer_index) {
-            return true;
-        }
-
-        while let Some(current_outer_index) = self.slide(slot_storage) {
-            if current_outer_index == outer_index {
+        loop {
+            if self.cached_outer_index == Some(outer_index) {
                 return true;
             }
+            self.slide(slot_storage);
+            if self.cached_outer_index.is_none() {
+                return false;
+            }
         }
-        false
     }
 
-    /// Prepare the index list by removing the specified outer index
+    /// Remove the cached index, and set `pending_write` to true if the cached list
+    /// is not empty
     ///
-    /// TODO update. No need to call find_outer_index() again
-    ///
-    /// # Arguments
-    ///
-    /// * outer_index - The index to be removed
-    /// * slot_storage - The slot storage to read indices from
-    ///
-    pub fn remove(&mut self, slot_storage: &SlotStorage, outer_index: OuterIndex) -> bool {
-        // Find the element, then clear the found value
-        if self.find_outer_index(slot_storage, outer_index) {
-            self.pending_write = true;
-            self.cached_outer_index = None;
-            return true;
-        }
-        false
+    pub fn remove_cached_index(&mut self) {
+        self.cached_outer_index = None;
+        self.pending_write = !self.cache.is_empty();
     }
 
     /// Write prepared indices to slot after removal
+    ///
     /// Externally ensure that `remove()` is called before writing to slot.
     /// Calling `write_prepared_indices()` after `find_outer_index()` will result
     /// in `found_outer_index`.
@@ -165,10 +158,12 @@ mod tests {
         let found = remover.find_outer_index(&slot_storage, OuterIndex::new(100));
         assert!(!found);
         assert_eq!(remover.cache, vec![]);
+        assert_eq!(remover.cached_outer_index, None);
+        assert!(!remover.pending_write);
     }
 
     #[test]
-    fn test_find_existing_outer_index() {
+    fn test_find_and_remove_outer_index() {
         let mut slot_storage = SlotStorage::new();
 
         // Setup the initial slot storage with one item
@@ -192,6 +187,53 @@ mod tests {
         assert_eq!(remover.index_list_reader.outer_index_count, 0);
         assert_eq!(remover.cache, vec![]);
         assert_eq!(remover.cached_outer_index, Some(OuterIndex::new(100)));
+        assert!(!remover.pending_write);
+
+        remover.remove_cached_index();
+        assert_eq!(remover.index_list_reader.outer_index_count, 0);
+        assert_eq!(remover.cache, vec![]);
+        assert_eq!(remover.cached_outer_index, None);
+        assert!(!remover.pending_write); // false because cache is empty
+    }
+
+    #[test]
+    fn test_find_one_but_remove_another() {
+        let mut slot_storage = SlotStorage::new();
+
+        let side = Side::Bid;
+        let outer_index_count = 2;
+
+        // Setup the initial slot storage with one item
+        let list_key = ListKey { index: 0, side };
+        let mut list_slot = ListSlot::default();
+        list_slot.set(0, OuterIndex::new(100));
+        list_slot.set(1, OuterIndex::new(200));
+        list_slot.write_to_slot(&mut slot_storage, &list_key);
+
+        let mut remover = IndexListRemover::new(side, outer_index_count);
+
+        // Find the existing element
+
+        let found_200 = remover.find_outer_index(&slot_storage, OuterIndex::new(200));
+        assert!(found_200);
+        assert_eq!(remover.index_list_reader.outer_index_count, 1);
+        assert_eq!(remover.cache, vec![]);
+        assert_eq!(remover.cached_outer_index, Some(OuterIndex::new(200)));
+        assert!(!remover.pending_write);
+
+        let found_100 = remover.find_outer_index(&slot_storage, OuterIndex::new(100));
+        assert!(found_100);
+        assert_eq!(remover.index_list_reader.outer_index_count, 0);
+        // Previous `cached_outer_index` is pushed to cache array
+        assert_eq!(remover.cache, vec![OuterIndex::new(200)]);
+        assert_eq!(remover.cached_outer_index, Some(OuterIndex::new(100)));
+        assert!(!remover.pending_write);
+
+        remover.remove_cached_index();
+        assert_eq!(remover.index_list_reader.outer_index_count, 0);
+        assert_eq!(remover.cache, vec![OuterIndex::new(200)]);
+        assert_eq!(remover.cached_outer_index, None);
+        assert!(remover.pending_write);
     }
 
     #[test]
@@ -247,6 +289,12 @@ mod tests {
         assert_eq!(remover.index_list_reader.outer_index_count, 0);
         assert_eq!(remover.cache, vec![OuterIndex::new(100)]);
         assert_eq!(remover.cached_outer_index, None);
+        assert!(!remover.pending_write);
+
+        // Ensure this is not called if no `cached_outer_index` is present.
+        // Else `pending_write` will be set to true.
+        remover.remove_cached_index();
+        assert!(remover.pending_write);
     }
 
     #[test]
@@ -254,19 +302,15 @@ mod tests {
         let mut slot_storage = SlotStorage::new();
 
         // Setup the initial slot storage with multiple items
-        {
-            let mut list_slot = ListSlot::default();
-            list_slot.set(0, OuterIndex::new(100));
-            list_slot.set(1, OuterIndex::new(200));
-            list_slot.set(2, OuterIndex::new(300));
-            list_slot.write_to_slot(
-                &mut slot_storage,
-                &ListKey {
-                    index: 0,
-                    side: Side::Bid,
-                },
-            );
-        }
+        let list_key = ListKey {
+            index: 0,
+            side: Side::Bid,
+        };
+        let mut list_slot = ListSlot::default();
+        list_slot.set(0, OuterIndex::new(100));
+        list_slot.set(1, OuterIndex::new(200));
+        list_slot.set(2, OuterIndex::new(300));
+        list_slot.write_to_slot(&mut slot_storage, &list_key);
 
         let mut remover = IndexListRemover::new(Side::Bid, 3);
 
@@ -276,439 +320,396 @@ mod tests {
         assert_eq!(remover.index_list_reader.outer_index_count, 1);
         assert_eq!(remover.cache, vec![OuterIndex::new(300)]);
         assert_eq!(remover.cached_outer_index, Some(OuterIndex::new(200)));
-    }
+        assert!(!remover.pending_write);
 
-    #[test]
-    fn test_remove_from_empty_list() {
-        let slot_storage = SlotStorage::new();
-        let mut remover = IndexListRemover::new(Side::Bid, 0);
-
-        // Try to remove from an empty list
-        let removed = remover.remove(&slot_storage, OuterIndex::new(100));
-        assert_eq!(remover.index_list_length(), 0);
-        assert!(!removed);
-        assert_eq!(remover.cache, vec![]);
-    }
-
-    #[test]
-    fn test_remove_nonexistent_element() {
-        let mut slot_storage = SlotStorage::new();
-
-        // Setup the initial slot storage with one item
-        {
-            let mut list_slot = ListSlot::default();
-            list_slot.set(0, OuterIndex::new(100));
-            list_slot.write_to_slot(
-                &mut slot_storage,
-                &ListKey {
-                    index: 0,
-                    side: Side::Bid,
-                },
-            );
-        }
-
-        let mut remover = IndexListRemover::new(Side::Bid, 1);
-
-        // Attempt to remove an element that does not exist
-        let removed = remover.remove(&slot_storage, OuterIndex::new(200));
-        assert_eq!(remover.index_list_length(), 1);
-        assert!(!removed);
-        assert_eq!(remover.cache, vec![OuterIndex::new(100)]);
-    }
-
-    #[test]
-    fn test_clear_slot_with_single_value() {
-        let mut slot_storage = SlotStorage::new();
-
-        // Setup the initial slot storage with multiple items
-        {
-            let mut list_slot = ListSlot::default();
-            list_slot.set(0, OuterIndex::new(100));
-            list_slot.write_to_slot(
-                &mut slot_storage,
-                &ListKey {
-                    index: 0,
-                    side: Side::Bid,
-                },
-            );
-        }
-
-        let mut remover = IndexListRemover::new(Side::Bid, 1);
-
-        let removed = remover.remove(&slot_storage, OuterIndex::new(100));
-        assert!(removed);
-        assert_eq!(remover.cache, vec![]);
-        assert_eq!(remover.index_list_reader.outer_index_count, 0);
-
-        remover.write_prepared_indices(&mut slot_storage);
-
-        // Validate the contents of the first slot after removal
-        let result_slot = ListSlot::new_from_slot(
-            &slot_storage,
-            ListKey {
-                index: 0,
-                side: Side::Bid,
-            },
-        );
-        // Ghost values due to cleared slot
-        assert_eq!(
-            vec![100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            result_slot.inner
-        );
-    }
-
-    #[test]
-    fn test_remove_element_from_single_slot_but_slot_is_not_cleared() {
-        let mut slot_storage = SlotStorage::new();
-
-        // Setup the initial slot storage with multiple items
-        {
-            let mut list_slot = ListSlot::default();
-            list_slot.set(0, OuterIndex::new(100));
-            list_slot.set(1, OuterIndex::new(200));
-            list_slot.set(2, OuterIndex::new(300));
-            list_slot.write_to_slot(
-                &mut slot_storage,
-                &ListKey {
-                    index: 0,
-                    side: Side::Bid,
-                },
-            );
-        }
-
-        let mut remover = IndexListRemover::new(Side::Bid, 3);
-
-        // Remove the middle element (200)
-        let removed = remover.remove(&slot_storage, OuterIndex::new(200));
-        assert_eq!(remover.index_list_length(), 2);
-        assert!(removed);
-        assert_eq!(remover.cache, vec![OuterIndex::new(300)]);
+        remover.remove_cached_index();
         assert_eq!(remover.index_list_reader.outer_index_count, 1);
+        assert_eq!(remover.cache, vec![OuterIndex::new(300)]);
+        assert_eq!(remover.cached_outer_index, None);
+        assert!(remover.pending_write);
 
         remover.write_prepared_indices(&mut slot_storage);
+        let read_list_slot = ListSlot::new_from_slot(&slot_storage, list_key);
 
-        // Validate the contents of the first slot after removal
-        let result_slot = ListSlot::new_from_slot(
-            &slot_storage,
-            ListKey {
-                index: 0,
-                side: Side::Bid,
-            },
-        );
-        // Ghost values due to cached slot
-        assert_eq!(
-            vec![100, 300, 300, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            result_slot.inner
-        );
+        let mut expected_list_slot = ListSlot::default();
+        expected_list_slot.set(0, OuterIndex::new(100));
+        expected_list_slot.set(1, OuterIndex::new(300));
+
+        // Ghost value from cached slot
+        expected_list_slot.set(2, OuterIndex::new(300));
+        assert_eq!(read_list_slot, expected_list_slot);
     }
 
     #[test]
-    fn test_remove_element_from_two_contiguous_slots() {
+    fn test_remove_multiple_adjacent_outermost_in_same_slot() {
         let mut slot_storage = SlotStorage::new();
+        let side = Side::Bid;
+        let outer_index_count = 4;
 
-        let list_key_0 = ListKey {
-            index: 0,
-            side: Side::Bid,
-        };
-        let list_key_1 = ListKey {
-            index: 1,
-            side: Side::Bid,
-        };
+        let mut remover = IndexListRemover::new(side, outer_index_count);
 
-        // Setup the initial slot storage with multiple items
-        {
-            let mut list_slot_0 = ListSlot::default();
-            let mut list_slot_1 = ListSlot::default();
-            list_slot_0.inner = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
-            list_slot_1.inner = [16, 17, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-            list_slot_0.write_to_slot(&mut slot_storage, &list_key_0);
-            list_slot_1.write_to_slot(&mut slot_storage, &list_key_1);
-        }
+        let list_key_0 = ListKey { index: 0, side };
 
-        let mut remover = IndexListRemover::new(Side::Bid, 18);
+        let mut list_slot_0 = ListSlot::default();
+        list_slot_0.inner = [0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        list_slot_0.write_to_slot(&mut slot_storage, &list_key_0);
 
-        let removed = remover.remove(&slot_storage, OuterIndex::new(15));
-        assert!(removed);
+        remover.find_outer_index(&slot_storage, OuterIndex::new(3));
+        remover.remove_cached_index();
+
+        remover.find_outer_index(&slot_storage, OuterIndex::new(2));
+        remover.remove_cached_index();
+
+        assert!(!remover.pending_write);
+        assert_eq!(remover.cached_outer_index, None);
+        assert_eq!(remover.cache, vec![]);
+        assert_eq!(remover.index_list_reader.outer_index_count, 2);
+    }
+
+    #[test]
+    fn test_remove_multiple_adjacent_non_outermost_in_same_slot() {
+        let mut slot_storage = SlotStorage::new();
+        let side = Side::Bid;
+        let outer_index_count = 4;
+
+        let mut remover = IndexListRemover::new(side, outer_index_count);
+
+        let list_key_0 = ListKey { index: 0, side };
+
+        let mut list_slot_0 = ListSlot::default();
+        list_slot_0.inner = [0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        list_slot_0.write_to_slot(&mut slot_storage, &list_key_0);
+
+        remover.find_outer_index(&slot_storage, OuterIndex::new(2));
+        remover.remove_cached_index();
+
+        remover.find_outer_index(&slot_storage, OuterIndex::new(1));
+        remover.remove_cached_index();
+
+        assert!(remover.pending_write);
+        assert_eq!(remover.cached_outer_index, None);
+        assert_eq!(remover.cache, vec![OuterIndex::new(3)]);
+        assert_eq!(remover.index_list_reader.outer_index_count, 1);
+    }
+
+    #[test]
+    fn test_remove_multiple_non_adjacent_in_same_slot() {
+        let mut slot_storage = SlotStorage::new();
+        let side = Side::Bid;
+        let outer_index_count = 4;
+
+        let mut remover = IndexListRemover::new(side, outer_index_count);
+
+        let list_key_0 = ListKey { index: 0, side };
+
+        let mut list_slot_0 = ListSlot::default();
+        list_slot_0.inner = [0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        list_slot_0.write_to_slot(&mut slot_storage, &list_key_0);
+
+        remover.find_outer_index(&slot_storage, OuterIndex::new(2));
+        remover.remove_cached_index();
+
+        remover.find_outer_index(&slot_storage, OuterIndex::new(0));
+        remover.remove_cached_index();
+
+        assert!(remover.pending_write);
+        assert_eq!(remover.cached_outer_index, None);
+        assert_eq!(remover.cache, vec![OuterIndex::new(3), OuterIndex::new(1)]);
+        assert_eq!(remover.index_list_reader.outer_index_count, 0);
+    }
+
+    #[test]
+    fn test_remove_multiple_different_adjacent_slots() {
+        let mut slot_storage = SlotStorage::new();
+        let side = Side::Bid;
+        let outer_index_count = 18;
+
+        let mut remover = IndexListRemover::new(side, outer_index_count);
+
+        let list_key_0 = ListKey { index: 0, side };
+        let list_key_1 = ListKey { index: 1, side };
+        let mut list_slot_0 = ListSlot::default();
+        let mut list_slot_1 = ListSlot::default();
+        list_slot_0.inner = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+        list_slot_1.inner = [16, 17, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        list_slot_0.write_to_slot(&mut slot_storage, &list_key_0);
+        list_slot_1.write_to_slot(&mut slot_storage, &list_key_1);
+
+        remover.find_outer_index(&slot_storage, OuterIndex::new(17));
+        remover.remove_cached_index();
+
+        remover.find_outer_index(&slot_storage, OuterIndex::new(14));
+        remover.remove_cached_index();
+
+        assert!(remover.pending_write);
+        assert_eq!(remover.cached_outer_index, None);
         assert_eq!(
             remover.cache,
-            vec![OuterIndex::new(17), OuterIndex::new(16)]
+            vec![OuterIndex::new(16), OuterIndex::new(15)]
         );
-        assert_eq!(remover.index_list_reader.outer_index_count, 15);
+        assert_eq!(remover.index_list_reader.outer_index_count, 14);
+    }
+
+    #[test]
+    fn test_remove_multiple_different_non_adjacent_slots() {
+        let mut slot_storage = SlotStorage::new();
+        let side = Side::Bid;
+        let outer_index_count = 34;
+
+        let mut remover = IndexListRemover::new(side, outer_index_count);
+
+        let list_key_0 = ListKey { index: 0, side };
+        let list_key_1 = ListKey { index: 1, side };
+        let list_key_2 = ListKey { index: 2, side };
+        let mut list_slot_0 = ListSlot::default();
+        let mut list_slot_1 = ListSlot::default();
+        let mut list_slot_2 = ListSlot::default();
+        list_slot_0.inner = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+        list_slot_1.inner = [
+            16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
+        ];
+        list_slot_2.inner = [33, 34, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        list_slot_0.write_to_slot(&mut slot_storage, &list_key_0);
+        list_slot_1.write_to_slot(&mut slot_storage, &list_key_1);
+        list_slot_2.write_to_slot(&mut slot_storage, &list_key_2);
+
+        remover.find_outer_index(&slot_storage, OuterIndex::new(33));
+        remover.remove_cached_index();
+
+        remover.find_outer_index(&slot_storage, OuterIndex::new(14));
+        remover.remove_cached_index();
+
+        assert!(remover.pending_write);
+        assert_eq!(remover.cached_outer_index, None);
+        assert_eq!(
+            remover.cache,
+            vec![
+                OuterIndex::new(34),
+                OuterIndex::new(31),
+                OuterIndex::new(30),
+                OuterIndex::new(29),
+                OuterIndex::new(28),
+                OuterIndex::new(27),
+                OuterIndex::new(26),
+                OuterIndex::new(25),
+                OuterIndex::new(24),
+                OuterIndex::new(23),
+                OuterIndex::new(22),
+                OuterIndex::new(21),
+                OuterIndex::new(20),
+                OuterIndex::new(19),
+                OuterIndex::new(18),
+                OuterIndex::new(17),
+                OuterIndex::new(16),
+                OuterIndex::new(15)
+            ]
+        );
+        assert_eq!(remover.index_list_reader.outer_index_count, 14);
+    }
+
+    #[test]
+    fn test_remove_same_slot_ghost_value_from_no_write_case() {
+        let mut slot_storage = SlotStorage::new();
+        let side = Side::Bid;
+        let outer_index_count = 2;
+
+        let mut remover = IndexListRemover::new(side, outer_index_count);
+
+        let list_key = ListKey { index: 0, side };
+        let mut list_slot = ListSlot::default();
+        list_slot.set(0, OuterIndex::new(100));
+        list_slot.set(1, OuterIndex::new(200));
+        list_slot.write_to_slot(&mut slot_storage, &list_key);
+
+        remover.find_outer_index(&slot_storage, OuterIndex::new(200));
+        remover.remove_cached_index();
+        // No need of a write since we only removed the outermost value
+        assert!(!remover.pending_write);
+
         remover.write_prepared_indices(&mut slot_storage);
-
-        // Validate the contents of the first slot after removal
-        let result_slot_0 = ListSlot::new_from_slot(&slot_storage, list_key_0);
-        let result_slot_1 = ListSlot::new_from_slot(&slot_storage, list_key_1);
-
+        let read_list_slot = ListSlot::new_from_slot(&slot_storage, list_key);
+        // Ghost value 200 at i = 1 due to no write case
         assert_eq!(
-            vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16],
-            result_slot_0.inner
-        );
-        // No ghost value because the slot was not cached
-        assert_eq!(
-            vec![17, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            result_slot_1.inner
+            vec![100, 200, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            read_list_slot.inner
         );
     }
 
     #[test]
-    fn test_remove_element_from_two_contiguous_slots_with_last_slot_cleared() {
+    fn test_remove_same_slot_ghost_value_from_no_write_case_multiple_slots() {
         let mut slot_storage = SlotStorage::new();
+        let side = Side::Bid;
+        let outer_index_count = 17;
 
-        let list_key_0 = ListKey {
-            index: 0,
-            side: Side::Bid,
-        };
-        let list_key_1 = ListKey {
-            index: 1,
-            side: Side::Bid,
-        };
+        let mut remover = IndexListRemover::new(side, outer_index_count);
 
-        // Setup the initial slot storage with multiple items
-        {
-            let mut list_slot_0 = ListSlot::default();
-            let mut list_slot_1 = ListSlot::default();
-            list_slot_0.inner = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
-            list_slot_1.inner = [16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-            list_slot_0.write_to_slot(&mut slot_storage, &list_key_0);
-            list_slot_1.write_to_slot(&mut slot_storage, &list_key_1);
-        }
+        let list_key_0 = ListKey { index: 0, side };
+        let list_key_1 = ListKey { index: 1, side };
+        let mut list_slot_0 = ListSlot::default();
+        let mut list_slot_1 = ListSlot::default();
+        list_slot_0.inner = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+        list_slot_1.inner = [16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        list_slot_0.write_to_slot(&mut slot_storage, &list_key_0);
+        list_slot_1.write_to_slot(&mut slot_storage, &list_key_1);
 
-        let mut remover = IndexListRemover::new(Side::Bid, 17);
+        remover.find_outer_index(&slot_storage, OuterIndex::new(16));
+        remover.remove_cached_index();
+        // No need of a write since we only removed the outermost value
+        assert!(!remover.pending_write);
 
-        let removed = remover.remove(&slot_storage, OuterIndex::new(15));
-        assert!(removed);
-        assert_eq!(remover.cache, vec![OuterIndex::new(16)]);
-        assert_eq!(remover.index_list_reader.outer_index_count, 15);
         remover.write_prepared_indices(&mut slot_storage);
+        let read_list_slot_0 = ListSlot::new_from_slot(&slot_storage, list_key_0);
+        let read_list_slot_1 = ListSlot::new_from_slot(&slot_storage, list_key_1);
+        assert_eq!(
+            vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+            read_list_slot_0.inner
+        );
+        // Ghost value at i=0 because of no write case
+        assert_eq!(
+            vec![16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            read_list_slot_1.inner
+        );
+    }
 
-        // Validate the contents of the first slot after removal
-        let result_slot_0 = ListSlot::new_from_slot(&slot_storage, list_key_0);
-        let result_slot_1 = ListSlot::new_from_slot(&slot_storage, list_key_1);
+    #[test]
+    fn test_remove_same_slot_ghost_value_from_write_case() {
+        let mut slot_storage = SlotStorage::new();
+        let side = Side::Bid;
+        let outer_index_count = 2;
 
+        let mut remover = IndexListRemover::new(side, outer_index_count);
+
+        let list_key = ListKey { index: 0, side };
+        let mut list_slot = ListSlot::default();
+        list_slot.set(0, OuterIndex::new(100));
+        list_slot.set(1, OuterIndex::new(200));
+        list_slot.write_to_slot(&mut slot_storage, &list_key);
+
+        remover.find_outer_index(&slot_storage, OuterIndex::new(100));
+        remover.remove_cached_index();
+        // We need to write because cache was non-empty
+        assert!(remover.pending_write);
+
+        remover.write_prepared_indices(&mut slot_storage);
+        let read_list_slot = ListSlot::new_from_slot(&slot_storage, list_key);
+        // Ghost value 200 at i = 1 due to same slot write case
+        assert_eq!(
+            vec![200, 200, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            read_list_slot.inner
+        );
+    }
+
+    #[test]
+    fn test_remove_different_slot_no_ghost_value() {
+        let mut slot_storage = SlotStorage::new();
+        let side = Side::Bid;
+        let outer_index_count = 18;
+
+        let mut remover = IndexListRemover::new(side, outer_index_count);
+
+        let list_key_0 = ListKey { index: 0, side };
+        let list_key_1 = ListKey { index: 1, side };
+
+        let mut list_slot_0 = ListSlot::default();
+        let mut list_slot_1 = ListSlot::default();
+        list_slot_0.inner = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+        list_slot_1.inner = [16, 17, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        list_slot_0.write_to_slot(&mut slot_storage, &list_key_0);
+        list_slot_1.write_to_slot(&mut slot_storage, &list_key_1);
+
+        remover.find_outer_index(&slot_storage, OuterIndex::new(15));
+        remover.remove_cached_index();
+        // We need to write because cache was non-empty
+        assert!(remover.pending_write);
+
+        remover.write_prepared_indices(&mut slot_storage);
+        let read_list_slot_0 = ListSlot::new_from_slot(&slot_storage, list_key_0);
+        let read_list_slot_1 = ListSlot::new_from_slot(&slot_storage, list_key_1);
         assert_eq!(
             vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16],
-            result_slot_0.inner
+            read_list_slot_0.inner
+        );
+        assert_eq!(
+            vec![17, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            read_list_slot_1.inner
+        );
+    }
+
+    #[test]
+    fn test_remove_from_different_slot_ghost_value_due_to_cleared_slot() {
+        let mut slot_storage = SlotStorage::new();
+        let side = Side::Bid;
+        let outer_index_count = 17;
+
+        let mut remover = IndexListRemover::new(side, outer_index_count);
+
+        let list_key_0 = ListKey { index: 0, side };
+        let list_key_1 = ListKey { index: 1, side };
+
+        let mut list_slot_0 = ListSlot::default();
+        let mut list_slot_1 = ListSlot::default();
+        list_slot_0.inner = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+        list_slot_1.inner = [16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        list_slot_0.write_to_slot(&mut slot_storage, &list_key_0);
+        list_slot_1.write_to_slot(&mut slot_storage, &list_key_1);
+
+        remover.find_outer_index(&slot_storage, OuterIndex::new(15));
+        remover.remove_cached_index();
+        // We need to write because cache was non-empty
+        assert!(remover.pending_write);
+
+        remover.write_prepared_indices(&mut slot_storage);
+        let read_list_slot_0 = ListSlot::new_from_slot(&slot_storage, list_key_0);
+        let read_list_slot_1 = ListSlot::new_from_slot(&slot_storage, list_key_1);
+        assert_eq!(
+            vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16],
+            read_list_slot_0.inner
         );
         // Ghost value because slot was cleared
         assert_eq!(
             vec![16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            result_slot_1.inner
+            read_list_slot_1.inner
         );
     }
 
     #[test]
-    fn test_remove_elements_from_two_contiguous_slots() {
+    fn test_two_types_of_ghost_values_due_to_cached_slot_and_cleared_slot() {
         let mut slot_storage = SlotStorage::new();
+        let side = Side::Bid;
+        let outer_index_count = 17;
 
-        let list_key_0 = ListKey {
-            index: 0,
-            side: Side::Bid,
-        };
-        let list_key_1 = ListKey {
-            index: 1,
-            side: Side::Bid,
-        };
+        let mut remover = IndexListRemover::new(side, outer_index_count);
 
-        // Setup the initial slot storage with multiple items
-        {
-            let mut list_slot_0 = ListSlot::default();
-            let mut list_slot_1 = ListSlot::default();
-            list_slot_0.inner = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
-            list_slot_1.inner = [16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-            list_slot_0.write_to_slot(&mut slot_storage, &list_key_0);
-            list_slot_1.write_to_slot(&mut slot_storage, &list_key_1);
-        }
+        let list_key_0 = ListKey { index: 0, side };
+        let list_key_1 = ListKey { index: 1, side };
 
-        let mut remover = IndexListRemover::new(Side::Bid, 17);
+        let mut list_slot_0 = ListSlot::default();
+        let mut list_slot_1 = ListSlot::default();
+        list_slot_0.inner = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+        list_slot_1.inner = [16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        list_slot_0.write_to_slot(&mut slot_storage, &list_key_0);
+        list_slot_1.write_to_slot(&mut slot_storage, &list_key_1);
 
-        let removed_15 = remover.remove(&slot_storage, OuterIndex::new(15));
-        assert!(removed_15);
-        assert_eq!(remover.cache, vec![OuterIndex::new(16)]);
-        assert_eq!(remover.index_list_reader.outer_index_count, 15);
+        remover.find_outer_index(&slot_storage, OuterIndex::new(14));
+        remover.remove_cached_index();
+        remover.find_outer_index(&slot_storage, OuterIndex::new(13));
+        remover.remove_cached_index();
 
-        let removed_12 = remover.remove(&slot_storage, OuterIndex::new(12));
-        assert!(removed_12);
-        assert_eq!(
-            remover.cache,
-            vec![
-                OuterIndex::new(16),
-                OuterIndex::new(14),
-                OuterIndex::new(13)
-            ]
-        );
-        assert_eq!(remover.index_list_reader.outer_index_count, 12);
-
+        // We need to write because cache was non-empty
+        assert!(remover.pending_write);
         remover.write_prepared_indices(&mut slot_storage);
 
-        // Validate the contents of the first slot after removal
-        let result_slot_0 = ListSlot::new_from_slot(&slot_storage, list_key_0);
-        let result_slot_1 = ListSlot::new_from_slot(&slot_storage, list_key_1);
-
+        let read_list_slot_0 = ListSlot::new_from_slot(&slot_storage, list_key_0);
+        let read_list_slot_1 = ListSlot::new_from_slot(&slot_storage, list_key_1);
         // Ghost value due to cached slot
         assert_eq!(
-            vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 16, 15],
-            result_slot_0.inner
+            vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 15, 16, 15],
+            read_list_slot_0.inner
         );
-        // Ghost value due to cleared slot
+        // Ghost value because slot was cleared
         assert_eq!(
             vec![16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            result_slot_1.inner
+            read_list_slot_1.inner
         );
-    }
-
-    #[test]
-    fn test_remove_elements_from_non_contiguous_slots() {
-        let mut slot_storage = SlotStorage::new();
-
-        let list_key_0 = ListKey {
-            index: 0,
-            side: Side::Bid,
-        };
-        let list_key_1 = ListKey {
-            index: 1,
-            side: Side::Bid,
-        };
-        let list_key_2 = ListKey {
-            index: 2,
-            side: Side::Bid,
-        };
-
-        // Setup the initial slot storage with multiple items
-        {
-            let mut list_slot_0 = ListSlot::default();
-            let mut list_slot_1 = ListSlot::default();
-            let mut list_slot_2 = ListSlot::default();
-            list_slot_0.inner = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
-            list_slot_1.inner = [
-                16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
-            ];
-            list_slot_2.inner = [32, 33, 34, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-            list_slot_0.write_to_slot(&mut slot_storage, &list_key_0);
-            list_slot_1.write_to_slot(&mut slot_storage, &list_key_1);
-            list_slot_2.write_to_slot(&mut slot_storage, &list_key_2);
-        }
-
-        let mut remover = IndexListRemover::new(Side::Bid, 35);
-
-        let removed_33 = remover.remove(&slot_storage, OuterIndex::new(33));
-        assert!(removed_33);
-        assert_eq!(remover.cache, vec![OuterIndex::new(34)]);
-        assert_eq!(remover.index_list_reader.outer_index_count, 33);
-
-        let removed_12 = remover.remove(&slot_storage, OuterIndex::new(12));
-        assert!(removed_12);
-        assert_eq!(
-            remover.cache,
-            vec![
-                34, 32, 31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13
-            ]
-            .into_iter()
-            .map(OuterIndex::new)
-            .collect::<Vec<OuterIndex>>()
-        );
-        assert_eq!(remover.index_list_reader.outer_index_count, 12);
-
-        remover.write_prepared_indices(&mut slot_storage);
-
-        // Validate the contents of the first slot after removal
-        let result_slot_0 = ListSlot::new_from_slot(&slot_storage, list_key_0);
-        let result_slot_1 = ListSlot::new_from_slot(&slot_storage, list_key_1);
-        let result_slot_2 = ListSlot::new_from_slot(&slot_storage, list_key_2);
-
-        assert_eq!(
-            vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16],
-            result_slot_0.inner
-        );
-        assert_eq!(
-            vec![17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32],
-            result_slot_1.inner
-        );
-        // Ghost value due to cleared slot
-        assert_eq!(
-            vec![34, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            result_slot_2.inner
-        );
-    }
-
-    #[test]
-    fn test_find_and_remove_same_value() {
-        let mut slot_storage = SlotStorage::new();
-        let list_key = ListKey {
-            index: 0,
-            side: Side::Bid,
-        };
-
-        // Setup the initial slot storage with multiple items
-        {
-            let mut list_slot = ListSlot::default();
-            list_slot.set(0, OuterIndex::new(100));
-            list_slot.set(1, OuterIndex::new(200));
-            list_slot.set(2, OuterIndex::new(300));
-            list_slot.write_to_slot(&mut slot_storage, &list_key);
-        }
-
-        let mut remover = IndexListRemover::new(Side::Bid, 3);
-
-        // Find and remove the element
-        let found = remover.find_outer_index(&slot_storage, OuterIndex::new(200));
-        assert!(found);
-        assert_eq!(remover.cache, vec![OuterIndex::new(300)]);
-        assert_eq!(remover.cached_outer_index, Some(OuterIndex::new(200)));
-
-        remover.remove(&mut slot_storage, OuterIndex::new(200));
-        assert_eq!(remover.cache, vec![OuterIndex::new(300)]);
-        assert!(remover.cached_outer_index.is_none());
-
-        // Verify the state after write
-        remover.write_prepared_indices(&mut slot_storage);
-        let list_slot = ListSlot::new_from_slot(&slot_storage, list_key);
-
-        assert_eq!(list_slot.get(0), OuterIndex::new(100));
-        assert_eq!(list_slot.get(1), OuterIndex::new(300));
-        assert_eq!(list_slot.get(2), OuterIndex::new(300)); // Ghost values due to cached slot
-    }
-
-    #[test]
-    fn test_find_one_value_remove_another() {
-        let mut slot_storage = SlotStorage::new();
-        let list_key = ListKey {
-            index: 0,
-            side: Side::Bid,
-        };
-
-        // Setup the initial slot storage with multiple items
-        {
-            let mut list_slot = ListSlot::default();
-            list_slot.set(0, OuterIndex::new(100));
-            list_slot.set(1, OuterIndex::new(200));
-            list_slot.set(2, OuterIndex::new(300));
-            list_slot.write_to_slot(&mut slot_storage, &list_key);
-        }
-
-        let mut remover = IndexListRemover::new(Side::Bid, 3);
-
-        // Find the value but remove a different one
-        let found = remover.find_outer_index(&slot_storage, OuterIndex::new(200));
-        assert!(found);
-        assert_eq!(remover.index_list_reader.outer_index_count, 1);
-        assert_eq!(remover.cache, vec![OuterIndex::new(300)]);
-        assert_eq!(remover.cached_outer_index, Some(OuterIndex::new(200)));
-
-        remover.remove(&mut slot_storage, OuterIndex::new(100));
-        assert_eq!(remover.index_list_reader.outer_index_count, 0);
-        assert_eq!(
-            remover.cache,
-            vec![OuterIndex::new(300), OuterIndex::new(200)]
-        );
-        assert!(remover.cached_outer_index.is_none());
-
-        // Verify the state after write
-        remover.write_prepared_indices(&mut slot_storage);
-        let list_slot = ListSlot::new_from_slot(&slot_storage, list_key);
-
-        assert_eq!(list_slot.get(0), OuterIndex::new(200));
-        assert_eq!(list_slot.get(1), OuterIndex::new(300));
-        assert_eq!(list_slot.get(2), OuterIndex::new(300)); // Ghost values due to cached slot
     }
 }
