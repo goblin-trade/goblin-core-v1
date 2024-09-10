@@ -1,5 +1,4 @@
-use super::{ListKey, ListSlot};
-use crate::state::{OuterIndex, Side, SlotStorage};
+use crate::state::{ListKey, ListSlot, OuterIndex, Side, SlotStorage};
 use alloc::vec::Vec;
 
 /// Write cached indices to slot

@@ -1,12 +1,11 @@
 use crate::{
     quantities::Ticks,
     state::{
-        InnerIndex, MarketState, OrderId, RestingOrder, RestingOrderIndex, Side, SlotRestingOrder,
-        SlotStorage,
+        bitmap_group::{inner_indices, BitmapGroup},
+        InnerIndex, ListKey, ListSlot, MarketState, OrderId, RestingOrder, RestingOrderIndex, Side,
+        SlotRestingOrder, SlotStorage,
     },
 };
-
-use super::{inner_indices, BitmapGroup, ListKey, ListSlot};
 
 /// Loops through subsequent resting orders, applying a lambda function on each.
 ///
@@ -47,6 +46,7 @@ pub fn process_resting_orders(
             let mut pending_bitmap_group_write = false;
 
             // 3. Loop through bitmaps
+            // TODO replace with iterator
             for i in inner_indices(side, previous_inner_index) {
                 let inner_index = InnerIndex::new(i);
                 price_in_ticks = Ticks::from_indices(outer_index, inner_index);

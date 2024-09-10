@@ -1,4 +1,6 @@
+pub mod bitmap_group;
 pub mod enums;
+pub mod index_list;
 pub mod inflight_order;
 pub mod iterable_tick_map;
 pub mod market_state;
@@ -10,6 +12,7 @@ pub mod tick_indices;
 pub mod trader_state;
 
 pub use enums::*;
+pub use index_list::*;
 pub use inflight_order::*;
 pub use iterable_tick_map::*;
 pub use market_state::*;

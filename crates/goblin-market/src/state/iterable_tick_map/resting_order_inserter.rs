@@ -112,7 +112,8 @@ mod tests {
     use crate::{
         quantities::{BaseLots, QuoteLots, Ticks, WrapperU64},
         state::{
-            BitmapGroup, ListKey, ListSlot, OuterIndex, RestingOrderIndex, SlotActions, TickIndices,
+            bitmap_group::BitmapGroup, ListKey, ListSlot, OuterIndex, RestingOrderIndex,
+            SlotActions, TickIndices,
         },
     };
 

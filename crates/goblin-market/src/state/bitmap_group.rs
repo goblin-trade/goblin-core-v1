@@ -4,7 +4,7 @@ use crate::state::{
 };
 use alloc::boxed::Box;
 
-use super::InnerIndexIterator;
+use super::iterable_tick_map::active_inner_indices_iterator::InnerIndexIterator;
 
 /// A BitmapGroup contains Bitmaps for 32 ticks in ascending order.
 /// A single Bitmap contains data of 8 resting orders.

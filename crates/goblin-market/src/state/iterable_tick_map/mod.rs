@@ -1,10 +1,8 @@
 pub mod active_inner_indices_iterator;
-pub mod bitmap;
 pub mod bitmap_inserter;
 pub mod bitmap_iterator;
 pub mod bitmap_remover;
 pub mod constants;
-pub mod index_list;
 pub mod index_list_inserter;
 pub mod index_list_reader;
 pub mod index_list_remover;
@@ -14,12 +12,10 @@ pub mod resting_order_searcher_and_remover;
 pub mod write_index_list;
 
 pub use active_inner_indices_iterator::*;
-pub use bitmap::*;
 pub use bitmap_inserter::*;
 pub use bitmap_iterator::*;
 pub use bitmap_remover::*;
 pub use constants::*;
-pub use index_list::*;
 pub use index_list_inserter::*;
 pub use index_list_reader::*;
 pub use index_list_remover::*;

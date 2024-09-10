@@ -1,6 +1,4 @@
-use crate::state::{InnerIndex, OrderId, RestingOrderIndex, Side};
-
-use super::BitmapGroup;
+use crate::state::{bitmap_group::BitmapGroup, InnerIndex, OrderId, RestingOrderIndex, Side};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct GroupPosition {

@@ -1,9 +1,9 @@
 use crate::{
     quantities::Ticks,
-    state::{OuterIndex, Side, SlotStorage},
+    state::{bitmap_group::BitmapGroup, OuterIndex, Side, SlotStorage},
 };
 
-use super::{BitmapGroup, GroupPosition};
+use super::GroupPosition;
 
 /// Facilitates efficient batch deactivations in bitmap groups
 pub struct BitmapRemover {

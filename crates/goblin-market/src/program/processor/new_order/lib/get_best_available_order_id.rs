@@ -2,8 +2,8 @@ use crate::{
     program::OrderToInsert,
     quantities::Ticks,
     state::{
-        inner_indices, BitmapGroup, InnerIndex, MutableBitmap, OrderId, OrderPacket, OuterIndex,
-        Side, SlotStorage, TickIndices,
+        bitmap_group::{inner_indices, BitmapGroup, MutableBitmap},
+        InnerIndex, OrderId, OrderPacket, OuterIndex, Side, SlotStorage, TickIndices,
     },
 };
 
