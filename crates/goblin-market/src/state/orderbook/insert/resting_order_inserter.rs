@@ -1,6 +1,9 @@
 use crate::{
     program::GoblinResult,
-    state::{MarketState, OrderId, Side, SlotRestingOrder, SlotStorage},
+    state::{
+        order::{order_id::OrderId, resting_order::SlotRestingOrder},
+        MarketState, Side, SlotStorage,
+    },
 };
 
 use super::{bitmap_inserter::BitmapInserter, index_list_inserter::IndexListInserter};

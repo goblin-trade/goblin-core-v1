@@ -1,8 +1,8 @@
 use crate::{
     quantities::Ticks,
     state::{
-        read::bitmap_iterator::GroupPosition, InnerIndex, MarketState, OrderId, Side, SlotStorage,
-        TickIndices,
+        order::{group_position::GroupPosition, order_id::OrderId},
+        InnerIndex, MarketState, Side, SlotStorage, TickIndices,
     },
 };
 

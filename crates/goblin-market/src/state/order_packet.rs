@@ -1,12 +1,10 @@
 use stylus_sdk::alloy_primitives::Address;
 
 use crate::{
-    parameters::{
-        BASE_LOTS_PER_BASE_UNIT, BASE_LOT_SIZE, BASE_TOKEN, TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT,
-    },
-    program::{get_available_balance, get_available_base_lots, get_available_quote_lots},
+    parameters::{BASE_LOTS_PER_BASE_UNIT, TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT},
+    program::{get_available_base_lots, get_available_quote_lots},
     quantities::{BaseLots, QuoteLots, Ticks},
-    state::{SelfTradeBehavior, Side, TraderState},
+    state::{SelfTradeBehavior, Side},
     GoblinMarket,
 };
 

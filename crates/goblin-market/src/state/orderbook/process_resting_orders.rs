@@ -2,8 +2,11 @@ use crate::{
     quantities::Ticks,
     state::{
         bitmap_group::{inner_indices, BitmapGroup},
-        InnerIndex, ListKey, ListSlot, MarketState, OrderId, RestingOrder, RestingOrderIndex, Side,
-        SlotRestingOrder, SlotStorage,
+        order::{
+            order_id::OrderId,
+            resting_order::{RestingOrder, SlotRestingOrder},
+        },
+        InnerIndex, ListKey, ListSlot, MarketState, RestingOrderIndex, Side, SlotStorage,
     },
 };
 

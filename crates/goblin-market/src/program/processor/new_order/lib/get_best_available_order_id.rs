@@ -3,7 +3,8 @@ use crate::{
     quantities::Ticks,
     state::{
         bitmap_group::{inner_indices, BitmapGroup, MutableBitmap},
-        InnerIndex, OrderId, OrderPacket, OuterIndex, Side, SlotStorage, TickIndices,
+        order::order_id::OrderId,
+        InnerIndex, OrderPacket, OuterIndex, Side, SlotStorage, TickIndices,
     },
 };
 

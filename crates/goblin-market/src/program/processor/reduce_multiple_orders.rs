@@ -6,9 +6,14 @@ use crate::{
     quantities::{BaseAtomsRaw, BaseLots, QuoteAtomsRaw, QuoteLots, Ticks, WrapperU64},
     require,
     state::{
-        remove::resting_order_searcher_and_remover::RestingOrderSearcherAndRemover, AskOrderId,
-        BidOrderId, MarketState, MatchingEngineResponse, OrderId, ReduceOrderInnerResponse,
-        RestingOrderIndex, Side, SlotActions, SlotRestingOrder, SlotStorage, TraderState,
+        order::{
+            order_id::OrderId,
+            resting_order::{ReduceOrderInnerResponse, SlotRestingOrder},
+            sorted_order_id::{AskOrderId, BidOrderId},
+        },
+        remove::resting_order_searcher_and_remover::RestingOrderSearcherAndRemover,
+        MarketState, MatchingEngineResponse, RestingOrderIndex, Side, SlotActions, SlotStorage,
+        TraderState,
     },
     GoblinMarket,
 };

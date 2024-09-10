@@ -10,8 +10,9 @@ use crate::{
     quantities::{BaseAtomsRaw, BaseLots, QuoteAtomsRaw, QuoteLots, Ticks, WrapperU64, MAX_TICK},
     require,
     state::{
-        insert::resting_order_inserter::RestingOrderInserter, MarketState, OrderId, OrderPacket,
-        OrderPacketMetadata, Side, SlotActions, SlotRestingOrder, SlotStorage, TraderState,
+        insert::resting_order_inserter::RestingOrderInserter,
+        order::{order_id::OrderId, resting_order::SlotRestingOrder},
+        MarketState, OrderPacket, OrderPacketMetadata, Side, SlotActions, SlotStorage, TraderState,
     },
     GoblinMarket,
 };

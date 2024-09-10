@@ -1,4 +1,6 @@
-use crate::state::{bitmap_group::BitmapGroup, OrderId, OuterIndex, SlotStorage, TickIndices};
+use crate::state::{
+    bitmap_group::BitmapGroup, order::order_id::OrderId, OuterIndex, SlotStorage, TickIndices,
+};
 
 /// Facilitates efficient batch activations in bitmap groups
 pub struct BitmapInserter {
@@ -74,12 +76,12 @@ impl BitmapInserter {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     use crate::{
         quantities::{Ticks, WrapperU64},
-        state::{OrderId, RestingOrderIndex, SlotActions, SlotStorage},
+        state::{RestingOrderIndex, SlotActions},
     };
-
-    use super::*;
 
     #[test]
     fn insert_single_order() {

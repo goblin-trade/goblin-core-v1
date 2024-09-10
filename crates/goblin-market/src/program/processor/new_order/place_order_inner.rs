@@ -4,8 +4,8 @@ use crate::{
     parameters::{BASE_LOTS_PER_BASE_UNIT, TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT},
     quantities::{AdjustedQuoteLots, BaseLots, QuoteLots, Ticks, WrapperU64},
     state::{
-        InflightOrder, MarketState, MatchingEngineResponse, OrderPacket, OrderPacketMetadata, Side,
-        SlotRestingOrder, SlotStorage, TraderState,
+        order::resting_order::SlotRestingOrder, InflightOrder, MarketState, MatchingEngineResponse,
+        OrderPacket, OrderPacketMetadata, Side, SlotStorage, TraderState,
     },
 };
 

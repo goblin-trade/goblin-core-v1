@@ -5,104 +5,14 @@ use stylus_sdk::alloy_primitives::{address, Address};
 use crate::{
     parameters::{BASE_LOTS_PER_BASE_UNIT, TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT},
     program::{ExceedRestingOrderSize, GoblinError},
-    quantities::{BaseLots, QuoteLots, Ticks, WrapperU64},
+    quantities::{BaseLots, QuoteLots, WrapperU64},
     require,
-    state::{
-        slot_storage::SlotKey, MatchingEngineResponse, Side, SlotActions, SlotStorage, TraderState,
-        RESTING_ORDER_KEY_SEED,
-    },
+    state::{MatchingEngineResponse, Side, SlotActions, SlotKey, SlotStorage, TraderState},
 };
 
-use super::{read::bitmap_iterator::GroupPosition, MarketState, OuterIndex, RestingOrderIndex};
+use super::order_id::OrderId;
 
 const NULL_ADDRESS: Address = address!("0000000000000000000000000000000000000001");
-
-#[derive(Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
-pub struct OrderId {
-    /// Tick where order is placed
-    pub price_in_ticks: Ticks,
-
-    /// Resting order index between 0 to 7. A single tick can have at most 8 orders
-    pub resting_order_index: RestingOrderIndex,
-}
-
-impl SlotKey for OrderId {
-    fn get_key(&self) -> [u8; 32] {
-        let mut key = [0u8; 32];
-
-        key[0] = RESTING_ORDER_KEY_SEED;
-        key[1..9].copy_from_slice(&self.price_in_ticks.as_u64().to_be_bytes());
-        key[9] = self.resting_order_index.as_u8();
-
-        key
-    }
-}
-
-impl OrderId {
-    pub fn decode(bytes: &[u8; 32]) -> Self {
-        OrderId {
-            price_in_ticks: Ticks::new(u64::from_be_bytes(bytes[1..9].try_into().unwrap())),
-            resting_order_index: RestingOrderIndex::new(bytes[9]),
-        }
-    }
-
-    /// Find the side of an active resting order (not a new order being placed)
-    ///
-    /// An active bid cannot have a price more than the best bid price,
-    /// and an active ask cannot have a price lower than the best ask price.
-    ///
-    pub fn side(&self, market_state: &MarketState) -> Side {
-        if self.price_in_ticks >= market_state.best_ask_price {
-            Side::Ask
-        } else if self.price_in_ticks <= market_state.best_bid_price {
-            Side::Bid
-        } else {
-            // There are no active orders in the spread
-            // However there could be activated slots. Ensure that they are not tested here.
-            unreachable!()
-        }
-    }
-
-    pub fn from_group_position(group_position: GroupPosition, outer_index: OuterIndex) -> Self {
-        OrderId {
-            price_in_ticks: Ticks::from_indices(outer_index, group_position.inner_index),
-            resting_order_index: group_position.resting_order_index,
-        }
-    }
-}
-
-// Asks are sorted in ascending order of price
-#[derive(PartialEq, Eq, Debug, Clone, Copy, Ord, PartialOrd)]
-pub struct AskOrderId {
-    pub inner: OrderId,
-}
-
-// Bids are sorted in descending order of price
-#[derive(PartialEq, Eq, Debug, Clone, Copy)]
-pub struct BidOrderId {
-    pub inner: OrderId,
-}
-
-impl PartialOrd for BidOrderId {
-    fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Ord for BidOrderId {
-    fn cmp(&self, other: &Self) -> core::cmp::Ordering {
-        // Compare `Ticks` in descending order
-        other
-            .inner
-            .price_in_ticks
-            .cmp(&self.inner.price_in_ticks)
-            .then_with(|| {
-                self.inner
-                    .resting_order_index
-                    .cmp(&other.inner.resting_order_index)
-            })
-    }
-}
 
 /// Resting order on a 32 byte slot
 #[repr(C)]
@@ -417,10 +327,7 @@ pub struct ReduceOrderInnerResponse {
 
 #[cfg(test)]
 mod tests {
-    use super::SlotRestingOrder;
     use super::*;
-    use crate::quantities::{BaseLots, WrapperU64};
-    use stylus_sdk::alloy_primitives::{address, Address};
 
     #[test]
     fn highest_valid_base_lot_size() {
@@ -609,97 +516,5 @@ mod tests {
 
         assert_eq!(encoded_4[20], 0b1111_1111);
         assert_eq!(&encoded_4[21..28], [255u8; 7]);
-    }
-
-    #[test]
-    fn test_ask_order_id_sorting() {
-        let ask1 = AskOrderId {
-            inner: OrderId {
-                price_in_ticks: Ticks::new(100),
-                resting_order_index: RestingOrderIndex::new(1),
-            },
-        };
-        let ask2 = AskOrderId {
-            inner: OrderId {
-                price_in_ticks: Ticks::new(200),
-                resting_order_index: RestingOrderIndex::new(2),
-            },
-        };
-
-        assert!(ask1 < ask2);
-
-        let mut asks = vec![ask2, ask1];
-        asks.sort();
-
-        assert_eq!(asks, vec![ask1, ask2]);
-    }
-
-    #[test]
-    fn test_bid_order_id_sorting() {
-        let bid1 = BidOrderId {
-            inner: OrderId {
-                price_in_ticks: Ticks::new(100),
-                resting_order_index: RestingOrderIndex::new(1),
-            },
-        };
-        let bid2 = BidOrderId {
-            inner: OrderId {
-                price_in_ticks: Ticks::new(200),
-                resting_order_index: RestingOrderIndex::new(2),
-            },
-        };
-
-        assert!(bid2 < bid1);
-
-        let mut bids = vec![bid1, bid2];
-        bids.sort();
-
-        assert_eq!(bids, vec![bid2, bid1]);
-    }
-
-    #[test]
-    fn test_ask_order_id_resting_order_index_tiebreaker() {
-        let ask1 = AskOrderId {
-            inner: OrderId {
-                price_in_ticks: Ticks::new(100),
-                resting_order_index: RestingOrderIndex::new(1),
-            },
-        };
-        let ask2 = AskOrderId {
-            inner: OrderId {
-                price_in_ticks: Ticks::new(100),
-                resting_order_index: RestingOrderIndex::new(2),
-            },
-        };
-
-        assert!(ask1 < ask2);
-
-        let mut asks = vec![ask2, ask1];
-        asks.sort();
-
-        assert_eq!(asks, vec![ask1, ask2]);
-    }
-
-    #[test]
-    fn test_bid_order_id_resting_order_index_tiebreaker() {
-        let bid1 = BidOrderId {
-            inner: OrderId {
-                price_in_ticks: Ticks::new(200),
-                resting_order_index: RestingOrderIndex::new(1),
-            },
-        };
-        let bid2 = BidOrderId {
-            inner: OrderId {
-                price_in_ticks: Ticks::new(200),
-                resting_order_index: RestingOrderIndex::new(2),
-            },
-        };
-
-        assert!(bid1 < bid2);
-
-        let mut bids = vec![bid2, bid1];
-        bids.sort();
-
-        assert_eq!(bids, vec![bid1, bid2]);
     }
 }

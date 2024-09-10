@@ -1,7 +1,7 @@
 use crate::{
     quantities::Ticks,
     state::{
-        bitmap_group::BitmapGroup, read::bitmap_iterator::GroupPosition, InnerIndex, OuterIndex,
+        bitmap_group::BitmapGroup, order::group_position::GroupPosition, InnerIndex, OuterIndex,
         Side, SlotStorage,
     },
 };

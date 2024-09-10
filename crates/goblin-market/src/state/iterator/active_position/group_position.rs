@@ -1,101 +1,10 @@
-use crate::state::{bitmap_group::BitmapGroup, InnerIndex, OrderId, RestingOrderIndex, Side};
-
-// TODO move to same file having OrderId
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct GroupPosition {
-    pub inner_index: InnerIndex,
-    pub resting_order_index: RestingOrderIndex,
-}
-
-impl GroupPosition {
-    pub fn count(&self, side: Side) -> u8 {
-        let GroupPosition {
-            inner_index,
-            resting_order_index,
-        } = self;
-
-        // Resting orders always begin from left to right so the latter part is the same
-        match side {
-            Side::Bid => {
-                (31 - inner_index.as_usize() as u8) * 8 + (resting_order_index.as_u8() + 1)
-            }
-
-            Side::Ask => (inner_index.as_usize() as u8) * 8 + (resting_order_index.as_u8() + 1),
-        }
-    }
-}
-
-impl From<&OrderId> for GroupPosition {
-    fn from(value: &OrderId) -> Self {
-        GroupPosition {
-            inner_index: value.price_in_ticks.inner_index(),
-            resting_order_index: value.resting_order_index,
-        }
-    }
-}
-
-/// Efficient iterator to loop through coordinates (inner index, resting order index)
-/// of a bitmap group.
-///
-///
-pub struct GroupPositionIterator {
-    /// Side determines looping direction.
-    /// - Bids: Top to bottom (descending)
-    /// - Asks: Bottom to top (ascending)
-    pub side: Side,
-
-    /// Number of elements traversed
-    pub count: u8,
-
-    /// Whether iteration is complete.
-    /// Special property of iterators- we need a flag to know when to stop.
-    /// Using the value itself is not sufficient.
-    finished: bool,
-}
-
-impl GroupPositionIterator {
-    pub fn new(side: Side, count: u8) -> Self {
-        GroupPositionIterator {
-            side,
-            count,
-            finished: false,
-        }
-    }
-}
-impl Iterator for GroupPositionIterator {
-    type Item = GroupPosition;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.finished {
-            return None;
-        }
-
-        let bit_index = match self.side {
-            Side::Bid => 255 - self.count,
-            Side::Ask => self.count,
-        };
-
-        let inner_index = InnerIndex::new(bit_index as usize / 8);
-
-        let resting_order_index = RestingOrderIndex::new(match self.side {
-            Side::Bid => 7 - (bit_index % 8),
-            Side::Ask => bit_index % 8,
-        });
-
-        let result = Some(GroupPosition {
-            inner_index,
-            resting_order_index,
-        });
-
-        self.count = self.count.wrapping_add(1);
-        self.finished = self.count == 0;
-
-        result
-    }
-}
+use crate::state::{
+    bitmap_group::BitmapGroup, iterator::position::group_position::GroupPositionIterator,
+    order::group_position::GroupPosition, Side,
+};
 
 /// Iterator to find coordinates of active bits in a bitmap group
-pub struct BitmapIterator<'a> {
+pub struct ActiveGroupPositionIterator<'a> {
     /// The bitmap group to search
     bitmap_group: &'a BitmapGroup,
 
@@ -103,9 +12,9 @@ pub struct BitmapIterator<'a> {
     group_position_iterator: GroupPositionIterator,
 }
 
-impl<'a> BitmapIterator<'a> {
+impl<'a> ActiveGroupPositionIterator<'a> {
     pub fn new(bitmap_group: &'a BitmapGroup, side: Side, count: u8) -> Self {
-        BitmapIterator {
+        ActiveGroupPositionIterator {
             bitmap_group,
             group_position_iterator: GroupPositionIterator::new(side, count),
         }
@@ -120,14 +29,14 @@ impl<'a> BitmapIterator<'a> {
             .map(|group_position| group_position.count(side))
             .unwrap_or(0);
 
-        BitmapIterator {
+        ActiveGroupPositionIterator {
             bitmap_group,
             group_position_iterator: GroupPositionIterator::new(side, count),
         }
     }
 }
 
-impl<'a> Iterator for BitmapIterator<'a> {
+impl<'a> Iterator for ActiveGroupPositionIterator<'a> {
     type Item = GroupPosition;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -151,161 +60,11 @@ impl<'a> Iterator for BitmapIterator<'a> {
 
 #[cfg(test)]
 mod tests {
+    use crate::state::{InnerIndex, RestingOrderIndex};
+
     use super::*;
 
-    #[test]
-    fn test_get_indices_for_asks() {
-        let side = Side::Ask;
-        let count = 0;
-
-        let mut iterator = GroupPositionIterator::new(side, count);
-
-        for i in 0..=255 {
-            let bit_index = match side {
-                Side::Bid => 255 - 1 - i,
-                Side::Ask => i,
-            };
-
-            let expected_inner_index = InnerIndex::new(bit_index as usize / 8);
-            let expected_resting_order_index = RestingOrderIndex::new(bit_index % 8);
-
-            let GroupPosition {
-                inner_index,
-                resting_order_index,
-            } = iterator.next().unwrap();
-
-            println!(
-                "inner_index {:?}, resting_order_index {:?}",
-                inner_index, resting_order_index
-            );
-
-            assert_eq!(inner_index, expected_inner_index);
-            assert_eq!(resting_order_index, expected_resting_order_index);
-
-            if i == 255 {
-                assert_eq!(iterator.count, 0);
-            } else {
-                assert_eq!(iterator.count, i + 1);
-            }
-        }
-    }
-
-    #[test]
-    fn test_get_indices_for_asks_with_count_10() {
-        let side = Side::Ask;
-        let count = 10;
-
-        let mut iterator = GroupPositionIterator::new(side, count);
-
-        for i in 10..=255 {
-            let bit_index = match side {
-                Side::Bid => 255 - 1 - i,
-                Side::Ask => i,
-            };
-
-            let expected_inner_index = InnerIndex::new(bit_index as usize / 8);
-            let expected_resting_order_index = RestingOrderIndex::new(bit_index % 8);
-
-            let GroupPosition {
-                inner_index,
-                resting_order_index,
-            } = iterator.next().unwrap();
-
-            println!(
-                "inner_index {:?}, resting_order_index {:?}",
-                inner_index, resting_order_index
-            );
-
-            assert_eq!(inner_index, expected_inner_index);
-            assert_eq!(resting_order_index, expected_resting_order_index);
-
-            if i == 255 {
-                assert_eq!(iterator.count, 0);
-            } else {
-                assert_eq!(iterator.count, i + 1);
-            }
-        }
-    }
-
-    #[test]
-    fn test_get_indices_for_bids() {
-        let side = Side::Bid;
-        let count = 0;
-
-        let mut iterator = GroupPositionIterator::new(side, count);
-
-        for i in 0..=255 {
-            let bit_index = match side {
-                Side::Bid => 255 - i,
-                Side::Ask => i,
-            };
-
-            let expected_inner_index = InnerIndex::new(bit_index as usize / 8);
-            let expected_resting_order_index = RestingOrderIndex::new(match side {
-                Side::Bid => 7 - (bit_index % 8),
-                Side::Ask => bit_index % 8,
-            });
-
-            let GroupPosition {
-                inner_index,
-                resting_order_index,
-            } = iterator.next().unwrap();
-
-            println!(
-                "inner_index {:?}, resting_order_index {:?}",
-                inner_index, resting_order_index
-            );
-
-            assert_eq!(inner_index, expected_inner_index);
-            assert_eq!(resting_order_index, expected_resting_order_index);
-
-            if i == 255 {
-                assert_eq!(iterator.count, 0);
-            } else {
-                assert_eq!(iterator.count, i + 1);
-            }
-        }
-    }
-
-    #[test]
-    fn test_get_indices_for_bids_with_count_10() {
-        let side = Side::Bid;
-        let count = 10;
-
-        let mut iterator = GroupPositionIterator::new(side, count);
-
-        for i in 10..=255 {
-            let bit_index = match side {
-                Side::Bid => 255 - i,
-                Side::Ask => i,
-            };
-
-            let expected_inner_index = InnerIndex::new(bit_index as usize / 8);
-            let expected_resting_order_index = RestingOrderIndex::new(match side {
-                Side::Bid => 7 - (bit_index % 8),
-                Side::Ask => bit_index % 8,
-            });
-
-            let GroupPosition {
-                inner_index,
-                resting_order_index,
-            } = iterator.next().unwrap();
-
-            println!(
-                "inner_index {:?}, resting_order_index {:?}",
-                inner_index, resting_order_index
-            );
-
-            assert_eq!(inner_index, expected_inner_index);
-            assert_eq!(resting_order_index, expected_resting_order_index);
-
-            if i == 255 {
-                assert_eq!(iterator.count, 0);
-            } else {
-                assert_eq!(iterator.count, i + 1);
-            }
-        }
-    }
+    // BitmapGroupIterator tests start here
 
     #[test]
     fn test_bitmap_group_iterator_same_bitmap_no_last_position() {
@@ -315,7 +74,7 @@ mod tests {
         let side = Side::Ask;
         let count = 0;
 
-        let mut iterator = BitmapIterator::new(&bitmap_group, side, count);
+        let mut iterator = ActiveGroupPositionIterator::new(&bitmap_group, side, count);
         assert_eq!(
             iterator.next().unwrap(),
             GroupPosition {
@@ -353,7 +112,7 @@ mod tests {
         let count = last_position.count(side);
         assert_eq!(count, 1);
 
-        let mut iterator = BitmapIterator::new(&bitmap_group, side, count);
+        let mut iterator = ActiveGroupPositionIterator::new(&bitmap_group, side, count);
         assert_eq!(
             iterator.next().unwrap(),
             GroupPosition {
@@ -380,7 +139,7 @@ mod tests {
         let side = Side::Ask;
         let count = 0;
 
-        let mut iterator = BitmapIterator::new(&bitmap_group, side, count);
+        let mut iterator = ActiveGroupPositionIterator::new(&bitmap_group, side, count);
         assert_eq!(
             iterator.next().unwrap(),
             GroupPosition {
@@ -411,7 +170,7 @@ mod tests {
         };
         let count = last_position.count(side);
 
-        let mut iterator = BitmapIterator::new(&bitmap_group, side, count);
+        let mut iterator = ActiveGroupPositionIterator::new(&bitmap_group, side, count);
         assert_eq!(
             iterator.next().unwrap(),
             GroupPosition {
@@ -431,7 +190,7 @@ mod tests {
         let side = Side::Ask;
         let count = 0;
 
-        let mut iterator = BitmapIterator::new(&bitmap_group, side, count);
+        let mut iterator = ActiveGroupPositionIterator::new(&bitmap_group, side, count);
         assert_eq!(
             iterator.next().unwrap(),
             GroupPosition {
@@ -464,7 +223,7 @@ mod tests {
         let count = last_position.count(side);
         assert_eq!(count, 10);
 
-        let mut iterator = BitmapIterator::new(&bitmap_group, side, count);
+        let mut iterator = ActiveGroupPositionIterator::new(&bitmap_group, side, count);
         assert_eq!(
             iterator.next().unwrap(),
             GroupPosition {
@@ -483,7 +242,7 @@ mod tests {
         let side = Side::Bid;
         let count = 0;
 
-        let mut iterator = BitmapIterator::new(&bitmap_group, side, count);
+        let mut iterator = ActiveGroupPositionIterator::new(&bitmap_group, side, count);
         assert_eq!(
             iterator.next().unwrap(),
             GroupPosition {
@@ -521,7 +280,7 @@ mod tests {
         let count = last_position.count(side);
         assert_eq!(count, 1);
 
-        let mut iterator = BitmapIterator::new(&bitmap_group, side, count);
+        let mut iterator = ActiveGroupPositionIterator::new(&bitmap_group, side, count);
         assert_eq!(
             iterator.next().unwrap(),
             GroupPosition {
@@ -548,7 +307,7 @@ mod tests {
         let side = Side::Bid;
         let count = 0;
 
-        let mut iterator = BitmapIterator::new(&bitmap_group, side, count);
+        let mut iterator = ActiveGroupPositionIterator::new(&bitmap_group, side, count);
         assert_eq!(
             iterator.next().unwrap(),
             GroupPosition {
@@ -580,7 +339,7 @@ mod tests {
         let count = last_position.count(side);
         assert_eq!(count, 1);
 
-        let mut iterator = BitmapIterator::new(&bitmap_group, side, count);
+        let mut iterator = ActiveGroupPositionIterator::new(&bitmap_group, side, count);
         assert_eq!(
             iterator.next().unwrap(),
             GroupPosition {
@@ -600,7 +359,7 @@ mod tests {
         let side = Side::Bid;
         let count = 0;
 
-        let mut iterator = BitmapIterator::new(&bitmap_group, side, count);
+        let mut iterator = ActiveGroupPositionIterator::new(&bitmap_group, side, count);
         assert_eq!(
             iterator.next().unwrap(),
             GroupPosition {
@@ -633,7 +392,7 @@ mod tests {
         let count = last_position.count(side);
         assert_eq!(count, 10);
 
-        let mut iterator = BitmapIterator::new(&bitmap_group, side, count);
+        let mut iterator = ActiveGroupPositionIterator::new(&bitmap_group, side, count);
         assert_eq!(
             iterator.next().unwrap(),
             GroupPosition {
