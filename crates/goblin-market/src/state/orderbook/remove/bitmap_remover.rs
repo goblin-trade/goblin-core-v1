@@ -58,11 +58,11 @@ impl BitmapRemover {
         self.pending_write = true;
     }
 
-    // Get price of the best active order in the current bitmap group,
-    // beginning from a given position
-    //
-    // # Arguments
-    //
+    /// Get price of the best active order in the current bitmap group,
+    /// beginning from a given position
+    ///
+    /// # Arguments
+    ///
     /// * `starting_index` - Search beginning from this index (inclusive) if Some,
     /// else begin lookup from the edge of the bitmap group.
     ///
@@ -107,13 +107,3 @@ impl BitmapRemover {
         }
     }
 }
-
-// #[cfg(test)]
-// mod tests {
-//     use crate::{
-//         quantities::{Ticks, WrapperU64},
-//         state::{BitmapGroup, OrderId, RestingOrderIndex, Side, SlotActions, SlotStorage},
-//     };
-
-//     use super::*;
-// }

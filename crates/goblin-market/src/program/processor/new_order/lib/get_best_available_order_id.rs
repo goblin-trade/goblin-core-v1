@@ -2,9 +2,10 @@ use crate::{
     program::{types::order_packet::OrderPacket, OrderToInsert},
     quantities::Ticks,
     state::{
-        bitmap_group::{inner_indices, BitmapGroup, MutableBitmap},
+        bitmap_group::{BitmapGroup, MutableBitmap},
+        iterator::position::inner_index::InnerIndexIterator,
         order::order_id::OrderId,
-        InnerIndex, OuterIndex, Side, SlotStorage, TickIndices,
+        OuterIndex, Side, SlotStorage, TickIndices,
     },
 };
 
@@ -68,9 +69,11 @@ pub fn get_best_available_order_id(
             None
         };
 
+        let mut inner_index_iterator =
+            InnerIndexIterator::new_with_starting_index(side, previous_inner_index);
+
         // 2. Loop through bitmaps
-        for i in inner_indices(side, previous_inner_index) {
-            let current_inner_index = InnerIndex::new(i);
+        while let Some(current_inner_index) = inner_index_iterator.next() {
             let price_in_ticks = Ticks::from_indices(outer_index, current_inner_index);
 
             // 3. Loop through resting order IDs

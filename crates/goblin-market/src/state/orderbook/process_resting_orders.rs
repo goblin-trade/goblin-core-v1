@@ -1,12 +1,13 @@
 use crate::{
     quantities::Ticks,
     state::{
-        bitmap_group::{inner_indices, BitmapGroup},
+        bitmap_group::BitmapGroup,
+        iterator::position::inner_index::InnerIndexIterator,
         order::{
             order_id::OrderId,
             resting_order::{RestingOrder, SlotRestingOrder},
         },
-        InnerIndex, ListKey, ListSlot, MarketState, RestingOrderIndex, Side, SlotStorage,
+        ListKey, ListSlot, MarketState, RestingOrderIndex, Side, SlotStorage,
     },
 };
 
@@ -49,9 +50,9 @@ pub fn process_resting_orders(
             let mut pending_bitmap_group_write = false;
 
             // 3. Loop through bitmaps
-            // TODO replace with iterator
-            for i in inner_indices(side, previous_inner_index) {
-                let inner_index = InnerIndex::new(i);
+            let mut inner_index_iterator =
+                InnerIndexIterator::new_with_starting_index(side, previous_inner_index);
+            while let Some(inner_index) = inner_index_iterator.next() {
                 price_in_ticks = Ticks::from_indices(outer_index, inner_index);
                 let mut bitmap = bitmap_group.get_bitmap_mut(&inner_index);
 

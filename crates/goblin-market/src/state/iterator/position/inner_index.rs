@@ -1,7 +1,8 @@
 use crate::state::{InnerIndex, Side};
 
 /// Iterates through consecutive values of InnerIndex, i.e.
-/// 0 to 31 for Asks and 31 to 0 for bids (inclusive).
+/// 0 to 31 for Asks and 31 to 0 for bids (inclusive). The traversal
+/// direction is away from centre of the book.
 ///
 /// Optionally provides a way to iterate beginning from a given inner index.
 pub struct InnerIndexIterator {

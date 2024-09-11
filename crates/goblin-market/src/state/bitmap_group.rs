@@ -1,10 +1,8 @@
+use super::iterator::position::inner_index::InnerIndexIterator;
 use crate::state::{
     slot_storage::{SlotActions, SlotKey, SlotStorage},
     InnerIndex, OuterIndex, RestingOrderIndex, Side,
 };
-use alloc::boxed::Box;
-
-use super::iterator::position::inner_index::InnerIndexIterator;
 
 /// A BitmapGroup contains Bitmaps for 32 ticks in ascending order.
 /// A single Bitmap contains data of 8 resting orders.
@@ -67,7 +65,7 @@ impl BitmapGroup {
         let mut inner_index_iterator =
             InnerIndexIterator::new_with_starting_index(side, starting_index);
 
-        // Should I write iterator for active inner indices?
+        // TODO iterator for active inner indices
         while let Some(inner_index) = inner_index_iterator.next() {
             if self.inner_index_is_active(inner_index) {
                 return Some(inner_index);
@@ -90,36 +88,6 @@ impl BitmapGroup {
             1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0,
         ];
-    }
-}
-
-/// Return an iterator to traverse bitmaps in a bitmap group
-///
-/// Traversal is away from the centre. Move from top to bottom for bids (high to low) and from
-/// bottom to top (low to high) for asks.
-///
-/// TODO replace with an InnerIndexIterator
-///
-/// # Arguments
-///
-/// * `side`
-/// * `previous_inner_index` - Begin traversal starting with this index (inclusive)
-///
-pub fn inner_indices(
-    side: Side,
-    previous_inner_index: Option<InnerIndex>,
-) -> Box<dyn Iterator<Item = usize>> {
-    match side {
-        // Top to bottom for bids
-        Side::Bid => {
-            let highest_index = previous_inner_index.map(|i| i.as_usize()).unwrap_or(31);
-            return Box::new((0..=highest_index).rev());
-        }
-        // Bottom to top for asks
-        Side::Ask => {
-            let lowest_index = previous_inner_index.map(|i| i.as_usize()).unwrap_or(0);
-            return Box::new(lowest_index..=31);
-        }
     }
 }
 
