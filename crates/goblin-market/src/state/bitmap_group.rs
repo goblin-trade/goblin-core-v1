@@ -1,4 +1,4 @@
-use super::iterator::position::inner_index::InnerIndexIterator;
+use super::iterator::active_position::inner_index::ActiveInnerIndexIterator;
 use crate::state::{
     slot_storage::{SlotActions, SlotKey, SlotStorage},
     InnerIndex, OuterIndex, RestingOrderIndex, Side,
@@ -62,16 +62,8 @@ impl BitmapGroup {
         side: Side,
         starting_index: Option<InnerIndex>,
     ) -> Option<InnerIndex> {
-        let mut inner_index_iterator =
-            InnerIndexIterator::new_with_starting_index(side, starting_index);
-
-        // TODO iterator for active inner indices
-        while let Some(inner_index) = inner_index_iterator.next() {
-            if self.inner_index_is_active(inner_index) {
-                return Some(inner_index);
-            }
-        }
-        None
+        let mut iterator = ActiveInnerIndexIterator::new(self, side, starting_index);
+        iterator.next()
     }
 
     /// Write to slot
