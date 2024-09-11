@@ -1,7 +1,9 @@
 use crate::{
     program::GoblinResult,
     state::{
-        order::{order_id::OrderId, resting_order::SlotRestingOrder},
+        order::{
+            group_position::GroupPosition, order_id::OrderId, resting_order::SlotRestingOrder,
+        },
         MarketState, Side, SlotStorage,
     },
 };
@@ -37,6 +39,25 @@ impl RestingOrderInserter {
         self.index_list_inserter.side()
     }
 
+    /// Activate bit at the given order ID
+    ///
+    /// # Arguments
+    ///
+    /// * `slot_storage`
+    /// * `order_id`
+    ///
+    pub fn activate_order_id(&mut self, slot_storage: &mut SlotStorage, order_id: &OrderId) {
+        // Activate outer index in index list
+        let outer_index = order_id.price_in_ticks.outer_index();
+        let bitmap_group_is_empty = self.index_list_inserter.prepare(slot_storage, outer_index);
+
+        // Active group position in bitmap
+        self.bitmap_inserter
+            .load_outer_index(slot_storage, outer_index, bitmap_group_is_empty);
+        self.bitmap_inserter
+            .activate_in_current(GroupPosition::from(order_id));
+    }
+
     /// Write a resting order to slot and prepare for insertion of its outer index
     /// in the index list
     ///
@@ -70,14 +91,8 @@ impl RestingOrderInserter {
         // 2. Write resting order to slot
         resting_order.write_to_slot(slot_storage, &order_id)?;
 
-        // 3. Try to insert outer index in list
-        // Find whether it was inserted or whether it was already present
-        let outer_index = order_id.price_in_ticks.outer_index();
-        let needs_insertion = self.index_list_inserter.prepare(slot_storage, outer_index);
-
-        // 4. Update bitmap
-        self.bitmap_inserter
-            .activate(slot_storage, order_id, needs_insertion);
+        // 3. Activate order ID
+        self.activate_order_id(slot_storage, order_id);
 
         Ok(())
     }
@@ -96,7 +111,7 @@ impl RestingOrderInserter {
         slot_storage: &mut SlotStorage,
         market_state: &mut MarketState,
     ) {
-        self.bitmap_inserter.write_last_bitmap_group(slot_storage);
+        self.bitmap_inserter.flush_bitmap_group(slot_storage);
 
         market_state.set_outer_index_length(
             self.side(),

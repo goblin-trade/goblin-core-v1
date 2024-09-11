@@ -1,5 +1,5 @@
 use crate::state::{
-    bitmap_group::BitmapGroup, order::order_id::OrderId, OuterIndex, SlotStorage, TickIndices,
+    bitmap_group::BitmapGroup, order::group_position::GroupPosition, OuterIndex, SlotStorage,
 };
 
 /// Facilitates efficient batch activations in bitmap groups
@@ -21,56 +21,52 @@ impl BitmapInserter {
         }
     }
 
+    /// Activate an order in the current bitmap group at the given GroupPosition
+    ///
+    /// Externally ensure that load_outer_index() was called first so that
+    /// `last_outer_index` is not None
+    ///
+    pub fn activate_in_current(&mut self, group_position: GroupPosition) {
+        let mut bitmap = self
+            .bitmap_group
+            .get_bitmap_mut(&group_position.inner_index);
+        bitmap.activate(&group_position.resting_order_index);
+    }
+
+    /// Loads a new bitmap group for the new outer index. The previous group is flushed.
+    /// No-op if outer index does not change
+    ///
+    /// Externally ensure that we always move away from the centre
+    ///
+    pub fn load_outer_index(
+        &mut self,
+        slot_storage: &mut SlotStorage,
+        outer_index: OuterIndex,
+        bitmap_group_is_empty: bool,
+    ) {
+        if self.last_outer_index == Some(outer_index) {
+            return;
+        }
+        // Outer index changed. Flush the old bitmap group to slot.
+        self.flush_bitmap_group(slot_storage);
+
+        // Update outer index and load new bitmap group from slot
+        self.last_outer_index = Some(outer_index);
+
+        self.bitmap_group = if bitmap_group_is_empty {
+            BitmapGroup::default()
+        } else {
+            BitmapGroup::new_from_slot(slot_storage, outer_index)
+        };
+    }
+
     /// Write cached bitmap group to slot
     /// This should be called when the outer index changes during looping,
     /// and when the loop is complete
-    pub fn write_last_bitmap_group(&self, slot_storage: &mut SlotStorage) {
+    pub fn flush_bitmap_group(&self, slot_storage: &mut SlotStorage) {
         if let Some(last_index) = self.last_outer_index {
             self.bitmap_group.write_to_slot(slot_storage, &last_index);
         }
-    }
-
-    /// Turn on a bit at a given (outer index, inner index, resting order index)
-    /// If the outer index changes then the previous bitmap is overwritten
-    ///
-    /// write_last_bitmap_group() must be called after activations are complete to write
-    /// the last bitmap group to slot.
-    ///
-    /// # Arguments
-    ///
-    /// * `slot_storage`
-    /// * `order_id`
-    /// * `new_group` - Whether the group is empty. If true we can start with a blank
-    /// bitmap group instead of wasting gas on SLOAD.
-    ///
-    pub fn activate(
-        &mut self,
-        slot_storage: &mut SlotStorage,
-        order_id: &OrderId,
-        bitmap_group_is_empty: bool,
-    ) {
-        let TickIndices {
-            outer_index,
-            inner_index,
-        } = order_id.price_in_ticks.to_indices();
-
-        // If last outer index has not changed, re-use the cached bitmap group.
-        // Else load anew and update the cache.
-        if self.last_outer_index != Some(outer_index) {
-            // Outer index changed. Flush the old bitmap group to slot.
-            self.write_last_bitmap_group(slot_storage);
-
-            self.bitmap_group = if bitmap_group_is_empty {
-                BitmapGroup::default()
-            } else {
-                BitmapGroup::new_from_slot(slot_storage, outer_index)
-            };
-
-            self.last_outer_index = Some(outer_index);
-        }
-
-        let mut bitmap = self.bitmap_group.get_bitmap_mut(&inner_index);
-        bitmap.activate(&order_id.resting_order_index);
     }
 }
 
@@ -80,8 +76,24 @@ mod tests {
 
     use crate::{
         quantities::{Ticks, WrapperU64},
-        state::{RestingOrderIndex, SlotActions},
+        state::{order::order_id::OrderId, RestingOrderIndex, SlotActions},
     };
+
+    /// Activates an order ID. If the outer index changes, the previous bitmap group is flushed
+    ///
+    /// Identical to `RestingOrderInserter::activate_order_id()`. It is replicated here
+    /// for isolated testing.
+    ///
+    fn activate_order_id(
+        bitmap_inserter: &mut BitmapInserter,
+        slot_storage: &mut SlotStorage,
+        order_id: &OrderId,
+        bitmap_group_is_empty: bool,
+    ) {
+        let outer_index = order_id.price_in_ticks.outer_index();
+        bitmap_inserter.load_outer_index(slot_storage, outer_index, bitmap_group_is_empty);
+        bitmap_inserter.activate_in_current(GroupPosition::from(order_id));
+    }
 
     #[test]
     fn insert_single_order() {
@@ -98,7 +110,12 @@ mod tests {
         let outer_index = order_id.price_in_ticks.outer_index();
 
         // 1. Activate and check
-        inserter.activate(slot_storage, &order_id, bitmap_group_is_empty);
+        activate_order_id(
+            &mut inserter,
+            slot_storage,
+            &order_id,
+            bitmap_group_is_empty,
+        );
         assert_eq!(outer_index, inserter.last_outer_index.unwrap());
 
         let mut expected_bitmap_group = BitmapGroup::default();
@@ -109,7 +126,7 @@ mod tests {
         assert_eq!(BitmapGroup::default(), read_bitmap_group);
 
         // 2. Write to slot and check
-        inserter.write_last_bitmap_group(slot_storage);
+        inserter.flush_bitmap_group(slot_storage);
         read_bitmap_group = BitmapGroup::new_from_slot(slot_storage, outer_index);
         assert_eq!(expected_bitmap_group, read_bitmap_group);
     }
@@ -133,8 +150,18 @@ mod tests {
         let outer_index = order_id_0.price_in_ticks.outer_index();
 
         // 1. Activate
-        inserter.activate(slot_storage, &order_id_0, bitmap_group_is_empty);
-        inserter.activate(slot_storage, &order_id_1, bitmap_group_is_empty);
+        activate_order_id(
+            &mut inserter,
+            slot_storage,
+            &order_id_0,
+            bitmap_group_is_empty,
+        );
+        activate_order_id(
+            &mut inserter,
+            slot_storage,
+            &order_id_1,
+            bitmap_group_is_empty,
+        );
 
         assert_eq!(outer_index, inserter.last_outer_index.unwrap());
 
@@ -146,7 +173,7 @@ mod tests {
         assert_eq!(BitmapGroup::default(), read_bitmap_group);
 
         // 2. Write to slot and check
-        inserter.write_last_bitmap_group(slot_storage);
+        inserter.flush_bitmap_group(slot_storage);
         read_bitmap_group = BitmapGroup::new_from_slot(slot_storage, outer_index);
         assert_eq!(expected_bitmap_group, read_bitmap_group);
     }
@@ -170,8 +197,18 @@ mod tests {
         let outer_index = order_id_0.price_in_ticks.outer_index();
 
         // 1. Activate
-        inserter.activate(slot_storage, &order_id_0, bitmap_group_is_empty);
-        inserter.activate(slot_storage, &order_id_1, bitmap_group_is_empty);
+        activate_order_id(
+            &mut inserter,
+            slot_storage,
+            &order_id_0,
+            bitmap_group_is_empty,
+        );
+        activate_order_id(
+            &mut inserter,
+            slot_storage,
+            &order_id_1,
+            bitmap_group_is_empty,
+        );
 
         assert_eq!(outer_index, inserter.last_outer_index.unwrap());
 
@@ -184,7 +221,7 @@ mod tests {
         assert_eq!(BitmapGroup::default(), read_bitmap_group);
 
         // 2. Write to slot and check
-        inserter.write_last_bitmap_group(slot_storage);
+        inserter.flush_bitmap_group(slot_storage);
         read_bitmap_group = BitmapGroup::new_from_slot(slot_storage, outer_index);
         assert_eq!(expected_bitmap_group, read_bitmap_group);
     }
@@ -209,8 +246,18 @@ mod tests {
         let outer_index_1 = order_id_1.price_in_ticks.outer_index();
 
         // 1. Activate
-        inserter.activate(slot_storage, &order_id_0, bitmap_group_is_empty);
-        inserter.activate(slot_storage, &order_id_1, bitmap_group_is_empty); // this will write first group
+        activate_order_id(
+            &mut inserter,
+            slot_storage,
+            &order_id_0,
+            bitmap_group_is_empty,
+        );
+        activate_order_id(
+            &mut inserter,
+            slot_storage,
+            &order_id_1,
+            bitmap_group_is_empty,
+        ); // this will write first group
 
         let mut expected_bitmap_group_0 = BitmapGroup::default();
         expected_bitmap_group_0.inner[0] = 0b00000001;
@@ -227,7 +274,7 @@ mod tests {
         assert_eq!(expected_bitmap_group_1, inserter.bitmap_group);
 
         // 2. Write cache
-        inserter.write_last_bitmap_group(slot_storage);
+        inserter.flush_bitmap_group(slot_storage);
         read_bitmap_group_1 = BitmapGroup::new_from_slot(slot_storage, outer_index_1);
         assert_eq!(expected_bitmap_group_1, read_bitmap_group_1);
     }

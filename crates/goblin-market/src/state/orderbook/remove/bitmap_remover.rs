@@ -37,7 +37,7 @@ impl BitmapRemover {
 
     /// Whether a resting order is present at given (inner_index, resting_order_index)
     ///
-    /// Externally ensure that set_outer_index() was called first so that
+    /// Externally ensure that load_outer_index() was called first so that
     /// `last_outer_index` is not None
     ///
     pub fn order_present(&self, group_position: GroupPosition) -> bool {
@@ -47,7 +47,7 @@ impl BitmapRemover {
 
     /// Deactivate an order in the current bitmap group
     ///
-    /// Externally ensure that set_outer_index() was called first so that
+    /// Externally ensure that load_outer_index() was called first so that
     /// `last_outer_index` is not None
     ///
     pub fn deactivate_in_current(&mut self, group_position: GroupPosition) {
@@ -81,7 +81,10 @@ impl BitmapRemover {
     /// Loads a new bitmap group for the new outer index. The previous group is flushed.
     /// No-op if outer index does not change
     ///
-    /// Externally ensure that we always move away from the centre
+    /// # Externally ensure that
+    ///
+    /// * we always move away from the centre
+    /// * outer_index is active and non-empty
     ///
     pub fn load_outer_index(&mut self, slot_storage: &mut SlotStorage, outer_index: OuterIndex) {
         if self.last_outer_index == Some(outer_index) {
