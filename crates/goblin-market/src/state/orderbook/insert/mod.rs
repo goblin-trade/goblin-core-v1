@@ -1,3 +1,3 @@
-pub mod bitmap_inserter;
-pub mod index_list_inserter;
-pub mod resting_order_inserter;
+pub mod group_position;
+pub mod order_id;
+pub mod outer_index;

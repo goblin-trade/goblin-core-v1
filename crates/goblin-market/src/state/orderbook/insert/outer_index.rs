@@ -1,5 +1,5 @@
 use crate::state::{
-    read::index_list_reader::IndexListReader, write_index_list::write_index_list, OuterIndex, Side,
+    read::outer_index::OuterIndexReader, write_index_list::write_index_list, OuterIndex, Side,
     SlotStorage,
 };
 use alloc::vec::Vec;
@@ -10,9 +10,9 @@ use alloc::vec::Vec;
 /// - insert bids in descending order
 /// - insert asks in ascending order
 ///
-pub struct IndexListInserter {
+pub struct OuterIndexInserter {
     /// Iterator to read saved values from list
-    pub index_list_reader: IndexListReader,
+    pub index_list_reader: OuterIndexReader,
 
     /// List of cached outer indices which will be written back to slots.
     /// Contains values to be inserted and values popped from index list reader
@@ -20,10 +20,10 @@ pub struct IndexListInserter {
     pub cache: Vec<OuterIndex>,
 }
 
-impl IndexListInserter {
+impl OuterIndexInserter {
     pub fn new(side: Side, outer_index_count: u16) -> Self {
         Self {
-            index_list_reader: IndexListReader::new(side, outer_index_count),
+            index_list_reader: OuterIndexReader::new(side, outer_index_count),
             cache: Vec::new(),
         }
     }
@@ -101,7 +101,7 @@ mod tests {
     #[test]
     fn test_prepare_bid_empty_list() {
         let slot_storage = &mut SlotStorage::new();
-        let mut insertion = IndexListInserter::new(Side::Bid, 0);
+        let mut insertion = OuterIndexInserter::new(Side::Bid, 0);
 
         // Insert into an empty list
         assert!(insertion.prepare(slot_storage, OuterIndex::new(100)));
@@ -149,7 +149,7 @@ mod tests {
             );
         }
 
-        let mut insertion = IndexListInserter::new(Side::Bid, 1);
+        let mut insertion = OuterIndexInserter::new(Side::Bid, 1);
 
         // Attempt to insert the same index
         assert!(!insertion.prepare(slot_storage, OuterIndex::new(100)));
@@ -173,7 +173,7 @@ mod tests {
             );
         }
 
-        let mut insertion = IndexListInserter::new(Side::Bid, 1);
+        let mut insertion = OuterIndexInserter::new(Side::Bid, 1);
 
         // Insert an index closer to the center
         assert!(insertion.prepare(slot_storage, OuterIndex::new(150)));
@@ -200,7 +200,7 @@ mod tests {
             );
         }
 
-        let mut insertion = IndexListInserter::new(Side::Bid, 1);
+        let mut insertion = OuterIndexInserter::new(Side::Bid, 1);
 
         // Insert an index further away from the center
         assert!(insertion.prepare(slot_storage, OuterIndex::new(50)));
@@ -213,7 +213,7 @@ mod tests {
     #[test]
     fn test_prepare_ask_empty_list() {
         let slot_storage = &mut SlotStorage::new();
-        let mut insertion = IndexListInserter::new(Side::Ask, 0);
+        let mut insertion = OuterIndexInserter::new(Side::Ask, 0);
 
         // Insert into an empty list
         assert!(insertion.prepare(slot_storage, OuterIndex::new(100)));
@@ -254,7 +254,7 @@ mod tests {
             list_slot.write_to_slot(slot_storage, &ListKey { index: 0, side });
         }
 
-        let mut insertion = IndexListInserter::new(side, 1);
+        let mut insertion = OuterIndexInserter::new(side, 1);
 
         // Attempt to insert the same index
         assert!(!insertion.prepare(slot_storage, OuterIndex::new(100)));
@@ -273,7 +273,7 @@ mod tests {
             list_slot.write_to_slot(slot_storage, &ListKey { index: 0, side });
         }
 
-        let mut insertion = IndexListInserter::new(side, 1);
+        let mut insertion = OuterIndexInserter::new(side, 1);
 
         // Insert an index closer to the center
         assert!(insertion.prepare(slot_storage, OuterIndex::new(50)));
@@ -295,7 +295,7 @@ mod tests {
             list_slot.write_to_slot(slot_storage, &ListKey { index: 0, side });
         }
 
-        let mut insertion = IndexListInserter::new(side, 1);
+        let mut insertion = OuterIndexInserter::new(side, 1);
 
         // Insert an index further away from the center
         assert!(insertion.prepare(slot_storage, OuterIndex::new(150)));

@@ -11,7 +11,7 @@ use crate::{
     quantities::{BaseAtomsRaw, BaseLots, QuoteAtomsRaw, QuoteLots, Ticks, WrapperU64, MAX_TICK},
     require,
     state::{
-        insert::resting_order_inserter::RestingOrderInserter,
+        insert::order_id::OrderIdInserter,
         order::{order_id::OrderId, resting_order::SlotRestingOrder},
         MarketState, Side, SlotActions, SlotStorage, TraderState,
     },
@@ -85,7 +85,7 @@ pub fn place_multiple_new_orders(
     ]
     .iter()
     {
-        let mut resting_order_inserter = RestingOrderInserter::new(*side, *outer_index_count);
+        let mut resting_order_inserter = OrderIdInserter::new(*side, *outer_index_count);
 
         for order_bytes in *book_orders {
             let condensed_order = CondensedOrder::from(order_bytes);
@@ -303,7 +303,7 @@ pub fn process_new_order(
         }) = order_to_insert
         {
             let mut resting_order_inserter =
-                RestingOrderInserter::new(side, market_state.outer_index_count(side));
+                OrderIdInserter::new(side, market_state.outer_index_count(side));
             resting_order_inserter.insert_resting_order(
                 slot_storage,
                 &mut market_state,

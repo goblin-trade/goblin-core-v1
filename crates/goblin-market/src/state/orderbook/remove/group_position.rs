@@ -6,8 +6,8 @@ use crate::{
     },
 };
 
-/// Facilitates efficient batch deactivations in bitmap groups
-pub struct BitmapRemover {
+/// Facilitates efficient batch deactivations at GroupPositions
+pub struct GroupPositionRemover {
     /// Whether for bids or asks
     /// Traverse upwards (ascending) for asks and downwards (descending) for bids
     pub side: Side,
@@ -25,9 +25,9 @@ pub struct BitmapRemover {
     pub pending_write: bool,
 }
 
-impl BitmapRemover {
+impl GroupPositionRemover {
     pub fn new(side: Side) -> Self {
-        BitmapRemover {
+        GroupPositionRemover {
             side,
             bitmap_group: BitmapGroup::default(),
             last_outer_index: None,

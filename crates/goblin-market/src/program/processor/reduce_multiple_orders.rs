@@ -14,7 +14,7 @@ use crate::{
             resting_order::{ReduceOrderInnerResponse, SlotRestingOrder},
             sorted_order_id::{AskOrderId, BidOrderId},
         },
-        remove::resting_order_searcher_and_remover::RestingOrderSearcherAndRemover,
+        remove::order_id::OrderIdRemover,
         MarketState, RestingOrderIndex, Side, SlotActions, SlotStorage, TraderState,
     },
     GoblinMarket,
@@ -200,21 +200,21 @@ pub fn reduce_multiple_orders_inner(
 struct RemoveMultipleProcessor {
     last_bid_order_id: Option<BidOrderId>,
     last_ask_order_id: Option<AskOrderId>,
-    bid_bitmap_reader: RestingOrderSearcherAndRemover,
-    ask_bitmap_reader: RestingOrderSearcherAndRemover,
+    bid_bitmap_reader: OrderIdRemover,
+    ask_bitmap_reader: OrderIdRemover,
 }
 
 impl RemoveMultipleProcessor {
     pub fn new(bids_outer_indices: u16, asks_outer_indices: u16) -> Self {
         RemoveMultipleProcessor {
-            bid_bitmap_reader: RestingOrderSearcherAndRemover::new(bids_outer_indices, Side::Bid),
-            ask_bitmap_reader: RestingOrderSearcherAndRemover::new(asks_outer_indices, Side::Ask),
+            bid_bitmap_reader: OrderIdRemover::new(bids_outer_indices, Side::Bid),
+            ask_bitmap_reader: OrderIdRemover::new(asks_outer_indices, Side::Ask),
             last_bid_order_id: None,
             last_ask_order_id: None,
         }
     }
 
-    fn reader(&mut self, side: Side) -> &mut RestingOrderSearcherAndRemover {
+    fn reader(&mut self, side: Side) -> &mut OrderIdRemover {
         match side {
             Side::Bid => &mut self.bid_bitmap_reader,
             Side::Ask => &mut self.ask_bitmap_reader,

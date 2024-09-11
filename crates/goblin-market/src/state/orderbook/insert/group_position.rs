@@ -3,7 +3,7 @@ use crate::state::{
 };
 
 /// Facilitates efficient batch activations in bitmap groups
-pub struct BitmapInserter {
+pub struct GroupPositionInserter {
     /// The current bitmap group pending a write. This allows us to perform multiple
     /// updates in a bitmap group with a single slot load. This value is written to slot
     /// when a new outer index is encountered.
@@ -13,9 +13,9 @@ pub struct BitmapInserter {
     pub last_outer_index: Option<OuterIndex>,
 }
 
-impl BitmapInserter {
+impl GroupPositionInserter {
     pub fn new() -> Self {
-        BitmapInserter {
+        GroupPositionInserter {
             bitmap_group: BitmapGroup::default(),
             last_outer_index: None,
         }
@@ -85,7 +85,7 @@ mod tests {
     /// for isolated testing.
     ///
     fn activate_order_id(
-        bitmap_inserter: &mut BitmapInserter,
+        bitmap_inserter: &mut GroupPositionInserter,
         slot_storage: &mut SlotStorage,
         order_id: &OrderId,
         bitmap_group_is_empty: bool,
@@ -100,7 +100,7 @@ mod tests {
         let slot_storage = &mut SlotStorage::new();
         let bitmap_group_is_empty = true;
 
-        let mut inserter = BitmapInserter::new();
+        let mut inserter = GroupPositionInserter::new();
 
         let order_id = OrderId {
             price_in_ticks: Ticks::ZERO,
@@ -136,7 +136,7 @@ mod tests {
         let slot_storage = &mut SlotStorage::new();
         let bitmap_group_is_empty = true;
 
-        let mut inserter = BitmapInserter::new();
+        let mut inserter = GroupPositionInserter::new();
 
         let order_id_0 = OrderId {
             price_in_ticks: Ticks::ZERO,
@@ -183,7 +183,7 @@ mod tests {
         let slot_storage = &mut SlotStorage::new();
         let bitmap_group_is_empty = true;
 
-        let mut inserter = BitmapInserter::new();
+        let mut inserter = GroupPositionInserter::new();
 
         let order_id_0 = OrderId {
             price_in_ticks: Ticks::ZERO,
@@ -231,7 +231,7 @@ mod tests {
         let slot_storage = &mut SlotStorage::new();
         let bitmap_group_is_empty = true;
 
-        let mut inserter = BitmapInserter::new();
+        let mut inserter = GroupPositionInserter::new();
 
         let order_id_0 = OrderId {
             price_in_ticks: Ticks::ZERO,

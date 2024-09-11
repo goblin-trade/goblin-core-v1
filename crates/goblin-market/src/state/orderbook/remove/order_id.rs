@@ -6,7 +6,7 @@ use crate::{
     },
 };
 
-use super::{bitmap_remover::BitmapRemover, index_list_remover::IndexListRemover};
+use super::{group_position::GroupPositionRemover, outer_index::OuterIndexRemover};
 
 /// Removes resting orders from slot. The resting order itself is not written, instead
 /// we update the bitmaps and index list to mark the order as cleared.
@@ -17,19 +17,19 @@ use super::{bitmap_remover::BitmapRemover, index_list_remover::IndexListRemover}
 /// 2. Index list- Remove outer index if the corresponding bitmap group is cleared
 /// 3. Market state- Update the outer index count and best price
 ///
-pub struct RestingOrderSearcherAndRemover {
+pub struct OrderIdRemover {
     /// To turn off bits in bitmap groups
-    pub bitmap_remover: BitmapRemover,
+    pub bitmap_remover: GroupPositionRemover,
 
     /// To lookup and remove outer indices
-    pub index_list_remover: IndexListRemover,
+    pub index_list_remover: OuterIndexRemover,
 }
 
-impl RestingOrderSearcherAndRemover {
+impl OrderIdRemover {
     pub fn new(outer_index_count: u16, side: Side) -> Self {
-        RestingOrderSearcherAndRemover {
-            bitmap_remover: BitmapRemover::new(side),
-            index_list_remover: IndexListRemover::new(side, outer_index_count),
+        OrderIdRemover {
+            bitmap_remover: GroupPositionRemover::new(side),
+            index_list_remover: OuterIndexRemover::new(side, outer_index_count),
         }
     }
 

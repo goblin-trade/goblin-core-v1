@@ -1,3 +1,3 @@
-pub mod bitmap_remover;
-pub mod index_list_remover;
-pub mod resting_order_searcher_and_remover;
+pub mod group_position;
+pub mod order_id;
+pub mod outer_index;

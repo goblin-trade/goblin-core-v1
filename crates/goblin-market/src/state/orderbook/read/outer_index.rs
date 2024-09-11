@@ -7,7 +7,7 @@ use crate::state::{ListKey, ListSlot, OuterIndex, Side, SlotStorage};
 /// - bids are in ascending order
 /// - asks are in descending order
 ///
-pub struct IndexListReader {
+pub struct OuterIndexReader {
     /// Whether bid or ask. There are two lists, one for bids and one for asks.
     pub side: Side,
 
@@ -18,7 +18,7 @@ pub struct IndexListReader {
     pub list_slot: Option<ListSlot>,
 }
 
-impl IndexListReader {
+impl OuterIndexReader {
     pub fn new(side: Side, outer_index_count: u16) -> Self {
         Self {
             outer_index_count,
@@ -46,6 +46,7 @@ impl IndexListReader {
             return None;
         }
 
+        // TODO dedicated iterator
         let slot_index = self.slot_index();
         let relative_index = self.relative_index();
 
@@ -79,7 +80,7 @@ mod tests {
         let outer_index_count = 0;
         let side = Side::Bid;
 
-        let mut reader = IndexListReader::new(side, outer_index_count);
+        let mut reader = OuterIndexReader::new(side, outer_index_count);
         assert!(reader.next(&slot_storage).is_none());
         assert!(reader.list_slot.is_none());
     }
@@ -97,7 +98,7 @@ mod tests {
 
         // We are mocking the behavior, so just test that the reader works
         let outer_index_count = 16; // Only one slot needed
-        let mut reader = IndexListReader::new(side, outer_index_count);
+        let mut reader = OuterIndexReader::new(side, outer_index_count);
 
         let expected_results = vec![
             (0, 15, list_slot, OuterIndex::new(16)),
@@ -145,7 +146,7 @@ mod tests {
 
         // We are mocking the behavior, so just test that the reader works
         let outer_index_count = 15; // Only one slot needed
-        let mut reader = IndexListReader::new(side, outer_index_count);
+        let mut reader = OuterIndexReader::new(side, outer_index_count);
 
         let expected_results = vec![
             (0, 14, list_slot, OuterIndex::new(15)),
@@ -198,7 +199,7 @@ mod tests {
 
         // Mock outer index count that spans across two slots
         let outer_index_count = 32;
-        let mut reader = IndexListReader::new(side, outer_index_count);
+        let mut reader = OuterIndexReader::new(side, outer_index_count);
 
         let expected_results = vec![
             (1, 15, list_slot_1, OuterIndex::new(32)),
@@ -281,7 +282,7 @@ mod tests {
 
         // Mock outer index count that spans across two slots
         let outer_index_count = 31;
-        let mut iterator = IndexListReader::new(side, outer_index_count);
+        let mut iterator = OuterIndexReader::new(side, outer_index_count);
 
         let expected_results = vec![
             (1, 14, list_slot_1, OuterIndex::new(31)),
@@ -342,7 +343,7 @@ mod tests {
 
         // Mocking the behavior, so just test that the iterator works
         let outer_index_count = 16; // Only one slot needed
-        let mut iterator = IndexListReader::new(side, outer_index_count);
+        let mut iterator = OuterIndexReader::new(side, outer_index_count);
 
         let expected_results = vec![
             (0, 15, list_slot, OuterIndex::new(1)),

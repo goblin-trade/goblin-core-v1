@@ -8,9 +8,9 @@ use crate::{
     },
 };
 
-use super::{bitmap_inserter::BitmapInserter, index_list_inserter::IndexListInserter};
+use super::{group_position::GroupPositionInserter, outer_index::OuterIndexInserter};
 
-/// Inserts resting orders to slot
+/// Inserts resting orders and activates order IDs in bulk
 ///
 /// This involves 4 updates
 ///
@@ -19,19 +19,19 @@ use super::{bitmap_inserter::BitmapInserter, index_list_inserter::IndexListInser
 /// 3. Index list- Insert outer index if not present
 /// 4. Bitmap group- Flip bit corresponding to the order
 ///
-pub struct RestingOrderInserter {
+pub struct OrderIdInserter {
     /// Index list inserter- to insert outer indices in index lists and for writing them to slot
-    pub index_list_inserter: IndexListInserter,
+    pub index_list_inserter: OuterIndexInserter,
 
     /// Bitmap inserter- to activate bits in bitmap groups and writing them to slot
-    pub bitmap_inserter: BitmapInserter,
+    pub bitmap_inserter: GroupPositionInserter,
 }
 
-impl RestingOrderInserter {
+impl OrderIdInserter {
     pub fn new(side: Side, outer_index_count: u16) -> Self {
-        RestingOrderInserter {
-            index_list_inserter: IndexListInserter::new(side, outer_index_count),
-            bitmap_inserter: BitmapInserter::new(),
+        OrderIdInserter {
+            index_list_inserter: OuterIndexInserter::new(side, outer_index_count),
+            bitmap_inserter: GroupPositionInserter::new(),
         }
     }
 
@@ -169,7 +169,7 @@ mod tests {
             last_valid_block_or_unix_timestamp_in_seconds: 0,
         };
 
-        let mut inserter = RestingOrderInserter::new(side, market_state.outer_index_count(side));
+        let mut inserter = OrderIdInserter::new(side, market_state.outer_index_count(side));
 
         inserter
             .insert_resting_order(slot_storage, &mut market_state, &resting_order, &order_id)
@@ -262,7 +262,7 @@ mod tests {
             last_valid_block_or_unix_timestamp_in_seconds: 0,
         };
 
-        let mut inserter = RestingOrderInserter::new(side, market_state.outer_index_count(side));
+        let mut inserter = OrderIdInserter::new(side, market_state.outer_index_count(side));
 
         inserter
             .insert_resting_order(
@@ -369,7 +369,7 @@ mod tests {
             last_valid_block_or_unix_timestamp_in_seconds: 0,
         };
 
-        let mut inserter = RestingOrderInserter::new(side, market_state.outer_index_count(side));
+        let mut inserter = OrderIdInserter::new(side, market_state.outer_index_count(side));
 
         inserter
             .insert_resting_order(
@@ -482,7 +482,7 @@ mod tests {
             last_valid_block_or_unix_timestamp_in_seconds: 0,
         };
 
-        let mut inserter = RestingOrderInserter::new(side, market_state.outer_index_count(side));
+        let mut inserter = OrderIdInserter::new(side, market_state.outer_index_count(side));
 
         inserter
             .insert_resting_order(
@@ -612,7 +612,7 @@ mod tests {
             last_valid_block_or_unix_timestamp_in_seconds: 0,
         };
 
-        let mut inserter = RestingOrderInserter::new(side, market_state.outer_index_count(side));
+        let mut inserter = OrderIdInserter::new(side, market_state.outer_index_count(side));
 
         inserter
             .insert_resting_order(slot_storage, &mut market_state, &resting_order, &order_id_1)
@@ -704,7 +704,7 @@ mod tests {
             last_valid_block_or_unix_timestamp_in_seconds: 0,
         };
 
-        let mut inserter = RestingOrderInserter::new(side, market_state.outer_index_count(side));
+        let mut inserter = OrderIdInserter::new(side, market_state.outer_index_count(side));
 
         inserter
             .insert_resting_order(slot_storage, &mut market_state, &resting_order, &order_id_1)
@@ -826,7 +826,7 @@ mod tests {
             last_valid_block_or_unix_timestamp_in_seconds: 0,
         };
 
-        let mut inserter = RestingOrderInserter::new(side, market_state.outer_index_count(side));
+        let mut inserter = OrderIdInserter::new(side, market_state.outer_index_count(side));
 
         inserter
             .insert_resting_order(slot_storage, &mut market_state, &resting_order, &order_id_1)

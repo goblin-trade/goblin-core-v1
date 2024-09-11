@@ -1,5 +1,5 @@
 use crate::state::{
-    read::index_list_reader::IndexListReader, write_index_list::write_index_list, OuterIndex, Side,
+    read::outer_index::OuterIndexReader, write_index_list::write_index_list, OuterIndex, Side,
     SlotStorage,
 };
 use alloc::vec::Vec;
@@ -28,9 +28,9 @@ use alloc::vec::Vec;
 /// original place. Note- this can combine with (1) when we the inner slot does not
 /// close but the outer slot does.
 ///
-pub struct IndexListRemover {
+pub struct OuterIndexRemover {
     /// Iterator to read saved values from list
-    pub index_list_reader: IndexListReader,
+    pub index_list_reader: OuterIndexReader,
 
     /// List of cached outer indices which will be written back to slots.
     /// Contains values to be retained after removal.
@@ -48,10 +48,10 @@ pub struct IndexListRemover {
     pub pending_write: bool,
 }
 
-impl IndexListRemover {
+impl OuterIndexRemover {
     pub fn new(side: Side, outer_index_count: u16) -> Self {
         Self {
-            index_list_reader: IndexListReader::new(side, outer_index_count),
+            index_list_reader: OuterIndexReader::new(side, outer_index_count),
             cache: Vec::new(),
             cached_outer_index: None,
             pending_write: false,
@@ -154,7 +154,7 @@ mod tests {
     #[test]
     fn test_find_outer_index_in_empty_list() {
         let slot_storage = SlotStorage::new();
-        let mut remover = IndexListRemover::new(Side::Bid, 0);
+        let mut remover = OuterIndexRemover::new(Side::Bid, 0);
 
         // Try to find an index in an empty list
         let found = remover.find_outer_index(&slot_storage, OuterIndex::new(100));
@@ -181,7 +181,7 @@ mod tests {
             );
         }
 
-        let mut remover = IndexListRemover::new(Side::Bid, 1);
+        let mut remover = OuterIndexRemover::new(Side::Bid, 1);
 
         // Find the existing element
         let found = remover.find_outer_index(&slot_storage, OuterIndex::new(100));
@@ -212,7 +212,7 @@ mod tests {
         list_slot.set(1, OuterIndex::new(200));
         list_slot.write_to_slot(&mut slot_storage, &list_key);
 
-        let mut remover = IndexListRemover::new(side, outer_index_count);
+        let mut remover = OuterIndexRemover::new(side, outer_index_count);
 
         // Find the existing element
 
@@ -250,7 +250,7 @@ mod tests {
         list_slot.set(0, OuterIndex::new(100));
         list_slot.write_to_slot(&mut slot_storage, &list_key);
 
-        let mut remover = IndexListRemover::new(Side::Bid, 1);
+        let mut remover = OuterIndexRemover::new(Side::Bid, 1);
 
         // Find the existing element
         let found = remover.find_outer_index(&slot_storage, OuterIndex::new(100));
@@ -283,7 +283,7 @@ mod tests {
             );
         }
 
-        let mut remover = IndexListRemover::new(Side::Bid, 1);
+        let mut remover = OuterIndexRemover::new(Side::Bid, 1);
 
         // Try to find a nonexistent element
         let found = remover.find_outer_index(&slot_storage, OuterIndex::new(200));
@@ -314,7 +314,7 @@ mod tests {
         list_slot.set(2, OuterIndex::new(300));
         list_slot.write_to_slot(&mut slot_storage, &list_key);
 
-        let mut remover = IndexListRemover::new(Side::Bid, 3);
+        let mut remover = OuterIndexRemover::new(Side::Bid, 3);
 
         // Try to find the last element, cache intermediary values
         let found = remover.find_outer_index(&slot_storage, OuterIndex::new(200));
@@ -348,7 +348,7 @@ mod tests {
         let side = Side::Bid;
         let outer_index_count = 4;
 
-        let mut remover = IndexListRemover::new(side, outer_index_count);
+        let mut remover = OuterIndexRemover::new(side, outer_index_count);
 
         let list_key_0 = ListKey { index: 0, side };
 
@@ -374,7 +374,7 @@ mod tests {
         let side = Side::Bid;
         let outer_index_count = 4;
 
-        let mut remover = IndexListRemover::new(side, outer_index_count);
+        let mut remover = OuterIndexRemover::new(side, outer_index_count);
 
         let list_key_0 = ListKey { index: 0, side };
 
@@ -400,7 +400,7 @@ mod tests {
         let side = Side::Bid;
         let outer_index_count = 4;
 
-        let mut remover = IndexListRemover::new(side, outer_index_count);
+        let mut remover = OuterIndexRemover::new(side, outer_index_count);
 
         let list_key_0 = ListKey { index: 0, side };
 
@@ -426,7 +426,7 @@ mod tests {
         let side = Side::Bid;
         let outer_index_count = 18;
 
-        let mut remover = IndexListRemover::new(side, outer_index_count);
+        let mut remover = OuterIndexRemover::new(side, outer_index_count);
 
         let list_key_0 = ListKey { index: 0, side };
         let list_key_1 = ListKey { index: 1, side };
@@ -458,7 +458,7 @@ mod tests {
         let side = Side::Bid;
         let outer_index_count = 34;
 
-        let mut remover = IndexListRemover::new(side, outer_index_count);
+        let mut remover = OuterIndexRemover::new(side, outer_index_count);
 
         let list_key_0 = ListKey { index: 0, side };
         let list_key_1 = ListKey { index: 1, side };
@@ -515,7 +515,7 @@ mod tests {
         let side = Side::Bid;
         let outer_index_count = 2;
 
-        let mut remover = IndexListRemover::new(side, outer_index_count);
+        let mut remover = OuterIndexRemover::new(side, outer_index_count);
 
         let list_key = ListKey { index: 0, side };
         let mut list_slot = ListSlot::default();
@@ -543,7 +543,7 @@ mod tests {
         let side = Side::Bid;
         let outer_index_count = 17;
 
-        let mut remover = IndexListRemover::new(side, outer_index_count);
+        let mut remover = OuterIndexRemover::new(side, outer_index_count);
 
         let list_key_0 = ListKey { index: 0, side };
         let list_key_1 = ListKey { index: 1, side };
@@ -579,7 +579,7 @@ mod tests {
         let side = Side::Bid;
         let outer_index_count = 2;
 
-        let mut remover = IndexListRemover::new(side, outer_index_count);
+        let mut remover = OuterIndexRemover::new(side, outer_index_count);
 
         let list_key = ListKey { index: 0, side };
         let mut list_slot = ListSlot::default();
@@ -607,7 +607,7 @@ mod tests {
         let side = Side::Bid;
         let outer_index_count = 18;
 
-        let mut remover = IndexListRemover::new(side, outer_index_count);
+        let mut remover = OuterIndexRemover::new(side, outer_index_count);
 
         let list_key_0 = ListKey { index: 0, side };
         let list_key_1 = ListKey { index: 1, side };
@@ -643,7 +643,7 @@ mod tests {
         let side = Side::Bid;
         let outer_index_count = 17;
 
-        let mut remover = IndexListRemover::new(side, outer_index_count);
+        let mut remover = OuterIndexRemover::new(side, outer_index_count);
 
         let list_key_0 = ListKey { index: 0, side };
         let list_key_1 = ListKey { index: 1, side };
@@ -680,7 +680,7 @@ mod tests {
         let side = Side::Bid;
         let outer_index_count = 17;
 
-        let mut remover = IndexListRemover::new(side, outer_index_count);
+        let mut remover = OuterIndexRemover::new(side, outer_index_count);
 
         let list_key_0 = ListKey { index: 0, side };
         let list_key_1 = ListKey { index: 1, side };
