@@ -30,7 +30,7 @@ use alloc::vec::Vec;
 ///
 pub struct OuterIndexRemover {
     /// Iterator to read active outer indices from index list
-    pub active_ouetr_index_iterator: ActiveOuterIndexIterator,
+    pub active_outer_index_iterator: ActiveOuterIndexIterator,
 
     /// List of cached outer indices which will be written back to slots.
     /// Contains values to be retained after removal.
@@ -51,7 +51,7 @@ pub struct OuterIndexRemover {
 impl OuterIndexRemover {
     pub fn new(side: Side, outer_index_count: u16) -> Self {
         Self {
-            active_ouetr_index_iterator: ActiveOuterIndexIterator::new(side, outer_index_count),
+            active_outer_index_iterator: ActiveOuterIndexIterator::new(side, outer_index_count),
             cache: Vec::new(),
             cached_outer_index: None,
             pending_write: false,
@@ -59,12 +59,21 @@ impl OuterIndexRemover {
     }
 
     pub fn side(&self) -> Side {
-        self.active_ouetr_index_iterator.side
+        self.active_outer_index_iterator.side
     }
 
     /// The total length of index list after accounting for removals
     pub fn index_list_length(&self) -> u16 {
-        self.active_ouetr_index_iterator.outer_index_count()
+        #[cfg(test)]
+        println!(
+            "outer_index_count {:?}, cache length {:?}, cached_outer_index present {:?}, cached_outer_index {:?}, cache list {:?}",
+            self.active_outer_index_iterator.outer_index_count(),
+            self.cache.len() as u16,
+            u16::from(self.cached_outer_index.is_some()),
+            self.cached_outer_index,
+            self.cache
+        );
+        self.active_outer_index_iterator.outer_index_count()
             + self.cache.len() as u16
             + u16::from(self.cached_outer_index.is_some())
     }
@@ -78,7 +87,7 @@ impl OuterIndexRemover {
     ///
     pub fn slide(&mut self, slot_storage: &SlotStorage) {
         self.flush_cached_outer_index();
-        self.cached_outer_index = self.active_ouetr_index_iterator.next(slot_storage);
+        self.cached_outer_index = self.active_outer_index_iterator.next(slot_storage);
     }
 
     /// Pushes `found_outer_index` to cache and clears the value
@@ -139,8 +148,8 @@ impl OuterIndexRemover {
             slot_storage,
             self.side(),
             &mut self.cache,
-            self.active_ouetr_index_iterator.outer_index_count(),
-            self.active_ouetr_index_iterator.list_slot,
+            self.active_outer_index_iterator.outer_index_count(),
+            self.active_outer_index_iterator.list_slot,
         );
     }
 }
@@ -186,13 +195,13 @@ mod tests {
         // Find the existing element
         let found = remover.find_outer_index(&slot_storage, OuterIndex::new(100));
         assert!(found);
-        assert_eq!(remover.active_ouetr_index_iterator.outer_index_count(), 0);
+        assert_eq!(remover.active_outer_index_iterator.outer_index_count(), 0);
         assert_eq!(remover.cache, vec![]);
         assert_eq!(remover.cached_outer_index, Some(OuterIndex::new(100)));
         assert!(!remover.pending_write);
 
         remover.remove_cached_index();
-        assert_eq!(remover.active_ouetr_index_iterator.outer_index_count(), 0);
+        assert_eq!(remover.active_outer_index_iterator.outer_index_count(), 0);
         assert_eq!(remover.cache, vec![]);
         assert_eq!(remover.cached_outer_index, None);
         assert!(!remover.pending_write); // false because cache is empty
@@ -218,21 +227,21 @@ mod tests {
 
         let found_200 = remover.find_outer_index(&slot_storage, OuterIndex::new(200));
         assert!(found_200);
-        assert_eq!(remover.active_ouetr_index_iterator.outer_index_count(), 1);
+        assert_eq!(remover.active_outer_index_iterator.outer_index_count(), 1);
         assert_eq!(remover.cache, vec![]);
         assert_eq!(remover.cached_outer_index, Some(OuterIndex::new(200)));
         assert!(!remover.pending_write);
 
         let found_100 = remover.find_outer_index(&slot_storage, OuterIndex::new(100));
         assert!(found_100);
-        assert_eq!(remover.active_ouetr_index_iterator.outer_index_count(), 0);
+        assert_eq!(remover.active_outer_index_iterator.outer_index_count(), 0);
         // Previous `cached_outer_index` is pushed to cache array
         assert_eq!(remover.cache, vec![OuterIndex::new(200)]);
         assert_eq!(remover.cached_outer_index, Some(OuterIndex::new(100)));
         assert!(!remover.pending_write);
 
         remover.remove_cached_index();
-        assert_eq!(remover.active_ouetr_index_iterator.outer_index_count(), 0);
+        assert_eq!(remover.active_outer_index_iterator.outer_index_count(), 0);
         assert_eq!(remover.cache, vec![OuterIndex::new(200)]);
         assert_eq!(remover.cached_outer_index, None);
         assert!(remover.pending_write);
@@ -255,7 +264,7 @@ mod tests {
         // Find the existing element
         let found = remover.find_outer_index(&slot_storage, OuterIndex::new(100));
         assert!(found);
-        assert_eq!(remover.active_ouetr_index_iterator.outer_index_count(), 0);
+        assert_eq!(remover.active_outer_index_iterator.outer_index_count(), 0);
         assert_eq!(remover.cache, vec![]);
         assert_eq!(remover.cached_outer_index, Some(OuterIndex::new(100)));
         assert_eq!(remover.pending_write, false);
@@ -288,7 +297,7 @@ mod tests {
         // Try to find a nonexistent element
         let found = remover.find_outer_index(&slot_storage, OuterIndex::new(200));
         assert!(!found);
-        assert_eq!(remover.active_ouetr_index_iterator.outer_index_count(), 0);
+        assert_eq!(remover.active_outer_index_iterator.outer_index_count(), 0);
         assert_eq!(remover.cache, vec![OuterIndex::new(100)]);
         assert_eq!(remover.cached_outer_index, None);
         assert!(!remover.pending_write);
@@ -319,13 +328,13 @@ mod tests {
         // Try to find the last element, cache intermediary values
         let found = remover.find_outer_index(&slot_storage, OuterIndex::new(200));
         assert!(found);
-        assert_eq!(remover.active_ouetr_index_iterator.outer_index_count(), 1);
+        assert_eq!(remover.active_outer_index_iterator.outer_index_count(), 1);
         assert_eq!(remover.cache, vec![OuterIndex::new(300)]);
         assert_eq!(remover.cached_outer_index, Some(OuterIndex::new(200)));
         assert!(!remover.pending_write);
 
         remover.remove_cached_index();
-        assert_eq!(remover.active_ouetr_index_iterator.outer_index_count(), 1);
+        assert_eq!(remover.active_outer_index_iterator.outer_index_count(), 1);
         assert_eq!(remover.cache, vec![OuterIndex::new(300)]);
         assert_eq!(remover.cached_outer_index, None);
         assert!(remover.pending_write);
@@ -365,7 +374,7 @@ mod tests {
         assert!(!remover.pending_write);
         assert_eq!(remover.cached_outer_index, None);
         assert_eq!(remover.cache, vec![]);
-        assert_eq!(remover.active_ouetr_index_iterator.outer_index_count(), 2);
+        assert_eq!(remover.active_outer_index_iterator.outer_index_count(), 2);
     }
 
     #[test]
@@ -391,7 +400,7 @@ mod tests {
         assert!(remover.pending_write);
         assert_eq!(remover.cached_outer_index, None);
         assert_eq!(remover.cache, vec![OuterIndex::new(3)]);
-        assert_eq!(remover.active_ouetr_index_iterator.outer_index_count(), 1);
+        assert_eq!(remover.active_outer_index_iterator.outer_index_count(), 1);
     }
 
     #[test]
@@ -417,7 +426,7 @@ mod tests {
         assert!(remover.pending_write);
         assert_eq!(remover.cached_outer_index, None);
         assert_eq!(remover.cache, vec![OuterIndex::new(3), OuterIndex::new(1)]);
-        assert_eq!(remover.active_ouetr_index_iterator.outer_index_count(), 0);
+        assert_eq!(remover.active_outer_index_iterator.outer_index_count(), 0);
     }
 
     #[test]
@@ -449,7 +458,7 @@ mod tests {
             remover.cache,
             vec![OuterIndex::new(16), OuterIndex::new(15)]
         );
-        assert_eq!(remover.active_ouetr_index_iterator.outer_index_count(), 14);
+        assert_eq!(remover.active_outer_index_iterator.outer_index_count(), 14);
     }
 
     #[test]
@@ -506,7 +515,7 @@ mod tests {
                 OuterIndex::new(15)
             ]
         );
-        assert_eq!(remover.active_ouetr_index_iterator.outer_index_count(), 14);
+        assert_eq!(remover.active_outer_index_iterator.outer_index_count(), 14);
     }
 
     #[test]

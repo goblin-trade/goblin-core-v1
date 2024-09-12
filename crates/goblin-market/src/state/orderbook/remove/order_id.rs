@@ -40,7 +40,9 @@ impl OrderIdRemover {
     /// Checks whether an order is present at the given order ID.
     /// The bitmap group is updated if the outer index does not match.
     ///
-    /// Externally ensure that order IDs move away from the centre
+    /// Externally ensure that
+    /// * order IDs move away from the centre
+    /// * we don't find order ids belonging to the opposite side
     ///
     /// # Arguments
     ///
@@ -159,6 +161,7 @@ impl OrderIdRemover {
             self.index_list_remover.remove_cached_index();
         }
 
+        // TODO remove order ID. The last found order_id should be cached
         if order_id.price_in_ticks == market_state.best_price(self.side()) {
             // - Obtain and set new best price.
             // - If the outermost group was closed then this loads a new group.
@@ -191,5 +194,154 @@ impl OrderIdRemover {
         market_state
             .set_outer_index_length(self.side(), self.index_list_remover.index_list_length());
         self.index_list_remover.write_index_list(slot_storage);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        quantities::QuoteLots,
+        state::{
+            bitmap_group::BitmapGroup, insert::outer_index, ListKey, ListSlot, OuterIndex,
+            RestingOrderIndex, SlotActions, SlotKey,
+        },
+    };
+
+    use super::*;
+
+    fn enable_order_id(slot_storage: &mut SlotStorage, order_id: OrderId) {
+        let OrderId {
+            price_in_ticks,
+            resting_order_index,
+        } = order_id;
+        let TickIndices {
+            outer_index,
+            inner_index,
+        } = price_in_ticks.to_indices();
+
+        let mut bitmap_group = BitmapGroup::new_from_slot(slot_storage, outer_index);
+        let mut bitmap = bitmap_group.get_bitmap_mut(&inner_index);
+        bitmap.activate(&resting_order_index);
+
+        bitmap_group.write_to_slot(slot_storage, &outer_index);
+    }
+
+    #[test]
+    fn test_search_and_remove_same_inner_index() {
+        let mut slot_storage = SlotStorage::new();
+        let side = Side::Ask;
+
+        let outer_index_count = 1;
+        let outer_index_0 = OuterIndex::new(1);
+
+        // Write outer indices to slot
+        let list_key = ListKey { index: 0, side };
+        let mut list_slot = ListSlot::default();
+        list_slot.set(0, outer_index_0);
+        list_slot.write_to_slot(&mut slot_storage, &list_key);
+
+        // Opposite side bit belonging to bids
+        let order_id_bid = OrderId {
+            price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(0)),
+            resting_order_index: RestingOrderIndex::new(0),
+        };
+
+        let order_id_0 = OrderId {
+            price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(2)),
+            resting_order_index: RestingOrderIndex::new(0),
+        };
+        let order_id_1 = OrderId {
+            price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(2)),
+            resting_order_index: RestingOrderIndex::new(7),
+        };
+        enable_order_id(&mut slot_storage, order_id_bid);
+        enable_order_id(&mut slot_storage, order_id_0);
+        enable_order_id(&mut slot_storage, order_id_1);
+
+        let mut market_state = MarketState {
+            collected_quote_lot_fees: QuoteLots::ZERO,
+            unclaimed_quote_lot_fees: QuoteLots::ZERO,
+            bids_outer_indices: 1,
+            asks_outer_indices: 1,
+            best_bid_price: order_id_bid.price_in_ticks,
+            best_ask_price: order_id_0.price_in_ticks,
+        };
+
+        let mut remover = OrderIdRemover::new(outer_index_count, side);
+
+        // 1. Search
+        assert!(remover.order_present(&mut slot_storage, order_id_0));
+
+        // 2. Remove
+        remover.remove_order(&mut slot_storage, &mut market_state, order_id_0);
+
+        // No change in opposite side price
+        assert_eq!(market_state.best_bid_price, order_id_bid.price_in_ticks);
+
+        // No change in best price because another order is present at the same tick
+        assert_eq!(market_state.best_ask_price, order_id_1.price_in_ticks);
+
+        // 3. Write list
+        remover.write_prepared_indices(&mut slot_storage, &mut market_state);
+        // No change because group is still active
+        assert_eq!(market_state.asks_outer_indices, 1);
+
+        // Check bitmap group
+        let mut expected_bitmap_group = BitmapGroup::default();
+        expected_bitmap_group.inner[0] = 0b00000001;
+        expected_bitmap_group.inner[2] = 0b10000000;
+        assert_eq!(remover.bitmap_remover.bitmap_group, expected_bitmap_group);
+    }
+
+    #[test]
+    fn test_search_and_remove_all_cases() {
+        let mut slot_storage = SlotStorage::new();
+        let side = Side::Ask;
+
+        let outer_index_count = 2;
+        let outer_index_0 = OuterIndex::new(1);
+        let outer_index_1 = OuterIndex::new(2);
+
+        // Write outer indices to slot
+        let list_key = ListKey { index: 0, side };
+        let mut list_slot = ListSlot::default();
+        list_slot.set(0, outer_index_0);
+        list_slot.set(1, outer_index_1);
+        list_slot.write_to_slot(&mut slot_storage, &list_key);
+
+        let order_ids = vec![
+            // Belongs to bids
+            OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(0)),
+                resting_order_index: RestingOrderIndex::new(0),
+            },
+            // Outermost ask
+            OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(2)),
+                resting_order_index: RestingOrderIndex::new(0),
+            },
+            // Same inner index case
+            OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(2)),
+                resting_order_index: RestingOrderIndex::new(7),
+            },
+            // Different inner index case
+            OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(4)),
+                resting_order_index: RestingOrderIndex::new(1),
+            },
+            // Different outer index case
+            OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index_1, InnerIndex::new(0)),
+                resting_order_index: RestingOrderIndex::new(0),
+            },
+        ];
+
+        for order_id in &order_ids {
+            enable_order_id(&mut slot_storage, *order_id);
+        }
+
+        let mut remover = OrderIdRemover::new(outer_index_count, side);
+        assert!(remover.order_present(&mut slot_storage, *order_ids.get(1).unwrap()));
     }
 }
