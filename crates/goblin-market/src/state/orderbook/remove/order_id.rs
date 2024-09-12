@@ -2,7 +2,7 @@ use crate::{
     quantities::Ticks,
     state::{
         order::{group_position::GroupPosition, order_id::OrderId},
-        InnerIndex, MarketState, Side, SlotStorage, TickIndices,
+        InnerIndex, MarketState, OuterIndex, Side, SlotStorage, TickIndices,
     },
 };
 
@@ -18,11 +18,11 @@ use super::{group_position::GroupPositionRemover, outer_index::OuterIndexRemover
 /// 3. Market state- Update the outer index count and best price
 ///
 pub struct OrderIdRemover {
-    /// To turn off bits in bitmap groups
-    pub bitmap_remover: GroupPositionRemover,
-
     /// To lookup and remove outer indices
     pub index_list_remover: OuterIndexRemover,
+
+    /// To turn off bits in bitmap groups
+    pub bitmap_remover: GroupPositionRemover,
 }
 
 impl OrderIdRemover {
@@ -37,6 +37,10 @@ impl OrderIdRemover {
         self.index_list_remover.side()
     }
 
+    pub fn last_outer_index(&self) -> Option<OuterIndex> {
+        self.bitmap_remover.last_outer_index
+    }
+
     /// Checks whether an order is present at the given order ID.
     /// The bitmap group is updated if the outer index does not match.
     ///
@@ -49,7 +53,7 @@ impl OrderIdRemover {
     /// * `slot_storage`
     /// * `order_id`
     ///
-    pub fn order_present(&mut self, slot_storage: &mut SlotStorage, order_id: OrderId) -> bool {
+    pub fn find_order(&mut self, slot_storage: &mut SlotStorage, order_id: OrderId) -> bool {
         let OrderId {
             price_in_ticks,
             resting_order_index,
@@ -60,7 +64,7 @@ impl OrderIdRemover {
         } = price_in_ticks.to_indices();
 
         // Read the bitmap group and outer index corresponding to order_id
-        if self.bitmap_remover.last_outer_index != Some(outer_index) {
+        if self.last_outer_index() != Some(outer_index) {
             let outer_index_present = self
                 .index_list_remover
                 .find_outer_index(slot_storage, outer_index);
@@ -73,27 +77,43 @@ impl OrderIdRemover {
                 .load_outer_index(slot_storage, outer_index);
         }
 
-        // Now check in bitmap group
-        return self.bitmap_remover.order_present(GroupPosition {
+        let group_position = GroupPosition {
             inner_index,
             resting_order_index,
-        });
+        };
+
+        // Search group position in bitmap group
+        let order_present = self.bitmap_remover.order_present(group_position);
+
+        order_present
     }
 
-    /// Move one position down the index list and load the corresponding bitmap group
+    /// Remove the last searched order from the book, and update the
+    /// best price in market state if the outermost tick closed
     ///
-    /// Externally ensure that this is only called when we're on the outermost outer index.
-    /// This way there is no `found_outer_index` to push to the cache.
+    /// # Arguments
     ///
-    pub fn slide_outer_index_and_bitmap_group(&mut self, slot_storage: &mut SlotStorage) -> bool {
-        self.index_list_remover.slide(slot_storage);
-        if let Some(next_outer_index) = self.index_list_remover.cached_outer_index {
-            self.bitmap_remover
-                .load_outer_index(slot_storage, next_outer_index);
+    /// * `slot_storage`
+    /// * `market_state`
+    ///
+    pub fn remove_order(&mut self, slot_storage: &mut SlotStorage, market_state: &mut MarketState) {
+        if let Some(order_id) = self.bitmap_remover.last_searched_order_id() {
+            // Deactivate group position in bitmap group
+            let group_position = GroupPosition::from(&order_id);
+            self.bitmap_remover.deactivate_in_current(group_position);
 
-            return true;
+            // Remove cached outer index if the bitmap group was closed
+            if !self.bitmap_remover.bitmap_group.is_active() {
+                self.index_list_remover.remove_cached_index();
+            }
+
+            // Update best market price if the outermost tick was closed
+            if order_id.price_in_ticks == market_state.best_price(self.side()) {
+                let new_best_price =
+                    self.get_best_price(slot_storage, Some(group_position.inner_index));
+                market_state.set_best_price(self.side(), new_best_price);
+            }
         }
-        false
     }
 
     /// Get the next best active price tick
@@ -135,43 +155,20 @@ impl OrderIdRemover {
         }
     }
 
-    /// Remove an order from the book and update the best price in market state
+    /// Move one position down the index list and load the corresponding bitmap group
     ///
-    /// This involves
+    /// Externally ensure that this is only called when we're on the outermost outer index.
+    /// This way there is no `found_outer_index` to push to the cache.
     ///
-    /// 1. Deactivating bit in bitmap group
-    /// 2. Updating the best market price if the outermost tick was closed
-    /// 2. Removing the outer index if the outermost bitmap group was closed
-    ///
-    /// Externally ensure that the order's outer index is loaded correctly. `order_present()`
-    /// must be called before calling `remove_order()`. Since we're at the same bitmap group,
-    /// we can simply deactivate the bit at `group_position`.
-    ///
-    pub fn remove_order(
-        &mut self,
-        slot_storage: &mut SlotStorage,
-        market_state: &mut MarketState,
-        order_id: OrderId,
-    ) {
-        let group_position = GroupPosition::from(&order_id);
-        self.bitmap_remover.deactivate_in_current(group_position);
+    pub fn slide_outer_index_and_bitmap_group(&mut self, slot_storage: &mut SlotStorage) -> bool {
+        self.index_list_remover.slide(slot_storage);
+        if let Some(next_outer_index) = self.index_list_remover.cached_outer_index {
+            self.bitmap_remover
+                .load_outer_index(slot_storage, next_outer_index);
 
-        // Remove cached outer index if the bitmap group was closed
-        if !self.bitmap_remover.bitmap_group.is_active() {
-            self.index_list_remover.remove_cached_index();
+            return true;
         }
-
-        // TODO remove order ID. The last found order_id should be cached
-        if order_id.price_in_ticks == market_state.best_price(self.side()) {
-            // - Obtain and set new best price.
-            // - If the outermost group was closed then this loads a new group.
-            // - Look for active ticks at `order_id.price_in_ticks` and worse,
-            // because we don't want to include active ticks on the same
-            // bitmap belonging to the opposite side.
-            let new_best_price =
-                self.get_best_price(slot_storage, Some(order_id.price_in_ticks.inner_index()));
-            market_state.set_best_price(self.side(), new_best_price);
-        }
+        false
     }
 
     /// Write the prepared outer indices to slot and update outer index count in market state
@@ -202,8 +199,8 @@ mod tests {
     use crate::{
         quantities::QuoteLots,
         state::{
-            bitmap_group::BitmapGroup, insert::outer_index, ListKey, ListSlot, OuterIndex,
-            RestingOrderIndex, SlotActions, SlotKey,
+            bitmap_group::BitmapGroup, ListKey, ListSlot, OuterIndex, RestingOrderIndex,
+            SlotActions,
         },
     };
 
@@ -270,10 +267,10 @@ mod tests {
         let mut remover = OrderIdRemover::new(outer_index_count, side);
 
         // 1. Search
-        assert!(remover.order_present(&mut slot_storage, order_id_0));
+        assert!(remover.find_order(&mut slot_storage, order_id_0));
 
         // 2. Remove
-        remover.remove_order(&mut slot_storage, &mut market_state, order_id_0);
+        remover.remove_order(&mut slot_storage, &mut market_state);
 
         // No change in opposite side price
         assert_eq!(market_state.best_bid_price, order_id_bid.price_in_ticks);
@@ -342,6 +339,6 @@ mod tests {
         }
 
         let mut remover = OrderIdRemover::new(outer_index_count, side);
-        assert!(remover.order_present(&mut slot_storage, *order_ids.get(1).unwrap()));
+        assert!(remover.find_order(&mut slot_storage, *order_ids.get(1).unwrap()));
     }
 }

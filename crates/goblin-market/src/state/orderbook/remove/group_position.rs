@@ -1,8 +1,9 @@
 use crate::{
     quantities::Ticks,
     state::{
-        bitmap_group::BitmapGroup, order::group_position::GroupPosition, InnerIndex, OuterIndex,
-        Side, SlotStorage,
+        bitmap_group::BitmapGroup,
+        order::{group_position::GroupPosition, order_id::OrderId},
+        InnerIndex, OuterIndex, Side, SlotStorage,
     },
 };
 
@@ -20,6 +21,9 @@ pub struct GroupPositionRemover {
     /// Outer index corresponding to `bitmap_group`
     pub last_outer_index: Option<OuterIndex>,
 
+    /// The last searched group position. Used to re-construct the last searched order id
+    pub last_searched_group_position: Option<GroupPosition>,
+
     /// Whether the bitmap group was updated in memory and is pending a write.
     /// write_last_bitmap_group() should write to slot only if this is true.
     pub pending_write: bool,
@@ -31,8 +35,22 @@ impl GroupPositionRemover {
             side,
             bitmap_group: BitmapGroup::default(),
             last_outer_index: None,
+            last_searched_group_position: None,
             pending_write: false,
         }
+    }
+
+    /// The last searched order ID
+    pub fn last_searched_order_id(&self) -> Option<OrderId> {
+        if let (Some(outer_index), Some(group_position)) =
+            (self.last_outer_index, self.last_searched_group_position)
+        {
+            return Some(OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index, group_position.inner_index),
+                resting_order_index: group_position.resting_order_index,
+            });
+        }
+        None
     }
 
     /// Whether a resting order is present at given (inner_index, resting_order_index)
@@ -40,9 +58,15 @@ impl GroupPositionRemover {
     /// Externally ensure that load_outer_index() was called first so that
     /// `last_outer_index` is not None
     ///
-    pub fn order_present(&self, group_position: GroupPosition) -> bool {
-        let bitmap = self.bitmap_group.get_bitmap(&group_position.inner_index);
-        bitmap.order_present(group_position.resting_order_index)
+    pub fn order_present(&mut self, group_position: GroupPosition) -> bool {
+        self.last_searched_group_position = Some(group_position);
+
+        let GroupPosition {
+            inner_index,
+            resting_order_index,
+        } = group_position;
+        let bitmap = self.bitmap_group.get_bitmap(&inner_index);
+        bitmap.order_present(resting_order_index)
     }
 
     /// Deactivate an order in the current bitmap group
@@ -93,8 +117,8 @@ impl GroupPositionRemover {
         // Outer index changed. Flush the old bitmap group to slot.
         self.flush_bitmap_group(slot_storage);
 
-        // Update outer index and load new bitmap group from slot
         self.last_outer_index = Some(outer_index);
+        self.last_searched_group_position = None;
         self.bitmap_group = BitmapGroup::new_from_slot(slot_storage, outer_index);
     }
 

@@ -175,7 +175,7 @@ pub fn reduce_multiple_orders_inner(
                 base_lots_released += matching_engine_response.num_base_lots_out;
 
                 if should_remove_order_from_book {
-                    processor.remove_order(slot_storage, market_state, side, order_id);
+                    processor.remove_order(slot_storage, market_state, side);
                 } else {
                     resting_order.write_to_slot(slot_storage, &order_id)?;
                 }
@@ -251,7 +251,7 @@ impl RemoveMultipleProcessor {
         side: Side,
         order_id: OrderId,
     ) -> bool {
-        self.reader(side).order_present(slot_storage, order_id)
+        self.reader(side).find_order(slot_storage, order_id)
     }
 
     pub fn remove_order(
@@ -259,10 +259,8 @@ impl RemoveMultipleProcessor {
         slot_storage: &mut SlotStorage,
         market_state: &mut MarketState,
         side: Side,
-        order_id: OrderId,
     ) {
-        self.reader(side)
-            .remove_order(slot_storage, market_state, order_id)
+        self.reader(side).remove_order(slot_storage, market_state)
     }
 
     pub fn write_prepared_indices(
