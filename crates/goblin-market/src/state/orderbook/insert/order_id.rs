@@ -115,7 +115,9 @@ impl OrderIdInserter {
 
         market_state.set_outer_index_length(
             self.side(),
-            self.index_list_inserter.index_list_reader.outer_index_count
+            self.index_list_inserter
+                .active_outer_index_iterator
+                .outer_index_count()
                 + self.index_list_inserter.cache.len() as u16,
         );
 

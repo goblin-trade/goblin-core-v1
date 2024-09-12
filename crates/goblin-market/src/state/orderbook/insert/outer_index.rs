@@ -1,6 +1,6 @@
 use crate::state::{
-    read::outer_index::OuterIndexReader, write_index_list::write_index_list, OuterIndex, Side,
-    SlotStorage,
+    iterator::active_position::outer_index::ActiveOuterIndexIterator,
+    write_index_list::write_index_list, OuterIndex, Side, SlotStorage,
 };
 use alloc::vec::Vec;
 
@@ -11,8 +11,8 @@ use alloc::vec::Vec;
 /// - insert asks in ascending order
 ///
 pub struct OuterIndexInserter {
-    /// Iterator to read saved values from list
-    pub index_list_reader: OuterIndexReader,
+    /// Iterator to read active outer indices from index list
+    pub active_outer_index_iterator: ActiveOuterIndexIterator,
 
     /// List of cached outer indices which will be written back to slots.
     /// Contains values to be inserted and values popped from index list reader
@@ -23,13 +23,13 @@ pub struct OuterIndexInserter {
 impl OuterIndexInserter {
     pub fn new(side: Side, outer_index_count: u16) -> Self {
         Self {
-            index_list_reader: OuterIndexReader::new(side, outer_index_count),
+            active_outer_index_iterator: ActiveOuterIndexIterator::new(side, outer_index_count),
             cache: Vec::new(),
         }
     }
 
     pub fn side(&self) -> Side {
-        self.index_list_reader.side
+        self.active_outer_index_iterator.side
     }
 
     /// Prepare an outer index for insertion in the index list
@@ -57,7 +57,7 @@ impl OuterIndexInserter {
         }
 
         // Iterate through the list to find the correct position
-        while let Some(current_outer_index) = self.index_list_reader.next(slot_storage) {
+        while let Some(current_outer_index) = self.active_outer_index_iterator.next(slot_storage) {
             // If the outer_index is already in the list, only insert once
             if current_outer_index == outer_index {
                 self.cache.push(current_outer_index);
@@ -86,8 +86,8 @@ impl OuterIndexInserter {
             slot_storage,
             self.side(),
             &mut self.cache,
-            self.index_list_reader.outer_index_count,
-            self.index_list_reader.list_slot,
+            self.active_outer_index_iterator.outer_index_count(),
+            self.active_outer_index_iterator.list_slot,
         );
     }
 }

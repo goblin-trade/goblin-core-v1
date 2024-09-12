@@ -1,4 +1,4 @@
 pub mod group_position;
 pub mod inner_index;
-pub mod list_position;
+pub mod outer_index;
 pub mod resting_order_index;

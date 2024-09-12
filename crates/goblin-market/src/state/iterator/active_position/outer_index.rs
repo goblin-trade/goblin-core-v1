@@ -1,4 +1,7 @@
-use crate::state::{ListKey, ListSlot, OuterIndex, Side, SlotStorage};
+use crate::state::{
+    iterator::position::outer_index::{OuterIndexPosition, OuterIndexPositionIterator},
+    ListKey, ListSlot, OuterIndex, Side, SlotStorage,
+};
 
 /// Read outer indices from the index list, end first.
 /// In an index list, indices closer to the centre are at the end while
@@ -7,32 +10,56 @@ use crate::state::{ListKey, ListSlot, OuterIndex, Side, SlotStorage};
 /// - bids are in ascending order
 /// - asks are in descending order
 ///
-pub struct OuterIndexReader {
+pub struct ActiveOuterIndexIterator {
     /// Whether bid or ask. There are two lists, one for bids and one for asks.
     pub side: Side,
 
-    /// Number of indices yet to be read
-    pub outer_index_count: u16,
+    inner: OuterIndexPositionIterator,
 
+    // /// Number of indices yet to be read
+    // pub outer_index_count: u16,
     /// The currently read list slot
     pub list_slot: Option<ListSlot>,
 }
 
-impl OuterIndexReader {
+impl ActiveOuterIndexIterator {
     pub fn new(side: Side, outer_index_count: u16) -> Self {
         Self {
-            outer_index_count,
+            inner: OuterIndexPositionIterator { outer_index_count },
             list_slot: None, // Initialize with None
             side,
         }
     }
 
-    pub fn slot_index(&self) -> u16 {
-        (self.outer_index_count - 1) / 16
+    pub fn outer_index_count(&self) -> u16 {
+        self.inner.outer_index_count
     }
 
-    pub fn relative_index(&self) -> u16 {
-        (self.outer_index_count - 1) % 16
+    /// Update the cached list slot if no value was cached or if we reached
+    /// a new slot
+    ///
+    /// # Arguments
+    ///
+    /// * `outer_index_position`
+    /// * `slot_storage`
+    ///
+    pub fn update_cached_list_slot(
+        &mut self,
+        outer_index_position: OuterIndexPosition,
+        slot_storage: &SlotStorage,
+    ) {
+        let OuterIndexPosition {
+            slot_index,
+            relative_index,
+        } = outer_index_position;
+
+        if self.list_slot.is_none() || relative_index == 15 {
+            let list_key = ListKey {
+                index: slot_index,
+                side: self.side,
+            };
+            self.list_slot = Some(ListSlot::new_from_slot(slot_storage, list_key));
+        }
     }
 
     /// Read the next outer index
@@ -42,29 +69,14 @@ impl OuterIndexReader {
     /// * slot_storage
     ///
     pub fn next(&mut self, slot_storage: &SlotStorage) -> Option<OuterIndex> {
-        if self.outer_index_count == 0 {
-            return None;
+        if let Some(outer_index_position) = self.inner.next() {
+            self.update_cached_list_slot(outer_index_position, slot_storage);
+            let list_slot = self.list_slot.as_ref().unwrap();
+            let current_outer_index = list_slot.get(outer_index_position.relative_index as usize);
+
+            return Some(current_outer_index);
         }
-
-        // TODO dedicated iterator
-        let slot_index = self.slot_index();
-        let relative_index = self.relative_index();
-
-        // Check if we need to load a new list_slot
-        if self.list_slot.is_none() || relative_index == 15 {
-            let list_key = ListKey {
-                index: slot_index,
-                side: self.side,
-            };
-            self.list_slot = Some(ListSlot::new_from_slot(slot_storage, list_key));
-        }
-
-        let list_slot = self.list_slot.as_ref().unwrap();
-        let current_outer_index = list_slot.get(relative_index as usize);
-
-        self.outer_index_count -= 1;
-
-        Some(current_outer_index)
+        None
     }
 }
 
@@ -80,7 +92,7 @@ mod tests {
         let outer_index_count = 0;
         let side = Side::Bid;
 
-        let mut reader = OuterIndexReader::new(side, outer_index_count);
+        let mut reader = ActiveOuterIndexIterator::new(side, outer_index_count);
         assert!(reader.next(&slot_storage).is_none());
         assert!(reader.list_slot.is_none());
     }
@@ -98,7 +110,7 @@ mod tests {
 
         // We are mocking the behavior, so just test that the reader works
         let outer_index_count = 16; // Only one slot needed
-        let mut reader = OuterIndexReader::new(side, outer_index_count);
+        let mut iterator = ActiveOuterIndexIterator::new(side, outer_index_count);
 
         let expected_results = vec![
             (0, 15, list_slot, OuterIndex::new(16)),
@@ -122,15 +134,15 @@ mod tests {
         for expected in expected_results {
             // Obtain slot_index() and relative_index() of the upcoming value by calling
             // it before .next()
-            assert_eq!(reader.slot_index(), expected.0);
-            assert_eq!(reader.relative_index(), expected.1);
+            assert_eq!(iterator.inner.slot_index(), expected.0);
+            assert_eq!(iterator.inner.relative_index(), expected.1);
 
-            let result = reader.next(&slot_storage).unwrap();
+            let result = iterator.next(&slot_storage).unwrap();
             assert_eq!(result, expected.3);
-            assert_eq!(reader.list_slot, Some(expected.2));
+            assert_eq!(iterator.list_slot, Some(expected.2));
         }
 
-        assert!(reader.next(&slot_storage).is_none());
+        assert!(iterator.next(&slot_storage).is_none());
     }
 
     #[test]
@@ -146,7 +158,7 @@ mod tests {
 
         // We are mocking the behavior, so just test that the reader works
         let outer_index_count = 15; // Only one slot needed
-        let mut reader = OuterIndexReader::new(side, outer_index_count);
+        let mut iterator = ActiveOuterIndexIterator::new(side, outer_index_count);
 
         let expected_results = vec![
             (0, 14, list_slot, OuterIndex::new(15)),
@@ -169,15 +181,15 @@ mod tests {
         for expected in expected_results {
             // Obtain slot_index() and relative_index() of the upcoming value by calling
             // it before .next()
-            assert_eq!(reader.slot_index(), expected.0);
-            assert_eq!(reader.relative_index(), expected.1);
+            assert_eq!(iterator.inner.slot_index(), expected.0);
+            assert_eq!(iterator.inner.relative_index(), expected.1);
 
-            let result = reader.next(&slot_storage).unwrap();
+            let result = iterator.next(&slot_storage).unwrap();
             assert_eq!(result, expected.3);
-            assert_eq!(reader.list_slot, Some(expected.2));
+            assert_eq!(iterator.list_slot, Some(expected.2));
         }
 
-        assert!(reader.next(&slot_storage).is_none());
+        assert!(iterator.next(&slot_storage).is_none());
     }
 
     #[test]
@@ -199,7 +211,7 @@ mod tests {
 
         // Mock outer index count that spans across two slots
         let outer_index_count = 32;
-        let mut reader = OuterIndexReader::new(side, outer_index_count);
+        let mut iterator = ActiveOuterIndexIterator::new(side, outer_index_count);
 
         let expected_results = vec![
             (1, 15, list_slot_1, OuterIndex::new(32)),
@@ -237,15 +249,15 @@ mod tests {
         ];
 
         for expected in expected_results {
-            assert_eq!(reader.slot_index(), expected.0);
-            assert_eq!(reader.relative_index(), expected.1);
+            assert_eq!(iterator.inner.slot_index(), expected.0);
+            assert_eq!(iterator.inner.relative_index(), expected.1);
 
-            let result = reader.next(&slot_storage).unwrap();
+            let result = iterator.next(&slot_storage).unwrap();
             assert_eq!(result, expected.3);
-            assert_eq!(reader.list_slot, Some(expected.2));
+            assert_eq!(iterator.list_slot, Some(expected.2));
         }
 
-        assert!(reader.next(&slot_storage).is_none());
+        assert!(iterator.next(&slot_storage).is_none());
     }
 
     #[test]
@@ -282,7 +294,7 @@ mod tests {
 
         // Mock outer index count that spans across two slots
         let outer_index_count = 31;
-        let mut iterator = OuterIndexReader::new(side, outer_index_count);
+        let mut iterator = ActiveOuterIndexIterator::new(side, outer_index_count);
 
         let expected_results = vec![
             (1, 14, list_slot_1, OuterIndex::new(31)),
@@ -319,8 +331,8 @@ mod tests {
         ];
 
         for expected in expected_results {
-            assert_eq!(iterator.slot_index(), expected.0);
-            assert_eq!(iterator.relative_index(), expected.1);
+            assert_eq!(iterator.inner.slot_index(), expected.0);
+            assert_eq!(iterator.inner.relative_index(), expected.1);
 
             let result = iterator.next(&slot_storage).unwrap();
             assert_eq!(result, expected.3);
@@ -343,7 +355,7 @@ mod tests {
 
         // Mocking the behavior, so just test that the iterator works
         let outer_index_count = 16; // Only one slot needed
-        let mut iterator = OuterIndexReader::new(side, outer_index_count);
+        let mut iterator = ActiveOuterIndexIterator::new(side, outer_index_count);
 
         let expected_results = vec![
             (0, 15, list_slot, OuterIndex::new(1)),
@@ -365,8 +377,8 @@ mod tests {
         ];
 
         for expected in expected_results {
-            assert_eq!(iterator.slot_index(), expected.0);
-            assert_eq!(iterator.relative_index(), expected.1);
+            assert_eq!(iterator.inner.slot_index(), expected.0);
+            assert_eq!(iterator.inner.relative_index(), expected.1);
 
             let result = iterator.next(&slot_storage).unwrap();
             assert_eq!(result, expected.3);
