@@ -38,14 +38,19 @@ impl GroupPositionInserter {
     ///
     /// Externally ensure that we always move away from the centre
     ///
-    /// TODO fix- group will not be empty if opposite side's best outer index equals
-    /// outer_index. Derive this value from market state
+    /// # Arguments
+    ///
+    /// * `slot_storage`
+    /// * `outer_index`
+    /// * `outer_index_is_inactive` - Whether the outer index was inactive for
+    /// BOTH bids and asks. If the index is being used by the opposite side, we need
+    /// to read the bitmap group from slot.
     ///
     pub fn load_outer_index(
         &mut self,
         slot_storage: &mut SlotStorage,
         outer_index: OuterIndex,
-        bitmap_group_is_empty: bool,
+        outer_index_activated: bool,
     ) {
         if self.last_outer_index == Some(outer_index) {
             return;
@@ -56,7 +61,8 @@ impl GroupPositionInserter {
         // Update outer index and load new bitmap group from slot
         self.last_outer_index = Some(outer_index);
 
-        self.bitmap_group = if bitmap_group_is_empty {
+        self.bitmap_group = if outer_index_activated {
+            // Gas optimization- avoid SLOAD if
             BitmapGroup::default()
         } else {
             BitmapGroup::new_from_slot(slot_storage, outer_index)

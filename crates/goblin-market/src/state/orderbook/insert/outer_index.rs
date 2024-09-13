@@ -39,7 +39,15 @@ impl OuterIndexInserter {
     /// * outer_index
     /// * slot_storage
     ///
-    pub fn prepare(&mut self, slot_storage: &SlotStorage, outer_index: OuterIndex) -> bool {
+    /// # Returns
+    ///
+    /// Returns true if the value needs insertion, false if it is already present
+    ///
+    pub fn insert_if_absent(
+        &mut self,
+        slot_storage: &SlotStorage,
+        outer_index: OuterIndex,
+    ) -> bool {
         // Check last element in the cache
         if let Some(&last_pushed_outer_index) = self.cache.last() {
             // If the element already exists in the cache, return false
@@ -104,24 +112,24 @@ mod tests {
         let mut insertion = OuterIndexInserter::new(Side::Bid, 0);
 
         // Insert into an empty list
-        assert!(insertion.prepare(slot_storage, OuterIndex::new(100)));
+        assert!(insertion.insert_if_absent(slot_storage, OuterIndex::new(100)));
         assert_eq!(insertion.cache, vec![OuterIndex::new(100)]);
 
         // Insert duplicate
-        assert!(!insertion.prepare(slot_storage, OuterIndex::new(100)));
+        assert!(!insertion.insert_if_absent(slot_storage, OuterIndex::new(100)));
         assert_eq!(insertion.cache, vec![OuterIndex::new(100)]);
 
         // Insert an index closer to the center
         // Externally ensure that subsequent indices move away from the centre.
         // This case is to deal with the last value from .next()
-        assert!(insertion.prepare(slot_storage, OuterIndex::new(150)));
+        assert!(insertion.insert_if_absent(slot_storage, OuterIndex::new(150)));
         assert_eq!(
             insertion.cache,
             vec![OuterIndex::new(150), OuterIndex::new(100)]
         );
 
         // Insert an index further away from the center
-        assert!(insertion.prepare(slot_storage, OuterIndex::new(50)));
+        assert!(insertion.insert_if_absent(slot_storage, OuterIndex::new(50)));
         assert_eq!(
             insertion.cache,
             vec![
@@ -152,7 +160,7 @@ mod tests {
         let mut insertion = OuterIndexInserter::new(Side::Bid, 1);
 
         // Attempt to insert the same index
-        assert!(!insertion.prepare(slot_storage, OuterIndex::new(100)));
+        assert!(!insertion.insert_if_absent(slot_storage, OuterIndex::new(100)));
         assert_eq!(insertion.cache, vec![OuterIndex::new(100)]);
     }
 
@@ -176,7 +184,7 @@ mod tests {
         let mut insertion = OuterIndexInserter::new(Side::Bid, 1);
 
         // Insert an index closer to the center
-        assert!(insertion.prepare(slot_storage, OuterIndex::new(150)));
+        assert!(insertion.insert_if_absent(slot_storage, OuterIndex::new(150)));
         assert_eq!(
             insertion.cache,
             vec![OuterIndex::new(150), OuterIndex::new(100)]
@@ -203,7 +211,7 @@ mod tests {
         let mut insertion = OuterIndexInserter::new(Side::Bid, 1);
 
         // Insert an index further away from the center
-        assert!(insertion.prepare(slot_storage, OuterIndex::new(50)));
+        assert!(insertion.insert_if_absent(slot_storage, OuterIndex::new(50)));
         assert_eq!(
             insertion.cache,
             vec![OuterIndex::new(100), OuterIndex::new(50)]
@@ -216,22 +224,22 @@ mod tests {
         let mut insertion = OuterIndexInserter::new(Side::Ask, 0);
 
         // Insert into an empty list
-        assert!(insertion.prepare(slot_storage, OuterIndex::new(100)));
+        assert!(insertion.insert_if_absent(slot_storage, OuterIndex::new(100)));
         assert_eq!(insertion.cache, vec![OuterIndex::new(100)]);
 
         // Insert duplicate
-        assert!(!insertion.prepare(slot_storage, OuterIndex::new(100)));
+        assert!(!insertion.insert_if_absent(slot_storage, OuterIndex::new(100)));
         assert_eq!(insertion.cache, vec![OuterIndex::new(100)]);
 
         // Insert an index closer to the center
-        assert!(insertion.prepare(slot_storage, OuterIndex::new(50)));
+        assert!(insertion.insert_if_absent(slot_storage, OuterIndex::new(50)));
         assert_eq!(
             insertion.cache,
             vec![OuterIndex::new(50), OuterIndex::new(100)]
         );
 
         // Insert an index further away from the center
-        assert!(insertion.prepare(slot_storage, OuterIndex::new(150)));
+        assert!(insertion.insert_if_absent(slot_storage, OuterIndex::new(150)));
         assert_eq!(
             insertion.cache,
             vec![
@@ -257,7 +265,7 @@ mod tests {
         let mut insertion = OuterIndexInserter::new(side, 1);
 
         // Attempt to insert the same index
-        assert!(!insertion.prepare(slot_storage, OuterIndex::new(100)));
+        assert!(!insertion.insert_if_absent(slot_storage, OuterIndex::new(100)));
         assert_eq!(insertion.cache, vec![OuterIndex::new(100)]);
     }
 
@@ -276,7 +284,7 @@ mod tests {
         let mut insertion = OuterIndexInserter::new(side, 1);
 
         // Insert an index closer to the center
-        assert!(insertion.prepare(slot_storage, OuterIndex::new(50)));
+        assert!(insertion.insert_if_absent(slot_storage, OuterIndex::new(50)));
         assert_eq!(
             insertion.cache,
             vec![OuterIndex::new(50), OuterIndex::new(100)]
@@ -298,7 +306,7 @@ mod tests {
         let mut insertion = OuterIndexInserter::new(side, 1);
 
         // Insert an index further away from the center
-        assert!(insertion.prepare(slot_storage, OuterIndex::new(150)));
+        assert!(insertion.insert_if_absent(slot_storage, OuterIndex::new(150)));
         assert_eq!(
             insertion.cache,
             vec![OuterIndex::new(100), OuterIndex::new(150)]

@@ -4,7 +4,7 @@ use crate::{
         order::{
             group_position::GroupPosition, order_id::OrderId, resting_order::SlotRestingOrder,
         },
-        MarketState, Side, SlotStorage,
+        MarketState, OuterIndex, Side, SlotStorage,
     },
 };
 
@@ -41,22 +41,34 @@ impl OrderIdInserter {
 
     /// Activate bit at the given order ID
     ///
+    /// Externally ensure that order ID belongs to the correct side.
+    ///
     /// # Arguments
     ///
     /// * `slot_storage`
     /// * `order_id`
+    /// * `best_opposite_price` - The best opposite side price
     ///
-    pub fn activate_order_id(&mut self, slot_storage: &mut SlotStorage, order_id: &OrderId) {
+    pub fn activate_order_id(
+        &mut self,
+        slot_storage: &mut SlotStorage,
+        order_id: &OrderId,
+        best_opposite_outer_index: OuterIndex,
+    ) {
         // Activate outer index in index list
         let outer_index = order_id.price_in_ticks.outer_index();
+        let outer_index_inserted = self
+            .index_list_inserter
+            .insert_if_absent(slot_storage, outer_index);
 
-        // TODO fix- group will not be empty if opposite side's best outer index equals
-        // outer_index. Derive this value from market state
-        let bitmap_group_is_empty = self.index_list_inserter.prepare(slot_storage, outer_index);
+        // Bitmap groups are shared by bids and asks. A group will not be empty if its
+        // occupied by active bits from the opposite side
+        let outer_index_activated =
+            outer_index_inserted && best_opposite_outer_index != outer_index;
 
         // Active group position in bitmap
         self.bitmap_inserter
-            .load_outer_index(slot_storage, outer_index, bitmap_group_is_empty);
+            .load_outer_index(slot_storage, outer_index, outer_index_activated);
         self.bitmap_inserter
             .activate_in_current(GroupPosition::from(order_id));
     }
@@ -95,7 +107,9 @@ impl OrderIdInserter {
         resting_order.write_to_slot(slot_storage, &order_id)?;
 
         // 3. Activate order ID
-        self.activate_order_id(slot_storage, order_id);
+        let best_opposite_price = market_state.best_price(self.side().opposite());
+        let best_opposite_outer_index = best_opposite_price.outer_index();
+        self.activate_order_id(slot_storage, order_id, best_opposite_outer_index);
 
         Ok(())
     }
@@ -135,15 +149,15 @@ mod tests {
     use crate::{
         quantities::{BaseLots, QuoteLots, Ticks, WrapperU64},
         state::{
-            bitmap_group::BitmapGroup, ListKey, ListSlot, OuterIndex, RestingOrderIndex,
-            SlotActions, TickIndices,
+            bitmap_group::BitmapGroup, InnerIndex, ListKey, ListSlot, OuterIndex,
+            RestingOrderIndex, SlotActions, TickIndices,
         },
     };
 
     use super::*;
 
     #[test]
-    fn insert_single_order_on_empty_index_list() {
+    fn test_insert_single_order_on_empty_index_list() {
         let slot_storage = &mut SlotStorage::new();
         let side = Side::Bid;
 
@@ -225,7 +239,7 @@ mod tests {
     }
 
     #[test]
-    fn insert_two_orders_at_same_price_on_empty_index_list() {
+    fn test_insert_two_orders_at_same_price_on_empty_index_list() {
         let slot_storage = &mut SlotStorage::new();
         let side = Side::Bid;
 
@@ -330,7 +344,7 @@ mod tests {
     }
 
     #[test]
-    fn insert_two_orders_at_different_ticks_on_same_bitmap_group_on_empty_index_list() {
+    fn test_insert_two_orders_at_different_ticks_on_same_bitmap_group_on_empty_index_list() {
         let slot_storage = &mut SlotStorage::new();
         let side = Side::Bid;
 
@@ -438,7 +452,7 @@ mod tests {
     }
 
     #[test]
-    fn insert_two_orders_at_bitmap_groups_on_empty_index_list() {
+    fn test_insert_two_orders_at_bitmap_groups_on_empty_index_list() {
         let slot_storage = &mut SlotStorage::new();
         let side = Side::Bid;
 
@@ -563,12 +577,8 @@ mod tests {
         assert_eq!(expected_list_slot, list_slot);
     }
 
-    // insert on non-empty values
-    // 1. order present on same bitmap group
-    // 2. on different bitmap group
-
     #[test]
-    fn insert_single_order_on_non_empty_index_list_on_same_bitmap_group() {
+    fn test_insert_single_order_on_non_empty_index_list_on_same_bitmap_group() {
         let slot_storage = &mut SlotStorage::new();
         let side = Side::Bid;
 
@@ -660,7 +670,7 @@ mod tests {
     }
 
     #[test]
-    fn insert_single_order_on_non_empty_index_list_on_different_bitmap_groups() {
+    fn test_insert_single_order_on_non_empty_index_list_on_different_bitmap_groups() {
         let slot_storage = &mut SlotStorage::new();
         let side = Side::Bid;
 
@@ -769,7 +779,7 @@ mod tests {
     }
 
     #[test]
-    fn insert_two_orders_on_non_empty_index_list_on_different_bitmap_groups() {
+    fn test_insert_two_orders_on_non_empty_index_list_on_different_bitmap_groups() {
         let slot_storage = &mut SlotStorage::new();
         let side = Side::Bid;
 
@@ -902,5 +912,73 @@ mod tests {
 
         let read_list_slot = ListSlot::new_from_slot(slot_storage, list_key);
         assert_eq!(list_slot, read_list_slot);
+    }
+
+    #[test]
+    fn test_bits_from_opposite_side_not_cleared_for_newly_activated_outer_indices_for_asks() {
+        let slot_storage = &mut SlotStorage::new();
+
+        // Outer index 1 with non-empty bitmap is present in bid index list but not ask index list
+        // Ensure that when we write an ask bit to outer index 1, the old bit is preserved.
+        let outer_index = OuterIndex::new(1);
+
+        let mut bitmap_group = BitmapGroup::default();
+        bitmap_group.inner[0] = 1;
+        bitmap_group.write_to_slot(slot_storage, &outer_index);
+
+        let side = Side::Ask;
+        let outer_index_count = 0;
+        let mut order_id_inserter = OrderIdInserter::new(side, outer_index_count);
+
+        let order_id = OrderId {
+            price_in_ticks: Ticks::from_indices(outer_index, InnerIndex::new(31)),
+            resting_order_index: RestingOrderIndex::ZERO,
+        };
+        order_id_inserter.activate_order_id(slot_storage, &order_id, outer_index);
+        order_id_inserter
+            .bitmap_inserter
+            .flush_bitmap_group(slot_storage);
+
+        let read_bitmap_group = BitmapGroup::new_from_slot(slot_storage, outer_index);
+
+        let mut expected_bitmap_group = BitmapGroup::default();
+        expected_bitmap_group.inner[0] = 1; // Belonging to bids
+        expected_bitmap_group.inner[31] = 1;
+
+        assert_eq!(read_bitmap_group, expected_bitmap_group);
+    }
+
+    #[test]
+    fn test_bits_from_opposite_side_not_cleared_for_newly_activated_outer_indices_for_bids() {
+        let slot_storage = &mut SlotStorage::new();
+
+        // Outer index 1 with non-empty bitmap is present in bid index list but not ask index list
+        // Ensure that when we write an ask bit to outer index 1, the old bit is preserved.
+        let outer_index = OuterIndex::new(1);
+
+        let mut bitmap_group = BitmapGroup::default();
+        bitmap_group.inner[31] = 1;
+        bitmap_group.write_to_slot(slot_storage, &outer_index);
+
+        let side = Side::Bid;
+        let outer_index_count = 0;
+        let mut order_id_inserter = OrderIdInserter::new(side, outer_index_count);
+
+        let order_id = OrderId {
+            price_in_ticks: Ticks::from_indices(outer_index, InnerIndex::new(0)),
+            resting_order_index: RestingOrderIndex::ZERO,
+        };
+        order_id_inserter.activate_order_id(slot_storage, &order_id, outer_index);
+        order_id_inserter
+            .bitmap_inserter
+            .flush_bitmap_group(slot_storage);
+
+        let read_bitmap_group = BitmapGroup::new_from_slot(slot_storage, outer_index);
+
+        let mut expected_bitmap_group = BitmapGroup::default();
+        expected_bitmap_group.inner[0] = 1;
+        expected_bitmap_group.inner[31] = 1; // Belonging to asks
+
+        assert_eq!(read_bitmap_group, expected_bitmap_group);
     }
 }
