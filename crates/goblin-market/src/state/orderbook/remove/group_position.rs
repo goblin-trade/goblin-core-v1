@@ -69,17 +69,27 @@ impl GroupPositionRemover {
         bitmap.order_present(resting_order_index)
     }
 
-    /// Deactivate an order in the current bitmap group
+    /// Deactivate bit at the last searched group position
     ///
     /// Externally ensure that load_outer_index() was called first so that
     /// `last_outer_index` is not None
     ///
-    pub fn deactivate_in_current(&mut self, group_position: GroupPosition) {
-        let mut bitmap = self
-            .bitmap_group
-            .get_bitmap_mut(&group_position.inner_index);
-        bitmap.clear(&group_position.resting_order_index);
-        self.pending_write = true;
+    pub fn deactivate_last_searched_group_position(&mut self) {
+        if let Some(group_position) = self.last_searched_group_position {
+            let mut bitmap = self
+                .bitmap_group
+                .get_bitmap_mut(&group_position.inner_index);
+            bitmap.clear(&group_position.resting_order_index);
+            self.pending_write = true;
+
+            // We need to clear last_searched_group_position so that behavior
+            // remains consistent with slides.
+            self.last_searched_group_position = None;
+
+            // Optimization- no need to clear `last_searched_group_position`,
+            // since `deactivate_in_current()` is not called without calling
+            // `order_present()` first
+        }
     }
 
     /// Get price of the best active order in the current bitmap group,

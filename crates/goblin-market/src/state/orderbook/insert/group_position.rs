@@ -38,6 +38,9 @@ impl GroupPositionInserter {
     ///
     /// Externally ensure that we always move away from the centre
     ///
+    /// TODO fix- group will not be empty if opposite side's best outer index equals
+    /// outer_index. Derive this value from market state
+    ///
     pub fn load_outer_index(
         &mut self,
         slot_storage: &mut SlotStorage,

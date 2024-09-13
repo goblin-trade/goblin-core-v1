@@ -49,6 +49,9 @@ impl OrderIdInserter {
     pub fn activate_order_id(&mut self, slot_storage: &mut SlotStorage, order_id: &OrderId) {
         // Activate outer index in index list
         let outer_index = order_id.price_in_ticks.outer_index();
+
+        // TODO fix- group will not be empty if opposite side's best outer index equals
+        // outer_index. Derive this value from market state
         let bitmap_group_is_empty = self.index_list_inserter.prepare(slot_storage, outer_index);
 
         // Active group position in bitmap

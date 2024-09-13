@@ -69,7 +69,11 @@ impl ActiveOuterIndexIterator {
     /// * slot_storage
     ///
     pub fn next(&mut self, slot_storage: &SlotStorage) -> Option<OuterIndex> {
-        if let Some(outer_index_position) = self.inner.next() {
+        let res = self.inner.next();
+        #[cfg(test)]
+        println!("next result in OuterIndexPositionIterator {:?}", res);
+
+        if let Some(outer_index_position) = res {
             self.update_cached_list_slot(outer_index_position, slot_storage);
             let list_slot = self.list_slot.as_ref().unwrap();
             let current_outer_index = list_slot.get(outer_index_position.relative_index as usize);

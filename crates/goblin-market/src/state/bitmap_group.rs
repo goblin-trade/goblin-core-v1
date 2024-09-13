@@ -34,12 +34,6 @@ impl BitmapGroup {
         }
     }
 
-    /// Whether the bitmap group is active. If the active state changes then
-    /// the tick group list must be updated
-    pub fn is_active(&self) -> bool {
-        self.inner != [0u8; 32]
-    }
-
     /// Whether the bitmap group has active resting orders at the given inner index
     pub fn inner_index_is_active(&self, inner_index: InnerIndex) -> bool {
         self.inner[inner_index.as_usize()] != 0
@@ -65,6 +59,26 @@ impl BitmapGroup {
         let mut iterator = ActiveInnerIndexIterator::new(self, side, starting_index);
         iterator.next()
     }
+
+    /// Whether the bitmap group is inactive for `side`
+    ///
+    /// Even if bits for a side have closed, the opposite side bits can remain open.
+    /// Therefore avoid `is_active = self.inner != [0u8; 32]`
+    ///
+    pub fn is_inactive(&self, side: Side, start_index_inclusive: InnerIndex) -> bool {
+        let best_active_index = self.best_active_inner_index(side, Some(start_index_inclusive));
+        best_active_index.is_none()
+    }
+
+    /// Whether the bitmap group is active. If the active state changes then
+    /// the tick group list must be updated
+    ///
+    /// Important- Avoid this function for index list deactivations. Use is_inactive()
+    /// instead
+    ///
+    // pub fn is_active(&self) -> bool {
+    //     self.inner != [0u8; 32]
+    // }
 
     /// Write to slot
     pub fn write_to_slot(&self, slot_storage: &mut SlotStorage, key: &OuterIndex) {
@@ -247,5 +261,33 @@ mod test {
 
         assert_eq!(*bitmap.inner, 1);
         assert_eq!(bitmap_group.inner[0], 1);
+    }
+
+    #[test]
+    fn test_is_inactive_for_bids() {
+        let mut bitmap_group = BitmapGroup::default();
+
+        let side = Side::Bid;
+        let starting_index = InnerIndex::new(10);
+
+        bitmap_group.inner[starting_index.as_usize() + 1] = 0b00000001;
+        assert_eq!(bitmap_group.is_inactive(side, starting_index), true);
+
+        bitmap_group.inner[starting_index.as_usize()] = 0b00000001;
+        assert_eq!(bitmap_group.is_inactive(side, starting_index), false);
+    }
+
+    #[test]
+    fn test_is_inactive_for_asks() {
+        let mut bitmap_group = BitmapGroup::default();
+
+        let side = Side::Ask;
+        let starting_index = InnerIndex::new(10);
+
+        bitmap_group.inner[starting_index.as_usize() - 1] = 0b00000001;
+        assert_eq!(bitmap_group.is_inactive(side, starting_index), true);
+
+        bitmap_group.inner[starting_index.as_usize()] = 0b00000001;
+        assert_eq!(bitmap_group.is_inactive(side, starting_index), false);
     }
 }
