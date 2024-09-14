@@ -112,6 +112,37 @@ impl GroupPositionRemover {
         }
     }
 
+    /// Whether the bitmap group has been inactivated for `self.side`. It accounts for
+    /// and excludes bits belonging to the opposite side during lookup.
+    ///
+    /// Externally ensure that `last_outer_index` is not None and has active bits for `side`, so there is
+    /// no overflow or underflow when we add or subtract from `best_opposite_inner_index`.
+    ///
+    /// # Arguments
+    ///
+    /// * `best_opposite_price`
+    ///
+    pub fn is_inactive(&self, best_opposite_price: Ticks) -> bool {
+        let start_index = if self.last_outer_index == Some(best_opposite_price.outer_index()) {
+            // Overflow or underflow would happen only if the most extreme bitmap is occupied
+            // by opposite side bits. This is not possible because active bits for `side`
+            // are guaranteed to be present.
+
+            let best_opposite_inner_index = best_opposite_price.inner_index();
+            if self.side == Side::Bid {
+                best_opposite_inner_index - InnerIndex::ONE
+            } else {
+                best_opposite_inner_index + InnerIndex::ONE
+            }
+        } else if self.side == Side::Bid {
+            InnerIndex::MAX
+        } else {
+            InnerIndex::MIN
+        };
+
+        self.bitmap_group.is_inactive(self.side, start_index)
+    }
+
     /// Loads a new bitmap group for the new outer index. The previous group is flushed.
     /// No-op if outer index does not change
     ///

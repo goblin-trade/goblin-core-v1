@@ -1,7 +1,10 @@
 use super::iterator::active_position::inner_index::ActiveInnerIndexIterator;
-use crate::state::{
-    slot_storage::{SlotActions, SlotKey, SlotStorage},
-    InnerIndex, OuterIndex, RestingOrderIndex, Side,
+use crate::{
+    quantities::Ticks,
+    state::{
+        slot_storage::{SlotActions, SlotKey, SlotStorage},
+        InnerIndex, OuterIndex, RestingOrderIndex, Side,
+    },
 };
 
 /// A BitmapGroup contains Bitmaps for 32 ticks in ascending order.
