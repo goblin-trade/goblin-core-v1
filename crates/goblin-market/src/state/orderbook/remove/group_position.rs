@@ -69,27 +69,77 @@ impl GroupPositionRemover {
         bitmap.order_present(resting_order_index)
     }
 
-    /// Deactivate bit at the last searched group position
+    /// Deactivates the bit present on `last_searched_group_position` and conditionally
+    /// enables or disables `pending_write`
     ///
-    /// Externally ensure that load_outer_index() was called first so that
-    /// `last_outer_index` is not None
+    /// Sets pending_write to false if the last bit on best market price is deactivated,
+    /// else set to true. If the last bit on best maket price is deactivated there is no
+    /// need to write the bitmap group to slot because the best market price will update.
     ///
-    pub fn deactivate_last_searched_group_position(&mut self) {
-        if let Some(group_position) = self.last_searched_group_position {
+    pub fn deactivate_last_searched_group_position(&mut self, best_market_price: Ticks) {
+        if let (Some(outer_index), Some(group_position)) =
+            (self.last_outer_index, self.last_searched_group_position)
+        {
+            let current_price = Ticks::from_indices(outer_index, group_position.inner_index);
             let mut bitmap = self
                 .bitmap_group
                 .get_bitmap_mut(&group_position.inner_index);
             bitmap.clear(&group_position.resting_order_index);
-            self.pending_write = true;
 
-            // We need to clear last_searched_group_position so that behavior
-            // remains consistent with slides.
+            // TODO pending_write should be false if group got cleared
+            // self.bitmap_group.is_inactive(side, start_index_inclusive)
+            self.pending_write = !(current_price == best_market_price && bitmap.is_empty());
             self.last_searched_group_position = None;
 
             // Optimization- no need to clear `last_searched_group_position`,
             // since `deactivate_in_current()` is not called without calling
             // `order_present()` first
         }
+    }
+
+    // /// Deactivate bit at the last searched group position
+    // ///
+    // /// Externally ensure that load_outer_index() was called first so that
+    // /// `last_outer_index` is not None
+    // ///
+    // pub fn deactivate_last_searched_group_position(&mut self) {
+    //     if let Some(group_position) = self.last_searched_group_position {
+    //         let mut bitmap = self
+    //             .bitmap_group
+    //             .get_bitmap_mut(&group_position.inner_index);
+    //         bitmap.clear(&group_position.resting_order_index);
+    //         self.pending_write = true;
+
+    //         // We need to clear last_searched_group_position so that behavior
+    //         // remains consistent with slides.
+    //         self.last_searched_group_position = None;
+
+    //         // Optimization- no need to clear `last_searched_group_position`,
+    //         // since `deactivate_in_current()` is not called without calling
+    //         // `order_present()` first
+    //     }
+    // }
+
+    pub fn deactivation_will_close_best_inner_index_v2(&self, best_market_price: Ticks) -> bool {
+        if let Some(order_id) = self.last_searched_order_id() {
+            if order_id.price_in_ticks == best_market_price {
+                let group_position = self.last_searched_group_position.unwrap();
+                let bitmap = self.bitmap_group.get_bitmap(&group_position.inner_index);
+                return bitmap.will_be_cleared_after_removal(group_position.resting_order_index);
+            }
+        }
+        false
+    }
+
+    pub fn deactivation_will_close_best_inner_index(&self, best_inner_index: InnerIndex) -> bool {
+        if let Some(group_position) = self.last_searched_group_position {
+            if group_position.inner_index == best_inner_index {
+                let bitmap = self.bitmap_group.get_bitmap(&group_position.inner_index);
+                return bitmap.will_be_cleared_after_removal(group_position.resting_order_index);
+            }
+        }
+
+        false
     }
 
     /// Get price of the best active order in the current bitmap group,
@@ -169,7 +219,16 @@ impl GroupPositionRemover {
         if !self.pending_write {
             return;
         }
+
         if let Some(last_index) = self.last_outer_index {
+            // Don't write to slot if
+            // - Bitmap group was completely cleared. Since outer index is removed from list
+            // we can infer an empty group from outer index.
+            // - Group closed for side, but not opposite side- This means that the bitmap will
+            // hold a ghost value that's not valid for the opposite side. The tick price of this
+            // bit will be closer to the centre than best price stored in market state. We'll need
+            // a way to ignore this value- form a virtual bitmap when inserting values that
+            // only considers bits at best market price or inner.
             self.bitmap_group.write_to_slot(slot_storage, &last_index);
             self.pending_write = false;
         }

@@ -1,10 +1,7 @@
 use super::iterator::active_position::inner_index::ActiveInnerIndexIterator;
-use crate::{
-    quantities::Ticks,
-    state::{
-        slot_storage::{SlotActions, SlotKey, SlotStorage},
-        InnerIndex, OuterIndex, RestingOrderIndex, Side,
-    },
+use crate::state::{
+    slot_storage::{SlotActions, SlotKey, SlotStorage},
+    InnerIndex, OuterIndex, RestingOrderIndex, Side,
 };
 
 /// A BitmapGroup contains Bitmaps for 32 ticks in ascending order.
@@ -130,6 +127,27 @@ impl Bitmap<'_> {
         // If all bits are 1, return None indicating no free index
         None
     }
+
+    /// Checks if removing the order at the specified `RestingOrderIndex`
+    /// will clear the entire bitmap, meaning no bits will be set after the removal.
+    ///
+    /// # Arguments
+    ///
+    /// * `resting_order_index` - The index of the order to be removed.
+    ///
+    /// # Returns
+    ///
+    /// * `true` if removing the order will result in the bitmap being cleared (i.e., no bits set).
+    /// * `false` if other bits will remain set after the removal.
+    pub fn will_be_cleared_after_removal(&self, resting_order_index: RestingOrderIndex) -> bool {
+        // Create a mask to clear the bit at `resting_order_index`
+        let mask = !(1 << resting_order_index.as_u8());
+
+        // Apply the mask to the bitmap
+        // If the result after applying the mask is 0, it means that removing the
+        // order will clear the bitmap (all bits will be zero)
+        (*self.inner & mask) == 0
+    }
 }
 
 /// An 8 bit bitmap which tells about active resting orders at the given tick.
@@ -184,7 +202,7 @@ impl MutableBitmap<'_> {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::*;
 
     #[test]
@@ -292,5 +310,64 @@ mod test {
 
         bitmap_group.inner[starting_index.as_usize()] = 0b00000001;
         assert_eq!(bitmap_group.is_inactive(side, starting_index), false);
+    }
+
+    // will_be_cleared_after_removal() tests
+
+    #[test]
+    fn test_removal_clears_bitmap_single_bit_set() {
+        // Bitmap with only the first bit set (0b00000001)
+        let inner = 0b00000001;
+        let bitmap = Bitmap { inner: &inner };
+        let resting_order_index = RestingOrderIndex::new(0);
+
+        // Removing the only order should clear the bitmap
+        assert!(bitmap.will_be_cleared_after_removal(resting_order_index));
+    }
+
+    #[test]
+    fn test_removal_clears_bitmap_middle_bit_set() {
+        // Bitmap with only the middle bit set (0b00010000)
+        let inner = 0b00010000;
+        let bitmap = Bitmap { inner: &inner };
+        let resting_order_index = RestingOrderIndex::new(4);
+
+        // Removing the only order should clear the bitmap
+        assert!(bitmap.will_be_cleared_after_removal(resting_order_index));
+    }
+
+    #[test]
+    fn test_removal_does_not_clear_bitmap_other_bits_set() {
+        // Bitmap with multiple bits set (0b00000011)
+        let inner = 0b00000011;
+        let bitmap = Bitmap { inner: &inner };
+        let resting_order_index = RestingOrderIndex::new(0);
+
+        // Removing the order at index 0 should NOT clear the bitmap
+        // because there is still an order at index 1
+        assert!(!bitmap.will_be_cleared_after_removal(resting_order_index));
+    }
+
+    #[test]
+    fn test_removal_clears_bitmap_highest_bit_set() {
+        // Bitmap with highest bit set (0b10000000)
+        let inner = 0b10000000;
+        let bitmap = Bitmap { inner: &inner };
+        let resting_order_index = RestingOrderIndex::new(7);
+
+        // Removing the order at index 7 should clear the bitmap
+        assert!(bitmap.will_be_cleared_after_removal(resting_order_index));
+    }
+
+    #[test]
+    fn test_removal_does_not_clear_bitmap_all_bits_set() {
+        // Bitmap with all bits set (0b11111111)
+        let inner = 0b11111111;
+        let bitmap = Bitmap { inner: &inner };
+        let resting_order_index = RestingOrderIndex::new(3);
+
+        // Removing the order at index 3 should not clear the bitmap,
+        // since all other bits are still set
+        assert!(!bitmap.will_be_cleared_after_removal(resting_order_index));
     }
 }

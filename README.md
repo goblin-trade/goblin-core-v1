@@ -73,4 +73,5 @@ Order removal is designed to minimize slot writes.
 
 - If a `SlotRestingOrder` is closed, we don't write the cleared value to slot. Instead we just turn off the bit in BitmapGroup.
 - If a `BitmapGroup` is closed, don't write the cleared value to slot. Instead remove its outer index from index list.
+  - Special case: If outermost orders are removed in sequence such that the best market price changes, don't write `BitmapGroup`. Just update best market price.
 - If a `ListSlot` in the index list is closed, don't write the cleared value to slot. Instead just update other list slots and decrement count in `MarketState`

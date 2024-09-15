@@ -88,6 +88,8 @@ impl OrderIdRemover {
         order_present
     }
 
+    pub fn deactivate_group_position(&mut self, market_state: &mut MarketState) {}
+
     /// Remove the last searched order from the book, and update the
     /// best price in market state if the outermost tick closed
     ///
@@ -98,24 +100,59 @@ impl OrderIdRemover {
     ///
     pub fn remove_order(&mut self, slot_storage: &mut SlotStorage, market_state: &mut MarketState) {
         if let Some(order_id) = self.bitmap_remover.last_searched_order_id() {
-            // Deactivate group position in bitmap group
             let group_position = GroupPosition::from(&order_id);
-            self.bitmap_remover
-                .deactivate_last_searched_group_position();
 
             let side = self.side();
+            let best_market_price = market_state.best_price(side);
             let best_opposite_price = market_state.best_price(side.opposite());
+
+            self.bitmap_remover
+                .deactivate_last_searched_group_position(best_market_price);
+
+            // Remove outer index if group was closed
             if self.bitmap_remover.is_inactive(best_opposite_price) {
                 self.index_list_remover.remove_cached_index();
             }
 
             // Update best market price if the outermost tick was closed
-            if order_id.price_in_ticks == market_state.best_price(side) {
+            if order_id.price_in_ticks == best_market_price {
                 let new_best_price =
                     self.get_best_price(slot_storage, Some(group_position.inner_index));
 
                 market_state.set_best_price(side, new_best_price);
             }
+
+            // Handle group writes
+
+            // // If I don't remove this bit, I need to construct a virtual bitmap later.
+            // // Instead the bit can be removed. Have a separate `to_write` condition
+            // if self
+            //     .bitmap_remover
+            //     .deactivation_will_close_best_inner_index_v2(best_market_price)
+            // {
+            //     // No need to remove bit from bitmap group
+            //     // Just update best market price
+            //     // This is the only case where best market price is updated
+            //     let new_best_price =
+            //         self.get_best_price(slot_storage, Some(group_position.inner_index));
+
+            //     market_state.set_best_price(side, new_best_price);
+
+            //     // Handle outer index removal
+            //     // Need to distinguish between ghost value and valid value that
+            //     // was searched prevously but not removed
+            //     // If we're on the best market price, then there are no previously searched unremoved values
+            //     // Therefore we can simply lookup for active bits from current positions
+            // } else {
+            //     // Deactivate group position in bitmap group
+
+            //     self.bitmap_remover
+            //         .deactivate_last_searched_group_position();
+            // }
+
+            // if self.bitmap_remover.is_inactive(best_opposite_price) {
+            //     self.index_list_remover.remove_cached_index();
+            // }
         }
     }
 
@@ -189,7 +226,8 @@ impl OrderIdRemover {
         slot_storage: &mut SlotStorage,
         market_state: &mut MarketState,
     ) {
-        // TODO avoid flush if empty
+        // TODO no need to write bitmap groups if all removals happen above current market
+        // price
         self.bitmap_remover.flush_bitmap_group(slot_storage);
         market_state
             .set_outer_index_length(self.side(), self.index_list_remover.index_list_length());
