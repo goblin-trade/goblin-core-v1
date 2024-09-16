@@ -126,6 +126,44 @@ impl InnerIndex {
     pub fn as_usize(&self) -> usize {
         self.inner
     }
+
+    /// Get the first inner index according to sort order for `side`.
+    pub fn first(side: Side) -> InnerIndex {
+        match side {
+            Side::Bid => InnerIndex::MAX,  // higher to lower
+            Side::Ask => InnerIndex::ZERO, // lower to higher
+        }
+    }
+
+    /// Get the last inner index according to sort order for `side`.
+    pub fn last(side: Side) -> InnerIndex {
+        match side {
+            Side::Bid => InnerIndex::ZERO, // higher to lower
+            Side::Ask => InnerIndex::MAX,  // lower to higher
+        }
+    }
+
+    /// Get the previous inner index according to sort order for `side`.
+    ///
+    /// Externally ensure that is_last() is false
+    ///
+    pub fn previous(&self, side: Side) -> InnerIndex {
+        match side {
+            Side::Bid => *self - InnerIndex::ONE, // descending order
+            Side::Ask => *self + InnerIndex::ONE, // ascending order
+        }
+    }
+
+    /// Get the next inner index according to sort order for `side`.
+    ///
+    /// Externally ensure that is_last() is false
+    ///
+    pub fn next(&self, side: Side) -> InnerIndex {
+        match side {
+            Side::Bid => *self - InnerIndex::ONE, // descending order
+            Side::Ask => *self + InnerIndex::ONE, // ascending order
+        }
+    }
 }
 
 impl Add for InnerIndex {
