@@ -53,37 +53,32 @@ impl GroupPositionRemover {
         None
     }
 
-    /// Whether a resting order is present at given (inner_index, resting_order_index)
+    /// Loads the given group position and tells whether it is active
     ///
     /// Externally ensure that load_outer_index() was called first so that
     /// `last_outer_index` is not None
     ///
     pub fn order_present(&mut self, group_position: GroupPosition) -> bool {
         self.last_searched_group_position = Some(group_position);
-
-        let GroupPosition {
-            inner_index,
-            resting_order_index,
-        } = group_position;
-        let bitmap = self.bitmap_group.get_bitmap(&inner_index);
-        bitmap.order_present(resting_order_index)
+        self.bitmap_group.order_present(group_position)
     }
 
-    /// Deactivates the bit present on `last_searched_group_position` and conditionally
+    /// Deactivates `last_searched_group_position` and conditionally
     /// enables or disables `pending_write`
     ///
-    /// Sets pending_write to false if the last bit on best market price is deactivated
-    /// or if the whole group is cleared.
+    /// Sets pending_write to false if market price updates or if the whole group is cleared,
+    /// else sets it to true.
     ///
     /// # Arguments
     ///
     /// * `best_market_price` - Best market price for the current side
     ///
-    pub fn deactivate_last_searched_group_position(&mut self, best_market_price: Ticks) {
+    pub fn deactivate(&mut self, best_market_price: Ticks) {
         if let (Some(outer_index), Some(group_position)) =
             (self.last_outer_index, self.last_searched_group_position)
         {
             let current_price = Ticks::from_indices(outer_index, group_position.inner_index);
+
             let mut bitmap = self
                 .bitmap_group
                 .get_bitmap_mut(&group_position.inner_index);
@@ -167,21 +162,19 @@ impl GroupPositionRemover {
     }
 
     /// Flush the cached bitmap group to slot
+    ///
     /// This should be called before moving to a new outer index
+    ///
+    /// # Arguments
+    ///
+    /// * `slot_storage`
+    ///
     pub fn flush_bitmap_group(&mut self, slot_storage: &mut SlotStorage) {
         if !self.pending_write {
             return;
         }
 
         if let Some(last_index) = self.last_outer_index {
-            // Don't write to slot if
-            // - Bitmap group was completely cleared. Since outer index is removed from list
-            // we can infer an empty group from outer index.
-            // - Group closed for side, but not opposite side- This means that the bitmap will
-            // hold a ghost value that's not valid for the opposite side. The tick price of this
-            // bit will be closer to the centre than best price stored in market state. We'll need
-            // a way to ignore this value- form a virtual bitmap when inserting values that
-            // only considers bits at best market price or inner.
             self.bitmap_group.write_to_slot(slot_storage, &last_index);
             self.pending_write = false;
         }
@@ -202,7 +195,7 @@ mod tests {
         let present = remover.order_present(group_position);
         assert_eq!(present, true);
 
-        remover.deactivate_last_searched_group_position(best_market_price);
+        remover.deactivate(best_market_price);
         let present_after_deactivation = remover.bitmap_group.order_present(group_position);
         assert_eq!(present_after_deactivation, false);
     }

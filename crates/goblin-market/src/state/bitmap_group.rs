@@ -48,13 +48,24 @@ impl BitmapGroup {
         bitmap.activate(&resting_order_index);
     }
 
+    /// Activate bit at the given group position
+    pub fn deactivate(&mut self, group_position: GroupPosition) {
+        let GroupPosition {
+            inner_index,
+            resting_order_index,
+        } = group_position;
+
+        let mut bitmap = self.get_bitmap_mut(&inner_index);
+        bitmap.clear(&resting_order_index);
+    }
+
     pub fn order_present(&mut self, group_position: GroupPosition) -> bool {
         let GroupPosition {
             inner_index,
             resting_order_index,
         } = group_position;
 
-        let mut bitmap = self.get_bitmap(&inner_index);
+        let bitmap = self.get_bitmap(&inner_index);
         bitmap.order_present(resting_order_index)
     }
 
