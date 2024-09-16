@@ -187,3 +187,407 @@ impl GroupPositionRemover {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::state::RestingOrderIndex;
+
+    use super::*;
+
+    fn load_and_deactivate(
+        remover: &mut GroupPositionRemover,
+        group_position: GroupPosition,
+        best_market_price: Ticks,
+    ) {
+        let present = remover.order_present(group_position);
+        assert_eq!(present, true);
+
+        remover.deactivate_last_searched_group_position(best_market_price);
+        let present_after_deactivation = remover.bitmap_group.order_present(group_position);
+        assert_eq!(present_after_deactivation, false);
+    }
+
+    // Test cases where cleared bitmap group is not written (pending_write is false)
+    // - Outermost tick closed
+    // - Whole group closed
+    //
+    // Cases where pending_write is true
+    // - Remove from outermost but last price does not change
+    // - Remove behind outermost
+
+    #[test]
+    pub fn test_pending_write_behavior_on_sequential_removals_ask() {
+        let side = Side::Ask;
+        let outer_index = OuterIndex::new(1);
+
+        // Write initial data to slot
+        let mut bitmap_group = BitmapGroup::default();
+        // Best opposite price
+        bitmap_group.inner[0] = 0b00000001;
+
+        // Best market price- two resting orders
+        bitmap_group.inner[1] = 0b10000001;
+
+        // Next inner price. Rest of the group is empty
+        bitmap_group.inner[2] = 0b00000001;
+
+        let mut remover = GroupPositionRemover {
+            side,
+            bitmap_group,
+            last_outer_index: Some(outer_index),
+            last_searched_group_position: None,
+            pending_write: false,
+        };
+
+        let mut best_market_price = Ticks::from_indices(outer_index, InnerIndex::ONE);
+
+        // 1. Remove first bit on outermost tick.
+        // - Since the tick remains active `pending_write` is true.
+        // - Best price does not update
+        load_and_deactivate(
+            &mut remover,
+            GroupPosition {
+                inner_index: InnerIndex::ONE,
+                resting_order_index: RestingOrderIndex::ZERO,
+            },
+            best_market_price,
+        );
+        assert_eq!(remover.pending_write, true);
+
+        // No change in market price
+        best_market_price = remover
+            .get_best_price_in_current(Some(InnerIndex::ONE))
+            .unwrap();
+        assert_eq!(
+            best_market_price,
+            Ticks::from_indices(outer_index, InnerIndex::ONE)
+        );
+
+        // 2. Remove final bit on the outermost tick
+        // - The outermost tick is closed so `pending_write` is false
+        // - Best price updated
+        load_and_deactivate(
+            &mut remover,
+            GroupPosition {
+                inner_index: InnerIndex::ONE,
+                resting_order_index: RestingOrderIndex::new(7),
+            },
+            best_market_price,
+        );
+        assert_eq!(remover.pending_write, false);
+
+        // Market price changed
+        best_market_price = remover
+            .get_best_price_in_current(Some(best_market_price.inner_index()))
+            .unwrap();
+        assert_eq!(
+            best_market_price,
+            Ticks::from_indices(outer_index, InnerIndex::new(2))
+        );
+
+        // 3. Remove final bit in the group
+        // - The whole group is closed so `pending_write` is false
+        // - Best price updated
+        load_and_deactivate(
+            &mut remover,
+            GroupPosition {
+                inner_index: InnerIndex::new(2),
+                resting_order_index: RestingOrderIndex::new(0),
+            },
+            best_market_price,
+        );
+        assert_eq!(remover.pending_write, false);
+
+        // Best price is None because the group is cleared
+        assert_eq!(
+            remover.get_best_price_in_current(Some(best_market_price.inner_index())),
+            None
+        );
+    }
+
+    #[test]
+    pub fn test_pending_write_behavior_on_removing_behind_best_price_ask() {
+        let side = Side::Ask;
+        let outer_index = OuterIndex::new(1);
+
+        // Write initial data to slot
+        let mut bitmap_group = BitmapGroup::default();
+        // Best opposite price
+        bitmap_group.inner[0] = 0b00000001;
+
+        // Best market price- two resting orders
+        bitmap_group.inner[1] = 0b10000001;
+
+        // Next inner price. Rest of the group is empty
+        bitmap_group.inner[2] = 0b00000001;
+
+        let mut remover = GroupPositionRemover {
+            side,
+            bitmap_group,
+            last_outer_index: Some(outer_index),
+            last_searched_group_position: None,
+            pending_write: false,
+        };
+
+        let best_market_price = Ticks::from_indices(outer_index, InnerIndex::ONE);
+
+        // 3. Remove the bit at inner index 2
+        // - Best price is unchanged because ticks at best tick are not removed
+        // - `pending_write` is true
+        load_and_deactivate(
+            &mut remover,
+            GroupPosition {
+                inner_index: InnerIndex::new(2),
+                resting_order_index: RestingOrderIndex::new(0),
+            },
+            best_market_price,
+        );
+        assert_eq!(remover.pending_write, true);
+
+        // No change in best price
+        let new_best_market_price = remover
+            .get_best_price_in_current(Some(best_market_price.inner_index()))
+            .unwrap();
+        assert_eq!(new_best_market_price, best_market_price,);
+    }
+
+    #[test]
+    pub fn test_remove_in_non_outermost_group_ask() {
+        let side = Side::Ask;
+        let outer_index = OuterIndex::new(1);
+
+        let best_market_price = Ticks::from_indices(OuterIndex::new(2), InnerIndex::new(0));
+
+        // Write initial data to slot
+        let mut bitmap_group = BitmapGroup::default();
+        bitmap_group.inner[1] = 0b10000001;
+        bitmap_group.inner[2] = 0b00000001;
+
+        let mut remover = GroupPositionRemover {
+            side,
+            bitmap_group,
+            last_outer_index: Some(outer_index),
+            last_searched_group_position: None,
+            pending_write: false,
+        };
+
+        // 1. Remove first bit on outermost
+        // - `pending_write` is true because group did not clear. The best price change
+        // condition does not apply on non-outermost groups
+        load_and_deactivate(
+            &mut remover,
+            GroupPosition {
+                inner_index: InnerIndex::new(1),
+                resting_order_index: RestingOrderIndex::new(0),
+            },
+            best_market_price,
+        );
+        assert_eq!(remover.pending_write, true);
+
+        // 2. Remove final bit on outermost
+        // - `pending_write` is true because group did not clear
+        load_and_deactivate(
+            &mut remover,
+            GroupPosition {
+                inner_index: InnerIndex::new(1),
+                resting_order_index: RestingOrderIndex::new(7),
+            },
+            best_market_price,
+        );
+        assert_eq!(remover.pending_write, true);
+
+        // 3. Close the last bit in group
+        // - `pending_write` is false because the whole group cleared
+        load_and_deactivate(
+            &mut remover,
+            GroupPosition {
+                inner_index: InnerIndex::new(2),
+                resting_order_index: RestingOrderIndex::new(0),
+            },
+            best_market_price,
+        );
+        assert_eq!(remover.pending_write, false);
+    }
+
+    #[test]
+    pub fn test_pending_write_behavior_on_sequential_removals_bid() {
+        let side = Side::Bid;
+        let outer_index = OuterIndex::new(1);
+
+        // Write initial data to slot
+        let mut bitmap_group = BitmapGroup::default();
+        // Best opposite price
+        bitmap_group.inner[31] = 0b00000001;
+
+        // Best market price - two resting orders
+        bitmap_group.inner[30] = 0b10000001;
+
+        // Next inner price. Rest of the group is empty
+        bitmap_group.inner[29] = 0b00000001;
+
+        let mut remover = GroupPositionRemover {
+            side,
+            bitmap_group,
+            last_outer_index: Some(outer_index),
+            last_searched_group_position: None,
+            pending_write: false,
+        };
+
+        let mut best_market_price = Ticks::from_indices(outer_index, InnerIndex::new(30));
+
+        // 1. Remove first bit on outermost tick.
+        load_and_deactivate(
+            &mut remover,
+            GroupPosition {
+                inner_index: InnerIndex::new(30),
+                resting_order_index: RestingOrderIndex::ZERO,
+            },
+            best_market_price,
+        );
+        assert_eq!(remover.pending_write, true);
+
+        // No change in market price
+        best_market_price = remover
+            .get_best_price_in_current(Some(InnerIndex::new(30)))
+            .unwrap();
+        assert_eq!(
+            best_market_price,
+            Ticks::from_indices(outer_index, InnerIndex::new(30))
+        );
+
+        // 2. Remove final bit on the outermost tick
+        load_and_deactivate(
+            &mut remover,
+            GroupPosition {
+                inner_index: InnerIndex::new(30),
+                resting_order_index: RestingOrderIndex::new(7),
+            },
+            best_market_price,
+        );
+        assert_eq!(remover.pending_write, false);
+
+        // Market price changed
+        best_market_price = remover
+            .get_best_price_in_current(Some(best_market_price.inner_index()))
+            .unwrap();
+        assert_eq!(
+            best_market_price,
+            Ticks::from_indices(outer_index, InnerIndex::new(29))
+        );
+
+        // 3. Remove final bit in the group
+        load_and_deactivate(
+            &mut remover,
+            GroupPosition {
+                inner_index: InnerIndex::new(29),
+                resting_order_index: RestingOrderIndex::new(0),
+            },
+            best_market_price,
+        );
+        assert_eq!(remover.pending_write, false);
+
+        // Best price is None because the group is cleared
+        assert_eq!(
+            remover.get_best_price_in_current(Some(best_market_price.inner_index())),
+            None
+        );
+    }
+
+    #[test]
+    pub fn test_pending_write_behavior_on_removing_behind_best_price_bid() {
+        let side = Side::Bid;
+        let outer_index = OuterIndex::new(1);
+
+        // Write initial data to slot
+        let mut bitmap_group = BitmapGroup::default();
+        // Best opposite price
+        bitmap_group.inner[31] = 0b00000001;
+
+        // Best market price - two resting orders
+        bitmap_group.inner[30] = 0b10000001;
+
+        // Next inner price. Rest of the group is empty
+        bitmap_group.inner[29] = 0b00000001;
+
+        let mut remover = GroupPositionRemover {
+            side,
+            bitmap_group,
+            last_outer_index: Some(outer_index),
+            last_searched_group_position: None,
+            pending_write: false,
+        };
+
+        let best_market_price = Ticks::from_indices(outer_index, InnerIndex::new(30));
+
+        // Remove bit at inner index 29
+        load_and_deactivate(
+            &mut remover,
+            GroupPosition {
+                inner_index: InnerIndex::new(29),
+                resting_order_index: RestingOrderIndex::new(0),
+            },
+            best_market_price,
+        );
+        assert_eq!(remover.pending_write, true);
+
+        // No change in best price
+        let new_best_market_price = remover
+            .get_best_price_in_current(Some(best_market_price.inner_index()))
+            .unwrap();
+        assert_eq!(new_best_market_price, best_market_price);
+    }
+
+    #[test]
+    pub fn test_remove_in_non_outermost_group_bid() {
+        let side = Side::Bid;
+        let outer_index = OuterIndex::new(1);
+
+        let best_market_price = Ticks::from_indices(OuterIndex::new(2), InnerIndex::new(31));
+
+        // Write initial data to slot
+        let mut bitmap_group = BitmapGroup::default();
+        bitmap_group.inner[30] = 0b10000001;
+        bitmap_group.inner[29] = 0b00000001;
+
+        let mut remover = GroupPositionRemover {
+            side,
+            bitmap_group,
+            last_outer_index: Some(outer_index),
+            last_searched_group_position: None,
+            pending_write: false,
+        };
+
+        // 1. Remove first bit on outermost
+        load_and_deactivate(
+            &mut remover,
+            GroupPosition {
+                inner_index: InnerIndex::new(30),
+                resting_order_index: RestingOrderIndex::new(0),
+            },
+            best_market_price,
+        );
+        assert_eq!(remover.pending_write, true);
+
+        // 2. Remove final bit on outermost
+        load_and_deactivate(
+            &mut remover,
+            GroupPosition {
+                inner_index: InnerIndex::new(30),
+                resting_order_index: RestingOrderIndex::new(7),
+            },
+            best_market_price,
+        );
+        assert_eq!(remover.pending_write, true);
+
+        // 3. Close the last bit in group
+        load_and_deactivate(
+            &mut remover,
+            GroupPosition {
+                inner_index: InnerIndex::new(29),
+                resting_order_index: RestingOrderIndex::new(0),
+            },
+            best_market_price,
+        );
+        assert_eq!(remover.pending_write, false);
+    }
+}

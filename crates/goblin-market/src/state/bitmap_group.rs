@@ -1,4 +1,7 @@
-use super::iterator::active_position::inner_index::ActiveInnerIndexIterator;
+use super::{
+    iterator::active_position::inner_index::ActiveInnerIndexIterator,
+    order::group_position::{self, GroupPosition},
+};
 use crate::state::{
     slot_storage::{SlotActions, SlotKey, SlotStorage},
     InnerIndex, OuterIndex, RestingOrderIndex, Side,
@@ -32,6 +35,27 @@ impl BitmapGroup {
         MutableBitmap {
             inner: &mut self.inner[inner_index.as_usize()],
         }
+    }
+
+    /// Activate bit at the given group position
+    pub fn activate(&mut self, group_position: GroupPosition) {
+        let GroupPosition {
+            inner_index,
+            resting_order_index,
+        } = group_position;
+
+        let mut bitmap = self.get_bitmap_mut(&inner_index);
+        bitmap.activate(&resting_order_index);
+    }
+
+    pub fn order_present(&mut self, group_position: GroupPosition) -> bool {
+        let GroupPosition {
+            inner_index,
+            resting_order_index,
+        } = group_position;
+
+        let mut bitmap = self.get_bitmap(&inner_index);
+        bitmap.order_present(resting_order_index)
     }
 
     /// Whether the bitmap group has active resting orders at the given inner index
