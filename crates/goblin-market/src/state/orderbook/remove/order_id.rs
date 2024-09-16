@@ -88,8 +88,6 @@ impl OrderIdRemover {
         order_present
     }
 
-    pub fn deactivate_group_position(&mut self, market_state: &mut MarketState) {}
-
     /// Remove the last searched order from the book, and update the
     /// best price in market state if the outermost tick closed
     ///
@@ -121,38 +119,6 @@ impl OrderIdRemover {
 
                 market_state.set_best_price(side, new_best_price);
             }
-
-            // Handle group writes
-
-            // // If I don't remove this bit, I need to construct a virtual bitmap later.
-            // // Instead the bit can be removed. Have a separate `to_write` condition
-            // if self
-            //     .bitmap_remover
-            //     .deactivation_will_close_best_inner_index_v2(best_market_price)
-            // {
-            //     // No need to remove bit from bitmap group
-            //     // Just update best market price
-            //     // This is the only case where best market price is updated
-            //     let new_best_price =
-            //         self.get_best_price(slot_storage, Some(group_position.inner_index));
-
-            //     market_state.set_best_price(side, new_best_price);
-
-            //     // Handle outer index removal
-            //     // Need to distinguish between ghost value and valid value that
-            //     // was searched prevously but not removed
-            //     // If we're on the best market price, then there are no previously searched unremoved values
-            //     // Therefore we can simply lookup for active bits from current positions
-            // } else {
-            //     // Deactivate group position in bitmap group
-
-            //     self.bitmap_remover
-            //         .deactivate_last_searched_group_position();
-            // }
-
-            // if self.bitmap_remover.is_inactive(best_opposite_price) {
-            //     self.index_list_remover.remove_cached_index();
-            // }
         }
     }
 
@@ -323,6 +289,11 @@ mod tests {
             .is_none());
         assert!(remover.bitmap_remover.last_searched_order_id().is_none());
 
+        // pending_write is true because
+        // - We're in the outermost group
+        // - Outermost tick did not close
+        assert!(remover.bitmap_remover.pending_write);
+
         // No change in opposite side price
         assert_eq!(market_state.best_bid_price, order_id_bid.price_in_ticks);
 
@@ -341,10 +312,14 @@ mod tests {
         assert_eq!(market_state.asks_outer_indices, 1);
 
         // Check bitmap group
+        // Group updated because `pending_write` was true
         let mut expected_bitmap_group = BitmapGroup::default();
         expected_bitmap_group.inner[0] = 0b00000001;
         expected_bitmap_group.inner[2] = 0b10000000;
         assert_eq!(remover.bitmap_remover.bitmap_group, expected_bitmap_group);
+
+        let read_bitmap_group = BitmapGroup::new_from_slot(&slot_storage, outer_index_0);
+        assert_eq!(read_bitmap_group, expected_bitmap_group);
     }
 
     #[test]
@@ -406,6 +381,9 @@ mod tests {
             .is_none());
         assert!(remover.bitmap_remover.last_searched_order_id().is_none());
 
+        // Pending write is false because the best market price changed
+        assert_eq!(remover.bitmap_remover.pending_write, false);
+
         // No change in opposite side price
         assert_eq!(market_state.best_bid_price, order_id_bid.price_in_ticks);
 
@@ -424,10 +402,110 @@ mod tests {
         assert_eq!(market_state.asks_outer_indices, 1);
 
         // Check bitmap group
+        let mut expected_cached_bitmap_group = BitmapGroup::default();
+        expected_cached_bitmap_group.inner[0] = 0b00000001;
+        expected_cached_bitmap_group.inner[3] = 0b00000001;
+        assert_eq!(
+            remover.bitmap_remover.bitmap_group,
+            expected_cached_bitmap_group
+        );
+
+        // Bitmap group not written because `pending_write` is false. No change in value
+        let read_bitmap_group = BitmapGroup::new_from_slot(&slot_storage, outer_index_0);
+        let mut expected_read_bitmap_group = BitmapGroup::default();
+        expected_read_bitmap_group.inner[0] = 0b00000001;
+        expected_read_bitmap_group.inner[2] = 0b00000001;
+        expected_read_bitmap_group.inner[3] = 0b00000001;
+
+        assert_eq!(read_bitmap_group, expected_read_bitmap_group);
+    }
+
+    #[test]
+    fn test_search_and_remove_same_outer_index_non_outermost_value() {
+        let mut slot_storage = SlotStorage::new();
+        let side = Side::Ask;
+
+        let outer_index_count = 1;
+        let outer_index_0 = OuterIndex::new(1);
+
+        // Write outer indices to slot
+        let list_key = ListKey { index: 0, side };
+        let mut list_slot = ListSlot::default();
+        list_slot.set(0, outer_index_0);
+        list_slot.write_to_slot(&mut slot_storage, &list_key);
+
+        // Opposite side bit belonging to bids
+        let order_id_bid = OrderId {
+            price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(0)),
+            resting_order_index: RestingOrderIndex::new(0),
+        };
+
+        let order_id_0 = OrderId {
+            price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(2)),
+            resting_order_index: RestingOrderIndex::new(0),
+        };
+        let order_id_1 = OrderId {
+            price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(3)),
+            resting_order_index: RestingOrderIndex::new(0),
+        };
+        enable_order_id(&mut slot_storage, order_id_bid);
+        enable_order_id(&mut slot_storage, order_id_0);
+        enable_order_id(&mut slot_storage, order_id_1);
+
+        let mut market_state = MarketState {
+            collected_quote_lot_fees: QuoteLots::ZERO,
+            unclaimed_quote_lot_fees: QuoteLots::ZERO,
+            bids_outer_indices: 1,
+            asks_outer_indices: 1,
+            best_bid_price: order_id_bid.price_in_ticks,
+            best_ask_price: order_id_0.price_in_ticks,
+        };
+
+        let mut remover = OrderIdRemover::new(outer_index_count, side);
+
+        // 1. Search
+        let found_1 = remover.find_order(&mut slot_storage, order_id_1);
+        assert!(found_1);
+        assert_eq!(
+            remover.bitmap_remover.last_searched_order_id().unwrap(),
+            order_id_1
+        );
+
+        // 2. Remove
+        remover.remove_order(&mut slot_storage, &mut market_state);
+        assert!(remover
+            .bitmap_remover
+            .last_searched_group_position
+            .is_none());
+        assert!(remover.bitmap_remover.last_searched_order_id().is_none());
+
+        // Pending write is true because the best market price did not change
+        assert_eq!(remover.bitmap_remover.pending_write, true);
+
+        // No change in opposite side price
+        assert_eq!(market_state.best_bid_price, order_id_bid.price_in_ticks);
+
+        // Best price did not change
+        assert_eq!(market_state.best_ask_price, order_id_0.price_in_ticks);
+
+        // No change in outer index
+        assert_eq!(
+            remover.bitmap_remover.last_outer_index.unwrap(),
+            outer_index_0
+        );
+
+        // 3. Write list
+        remover.write_prepared_indices(&mut slot_storage, &mut market_state);
+        // No change because group is still active
+        assert_eq!(market_state.asks_outer_indices, 1);
+
+        // Check bitmap group
         let mut expected_bitmap_group = BitmapGroup::default();
         expected_bitmap_group.inner[0] = 0b00000001;
-        expected_bitmap_group.inner[3] = 0b00000001;
+        expected_bitmap_group.inner[2] = 0b00000001;
         assert_eq!(remover.bitmap_remover.bitmap_group, expected_bitmap_group);
+        let read_bitmap_group = BitmapGroup::new_from_slot(&slot_storage, outer_index_0);
+        assert_eq!(read_bitmap_group, expected_bitmap_group);
     }
 
     #[test]
@@ -491,6 +569,9 @@ mod tests {
             .is_none());
         assert!(remover.bitmap_remover.last_searched_order_id().is_none());
 
+        // No pending write because group was cleared
+        assert_eq!(remover.bitmap_remover.pending_write, false);
+
         // No change in opposite side price
         assert_eq!(market_state.best_bid_price, order_id_bid.price_in_ticks);
 
@@ -508,10 +589,20 @@ mod tests {
         // Outer index list size reduced by 1
         assert_eq!(market_state.asks_outer_indices, 1);
 
+        // bitmap_group_0 was cleared, so no slot update
+        let mut expected_bitmap_group_0 = BitmapGroup::default();
+        expected_bitmap_group_0.inner[0] = 0b00000001;
+        expected_bitmap_group_0.inner[2] = 0b00000001;
+        let read_bitmap_group_0 = BitmapGroup::new_from_slot(&slot_storage, outer_index_0);
+        assert_eq!(read_bitmap_group_0, expected_bitmap_group_0);
+
         // We are now on the bitmap for outer_index_1
-        let mut expected_bitmap_group = BitmapGroup::default();
-        expected_bitmap_group.inner[0] = 0b00000001;
-        assert_eq!(remover.bitmap_remover.bitmap_group, expected_bitmap_group);
+        let mut expected_cached_bitmap_group_1 = BitmapGroup::default();
+        expected_cached_bitmap_group_1.inner[0] = 0b00000001;
+        assert_eq!(
+            remover.bitmap_remover.bitmap_group,
+            expected_cached_bitmap_group_1
+        );
     }
 
     #[test]
@@ -590,6 +681,9 @@ mod tests {
             .is_none());
         assert!(remover.bitmap_remover.last_searched_order_id().is_none());
 
+        // pending write because best market price did not change
+        assert_eq!(remover.bitmap_remover.pending_write, true);
+
         // No change in opposite side price
         assert_eq!(market_state.best_bid_price, order_id_bid.price_in_ticks);
 
@@ -612,6 +706,9 @@ mod tests {
         expected_bitmap_group.inner[0] = 0b00000001;
         expected_bitmap_group.inner[2] = 0b00000001;
         assert_eq!(remover.bitmap_remover.bitmap_group, expected_bitmap_group);
+
+        let read_bitmap_group = BitmapGroup::new_from_slot(&slot_storage, outer_index_0);
+        assert_eq!(read_bitmap_group, expected_bitmap_group);
     }
 
     #[test]
@@ -690,6 +787,9 @@ mod tests {
             .is_none());
         assert!(remover.bitmap_remover.last_searched_order_id().is_none());
 
+        // Pending write because best price did not change
+        assert_eq!(remover.bitmap_remover.pending_write, true);
+
         // No change in opposite side price
         assert_eq!(market_state.best_bid_price, order_id_bid.price_in_ticks);
 
@@ -712,6 +812,9 @@ mod tests {
         expected_bitmap_group.inner[0] = 0b00000001;
         expected_bitmap_group.inner[2] = 0b00000001;
         assert_eq!(remover.bitmap_remover.bitmap_group, expected_bitmap_group);
+
+        let read_bitmap_group = BitmapGroup::new_from_slot(&slot_storage, outer_index_0);
+        assert_eq!(read_bitmap_group, expected_bitmap_group);
     }
 
     #[test]
@@ -792,6 +895,10 @@ mod tests {
             .is_none());
         assert!(remover.bitmap_remover.last_searched_order_id().is_none());
 
+        // Pending write is false because group was closed and because this is not the
+        // outermost group
+        assert_eq!(remover.bitmap_remover.pending_write, false);
+
         // No change in opposite side price
         assert_eq!(market_state.best_bid_price, order_id_bid.price_in_ticks);
 
@@ -803,9 +910,6 @@ mod tests {
             remover.bitmap_remover.last_outer_index.unwrap(),
             outer_index_1
         );
-
-        let read_bitmap_group_1 = BitmapGroup::new_from_slot(&slot_storage, outer_index_1);
-        println!("read_bitmap_group_1 {:?}", read_bitmap_group_1);
 
         // 4. Write list
         remover.write_prepared_indices(&mut slot_storage, &mut market_state);
@@ -820,66 +924,16 @@ mod tests {
         let read_bitmap_group_0 = BitmapGroup::new_from_slot(&slot_storage, outer_index_0);
         assert_eq!(read_bitmap_group_0, expected_bitmap_group_0);
 
-        let expected_bitmap_group_1 = BitmapGroup::default();
-        assert_eq!(remover.bitmap_remover.bitmap_group, expected_bitmap_group_1);
+        let expected_cached_bitmap_group_1 = BitmapGroup::default();
+        assert_eq!(
+            remover.bitmap_remover.bitmap_group,
+            expected_cached_bitmap_group_1
+        );
 
         // bitmap group 1 is not written to slot. Slot will give the previous value
-        let mut expected_bitmap_group_1_written = BitmapGroup::default();
-        expected_bitmap_group_1_written.inner[0] = 0b00000001;
+        let mut expected_written_bitmap_group_1 = BitmapGroup::default();
+        expected_written_bitmap_group_1.inner[0] = 0b00000001;
         let read_bitmap_group_1 = BitmapGroup::new_from_slot(&slot_storage, outer_index_1);
-        assert_eq!(read_bitmap_group_1, expected_bitmap_group_1_written);
-    }
-
-    // TODO test_search_one_but_remove_another()
-    #[test]
-    fn test_search_and_remove_all_cases() {
-        let mut slot_storage = SlotStorage::new();
-        let side = Side::Ask;
-
-        let outer_index_count = 2;
-        let outer_index_0 = OuterIndex::new(1);
-        let outer_index_1 = OuterIndex::new(2);
-
-        // Write outer indices to slot
-        let list_key = ListKey { index: 0, side };
-        let mut list_slot = ListSlot::default();
-        list_slot.set(0, outer_index_0);
-        list_slot.set(1, outer_index_1);
-        list_slot.write_to_slot(&mut slot_storage, &list_key);
-
-        let order_ids = vec![
-            // Belongs to bids
-            OrderId {
-                price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(0)),
-                resting_order_index: RestingOrderIndex::new(0),
-            },
-            // Outermost ask
-            OrderId {
-                price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(2)),
-                resting_order_index: RestingOrderIndex::new(0),
-            },
-            // Same inner index case
-            OrderId {
-                price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(2)),
-                resting_order_index: RestingOrderIndex::new(7),
-            },
-            // Different inner index case
-            OrderId {
-                price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(4)),
-                resting_order_index: RestingOrderIndex::new(1),
-            },
-            // Different outer index case
-            OrderId {
-                price_in_ticks: Ticks::from_indices(outer_index_1, InnerIndex::new(0)),
-                resting_order_index: RestingOrderIndex::new(0),
-            },
-        ];
-
-        for order_id in &order_ids {
-            enable_order_id(&mut slot_storage, *order_id);
-        }
-
-        let mut remover = OrderIdRemover::new(outer_index_count, side);
-        assert!(remover.find_order(&mut slot_storage, *order_ids.get(1).unwrap()));
+        assert_eq!(read_bitmap_group_1, expected_written_bitmap_group_1);
     }
 }
