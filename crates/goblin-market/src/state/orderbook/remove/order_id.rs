@@ -226,8 +226,6 @@ impl OrderIdRemover {
         slot_storage: &mut SlotStorage,
         market_state: &mut MarketState,
     ) {
-        // TODO no need to write bitmap groups if all removals happen above current market
-        // price
         self.bitmap_remover.flush_bitmap_group(slot_storage);
         market_state
             .set_outer_index_length(self.side(), self.index_list_remover.index_list_length());

@@ -65,8 +65,8 @@ impl BitmapGroup {
     /// Even if bits for a side have closed, the opposite side bits can remain open.
     /// Therefore avoid `is_active = self.inner != [0u8; 32]`
     ///
-    pub fn is_inactive(&self, side: Side, start_index_inclusive: InnerIndex) -> bool {
-        let best_active_index = self.best_active_inner_index(side, Some(start_index_inclusive));
+    pub fn is_inactive(&self, side: Side, start_index_inclusive: Option<InnerIndex>) -> bool {
+        let best_active_index = self.best_active_inner_index(side, start_index_inclusive);
         best_active_index.is_none()
     }
 
@@ -292,10 +292,10 @@ mod tests {
         let starting_index = InnerIndex::new(10);
 
         bitmap_group.inner[starting_index.as_usize() + 1] = 0b00000001;
-        assert_eq!(bitmap_group.is_inactive(side, starting_index), true);
+        assert_eq!(bitmap_group.is_inactive(side, Some(starting_index)), true);
 
         bitmap_group.inner[starting_index.as_usize()] = 0b00000001;
-        assert_eq!(bitmap_group.is_inactive(side, starting_index), false);
+        assert_eq!(bitmap_group.is_inactive(side, Some(starting_index)), false);
     }
 
     #[test]
@@ -306,10 +306,10 @@ mod tests {
         let starting_index = InnerIndex::new(10);
 
         bitmap_group.inner[starting_index.as_usize() - 1] = 0b00000001;
-        assert_eq!(bitmap_group.is_inactive(side, starting_index), true);
+        assert_eq!(bitmap_group.is_inactive(side, Some(starting_index)), true);
 
         bitmap_group.inner[starting_index.as_usize()] = 0b00000001;
-        assert_eq!(bitmap_group.is_inactive(side, starting_index), false);
+        assert_eq!(bitmap_group.is_inactive(side, Some(starting_index)), false);
     }
 
     // will_be_cleared_after_removal() tests

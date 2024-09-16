@@ -72,9 +72,12 @@ impl GroupPositionRemover {
     /// Deactivates the bit present on `last_searched_group_position` and conditionally
     /// enables or disables `pending_write`
     ///
-    /// Sets pending_write to false if the last bit on best market price is deactivated,
-    /// else set to true. If the last bit on best maket price is deactivated there is no
-    /// need to write the bitmap group to slot because the best market price will update.
+    /// Sets pending_write to false if the last bit on best market price is deactivated
+    /// or if the whole group is cleared.
+    ///
+    /// # Arguments
+    ///
+    /// * `best_market_price` - Best market price for the current side
     ///
     pub fn deactivate_last_searched_group_position(&mut self, best_market_price: Ticks) {
         if let (Some(outer_index), Some(group_position)) =
@@ -86,60 +89,12 @@ impl GroupPositionRemover {
                 .get_bitmap_mut(&group_position.inner_index);
             bitmap.clear(&group_position.resting_order_index);
 
-            // TODO pending_write should be false if group got cleared
-            // self.bitmap_group.is_inactive(side, start_index_inclusive)
-            self.pending_write = !(current_price == best_market_price && bitmap.is_empty());
+            self.pending_write = (current_price == best_market_price && !bitmap.is_empty())
+                || (current_price != best_market_price
+                    && !self.bitmap_group.is_inactive(self.side, None));
+
             self.last_searched_group_position = None;
-
-            // Optimization- no need to clear `last_searched_group_position`,
-            // since `deactivate_in_current()` is not called without calling
-            // `order_present()` first
         }
-    }
-
-    // /// Deactivate bit at the last searched group position
-    // ///
-    // /// Externally ensure that load_outer_index() was called first so that
-    // /// `last_outer_index` is not None
-    // ///
-    // pub fn deactivate_last_searched_group_position(&mut self) {
-    //     if let Some(group_position) = self.last_searched_group_position {
-    //         let mut bitmap = self
-    //             .bitmap_group
-    //             .get_bitmap_mut(&group_position.inner_index);
-    //         bitmap.clear(&group_position.resting_order_index);
-    //         self.pending_write = true;
-
-    //         // We need to clear last_searched_group_position so that behavior
-    //         // remains consistent with slides.
-    //         self.last_searched_group_position = None;
-
-    //         // Optimization- no need to clear `last_searched_group_position`,
-    //         // since `deactivate_in_current()` is not called without calling
-    //         // `order_present()` first
-    //     }
-    // }
-
-    pub fn deactivation_will_close_best_inner_index_v2(&self, best_market_price: Ticks) -> bool {
-        if let Some(order_id) = self.last_searched_order_id() {
-            if order_id.price_in_ticks == best_market_price {
-                let group_position = self.last_searched_group_position.unwrap();
-                let bitmap = self.bitmap_group.get_bitmap(&group_position.inner_index);
-                return bitmap.will_be_cleared_after_removal(group_position.resting_order_index);
-            }
-        }
-        false
-    }
-
-    pub fn deactivation_will_close_best_inner_index(&self, best_inner_index: InnerIndex) -> bool {
-        if let Some(group_position) = self.last_searched_group_position {
-            if group_position.inner_index == best_inner_index {
-                let bitmap = self.bitmap_group.get_bitmap(&group_position.inner_index);
-                return bitmap.will_be_cleared_after_removal(group_position.resting_order_index);
-            }
-        }
-
-        false
     }
 
     /// Get price of the best active order in the current bitmap group,
@@ -179,15 +134,13 @@ impl GroupPositionRemover {
             // are guaranteed to be present.
 
             let best_opposite_inner_index = best_opposite_price.inner_index();
-            if self.side == Side::Bid {
+            Some(if self.side == Side::Bid {
                 best_opposite_inner_index - InnerIndex::ONE
             } else {
                 best_opposite_inner_index + InnerIndex::ONE
-            }
-        } else if self.side == Side::Bid {
-            InnerIndex::MAX
+            })
         } else {
-            InnerIndex::MIN
+            None
         };
 
         self.bitmap_group.is_inactive(self.side, start_index)
