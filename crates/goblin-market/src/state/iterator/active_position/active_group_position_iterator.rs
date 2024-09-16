@@ -1,5 +1,5 @@
 use crate::state::{
-    bitmap_group::BitmapGroup, iterator::position::group_position::GroupPositionIterator,
+    bitmap_group::BitmapGroup, iterator::position::group_position_iterator::GroupPositionIterator,
     order::group_position::GroupPosition, Side,
 };
 

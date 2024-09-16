@@ -2,7 +2,7 @@ use crate::{
     quantities::Ticks,
     state::{
         bitmap_group::BitmapGroup,
-        iterator::position::inner_index::InnerIndexIterator,
+        iterator::position::inner_index_iterator::InnerIndexIterator,
         order::{
             order_id::OrderId,
             resting_order::{RestingOrder, SlotRestingOrder},

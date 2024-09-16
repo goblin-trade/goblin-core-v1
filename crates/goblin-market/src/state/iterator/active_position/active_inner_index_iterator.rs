@@ -1,6 +1,6 @@
 use crate::state::{
-    bitmap_group::BitmapGroup, iterator::position::inner_index::InnerIndexIterator, InnerIndex,
-    Side,
+    bitmap_group::BitmapGroup, iterator::position::inner_index_iterator::InnerIndexIterator,
+    InnerIndex, Side,
 };
 
 /// Iterates through active inner indices in a bitmap group

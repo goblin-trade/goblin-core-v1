@@ -1,3 +1,3 @@
-pub mod group_position;
-pub mod order_id;
-pub mod outer_index;
+pub mod group_position_remover;
+pub mod order_id_remover;
+pub mod outer_index_remover;

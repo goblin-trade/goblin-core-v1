@@ -11,7 +11,7 @@ use crate::{
     quantities::{BaseAtomsRaw, BaseLots, QuoteAtomsRaw, QuoteLots, Ticks, WrapperU64, MAX_TICK},
     require,
     state::{
-        insert::order_id::OrderIdInserter,
+        insert::order_id_inserter::OrderIdInserter,
         order::{order_id::OrderId, resting_order::SlotRestingOrder},
         MarketState, Side, SlotActions, SlotStorage, TraderState,
     },

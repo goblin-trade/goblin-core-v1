@@ -14,7 +14,7 @@ use crate::{
             resting_order::{ReduceOrderInnerResponse, SlotRestingOrder},
             sorted_order_id::{AskOrderId, BidOrderId},
         },
-        remove::order_id::OrderIdRemover,
+        remove::order_id_remover::OrderIdRemover,
         MarketState, RestingOrderIndex, Side, SlotActions, SlotStorage, TraderState,
     },
     GoblinMarket,

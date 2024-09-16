@@ -8,7 +8,9 @@ use crate::{
     },
 };
 
-use super::{group_position::GroupPositionInserter, outer_index::OuterIndexInserter};
+use super::{
+    group_position_inserter::GroupPositionInserter, outer_index_inserter::OuterIndexInserter,
+};
 
 /// Inserts resting orders and activates order IDs in bulk
 ///

@@ -6,7 +6,7 @@ use crate::{
     },
 };
 
-use super::{group_position::GroupPositionRemover, outer_index::OuterIndexRemover};
+use super::{group_position_remover::GroupPositionRemover, outer_index_remover::OuterIndexRemover};
 
 /// Lookup and remove order ids from the orderbook. Successive order ids must move away
 /// from the centre, i.e. ascending order for asks and descending for bids.

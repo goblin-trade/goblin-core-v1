@@ -1,5 +1,7 @@
 use crate::state::{
-    iterator::position::outer_index::{OuterIndexPosition, OuterIndexPositionIterator},
+    iterator::position::outer_index_position_iterator::{
+        OuterIndexPosition, OuterIndexPositionIterator,
+    },
     ListKey, ListSlot, OuterIndex, Side, SlotStorage,
 };
 

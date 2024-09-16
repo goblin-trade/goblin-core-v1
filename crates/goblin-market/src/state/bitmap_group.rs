@@ -1,5 +1,5 @@
 use super::{
-    iterator::active_position::inner_index::ActiveInnerIndexIterator,
+    iterator::active_position::active_inner_index_iterator::ActiveInnerIndexIterator,
     order::group_position::{self, GroupPosition},
 };
 use crate::state::{

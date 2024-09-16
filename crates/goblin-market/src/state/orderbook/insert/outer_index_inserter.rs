@@ -1,5 +1,5 @@
 use crate::state::{
-    iterator::active_position::outer_index::ActiveOuterIndexIterator,
+    iterator::active_position::active_outer_index_iterator::ActiveOuterIndexIterator,
     write_index_list::write_index_list, OuterIndex, Side, SlotStorage,
 };
 use alloc::vec::Vec;
