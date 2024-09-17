@@ -13,11 +13,18 @@ pub struct InnerIndexIterator {
 
     /// Number of outer indices traversed
     pub count: usize,
+
+    /// Stop iterator when `max_count` is reached
+    pub max_count: usize,
 }
 
 impl InnerIndexIterator {
     pub fn new(side: Side) -> Self {
-        InnerIndexIterator { side, count: 0 }
+        InnerIndexIterator {
+            side,
+            count: 0,
+            max_count: 32,
+        }
     }
 
     /// Begin iteration from a starting position (inclusive)
@@ -31,7 +38,49 @@ impl InnerIndexIterator {
             0
         };
 
-        InnerIndexIterator { side, count }
+        InnerIndexIterator {
+            side,
+            count,
+            max_count: 32,
+        }
+    }
+
+    /// Return an iterator between two exclusive indices
+    ///
+    /// # Rules
+    ///
+    /// * `starting_index_exclusive` is non-None. That is atleast one index in the
+    ///  range will be skipped
+    /// * `end_index_exclusive` can be None. This means iterate till the end value.
+    /// * `end_index_exclusive` cannot be equal to or behind `starting_index_exclusive`
+    ///
+    /// # Arguments
+    ///
+    /// * `side`
+    /// * `starting_index_exclusive`
+    /// * `end_index_exclusive`
+    ///
+    pub fn new_with_exclusive_indices(
+        side: Side,
+        starting_index_exclusive: InnerIndex,
+        end_index_exclusive: Option<InnerIndex>,
+    ) -> Self {
+        let (count, max_count) = match side {
+            Side::Bid => (
+                32 - starting_index_exclusive.as_usize(),
+                end_index_exclusive.map(|i| 31 - i.as_usize()).unwrap_or(32),
+            ),
+            Side::Ask => (
+                starting_index_exclusive.as_usize() + 1,
+                end_index_exclusive.map(|i| i.as_usize()).unwrap_or(32),
+            ),
+        };
+
+        InnerIndexIterator {
+            side,
+            count,
+            max_count,
+        }
     }
 }
 
@@ -39,7 +88,7 @@ impl Iterator for InnerIndexIterator {
     type Item = InnerIndex;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.count == 32 {
+        if self.count == self.max_count {
             return None;
         }
 
@@ -144,5 +193,111 @@ mod tests {
             assert_eq!(iterator.next(), Some(InnerIndex::new(expected)));
         }
         assert_eq!(iterator.next(), None);
+    }
+
+    // Exlusive range tests
+
+    #[test]
+    fn test_exclusive_range_for_ask_no_ending() {
+        let side = Side::Ask;
+        let starting_index_exclusive = InnerIndex::ZERO;
+        let end_index_exclusive = None;
+
+        let mut iterator = InnerIndexIterator::new_with_exclusive_indices(
+            side,
+            starting_index_exclusive,
+            end_index_exclusive,
+        );
+
+        for i in 1..=31 {
+            assert_eq!(iterator.next().unwrap(), InnerIndex::new(i));
+        }
+
+        assert!(iterator.next().is_none());
+    }
+
+    #[test]
+    fn test_exclusive_range_for_ask_with_ending() {
+        let side = Side::Ask;
+        let starting_index_exclusive = InnerIndex::ZERO;
+        let end_index_exclusive = Some(InnerIndex::MAX);
+
+        let mut iterator = InnerIndexIterator::new_with_exclusive_indices(
+            side,
+            starting_index_exclusive,
+            end_index_exclusive,
+        );
+
+        for i in 1..=30 {
+            assert_eq!(iterator.next().unwrap(), InnerIndex::new(i));
+        }
+
+        assert!(iterator.next().is_none());
+    }
+
+    #[test]
+    fn test_exclusive_range_for_ask_with_no_values() {
+        let side = Side::Ask;
+        let starting_index_exclusive = InnerIndex::ZERO;
+        let end_index_exclusive = Some(InnerIndex::ONE);
+
+        let mut iterator = InnerIndexIterator::new_with_exclusive_indices(
+            side,
+            starting_index_exclusive,
+            end_index_exclusive,
+        );
+        assert!(iterator.next().is_none());
+    }
+
+    #[test]
+    fn test_exclusive_range_for_bid_no_ending() {
+        let side = Side::Bid;
+        let starting_index_exclusive = InnerIndex::MAX;
+        let end_index_exclusive = None;
+
+        let mut iterator = InnerIndexIterator::new_with_exclusive_indices(
+            side,
+            starting_index_exclusive,
+            end_index_exclusive,
+        );
+
+        for i in (0..=30).rev() {
+            assert_eq!(iterator.next().unwrap(), InnerIndex::new(i));
+        }
+
+        assert!(iterator.next().is_none());
+    }
+
+    #[test]
+    fn test_exclusive_range_for_bid_with_ending() {
+        let side = Side::Bid;
+        let starting_index_exclusive = InnerIndex::MAX;
+        let end_index_exclusive = Some(InnerIndex::ZERO);
+
+        let mut iterator = InnerIndexIterator::new_with_exclusive_indices(
+            side,
+            starting_index_exclusive,
+            end_index_exclusive,
+        );
+
+        for i in (1..=30).rev() {
+            assert_eq!(iterator.next().unwrap(), InnerIndex::new(i));
+        }
+
+        assert!(iterator.next().is_none());
+    }
+
+    #[test]
+    fn test_exclusive_range_for_bid_with_no_values() {
+        let side = Side::Bid;
+        let starting_index_exclusive = InnerIndex::MAX;
+        let end_index_exclusive = Some(InnerIndex::new(30));
+
+        let mut iterator = InnerIndexIterator::new_with_exclusive_indices(
+            side,
+            starting_index_exclusive,
+            end_index_exclusive,
+        );
+        assert!(iterator.next().is_none());
     }
 }

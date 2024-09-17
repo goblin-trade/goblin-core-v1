@@ -24,6 +24,7 @@ pub fn write_index_list(
     let size_after_insertions = unread_count + cache.len() as u16;
     let final_slot_index_inclusive = (size_after_insertions - 1) / 16;
 
+    // TODO avoid inclusive range loop, internally they need extra state variable
     for slot_index in start_slot_index..=final_slot_index_inclusive {
         let (mut list_slot, start_relative_index) = if slot_index == start_slot_index {
             (first_list_slot.unwrap_or_default(), unread_count % 16)
@@ -37,6 +38,7 @@ pub fn write_index_list(
             15
         };
 
+        // TODO avoid inclusive range loop, internally they need extra state variable
         for relative_index in start_relative_index..=final_relative_index_inclusive {
             let outer_index = cache.pop().unwrap();
             list_slot.set(relative_index as usize, outer_index);
