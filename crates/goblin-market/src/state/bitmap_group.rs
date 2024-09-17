@@ -4,6 +4,7 @@ use super::{
         position::inner_index_iterator::InnerIndexIterator,
     },
     order::group_position::{self, GroupPosition},
+    MarketPrices,
 };
 use crate::{
     quantities::Ticks,
@@ -127,9 +128,13 @@ impl BitmapGroup {
         &mut self,
         side: Side,
         outer_index: OuterIndex,
-        best_market_price: Ticks,
-        best_opposite_price: Ticks,
+        market_prices: MarketPrices,
     ) {
+        let MarketPrices {
+            best_market_price,
+            best_opposite_price,
+        } = market_prices;
+
         // Garbage bits are only present in the outermost bitmap group
         if best_market_price.outer_index() == outer_index {
             let start_index_exclusive = best_market_price.inner_index();

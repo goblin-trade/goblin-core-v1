@@ -29,6 +29,11 @@ pub struct MarketState {
     pub best_ask_price: Ticks,
 }
 
+pub struct MarketPrices {
+    pub best_market_price: Ticks,
+    pub best_opposite_price: Ticks,
+}
+
 const MARKET_SLOT_KEY: [u8; 32] = [
     MARKET_STATE_KEY_SEED,
     0,
@@ -154,6 +159,19 @@ impl MarketState {
             self.best_bid_price
         } else {
             self.best_ask_price
+        }
+    }
+
+    pub fn get_prices(&self, side: Side) -> MarketPrices {
+        match side {
+            Side::Bid => MarketPrices {
+                best_market_price: self.best_bid_price,
+                best_opposite_price: self.best_ask_price,
+            },
+            Side::Ask => MarketPrices {
+                best_market_price: self.best_ask_price,
+                best_opposite_price: self.best_bid_price,
+            },
         }
     }
 

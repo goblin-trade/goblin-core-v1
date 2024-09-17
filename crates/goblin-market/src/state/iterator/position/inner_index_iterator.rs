@@ -54,6 +54,9 @@ impl InnerIndexIterator {
     /// * `end_index_exclusive` can be None. This means iterate till the end value.
     /// * `end_index_exclusive` cannot be equal to or behind `starting_index_exclusive`
     ///
+    /// TODO remove `side`. Iteration direction is unnecessary.
+    /// Simply move from bid_inner_index to ask_inner_index
+    ///
     /// # Arguments
     ///
     /// * `side`
