@@ -1,10 +1,16 @@
 use super::{
-    iterator::active_position::active_inner_index_iterator::ActiveInnerIndexIterator,
+    iterator::{
+        active_position::active_inner_index_iterator::ActiveInnerIndexIterator,
+        position::inner_index_iterator::InnerIndexIterator,
+    },
     order::group_position::{self, GroupPosition},
 };
-use crate::state::{
-    slot_storage::{SlotActions, SlotKey, SlotStorage},
-    InnerIndex, OuterIndex, RestingOrderIndex, Side,
+use crate::{
+    quantities::Ticks,
+    state::{
+        slot_storage::{SlotActions, SlotKey, SlotStorage},
+        InnerIndex, OuterIndex, RestingOrderIndex, Side,
+    },
 };
 
 /// A BitmapGroup contains Bitmaps for 32 ticks in ascending order.
@@ -103,6 +109,65 @@ impl BitmapGroup {
     pub fn is_inactive(&self, side: Side, start_index_inclusive: Option<InnerIndex>) -> bool {
         let best_active_index = self.best_active_inner_index(side, start_index_inclusive);
         best_active_index.is_none()
+    }
+
+    /// Clear garbage bits in the bitmap group
+    ///
+    /// Garbage bits are present in the outermost group between the best inner index
+    /// and the best opposite inner index (both exclusive)
+    ///
+    /// # Arguments
+    ///
+    /// * `side`
+    /// * `outer_index`
+    /// * `best_market_price`
+    /// * `best_opposite_price`
+    ///
+    pub fn clear_garbage_bits(
+        &mut self,
+        side: Side,
+        outer_index: OuterIndex,
+        best_market_price: Ticks,
+        best_opposite_price: Ticks,
+    ) {
+        // Garbage bits are only present in the outermost bitmap group
+        if best_market_price.outer_index() == outer_index {
+            let start_index_exclusive = best_market_price.inner_index();
+
+            // Consider end index if opposite price is also in the same group
+            let end_index_exclusive = if best_opposite_price.outer_index() == outer_index {
+                Some(best_opposite_price.inner_index())
+            } else {
+                None
+            };
+
+            self.clear_in_range(side, start_index_exclusive, end_index_exclusive);
+        }
+    }
+
+    /// Clear all bits between two inner indices
+    ///
+    /// # Arguments
+    ///
+    /// * `side`
+    /// * `start_index_exclusive`
+    /// * `end_index_exclusive`
+    ///
+    pub fn clear_in_range(
+        &mut self,
+        side: Side,
+        start_index_exclusive: InnerIndex,
+        end_index_exclusive: Option<InnerIndex>,
+    ) {
+        let mut iterator = InnerIndexIterator::new_with_exclusive_indices(
+            side,
+            start_index_exclusive,
+            end_index_exclusive,
+        );
+
+        while let Some(inner_index_to_clear) = iterator.next() {
+            self.inner[inner_index_to_clear.as_usize()] = 0;
+        }
     }
 
     /// Whether the bitmap group is active. If the active state changes then
@@ -404,5 +469,49 @@ mod tests {
         // Removing the order at index 3 should not clear the bitmap,
         // since all other bits are still set
         assert!(!bitmap.will_be_cleared_after_removal(resting_order_index));
+    }
+
+    #[test]
+    fn test_clear_in_range() {
+        let side = Side::Ask;
+        let start_index_exclusive = InnerIndex::ZERO;
+        let end_index_exclusive = Some(InnerIndex::new(2));
+
+        let mut bitmap_group = BitmapGroup::default();
+        bitmap_group.inner[0] = 1;
+        bitmap_group.inner[1] = 1;
+        bitmap_group.inner[2] = 1;
+
+        bitmap_group.clear_in_range(side, start_index_exclusive, end_index_exclusive);
+
+        assert_eq!(
+            bitmap_group.inner,
+            [
+                1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0,
+            ]
+        );
+    }
+
+    #[test]
+    fn test_clear_in_range_no_end_index() {
+        let side = Side::Ask;
+        let start_index_exclusive = InnerIndex::ZERO;
+        let end_index_exclusive = None;
+
+        let mut bitmap_group = BitmapGroup::default();
+        bitmap_group.inner[0] = 1;
+        bitmap_group.inner[1] = 1;
+        bitmap_group.inner[2] = 1;
+
+        bitmap_group.clear_in_range(side, start_index_exclusive, end_index_exclusive);
+
+        assert_eq!(
+            bitmap_group.inner,
+            [
+                1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0,
+            ]
+        );
     }
 }

@@ -65,12 +65,12 @@ impl OrderIdInserter {
 
         // Bitmap groups are shared by bids and asks. A group will not be empty if its
         // occupied by active bits from the opposite side
-        let outer_index_activated =
+        let bitmap_group_is_empty =
             outer_index_inserted && best_opposite_outer_index != outer_index;
 
         // Active group position in bitmap
         self.bitmap_inserter
-            .load_outer_index(slot_storage, outer_index, outer_index_activated);
+            .load_outer_index(slot_storage, outer_index, bitmap_group_is_empty);
         self.bitmap_inserter
             .activate_in_current(GroupPosition::from(order_id));
     }

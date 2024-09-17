@@ -46,7 +46,7 @@ impl GroupPositionInserter {
     ///
     /// * `slot_storage`
     /// * `outer_index`
-    /// * `outer_index_is_inactive` - Whether the outer index was inactive for
+    /// * `bitmap_group_is_empty` - Whether the outer index was inactive for
     /// BOTH bids and asks. If the index is being used by the opposite side, we need
     /// to read the bitmap group from slot.
     ///
@@ -54,7 +54,7 @@ impl GroupPositionInserter {
         &mut self,
         slot_storage: &mut SlotStorage,
         outer_index: OuterIndex,
-        outer_index_activated: bool,
+        bitmap_group_is_empty: bool,
     ) {
         if self.last_outer_index == Some(outer_index) {
             return;
@@ -65,7 +65,7 @@ impl GroupPositionInserter {
         // Update outer index and load new bitmap group from slot
         self.last_outer_index = Some(outer_index);
 
-        self.bitmap_group = if outer_index_activated {
+        self.bitmap_group = if bitmap_group_is_empty {
             // Gas optimization- avoid SLOAD if the group was inactive before
             BitmapGroup::default()
         } else {
@@ -79,63 +79,89 @@ impl GroupPositionInserter {
         &mut self,
         slot_storage: &mut SlotStorage,
         outer_index: OuterIndex,
-        outer_index_activated: bool,
+        bitmap_group_is_empty: bool,
         best_market_price: Ticks,
         best_opposite_price: Ticks,
         side: Side,
     ) {
+        // Already loaded
         if self.last_outer_index == Some(outer_index) {
             return;
         }
+
         // Outer index changed. Flush the old bitmap group to slot.
         self.flush_bitmap_group(slot_storage);
 
         // Update outer index and load new bitmap group from slot
         self.last_outer_index = Some(outer_index);
-
-        self.bitmap_group = if outer_index_activated {
-            // Gas optimization- avoid SLOAD if the group was inactive before
+        self.bitmap_group = if bitmap_group_is_empty {
+            // Avoid SLOAD if the group was previously empty
             BitmapGroup::default()
         } else {
-            // TODO clear garbage values between best_market_price and best_opposite_price
             let mut bitmap_group = BitmapGroup::new_from_slot(slot_storage, outer_index);
-
-            if best_market_price.outer_index() == outer_index {
-                // include bits at best_inner_index and inwards
-                // include bits at best_opposite_inner_index and outwards
-
-                // that is clear bits in range (best_inner_index + 1)..best_opposite_inner_index (exclusive)
-
-                // TODO begin one position ahead of starting_index
-                let best_inner_index = best_market_price.inner_index();
-
-                if best_inner_index != InnerIndex::last(side) {
-                    let start_index = best_inner_index.next(side);
-
-                    let end_index_inclusive = if best_opposite_price.outer_index() == outer_index {
-                        let best_opposite_inner_index = best_opposite_price.inner_index();
-
-                        // Can never overflow or underflow because best_market_price ticks
-                        // are present
-                        best_opposite_inner_index.previous(side)
-                    } else {
-                        InnerIndex::last(side)
-                    };
-
-                    let mut iterator =
-                        InnerIndexIterator::new_with_starting_index(side, Some(start_index));
-
-                    // TODO
-                    while let Some(inner_index) = iterator.next() {
-                        // if-some-exit clause must have exclusive end index
-                        // But in order to traverse MAX or 0, the exclusive end index
-                        // will become out of bounds
-                    }
-                }
-            }
+            // Clear garbage bits of on the outermost bitmap group
+            bitmap_group.clear_garbage_bits(
+                side,
+                outer_index,
+                best_market_price,
+                best_opposite_price,
+            );
 
             bitmap_group
         };
+
+        // if self.last_outer_index == Some(outer_index) {
+        //     return;
+        // }
+        // // Outer index changed. Flush the old bitmap group to slot.
+        // self.flush_bitmap_group(slot_storage);
+
+        // // Update outer index and load new bitmap group from slot
+        // self.last_outer_index = Some(outer_index);
+
+        // self.bitmap_group = if bitmap_group_is_empty {
+        //     // Gas optimization- avoid SLOAD if the group was inactive before
+        //     BitmapGroup::default()
+        // } else {
+        //     // TODO clear garbage values between best_market_price and best_opposite_price
+        //     let mut bitmap_group = BitmapGroup::new_from_slot(slot_storage, outer_index);
+
+        //     if best_market_price.outer_index() == outer_index {
+        //         // include bits at best_inner_index and inwards
+        //         // include bits at best_opposite_inner_index and outwards
+
+        //         // that is clear bits in range (best_inner_index + 1)..best_opposite_inner_index (exclusive)
+
+        //         // TODO begin one position ahead of starting_index
+        //         let best_inner_index = best_market_price.inner_index();
+
+        //         if best_inner_index != InnerIndex::last(side) {
+        //             let start_index = best_inner_index.next(side);
+
+        //             let end_index_inclusive = if best_opposite_price.outer_index() == outer_index {
+        //                 let best_opposite_inner_index = best_opposite_price.inner_index();
+
+        //                 // Can never overflow or underflow because best_market_price ticks
+        //                 // are present
+        //                 best_opposite_inner_index.previous(side)
+        //             } else {
+        //                 InnerIndex::last(side)
+        //             };
+
+        //             let mut iterator =
+        //                 InnerIndexIterator::new_with_starting_index(side, Some(start_index));
+
+        //             // TODO
+        //             while let Some(inner_index) = iterator.next() {
+        //                 // if-some-exit clause must have exclusive end index
+        //                 // But in order to traverse MAX or 0, the exclusive end index
+        //                 // will become out of bounds
+        //             }
+        //         }
+        //     }
+
+        //     bitmap_group
+        // };
     }
 
     /// Write cached bitmap group to slot
