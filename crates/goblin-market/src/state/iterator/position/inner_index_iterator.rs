@@ -89,50 +89,11 @@ impl InnerIndexIterator {
         bid_inner_index: Option<InnerIndex>,
         ask_inner_index: Option<InnerIndex>,
     ) -> Self {
+        debug_assert!(bid_inner_index.is_none() || (bid_inner_index != ask_inner_index));
+
         let side = Side::Ask;
         let count = bid_inner_index.map(|i| i.as_usize() + 1).unwrap_or(0);
         let max_count = ask_inner_index.map(|i| i.as_usize()).unwrap_or(32);
-
-        InnerIndexIterator {
-            side,
-            count,
-            max_count,
-        }
-    }
-
-    /// Return an iterator between two exclusive indices
-    ///
-    /// # Rules
-    ///
-    /// * `starting_index_exclusive` is non-None. That is atleast one index in the
-    ///  range will be skipped
-    /// * `end_index_exclusive` can be None. This means iterate till the end value.
-    /// * `end_index_exclusive` cannot be equal to or behind `starting_index_exclusive`
-    ///
-    /// TODO remove `side`. Iteration direction is unnecessary.
-    /// Simply move from bid_inner_index to ask_inner_index
-    ///
-    /// # Arguments
-    ///
-    /// * `side`
-    /// * `starting_index_exclusive`
-    /// * `end_index_exclusive`
-    ///
-    pub fn new_with_exclusive_indices(
-        side: Side,
-        starting_index_exclusive: InnerIndex,
-        end_index_exclusive: Option<InnerIndex>,
-    ) -> Self {
-        let (count, max_count) = match side {
-            Side::Bid => (
-                32 - starting_index_exclusive.as_usize(),
-                end_index_exclusive.map(|i| 31 - i.as_usize()).unwrap_or(32),
-            ),
-            Side::Ask => (
-                starting_index_exclusive.as_usize() + 1,
-                end_index_exclusive.map(|i| i.as_usize()).unwrap_or(32),
-            ),
-        };
 
         InnerIndexIterator {
             side,
@@ -191,237 +152,139 @@ mod tests {
         assert_eq!(iterator.next(), None);
     }
 
-    #[test]
-    fn test_ask_with_start_index_0() {
-        let start_index = Some(InnerIndex::ZERO);
-        let mut iterator = InnerIndexIterator::new_with_starting_index(Side::Ask, start_index);
+    mod new_with_starting_index {
+        use super::*;
 
-        for expected in 0..=31 {
-            assert_eq!(iterator.next(), Some(InnerIndex::new(expected)));
-        }
-        assert_eq!(iterator.next(), None);
-    }
+        #[test]
+        fn test_ask_with_start_index_0() {
+            let start_index = Some(InnerIndex::ZERO);
+            let mut iterator = InnerIndexIterator::new_with_starting_index(Side::Ask, start_index);
 
-    #[test]
-    fn test_bid_with_start_index_max() {
-        let start_index = Some(InnerIndex::MAX);
-        let mut iterator = InnerIndexIterator::new_with_starting_index(Side::Bid, start_index);
-
-        for expected in (0..=31).rev() {
-            assert_eq!(iterator.next(), Some(InnerIndex::new(expected)));
-        }
-        assert_eq!(iterator.next(), None);
-    }
-
-    #[test]
-    fn test_ask_with_start_index_max() {
-        let start_index = Some(InnerIndex::MAX);
-        let mut iterator = InnerIndexIterator::new_with_starting_index(Side::Ask, start_index);
-
-        assert_eq!(iterator.next(), Some(InnerIndex::MAX));
-        assert_eq!(iterator.next(), None);
-    }
-
-    #[test]
-    fn test_bid_with_start_index_zero() {
-        let start_index = Some(InnerIndex::ZERO);
-        let mut iterator = InnerIndexIterator::new_with_starting_index(Side::Bid, start_index);
-
-        assert_eq!(iterator.next(), Some(InnerIndex::ZERO));
-        assert_eq!(iterator.next(), None);
-    }
-
-    #[test]
-    fn test_ask_with_start_in_middle() {
-        let start_index = Some(InnerIndex::new(15));
-        let mut iterator = InnerIndexIterator::new_with_starting_index(Side::Ask, start_index);
-
-        for expected in 15..=31 {
-            assert_eq!(iterator.next(), Some(InnerIndex::new(expected)));
-        }
-        assert_eq!(iterator.next(), None);
-    }
-
-    #[test]
-    fn test_bid_with_start_in_middle() {
-        let start_index = Some(InnerIndex::new(15));
-        let mut iterator = InnerIndexIterator::new_with_starting_index(Side::Bid, start_index);
-
-        for expected in (0..=15).rev() {
-            assert_eq!(iterator.next(), Some(InnerIndex::new(expected)));
-        }
-        assert_eq!(iterator.next(), None);
-    }
-
-    // Exlusive range tests
-
-    #[test]
-    fn test_exclusive_range_for_ask_no_ending() {
-        let side = Side::Ask;
-        let starting_index_exclusive = InnerIndex::ZERO;
-        let end_index_exclusive = None;
-
-        let mut iterator = InnerIndexIterator::new_with_exclusive_indices(
-            side,
-            starting_index_exclusive,
-            end_index_exclusive,
-        );
-
-        for i in 1..=31 {
-            assert_eq!(iterator.next().unwrap(), InnerIndex::new(i));
+            for expected in 0..=31 {
+                assert_eq!(iterator.next(), Some(InnerIndex::new(expected)));
+            }
+            assert_eq!(iterator.next(), None);
         }
 
-        assert!(iterator.next().is_none());
-    }
+        #[test]
+        fn test_bid_with_start_index_max() {
+            let start_index = Some(InnerIndex::MAX);
+            let mut iterator = InnerIndexIterator::new_with_starting_index(Side::Bid, start_index);
 
-    #[test]
-    fn test_exclusive_range_for_ask_with_ending() {
-        let side = Side::Ask;
-        let starting_index_exclusive = InnerIndex::ZERO;
-        let end_index_exclusive = Some(InnerIndex::MAX);
-
-        let mut iterator = InnerIndexIterator::new_with_exclusive_indices(
-            side,
-            starting_index_exclusive,
-            end_index_exclusive,
-        );
-
-        for i in 1..=30 {
-            assert_eq!(iterator.next().unwrap(), InnerIndex::new(i));
+            for expected in (0..=31).rev() {
+                assert_eq!(iterator.next(), Some(InnerIndex::new(expected)));
+            }
+            assert_eq!(iterator.next(), None);
         }
 
-        assert!(iterator.next().is_none());
-    }
+        #[test]
+        fn test_ask_with_start_index_max() {
+            let start_index = Some(InnerIndex::MAX);
+            let mut iterator = InnerIndexIterator::new_with_starting_index(Side::Ask, start_index);
 
-    #[test]
-    fn test_exclusive_range_for_ask_with_no_values() {
-        let side = Side::Ask;
-        let starting_index_exclusive = InnerIndex::ZERO;
-        let end_index_exclusive = Some(InnerIndex::ONE);
-
-        let mut iterator = InnerIndexIterator::new_with_exclusive_indices(
-            side,
-            starting_index_exclusive,
-            end_index_exclusive,
-        );
-        assert!(iterator.next().is_none());
-    }
-
-    #[test]
-    fn test_exclusive_range_for_bid_no_ending() {
-        let side = Side::Bid;
-        let starting_index_exclusive = InnerIndex::MAX;
-        let end_index_exclusive = None;
-
-        let mut iterator = InnerIndexIterator::new_with_exclusive_indices(
-            side,
-            starting_index_exclusive,
-            end_index_exclusive,
-        );
-
-        for i in (0..=30).rev() {
-            assert_eq!(iterator.next().unwrap(), InnerIndex::new(i));
+            assert_eq!(iterator.next(), Some(InnerIndex::MAX));
+            assert_eq!(iterator.next(), None);
         }
 
-        assert!(iterator.next().is_none());
-    }
+        #[test]
+        fn test_bid_with_start_index_zero() {
+            let start_index = Some(InnerIndex::ZERO);
+            let mut iterator = InnerIndexIterator::new_with_starting_index(Side::Bid, start_index);
 
-    #[test]
-    fn test_exclusive_range_for_bid_with_ending() {
-        let side = Side::Bid;
-        let starting_index_exclusive = InnerIndex::MAX;
-        let end_index_exclusive = Some(InnerIndex::ZERO);
-
-        let mut iterator = InnerIndexIterator::new_with_exclusive_indices(
-            side,
-            starting_index_exclusive,
-            end_index_exclusive,
-        );
-
-        for i in (1..=30).rev() {
-            assert_eq!(iterator.next().unwrap(), InnerIndex::new(i));
+            assert_eq!(iterator.next(), Some(InnerIndex::ZERO));
+            assert_eq!(iterator.next(), None);
         }
 
-        assert!(iterator.next().is_none());
-    }
+        #[test]
+        fn test_ask_with_start_in_middle() {
+            let start_index = Some(InnerIndex::new(15));
+            let mut iterator = InnerIndexIterator::new_with_starting_index(Side::Ask, start_index);
 
-    #[test]
-    fn test_exclusive_range_for_bid_with_no_values() {
-        let side = Side::Bid;
-        let starting_index_exclusive = InnerIndex::MAX;
-        let end_index_exclusive = Some(InnerIndex::new(30));
-
-        let mut iterator = InnerIndexIterator::new_with_exclusive_indices(
-            side,
-            starting_index_exclusive,
-            end_index_exclusive,
-        );
-        assert!(iterator.next().is_none());
-    }
-
-    #[test]
-    fn test_between_best_prices_both_none() {
-        let bid_inner_index = None;
-        let ask_inner_index = None;
-
-        let mut iterator =
-            InnerIndexIterator::new_between_inner_indices(bid_inner_index, ask_inner_index);
-
-        for i in 0..=31 {
-            assert_eq!(iterator.next().unwrap(), InnerIndex::new(i));
+            for expected in 15..=31 {
+                assert_eq!(iterator.next(), Some(InnerIndex::new(expected)));
+            }
+            assert_eq!(iterator.next(), None);
         }
-        assert!(iterator.next().is_none());
-    }
 
-    #[test]
-    fn test_between_best_prices_with_bid_inner_index() {
-        let bid_inner_index = Some(InnerIndex::ZERO);
-        let ask_inner_index = None;
+        #[test]
+        fn test_bid_with_start_in_middle() {
+            let start_index = Some(InnerIndex::new(15));
+            let mut iterator = InnerIndexIterator::new_with_starting_index(Side::Bid, start_index);
 
-        let mut iterator =
-            InnerIndexIterator::new_between_inner_indices(bid_inner_index, ask_inner_index);
-
-        for i in 1..=31 {
-            assert_eq!(iterator.next().unwrap(), InnerIndex::new(i));
+            for expected in (0..=15).rev() {
+                assert_eq!(iterator.next(), Some(InnerIndex::new(expected)));
+            }
+            assert_eq!(iterator.next(), None);
         }
-        assert!(iterator.next().is_none());
     }
 
-    #[test]
-    fn test_between_best_prices_with_ask_inner_index() {
-        let bid_inner_index = None;
-        let ask_inner_index = Some(InnerIndex::MAX);
+    mod new_between_inner_indices {
+        use super::*;
 
-        let mut iterator =
-            InnerIndexIterator::new_between_inner_indices(bid_inner_index, ask_inner_index);
+        #[test]
+        fn test_between_best_prices_both_none() {
+            let bid_inner_index = None;
+            let ask_inner_index = None;
 
-        for i in 0..=30 {
-            assert_eq!(iterator.next().unwrap(), InnerIndex::new(i));
+            let mut iterator =
+                InnerIndexIterator::new_between_inner_indices(bid_inner_index, ask_inner_index);
+
+            for i in 0..=31 {
+                assert_eq!(iterator.next().unwrap(), InnerIndex::new(i));
+            }
+            assert!(iterator.next().is_none());
         }
-        assert!(iterator.next().is_none());
-    }
 
-    #[test]
-    fn test_between_best_prices_with_both_indices() {
-        let bid_inner_index = Some(InnerIndex::ZERO);
-        let ask_inner_index = Some(InnerIndex::MAX);
+        #[test]
+        fn test_between_best_prices_with_bid_inner_index() {
+            let bid_inner_index = Some(InnerIndex::ZERO);
+            let ask_inner_index = None;
 
-        let mut iterator =
-            InnerIndexIterator::new_between_inner_indices(bid_inner_index, ask_inner_index);
+            let mut iterator =
+                InnerIndexIterator::new_between_inner_indices(bid_inner_index, ask_inner_index);
 
-        for i in 1..=30 {
-            assert_eq!(iterator.next().unwrap(), InnerIndex::new(i));
+            for i in 1..=31 {
+                assert_eq!(iterator.next().unwrap(), InnerIndex::new(i));
+            }
+            assert!(iterator.next().is_none());
         }
-        assert!(iterator.next().is_none());
-    }
 
-    #[test]
-    fn test_between_best_prices_with_both_indices_and_no_gap() {
-        let bid_inner_index = Some(InnerIndex::ZERO);
-        let ask_inner_index = Some(InnerIndex::ONE);
+        #[test]
+        fn test_between_best_prices_with_ask_inner_index() {
+            let bid_inner_index = None;
+            let ask_inner_index = Some(InnerIndex::MAX);
 
-        let mut iterator =
-            InnerIndexIterator::new_between_inner_indices(bid_inner_index, ask_inner_index);
-        assert!(iterator.next().is_none());
+            let mut iterator =
+                InnerIndexIterator::new_between_inner_indices(bid_inner_index, ask_inner_index);
+
+            for i in 0..=30 {
+                assert_eq!(iterator.next().unwrap(), InnerIndex::new(i));
+            }
+            assert!(iterator.next().is_none());
+        }
+
+        #[test]
+        fn test_between_best_prices_with_both_indices() {
+            let bid_inner_index = Some(InnerIndex::ZERO);
+            let ask_inner_index = Some(InnerIndex::MAX);
+
+            let mut iterator =
+                InnerIndexIterator::new_between_inner_indices(bid_inner_index, ask_inner_index);
+
+            for i in 1..=30 {
+                assert_eq!(iterator.next().unwrap(), InnerIndex::new(i));
+            }
+            assert!(iterator.next().is_none());
+        }
+
+        #[test]
+        fn test_between_best_prices_with_both_indices_and_no_gap() {
+            let bid_inner_index = Some(InnerIndex::ZERO);
+            let ask_inner_index = Some(InnerIndex::ONE);
+
+            let mut iterator =
+                InnerIndexIterator::new_between_inner_indices(bid_inner_index, ask_inner_index);
+            assert!(iterator.next().is_none());
+        }
     }
 }
