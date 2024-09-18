@@ -94,6 +94,9 @@ impl MarketState {
             // Reading empty slot will yield 0.
             // When bids_outer_indices or asks_outer_indices is 0, we ignore these values
 
+            // TODO use default values for best market prices-
+            // Ticks::MIN for bid, Ticks::MAX for asks
+
             // Tick: u21 was encoded in 20..23 in big endian
             // Empty values to the left (LSB) in big endian
             best_bid_price: Ticks::new(
@@ -121,6 +124,9 @@ impl MarketState {
         let best_bid_price = self.best_bid_price.as_u64();
         let best_ask_price = self.best_ask_price.as_u64();
 
+        // TODO best prices only change during insertions and removals
+        // Externally ensure that tick values during insertion are within bounds.
+        // This check below can be removed
         require!(
             best_bid_price <= MAX_TICK && best_ask_price <= MAX_TICK,
             GoblinError::ExceedTickSize(ExceedTickSize {})
@@ -163,6 +169,11 @@ impl MarketState {
     }
 
     pub fn get_prices(&self) -> MarketPrices {
+        debug_assert!(
+            self.best_ask_price > self.best_bid_price,
+            "Best ask price must be greater than best bid price"
+        );
+
         MarketPrices {
             best_bid_price: self.best_bid_price,
             best_ask_price: self.best_ask_price,

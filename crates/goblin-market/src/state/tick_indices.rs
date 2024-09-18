@@ -119,7 +119,7 @@ impl InnerIndex {
 
     // TODO replace assert
     pub fn new(inner: usize) -> Self {
-        assert!(inner < BITMAPS_PER_GROUP as usize);
+        debug_assert!(inner < BITMAPS_PER_GROUP as usize);
         InnerIndex { inner }
     }
 

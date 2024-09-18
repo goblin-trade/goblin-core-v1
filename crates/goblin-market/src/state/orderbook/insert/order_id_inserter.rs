@@ -74,7 +74,7 @@ impl OrderIdInserter {
 
         // Clear garbage bits
         // TODO fix failed tests
-        // self.bitmap_inserter.clear_garbage_bits(best_market_prices);
+        self.bitmap_inserter.clear_garbage_bits(best_market_prices);
 
         // Active group position in bitmap
         self.bitmap_inserter
@@ -162,7 +162,7 @@ mod tests {
             bids_outer_indices: 0,
             asks_outer_indices: 0,
             best_bid_price: Ticks::ZERO,
-            best_ask_price: Ticks::ZERO,
+            best_ask_price: Ticks::MAX,
         };
 
         let price_in_ticks = Ticks::new(10);
@@ -244,7 +244,7 @@ mod tests {
             bids_outer_indices: 0,
             asks_outer_indices: 0,
             best_bid_price: Ticks::ZERO,
-            best_ask_price: Ticks::ZERO,
+            best_ask_price: Ticks::MAX,
         };
 
         let price_in_ticks = Ticks::new(10);
@@ -349,7 +349,7 @@ mod tests {
             bids_outer_indices: 0,
             asks_outer_indices: 0,
             best_bid_price: Ticks::ZERO,
-            best_ask_price: Ticks::ZERO,
+            best_ask_price: Ticks::MAX,
         };
 
         // Order closer to the centre is inserted first
@@ -457,7 +457,7 @@ mod tests {
             bids_outer_indices: 0,
             asks_outer_indices: 0,
             best_bid_price: Ticks::ZERO,
-            best_ask_price: Ticks::ZERO,
+            best_ask_price: Ticks::MAX,
         };
 
         // Order closer to the centre is inserted first
@@ -601,7 +601,7 @@ mod tests {
             bids_outer_indices: 1,
             asks_outer_indices: 0,
             best_bid_price: price_in_ticks_0,
-            best_ask_price: Ticks::ZERO,
+            best_ask_price: Ticks::MAX,
         };
 
         let price_in_ticks_1 = Ticks::new(10);
@@ -693,7 +693,7 @@ mod tests {
             bids_outer_indices: 1,
             asks_outer_indices: 0,
             best_bid_price: price_in_ticks_0,
-            best_ask_price: Ticks::ZERO,
+            best_ask_price: Ticks::MAX,
         };
 
         let price_in_ticks_1 = Ticks::new(32);
@@ -801,7 +801,7 @@ mod tests {
             bids_outer_indices: 1,
             asks_outer_indices: 0,
             best_bid_price: price_in_ticks_0,
-            best_ask_price: Ticks::ZERO,
+            best_ask_price: Ticks::MAX,
         };
 
         // Higher price inserted first for bids

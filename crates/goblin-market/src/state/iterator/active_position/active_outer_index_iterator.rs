@@ -16,10 +16,9 @@ pub struct ActiveOuterIndexIterator {
     /// Whether bid or ask. There are two lists, one for bids and one for asks.
     pub side: Side,
 
+    /// Inner iterator
     inner: OuterIndexPositionIterator,
 
-    // /// Number of indices yet to be read
-    // pub outer_index_count: u16,
     /// The currently read list slot
     pub list_slot: Option<ListSlot>,
 }
@@ -47,8 +46,8 @@ impl ActiveOuterIndexIterator {
     ///
     pub fn update_cached_list_slot(
         &mut self,
-        outer_index_position: OuterIndexPosition,
         slot_storage: &SlotStorage,
+        outer_index_position: OuterIndexPosition,
     ) {
         let OuterIndexPosition {
             slot_index,
@@ -71,18 +70,13 @@ impl ActiveOuterIndexIterator {
     /// * slot_storage
     ///
     pub fn next(&mut self, slot_storage: &SlotStorage) -> Option<OuterIndex> {
-        let res = self.inner.next();
-        #[cfg(test)]
-        println!("next result in OuterIndexPositionIterator {:?}", res);
-
-        if let Some(outer_index_position) = res {
-            self.update_cached_list_slot(outer_index_position, slot_storage);
+        self.inner.next().map(|outer_index_position| {
+            self.update_cached_list_slot(slot_storage, outer_index_position);
             let list_slot = self.list_slot.as_ref().unwrap();
             let current_outer_index = list_slot.get(outer_index_position.relative_index as usize);
 
-            return Some(current_outer_index);
-        }
-        None
+            current_outer_index
+        })
     }
 }
 
