@@ -992,43 +992,121 @@ mod tests {
         assert_eq!(read_bitmap_group, expected_bitmap_group);
     }
 
-    #[test]
-    fn test_garbage_bits_cleared() {
-        let slot_storage = &mut SlotStorage::new();
-        let side = Side::Ask;
+    mod clear_garbage_bits {
+        use super::*;
 
-        // Outer index 1 with non-empty bitmap is present in bid index list but not ask index list
-        // Ensure that when we write an ask bit to outer index 1, the old bit is preserved.
-        let outer_index = OuterIndex::new(1);
-        let bid_inner_index = InnerIndex::ZERO;
+        #[test]
+        fn test_garbage_bits_cleared_when_inserting_ask() {
+            let slot_storage = &mut SlotStorage::new();
+            let side = Side::Ask;
 
-        let market_prices = MarketPrices {
-            best_ask_price: Ticks::from_indices(OuterIndex::new(2), InnerIndex::ZERO),
-            best_bid_price: Ticks::from_indices(outer_index, bid_inner_index),
-        };
+            // Outer index 1 with non-empty bitmap is present in bid index list but not ask index list
+            // Ensure that when we write an ask bit to outer index 1, the old bit is preserved
+            // but garbage bits are cleared.
+            let outer_index = OuterIndex::new(1);
+            let bid_inner_index = InnerIndex::ZERO;
 
-        let mut bitmap_group = BitmapGroup::default();
-        bitmap_group.inner[bid_inner_index.as_usize()] = 1;
-        bitmap_group.write_to_slot(slot_storage, &outer_index);
+            let mut market_state = MarketState {
+                collected_quote_lot_fees: QuoteLots::ZERO,
+                unclaimed_quote_lot_fees: QuoteLots::ZERO,
+                bids_outer_indices: 1,
+                asks_outer_indices: 0,
+                best_bid_price: Ticks::from_indices(outer_index, bid_inner_index),
+                best_ask_price: Ticks::from_indices(OuterIndex::new(2), InnerIndex::ZERO),
+            };
 
-        let outer_index_count = 0;
-        let mut order_id_inserter = OrderIdInserter::new(side, outer_index_count);
+            let mut bitmap_group = BitmapGroup::default();
+            bitmap_group.inner[bid_inner_index.as_usize()] = 1; // belongs to bid
+            bitmap_group.inner[1] = 1; // Garbage bits
+            bitmap_group.inner[2] = 1;
+            bitmap_group.inner[3] = 1;
+            bitmap_group.inner[4] = 1;
+            bitmap_group.write_to_slot(slot_storage, &outer_index);
 
-        let order_id = OrderId {
-            price_in_ticks: Ticks::from_indices(outer_index, InnerIndex::new(31)),
-            resting_order_index: RestingOrderIndex::ZERO,
-        };
-        order_id_inserter.activate_order_id(slot_storage, &order_id, &market_prices);
-        order_id_inserter
-            .bitmap_inserter
-            .flush_bitmap_group(slot_storage);
+            let outer_index_count = 0;
+            let mut order_id_inserter = OrderIdInserter::new(side, outer_index_count);
 
-        let read_bitmap_group = BitmapGroup::new_from_slot(slot_storage, outer_index);
+            let order_id = OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index, InnerIndex::new(31)),
+                resting_order_index: RestingOrderIndex::ZERO,
+            };
+            let resting_order = SlotRestingOrder {
+                trader_address: Address::default(),
+                num_base_lots: BaseLots::ONE,
+                track_block: false,
+                last_valid_block_or_unix_timestamp_in_seconds: 0,
+            };
 
-        let mut expected_bitmap_group = BitmapGroup::default();
-        expected_bitmap_group.inner[0] = 1; // Belonging to bids
-        expected_bitmap_group.inner[31] = 1;
+            order_id_inserter
+                .insert_resting_order(slot_storage, &mut market_state, &resting_order, &order_id)
+                .unwrap();
 
-        assert_eq!(read_bitmap_group, expected_bitmap_group);
+            order_id_inserter.write_prepared_indices(slot_storage, &mut market_state);
+            assert_eq!(market_state.best_ask_price, order_id.price_in_ticks);
+
+            let read_bitmap_group = BitmapGroup::new_from_slot(slot_storage, outer_index);
+            let mut expected_bitmap_group = BitmapGroup::default();
+            expected_bitmap_group.inner[0] = 1; // Belonging to bids
+            expected_bitmap_group.inner[31] = 1; // Inserted ask
+                                                 // Garbage bits are cleared
+            assert_eq!(read_bitmap_group, expected_bitmap_group);
+        }
+
+        #[test]
+        fn test_garbage_bits_cleared_when_inserting_bid() {
+            let slot_storage = &mut SlotStorage::new();
+            let side = Side::Bid;
+
+            // Outer index 1 with non-empty bitmap is present in ask index list but not bid index list
+            // Ensure that when we write an bid bit to outer index 1, the old bit is preserved
+            // but garbage bits are cleared.
+            let outer_index = OuterIndex::new(1);
+            let ask_inner_index = InnerIndex::MAX;
+
+            let mut market_state = MarketState {
+                collected_quote_lot_fees: QuoteLots::ZERO,
+                unclaimed_quote_lot_fees: QuoteLots::ZERO,
+                bids_outer_indices: 1,
+                asks_outer_indices: 0,
+                best_bid_price: Ticks::from_indices(OuterIndex::ZERO, InnerIndex::ZERO),
+                best_ask_price: Ticks::from_indices(outer_index, ask_inner_index),
+            };
+
+            let mut bitmap_group = BitmapGroup::default();
+            bitmap_group.inner[ask_inner_index.as_usize()] = 1; // belongs to ask
+            bitmap_group.inner[1] = 1; // Garbage bits
+            bitmap_group.inner[2] = 1;
+            bitmap_group.inner[3] = 1;
+            bitmap_group.inner[4] = 1;
+            bitmap_group.write_to_slot(slot_storage, &outer_index);
+
+            let outer_index_count = 0;
+            let mut order_id_inserter = OrderIdInserter::new(side, outer_index_count);
+
+            let order_id = OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index, InnerIndex::ZERO),
+                resting_order_index: RestingOrderIndex::ZERO,
+            };
+            let resting_order = SlotRestingOrder {
+                trader_address: Address::default(),
+                num_base_lots: BaseLots::ONE,
+                track_block: false,
+                last_valid_block_or_unix_timestamp_in_seconds: 0,
+            };
+
+            order_id_inserter
+                .insert_resting_order(slot_storage, &mut market_state, &resting_order, &order_id)
+                .unwrap();
+            order_id_inserter.write_prepared_indices(slot_storage, &mut market_state);
+
+            assert_eq!(market_state.best_bid_price, order_id.price_in_ticks);
+
+            let read_bitmap_group = BitmapGroup::new_from_slot(slot_storage, outer_index);
+            let mut expected_bitmap_group = BitmapGroup::default();
+            expected_bitmap_group.inner[0] = 1; // Inserted bit
+            expected_bitmap_group.inner[31] = 1; // Belongs to asks
+                                                 // Garbage bits are cleared
+            assert_eq!(read_bitmap_group, expected_bitmap_group);
+        }
     }
 }
