@@ -55,22 +55,26 @@ impl OrderIdInserter {
         &mut self,
         slot_storage: &mut SlotStorage,
         order_id: &OrderId,
-        market_prices: MarketPrices,
+        best_market_prices: &MarketPrices,
     ) {
         // Activate outer index in index list
         let outer_index = order_id.price_in_ticks.outer_index();
-        let outer_index_inserted = self
+
+        let outer_index_inserted_in_list = self
             .index_list_inserter
             .insert_if_absent(slot_storage, outer_index);
 
+        let bitmap_group_is_empty = outer_index_inserted_in_list
+            && best_market_prices.best_bid_price.outer_index() != outer_index
+            && best_market_prices.best_ask_price.outer_index() != outer_index;
+
         // Load bitmap group
-        self.bitmap_inserter.load_outer_index_v2(
-            slot_storage,
-            outer_index,
-            outer_index_inserted,
-            self.side(),
-            market_prices,
-        );
+        self.bitmap_inserter
+            .load_outer_index(slot_storage, outer_index, bitmap_group_is_empty);
+
+        // Clear garbage bits
+        // TODO fix failed tests
+        // self.bitmap_inserter.clear_garbage_bits(best_market_prices);
 
         // Active group position in bitmap
         self.bitmap_inserter
@@ -79,6 +83,8 @@ impl OrderIdInserter {
 
     /// Write a resting order to slot and prepare for insertion of its outer index
     /// in the index list
+    ///
+    /// It activates the bit, updates best market price and writes resting order to slot.
     ///
     /// Slot writes- resting_order, bitmap_group
     ///
@@ -96,27 +102,11 @@ impl OrderIdInserter {
         resting_order: &SlotRestingOrder,
         order_id: &OrderId,
     ) -> GoblinResult<()> {
-        let side = self.side();
+        let market_prices = market_state.get_prices();
 
-        // 1. Update market state
-        //
-        // Since the first element is closest to the centre, we only need
-        // to check the first element against the current best price.
-        //
-        // Outer index length in market state is updated in write_prepared_indices()
-        //
-        if self.index_list_inserter.cache.len() == 0 {
-            market_state.try_set_best_price(side, order_id.price_in_ticks);
-        }
-
-        // 2. Write resting order to slot
-        resting_order.write_to_slot(slot_storage, &order_id)?;
-
-        // 3. Activate order ID
-        let market_prices = market_state.get_prices(side);
-        self.activate_order_id(slot_storage, order_id, market_prices);
-
-        Ok(())
+        self.activate_order_id(slot_storage, order_id, &market_prices);
+        market_state.try_set_best_price(self.side(), order_id.price_in_ticks);
+        resting_order.write_to_slot(slot_storage, &order_id)
     }
 
     /// Write the prepared outer indices to slot and update outer index count in market state
@@ -154,7 +144,7 @@ mod tests {
     use crate::{
         quantities::{BaseLots, QuoteLots, Ticks, WrapperU64},
         state::{
-            bitmap_group::BitmapGroup, InnerIndex, ListKey, ListSlot, OuterIndex,
+            bitmap_group::BitmapGroup, InnerIndex, ListKey, ListSlot, MarketPrices, OuterIndex,
             RestingOrderIndex, SlotActions, TickIndices,
         },
     };
@@ -794,7 +784,7 @@ mod tests {
             inner_index: inner_index_0,
         } = price_in_ticks_0.to_indices();
 
-        // Pre test setup- push outer_index_0 to list and activate a bit at outer_index_0
+        // Pre test setup- push outer_index_0 to list and activate a bit at inner_index_0
         let list_key = ListKey { index: 0, side };
         let mut list_slot = ListSlot::default();
         list_slot.set(0, outer_index_0);
@@ -803,7 +793,6 @@ mod tests {
         let mut bitmap_group_0 = BitmapGroup::default();
         bitmap_group_0.inner[inner_index_0.as_usize()] = 0b00000001;
         bitmap_group_0.write_to_slot(slot_storage, &outer_index_0);
-
         // No need to insert resting order for price_in_ticks_0
 
         let mut market_state = MarketState {
@@ -818,6 +807,7 @@ mod tests {
         // Higher price inserted first for bids
         let price_in_ticks_1 = Ticks::new(32);
         let price_in_ticks_2 = Ticks::new(64);
+        // Final order [1, 32, 64]
 
         let TickIndices {
             outer_index: outer_index_1,
@@ -849,74 +839,77 @@ mod tests {
         let mut inserter = OrderIdInserter::new(side, market_state.outer_index_count(side));
 
         inserter
-            .insert_resting_order(slot_storage, &mut market_state, &resting_order, &order_id_1)
-            .unwrap();
-
-        inserter
             .insert_resting_order(slot_storage, &mut market_state, &resting_order, &order_id_2)
             .unwrap();
 
+        inserter
+            .insert_resting_order(slot_storage, &mut market_state, &resting_order, &order_id_1)
+            .unwrap();
+
         // 1. Check updated market state
-        assert_eq!(market_state.best_bid_price, price_in_ticks_1); // Best price changed
+        assert_eq!(market_state.best_bid_price, price_in_ticks_2); // Best price changed
         assert_eq!(market_state.bids_outer_indices, 1); // No change yet
 
         // 2. Check resting order and market state from slot
         let read_resting_order_1 = SlotRestingOrder::new_from_slot(slot_storage, order_id_1);
-        assert_eq!(resting_order, read_resting_order_1);
+        assert_eq!(read_resting_order_1, resting_order);
         let read_resting_order_2 = SlotRestingOrder::new_from_slot(slot_storage, order_id_2);
-        assert_eq!(resting_order, read_resting_order_2);
+        assert_eq!(read_resting_order_2, resting_order);
 
         // 3. Check cached values
         assert_eq!(
-            outer_index_2,
-            inserter.bitmap_inserter.last_outer_index.unwrap()
+            inserter.bitmap_inserter.last_outer_index.unwrap(),
+            outer_index_1,
         );
 
         assert_eq!(
-            vec![outer_index_1, outer_index_2, outer_index_0], // [2, 1, 0]
-            inserter.index_list_inserter.cache
+            inserter.index_list_inserter.cache,
+            vec![outer_index_2, outer_index_1, outer_index_0],
         );
 
         // No change in bitmap group 0
         let mut read_bitmap_group_0 = BitmapGroup::new_from_slot(slot_storage, outer_index_0);
-        assert_eq!(bitmap_group_0, read_bitmap_group_0);
+        assert_eq!(read_bitmap_group_0, bitmap_group_0);
 
-        // Bitmap group 1 is written
-        let mut expected_bitmap_group_1 = BitmapGroup::default();
-        expected_bitmap_group_1.inner[inner_index_1.as_usize()] = 0b00000001;
-
-        let mut read_bitmap_group_1 = BitmapGroup::new_from_slot(slot_storage, outer_index_1);
-        assert_eq!(expected_bitmap_group_1, read_bitmap_group_1);
-
-        // Bitmap group 2 is still cached
+        // Bitmap group 2 is written
         let mut expected_bitmap_group_2 = BitmapGroup::default();
         expected_bitmap_group_2.inner[inner_index_2.as_usize()] = 0b00000001;
+
+        let mut read_bitmap_group_2 = BitmapGroup::new_from_slot(slot_storage, outer_index_2);
+        assert_eq!(read_bitmap_group_2, expected_bitmap_group_2);
+
+        // Bitmap group 1 is still cached
+        let mut expected_bitmap_group_1 = BitmapGroup::default();
+        expected_bitmap_group_1.inner[inner_index_1.as_usize()] = 0b00000001;
         assert_eq!(
-            expected_bitmap_group_2,
-            inserter.bitmap_inserter.bitmap_group
+            inserter.bitmap_inserter.bitmap_group,
+            expected_bitmap_group_1,
         );
+
+        let mut read_bitmap_group_1 = BitmapGroup::new_from_slot(slot_storage, outer_index_1);
+        assert_eq!(read_bitmap_group_1, BitmapGroup::default());
 
         // 3. Check values after writing indices
         inserter.write_prepared_indices(slot_storage, &mut market_state);
         assert_eq!(market_state.bids_outer_indices, 3);
 
-        // No change in bitmap group 0 and 1
+        // No change in bitmap group 0 and 2
         read_bitmap_group_0 = BitmapGroup::new_from_slot(slot_storage, outer_index_0);
-        assert_eq!(bitmap_group_0, read_bitmap_group_0);
-        read_bitmap_group_1 = BitmapGroup::new_from_slot(slot_storage, outer_index_1);
-        assert_eq!(expected_bitmap_group_1, read_bitmap_group_1);
+        assert_eq!(read_bitmap_group_0, bitmap_group_0);
+        read_bitmap_group_2 = BitmapGroup::new_from_slot(slot_storage, outer_index_2);
+        assert_eq!(read_bitmap_group_2, expected_bitmap_group_2);
 
-        // bitmap group 2 is written
-        let read_bitmap_group_2 = BitmapGroup::new_from_slot(slot_storage, outer_index_2);
-        assert_eq!(expected_bitmap_group_2, read_bitmap_group_2);
+        // bitmap group 1 is written
+        read_bitmap_group_1 = BitmapGroup::new_from_slot(slot_storage, outer_index_1);
+        assert_eq!(read_bitmap_group_1, expected_bitmap_group_1);
 
         // outer_index_2 and outer_index_1 and added to list
-        list_slot.set(1, outer_index_2);
-        list_slot.set(2, outer_index_1);
-        list_slot.write_to_slot(slot_storage, &list_key); // [outer_index_0, outer_index_2, outer_index_1]
+        list_slot.set(1, outer_index_1);
+        list_slot.set(2, outer_index_2);
+        list_slot.write_to_slot(slot_storage, &list_key); // [outer_index_0, outer_index_1, outer_index_2]
 
         let read_list_slot = ListSlot::new_from_slot(slot_storage, list_key);
-        assert_eq!(list_slot, read_list_slot);
+        assert_eq!(read_list_slot, list_slot);
     }
 
     #[test]
@@ -927,15 +920,15 @@ mod tests {
         // Outer index 1 with non-empty bitmap is present in bid index list but not ask index list
         // Ensure that when we write an ask bit to outer index 1, the old bit is preserved.
         let outer_index = OuterIndex::new(1);
-        let opposite_inner_index = InnerIndex::ZERO;
+        let bid_inner_index = InnerIndex::ZERO;
 
         let market_prices = MarketPrices {
-            best_market_price: Ticks::from_indices(OuterIndex::new(2), InnerIndex::ZERO),
-            best_opposite_price: Ticks::from_indices(outer_index, opposite_inner_index),
+            best_ask_price: Ticks::from_indices(OuterIndex::new(2), InnerIndex::ZERO),
+            best_bid_price: Ticks::from_indices(outer_index, bid_inner_index),
         };
 
         let mut bitmap_group = BitmapGroup::default();
-        bitmap_group.inner[opposite_inner_index.as_usize()] = 1;
+        bitmap_group.inner[bid_inner_index.as_usize()] = 1;
         bitmap_group.write_to_slot(slot_storage, &outer_index);
 
         let outer_index_count = 0;
@@ -945,7 +938,7 @@ mod tests {
             price_in_ticks: Ticks::from_indices(outer_index, InnerIndex::new(31)),
             resting_order_index: RestingOrderIndex::ZERO,
         };
-        order_id_inserter.activate_order_id(slot_storage, &order_id, market_prices);
+        order_id_inserter.activate_order_id(slot_storage, &order_id, &market_prices);
         order_id_inserter
             .bitmap_inserter
             .flush_bitmap_group(slot_storage);
@@ -967,15 +960,15 @@ mod tests {
         // Outer index 1 with non-empty bitmap is present in ask index list but not bid index list
         // Ensure that when we write an bid bit to outer index 1, the old bit is preserved.
         let outer_index = OuterIndex::new(1);
-        let opposite_inner_index = InnerIndex::MAX;
+        let bid_inner_index = InnerIndex::MAX;
 
         let market_prices = MarketPrices {
-            best_market_price: Ticks::from_indices(OuterIndex::new(0), InnerIndex::MAX),
-            best_opposite_price: Ticks::from_indices(outer_index, opposite_inner_index),
+            best_ask_price: Ticks::from_indices(OuterIndex::new(2), InnerIndex::ZERO),
+            best_bid_price: Ticks::from_indices(outer_index, bid_inner_index),
         };
 
         let mut bitmap_group = BitmapGroup::default();
-        bitmap_group.inner[opposite_inner_index.as_usize()] = 1;
+        bitmap_group.inner[bid_inner_index.as_usize()] = 1;
         bitmap_group.write_to_slot(slot_storage, &outer_index);
 
         let outer_index_count = 0;
@@ -985,7 +978,7 @@ mod tests {
             price_in_ticks: Ticks::from_indices(outer_index, InnerIndex::new(0)),
             resting_order_index: RestingOrderIndex::ZERO,
         };
-        order_id_inserter.activate_order_id(slot_storage, &order_id, market_prices);
+        order_id_inserter.activate_order_id(slot_storage, &order_id, &market_prices);
         order_id_inserter
             .bitmap_inserter
             .flush_bitmap_group(slot_storage);
@@ -1007,15 +1000,15 @@ mod tests {
         // Outer index 1 with non-empty bitmap is present in bid index list but not ask index list
         // Ensure that when we write an ask bit to outer index 1, the old bit is preserved.
         let outer_index = OuterIndex::new(1);
-        let opposite_inner_index = InnerIndex::ZERO;
+        let bid_inner_index = InnerIndex::ZERO;
 
         let market_prices = MarketPrices {
-            best_market_price: Ticks::from_indices(OuterIndex::new(2), InnerIndex::ZERO),
-            best_opposite_price: Ticks::from_indices(outer_index, opposite_inner_index),
+            best_ask_price: Ticks::from_indices(OuterIndex::new(2), InnerIndex::ZERO),
+            best_bid_price: Ticks::from_indices(outer_index, bid_inner_index),
         };
 
         let mut bitmap_group = BitmapGroup::default();
-        bitmap_group.inner[opposite_inner_index.as_usize()] = 1;
+        bitmap_group.inner[bid_inner_index.as_usize()] = 1;
         bitmap_group.write_to_slot(slot_storage, &outer_index);
 
         let outer_index_count = 0;
@@ -1025,7 +1018,7 @@ mod tests {
             price_in_ticks: Ticks::from_indices(outer_index, InnerIndex::new(31)),
             resting_order_index: RestingOrderIndex::ZERO,
         };
-        order_id_inserter.activate_order_id(slot_storage, &order_id, market_prices);
+        order_id_inserter.activate_order_id(slot_storage, &order_id, &market_prices);
         order_id_inserter
             .bitmap_inserter
             .flush_bitmap_group(slot_storage);

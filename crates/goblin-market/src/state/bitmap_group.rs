@@ -3,15 +3,12 @@ use super::{
         active_position::active_inner_index_iterator::ActiveInnerIndexIterator,
         position::inner_index_iterator::InnerIndexIterator,
     },
-    order::group_position::{self, GroupPosition},
+    order::group_position::GroupPosition,
     MarketPrices,
 };
-use crate::{
-    quantities::Ticks,
-    state::{
-        slot_storage::{SlotActions, SlotKey, SlotStorage},
-        InnerIndex, OuterIndex, RestingOrderIndex, Side,
-    },
+use crate::state::{
+    slot_storage::{SlotActions, SlotKey, SlotStorage},
+    InnerIndex, OuterIndex, RestingOrderIndex, Side,
 };
 
 /// A BitmapGroup contains Bitmaps for 32 ticks in ascending order.
@@ -112,10 +109,7 @@ impl BitmapGroup {
         best_active_index.is_none()
     }
 
-    /// Clear garbage bits in the bitmap group
-    ///
-    /// Garbage bits are present in the outermost group between the best inner index
-    /// and the best opposite inner index (both exclusive)
+    /// Clear garbage bits in the bitmap group that fall between best market prices
     ///
     /// # Arguments
     ///
@@ -126,49 +120,11 @@ impl BitmapGroup {
     ///
     pub fn clear_garbage_bits(
         &mut self,
-        side: Side,
         outer_index: OuterIndex,
-        market_prices: MarketPrices,
+        best_market_prices: &MarketPrices,
     ) {
-        let MarketPrices {
-            best_market_price,
-            best_opposite_price,
-        } = market_prices;
-
-        // Garbage bits are only present in the outermost bitmap group
-        if best_market_price.outer_index() == outer_index {
-            let start_index_exclusive = best_market_price.inner_index();
-
-            // Consider end index if opposite price is also in the same group
-            let end_index_exclusive = if best_opposite_price.outer_index() == outer_index {
-                Some(best_opposite_price.inner_index())
-            } else {
-                None
-            };
-
-            self.clear_in_range(side, start_index_exclusive, end_index_exclusive);
-        }
-    }
-
-    /// Clear all bits between two inner indices
-    ///
-    /// # Arguments
-    ///
-    /// * `side`
-    /// * `start_index_exclusive`
-    /// * `end_index_exclusive`
-    ///
-    pub fn clear_in_range(
-        &mut self,
-        side: Side,
-        start_index_exclusive: InnerIndex,
-        end_index_exclusive: Option<InnerIndex>,
-    ) {
-        let mut iterator = InnerIndexIterator::new_with_exclusive_indices(
-            side,
-            start_index_exclusive,
-            end_index_exclusive,
-        );
+        let mut iterator =
+            InnerIndexIterator::new_between_market_prices(best_market_prices, outer_index);
 
         while let Some(inner_index_to_clear) = iterator.next() {
             self.inner[inner_index_to_clear.as_usize()] = 0;
@@ -308,6 +264,8 @@ impl MutableBitmap<'_> {
 
 #[cfg(test)]
 mod tests {
+    use crate::quantities::Ticks;
+
     use super::*;
 
     #[test]
@@ -477,17 +435,19 @@ mod tests {
     }
 
     #[test]
-    fn test_clear_in_range() {
-        let side = Side::Ask;
-        let start_index_exclusive = InnerIndex::ZERO;
-        let end_index_exclusive = Some(InnerIndex::new(2));
+    fn test_clear_garbage_bits_same_outer_index() {
+        let outer_index = OuterIndex::ONE;
+        let market_prices = MarketPrices {
+            best_bid_price: Ticks::from_indices(outer_index, InnerIndex::new(0)),
+            best_ask_price: Ticks::from_indices(outer_index, InnerIndex::new(2)),
+        };
 
         let mut bitmap_group = BitmapGroup::default();
         bitmap_group.inner[0] = 1;
         bitmap_group.inner[1] = 1;
         bitmap_group.inner[2] = 1;
 
-        bitmap_group.clear_in_range(side, start_index_exclusive, end_index_exclusive);
+        bitmap_group.clear_garbage_bits(outer_index, &market_prices);
 
         assert_eq!(
             bitmap_group.inner,
@@ -499,17 +459,19 @@ mod tests {
     }
 
     #[test]
-    fn test_clear_in_range_no_end_index() {
-        let side = Side::Ask;
-        let start_index_exclusive = InnerIndex::ZERO;
-        let end_index_exclusive = None;
+    fn test_clear_in_range_best_ask_price_on_different_outer_index() {
+        let outer_index = OuterIndex::ONE;
+        let market_prices = MarketPrices {
+            best_bid_price: Ticks::from_indices(outer_index, InnerIndex::new(0)),
+            best_ask_price: Ticks::from_indices(OuterIndex::new(2), InnerIndex::new(2)),
+        };
 
         let mut bitmap_group = BitmapGroup::default();
         bitmap_group.inner[0] = 1;
         bitmap_group.inner[1] = 1;
         bitmap_group.inner[2] = 1;
 
-        bitmap_group.clear_in_range(side, start_index_exclusive, end_index_exclusive);
+        bitmap_group.clear_garbage_bits(outer_index, &market_prices);
 
         assert_eq!(
             bitmap_group.inner,
