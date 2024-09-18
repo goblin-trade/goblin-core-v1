@@ -347,138 +347,196 @@ mod tests {
         assert_eq!(bitmap_group.inner[0], 1);
     }
 
-    #[test]
-    fn test_is_inactive_for_bids() {
-        let mut bitmap_group = BitmapGroup::default();
+    mod is_inactive {
+        use super::*;
 
-        let side = Side::Bid;
-        let starting_index = InnerIndex::new(10);
+        #[test]
+        fn test_is_inactive_for_bids() {
+            let mut bitmap_group = BitmapGroup::default();
 
-        bitmap_group.inner[starting_index.as_usize() + 1] = 0b00000001;
-        assert_eq!(bitmap_group.is_inactive(side, Some(starting_index)), true);
+            let side = Side::Bid;
+            let starting_index = InnerIndex::new(10);
 
-        bitmap_group.inner[starting_index.as_usize()] = 0b00000001;
-        assert_eq!(bitmap_group.is_inactive(side, Some(starting_index)), false);
+            bitmap_group.inner[starting_index.as_usize() + 1] = 0b00000001;
+            assert_eq!(bitmap_group.is_inactive(side, Some(starting_index)), true);
+
+            bitmap_group.inner[starting_index.as_usize()] = 0b00000001;
+            assert_eq!(bitmap_group.is_inactive(side, Some(starting_index)), false);
+        }
+
+        #[test]
+        fn test_is_inactive_for_asks() {
+            let mut bitmap_group = BitmapGroup::default();
+
+            let side = Side::Ask;
+            let starting_index = InnerIndex::new(10);
+
+            bitmap_group.inner[starting_index.as_usize() - 1] = 0b00000001;
+            assert_eq!(bitmap_group.is_inactive(side, Some(starting_index)), true);
+
+            bitmap_group.inner[starting_index.as_usize()] = 0b00000001;
+            assert_eq!(bitmap_group.is_inactive(side, Some(starting_index)), false);
+        }
     }
 
-    #[test]
-    fn test_is_inactive_for_asks() {
-        let mut bitmap_group = BitmapGroup::default();
+    mod will_be_cleared_after_removal {
+        use super::*;
 
-        let side = Side::Ask;
-        let starting_index = InnerIndex::new(10);
+        #[test]
+        fn test_removal_clears_bitmap_single_bit_set() {
+            // Bitmap with only the first bit set (0b00000001)
+            let inner = 0b00000001;
+            let bitmap = Bitmap { inner: &inner };
+            let resting_order_index = RestingOrderIndex::new(0);
 
-        bitmap_group.inner[starting_index.as_usize() - 1] = 0b00000001;
-        assert_eq!(bitmap_group.is_inactive(side, Some(starting_index)), true);
+            // Removing the only order should clear the bitmap
+            assert!(bitmap.will_be_cleared_after_removal(resting_order_index));
+        }
 
-        bitmap_group.inner[starting_index.as_usize()] = 0b00000001;
-        assert_eq!(bitmap_group.is_inactive(side, Some(starting_index)), false);
+        #[test]
+        fn test_removal_clears_bitmap_middle_bit_set() {
+            // Bitmap with only the middle bit set (0b00010000)
+            let inner = 0b00010000;
+            let bitmap = Bitmap { inner: &inner };
+            let resting_order_index = RestingOrderIndex::new(4);
+
+            // Removing the only order should clear the bitmap
+            assert!(bitmap.will_be_cleared_after_removal(resting_order_index));
+        }
+
+        #[test]
+        fn test_removal_does_not_clear_bitmap_other_bits_set() {
+            // Bitmap with multiple bits set (0b00000011)
+            let inner = 0b00000011;
+            let bitmap = Bitmap { inner: &inner };
+            let resting_order_index = RestingOrderIndex::new(0);
+
+            // Removing the order at index 0 should NOT clear the bitmap
+            // because there is still an order at index 1
+            assert!(!bitmap.will_be_cleared_after_removal(resting_order_index));
+        }
+
+        #[test]
+        fn test_removal_clears_bitmap_highest_bit_set() {
+            // Bitmap with highest bit set (0b10000000)
+            let inner = 0b10000000;
+            let bitmap = Bitmap { inner: &inner };
+            let resting_order_index = RestingOrderIndex::new(7);
+
+            // Removing the order at index 7 should clear the bitmap
+            assert!(bitmap.will_be_cleared_after_removal(resting_order_index));
+        }
+
+        #[test]
+        fn test_removal_does_not_clear_bitmap_all_bits_set() {
+            // Bitmap with all bits set (0b11111111)
+            let inner = 0b11111111;
+            let bitmap = Bitmap { inner: &inner };
+            let resting_order_index = RestingOrderIndex::new(3);
+
+            // Removing the order at index 3 should not clear the bitmap,
+            // since all other bits are still set
+            assert!(!bitmap.will_be_cleared_after_removal(resting_order_index));
+        }
     }
 
-    // will_be_cleared_after_removal() tests
+    mod clear_garbage_bits {
+        use super::*;
 
-    #[test]
-    fn test_removal_clears_bitmap_single_bit_set() {
-        // Bitmap with only the first bit set (0b00000001)
-        let inner = 0b00000001;
-        let bitmap = Bitmap { inner: &inner };
-        let resting_order_index = RestingOrderIndex::new(0);
+        #[test]
+        fn test_best_prices_on_same_bitmap() {
+            let outer_index = OuterIndex::ONE;
+            let market_prices = MarketPrices {
+                best_bid_price: Ticks::from_indices(outer_index, InnerIndex::new(0)),
+                best_ask_price: Ticks::from_indices(outer_index, InnerIndex::new(2)),
+            };
 
-        // Removing the only order should clear the bitmap
-        assert!(bitmap.will_be_cleared_after_removal(resting_order_index));
-    }
+            let mut bitmap_group = BitmapGroup::default();
+            bitmap_group.inner[0] = 1;
+            bitmap_group.inner[1] = 1;
+            bitmap_group.inner[2] = 1;
 
-    #[test]
-    fn test_removal_clears_bitmap_middle_bit_set() {
-        // Bitmap with only the middle bit set (0b00010000)
-        let inner = 0b00010000;
-        let bitmap = Bitmap { inner: &inner };
-        let resting_order_index = RestingOrderIndex::new(4);
+            bitmap_group.clear_garbage_bits(outer_index, &market_prices);
 
-        // Removing the only order should clear the bitmap
-        assert!(bitmap.will_be_cleared_after_removal(resting_order_index));
-    }
+            assert_eq!(
+                bitmap_group.inner,
+                [
+                    1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0,
+                ]
+            );
+        }
 
-    #[test]
-    fn test_removal_does_not_clear_bitmap_other_bits_set() {
-        // Bitmap with multiple bits set (0b00000011)
-        let inner = 0b00000011;
-        let bitmap = Bitmap { inner: &inner };
-        let resting_order_index = RestingOrderIndex::new(0);
+        #[test]
+        fn test_best_bid_price_on_different_bitmap() {
+            let outer_index = OuterIndex::ONE;
+            let market_prices = MarketPrices {
+                best_bid_price: Ticks::from_indices(OuterIndex::ZERO, InnerIndex::new(0)),
+                best_ask_price: Ticks::from_indices(outer_index, InnerIndex::new(2)),
+            };
 
-        // Removing the order at index 0 should NOT clear the bitmap
-        // because there is still an order at index 1
-        assert!(!bitmap.will_be_cleared_after_removal(resting_order_index));
-    }
+            let mut bitmap_group = BitmapGroup::default();
+            bitmap_group.inner[0] = 1;
+            bitmap_group.inner[1] = 1;
+            bitmap_group.inner[2] = 1;
 
-    #[test]
-    fn test_removal_clears_bitmap_highest_bit_set() {
-        // Bitmap with highest bit set (0b10000000)
-        let inner = 0b10000000;
-        let bitmap = Bitmap { inner: &inner };
-        let resting_order_index = RestingOrderIndex::new(7);
+            bitmap_group.clear_garbage_bits(outer_index, &market_prices);
 
-        // Removing the order at index 7 should clear the bitmap
-        assert!(bitmap.will_be_cleared_after_removal(resting_order_index));
-    }
+            assert_eq!(
+                bitmap_group.inner,
+                [
+                    0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0,
+                ]
+            );
+        }
 
-    #[test]
-    fn test_removal_does_not_clear_bitmap_all_bits_set() {
-        // Bitmap with all bits set (0b11111111)
-        let inner = 0b11111111;
-        let bitmap = Bitmap { inner: &inner };
-        let resting_order_index = RestingOrderIndex::new(3);
+        #[test]
+        fn test_best_ask_price_on_different_bitmap() {
+            let outer_index = OuterIndex::ONE;
+            let market_prices = MarketPrices {
+                best_bid_price: Ticks::from_indices(outer_index, InnerIndex::new(0)),
+                best_ask_price: Ticks::from_indices(OuterIndex::new(2), InnerIndex::new(2)),
+            };
 
-        // Removing the order at index 3 should not clear the bitmap,
-        // since all other bits are still set
-        assert!(!bitmap.will_be_cleared_after_removal(resting_order_index));
-    }
+            let mut bitmap_group = BitmapGroup::default();
+            bitmap_group.inner[0] = 1;
+            bitmap_group.inner[1] = 1;
+            bitmap_group.inner[2] = 1;
 
-    #[test]
-    fn test_clear_garbage_bits_same_outer_index() {
-        let outer_index = OuterIndex::ONE;
-        let market_prices = MarketPrices {
-            best_bid_price: Ticks::from_indices(outer_index, InnerIndex::new(0)),
-            best_ask_price: Ticks::from_indices(outer_index, InnerIndex::new(2)),
-        };
+            bitmap_group.clear_garbage_bits(outer_index, &market_prices);
 
-        let mut bitmap_group = BitmapGroup::default();
-        bitmap_group.inner[0] = 1;
-        bitmap_group.inner[1] = 1;
-        bitmap_group.inner[2] = 1;
+            assert_eq!(
+                bitmap_group.inner,
+                [
+                    1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0,
+                ]
+            );
+        }
 
-        bitmap_group.clear_garbage_bits(outer_index, &market_prices);
+        #[test]
+        fn test_both_best_prices_on_different_bitmaps() {
+            let outer_index = OuterIndex::ONE;
+            let market_prices = MarketPrices {
+                best_bid_price: Ticks::from_indices(OuterIndex::ZERO, InnerIndex::new(0)),
+                best_ask_price: Ticks::from_indices(OuterIndex::new(2), InnerIndex::new(2)),
+            };
 
-        assert_eq!(
-            bitmap_group.inner,
-            [
-                1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0,
-            ]
-        );
-    }
+            let mut bitmap_group = BitmapGroup::default();
+            bitmap_group.inner[0] = 1;
+            bitmap_group.inner[1] = 1;
+            bitmap_group.inner[2] = 1;
 
-    #[test]
-    fn test_clear_in_range_best_ask_price_on_different_outer_index() {
-        let outer_index = OuterIndex::ONE;
-        let market_prices = MarketPrices {
-            best_bid_price: Ticks::from_indices(outer_index, InnerIndex::new(0)),
-            best_ask_price: Ticks::from_indices(OuterIndex::new(2), InnerIndex::new(2)),
-        };
+            bitmap_group.clear_garbage_bits(outer_index, &market_prices);
 
-        let mut bitmap_group = BitmapGroup::default();
-        bitmap_group.inner[0] = 1;
-        bitmap_group.inner[1] = 1;
-        bitmap_group.inner[2] = 1;
-
-        bitmap_group.clear_garbage_bits(outer_index, &market_prices);
-
-        assert_eq!(
-            bitmap_group.inner,
-            [
-                1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0,
-            ]
-        );
+            assert_eq!(
+                bitmap_group.inner,
+                [
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0,
+                ]
+            );
+        }
     }
 }
