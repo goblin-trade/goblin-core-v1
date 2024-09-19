@@ -1,7 +1,7 @@
 #[derive(PartialEq, Clone, Copy)]
 pub enum Side {
-    Bid,
-    Ask,
+    Bid = 0,
+    Ask = 1,
 }
 
 impl From<bool> for Side {

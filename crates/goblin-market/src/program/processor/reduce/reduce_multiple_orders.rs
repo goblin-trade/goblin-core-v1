@@ -4,21 +4,20 @@ use stylus_sdk::alloy_primitives::{Address, FixedBytes};
 use crate::{
     program::{
         try_withdraw, types::matching_engine_response::MatchingEngineResponse, FailedToReduce,
-        GoblinError, GoblinResult, PricesNotInOrder,
+        GoblinError, GoblinResult,
     },
     quantities::{BaseAtomsRaw, BaseLots, QuoteAtomsRaw, QuoteLots, Ticks, WrapperU64},
-    require,
     state::{
         order::{
             order_id::OrderId,
             resting_order::{ReduceOrderInnerResponse, SlotRestingOrder},
-            sorted_order_id::{AskOrderId, BidOrderId},
         },
-        remove::order_id_remover::OrderIdRemover,
-        MarketState, RestingOrderIndex, Side, SlotActions, SlotStorage, TraderState,
+        MarketState, RestingOrderIndex, SlotActions, SlotStorage, TraderState,
     },
     GoblinMarket,
 };
+
+use super::RemoveMultipleManager;
 
 pub struct ReduceOrderPacket {
     // ID of order to reduce
@@ -135,9 +134,7 @@ pub fn reduce_multiple_orders_inner(
     let mut quote_lots_released = QuoteLots::ZERO;
     let mut base_lots_released = BaseLots::ZERO;
 
-    // let mut order_id_checker = OrderIdChecker::new();
-
-    let mut processor = RemoveMultipleProcessor::new(
+    let mut processor = RemoveMultipleManager::new(
         market_state.bids_outer_indices,
         market_state.asks_outer_indices,
     );
@@ -152,7 +149,7 @@ pub fn reduce_multiple_orders_inner(
         // Ensure that successive order IDs move away from the center and that
         // duplicate values are not passed
         let side = order_id.side(market_state);
-        processor.check_correct_order(order_id, side)?;
+        processor.check_sorted(side, order_id)?;
 
         let order_present = processor.order_present(slot_storage, side, order_id);
 
@@ -195,82 +192,4 @@ pub fn reduce_multiple_orders_inner(
         base_lots_released,
         quote_lots_released,
     ))
-}
-
-struct RemoveMultipleProcessor {
-    last_bid_order_id: Option<BidOrderId>,
-    last_ask_order_id: Option<AskOrderId>,
-    bid_bitmap_reader: OrderIdRemover,
-    ask_bitmap_reader: OrderIdRemover,
-}
-
-impl RemoveMultipleProcessor {
-    pub fn new(bids_outer_indices: u16, asks_outer_indices: u16) -> Self {
-        RemoveMultipleProcessor {
-            bid_bitmap_reader: OrderIdRemover::new(bids_outer_indices, Side::Bid),
-            ask_bitmap_reader: OrderIdRemover::new(asks_outer_indices, Side::Ask),
-            last_bid_order_id: None,
-            last_ask_order_id: None,
-        }
-    }
-
-    fn reader(&mut self, side: Side) -> &mut OrderIdRemover {
-        match side {
-            Side::Bid => &mut self.bid_bitmap_reader,
-            Side::Ask => &mut self.ask_bitmap_reader,
-        }
-    }
-
-    /// Ensures that successive order ids to remove are in correct order
-    ///
-    /// Successive IDs must be in ascending order for asks and in descending order for bids
-    pub fn check_correct_order(&mut self, order_id: OrderId, side: Side) -> GoblinResult<()> {
-        if side == Side::Bid && self.last_bid_order_id.is_some() {
-            let bid_order_id = BidOrderId { inner: order_id };
-            require!(
-                bid_order_id < self.last_bid_order_id.unwrap(),
-                GoblinError::PricesNotInOrder(PricesNotInOrder {})
-            );
-            self.last_bid_order_id = Some(bid_order_id);
-        }
-        if side == Side::Ask && self.last_ask_order_id.is_some() {
-            let ask_order_id = AskOrderId { inner: order_id };
-            require!(
-                ask_order_id < self.last_ask_order_id.unwrap(),
-                GoblinError::PricesNotInOrder(PricesNotInOrder {})
-            );
-            self.last_ask_order_id = Some(ask_order_id);
-        }
-
-        Ok(())
-    }
-
-    pub fn order_present(
-        &mut self,
-        slot_storage: &mut SlotStorage,
-        side: Side,
-        order_id: OrderId,
-    ) -> bool {
-        self.reader(side).find_order(slot_storage, order_id)
-    }
-
-    pub fn remove_order(
-        &mut self,
-        slot_storage: &mut SlotStorage,
-        market_state: &mut MarketState,
-        side: Side,
-    ) {
-        self.reader(side).remove_order(slot_storage, market_state)
-    }
-
-    pub fn write_prepared_indices(
-        &mut self,
-        slot_storage: &mut SlotStorage,
-        market_state: &mut MarketState,
-    ) {
-        self.bid_bitmap_reader
-            .write_prepared_indices(slot_storage, market_state);
-        self.ask_bitmap_reader
-            .write_prepared_indices(slot_storage, market_state);
-    }
 }
