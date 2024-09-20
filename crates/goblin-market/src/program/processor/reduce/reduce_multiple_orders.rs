@@ -101,7 +101,11 @@ pub fn process_reduce_multiple_orders(
 /// another trader. The current behavior is that if one reduction fails,
 /// continue trying to reduction others.
 ///
-/// Order IDs should be grouped by outer_ids and by side for efficiency.
+/// Order IDs should be in correct order
+/// - Asks in ascending order and bids in desecnding order of price. The call reverts if
+/// they are not in order.
+/// - Order IDs for bids and asks can be interspersed but the sorting in the
+/// respective side must be maintained.
 ///
 /// Reduction involves
 ///
@@ -146,12 +150,8 @@ pub fn reduce_multiple_orders_inner(
             revert_if_fail,
         } = ReduceOrderPacket::from(&order_packet_bytes);
 
-        // Ensure that successive order IDs move away from the center and that
-        // duplicate values are not passed
         let side = order_id.side(market_state);
-        processor.check_sorted(side, order_id)?;
-
-        let order_present = processor.order_present(slot_storage, side, order_id);
+        let order_present = processor.find_order(slot_storage, side, order_id)?;
 
         if order_present {
             let mut resting_order = SlotRestingOrder::new_from_slot(slot_storage, order_id);
@@ -172,7 +172,7 @@ pub fn reduce_multiple_orders_inner(
                 base_lots_released += matching_engine_response.num_base_lots_out;
 
                 if should_remove_order_from_book {
-                    processor.remove_order(slot_storage, market_state, side);
+                    processor.remove_order(slot_storage, market_state);
                 } else {
                     resting_order.write_to_slot(slot_storage, &order_id)?;
                 }

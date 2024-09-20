@@ -1,4 +1,4 @@
-#[derive(PartialEq, Clone, Copy)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum Side {
     Bid = 0,
     Ask = 1,

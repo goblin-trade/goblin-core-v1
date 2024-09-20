@@ -3,7 +3,7 @@ use crate::{
     state::{MarketState, OuterIndex, RestingOrderIndex, Side, SlotKey, RESTING_ORDER_KEY_SEED},
 };
 
-use super::group_position::GroupPosition;
+use super::{group_position::GroupPosition, sorted_order_id::SortedOrderId};
 
 #[derive(Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub struct OrderId {
