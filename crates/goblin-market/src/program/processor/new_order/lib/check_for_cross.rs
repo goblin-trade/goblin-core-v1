@@ -46,7 +46,7 @@ pub fn check_for_cross(
     let mut handle_cross = |order_id: OrderId,
                             resting_order: &mut SlotRestingOrder,
                             slot_storage: &mut SlotStorage| {
-        let crosses = match side.opposite() {
+        let crosses = match opposite_side {
             Side::Bid => order_id.price_in_ticks >= limit_price_in_ticks,
             Side::Ask => order_id.price_in_ticks <= limit_price_in_ticks,
         };
@@ -55,14 +55,14 @@ pub fn check_for_cross(
             return true;
         }
 
-        if resting_order.expired(current_block, current_unix_timestamp_in_seconds) {
+        if resting_order.is_expired(current_block, current_unix_timestamp_in_seconds) {
             let mut maker_state =
                 TraderState::read_from_slot(slot_storage, resting_order.trader_address);
 
             resting_order.reduce_order(
                 &mut maker_state,
-                &order_id,
-                side.opposite(),
+                opposite_side,
+                order_id.price_in_ticks,
                 BaseLots::MAX,
                 true,
                 false,

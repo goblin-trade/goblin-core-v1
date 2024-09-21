@@ -7,7 +7,7 @@ use crate::{
         compute_quote_lots, types::matching_engine_response::MatchingEngineResponse,
         ExceedRestingOrderSize, GoblinError,
     },
-    quantities::{BaseLots, QuoteLots, WrapperU64},
+    quantities::{BaseLots, QuoteLots, Ticks, WrapperU64},
     require,
     state::{Side, SlotActions, SlotKey, SlotStorage, TraderState},
 };
@@ -183,7 +183,7 @@ impl SlotRestingOrder {
         self.trader_address == Address::ZERO || self.trader_address == NULL_ADDRESS
     }
 
-    pub fn expired(&self, current_block: u32, current_unix_timestamp_in_seconds: u32) -> bool {
+    pub fn is_expired(&self, current_block: u32, current_unix_timestamp_in_seconds: u32) -> bool {
         if self.last_valid_block_or_unix_timestamp_in_seconds == 0 {
             return false;
         }
@@ -210,8 +210,8 @@ impl SlotRestingOrder {
     ///
     /// * `trader_state`
     /// * `trader`
-    /// * `order_id`
     /// * `side`
+    /// * `price_in_ticks`
     /// * `lots_to_remove` - Try to reduce size by this many lots. Pass u64::MAX to close entire order
     /// * `order_is_expired`
     /// * `claim_funds`
@@ -223,8 +223,8 @@ impl SlotRestingOrder {
     pub fn reduce_order(
         &mut self,
         trader_state: &mut TraderState,
-        order_id: &OrderId,
         side: Side,
+        price_in_ticks: Ticks,
         lots_to_remove: BaseLots,
         order_is_expired: bool,
         claim_funds: bool,
@@ -247,8 +247,7 @@ impl SlotRestingOrder {
                 Side::Bid => {
                     // A bid order consists of locked up 'quote tokens' bidding to buy the base token.
                     // Quote tokens are released on reducing the order.
-                    let quote_lots =
-                        compute_quote_lots(order_id.price_in_ticks, base_lots_to_remove);
+                    let quote_lots = compute_quote_lots(price_in_ticks, base_lots_to_remove);
 
                     trader_state.unlock_quote_lots(quote_lots);
                     (quote_lots, BaseLots::ZERO)
@@ -265,6 +264,7 @@ impl SlotRestingOrder {
 
         // We don't want to claim funds if an order is removed from the book during a self trade
         // or if the user specifically indicates that they don't want to claim funds.
+        // TODO test claim_funds_inner()
         if claim_funds {
             trader_state.claim_funds_inner(num_quote_lots, num_base_lots)
         } else {
@@ -278,7 +278,6 @@ pub trait RestingOrder {
     fn size(&self) -> u64;
     fn last_valid_block(&self) -> Option<u32>;
     fn last_valid_unix_timestamp_in_seconds(&self) -> Option<u32>;
-    // fn is_expired(&self, current_slot: u32, current_unix_timestamp_in_seconds: u32) -> bool;
 }
 
 impl RestingOrder for SlotRestingOrder {
@@ -301,58 +300,106 @@ impl RestingOrder for SlotRestingOrder {
             None
         }
     }
-
-    // TODO is_expired() function
-}
-
-pub struct ReduceOrderInnerResponse {
-    pub matching_engine_response: MatchingEngineResponse,
-    pub should_remove_order_from_book: bool,
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    #[test]
-    fn highest_valid_base_lot_size() {
-        let resting_order = SlotRestingOrder {
-            trader_address: Address::ZERO,
-            num_base_lots: BaseLots::new(9223372036854775807),
-            track_block: false,
-            last_valid_block_or_unix_timestamp_in_seconds: 0,
-        };
+    mod test_encoding {
+        use super::*;
 
-        resting_order.encode().unwrap();
-    }
+        #[test]
+        fn test_highest_valid_base_lot_size() {
+            let resting_order = SlotRestingOrder {
+                trader_address: Address::ZERO,
+                num_base_lots: BaseLots::new(9223372036854775807),
+                track_block: false,
+                last_valid_block_or_unix_timestamp_in_seconds: 0,
+            };
 
-    #[test]
-    #[should_panic]
-    fn base_lot_size_overflow() {
-        let resting_order = SlotRestingOrder {
-            trader_address: Address::ZERO,
-            num_base_lots: BaseLots::new(9223372036854775807 + 1),
-            track_block: false,
-            last_valid_block_or_unix_timestamp_in_seconds: 0,
-        };
+            resting_order.encode().unwrap();
+        }
 
-        resting_order.encode().unwrap();
-    }
+        #[test]
+        #[should_panic]
+        fn test_base_lot_size_overflow() {
+            let resting_order = SlotRestingOrder {
+                trader_address: Address::ZERO,
+                num_base_lots: BaseLots::new(9223372036854775807 + 1),
+                track_block: false,
+                last_valid_block_or_unix_timestamp_in_seconds: 0,
+            };
 
-    #[test]
-    fn test_encode_resting_order() {
-        let resting_order = SlotRestingOrder {
-            trader_address: Address::ZERO,
-            num_base_lots: BaseLots::new(1),
-            track_block: true,
-            last_valid_block_or_unix_timestamp_in_seconds: 257,
-        };
+            resting_order.encode().unwrap();
+        }
 
-        let encoded_order = resting_order.encode().unwrap();
-        assert_eq!(
-            encoded_order,
-            [
-                // address- 0
+        #[test]
+        fn test_encode_resting_order() {
+            let resting_order = SlotRestingOrder {
+                trader_address: Address::ZERO,
+                num_base_lots: BaseLots::new(1),
+                track_block: true,
+                last_valid_block_or_unix_timestamp_in_seconds: 257,
+            };
+
+            let encoded_order = resting_order.encode().unwrap();
+            assert_eq!(
+                encoded_order,
+                [
+                    // address- 0
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    // num_base_lots- 1, track_block true
+                    0b1000_0000,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    // 257
+                    0,
+                    0,
+                    1,
+                    1,
+                ]
+            );
+
+            let decoded_order = SlotRestingOrder::decode(encoded_order);
+
+            assert_eq!(resting_order.trader_address, decoded_order.trader_address);
+            assert_eq!(resting_order.num_base_lots, decoded_order.num_base_lots);
+            assert_eq!(resting_order.track_block, decoded_order.track_block);
+            assert_eq!(
+                resting_order.last_valid_block_or_unix_timestamp_in_seconds,
+                decoded_order.last_valid_block_or_unix_timestamp_in_seconds
+            );
+        }
+
+        #[test]
+        fn test_decode_resting_order() {
+            let slot: [u8; 32] = [
+                // address- 0x000...1
                 0,
                 0,
                 0,
@@ -366,15 +413,6 @@ mod tests {
                 0,
                 0,
                 0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                // num_base_lots- 1, track_block true
-                0b1000_0000,
                 0,
                 0,
                 0,
@@ -382,124 +420,257 @@ mod tests {
                 0,
                 0,
                 1,
-                // 257
+                // track_block false, max lots
+                0b0111_1111,
+                255,
+                255,
+                255,
+                255,
+                255,
+                255,
+                255,
                 0,
                 0,
                 1,
-                1,
-            ]
-        );
+                1, // 257
+            ];
 
-        let decoded_order = SlotRestingOrder::decode(encoded_order);
+            let resting_order = SlotRestingOrder::decode(slot);
 
-        assert_eq!(resting_order.trader_address, decoded_order.trader_address);
-        assert_eq!(resting_order.num_base_lots, decoded_order.num_base_lots);
-        assert_eq!(resting_order.track_block, decoded_order.track_block);
-        assert_eq!(
-            resting_order.last_valid_block_or_unix_timestamp_in_seconds,
-            decoded_order.last_valid_block_or_unix_timestamp_in_seconds
-        );
+            let expected_address = address!("0000000000000000000000000000000000000001");
+            assert_eq!(resting_order.trader_address, expected_address);
+            assert_eq!(
+                resting_order.num_base_lots,
+                BaseLots::new(9223372036854775807)
+            );
+
+            assert_eq!(resting_order.track_block, false);
+            assert_eq!(
+                resting_order.last_valid_block_or_unix_timestamp_in_seconds,
+                257
+            );
+        }
+
+        #[test]
+        fn test_track_block_encoding() {
+            let resting_order_1 = SlotRestingOrder {
+                trader_address: Address::ZERO,
+                num_base_lots: BaseLots::new(0),
+                track_block: false,
+                last_valid_block_or_unix_timestamp_in_seconds: 0,
+            };
+            let encoded_1 = resting_order_1.encode().unwrap();
+
+            assert_eq!(encoded_1[20], 0b0000_0000);
+            assert_eq!(&encoded_1[21..28], [0u8; 7]);
+
+            let resting_order_2 = SlotRestingOrder {
+                trader_address: Address::ZERO,
+                num_base_lots: BaseLots::new(0),
+                track_block: true,
+                last_valid_block_or_unix_timestamp_in_seconds: 0,
+            };
+            let encoded_2 = resting_order_2.encode().unwrap();
+
+            assert_eq!(encoded_2[20], 0b1000_0000);
+            assert_eq!(&encoded_2[21..28], [0u8; 7]);
+
+            let resting_order_3 = SlotRestingOrder {
+                trader_address: Address::ZERO,
+                num_base_lots: BaseLots::new(9223372036854775807), // 2^63 - 1, max
+                track_block: false,
+                last_valid_block_or_unix_timestamp_in_seconds: 0,
+            };
+            let encoded_3 = resting_order_3.encode().unwrap();
+
+            assert_eq!(encoded_3[20], 0b0111_1111);
+            assert_eq!(&encoded_3[21..28], [255u8; 7]);
+
+            let resting_order_4 = SlotRestingOrder {
+                trader_address: Address::ZERO,
+                num_base_lots: BaseLots::new(9223372036854775807), // 2^63 - 1, max
+                track_block: true,
+                last_valid_block_or_unix_timestamp_in_seconds: 0,
+            };
+            let encoded_4 = resting_order_4.encode().unwrap();
+
+            assert_eq!(encoded_4[20], 0b1111_1111);
+            assert_eq!(&encoded_4[21..28], [255u8; 7]);
+        }
     }
 
-    #[test]
-    fn test_decode_resting_order() {
-        let slot: [u8; 32] = [
-            // address- 0x000...1
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            1,
-            // track_block false, max lots
-            0b0111_1111,
-            255,
-            255,
-            255,
-            255,
-            255,
-            255,
-            255,
-            0,
-            0,
-            1,
-            1, // 257
-        ];
+    mod reduce_order {
+        use super::*;
 
-        let resting_order = SlotRestingOrder::decode(slot);
+        #[test]
+        fn test_reduce_for_bids() {
+            let side = Side::Ask;
+            let price_in_ticks = Ticks::ONE;
+            let order_size = BaseLots::new(2);
 
-        let expected_address = address!("0000000000000000000000000000000000000001");
-        assert_eq!(resting_order.trader_address, expected_address);
-        assert_eq!(
-            resting_order.num_base_lots,
-            BaseLots::new(9223372036854775807)
-        );
+            let mut trader_state = TraderState {
+                quote_lots_locked: QuoteLots::ZERO,
+                quote_lots_free: QuoteLots::ZERO,
+                base_lots_locked: BaseLots::new(2),
+                base_lots_free: BaseLots::ZERO,
+            };
+            let mut resting_order = SlotRestingOrder {
+                trader_address: Address::default(),
+                num_base_lots: order_size,
+                track_block: true,
+                last_valid_block_or_unix_timestamp_in_seconds: 1,
+            };
 
-        assert_eq!(resting_order.track_block, false);
-        assert_eq!(
-            resting_order.last_valid_block_or_unix_timestamp_in_seconds,
-            257
-        );
-    }
+            let order_is_expired = false;
+            let claim_funds = false;
 
-    #[test]
-    fn test_track_block_encoding() {
-        let resting_order_1 = SlotRestingOrder {
-            trader_address: Address::ZERO,
-            num_base_lots: BaseLots::new(0),
-            track_block: false,
-            last_valid_block_or_unix_timestamp_in_seconds: 0,
-        };
-        let encoded_1 = resting_order_1.encode().unwrap();
+            let lots_to_remove_0 = BaseLots::ONE;
+            let response_0 = resting_order.reduce_order(
+                &mut trader_state,
+                side,
+                price_in_ticks,
+                lots_to_remove_0,
+                order_is_expired,
+                claim_funds,
+            );
+            assert_eq!(response_0, MatchingEngineResponse::default());
+            assert_eq!(
+                trader_state,
+                TraderState {
+                    quote_lots_locked: QuoteLots::ZERO,
+                    quote_lots_free: QuoteLots::ZERO,
+                    base_lots_locked: BaseLots::ONE,
+                    base_lots_free: lots_to_remove_0,
+                }
+            );
 
-        assert_eq!(encoded_1[20], 0b0000_0000);
-        assert_eq!(&encoded_1[21..28], [0u8; 7]);
+            let lots_to_remove_1 = BaseLots::ONE;
+            let response_1 = resting_order.reduce_order(
+                &mut trader_state,
+                side,
+                price_in_ticks,
+                lots_to_remove_1,
+                order_is_expired,
+                claim_funds,
+            );
+            assert_eq!(response_1, MatchingEngineResponse::default());
+            assert_eq!(
+                trader_state,
+                TraderState {
+                    quote_lots_locked: QuoteLots::ZERO,
+                    quote_lots_free: QuoteLots::ZERO,
+                    base_lots_locked: BaseLots::ZERO,
+                    base_lots_free: BaseLots::new(2),
+                }
+            );
+        }
 
-        let resting_order_2 = SlotRestingOrder {
-            trader_address: Address::ZERO,
-            num_base_lots: BaseLots::new(0),
-            track_block: true,
-            last_valid_block_or_unix_timestamp_in_seconds: 0,
-        };
-        let encoded_2 = resting_order_2.encode().unwrap();
+        #[test]
+        fn test_reduce_for_asks() {
+            let side = Side::Bid;
+            let price_in_ticks = Ticks::ONE;
+            let order_size = BaseLots::new(2);
+            let quote_lots_locked = QuoteLots::new(2);
 
-        assert_eq!(encoded_2[20], 0b1000_0000);
-        assert_eq!(&encoded_2[21..28], [0u8; 7]);
+            let mut trader_state = TraderState {
+                quote_lots_locked,
+                quote_lots_free: QuoteLots::ZERO,
+                base_lots_locked: BaseLots::ZERO,
+                base_lots_free: BaseLots::ZERO,
+            };
+            let mut resting_order = SlotRestingOrder {
+                trader_address: Address::default(),
+                num_base_lots: order_size,
+                track_block: true,
+                last_valid_block_or_unix_timestamp_in_seconds: 1,
+            };
 
-        let resting_order_3 = SlotRestingOrder {
-            trader_address: Address::ZERO,
-            num_base_lots: BaseLots::new(9223372036854775807), // 2^63 - 1, max
-            track_block: false,
-            last_valid_block_or_unix_timestamp_in_seconds: 0,
-        };
-        let encoded_3 = resting_order_3.encode().unwrap();
+            let order_is_expired = false;
+            let claim_funds = false;
 
-        assert_eq!(encoded_3[20], 0b0111_1111);
-        assert_eq!(&encoded_3[21..28], [255u8; 7]);
+            let lots_to_remove_0 = BaseLots::ONE;
+            let response_0 = resting_order.reduce_order(
+                &mut trader_state,
+                side,
+                price_in_ticks,
+                lots_to_remove_0,
+                order_is_expired,
+                claim_funds,
+            );
+            assert_eq!(response_0, MatchingEngineResponse::default());
+            assert_eq!(
+                trader_state,
+                TraderState {
+                    quote_lots_locked: QuoteLots::ONE,
+                    quote_lots_free: QuoteLots::ONE,
+                    base_lots_locked: BaseLots::ZERO,
+                    base_lots_free: BaseLots::ZERO,
+                }
+            );
 
-        let resting_order_4 = SlotRestingOrder {
-            trader_address: Address::ZERO,
-            num_base_lots: BaseLots::new(9223372036854775807), // 2^63 - 1, max
-            track_block: true,
-            last_valid_block_or_unix_timestamp_in_seconds: 0,
-        };
-        let encoded_4 = resting_order_4.encode().unwrap();
+            let lots_to_remove_1 = BaseLots::ONE;
+            let response_1 = resting_order.reduce_order(
+                &mut trader_state,
+                side,
+                price_in_ticks,
+                lots_to_remove_1,
+                order_is_expired,
+                claim_funds,
+            );
+            assert_eq!(response_1, MatchingEngineResponse::default());
+            assert_eq!(
+                trader_state,
+                TraderState {
+                    quote_lots_locked: QuoteLots::ZERO,
+                    quote_lots_free: QuoteLots::new(2),
+                    base_lots_locked: BaseLots::ZERO,
+                    base_lots_free: BaseLots::ZERO,
+                }
+            );
+        }
 
-        assert_eq!(encoded_4[20], 0b1111_1111);
-        assert_eq!(&encoded_4[21..28], [255u8; 7]);
+        #[test]
+        fn test_all_lots_freed_for_expired_order() {
+            let side = Side::Ask;
+            let price_in_ticks = Ticks::ONE;
+            let order_size = BaseLots::new(2);
+
+            let mut trader_state = TraderState {
+                quote_lots_locked: QuoteLots::ZERO,
+                quote_lots_free: QuoteLots::ZERO,
+                base_lots_locked: order_size,
+                base_lots_free: BaseLots::ZERO,
+            };
+            let mut resting_order = SlotRestingOrder {
+                trader_address: Address::default(),
+                num_base_lots: order_size,
+                track_block: true,
+                last_valid_block_or_unix_timestamp_in_seconds: 1,
+            };
+
+            let order_is_expired = true;
+            let claim_funds = false;
+
+            let lots_to_remove = BaseLots::ONE;
+            let response = resting_order.reduce_order(
+                &mut trader_state,
+                side,
+                price_in_ticks,
+                lots_to_remove,
+                order_is_expired,
+                claim_funds,
+            );
+
+            assert_eq!(response, MatchingEngineResponse::default());
+            assert_eq!(
+                trader_state,
+                TraderState {
+                    quote_lots_locked: QuoteLots::ZERO,
+                    quote_lots_free: QuoteLots::ZERO,
+                    base_lots_locked: BaseLots::ZERO,
+                    base_lots_free: order_size,
+                }
+            );
+        }
     }
 }

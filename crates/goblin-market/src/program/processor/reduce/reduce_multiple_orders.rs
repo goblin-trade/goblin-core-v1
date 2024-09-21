@@ -8,10 +8,7 @@ use crate::{
     },
     quantities::{BaseAtomsRaw, BaseLots, QuoteAtomsRaw, QuoteLots, Ticks, WrapperU64},
     state::{
-        order::{
-            order_id::OrderId,
-            resting_order::{ReduceOrderInnerResponse, RestingOrder, SlotRestingOrder},
-        },
+        order::{order_id::OrderId, resting_order::SlotRestingOrder},
         MarketState, RestingOrderIndex, SlotActions, SlotStorage, TraderState,
     },
     GoblinMarket,
@@ -166,12 +163,16 @@ pub fn reduce_multiple_orders_inner(
             return Err(GoblinError::FailedToReduce(FailedToReduce {}));
         }
 
+        let order_is_expired = false;
+
+        // TODO check- where is base_lots_free subtracted from trader state?
+        // If tokens are withdrawn then this should be subtracted
         let matching_engine_response = resting_order.reduce_order(
             trader_state,
-            &order_id,
             side,
+            order_id.price_in_ticks,
             lots_to_remove,
-            false,
+            order_is_expired,
             claim_funds,
         );
 
@@ -179,39 +180,12 @@ pub fn reduce_multiple_orders_inner(
         base_lots_released += matching_engine_response.num_base_lots_out;
 
         if resting_order.is_empty() {
+            // Remove empty order from bitmap group. No need to write cleared
+            // order to slot.
             manager.remove_order(slot_storage, market_state);
         } else {
             resting_order.write_to_slot(slot_storage, &order_id)?;
         }
-
-        // if order_present {
-        //     let mut resting_order = SlotRestingOrder::new_from_slot(slot_storage, order_id);
-
-        //     if trader != resting_order.trader_address {
-        //         return Err(GoblinError::FailedToReduce(FailedToReduce {}));
-        //     }
-
-        //     let matching_engine_response = resting_order.reduce_order_v2(
-        //         trader_state,
-        //         &order_id,
-        //         side,
-        //         lots_to_remove,
-        //         false,
-        //         claim_funds,
-        //     );
-
-        //     quote_lots_released += matching_engine_response.num_quote_lots_out;
-        //     base_lots_released += matching_engine_response.num_base_lots_out;
-
-        //     if resting_order.num_base_lots == BaseLots::ZERO {
-        //         manager.remove_order(slot_storage, market_state);
-        //     } else {
-        //         resting_order.write_to_slot(slot_storage, &order_id)?;
-        //     }
-        // } else if revert_if_fail {
-        //     // When order is not present
-        //     return Err(GoblinError::FailedToReduce(FailedToReduce {}));
-        // }
     }
 
     manager.write_prepared_indices(slot_storage, market_state);

@@ -48,11 +48,11 @@ pub fn match_order(
             TraderState::read_from_slot(slot_storage, resting_order.trader_address);
 
         // 1. Resting order expired case
-        if resting_order.expired(current_block, current_unix_timestamp_in_seconds) {
+        if resting_order.is_expired(current_block, current_unix_timestamp_in_seconds) {
             resting_order.reduce_order(
                 &mut maker_state,
-                &order_id,
-                inflight_order.side.opposite(),
+                opposite_side,
+                order_id.price_in_ticks,
                 BaseLots::MAX,
                 true,
                 false,
@@ -76,8 +76,8 @@ pub fn match_order(
 
                     resting_order.reduce_order(
                         &mut maker_state,
-                        &order_id,
-                        inflight_order.side.opposite(),
+                        opposite_side,
+                        order_id.price_in_ticks,
                         BaseLots::MAX,
                         false,
                         false,
@@ -102,8 +102,8 @@ pub fn match_order(
 
                     resting_order.reduce_order(
                         &mut maker_state,
-                        &order_id,
-                        inflight_order.side.opposite(),
+                        opposite_side,
+                        order_id.price_in_ticks,
                         base_lots_removed,
                         false,
                         false,

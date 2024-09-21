@@ -90,6 +90,23 @@ impl TraderState {
         MatchingEngineResponse::new_withdraw(base_lots_received, quote_lots_received)
     }
 
+    /// Obtain the matching engine response for reducing th
+    pub fn try_claim_funds(
+        &mut self,
+        claim_funds: bool,
+        num_quote_lots: QuoteLots,
+        num_base_lots: BaseLots,
+    ) -> MatchingEngineResponse {
+        // We don't want to claim funds if an order is removed from the book during a self trade
+        // or if the user specifically indicates that they don't want to claim funds.
+        if claim_funds {
+            self.claim_funds_inner(num_quote_lots, num_base_lots)
+        } else {
+            // No claim case- the order is reduced but no funds will be claimed
+            MatchingEngineResponse::default()
+        }
+    }
+
     #[inline(always)]
     pub(crate) fn unlock_quote_lots(&mut self, quote_lots: QuoteLots) {
         self.quote_lots_locked -= quote_lots;
