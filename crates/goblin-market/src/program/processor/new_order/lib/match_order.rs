@@ -49,17 +49,14 @@ pub fn match_order(
 
         // 1. Resting order expired case
         if resting_order.expired(current_block, current_unix_timestamp_in_seconds) {
-            resting_order
-                .reduce_order(
-                    &mut maker_state,
-                    resting_order.trader_address,
-                    &order_id,
-                    inflight_order.side.opposite(),
-                    BaseLots::MAX,
-                    true,
-                    false,
-                )
-                .unwrap();
+            resting_order.reduce_order(
+                &mut maker_state,
+                &order_id,
+                inflight_order.side.opposite(),
+                BaseLots::MAX,
+                true,
+                false,
+            );
             maker_state.write_to_slot(slot_storage, resting_order.trader_address);
             inflight_order.match_limit -= 1;
 
@@ -77,17 +74,14 @@ pub fn match_order(
                 crate::state::SelfTradeBehavior::CancelProvide => {
                     // Cancel the resting order without charging fees.
 
-                    resting_order
-                        .reduce_order(
-                            &mut maker_state,
-                            taker_address,
-                            &order_id,
-                            inflight_order.side.opposite(),
-                            BaseLots::MAX,
-                            false,
-                            false,
-                        )
-                        .unwrap();
+                    resting_order.reduce_order(
+                        &mut maker_state,
+                        &order_id,
+                        inflight_order.side.opposite(),
+                        BaseLots::MAX,
+                        false,
+                        false,
+                    );
 
                     inflight_order.match_limit -= 1;
                 }
@@ -106,17 +100,14 @@ pub fn match_order(
                         )
                         .min(num_base_lots_quoted);
 
-                    resting_order
-                        .reduce_order(
-                            &mut maker_state,
-                            taker_address,
-                            &order_id,
-                            inflight_order.side.opposite(),
-                            base_lots_removed,
-                            false,
-                            false,
-                        )
-                        .unwrap();
+                    resting_order.reduce_order(
+                        &mut maker_state,
+                        &order_id,
+                        inflight_order.side.opposite(),
+                        base_lots_removed,
+                        false,
+                        false,
+                    );
 
                     // In the case that the self trade behavior is DecrementTake, we decrement the
                     // the base lot and adjusted quote lot budgets accordingly

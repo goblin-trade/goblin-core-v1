@@ -166,7 +166,7 @@ pub fn reduce_multiple_orders_inner(
             return Err(GoblinError::FailedToReduce(FailedToReduce {}));
         }
 
-        let matching_engine_response = resting_order.reduce_order_v2(
+        let matching_engine_response = resting_order.reduce_order(
             trader_state,
             &order_id,
             side,

@@ -3,7 +3,6 @@ use core::ops::AddAssign;
 use stylus_sdk::alloy_primitives::{address, Address};
 
 use crate::{
-    parameters::{BASE_LOTS_PER_BASE_UNIT, TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT},
     program::{
         compute_quote_lots, types::matching_engine_response::MatchingEngineResponse,
         ExceedRestingOrderSize, GoblinError,
@@ -195,8 +194,15 @@ impl SlotRestingOrder {
                     > self.last_valid_block_or_unix_timestamp_in_seconds)
     }
 
-    /// Try to reduce a resting order. Returns None if the order doesn't exist
-    /// or belongs to another trader.
+    /// Whether the order is empty and can be removed from the book.
+    ///
+    /// Empty orders are not written to slot. Only their corresponding bit is remove
+    /// from the bitmap.
+    pub fn is_empty(&self) -> bool {
+        self.num_base_lots == BaseLots::ZERO
+    }
+
+    /// Reduce a resting order.
     ///
     /// Updates order and trader states, but doesn't write. Perform write externally.
     ///
@@ -210,97 +216,11 @@ impl SlotRestingOrder {
     /// * `order_is_expired`
     /// * `claim_funds`
     ///
-    pub fn reduce_order(
-        &mut self,
-        trader_state: &mut TraderState,
-        trader: Address,
-        order_id: &OrderId,
-        side: Side,
-        lots_to_remove: BaseLots,
-        order_is_expired: bool,
-        claim_funds: bool,
-    ) -> Option<ReduceOrderInnerResponse> {
-        // Find lots to remove
-        let (should_remove_order_from_book, base_lots_to_remove) = {
-            // Order belongs to another trader
-            if self.trader_address != trader {
-                return None;
-            }
-
-            // If the order is tagged as expired, we remove it from the book regardless of the size.
-            if order_is_expired {
-                (true, self.num_base_lots)
-            } else {
-                let base_lots_to_remove = self.num_base_lots.min(lots_to_remove);
-
-                (
-                    base_lots_to_remove == self.num_base_lots,
-                    base_lots_to_remove,
-                )
-            }
-        };
-
-        // Mutate order
-        let _base_lots_remaining = if should_remove_order_from_book {
-            // TODO investigate. If resting order is cleared, no need to write it to slot.
-            self.clear_order();
-
-            BaseLots::ZERO
-        } else {
-            // Reduce order
-            self.num_base_lots -= base_lots_to_remove;
-
-            self.num_base_lots
-        };
-
-        // EMIT ExpiredOrder / Reduce
-
-        // We don't want to claim funds if an order is removed from the book during a self trade
-        // or if the user specifically indicates that they don't want to claim funds.
-        if claim_funds {
-            // Update trader state
-            let (num_quote_lots, num_base_lots) = {
-                match side {
-                    Side::Bid => {
-                        let quote_lots = (order_id.price_in_ticks
-                            * TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT
-                            * base_lots_to_remove)
-                            / BASE_LOTS_PER_BASE_UNIT;
-                        trader_state.unlock_quote_lots(quote_lots);
-
-                        (quote_lots, BaseLots::ZERO)
-                    }
-                    Side::Ask => {
-                        trader_state.unlock_base_lots(base_lots_to_remove);
-
-                        (QuoteLots::ZERO, base_lots_to_remove)
-                    }
-                }
-            };
-
-            Some(ReduceOrderInnerResponse {
-                matching_engine_response: trader_state
-                    .claim_funds_inner(num_quote_lots, num_base_lots),
-                should_remove_order_from_book,
-            })
-        } else {
-            // No claim case- the order is reduced but no funds will be claimed
-            Some(ReduceOrderInnerResponse {
-                matching_engine_response: MatchingEngineResponse::default(),
-                should_remove_order_from_book,
-            })
-        }
-    }
-
-    /// Whether the order is empty and can be removed from the book.
+    /// # Returns
     ///
-    /// Empty orders are not written to slot. Only their corresponding bit is remove
-    /// from the bitmap.
-    pub fn is_empty(&self) -> bool {
-        self.num_base_lots == BaseLots::ZERO
-    }
-
-    pub fn reduce_order_v2(
+    /// Number of base and quote lots released after reducing the order.
+    ///
+    pub fn reduce_order(
         &mut self,
         trader_state: &mut TraderState,
         order_id: &OrderId,

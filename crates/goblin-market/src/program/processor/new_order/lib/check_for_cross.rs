@@ -59,17 +59,15 @@ pub fn check_for_cross(
             let mut maker_state =
                 TraderState::read_from_slot(slot_storage, resting_order.trader_address);
 
-            resting_order
-                .reduce_order(
-                    &mut maker_state,
-                    resting_order.trader_address,
-                    &order_id,
-                    side.opposite(),
-                    BaseLots::MAX,
-                    true,
-                    false,
-                )
-                .unwrap();
+            resting_order.reduce_order(
+                &mut maker_state,
+                &order_id,
+                side.opposite(),
+                BaseLots::MAX,
+                true,
+                false,
+            );
+
             maker_state.write_to_slot(slot_storage, resting_order.trader_address);
 
             return false;

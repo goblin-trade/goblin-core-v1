@@ -61,21 +61,31 @@ impl TraderState {
         slot_storage.sstore(&trader_id.get_key(), &self.encode());
     }
 
+    /// Claim a specified number of quote and base lots from the trader state. The
+    /// trader state balances are deduced. The amount claimed may be less if
+    /// the available free funds are less than the requested funds.
+    ///
+    /// # Arguments
+    ///
+    /// * `num_quote_lots` - The number of quote lots to be claimed.
+    /// * `num_base_lots` - The number of base lots to be claimed.
+    ///
+    /// # Returns
+    ///
+    /// * `MatchingEngineResponse` - A response containing the actual number of base and
+    ///   quote lots claimed, which may be less than the requested amount if the available
+    ///   free lots are smaller.
+    ///
     pub fn claim_funds_inner(
         &mut self,
         num_quote_lots: QuoteLots,
         num_base_lots: BaseLots,
     ) -> MatchingEngineResponse {
-        // sequence_number = 0 case removed
-        let (quote_lots_received, base_lots_received) = {
-            let quote_lots_free = num_quote_lots.min(self.quote_lots_free);
-            let base_lots_free = num_base_lots.min(self.base_lots_free);
+        let quote_lots_received = num_quote_lots.min(self.quote_lots_free);
+        let base_lots_received = num_base_lots.min(self.base_lots_free);
 
-            self.quote_lots_free -= quote_lots_free;
-            self.base_lots_free -= base_lots_free;
-
-            (quote_lots_free, base_lots_free)
-        };
+        self.quote_lots_free -= quote_lots_received;
+        self.base_lots_free -= base_lots_received;
 
         MatchingEngineResponse::new_withdraw(base_lots_received, quote_lots_received)
     }
