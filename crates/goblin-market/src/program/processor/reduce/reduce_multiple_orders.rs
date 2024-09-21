@@ -10,7 +10,7 @@ use crate::{
     state::{
         order::{
             order_id::OrderId,
-            resting_order::{ReduceOrderInnerResponse, SlotRestingOrder},
+            resting_order::{ReduceOrderInnerResponse, RestingOrder, SlotRestingOrder},
         },
         MarketState, RestingOrderIndex, SlotActions, SlotStorage, TraderState,
     },
@@ -138,7 +138,7 @@ pub fn reduce_multiple_orders_inner(
     let mut quote_lots_released = QuoteLots::ZERO;
     let mut base_lots_released = BaseLots::ZERO;
 
-    let mut processor = RemoveMultipleManager::new(
+    let mut manager = RemoveMultipleManager::new(
         market_state.bids_outer_indices,
         market_state.asks_outer_indices,
     );
@@ -151,42 +151,70 @@ pub fn reduce_multiple_orders_inner(
         } = ReduceOrderPacket::from(&order_packet_bytes);
 
         let side = order_id.side(market_state);
-        let order_present = processor.find_order(slot_storage, side, order_id)?;
+        let order_present = manager.find_order(slot_storage, side, order_id)?;
 
-        if order_present {
-            let mut resting_order = SlotRestingOrder::new_from_slot(slot_storage, order_id);
-
-            if let Some(ReduceOrderInnerResponse {
-                matching_engine_response,
-                should_remove_order_from_book,
-            }) = resting_order.reduce_order(
-                trader_state,
-                trader,
-                &order_id,
-                side,
-                lots_to_remove,
-                false,
-                claim_funds,
-            ) {
-                quote_lots_released += matching_engine_response.num_quote_lots_out;
-                base_lots_released += matching_engine_response.num_base_lots_out;
-
-                if should_remove_order_from_book {
-                    processor.remove_order(slot_storage, market_state);
-                } else {
-                    resting_order.write_to_slot(slot_storage, &order_id)?;
-                }
-            } else if revert_if_fail {
-                // None case- when order doesn't belong to trader
+        if !order_present {
+            if revert_if_fail {
                 return Err(GoblinError::FailedToReduce(FailedToReduce {}));
             }
-        } else if revert_if_fail {
-            // When order is not present
+            continue;
+        }
+
+        let mut resting_order = SlotRestingOrder::new_from_slot(slot_storage, order_id);
+
+        if trader != resting_order.trader_address {
             return Err(GoblinError::FailedToReduce(FailedToReduce {}));
         }
+
+        let matching_engine_response = resting_order.reduce_order_v2(
+            trader_state,
+            &order_id,
+            side,
+            lots_to_remove,
+            false,
+            claim_funds,
+        );
+
+        quote_lots_released += matching_engine_response.num_quote_lots_out;
+        base_lots_released += matching_engine_response.num_base_lots_out;
+
+        if resting_order.is_empty() {
+            manager.remove_order(slot_storage, market_state);
+        } else {
+            resting_order.write_to_slot(slot_storage, &order_id)?;
+        }
+
+        // if order_present {
+        //     let mut resting_order = SlotRestingOrder::new_from_slot(slot_storage, order_id);
+
+        //     if trader != resting_order.trader_address {
+        //         return Err(GoblinError::FailedToReduce(FailedToReduce {}));
+        //     }
+
+        //     let matching_engine_response = resting_order.reduce_order_v2(
+        //         trader_state,
+        //         &order_id,
+        //         side,
+        //         lots_to_remove,
+        //         false,
+        //         claim_funds,
+        //     );
+
+        //     quote_lots_released += matching_engine_response.num_quote_lots_out;
+        //     base_lots_released += matching_engine_response.num_base_lots_out;
+
+        //     if resting_order.num_base_lots == BaseLots::ZERO {
+        //         manager.remove_order(slot_storage, market_state);
+        //     } else {
+        //         resting_order.write_to_slot(slot_storage, &order_id)?;
+        //     }
+        // } else if revert_if_fail {
+        //     // When order is not present
+        //     return Err(GoblinError::FailedToReduce(FailedToReduce {}));
+        // }
     }
 
-    processor.write_prepared_indices(slot_storage, market_state);
+    manager.write_prepared_indices(slot_storage, market_state);
 
     Ok(MatchingEngineResponse::new_withdraw(
         base_lots_released,

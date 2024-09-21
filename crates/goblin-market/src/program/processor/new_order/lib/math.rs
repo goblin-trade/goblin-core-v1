@@ -13,8 +13,8 @@
 /// fees will be subtracted after matching is complete.
 ///
 use crate::{
-    parameters::{BASE_LOTS_PER_BASE_UNIT, TAKER_FEE_BPS},
-    quantities::{AdjustedQuoteLots, BaseLotsPerBaseUnit, QuoteLots, WrapperU64},
+    parameters::{BASE_LOTS_PER_BASE_UNIT, TAKER_FEE_BPS, TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT},
+    quantities::{AdjustedQuoteLots, BaseLots, BaseLotsPerBaseUnit, QuoteLots, Ticks, WrapperU64},
 };
 
 /// Round up the fee to the nearest adjusted quote lot
@@ -74,4 +74,20 @@ pub fn round_adjusted_quote_lots_down(
 ) -> AdjustedQuoteLots {
     num_adjusted_quote_lots.unchecked_div::<BaseLotsPerBaseUnit, QuoteLots>(BASE_LOTS_PER_BASE_UNIT)
         * BASE_LOTS_PER_BASE_UNIT
+}
+
+/// Obtain quote lots for an order
+///
+/// # Formula
+///
+/// * quote lots Q = PTS / B
+/// * Ref- https://ellipsis-labs.gitbook.io/phoenix-dex/tRIkEFlLUzWK9uKO3W2V/getting-started/technical-overview/units#order-sizes
+///
+/// # Arguments
+///
+/// * `price_in_ticks`
+/// * `base_lots`
+///
+pub fn compute_quote_lots(price_in_ticks: Ticks, base_lots: BaseLots) -> QuoteLots {
+    (price_in_ticks * TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT * base_lots) / BASE_LOTS_PER_BASE_UNIT
 }

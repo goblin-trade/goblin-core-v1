@@ -5,8 +5,8 @@ use stylus_sdk::alloy_primitives::{address, Address};
 use crate::{
     parameters::{BASE_LOTS_PER_BASE_UNIT, TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT},
     program::{
-        types::matching_engine_response::MatchingEngineResponse, ExceedRestingOrderSize,
-        GoblinError,
+        compute_quote_lots, types::matching_engine_response::MatchingEngineResponse,
+        ExceedRestingOrderSize, GoblinError,
     },
     quantities::{BaseLots, QuoteLots, WrapperU64},
     require,
@@ -179,6 +179,7 @@ impl SlotRestingOrder {
     }
 
     // The order slot was never initialized or was cleared
+    // TODO remove. Use bitmap to discover whether open or closed
     pub fn does_not_exist(&self) -> bool {
         self.trader_address == Address::ZERO || self.trader_address == NULL_ADDRESS
     }
@@ -288,6 +289,67 @@ impl SlotRestingOrder {
                 matching_engine_response: MatchingEngineResponse::default(),
                 should_remove_order_from_book,
             })
+        }
+    }
+
+    /// Whether the order is empty and can be removed from the book.
+    ///
+    /// Empty orders are not written to slot. Only their corresponding bit is remove
+    /// from the bitmap.
+    pub fn is_empty(&self) -> bool {
+        self.num_base_lots == BaseLots::ZERO
+    }
+
+    pub fn reduce_order_v2(
+        &mut self,
+        trader_state: &mut TraderState,
+        order_id: &OrderId,
+        side: Side,
+        lots_to_remove: BaseLots,
+        order_is_expired: bool,
+        claim_funds: bool,
+    ) -> MatchingEngineResponse {
+        let base_lots_to_remove = if order_is_expired {
+            // If the order is tagged as expired, remove all of the base lots
+            self.num_base_lots
+        } else {
+            self.num_base_lots.min(lots_to_remove)
+        };
+
+        // Deduct lots from resting order state
+        self.num_base_lots -= base_lots_to_remove;
+
+        // EMIT ExpiredOrder / Reduce
+
+        // Free up tokens from trader state
+        let (num_quote_lots, num_base_lots) = {
+            match side {
+                Side::Bid => {
+                    // A bid order consists of locked up 'quote tokens' bidding to buy the base token.
+                    // Quote tokens are released on reducing the order.
+                    let quote_lots =
+                        compute_quote_lots(order_id.price_in_ticks, base_lots_to_remove);
+
+                    trader_state.unlock_quote_lots(quote_lots);
+                    (quote_lots, BaseLots::ZERO)
+                }
+                Side::Ask => {
+                    // A bid order consists of locked up 'base tokens' bidding to sell the base token
+                    // in exchange of the quote token.
+                    // Base tokens are released on reducing the order.
+                    trader_state.unlock_base_lots(base_lots_to_remove);
+                    (QuoteLots::ZERO, base_lots_to_remove)
+                }
+            }
+        };
+
+        // We don't want to claim funds if an order is removed from the book during a self trade
+        // or if the user specifically indicates that they don't want to claim funds.
+        if claim_funds {
+            trader_state.claim_funds_inner(num_quote_lots, num_base_lots)
+        } else {
+            // No claim case- the order is reduced but no funds will be claimed
+            MatchingEngineResponse::default()
         }
     }
 }
