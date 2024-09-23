@@ -38,7 +38,7 @@ pub fn process_withdraw_funds(
         num_quote_lots_out,
         num_base_lots_out,
         ..
-    } = trader_state.claim_funds_inner(quote_lots, base_lots);
+    } = trader_state.claim_funds(quote_lots, base_lots);
 
     // Write
     trader_state.write_to_slot(slot_storage, trader);

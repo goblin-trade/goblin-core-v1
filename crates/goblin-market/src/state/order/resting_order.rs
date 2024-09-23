@@ -266,7 +266,7 @@ impl SlotRestingOrder {
         // or if the user specifically indicates that they don't want to claim funds.
         // TODO test claim_funds_inner()
         if claim_funds {
-            trader_state.claim_funds_inner(num_quote_lots, num_base_lots)
+            trader_state.claim_funds(num_quote_lots, num_base_lots)
         } else {
             // No claim case- the order is reduced but no funds will be claimed
             MatchingEngineResponse::default()

@@ -76,7 +76,7 @@ impl TraderState {
     ///   quote lots claimed, which may be less than the requested amount if the available
     ///   free lots are smaller.
     ///
-    pub fn claim_funds_inner(
+    pub fn claim_funds(
         &mut self,
         num_quote_lots: QuoteLots,
         num_base_lots: BaseLots,
@@ -88,23 +88,6 @@ impl TraderState {
         self.base_lots_free -= base_lots_received;
 
         MatchingEngineResponse::new_withdraw(base_lots_received, quote_lots_received)
-    }
-
-    /// Obtain the matching engine response for reducing th
-    pub fn try_claim_funds(
-        &mut self,
-        claim_funds: bool,
-        num_quote_lots: QuoteLots,
-        num_base_lots: BaseLots,
-    ) -> MatchingEngineResponse {
-        // We don't want to claim funds if an order is removed from the book during a self trade
-        // or if the user specifically indicates that they don't want to claim funds.
-        if claim_funds {
-            self.claim_funds_inner(num_quote_lots, num_base_lots)
-        } else {
-            // No claim case- the order is reduced but no funds will be claimed
-            MatchingEngineResponse::default()
-        }
     }
 
     #[inline(always)]
@@ -171,24 +154,90 @@ impl TraderState {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use crate::quantities::{BaseLots, QuoteLots, WrapperU64};
 
     use super::TraderState;
 
-    #[test]
-    fn test_encode_and_decode_trader_state() {
-        let trader_state = TraderState {
-            quote_lots_locked: QuoteLots::new(100),
-            quote_lots_free: QuoteLots::new(200),
-            base_lots_locked: BaseLots::new(300),
-            base_lots_free: BaseLots::new(400),
-        };
+    mod test_encode {
+        use super::*;
+        #[test]
+        fn test_encode_and_decode_trader_state() {
+            let trader_state = TraderState {
+                quote_lots_locked: QuoteLots::new(100),
+                quote_lots_free: QuoteLots::new(200),
+                base_lots_locked: BaseLots::new(300),
+                base_lots_free: BaseLots::new(400),
+            };
 
-        let encoded = trader_state.encode();
+            let encoded = trader_state.encode();
 
-        let decoded_trader_state = TraderState::decode(&encoded);
+            let decoded_trader_state = TraderState::decode(&encoded);
 
-        assert_eq!(trader_state, decoded_trader_state);
+            assert_eq!(trader_state, decoded_trader_state);
+        }
+    }
+
+    mod test_claim_funds {
+        use crate::program::types::matching_engine_response::MatchingEngineResponse;
+
+        use super::*;
+
+        #[test]
+        fn test_claim_when_no_free_tokens() {
+            let mut trader_state = TraderState {
+                quote_lots_locked: QuoteLots::ZERO,
+                quote_lots_free: QuoteLots::ZERO,
+                base_lots_locked: BaseLots::ZERO,
+                base_lots_free: BaseLots::ZERO,
+            };
+
+            let num_quote_lots = QuoteLots::ZERO;
+            let num_base_lots = BaseLots::ONE;
+
+            let response = trader_state.claim_funds(num_quote_lots, num_base_lots);
+
+            assert_eq!(trader_state, TraderState::default());
+            assert_eq!(response, MatchingEngineResponse::default());
+        }
+
+        #[test]
+        fn test_claim_base_lots() {
+            let mut trader_state = TraderState {
+                quote_lots_locked: QuoteLots::ZERO,
+                quote_lots_free: QuoteLots::ZERO,
+                base_lots_locked: BaseLots::ZERO,
+                base_lots_free: BaseLots::new(2),
+            };
+
+            let num_quote_lots = QuoteLots::ZERO;
+            let num_base_lots = BaseLots::ONE;
+
+            let response = trader_state.claim_funds(num_quote_lots, num_base_lots);
+
+            assert_eq!(
+                trader_state,
+                TraderState {
+                    quote_lots_locked: QuoteLots::ZERO,
+                    quote_lots_free: QuoteLots::ZERO,
+                    base_lots_locked: BaseLots::ZERO,
+                    base_lots_free: BaseLots::new(1),
+                }
+            );
+
+            assert_eq!(
+                response,
+                MatchingEngineResponse {
+                    num_quote_lots_in: QuoteLots::ZERO,
+                    num_base_lots_in: BaseLots::ZERO,
+                    num_quote_lots_out: QuoteLots::ZERO,
+                    num_base_lots_out: BaseLots::new(1),
+                    num_quote_lots_posted: QuoteLots::ZERO,
+                    num_base_lots_posted: BaseLots::ZERO,
+                    num_free_quote_lots_used: QuoteLots::ZERO,
+                    num_free_base_lots_used: BaseLots::ZERO
+                }
+            );
+        }
     }
 }

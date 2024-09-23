@@ -1,7 +1,7 @@
 use stylus_sdk::{alloy_primitives::Address, block};
 
 use crate::{
-    parameters::{BASE_LOTS_PER_BASE_UNIT, TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT},
+    parameters::BASE_LOTS_PER_BASE_UNIT,
     program::types::{
         matching_engine_response::MatchingEngineResponse,
         order_packet::{OrderPacket, OrderPacketMetadata},
@@ -15,7 +15,7 @@ use crate::{
 
 use super::{
     adjusted_quote_lot_budget_post_fee_adjustment_for_buys,
-    adjusted_quote_lot_budget_post_fee_adjustment_for_sells, check_for_cross,
+    adjusted_quote_lot_budget_post_fee_adjustment_for_sells, check_for_cross, compute_quote_lots,
     get_best_available_order_id, match_order, round_adjusted_quote_lots_down,
     round_adjusted_quote_lots_up, OrderToInsert,
 };
@@ -264,15 +264,24 @@ pub fn place_order_inner(
                     // Update trader state and matching engine response
                     match side {
                         Side::Bid => {
-                            let quote_lots_to_lock = (TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT
-                                * order_id.price_in_ticks
-                                * resting_order.num_base_lots)
-                                / BASE_LOTS_PER_BASE_UNIT;
+                            // Quote lots are traded for base lots in a bid order
+                            let quote_lots_to_lock = compute_quote_lots(
+                                order_id.price_in_ticks,
+                                resting_order.num_base_lots,
+                            );
+
+                            // Number of quote lots available to post the order
                             let quote_lots_free_to_use =
                                 quote_lots_to_lock.min(trader_state.quote_lots_free);
+
+                            // Withdraw freed lots, then lock them in the order
                             trader_state.use_free_quote_lots(quote_lots_free_to_use);
                             trader_state.lock_quote_lots(quote_lots_to_lock);
+
+                            // Posted lots are the lots locked in the trader state
                             matching_engine_response.post_quote_lots(quote_lots_to_lock);
+
+                            // Freed lots are the lots freed from trader state
                             matching_engine_response.use_free_quote_lots(quote_lots_free_to_use);
                         }
                         Side::Ask => {
