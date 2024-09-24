@@ -314,8 +314,9 @@ pub fn process_new_order(
         }
 
         (
-            QuoteAtomsRaw::from_lots(matching_engine_response.num_quote_lots_out),
+            QuoteAtomsRaw::from_lots(matching_engine_response.num_quote_lots_out), // amount to withraw
             QuoteAtomsRaw::from_lots(
+                // amount to deposit
                 matching_engine_response.get_deposit_amount_bid_in_quote_lots(),
             ),
             BaseAtomsRaw::from_lots(matching_engine_response.num_base_lots_out),

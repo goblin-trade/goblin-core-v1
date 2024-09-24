@@ -5,7 +5,7 @@ use crate::{
     quantities::{BaseLots, QuoteLots, WrapperU64},
 };
 
-use super::{SlotActions, SlotKey, SlotStorage, TRADER_STATE_KEY_SEED};
+use super::{Side, SlotActions, SlotKey, SlotStorage, TRADER_STATE_KEY_SEED};
 
 pub type TraderId = Address;
 
@@ -90,6 +90,37 @@ impl TraderState {
         MatchingEngineResponse::new_withdraw(base_lots_received, quote_lots_received)
     }
 
+    /// Credits output lots into free lots of the trader state and clears the output lots in
+    /// the matching engine response
+    pub fn deposit_output_into_free_lots(
+        &mut self,
+        matching_engine_response: &mut MatchingEngineResponse,
+        side: Side,
+    ) {
+        match side {
+            Side::Bid => {
+                self.deposit_free_base_lots(matching_engine_response.num_base_lots_out);
+                matching_engine_response.num_base_lots_out = BaseLots::ZERO;
+            }
+            Side::Ask => {
+                self.deposit_free_quote_lots(matching_engine_response.num_quote_lots_out);
+                matching_engine_response.num_quote_lots_out = QuoteLots::ZERO;
+            }
+        }
+    }
+
+    /// Deposit free quote lots in the trader state
+    #[inline(always)]
+    pub(crate) fn deposit_free_quote_lots(&mut self, quote_lots: QuoteLots) {
+        self.quote_lots_free += quote_lots;
+    }
+
+    /// Deposit free base lots in the trader state
+    #[inline(always)]
+    pub(crate) fn deposit_free_base_lots(&mut self, base_lots: BaseLots) {
+        self.base_lots_free += base_lots;
+    }
+
     #[inline(always)]
     pub(crate) fn unlock_quote_lots(&mut self, quote_lots: QuoteLots) {
         self.quote_lots_locked -= quote_lots;
@@ -122,34 +153,95 @@ impl TraderState {
         self.base_lots_free += base_lots_received;
     }
 
+    /// Locks the given number of quote lots in the trader state and posts them in
+    /// the matching engine response
+    ///
+    /// # Arguments
+    ///
+    /// * `matching_engine_response`
+    /// * `quote_lots` - Number of quote lots to lock / post.
     #[inline(always)]
-    pub(crate) fn lock_quote_lots(&mut self, quote_lots: QuoteLots) {
+    pub(crate) fn lock_quote_lots(
+        &mut self,
+        matching_engine_response: &mut MatchingEngineResponse,
+        quote_lots: QuoteLots,
+    ) {
+        self.lock_quote_lots_inner(quote_lots);
+        matching_engine_response.post_quote_lots(quote_lots);
+    }
+
+    /// Locks the given number of base lots in the trader state and posts them in
+    /// the matching engine response
+    ///
+    /// # Arguments
+    ///
+    /// * `matching_engine_response`
+    /// * `base_lots` - Number of base lots to lock / post.
+    #[inline(always)]
+    pub(crate) fn lock_base_lots(
+        &mut self,
+        matching_engine_response: &mut MatchingEngineResponse,
+        base_lots: BaseLots,
+    ) {
+        self.lock_base_lots_inner(base_lots);
+        matching_engine_response.post_base_lots(base_lots);
+    }
+
+    /// Uses up free quote lots from the trader state. This used amount is tracked
+    /// in Matching Engine Response
+    ///
+    /// # Arguments
+    ///
+    /// * `matching_engine_response`
+    /// * `quote_lots`
+    #[inline(always)]
+    pub(crate) fn use_free_quote_lots(
+        &mut self,
+        matching_engine_response: &mut MatchingEngineResponse,
+        quote_lots: QuoteLots,
+    ) {
+        self.use_free_quote_lots_inner(quote_lots);
+        matching_engine_response.use_free_quote_lots(quote_lots);
+    }
+
+    /// Uses up free base lots from the trader state. This used amount is tracked in Matching Engine Response
+    ///
+    /// # Arguments
+    ///
+    /// * `matching_engine_response`
+    /// * `base_lots`
+    #[inline(always)]
+    pub(crate) fn use_free_base_lots(
+        &mut self,
+        matching_engine_response: &mut MatchingEngineResponse,
+        base_lots: BaseLots,
+    ) {
+        self.use_free_base_lots_inner(base_lots);
+        matching_engine_response.use_free_base_lots(base_lots);
+    }
+
+    /// Lock up quote lots
+    #[inline(always)]
+    fn lock_quote_lots_inner(&mut self, quote_lots: QuoteLots) {
         self.quote_lots_locked += quote_lots;
     }
 
+    /// Lock up base lots
     #[inline(always)]
-    pub(crate) fn lock_base_lots(&mut self, base_lots: BaseLots) {
+    fn lock_base_lots_inner(&mut self, base_lots: BaseLots) {
         self.base_lots_locked += base_lots;
     }
 
+    /// Use up free quote lots
     #[inline(always)]
-    pub(crate) fn use_free_quote_lots(&mut self, quote_lots: QuoteLots) {
+    fn use_free_quote_lots_inner(&mut self, quote_lots: QuoteLots) {
         self.quote_lots_free -= quote_lots;
     }
 
+    /// Use up free base lots
     #[inline(always)]
-    pub(crate) fn use_free_base_lots(&mut self, base_lots: BaseLots) {
+    fn use_free_base_lots_inner(&mut self, base_lots: BaseLots) {
         self.base_lots_free -= base_lots;
-    }
-
-    #[inline(always)]
-    pub(crate) fn deposit_free_quote_lots(&mut self, quote_lots: QuoteLots) {
-        self.quote_lots_free += quote_lots;
-    }
-
-    #[inline(always)]
-    pub(crate) fn deposit_free_base_lots(&mut self, base_lots: BaseLots) {
-        self.base_lots_free += base_lots;
     }
 }
 

@@ -14,6 +14,7 @@ pub trait OrderPacketMetadata {
     }
     fn is_ioc(&self) -> bool;
     fn is_fok(&self) -> bool;
+    fn is_limit(&self) -> bool;
     fn is_post_only(&self) -> bool;
     fn no_deposit_or_withdrawal(&self) -> bool;
 }
@@ -174,6 +175,10 @@ impl OrderPacketMetadata for OrderPacket {
 
     fn is_post_only(&self) -> bool {
         matches!(self, OrderPacket::PostOnly { .. })
+    }
+
+    fn is_limit(&self) -> bool {
+        matches!(self, OrderPacket::Limit { .. })
     }
 
     fn no_deposit_or_withdrawal(&self) -> bool {
