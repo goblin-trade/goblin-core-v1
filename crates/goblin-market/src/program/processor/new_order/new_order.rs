@@ -13,7 +13,7 @@ use crate::{
     state::{
         insert::order_id_inserter::OrderIdInserter,
         order::{order_id::OrderId, resting_order::SlotRestingOrder},
-        MarketState, Side, SlotActions, SlotStorage, TraderState,
+        ArbContext, ContextActions, MarketState, Side, TraderState,
     },
     GoblinMarket,
 };
@@ -53,7 +53,7 @@ pub fn place_multiple_new_orders(
     client_order_id: u128,
     no_deposit: bool,
 ) -> GoblinResult<()> {
-    let slot_storage = &mut SlotStorage::new();
+    let slot_storage = &mut ArbContext::new();
 
     // Read states
     let mut market_state = MarketState::read_from_slot(slot_storage);
@@ -222,7 +222,7 @@ pub fn place_multiple_new_orders(
     // TODO check other writes in check_for_cross()
     market_state.write_to_slot(slot_storage)?;
     trader_state.write_to_slot(slot_storage, trader);
-    SlotStorage::storage_flush_cache(true);
+    ArbContext::storage_flush_cache(true);
 
     if !no_deposit {
         maybe_invoke_deposit(
@@ -257,7 +257,7 @@ pub fn process_new_order(
     order_packet: &mut OrderPacket,
     trader: Address,
 ) -> GoblinResult<()> {
-    let slot_storage = &mut SlotStorage::new();
+    let slot_storage = &mut ArbContext::new();
     let mut market_state = MarketState::read_from_slot(slot_storage);
     let mut trader_state = TraderState::read_from_slot(slot_storage, trader);
 
@@ -329,7 +329,7 @@ pub fn process_new_order(
     // Write state
     market_state.write_to_slot(slot_storage)?;
     trader_state.write_to_slot(slot_storage, trader);
-    SlotStorage::storage_flush_cache(true);
+    ArbContext::storage_flush_cache(true);
 
     if !order_packet.no_deposit_or_withdrawal() {
         match side {

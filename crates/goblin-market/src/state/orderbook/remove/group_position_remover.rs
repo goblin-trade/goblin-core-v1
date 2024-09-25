@@ -3,7 +3,7 @@ use crate::{
     state::{
         bitmap_group::BitmapGroup,
         order::{group_position::GroupPosition, order_id::OrderId},
-        InnerIndex, OuterIndex, Side, SlotStorage,
+        ArbContext, InnerIndex, OuterIndex, Side,
     },
 };
 
@@ -149,7 +149,7 @@ impl GroupPositionRemover {
     /// * we always move away from the centre
     /// * outer_index is active and non-empty
     ///
-    pub fn load_outer_index(&mut self, slot_storage: &mut SlotStorage, outer_index: OuterIndex) {
+    pub fn load_outer_index(&mut self, slot_storage: &mut ArbContext, outer_index: OuterIndex) {
         if self.last_outer_index == Some(outer_index) {
             return;
         }
@@ -169,7 +169,7 @@ impl GroupPositionRemover {
     ///
     /// * `slot_storage`
     ///
-    pub fn flush_bitmap_group(&mut self, slot_storage: &mut SlotStorage) {
+    pub fn flush_bitmap_group(&mut self, slot_storage: &mut ArbContext) {
         if !self.pending_write {
             return;
         }

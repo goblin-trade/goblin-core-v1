@@ -9,7 +9,7 @@ use crate::{
     quantities::{BaseAtomsRaw, BaseLots, QuoteAtomsRaw, QuoteLots, Ticks, WrapperU64},
     state::{
         order::{order_id::OrderId, resting_order::SlotRestingOrder},
-        MarketState, RestingOrderIndex, SlotActions, SlotStorage, TraderState,
+        ArbContext, ContextActions, MarketState, RestingOrderIndex, TraderState,
     },
     GoblinMarket,
 };
@@ -57,7 +57,7 @@ pub fn process_reduce_multiple_orders(
     claim_funds: bool,
 ) -> GoblinResult<()> {
     // Read
-    let slot_storage = &mut SlotStorage::new();
+    let slot_storage = &mut ArbContext::new();
     let market_state = &mut MarketState::read_from_slot(slot_storage);
     let trader_state = &mut TraderState::read_from_slot(slot_storage, trader);
 
@@ -80,7 +80,7 @@ pub fn process_reduce_multiple_orders(
     // Write state
     market_state.write_to_slot(slot_storage)?;
     trader_state.write_to_slot(slot_storage, trader);
-    SlotStorage::storage_flush_cache(true);
+    ArbContext::storage_flush_cache(true);
 
     // Transfer tokens
     if claim_funds {
@@ -125,7 +125,7 @@ pub fn process_reduce_multiple_orders(
 /// * `claim_funds`
 ///
 pub fn reduce_multiple_orders_inner(
-    slot_storage: &mut SlotStorage,
+    slot_storage: &mut ArbContext,
     market_state: &mut MarketState,
     trader: Address,
     trader_state: &mut TraderState,

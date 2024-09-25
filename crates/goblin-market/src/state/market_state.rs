@@ -4,7 +4,7 @@ use crate::{
     require,
 };
 
-use super::{Side, SlotActions, SlotStorage, MARKET_STATE_KEY_SEED};
+use super::{ArbContext, ContextActions, Side, MARKET_STATE_KEY_SEED};
 
 #[repr(C)]
 #[derive(Default, Debug, PartialEq)]
@@ -70,7 +70,7 @@ const MARKET_SLOT_KEY: [u8; 32] = [
 ];
 
 impl MarketState {
-    pub fn read_from_slot(slot_storage: &SlotStorage) -> Self {
+    pub fn read_from_slot(slot_storage: &ArbContext) -> Self {
         let slot = slot_storage.sload(&MARKET_SLOT_KEY);
 
         Self::decode(&slot)
@@ -138,7 +138,7 @@ impl MarketState {
         Ok(encoded_data)
     }
 
-    pub fn write_to_slot(&self, slot_storage: &mut SlotStorage) -> GoblinResult<()> {
+    pub fn write_to_slot(&self, slot_storage: &mut ArbContext) -> GoblinResult<()> {
         slot_storage.sstore(&MARKET_SLOT_KEY, &self.encode()?);
 
         Ok(())

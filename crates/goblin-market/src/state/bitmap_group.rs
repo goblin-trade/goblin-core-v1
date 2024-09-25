@@ -7,7 +7,7 @@ use super::{
     MarketPrices,
 };
 use crate::state::{
-    slot_storage::{SlotActions, SlotKey, SlotStorage},
+    slot_storage::{ArbContext, ContextActions, SlotKey},
     InnerIndex, OuterIndex, RestingOrderIndex, Side,
 };
 
@@ -22,7 +22,7 @@ pub struct BitmapGroup {
 }
 
 impl BitmapGroup {
-    pub fn new_from_slot(slot_storage: &SlotStorage, key: OuterIndex) -> Self {
+    pub fn new_from_slot(slot_storage: &ArbContext, key: OuterIndex) -> Self {
         BitmapGroup {
             inner: slot_storage.sload(&key.get_key()),
         }
@@ -142,7 +142,7 @@ impl BitmapGroup {
     // }
 
     /// Write to slot
-    pub fn write_to_slot(&self, slot_storage: &mut SlotStorage, key: &OuterIndex) {
+    pub fn write_to_slot(&self, slot_storage: &mut ArbContext, key: &OuterIndex) {
         slot_storage.sstore(&key.get_key(), &self.inner);
     }
 
@@ -290,7 +290,7 @@ mod tests {
 
     #[test]
     fn test_decode_group_from_empty_slot() {
-        let slot_storage = SlotStorage::new();
+        let slot_storage = ArbContext::new();
 
         let bitmap_group = BitmapGroup::new_from_slot(&slot_storage, OuterIndex::new(0));
 
@@ -299,7 +299,7 @@ mod tests {
 
     #[test]
     fn test_decode_filled_slot() {
-        let mut slot_storage = SlotStorage::new();
+        let mut slot_storage = ArbContext::new();
 
         // Tick group 0 contains ticks from 0 to 31
         let outer_index = OuterIndex::new(0);

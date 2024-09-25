@@ -6,7 +6,7 @@ use crate::{
     state::{
         order::{order_id::OrderId, resting_order::SlotRestingOrder},
         process_resting_orders::process_resting_orders,
-        InflightOrder, MarketState, Side, SlotStorage, TraderState,
+        ArbContext, InflightOrder, MarketState, Side, TraderState,
     },
 };
 
@@ -19,7 +19,7 @@ use super::{compute_fee, round_adjusted_quote_lots_up};
 /// - IOC case: is used to validate fill conditions
 ///
 pub fn match_order(
-    slot_storage: &mut SlotStorage,
+    slot_storage: &mut ArbContext,
     market_state: &mut MarketState,
     inflight_order: &mut InflightOrder,
     taker_address: Address,
@@ -32,7 +32,7 @@ pub fn match_order(
 
     let mut handle_match = |order_id: OrderId,
                             resting_order: &mut SlotRestingOrder,
-                            slot_storage: &mut SlotStorage| {
+                            slot_storage: &mut ArbContext| {
         let num_base_lots_quoted = resting_order.num_base_lots;
 
         let crosses = match inflight_order.side.opposite() {

@@ -4,7 +4,7 @@ use crate::{
     state::{
         order::{order_id::OrderId, sorted_order_id::orders_are_sorted},
         remove::order_id_remover::OrderIdRemover,
-        MarketState, Side, SlotStorage,
+        ArbContext, MarketState, Side,
     },
 };
 
@@ -39,7 +39,7 @@ impl RemoveMultipleManager {
     /// Checks whether an order is present at the given order ID.
     pub fn find_order(
         &mut self,
-        slot_storage: &mut SlotStorage,
+        slot_storage: &mut ArbContext,
         side: Side,
         order_id: OrderId,
     ) -> GoblinResult<bool> {
@@ -74,7 +74,7 @@ impl RemoveMultipleManager {
 
     /// Remove the last searched order from the book, and update the
     /// best price in market state if the outermost tick closed
-    pub fn remove_order(&mut self, slot_storage: &mut SlotStorage, market_state: &mut MarketState) {
+    pub fn remove_order(&mut self, slot_storage: &mut ArbContext, market_state: &mut MarketState) {
         self.remover().remove_order(slot_storage, market_state)
     }
 
@@ -82,7 +82,7 @@ impl RemoveMultipleManager {
     /// The last cached bitmap group pending a write is also written to slot
     pub fn write_prepared_indices(
         &mut self,
-        slot_storage: &mut SlotStorage,
+        slot_storage: &mut ArbContext,
         market_state: &mut MarketState,
     ) {
         self.removers[0].write_prepared_indices(slot_storage, market_state);

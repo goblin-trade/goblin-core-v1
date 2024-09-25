@@ -2,7 +2,7 @@ use crate::state::{
     iterator::position::outer_index_position_iterator::{
         OuterIndexPosition, OuterIndexPositionIterator,
     },
-    ListKey, ListSlot, OuterIndex, Side, SlotStorage,
+    ArbContext, ListKey, ListSlot, OuterIndex, Side,
 };
 
 /// Read outer indices from the index list, end first.
@@ -46,7 +46,7 @@ impl ActiveOuterIndexIterator {
     ///
     pub fn update_cached_list_slot(
         &mut self,
-        slot_storage: &SlotStorage,
+        slot_storage: &ArbContext,
         outer_index_position: OuterIndexPosition,
     ) {
         let OuterIndexPosition {
@@ -69,7 +69,7 @@ impl ActiveOuterIndexIterator {
     ///
     /// * slot_storage
     ///
-    pub fn next(&mut self, slot_storage: &SlotStorage) -> Option<OuterIndex> {
+    pub fn next(&mut self, slot_storage: &ArbContext) -> Option<OuterIndex> {
         self.inner.next().map(|outer_index_position| {
             self.update_cached_list_slot(slot_storage, outer_index_position);
             let list_slot = self.list_slot.as_ref().unwrap();
@@ -82,13 +82,13 @@ impl ActiveOuterIndexIterator {
 
 #[cfg(test)]
 mod tests {
-    use crate::state::SlotActions;
+    use crate::state::ContextActions;
 
     use super::*;
 
     #[test]
     fn test_empty_list() {
-        let slot_storage = SlotStorage::new();
+        let slot_storage = ArbContext::new();
         let outer_index_count = 0;
         let side = Side::Bid;
 
@@ -99,7 +99,7 @@ mod tests {
 
     #[test]
     fn test_reader_single_slot() {
-        let mut slot_storage = SlotStorage::new();
+        let mut slot_storage = ArbContext::new();
         let side = Side::Bid;
         let slot_key = ListKey { index: 0, side };
         let mut list_slot = ListSlot::new_from_slot(&slot_storage, slot_key);
@@ -147,7 +147,7 @@ mod tests {
 
     #[test]
     fn test_reader_single_slot_partially_full() {
-        let mut slot_storage = SlotStorage::new();
+        let mut slot_storage = ArbContext::new();
         let side = Side::Bid;
         let slot_key = ListKey { index: 0, side };
         let mut list_slot = ListSlot::new_from_slot(&slot_storage, slot_key);
@@ -194,7 +194,7 @@ mod tests {
 
     #[test]
     fn test_reader_multiple_slots() {
-        let mut slot_storage = SlotStorage::new();
+        let mut slot_storage = ArbContext::new();
         let side = Side::Bid;
         let slot_key_0 = ListKey { index: 0, side };
 
@@ -262,7 +262,7 @@ mod tests {
 
     #[test]
     fn test_iterator_multiple_slots_partially_full() {
-        let mut slot_storage = SlotStorage::new();
+        let mut slot_storage = ArbContext::new();
         let side = Side::Bid;
         let slot_key_0 = ListKey { index: 0, side };
         let slot_key_1 = ListKey { index: 1, side };
@@ -344,7 +344,7 @@ mod tests {
 
     #[test]
     fn test_iterator_single_slot_descending_for_asks() {
-        let mut slot_storage = SlotStorage::new();
+        let mut slot_storage = ArbContext::new();
         let side = Side::Ask;
         let slot_key = ListKey { index: 0, side };
         let mut list_slot = ListSlot::new_from_slot(&slot_storage, slot_key);

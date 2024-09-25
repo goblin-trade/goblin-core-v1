@@ -1,6 +1,6 @@
 use crate::state::{
     iterator::active_position::active_outer_index_iterator::ActiveOuterIndexIterator,
-    write_index_list::write_index_list, OuterIndex, Side, SlotStorage,
+    write_index_list::write_index_list, ArbContext, OuterIndex, Side,
 };
 use alloc::vec::Vec;
 
@@ -43,11 +43,7 @@ impl OuterIndexInserter {
     ///
     /// Returns true if the value needs insertion, false if it is already present
     ///
-    pub fn insert_if_absent(
-        &mut self,
-        slot_storage: &SlotStorage,
-        outer_index: OuterIndex,
-    ) -> bool {
+    pub fn insert_if_absent(&mut self, slot_storage: &ArbContext, outer_index: OuterIndex) -> bool {
         // Check last element in the cache
         if let Some(&last_pushed_outer_index) = self.cache.last() {
             // If the element already exists in the cache, return false
@@ -89,7 +85,7 @@ impl OuterIndexInserter {
     }
 
     /// Write prepared indices to slot
-    pub fn write_index_list(&mut self, slot_storage: &mut SlotStorage) {
+    pub fn write_index_list(&mut self, slot_storage: &mut ArbContext) {
         write_index_list(
             slot_storage,
             self.side(),
@@ -102,13 +98,13 @@ impl OuterIndexInserter {
 
 #[cfg(test)]
 mod tests {
-    use crate::state::{ListKey, ListSlot, SlotActions};
+    use crate::state::{ContextActions, ListKey, ListSlot};
 
     use super::*;
 
     #[test]
     fn test_prepare_bid_empty_list() {
-        let slot_storage = &mut SlotStorage::new();
+        let slot_storage = &mut ArbContext::new();
         let mut insertion = OuterIndexInserter::new(Side::Bid, 0);
 
         // Insert into an empty list
@@ -142,7 +138,7 @@ mod tests {
 
     #[test]
     fn test_prepare_bid_equal_index() {
-        let mut slot_storage = &mut SlotStorage::new();
+        let mut slot_storage = &mut ArbContext::new();
 
         // Setup the initial slot storage with one item
         {
@@ -166,7 +162,7 @@ mod tests {
 
     #[test]
     fn test_prepare_bid_closer_to_center() {
-        let slot_storage = &mut SlotStorage::new();
+        let slot_storage = &mut ArbContext::new();
 
         // Setup the initial slot storage with one item
         {
@@ -193,7 +189,7 @@ mod tests {
 
     #[test]
     fn test_prepare_bid_away_from_center() {
-        let mut slot_storage = &mut SlotStorage::new();
+        let mut slot_storage = &mut ArbContext::new();
 
         // Setup the initial slot storage with one item
         {
@@ -220,7 +216,7 @@ mod tests {
 
     #[test]
     fn test_prepare_ask_empty_list() {
-        let slot_storage = &mut SlotStorage::new();
+        let slot_storage = &mut ArbContext::new();
         let mut insertion = OuterIndexInserter::new(Side::Ask, 0);
 
         // Insert into an empty list
@@ -252,7 +248,7 @@ mod tests {
 
     #[test]
     fn test_prepare_ask_equal_index() {
-        let slot_storage = &mut SlotStorage::new();
+        let slot_storage = &mut ArbContext::new();
         let side = Side::Ask;
 
         // Setup the initial slot storage with one item
@@ -271,7 +267,7 @@ mod tests {
 
     #[test]
     fn test_prepare_ask_closer_to_center() {
-        let slot_storage = &mut SlotStorage::new();
+        let slot_storage = &mut ArbContext::new();
         let side = Side::Ask;
 
         // Setup the initial slot storage with one item
@@ -293,7 +289,7 @@ mod tests {
 
     #[test]
     fn test_prepare_ask_away_from_center() {
-        let slot_storage = &mut SlotStorage::new();
+        let slot_storage = &mut ArbContext::new();
         let side = Side::Ask;
 
         // Setup the initial slot storage with one item

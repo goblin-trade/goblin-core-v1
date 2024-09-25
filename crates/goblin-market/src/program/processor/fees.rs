@@ -8,7 +8,7 @@ use crate::state::MarketState;
 use crate::{
     parameters::QUOTE_TOKEN,
     program::{maybe_invoke_withdraw, GoblinResult},
-    state::{SlotActions, SlotStorage},
+    state::{ArbContext, ContextActions},
     GoblinMarket,
 };
 
@@ -29,7 +29,7 @@ pub fn process_collect_fees(
         GoblinError::InvalidFeeCollector(InvalidFeeCollector {})
     );
 
-    let slot_storage = &mut SlotStorage::new();
+    let slot_storage = &mut ArbContext::new();
     // Read
     let mut market = MarketState::read_from_slot(slot_storage);
     let num_quote_lots_out = market.unclaimed_quote_lot_fees;
@@ -40,7 +40,7 @@ pub fn process_collect_fees(
 
     // Write
     market.write_to_slot(slot_storage)?;
-    SlotStorage::storage_flush_cache(true);
+    ArbContext::storage_flush_cache(true);
 
     // Transfer
     let quote_atoms_collected_raw = QuoteAtomsRaw::from_lots(num_quote_lots_out);

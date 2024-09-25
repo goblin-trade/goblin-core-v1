@@ -7,7 +7,7 @@ use crate::{
             order_id::OrderId,
             resting_order::{RestingOrder, SlotRestingOrder},
         },
-        ListKey, ListSlot, MarketState, RestingOrderIndex, Side, SlotStorage,
+        ArbContext, ListKey, ListSlot, MarketState, RestingOrderIndex, Side,
     },
 };
 
@@ -20,10 +20,10 @@ use crate::{
 /// TODO replace with iterator. Avoid raw loops, use the newly created iterators.
 ///
 pub fn process_resting_orders(
-    slot_storage: &mut SlotStorage,
+    slot_storage: &mut ArbContext,
     market_state: &mut MarketState,
     side: Side,
-    lambda: &mut dyn FnMut(OrderId, &mut SlotRestingOrder, &mut SlotStorage) -> bool,
+    lambda: &mut dyn FnMut(OrderId, &mut SlotRestingOrder, &mut ArbContext) -> bool,
 ) {
     let mut price_in_ticks = market_state.best_price(side);
     let mut previous_inner_index = Some(price_in_ticks.inner_index());

@@ -2,7 +2,7 @@ use crate::{
     quantities::Ticks,
     state::{
         order::{group_position::GroupPosition, order_id::OrderId},
-        InnerIndex, MarketState, OuterIndex, Side, SlotStorage, TickIndices,
+        ArbContext, InnerIndex, MarketState, OuterIndex, Side, TickIndices,
     },
 };
 
@@ -71,7 +71,7 @@ impl OrderIdRemover {
     /// * `slot_storage`
     /// * `order_id`
     ///
-    pub fn find_order(&mut self, slot_storage: &mut SlotStorage, order_id: OrderId) -> bool {
+    pub fn find_order(&mut self, slot_storage: &mut ArbContext, order_id: OrderId) -> bool {
         let OrderId {
             price_in_ticks,
             resting_order_index,
@@ -114,7 +114,7 @@ impl OrderIdRemover {
     /// * `slot_storage`
     /// * `market_state`
     ///
-    pub fn remove_order(&mut self, slot_storage: &mut SlotStorage, market_state: &mut MarketState) {
+    pub fn remove_order(&mut self, slot_storage: &mut ArbContext, market_state: &mut MarketState) {
         if let Some(order_id) = self.group_position_remover.last_searched_order_id() {
             let group_position = GroupPosition::from(&order_id);
 
@@ -153,7 +153,7 @@ impl OrderIdRemover {
     ///
     pub fn get_best_price(
         &mut self,
-        slot_storage: &mut SlotStorage,
+        slot_storage: &mut ArbContext,
         mut starting_index: Option<InnerIndex>,
     ) -> Ticks {
         loop {
@@ -182,7 +182,7 @@ impl OrderIdRemover {
     /// Externally ensure that this is only called when we're on the outermost outer index.
     /// This way there is no `found_outer_index` to push to the cache.
     ///
-    pub fn slide_outer_index_and_bitmap_group(&mut self, slot_storage: &mut SlotStorage) -> bool {
+    pub fn slide_outer_index_and_bitmap_group(&mut self, slot_storage: &mut ArbContext) -> bool {
         self.outer_index_remover.slide(slot_storage);
         if let Some(next_outer_index) = self.outer_index_remover.cached_outer_index {
             self.group_position_remover
@@ -206,7 +206,7 @@ impl OrderIdRemover {
     ///
     pub fn write_prepared_indices(
         &mut self,
-        slot_storage: &mut SlotStorage,
+        slot_storage: &mut ArbContext,
         market_state: &mut MarketState,
     ) {
         self.group_position_remover.flush_bitmap_group(slot_storage);
@@ -221,14 +221,14 @@ mod tests {
     use crate::{
         quantities::QuoteLots,
         state::{
-            bitmap_group::BitmapGroup, ListKey, ListSlot, OuterIndex, RestingOrderIndex,
-            SlotActions,
+            bitmap_group::BitmapGroup, ContextActions, ListKey, ListSlot, OuterIndex,
+            RestingOrderIndex,
         },
     };
 
     use super::*;
 
-    fn enable_order_id(slot_storage: &mut SlotStorage, order_id: OrderId) {
+    fn enable_order_id(slot_storage: &mut ArbContext, order_id: OrderId) {
         let OrderId {
             price_in_ticks,
             resting_order_index,
@@ -247,7 +247,7 @@ mod tests {
 
     #[test]
     fn test_search_and_remove_same_inner_index() {
-        let mut slot_storage = SlotStorage::new();
+        let mut slot_storage = ArbContext::new();
         let side = Side::Ask;
 
         let outer_index_count = 1;
@@ -350,7 +350,7 @@ mod tests {
 
     #[test]
     fn test_search_and_remove_same_outer_index() {
-        let mut slot_storage = SlotStorage::new();
+        let mut slot_storage = ArbContext::new();
         let side = Side::Ask;
 
         let outer_index_count = 1;
@@ -454,7 +454,7 @@ mod tests {
 
     #[test]
     fn test_search_and_remove_same_outer_index_non_outermost_value() {
-        let mut slot_storage = SlotStorage::new();
+        let mut slot_storage = ArbContext::new();
         let side = Side::Ask;
 
         let outer_index_count = 1;
@@ -551,7 +551,7 @@ mod tests {
 
     #[test]
     fn test_search_and_remove_different_outer_index() {
-        let mut slot_storage = SlotStorage::new();
+        let mut slot_storage = ArbContext::new();
         let side = Side::Ask;
 
         let outer_index_count = 2;
@@ -654,7 +654,7 @@ mod tests {
 
     #[test]
     fn test_search_one_but_remove_another_in_same_inner_index() {
-        let mut slot_storage = SlotStorage::new();
+        let mut slot_storage = ArbContext::new();
         let side = Side::Ask;
 
         let outer_index_count = 1;
@@ -772,7 +772,7 @@ mod tests {
 
     #[test]
     fn test_search_one_but_remove_another_in_same_outer_index() {
-        let mut slot_storage = SlotStorage::new();
+        let mut slot_storage = ArbContext::new();
         let side = Side::Ask;
 
         let outer_index_count = 1;
@@ -890,7 +890,7 @@ mod tests {
 
     #[test]
     fn test_search_one_but_remove_another_in_different_outer_index() {
-        let mut slot_storage = SlotStorage::new();
+        let mut slot_storage = ArbContext::new();
         let side = Side::Ask;
 
         let outer_index_count = 2;

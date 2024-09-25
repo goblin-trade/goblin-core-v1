@@ -5,7 +5,7 @@ use crate::{
     quantities::{BaseLots, QuoteLots, Ticks, WrapperU64},
 };
 
-use super::{Side, SlotActions, SlotKey, SlotStorage, TRADER_STATE_KEY_SEED};
+use super::{ArbContext, ContextActions, Side, SlotKey, TRADER_STATE_KEY_SEED};
 
 pub type TraderId = Address;
 
@@ -30,7 +30,7 @@ pub struct TraderState {
 }
 
 impl TraderState {
-    pub fn read_from_slot(slot_storage: &SlotStorage, trader_id: TraderId) -> Self {
+    pub fn read_from_slot(slot_storage: &ArbContext, trader_id: TraderId) -> Self {
         let slot_key = trader_id.get_key();
         let slot = slot_storage.sload(&slot_key);
 
@@ -57,7 +57,7 @@ impl TraderState {
         encoded_data
     }
 
-    pub fn write_to_slot(&self, slot_storage: &mut SlotStorage, trader_id: TraderId) {
+    pub fn write_to_slot(&self, slot_storage: &mut ArbContext, trader_id: TraderId) {
         slot_storage.sstore(&trader_id.get_key(), &self.encode());
     }
 

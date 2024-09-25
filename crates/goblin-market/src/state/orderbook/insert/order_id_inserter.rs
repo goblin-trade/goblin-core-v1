@@ -4,7 +4,7 @@ use crate::{
         order::{
             group_position::GroupPosition, order_id::OrderId, resting_order::SlotRestingOrder,
         },
-        MarketPrices, MarketState, Side, SlotStorage,
+        ArbContext, MarketPrices, MarketState, Side,
     },
 };
 
@@ -53,7 +53,7 @@ impl OrderIdInserter {
     ///
     pub fn activate_order_id(
         &mut self,
-        slot_storage: &mut SlotStorage,
+        slot_storage: &mut ArbContext,
         order_id: &OrderId,
         best_market_prices: &MarketPrices,
     ) {
@@ -97,7 +97,7 @@ impl OrderIdInserter {
     ///
     pub fn insert_resting_order(
         &mut self,
-        slot_storage: &mut SlotStorage,
+        slot_storage: &mut ArbContext,
         market_state: &mut MarketState,
         resting_order: &SlotRestingOrder,
         order_id: &OrderId,
@@ -120,7 +120,7 @@ impl OrderIdInserter {
     ///
     pub fn write_prepared_indices(
         &mut self,
-        slot_storage: &mut SlotStorage,
+        slot_storage: &mut ArbContext,
         market_state: &mut MarketState,
     ) {
         self.bitmap_inserter.flush_bitmap_group(slot_storage);
@@ -144,8 +144,8 @@ mod tests {
     use crate::{
         quantities::{BaseLots, QuoteLots, Ticks, WrapperU64},
         state::{
-            bitmap_group::BitmapGroup, InnerIndex, ListKey, ListSlot, MarketPrices, OuterIndex,
-            RestingOrderIndex, SlotActions, TickIndices,
+            bitmap_group::BitmapGroup, ContextActions, InnerIndex, ListKey, ListSlot, MarketPrices,
+            OuterIndex, RestingOrderIndex, TickIndices,
         },
     };
 
@@ -153,7 +153,7 @@ mod tests {
 
     #[test]
     fn test_insert_single_order_on_empty_index_list() {
-        let slot_storage = &mut SlotStorage::new();
+        let slot_storage = &mut ArbContext::new();
         let side = Side::Bid;
 
         let mut market_state = MarketState {
@@ -235,7 +235,7 @@ mod tests {
 
     #[test]
     fn test_insert_two_orders_at_same_price_on_empty_index_list() {
-        let slot_storage = &mut SlotStorage::new();
+        let slot_storage = &mut ArbContext::new();
         let side = Side::Bid;
 
         let mut market_state = MarketState {
@@ -340,7 +340,7 @@ mod tests {
 
     #[test]
     fn test_insert_two_orders_at_different_ticks_on_same_bitmap_group_on_empty_index_list() {
-        let slot_storage = &mut SlotStorage::new();
+        let slot_storage = &mut ArbContext::new();
         let side = Side::Bid;
 
         let mut market_state = MarketState {
@@ -448,7 +448,7 @@ mod tests {
 
     #[test]
     fn test_insert_two_orders_at_bitmap_groups_on_empty_index_list() {
-        let slot_storage = &mut SlotStorage::new();
+        let slot_storage = &mut ArbContext::new();
         let side = Side::Bid;
 
         let mut market_state = MarketState {
@@ -574,7 +574,7 @@ mod tests {
 
     #[test]
     fn test_insert_single_order_on_non_empty_index_list_on_same_bitmap_group() {
-        let slot_storage = &mut SlotStorage::new();
+        let slot_storage = &mut ArbContext::new();
         let side = Side::Bid;
 
         let price_in_ticks_0 = Ticks::new(1);
@@ -666,7 +666,7 @@ mod tests {
 
     #[test]
     fn test_insert_single_order_on_non_empty_index_list_on_different_bitmap_groups() {
-        let slot_storage = &mut SlotStorage::new();
+        let slot_storage = &mut ArbContext::new();
         let side = Side::Bid;
 
         let price_in_ticks_0 = Ticks::new(1);
@@ -775,7 +775,7 @@ mod tests {
 
     #[test]
     fn test_insert_two_orders_on_non_empty_index_list_on_different_bitmap_groups() {
-        let slot_storage = &mut SlotStorage::new();
+        let slot_storage = &mut ArbContext::new();
         let side = Side::Bid;
 
         let price_in_ticks_0 = Ticks::new(1);
@@ -914,7 +914,7 @@ mod tests {
 
     #[test]
     fn test_bits_from_opposite_side_not_cleared_for_newly_activated_outer_indices_for_asks() {
-        let slot_storage = &mut SlotStorage::new();
+        let slot_storage = &mut ArbContext::new();
         let side = Side::Ask;
 
         // Outer index 1 with non-empty bitmap is present in bid index list but not ask index list
@@ -954,7 +954,7 @@ mod tests {
 
     #[test]
     fn test_bits_from_opposite_side_not_cleared_for_newly_activated_outer_indices_for_bids() {
-        let slot_storage = &mut SlotStorage::new();
+        let slot_storage = &mut ArbContext::new();
         let side = Side::Bid;
 
         // Outer index 1 with non-empty bitmap is present in ask index list but not bid index list
@@ -997,7 +997,7 @@ mod tests {
 
         #[test]
         fn test_garbage_bits_cleared_when_inserting_ask() {
-            let slot_storage = &mut SlotStorage::new();
+            let slot_storage = &mut ArbContext::new();
             let side = Side::Ask;
 
             // Outer index 1 with non-empty bitmap is present in bid index list but not ask index list
@@ -1054,7 +1054,7 @@ mod tests {
 
         #[test]
         fn test_garbage_bits_cleared_when_inserting_bid() {
-            let slot_storage = &mut SlotStorage::new();
+            let slot_storage = &mut ArbContext::new();
             let side = Side::Bid;
 
             // Outer index 1 with non-empty bitmap is present in ask index list but not bid index list

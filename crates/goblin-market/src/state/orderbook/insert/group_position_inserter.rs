@@ -1,6 +1,6 @@
 use crate::state::{
-    bitmap_group::BitmapGroup, order::group_position::GroupPosition, MarketPrices, OuterIndex,
-    SlotStorage,
+    bitmap_group::BitmapGroup, order::group_position::GroupPosition, ArbContext, MarketPrices,
+    OuterIndex,
 };
 
 /// Facilitates efficient batch activations in bitmap groups
@@ -47,7 +47,7 @@ impl GroupPositionInserter {
     ///
     pub fn load_outer_index(
         &mut self,
-        slot_storage: &mut SlotStorage,
+        slot_storage: &mut ArbContext,
         outer_index: OuterIndex,
         bitmap_group_is_empty: bool,
     ) {
@@ -84,7 +84,7 @@ impl GroupPositionInserter {
     /// Write cached bitmap group to slot
     /// This should be called when the outer index changes during looping,
     /// and when the loop is complete
-    pub fn flush_bitmap_group(&self, slot_storage: &mut SlotStorage) {
+    pub fn flush_bitmap_group(&self, slot_storage: &mut ArbContext) {
         if let Some(last_index) = self.last_outer_index {
             self.bitmap_group.write_to_slot(slot_storage, &last_index);
         }
@@ -97,7 +97,7 @@ mod tests {
 
     use crate::{
         quantities::{Ticks, WrapperU64},
-        state::{order::order_id::OrderId, RestingOrderIndex, SlotActions},
+        state::{order::order_id::OrderId, ContextActions, RestingOrderIndex},
     };
 
     /// Activates an order ID. If the outer index changes, the previous bitmap group is flushed
@@ -107,7 +107,7 @@ mod tests {
     ///
     fn activate_order_id(
         bitmap_inserter: &mut GroupPositionInserter,
-        slot_storage: &mut SlotStorage,
+        slot_storage: &mut ArbContext,
         order_id: &OrderId,
         outer_index_inserted: bool,
     ) {
@@ -118,7 +118,7 @@ mod tests {
 
     #[test]
     fn insert_single_order() {
-        let slot_storage = &mut SlotStorage::new();
+        let slot_storage = &mut ArbContext::new();
         let bitmap_group_is_empty = true;
 
         let mut inserter = GroupPositionInserter::new();
@@ -154,7 +154,7 @@ mod tests {
 
     #[test]
     fn insert_two_orders_at_same_tick() {
-        let slot_storage = &mut SlotStorage::new();
+        let slot_storage = &mut ArbContext::new();
         let bitmap_group_is_empty = true;
 
         let mut inserter = GroupPositionInserter::new();
@@ -201,7 +201,7 @@ mod tests {
 
     #[test]
     fn insert_two_orders_at_different_inner_indices_on_same_group() {
-        let slot_storage = &mut SlotStorage::new();
+        let slot_storage = &mut ArbContext::new();
         let bitmap_group_is_empty = true;
 
         let mut inserter = GroupPositionInserter::new();
@@ -249,7 +249,7 @@ mod tests {
 
     #[test]
     fn insert_two_orders_in_different_groups() {
-        let slot_storage = &mut SlotStorage::new();
+        let slot_storage = &mut ArbContext::new();
         let bitmap_group_is_empty = true;
 
         let mut inserter = GroupPositionInserter::new();

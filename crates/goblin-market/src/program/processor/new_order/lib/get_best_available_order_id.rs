@@ -5,7 +5,7 @@ use crate::{
         bitmap_group::{BitmapGroup, MutableBitmap},
         iterator::position::inner_index_iterator::InnerIndexIterator,
         order::order_id::OrderId,
-        OuterIndex, Side, SlotStorage, TickIndices,
+        ArbContext, OuterIndex, Side, TickIndices,
     },
 };
 
@@ -21,7 +21,7 @@ use crate::{
 /// and expiry params match, then return the same order id as the last order.
 ///
 pub fn get_best_available_order_id(
-    slot_storage: &SlotStorage,
+    slot_storage: &ArbContext,
     order_packet: &OrderPacket,
     last_order: Option<OrderToInsert>,
 ) -> Option<OrderId> {

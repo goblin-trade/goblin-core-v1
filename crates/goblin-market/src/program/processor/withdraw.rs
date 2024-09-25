@@ -6,7 +6,7 @@ use crate::{
         types::matching_engine_response::MatchingEngineResponse,
     },
     quantities::{BaseAtomsRaw, BaseLots, QuoteAtomsRaw, QuoteLots},
-    state::{SlotActions, SlotStorage, TraderState},
+    state::{ArbContext, ContextActions, TraderState},
     GoblinMarket,
 };
 
@@ -28,7 +28,7 @@ pub fn process_withdraw_funds(
     quote_lots: QuoteLots,
     base_lots: BaseLots,
 ) -> GoblinResult<()> {
-    let slot_storage = &mut SlotStorage::new();
+    let slot_storage = &mut ArbContext::new();
 
     // Read
     let mut trader_state = TraderState::read_from_slot(slot_storage, trader);
@@ -42,7 +42,7 @@ pub fn process_withdraw_funds(
 
     // Write
     trader_state.write_to_slot(slot_storage, trader);
-    SlotStorage::storage_flush_cache(true);
+    ArbContext::storage_flush_cache(true);
 
     // Transfer
     let quote_amount_raw = QuoteAtomsRaw::from_lots(num_quote_lots_out);

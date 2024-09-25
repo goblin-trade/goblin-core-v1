@@ -1,4 +1,4 @@
-use crate::state::{ListKey, ListSlot, OuterIndex, Side, SlotStorage};
+use crate::state::{ArbContext, ListKey, ListSlot, OuterIndex, Side};
 use alloc::vec::Vec;
 
 /// Write cached indices to slot
@@ -9,7 +9,7 @@ use alloc::vec::Vec;
 /// Indices are written from the left (start) to right.
 ///
 pub fn write_index_list(
-    slot_storage: &mut SlotStorage,
+    slot_storage: &mut ArbContext,
     side: Side,
     cache: &mut Vec<OuterIndex>,
     unread_count: u16,
@@ -56,13 +56,13 @@ pub fn write_index_list(
 
 #[cfg(test)]
 mod tests {
-    use crate::state::SlotActions;
+    use crate::state::ContextActions;
 
     use super::*;
 
     #[test]
     fn test_write_prepared_indices_basic_reverse_order() {
-        let mut slot_storage = SlotStorage::new();
+        let mut slot_storage = ArbContext::new();
         let mut cache = vec![OuterIndex::new(1), OuterIndex::new(2), OuterIndex::new(3)];
         let unread_count = 0;
         let first_list_slot = None;
@@ -88,7 +88,7 @@ mod tests {
 
     #[test]
     fn test_write_prepared_indices_with_unread_count() {
-        let mut slot_storage = SlotStorage::new();
+        let mut slot_storage = ArbContext::new();
         let side = Side::Bid;
         let mut first_list_slot = ListSlot::default();
         first_list_slot.set(0, OuterIndex::new(100)); // Existing unread index
@@ -123,7 +123,7 @@ mod tests {
 
     #[test]
     fn test_write_prepared_indices_multi_slot() {
-        let mut slot_storage = SlotStorage::new();
+        let mut slot_storage = ArbContext::new();
         let side = Side::Ask;
 
         let mut cache = vec![
@@ -176,7 +176,7 @@ mod tests {
 
     #[test]
     fn test_write_prepared_indices_multi_slot_with_slot_0_partially_full() {
-        let mut slot_storage = SlotStorage::new();
+        let mut slot_storage = ArbContext::new();
         let side = Side::Ask;
 
         let slot_key_0 = ListKey { index: 0, side };
@@ -239,7 +239,7 @@ mod tests {
 
     #[test]
     fn test_write_prepared_indices_multi_slot_with_slot_0_completely_full() {
-        let mut slot_storage = SlotStorage::new();
+        let mut slot_storage = ArbContext::new();
         let side = Side::Ask;
         let slot_key_0 = ListKey { index: 0, side };
         let slot_key_1 = ListKey { index: 1, side };
@@ -319,7 +319,7 @@ mod tests {
 
     #[test]
     fn test_write_prepared_indices_edge_case_exact_slot() {
-        let mut slot_storage = SlotStorage::new();
+        let mut slot_storage = ArbContext::new();
         let side = Side::Ask;
         let slot_key_0 = ListKey { index: 0, side };
 
@@ -361,7 +361,7 @@ mod tests {
 
     #[test]
     fn test_write_prepared_indices_empty_cache() {
-        let mut slot_storage = SlotStorage::new();
+        let mut slot_storage = ArbContext::new();
         let side = Side::Ask;
         let slot_key_0 = ListKey { index: 0, side };
 
@@ -390,7 +390,7 @@ mod tests {
 
     #[test]
     fn test_write_prepared_indices_partial_slot_with_unread() {
-        let mut slot_storage = SlotStorage::new();
+        let mut slot_storage = ArbContext::new();
         let side = Side::Bid;
         let slot_key_0 = ListKey { index: 0, side };
 

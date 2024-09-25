@@ -6,7 +6,7 @@ use crate::{
         order_packet::{OrderPacket, OrderPacketMetadata},
     },
     quantities::{BaseLots, QuoteLots, Ticks},
-    state::{MarketState, Side, SlotStorage, TraderState},
+    state::{ArbContext, MarketState, Side, TraderState},
 };
 
 use super::{check_for_cross, get_best_available_order_id, match_order, OrderToInsert};
@@ -24,7 +24,7 @@ use super::{check_for_cross, get_best_available_order_id, match_order, OrderToIn
 /// * `last_order` - The last placed order, if placing multiple post-only orders
 ///
 pub fn place_order_inner(
-    slot_storage: &mut SlotStorage,
+    slot_storage: &mut ArbContext,
     market_state: &mut MarketState,
     trader_state: &mut TraderState,
     trader: Address,

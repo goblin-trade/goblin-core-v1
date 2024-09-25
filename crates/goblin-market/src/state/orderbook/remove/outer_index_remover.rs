@@ -1,6 +1,6 @@
 use crate::state::{
     iterator::active_position::active_outer_index_iterator::ActiveOuterIndexIterator,
-    write_index_list::write_index_list, OuterIndex, Side, SlotStorage,
+    write_index_list::write_index_list, ArbContext, OuterIndex, Side,
 };
 use alloc::vec::Vec;
 
@@ -76,7 +76,7 @@ impl OuterIndexRemover {
     ///
     /// * `slot_storage`
     ///
-    pub fn slide(&mut self, slot_storage: &SlotStorage) {
+    pub fn slide(&mut self, slot_storage: &ArbContext) {
         self.flush_cached_outer_index();
         self.cached_outer_index = self.active_outer_index_iterator.next(slot_storage);
     }
@@ -99,11 +99,7 @@ impl OuterIndexRemover {
     ///
     /// * `true` if the index is found, `false` otherwise.
     ///
-    pub fn find_outer_index(
-        &mut self,
-        slot_storage: &SlotStorage,
-        outer_index: OuterIndex,
-    ) -> bool {
+    pub fn find_outer_index(&mut self, slot_storage: &ArbContext, outer_index: OuterIndex) -> bool {
         loop {
             if self.cached_outer_index == Some(outer_index) {
                 return true;
@@ -129,7 +125,7 @@ impl OuterIndexRemover {
     /// Calling `write_prepared_indices()` after `find_outer_index()` will result
     /// in `found_outer_index`.
     ///
-    pub fn write_index_list(&mut self, slot_storage: &mut SlotStorage) {
+    pub fn write_index_list(&mut self, slot_storage: &mut ArbContext) {
         if !self.pending_write {
             return;
         }
@@ -147,13 +143,13 @@ impl OuterIndexRemover {
 
 #[cfg(test)]
 mod tests {
-    use crate::state::{ListKey, ListSlot, SlotActions};
+    use crate::state::{ContextActions, ListKey, ListSlot};
 
     use super::*;
 
     #[test]
     fn test_find_outer_index_in_empty_list() {
-        let slot_storage = SlotStorage::new();
+        let slot_storage = ArbContext::new();
         let mut remover = OuterIndexRemover::new(Side::Bid, 0);
 
         // Try to find an index in an empty list
@@ -166,7 +162,7 @@ mod tests {
 
     #[test]
     fn test_find_and_remove_outer_index() {
-        let mut slot_storage = SlotStorage::new();
+        let mut slot_storage = ArbContext::new();
 
         // Setup the initial slot storage with one item
         {
@@ -200,7 +196,7 @@ mod tests {
 
     #[test]
     fn test_find_one_but_remove_another() {
-        let mut slot_storage = SlotStorage::new();
+        let mut slot_storage = ArbContext::new();
 
         let side = Side::Bid;
         let outer_index_count = 2;
@@ -240,7 +236,7 @@ mod tests {
 
     #[test]
     fn test_try_write_when_there_are_no_removals() {
-        let mut slot_storage = SlotStorage::new();
+        let mut slot_storage = ArbContext::new();
         let list_key = ListKey {
             index: 0,
             side: Side::Bid,
@@ -268,7 +264,7 @@ mod tests {
 
     #[test]
     fn test_find_nonexistent_outer_index() {
-        let mut slot_storage = SlotStorage::new();
+        let mut slot_storage = ArbContext::new();
 
         // Setup the initial slot storage with one item
         {
@@ -301,7 +297,7 @@ mod tests {
 
     #[test]
     fn test_find_outer_index_and_cache_intermediary_values() {
-        let mut slot_storage = SlotStorage::new();
+        let mut slot_storage = ArbContext::new();
 
         // Setup the initial slot storage with multiple items
         let list_key = ListKey {
@@ -344,7 +340,7 @@ mod tests {
 
     #[test]
     fn test_remove_multiple_adjacent_outermost_in_same_slot() {
-        let mut slot_storage = SlotStorage::new();
+        let mut slot_storage = ArbContext::new();
         let side = Side::Bid;
         let outer_index_count = 4;
 
@@ -370,7 +366,7 @@ mod tests {
 
     #[test]
     fn test_remove_multiple_adjacent_non_outermost_in_same_slot() {
-        let mut slot_storage = SlotStorage::new();
+        let mut slot_storage = ArbContext::new();
         let side = Side::Bid;
         let outer_index_count = 4;
 
@@ -396,7 +392,7 @@ mod tests {
 
     #[test]
     fn test_remove_multiple_non_adjacent_in_same_slot() {
-        let mut slot_storage = SlotStorage::new();
+        let mut slot_storage = ArbContext::new();
         let side = Side::Bid;
         let outer_index_count = 4;
 
@@ -422,7 +418,7 @@ mod tests {
 
     #[test]
     fn test_remove_multiple_different_adjacent_slots() {
-        let mut slot_storage = SlotStorage::new();
+        let mut slot_storage = ArbContext::new();
         let side = Side::Bid;
         let outer_index_count = 18;
 
@@ -454,7 +450,7 @@ mod tests {
 
     #[test]
     fn test_remove_multiple_different_non_adjacent_slots() {
-        let mut slot_storage = SlotStorage::new();
+        let mut slot_storage = ArbContext::new();
         let side = Side::Bid;
         let outer_index_count = 34;
 
@@ -511,7 +507,7 @@ mod tests {
 
     #[test]
     fn test_remove_same_slot_ghost_value_from_no_write_case() {
-        let mut slot_storage = SlotStorage::new();
+        let mut slot_storage = ArbContext::new();
         let side = Side::Bid;
         let outer_index_count = 2;
 
@@ -539,7 +535,7 @@ mod tests {
 
     #[test]
     fn test_remove_same_slot_ghost_value_from_no_write_case_multiple_slots() {
-        let mut slot_storage = SlotStorage::new();
+        let mut slot_storage = ArbContext::new();
         let side = Side::Bid;
         let outer_index_count = 17;
 
@@ -575,7 +571,7 @@ mod tests {
 
     #[test]
     fn test_remove_same_slot_ghost_value_from_write_case() {
-        let mut slot_storage = SlotStorage::new();
+        let mut slot_storage = ArbContext::new();
         let side = Side::Bid;
         let outer_index_count = 2;
 
@@ -603,7 +599,7 @@ mod tests {
 
     #[test]
     fn test_remove_different_slot_no_ghost_value() {
-        let mut slot_storage = SlotStorage::new();
+        let mut slot_storage = ArbContext::new();
         let side = Side::Bid;
         let outer_index_count = 18;
 
@@ -639,7 +635,7 @@ mod tests {
 
     #[test]
     fn test_remove_from_different_slot_ghost_value_due_to_cleared_slot() {
-        let mut slot_storage = SlotStorage::new();
+        let mut slot_storage = ArbContext::new();
         let side = Side::Bid;
         let outer_index_count = 17;
 
@@ -676,7 +672,7 @@ mod tests {
 
     #[test]
     fn test_two_types_of_ghost_values_due_to_cached_slot_and_cleared_slot() {
-        let mut slot_storage = SlotStorage::new();
+        let mut slot_storage = ArbContext::new();
         let side = Side::Bid;
         let outer_index_count = 17;
 

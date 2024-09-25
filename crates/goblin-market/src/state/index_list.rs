@@ -10,7 +10,7 @@
 ///
 /// Each tick group index is made of 2 bits in big endian format. This means that
 /// each ListItem contains 16 outer indices.
-use crate::state::{OuterIndex, Side, SlotActions, SlotKey, SlotStorage, LIST_KEY_SEED};
+use crate::state::{ArbContext, ContextActions, OuterIndex, Side, SlotKey, LIST_KEY_SEED};
 
 /// Slot key to fetch a ListSlot
 ///
@@ -45,7 +45,7 @@ pub struct ListSlot {
 
 impl ListSlot {
     /// Load from slot storage
-    pub fn new_from_slot(slot_storage: &SlotStorage, key: ListKey) -> Self {
+    pub fn new_from_slot(slot_storage: &ArbContext, key: ListKey) -> Self {
         let slot = slot_storage.sload(&key.get_key());
 
         ListSlot::decode(slot)
@@ -62,7 +62,7 @@ impl ListSlot {
         unsafe { core::mem::transmute::<[u16; 16], [u8; 32]>(self.inner) }
     }
 
-    pub fn write_to_slot(&self, slot_storage: &mut SlotStorage, key: &ListKey) {
+    pub fn write_to_slot(&self, slot_storage: &mut ArbContext, key: &ListKey) {
         let bytes = self.encode();
         slot_storage.sstore(&key.get_key(), &bytes);
     }

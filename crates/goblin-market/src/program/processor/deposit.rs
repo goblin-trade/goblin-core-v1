@@ -1,4 +1,4 @@
-use slot_storage::{SlotActions, SlotStorage};
+use slot_storage::{ArbContext, ContextActions};
 use stylus_sdk::alloy_primitives::Address;
 
 use crate::{
@@ -27,7 +27,7 @@ pub fn process_deposit_funds(
     base_lots: BaseLots,
 ) -> GoblinResult<()> {
     // Read
-    let mut slot_storage = SlotStorage::new();
+    let mut slot_storage = ArbContext::new();
     let mut trader_state = TraderState::read_from_slot(&slot_storage, trader);
 
     // Mutate
@@ -36,7 +36,7 @@ pub fn process_deposit_funds(
 
     // Write
     trader_state.write_to_slot(&mut slot_storage, trader);
-    SlotStorage::storage_flush_cache(true);
+    ArbContext::storage_flush_cache(true);
 
     // Transfer
     let quote_amount_raw = QuoteAtomsRaw::from_lots(quote_lots);

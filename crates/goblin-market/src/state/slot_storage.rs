@@ -1,4 +1,5 @@
-//! SSTORE and SLOAD helper. .Emulates storage with a HashMap in tests
+//! Context to EVM opcodes (SSTORE and SLOAD) and variables (block time, block number).
+//! Emulated in tests with a HashMap for storage and hardcoded values for variables.
 //!
 //! Storage is independent of endian format. Bytes are read in the exact
 //! format as they are stored.
@@ -15,13 +16,18 @@ pub const RESTING_ORDER_KEY_SEED: u8 = 2;
 pub const TRADER_STATE_KEY_SEED: u8 = 3;
 pub const MARKET_STATE_KEY_SEED: u8 = 4;
 
-// #[derive(Clone)]
-pub struct SlotStorage {
+pub struct ArbContext {
     #[cfg(test)]
     inner: HashMap<[u8; 32], [u8; 32]>,
+
+    #[cfg(test)]
+    block_number: u64,
+
+    #[cfg(test)]
+    block_timestamp: u64,
 }
 
-pub trait SlotActions {
+pub trait ContextActions {
     fn new() -> Self;
 
     fn sstore(&mut self, key: &[u8; 32], value: &[u8; 32]);
@@ -29,13 +35,32 @@ pub trait SlotActions {
     fn sload(&self, key: &[u8; 32]) -> [u8; 32];
 
     fn storage_flush_cache(clear: bool);
+
+    /// Current block number
+    fn block_number(&self) -> u64;
+
+    /// Current block epoch time in seconds
+    fn block_timestamp(&self) -> u64;
+}
+
+impl ArbContext {
+    #[cfg(test)]
+    pub fn new_with_block_details(block_number: u64, block_timestamp: u64) -> Self {
+        ArbContext {
+            inner: HashMap::new(),
+            block_number,
+            block_timestamp,
+        }
+    }
 }
 
 #[cfg(test)]
-impl SlotActions for SlotStorage {
+impl ContextActions for ArbContext {
     fn new() -> Self {
-        SlotStorage {
+        ArbContext {
             inner: HashMap::new(),
+            block_number: 0,
+            block_timestamp: 0,
         }
     }
 
@@ -48,12 +73,20 @@ impl SlotActions for SlotStorage {
     }
 
     fn storage_flush_cache(_clear: bool) {}
+
+    fn block_number(&self) -> u64 {
+        self.block_number
+    }
+
+    fn block_timestamp(&self) -> u64 {
+        self.block_timestamp
+    }
 }
 
 #[cfg(not(test))]
-impl SlotActions for SlotStorage {
+impl ContextActions for ArbContext {
     fn new() -> Self {
-        SlotStorage {}
+        ArbContext {}
     }
 
     fn sstore(&mut self, key: &[u8; 32], value: &[u8; 32]) {
@@ -71,10 +104,18 @@ impl SlotActions for SlotStorage {
     fn storage_flush_cache(clear: bool) {
         unsafe { hostio::storage_flush_cache(clear) };
     }
+
+    fn block_number(&self) -> u64 {
+        unsafe { hostio::block_number() }
+    }
+
+    fn block_timestamp(&self) -> u64 {
+        unsafe { hostio::block_timestamp() }
+    }
 }
 
 #[cfg(not(test))]
-impl Drop for SlotStorage {
+impl Drop for ArbContext {
     fn drop(&mut self) {
         // Write cache to slot
         unsafe { hostio::storage_flush_cache(false) };
@@ -91,7 +132,7 @@ mod test {
 
     #[test]
     fn test_write_and_read() {
-        let mut slot_storage = SlotStorage::new();
+        let mut slot_storage = ArbContext::new();
 
         let key = &[0u8; 32];
         let value: [u8; 32] = [

@@ -9,7 +9,7 @@ use crate::{
     },
     quantities::{BaseLots, QuoteLots, Ticks, WrapperU64},
     require,
-    state::{Side, SlotActions, SlotKey, SlotStorage, TraderState},
+    state::{ArbContext, ContextActions, Side, SlotKey, TraderState},
 };
 
 use super::order_id::OrderId;
@@ -129,13 +129,13 @@ impl SlotRestingOrder {
     }
 
     /// Load CBRestingOrder from slot storage
-    pub fn new_from_slot(slot_storage: &SlotStorage, key: OrderId) -> Self {
+    pub fn new_from_slot(slot_storage: &ArbContext, key: OrderId) -> Self {
         let slot = slot_storage.sload(&key.get_key());
 
         SlotRestingOrder::decode(slot)
     }
 
-    pub fn new_from_raw_key(slot_storage: &SlotStorage, key: &[u8; 32]) -> Self {
+    pub fn new_from_raw_key(slot_storage: &ArbContext, key: &[u8; 32]) -> Self {
         let slot = slot_storage.sload(key);
 
         SlotRestingOrder::decode(slot)
@@ -144,7 +144,7 @@ impl SlotRestingOrder {
     /// Encode and save CBRestingOrder to slot
     pub fn write_to_slot(
         &self,
-        slot_storage: &mut SlotStorage,
+        slot_storage: &mut ArbContext,
         key: &OrderId,
     ) -> Result<(), GoblinError> {
         let encoded = self.encode()?;
