@@ -71,6 +71,7 @@ pub fn place_order_inner(
         }
     }
 
+    // TODO don't load both
     let current_block = block::number() as u32;
     let current_unix_timestamp = block::timestamp() as u32;
 
