@@ -22,7 +22,7 @@ use crate::{
 /// * `current_unix_timestamp_in_seconds`
 ///
 pub fn check_for_cross(
-    slot_storage: &mut ArbContext,
+    ctx: &mut ArbContext,
     market_state: &mut MarketState,
     side: Side,
     limit_price_in_ticks: Ticks,
@@ -43,39 +43,39 @@ pub fn check_for_cross(
 
     let mut crossing_tick: Option<Ticks> = None;
 
-    let mut handle_cross =
-        |order_id: OrderId, resting_order: &mut SlotRestingOrder, slot_storage: &mut ArbContext| {
-            let crosses = match opposite_side {
-                Side::Bid => order_id.price_in_ticks >= limit_price_in_ticks,
-                Side::Ask => order_id.price_in_ticks <= limit_price_in_ticks,
-            };
-
-            if !crosses {
-                return true;
-            }
-
-            if resting_order.is_expired(current_block, current_unix_timestamp_in_seconds) {
-                let mut maker_state =
-                    TraderState::read_from_slot(slot_storage, resting_order.trader_address);
-
-                resting_order.reduce_order(
-                    &mut maker_state,
-                    opposite_side,
-                    order_id.price_in_ticks,
-                    BaseLots::MAX,
-                    true,
-                    false,
-                );
-
-                maker_state.write_to_slot(slot_storage, resting_order.trader_address);
-
-                return false;
-            }
-
-            crossing_tick = Some(order_id.price_in_ticks);
-            return true;
+    let mut handle_cross = |order_id: OrderId,
+                            resting_order: &mut SlotRestingOrder,
+                            ctx: &mut ArbContext| {
+        let crosses = match opposite_side {
+            Side::Bid => order_id.price_in_ticks >= limit_price_in_ticks,
+            Side::Ask => order_id.price_in_ticks <= limit_price_in_ticks,
         };
-    process_resting_orders(slot_storage, market_state, opposite_side, &mut handle_cross);
+
+        if !crosses {
+            return true;
+        }
+
+        if resting_order.is_expired(current_block, current_unix_timestamp_in_seconds) {
+            let mut maker_state = TraderState::read_from_slot(ctx, resting_order.trader_address);
+
+            resting_order.reduce_order(
+                &mut maker_state,
+                opposite_side,
+                order_id.price_in_ticks,
+                BaseLots::MAX,
+                true,
+                false,
+            );
+
+            maker_state.write_to_slot(ctx, resting_order.trader_address);
+
+            return false;
+        }
+
+        crossing_tick = Some(order_id.price_in_ticks);
+        return true;
+    };
+    process_resting_orders(ctx, market_state, opposite_side, &mut handle_cross);
 
     crossing_tick
 }

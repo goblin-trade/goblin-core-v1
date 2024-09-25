@@ -68,10 +68,10 @@ impl OrderIdRemover {
     ///
     /// # Arguments
     ///
-    /// * `slot_storage`
+    /// * `ctx`
     /// * `order_id`
     ///
-    pub fn find_order(&mut self, slot_storage: &mut ArbContext, order_id: OrderId) -> bool {
+    pub fn find_order(&mut self, ctx: &mut ArbContext, order_id: OrderId) -> bool {
         let OrderId {
             price_in_ticks,
             resting_order_index,
@@ -83,16 +83,14 @@ impl OrderIdRemover {
 
         // Read the bitmap group and outer index corresponding to order_id
         if self.last_outer_index() != Some(outer_index) {
-            let outer_index_present = self
-                .outer_index_remover
-                .find_outer_index(slot_storage, outer_index);
+            let outer_index_present = self.outer_index_remover.find_outer_index(ctx, outer_index);
 
             if !outer_index_present {
                 return false;
             }
 
             self.group_position_remover
-                .load_outer_index(slot_storage, outer_index);
+                .load_outer_index(ctx, outer_index);
         }
 
         let group_position = GroupPosition {
@@ -111,10 +109,10 @@ impl OrderIdRemover {
     ///
     /// # Arguments
     ///
-    /// * `slot_storage`
+    /// * `ctx`
     /// * `market_state`
     ///
-    pub fn remove_order(&mut self, slot_storage: &mut ArbContext, market_state: &mut MarketState) {
+    pub fn remove_order(&mut self, ctx: &mut ArbContext, market_state: &mut MarketState) {
         if let Some(order_id) = self.group_position_remover.last_searched_order_id() {
             let group_position = GroupPosition::from(&order_id);
 
@@ -131,8 +129,7 @@ impl OrderIdRemover {
 
             // Update best market price if the outermost tick was closed
             if order_id.price_in_ticks == best_market_price {
-                let new_best_price =
-                    self.get_best_price(slot_storage, Some(group_position.inner_index));
+                let new_best_price = self.get_best_price(ctx, Some(group_position.inner_index));
 
                 market_state.set_best_price(side, new_best_price);
             }
@@ -146,14 +143,14 @@ impl OrderIdRemover {
     ///
     /// # Arguments
     ///
-    /// * `slot_storage`
+    /// * `ctx`
     ///
     /// * `starting_index` - Lookup from this inner index and onwards (inclusive)
     /// in the first bitmap group. Rest of the bitmap groups are searched from the edges.
     ///
     pub fn get_best_price(
         &mut self,
-        slot_storage: &mut ArbContext,
+        ctx: &mut ArbContext,
         mut starting_index: Option<InnerIndex>,
     ) -> Ticks {
         loop {
@@ -166,7 +163,7 @@ impl OrderIdRemover {
             // Lookup from beginning in remaining bitmap groups
             starting_index = None;
 
-            let slide_success = self.slide_outer_index_and_bitmap_group(slot_storage);
+            let slide_success = self.slide_outer_index_and_bitmap_group(ctx);
             if !slide_success {
                 // Return default values if the index list is exhausted
                 return match self.side() {
@@ -182,11 +179,11 @@ impl OrderIdRemover {
     /// Externally ensure that this is only called when we're on the outermost outer index.
     /// This way there is no `found_outer_index` to push to the cache.
     ///
-    pub fn slide_outer_index_and_bitmap_group(&mut self, slot_storage: &mut ArbContext) -> bool {
-        self.outer_index_remover.slide(slot_storage);
+    pub fn slide_outer_index_and_bitmap_group(&mut self, ctx: &mut ArbContext) -> bool {
+        self.outer_index_remover.slide(ctx);
         if let Some(next_outer_index) = self.outer_index_remover.cached_outer_index {
             self.group_position_remover
-                .load_outer_index(slot_storage, next_outer_index);
+                .load_outer_index(ctx, next_outer_index);
 
             return true;
         }
@@ -202,17 +199,13 @@ impl OrderIdRemover {
     ///
     /// # Arguments
     ///
-    /// * `slot_storage`
+    /// * `ctx`
     ///
-    pub fn write_prepared_indices(
-        &mut self,
-        slot_storage: &mut ArbContext,
-        market_state: &mut MarketState,
-    ) {
-        self.group_position_remover.flush_bitmap_group(slot_storage);
+    pub fn write_prepared_indices(&mut self, ctx: &mut ArbContext, market_state: &mut MarketState) {
+        self.group_position_remover.flush_bitmap_group(ctx);
         market_state
             .set_outer_index_length(self.side(), self.outer_index_remover.index_list_length());
-        self.outer_index_remover.write_index_list(slot_storage);
+        self.outer_index_remover.write_index_list(ctx);
     }
 }
 
@@ -228,7 +221,7 @@ mod tests {
 
     use super::*;
 
-    fn enable_order_id(slot_storage: &mut ArbContext, order_id: OrderId) {
+    fn enable_order_id(ctx: &mut ArbContext, order_id: OrderId) {
         let OrderId {
             price_in_ticks,
             resting_order_index,
@@ -238,16 +231,16 @@ mod tests {
             inner_index,
         } = price_in_ticks.to_indices();
 
-        let mut bitmap_group = BitmapGroup::new_from_slot(slot_storage, outer_index);
+        let mut bitmap_group = BitmapGroup::new_from_slot(ctx, outer_index);
         let mut bitmap = bitmap_group.get_bitmap_mut(&inner_index);
         bitmap.activate(&resting_order_index);
 
-        bitmap_group.write_to_slot(slot_storage, &outer_index);
+        bitmap_group.write_to_slot(ctx, &outer_index);
     }
 
     #[test]
     fn test_search_and_remove_same_inner_index() {
-        let mut slot_storage = ArbContext::new();
+        let mut ctx = ArbContext::new();
         let side = Side::Ask;
 
         let outer_index_count = 1;
@@ -257,7 +250,7 @@ mod tests {
         let list_key = ListKey { index: 0, side };
         let mut list_slot = ListSlot::default();
         list_slot.set(0, outer_index_0);
-        list_slot.write_to_slot(&mut slot_storage, &list_key);
+        list_slot.write_to_slot(&mut ctx, &list_key);
 
         // Opposite side bit belonging to bids
         let order_id_bid = OrderId {
@@ -273,9 +266,9 @@ mod tests {
             price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(2)),
             resting_order_index: RestingOrderIndex::new(7),
         };
-        enable_order_id(&mut slot_storage, order_id_bid);
-        enable_order_id(&mut slot_storage, order_id_0);
-        enable_order_id(&mut slot_storage, order_id_1);
+        enable_order_id(&mut ctx, order_id_bid);
+        enable_order_id(&mut ctx, order_id_0);
+        enable_order_id(&mut ctx, order_id_1);
 
         let mut market_state = MarketState {
             collected_quote_lot_fees: QuoteLots::ZERO,
@@ -289,7 +282,7 @@ mod tests {
         let mut remover = OrderIdRemover::new(outer_index_count, side);
 
         // 1. Search
-        let found_0 = remover.find_order(&mut slot_storage, order_id_0);
+        let found_0 = remover.find_order(&mut ctx, order_id_0);
         assert!(found_0);
         assert_eq!(
             remover
@@ -300,7 +293,7 @@ mod tests {
         );
 
         // 2. Remove
-        remover.remove_order(&mut slot_storage, &mut market_state);
+        remover.remove_order(&mut ctx, &mut market_state);
 
         // Removing will clear last_searched_group_position
         assert!(remover
@@ -330,7 +323,7 @@ mod tests {
         );
 
         // 3. Write list
-        remover.write_prepared_indices(&mut slot_storage, &mut market_state);
+        remover.write_prepared_indices(&mut ctx, &mut market_state);
         // No change because group is still active
         assert_eq!(market_state.asks_outer_indices, 1);
 
@@ -344,13 +337,13 @@ mod tests {
             expected_bitmap_group
         );
 
-        let read_bitmap_group = BitmapGroup::new_from_slot(&slot_storage, outer_index_0);
+        let read_bitmap_group = BitmapGroup::new_from_slot(&ctx, outer_index_0);
         assert_eq!(read_bitmap_group, expected_bitmap_group);
     }
 
     #[test]
     fn test_search_and_remove_same_outer_index() {
-        let mut slot_storage = ArbContext::new();
+        let mut ctx = ArbContext::new();
         let side = Side::Ask;
 
         let outer_index_count = 1;
@@ -360,7 +353,7 @@ mod tests {
         let list_key = ListKey { index: 0, side };
         let mut list_slot = ListSlot::default();
         list_slot.set(0, outer_index_0);
-        list_slot.write_to_slot(&mut slot_storage, &list_key);
+        list_slot.write_to_slot(&mut ctx, &list_key);
 
         // Opposite side bit belonging to bids
         let order_id_bid = OrderId {
@@ -376,9 +369,9 @@ mod tests {
             price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(3)),
             resting_order_index: RestingOrderIndex::new(0),
         };
-        enable_order_id(&mut slot_storage, order_id_bid);
-        enable_order_id(&mut slot_storage, order_id_0);
-        enable_order_id(&mut slot_storage, order_id_1);
+        enable_order_id(&mut ctx, order_id_bid);
+        enable_order_id(&mut ctx, order_id_0);
+        enable_order_id(&mut ctx, order_id_1);
 
         let mut market_state = MarketState {
             collected_quote_lot_fees: QuoteLots::ZERO,
@@ -392,7 +385,7 @@ mod tests {
         let mut remover = OrderIdRemover::new(outer_index_count, side);
 
         // 1. Search
-        let found_0 = remover.find_order(&mut slot_storage, order_id_0);
+        let found_0 = remover.find_order(&mut ctx, order_id_0);
         assert!(found_0);
         assert_eq!(
             remover
@@ -403,7 +396,7 @@ mod tests {
         );
 
         // 2. Remove
-        remover.remove_order(&mut slot_storage, &mut market_state);
+        remover.remove_order(&mut ctx, &mut market_state);
         assert!(remover
             .group_position_remover
             .last_searched_group_position
@@ -429,7 +422,7 @@ mod tests {
         );
 
         // 3. Write list
-        remover.write_prepared_indices(&mut slot_storage, &mut market_state);
+        remover.write_prepared_indices(&mut ctx, &mut market_state);
         // No change because group is still active
         assert_eq!(market_state.asks_outer_indices, 1);
 
@@ -443,7 +436,7 @@ mod tests {
         );
 
         // Bitmap group not written because `pending_write` is false. No change in value
-        let read_bitmap_group = BitmapGroup::new_from_slot(&slot_storage, outer_index_0);
+        let read_bitmap_group = BitmapGroup::new_from_slot(&ctx, outer_index_0);
         let mut expected_read_bitmap_group = BitmapGroup::default();
         expected_read_bitmap_group.inner[0] = 0b00000001;
         expected_read_bitmap_group.inner[2] = 0b00000001;
@@ -454,7 +447,7 @@ mod tests {
 
     #[test]
     fn test_search_and_remove_same_outer_index_non_outermost_value() {
-        let mut slot_storage = ArbContext::new();
+        let mut ctx = ArbContext::new();
         let side = Side::Ask;
 
         let outer_index_count = 1;
@@ -464,7 +457,7 @@ mod tests {
         let list_key = ListKey { index: 0, side };
         let mut list_slot = ListSlot::default();
         list_slot.set(0, outer_index_0);
-        list_slot.write_to_slot(&mut slot_storage, &list_key);
+        list_slot.write_to_slot(&mut ctx, &list_key);
 
         // Opposite side bit belonging to bids
         let order_id_bid = OrderId {
@@ -480,9 +473,9 @@ mod tests {
             price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(3)),
             resting_order_index: RestingOrderIndex::new(0),
         };
-        enable_order_id(&mut slot_storage, order_id_bid);
-        enable_order_id(&mut slot_storage, order_id_0);
-        enable_order_id(&mut slot_storage, order_id_1);
+        enable_order_id(&mut ctx, order_id_bid);
+        enable_order_id(&mut ctx, order_id_0);
+        enable_order_id(&mut ctx, order_id_1);
 
         let mut market_state = MarketState {
             collected_quote_lot_fees: QuoteLots::ZERO,
@@ -496,7 +489,7 @@ mod tests {
         let mut remover = OrderIdRemover::new(outer_index_count, side);
 
         // 1. Search
-        let found_1 = remover.find_order(&mut slot_storage, order_id_1);
+        let found_1 = remover.find_order(&mut ctx, order_id_1);
         assert!(found_1);
         assert_eq!(
             remover
@@ -507,7 +500,7 @@ mod tests {
         );
 
         // 2. Remove
-        remover.remove_order(&mut slot_storage, &mut market_state);
+        remover.remove_order(&mut ctx, &mut market_state);
         assert!(remover
             .group_position_remover
             .last_searched_group_position
@@ -533,7 +526,7 @@ mod tests {
         );
 
         // 3. Write list
-        remover.write_prepared_indices(&mut slot_storage, &mut market_state);
+        remover.write_prepared_indices(&mut ctx, &mut market_state);
         // No change because group is still active
         assert_eq!(market_state.asks_outer_indices, 1);
 
@@ -545,13 +538,13 @@ mod tests {
             remover.group_position_remover.bitmap_group,
             expected_bitmap_group
         );
-        let read_bitmap_group = BitmapGroup::new_from_slot(&slot_storage, outer_index_0);
+        let read_bitmap_group = BitmapGroup::new_from_slot(&ctx, outer_index_0);
         assert_eq!(read_bitmap_group, expected_bitmap_group);
     }
 
     #[test]
     fn test_search_and_remove_different_outer_index() {
-        let mut slot_storage = ArbContext::new();
+        let mut ctx = ArbContext::new();
         let side = Side::Ask;
 
         let outer_index_count = 2;
@@ -563,7 +556,7 @@ mod tests {
         let mut list_slot = ListSlot::default();
         list_slot.set(0, outer_index_1);
         list_slot.set(1, outer_index_0); // smaller index is at end of the list
-        list_slot.write_to_slot(&mut slot_storage, &list_key);
+        list_slot.write_to_slot(&mut ctx, &list_key);
 
         // Opposite side bit belonging to bids
         let order_id_bid = OrderId {
@@ -579,9 +572,9 @@ mod tests {
             price_in_ticks: Ticks::from_indices(outer_index_1, InnerIndex::new(0)),
             resting_order_index: RestingOrderIndex::new(0),
         };
-        enable_order_id(&mut slot_storage, order_id_bid);
-        enable_order_id(&mut slot_storage, order_id_0);
-        enable_order_id(&mut slot_storage, order_id_1);
+        enable_order_id(&mut ctx, order_id_bid);
+        enable_order_id(&mut ctx, order_id_0);
+        enable_order_id(&mut ctx, order_id_1);
 
         let mut market_state = MarketState {
             collected_quote_lot_fees: QuoteLots::ZERO,
@@ -595,7 +588,7 @@ mod tests {
         let mut remover = OrderIdRemover::new(outer_index_count, side);
 
         // 1. Search
-        let found_0 = remover.find_order(&mut slot_storage, order_id_0);
+        let found_0 = remover.find_order(&mut ctx, order_id_0);
         assert!(found_0);
         assert_eq!(
             remover
@@ -606,7 +599,7 @@ mod tests {
         );
 
         // 2. Remove
-        remover.remove_order(&mut slot_storage, &mut market_state);
+        remover.remove_order(&mut ctx, &mut market_state);
         assert!(remover
             .group_position_remover
             .last_searched_group_position
@@ -632,7 +625,7 @@ mod tests {
         );
 
         // 3. Write list
-        remover.write_prepared_indices(&mut slot_storage, &mut market_state);
+        remover.write_prepared_indices(&mut ctx, &mut market_state);
         // Outer index list size reduced by 1
         assert_eq!(market_state.asks_outer_indices, 1);
 
@@ -640,7 +633,7 @@ mod tests {
         let mut expected_bitmap_group_0 = BitmapGroup::default();
         expected_bitmap_group_0.inner[0] = 0b00000001;
         expected_bitmap_group_0.inner[2] = 0b00000001;
-        let read_bitmap_group_0 = BitmapGroup::new_from_slot(&slot_storage, outer_index_0);
+        let read_bitmap_group_0 = BitmapGroup::new_from_slot(&ctx, outer_index_0);
         assert_eq!(read_bitmap_group_0, expected_bitmap_group_0);
 
         // We are now on the bitmap for outer_index_1
@@ -654,7 +647,7 @@ mod tests {
 
     #[test]
     fn test_search_one_but_remove_another_in_same_inner_index() {
-        let mut slot_storage = ArbContext::new();
+        let mut ctx = ArbContext::new();
         let side = Side::Ask;
 
         let outer_index_count = 1;
@@ -664,7 +657,7 @@ mod tests {
         let list_key = ListKey { index: 0, side };
         let mut list_slot = ListSlot::default();
         list_slot.set(0, outer_index_0);
-        list_slot.write_to_slot(&mut slot_storage, &list_key);
+        list_slot.write_to_slot(&mut ctx, &list_key);
 
         // Opposite side bit belonging to bids
         let order_id_bid = OrderId {
@@ -680,9 +673,9 @@ mod tests {
             price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(2)),
             resting_order_index: RestingOrderIndex::new(1),
         };
-        enable_order_id(&mut slot_storage, order_id_bid);
-        enable_order_id(&mut slot_storage, order_id_0);
-        enable_order_id(&mut slot_storage, order_id_1);
+        enable_order_id(&mut ctx, order_id_bid);
+        enable_order_id(&mut ctx, order_id_0);
+        enable_order_id(&mut ctx, order_id_1);
 
         let mut market_state = MarketState {
             collected_quote_lot_fees: QuoteLots::ZERO,
@@ -696,7 +689,7 @@ mod tests {
         let mut remover = OrderIdRemover::new(outer_index_count, side);
 
         // 1. Search order_id_0
-        let found_0 = remover.find_order(&mut slot_storage, order_id_0);
+        let found_0 = remover.find_order(&mut ctx, order_id_0);
         assert!(found_0);
         assert_eq!(
             remover
@@ -707,7 +700,7 @@ mod tests {
         );
 
         // 2. Search order_id_1
-        let found_1 = remover.find_order(&mut slot_storage, order_id_1);
+        let found_1 = remover.find_order(&mut ctx, order_id_1);
         assert!(found_1);
         assert_eq!(
             remover
@@ -727,7 +720,7 @@ mod tests {
         assert_eq!(remover.outer_index_remover.cache, vec![]);
 
         // 3. Remove
-        remover.remove_order(&mut slot_storage, &mut market_state);
+        remover.remove_order(&mut ctx, &mut market_state);
         assert!(remover
             .group_position_remover
             .last_searched_group_position
@@ -753,7 +746,7 @@ mod tests {
         );
 
         // 4. Write list
-        remover.write_prepared_indices(&mut slot_storage, &mut market_state);
+        remover.write_prepared_indices(&mut ctx, &mut market_state);
         // No change because group is still active
         assert_eq!(market_state.asks_outer_indices, 1);
 
@@ -766,13 +759,13 @@ mod tests {
             expected_bitmap_group
         );
 
-        let read_bitmap_group = BitmapGroup::new_from_slot(&slot_storage, outer_index_0);
+        let read_bitmap_group = BitmapGroup::new_from_slot(&ctx, outer_index_0);
         assert_eq!(read_bitmap_group, expected_bitmap_group);
     }
 
     #[test]
     fn test_search_one_but_remove_another_in_same_outer_index() {
-        let mut slot_storage = ArbContext::new();
+        let mut ctx = ArbContext::new();
         let side = Side::Ask;
 
         let outer_index_count = 1;
@@ -782,7 +775,7 @@ mod tests {
         let list_key = ListKey { index: 0, side };
         let mut list_slot = ListSlot::default();
         list_slot.set(0, outer_index_0);
-        list_slot.write_to_slot(&mut slot_storage, &list_key);
+        list_slot.write_to_slot(&mut ctx, &list_key);
 
         // Opposite side bit belonging to bids
         let order_id_bid = OrderId {
@@ -798,9 +791,9 @@ mod tests {
             price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(3)),
             resting_order_index: RestingOrderIndex::new(0),
         };
-        enable_order_id(&mut slot_storage, order_id_bid);
-        enable_order_id(&mut slot_storage, order_id_0);
-        enable_order_id(&mut slot_storage, order_id_1);
+        enable_order_id(&mut ctx, order_id_bid);
+        enable_order_id(&mut ctx, order_id_0);
+        enable_order_id(&mut ctx, order_id_1);
 
         let mut market_state = MarketState {
             collected_quote_lot_fees: QuoteLots::ZERO,
@@ -814,7 +807,7 @@ mod tests {
         let mut remover = OrderIdRemover::new(outer_index_count, side);
 
         // 1. Search order_id_0
-        let found_0 = remover.find_order(&mut slot_storage, order_id_0);
+        let found_0 = remover.find_order(&mut ctx, order_id_0);
         assert!(found_0);
         assert_eq!(
             remover
@@ -825,7 +818,7 @@ mod tests {
         );
 
         // 2. Search order_id_1
-        let found_1 = remover.find_order(&mut slot_storage, order_id_1);
+        let found_1 = remover.find_order(&mut ctx, order_id_1);
         assert!(found_1);
         assert_eq!(
             remover
@@ -845,7 +838,7 @@ mod tests {
         assert_eq!(remover.outer_index_remover.cache, vec![]);
 
         // 3. Remove
-        remover.remove_order(&mut slot_storage, &mut market_state);
+        remover.remove_order(&mut ctx, &mut market_state);
         assert!(remover
             .group_position_remover
             .last_searched_group_position
@@ -871,7 +864,7 @@ mod tests {
         );
 
         // 4. Write list
-        remover.write_prepared_indices(&mut slot_storage, &mut market_state);
+        remover.write_prepared_indices(&mut ctx, &mut market_state);
         // No change because group is still active
         assert_eq!(market_state.asks_outer_indices, 1);
 
@@ -884,13 +877,13 @@ mod tests {
             expected_bitmap_group
         );
 
-        let read_bitmap_group = BitmapGroup::new_from_slot(&slot_storage, outer_index_0);
+        let read_bitmap_group = BitmapGroup::new_from_slot(&ctx, outer_index_0);
         assert_eq!(read_bitmap_group, expected_bitmap_group);
     }
 
     #[test]
     fn test_search_one_but_remove_another_in_different_outer_index() {
-        let mut slot_storage = ArbContext::new();
+        let mut ctx = ArbContext::new();
         let side = Side::Ask;
 
         let outer_index_count = 2;
@@ -902,7 +895,7 @@ mod tests {
         let mut list_slot = ListSlot::default();
         list_slot.set(0, outer_index_1);
         list_slot.set(1, outer_index_0); // smaller index is at end of the list
-        list_slot.write_to_slot(&mut slot_storage, &list_key);
+        list_slot.write_to_slot(&mut ctx, &list_key);
 
         // Opposite side bit belonging to bids
         let order_id_bid = OrderId {
@@ -918,9 +911,9 @@ mod tests {
             price_in_ticks: Ticks::from_indices(outer_index_1, InnerIndex::new(0)),
             resting_order_index: RestingOrderIndex::new(0),
         };
-        enable_order_id(&mut slot_storage, order_id_bid);
-        enable_order_id(&mut slot_storage, order_id_0);
-        enable_order_id(&mut slot_storage, order_id_1);
+        enable_order_id(&mut ctx, order_id_bid);
+        enable_order_id(&mut ctx, order_id_0);
+        enable_order_id(&mut ctx, order_id_1);
 
         let mut market_state = MarketState {
             collected_quote_lot_fees: QuoteLots::ZERO,
@@ -934,7 +927,7 @@ mod tests {
         let mut remover = OrderIdRemover::new(outer_index_count, side);
 
         // 1. Search order_id_0
-        let found_0 = remover.find_order(&mut slot_storage, order_id_0);
+        let found_0 = remover.find_order(&mut ctx, order_id_0);
         assert!(found_0);
         assert_eq!(
             remover
@@ -945,7 +938,7 @@ mod tests {
         );
 
         // 2. Search order_id_1
-        let found_1 = remover.find_order(&mut slot_storage, order_id_1);
+        let found_1 = remover.find_order(&mut ctx, order_id_1);
         assert!(found_1);
         assert_eq!(
             remover
@@ -965,7 +958,7 @@ mod tests {
         assert_eq!(remover.outer_index_remover.cache, vec![outer_index_0]);
 
         // 3. Remove
-        remover.remove_order(&mut slot_storage, &mut market_state);
+        remover.remove_order(&mut ctx, &mut market_state);
         assert!(remover
             .group_position_remover
             .last_searched_group_position
@@ -992,7 +985,7 @@ mod tests {
         );
 
         // 4. Write list
-        remover.write_prepared_indices(&mut slot_storage, &mut market_state);
+        remover.write_prepared_indices(&mut ctx, &mut market_state);
         // Changed because outer_index_0 was closed
         assert_eq!(market_state.asks_outer_indices, 1);
 
@@ -1001,7 +994,7 @@ mod tests {
         expected_bitmap_group_0.inner[0] = 0b00000001;
         expected_bitmap_group_0.inner[2] = 0b00000001;
 
-        let read_bitmap_group_0 = BitmapGroup::new_from_slot(&slot_storage, outer_index_0);
+        let read_bitmap_group_0 = BitmapGroup::new_from_slot(&ctx, outer_index_0);
         assert_eq!(read_bitmap_group_0, expected_bitmap_group_0);
 
         let expected_cached_bitmap_group_1 = BitmapGroup::default();
@@ -1013,7 +1006,7 @@ mod tests {
         // bitmap group 1 is not written to slot. Slot will give the previous value
         let mut expected_written_bitmap_group_1 = BitmapGroup::default();
         expected_written_bitmap_group_1.inner[0] = 0b00000001;
-        let read_bitmap_group_1 = BitmapGroup::new_from_slot(&slot_storage, outer_index_1);
+        let read_bitmap_group_1 = BitmapGroup::new_from_slot(&ctx, outer_index_1);
         assert_eq!(read_bitmap_group_1, expected_written_bitmap_group_1);
     }
 }

@@ -24,7 +24,7 @@ use super::{check_for_cross, get_best_available_order_id, match_order, OrderToIn
 /// * `last_order` - The last placed order, if placing multiple post-only orders
 ///
 pub fn place_order_inner(
-    slot_storage: &mut ArbContext,
+    ctx: &mut ArbContext,
     market_state: &mut MarketState,
     trader_state: &mut TraderState,
     trader: Address,
@@ -104,7 +104,7 @@ pub fn place_order_inner(
                 *price_in_ticks = last_price;
             }
         } else if let Some(ticks) = check_for_cross(
-            slot_storage,
+            ctx,
             market_state,
             side,
             *price_in_ticks,
@@ -147,7 +147,7 @@ pub fn place_order_inner(
         // If match_order() returns None then the `?` unwrap will cause this function
         // to return None too.
         let resting_order = match_order(
-            slot_storage,
+            ctx,
             market_state,
             &mut inflight_order,
             trader,
@@ -185,8 +185,7 @@ pub fn place_order_inner(
     if (order_packet.is_post_only() || order_packet.is_limit())
         && resting_order.num_base_lots > BaseLots::ZERO
     {
-        if let Some(order_id) = get_best_available_order_id(slot_storage, &order_packet, last_order)
-        {
+        if let Some(order_id) = get_best_available_order_id(ctx, &order_packet, last_order) {
             // Queue resting order for insertion
             order_to_insert = Some(OrderToInsert {
                 order_id,

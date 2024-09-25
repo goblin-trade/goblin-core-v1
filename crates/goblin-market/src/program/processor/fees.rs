@@ -29,9 +29,9 @@ pub fn process_collect_fees(
         GoblinError::InvalidFeeCollector(InvalidFeeCollector {})
     );
 
-    let slot_storage = &mut ArbContext::new();
+    let ctx = &mut ArbContext::new();
     // Read
-    let mut market = MarketState::read_from_slot(slot_storage);
+    let mut market = MarketState::read_from_slot(ctx);
     let num_quote_lots_out = market.unclaimed_quote_lot_fees;
 
     // Mutate- Mark as claimed
@@ -39,7 +39,7 @@ pub fn process_collect_fees(
     market.unclaimed_quote_lot_fees = QuoteLots::ZERO;
 
     // Write
-    market.write_to_slot(slot_storage)?;
+    market.write_to_slot(ctx)?;
     ArbContext::storage_flush_cache(true);
 
     // Transfer

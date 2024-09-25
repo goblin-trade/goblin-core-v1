@@ -129,26 +129,22 @@ impl SlotRestingOrder {
     }
 
     /// Load CBRestingOrder from slot storage
-    pub fn new_from_slot(slot_storage: &ArbContext, key: OrderId) -> Self {
-        let slot = slot_storage.sload(&key.get_key());
+    pub fn new_from_slot(ctx: &ArbContext, key: OrderId) -> Self {
+        let slot = ctx.sload(&key.get_key());
 
         SlotRestingOrder::decode(slot)
     }
 
-    pub fn new_from_raw_key(slot_storage: &ArbContext, key: &[u8; 32]) -> Self {
-        let slot = slot_storage.sload(key);
+    pub fn new_from_raw_key(ctx: &ArbContext, key: &[u8; 32]) -> Self {
+        let slot = ctx.sload(key);
 
         SlotRestingOrder::decode(slot)
     }
 
     /// Encode and save CBRestingOrder to slot
-    pub fn write_to_slot(
-        &self,
-        slot_storage: &mut ArbContext,
-        key: &OrderId,
-    ) -> Result<(), GoblinError> {
+    pub fn write_to_slot(&self, ctx: &mut ArbContext, key: &OrderId) -> Result<(), GoblinError> {
         let encoded = self.encode()?;
-        slot_storage.sstore(&key.get_key(), &encoded);
+        ctx.sstore(&key.get_key(), &encoded);
 
         Ok(())
     }

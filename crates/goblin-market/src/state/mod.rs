@@ -1,5 +1,6 @@
 pub mod bitmap_group;
 pub mod constants;
+pub mod context;
 pub mod enums;
 pub mod index_list;
 pub mod inflight_order;
@@ -7,16 +8,15 @@ pub mod iterator;
 pub mod market_state;
 pub mod order;
 pub mod orderbook;
-pub mod slot_storage;
 pub mod tick_indices;
 pub mod trader_state;
 
 pub use constants::*;
+pub use context::*;
 pub use enums::*;
 pub use index_list::*;
 pub use inflight_order::*;
 pub use market_state::*;
 pub use orderbook::*;
-pub use slot_storage::*;
 pub use tick_indices::*;
 pub use trader_state::*;

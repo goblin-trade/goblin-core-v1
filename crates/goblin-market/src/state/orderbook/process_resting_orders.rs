@@ -20,7 +20,7 @@ use crate::{
 /// TODO replace with iterator. Avoid raw loops, use the newly created iterators.
 ///
 pub fn process_resting_orders(
-    slot_storage: &mut ArbContext,
+    ctx: &mut ArbContext,
     market_state: &mut MarketState,
     side: Side,
     lambda: &mut dyn FnMut(OrderId, &mut SlotRestingOrder, &mut ArbContext) -> bool,
@@ -39,13 +39,13 @@ pub fn process_resting_orders(
             index: slot_index,
             side,
         };
-        let mut list_slot = ListSlot::new_from_slot(slot_storage, list_key);
+        let mut list_slot = ListSlot::new_from_slot(ctx, list_key);
         let mut pending_list_slot_write = false;
 
         // 2. Loop through bitmap groups using relative index
         loop {
             let outer_index = list_slot.get(relative_index as usize);
-            let mut bitmap_group = BitmapGroup::new_from_slot(slot_storage, outer_index);
+            let mut bitmap_group = BitmapGroup::new_from_slot(ctx, outer_index);
 
             let mut pending_bitmap_group_write = false;
 
@@ -69,10 +69,10 @@ pub fn process_resting_orders(
 
                         if stop {
                             if pending_bitmap_group_write {
-                                bitmap_group.write_to_slot(slot_storage, &outer_index);
+                                bitmap_group.write_to_slot(ctx, &outer_index);
                             }
                             if pending_list_slot_write {
-                                list_slot.write_to_slot(slot_storage, &list_key);
+                                list_slot.write_to_slot(ctx, &list_key);
                             }
                             market_state.set_best_price(side, price_in_ticks);
                             market_state.set_outer_index_length(side, outer_index_count);
@@ -80,21 +80,18 @@ pub fn process_resting_orders(
                             return;
                         }
 
-                        let mut resting_order =
-                            SlotRestingOrder::new_from_slot(slot_storage, order_id);
+                        let mut resting_order = SlotRestingOrder::new_from_slot(ctx, order_id);
 
-                        stop = lambda(order_id, &mut resting_order, slot_storage);
+                        stop = lambda(order_id, &mut resting_order, ctx);
 
-                        resting_order
-                            .write_to_slot(slot_storage, &order_id)
-                            .unwrap();
+                        resting_order.write_to_slot(ctx, &order_id).unwrap();
 
                         if stop && resting_order.size() != 0 {
                             if pending_bitmap_group_write {
-                                bitmap_group.write_to_slot(slot_storage, &outer_index);
+                                bitmap_group.write_to_slot(ctx, &outer_index);
                             }
                             if pending_list_slot_write {
-                                list_slot.write_to_slot(slot_storage, &list_key);
+                                list_slot.write_to_slot(ctx, &list_key);
                             }
                             market_state.set_best_price(side, price_in_ticks);
                             market_state.set_outer_index_length(side, outer_index_count);
@@ -113,7 +110,7 @@ pub fn process_resting_orders(
             }
 
             // Empty bitmap group written to slot
-            bitmap_group.write_to_slot(slot_storage, &outer_index);
+            bitmap_group.write_to_slot(ctx, &outer_index);
 
             list_slot.clear_index(&list_key);
             pending_list_slot_write = true;
@@ -127,7 +124,7 @@ pub fn process_resting_orders(
 
         // All orders for the slot index have been purged
         // Empty list slot written to slot
-        list_slot.write_to_slot(slot_storage, &list_key);
+        list_slot.write_to_slot(ctx, &list_key);
 
         if slot_index == 0 {
             break;

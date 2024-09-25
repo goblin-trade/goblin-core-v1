@@ -42,11 +42,11 @@ impl ActiveOuterIndexIterator {
     /// # Arguments
     ///
     /// * `outer_index_position`
-    /// * `slot_storage`
+    /// * `ctx`
     ///
     pub fn update_cached_list_slot(
         &mut self,
-        slot_storage: &ArbContext,
+        ctx: &ArbContext,
         outer_index_position: OuterIndexPosition,
     ) {
         let OuterIndexPosition {
@@ -59,7 +59,7 @@ impl ActiveOuterIndexIterator {
                 index: slot_index,
                 side: self.side,
             };
-            self.list_slot = Some(ListSlot::new_from_slot(slot_storage, list_key));
+            self.list_slot = Some(ListSlot::new_from_slot(ctx, list_key));
         }
     }
 
@@ -67,11 +67,11 @@ impl ActiveOuterIndexIterator {
     ///
     /// # Arguments
     ///
-    /// * slot_storage
+    /// * ctx
     ///
-    pub fn next(&mut self, slot_storage: &ArbContext) -> Option<OuterIndex> {
+    pub fn next(&mut self, ctx: &ArbContext) -> Option<OuterIndex> {
         self.inner.next().map(|outer_index_position| {
-            self.update_cached_list_slot(slot_storage, outer_index_position);
+            self.update_cached_list_slot(ctx, outer_index_position);
             let list_slot = self.list_slot.as_ref().unwrap();
             let current_outer_index = list_slot.get(outer_index_position.relative_index as usize);
 
@@ -88,25 +88,25 @@ mod tests {
 
     #[test]
     fn test_empty_list() {
-        let slot_storage = ArbContext::new();
+        let ctx = ArbContext::new();
         let outer_index_count = 0;
         let side = Side::Bid;
 
         let mut reader = ActiveOuterIndexIterator::new(side, outer_index_count);
-        assert!(reader.next(&slot_storage).is_none());
+        assert!(reader.next(&ctx).is_none());
         assert!(reader.list_slot.is_none());
     }
 
     #[test]
     fn test_reader_single_slot() {
-        let mut slot_storage = ArbContext::new();
+        let mut ctx = ArbContext::new();
         let side = Side::Bid;
         let slot_key = ListKey { index: 0, side };
-        let mut list_slot = ListSlot::new_from_slot(&slot_storage, slot_key);
+        let mut list_slot = ListSlot::new_from_slot(&ctx, slot_key);
 
         // Fill the list_slot with some values for testing
         list_slot.inner = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
-        list_slot.write_to_slot(&mut slot_storage, &slot_key);
+        list_slot.write_to_slot(&mut ctx, &slot_key);
 
         // We are mocking the behavior, so just test that the reader works
         let outer_index_count = 16; // Only one slot needed
@@ -137,24 +137,24 @@ mod tests {
             assert_eq!(iterator.inner.slot_index(), expected.0);
             assert_eq!(iterator.inner.relative_index(), expected.1);
 
-            let result = iterator.next(&slot_storage).unwrap();
+            let result = iterator.next(&ctx).unwrap();
             assert_eq!(result, expected.3);
             assert_eq!(iterator.list_slot, Some(expected.2));
         }
 
-        assert!(iterator.next(&slot_storage).is_none());
+        assert!(iterator.next(&ctx).is_none());
     }
 
     #[test]
     fn test_reader_single_slot_partially_full() {
-        let mut slot_storage = ArbContext::new();
+        let mut ctx = ArbContext::new();
         let side = Side::Bid;
         let slot_key = ListKey { index: 0, side };
-        let mut list_slot = ListSlot::new_from_slot(&slot_storage, slot_key);
+        let mut list_slot = ListSlot::new_from_slot(&ctx, slot_key);
 
         // Fill the list_slot with some values for testing
         list_slot.inner = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, u16::MAX];
-        list_slot.write_to_slot(&mut slot_storage, &slot_key);
+        list_slot.write_to_slot(&mut ctx, &slot_key);
 
         // We are mocking the behavior, so just test that the reader works
         let outer_index_count = 15; // Only one slot needed
@@ -184,30 +184,30 @@ mod tests {
             assert_eq!(iterator.inner.slot_index(), expected.0);
             assert_eq!(iterator.inner.relative_index(), expected.1);
 
-            let result = iterator.next(&slot_storage).unwrap();
+            let result = iterator.next(&ctx).unwrap();
             assert_eq!(result, expected.3);
             assert_eq!(iterator.list_slot, Some(expected.2));
         }
 
-        assert!(iterator.next(&slot_storage).is_none());
+        assert!(iterator.next(&ctx).is_none());
     }
 
     #[test]
     fn test_reader_multiple_slots() {
-        let mut slot_storage = ArbContext::new();
+        let mut ctx = ArbContext::new();
         let side = Side::Bid;
         let slot_key_0 = ListKey { index: 0, side };
 
-        let mut list_slot_0 = ListSlot::new_from_slot(&slot_storage, slot_key_0);
+        let mut list_slot_0 = ListSlot::new_from_slot(&ctx, slot_key_0);
         list_slot_0.inner = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
-        list_slot_0.write_to_slot(&mut slot_storage, &slot_key_0);
+        list_slot_0.write_to_slot(&mut ctx, &slot_key_0);
 
         let slot_key_1 = ListKey { index: 1, side };
-        let mut list_slot_1 = ListSlot::new_from_slot(&slot_storage, slot_key_1);
+        let mut list_slot_1 = ListSlot::new_from_slot(&ctx, slot_key_1);
         list_slot_1.inner = [
             17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
         ];
-        list_slot_1.write_to_slot(&mut slot_storage, &slot_key_1);
+        list_slot_1.write_to_slot(&mut ctx, &slot_key_1);
 
         // Mock outer index count that spans across two slots
         let outer_index_count = 32;
@@ -252,26 +252,26 @@ mod tests {
             assert_eq!(iterator.inner.slot_index(), expected.0);
             assert_eq!(iterator.inner.relative_index(), expected.1);
 
-            let result = iterator.next(&slot_storage).unwrap();
+            let result = iterator.next(&ctx).unwrap();
             assert_eq!(result, expected.3);
             assert_eq!(iterator.list_slot, Some(expected.2));
         }
 
-        assert!(iterator.next(&slot_storage).is_none());
+        assert!(iterator.next(&ctx).is_none());
     }
 
     #[test]
     fn test_iterator_multiple_slots_partially_full() {
-        let mut slot_storage = ArbContext::new();
+        let mut ctx = ArbContext::new();
         let side = Side::Bid;
         let slot_key_0 = ListKey { index: 0, side };
         let slot_key_1 = ListKey { index: 1, side };
 
-        let mut list_slot_0 = ListSlot::new_from_slot(&slot_storage, slot_key_0);
+        let mut list_slot_0 = ListSlot::new_from_slot(&ctx, slot_key_0);
         list_slot_0.inner = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
-        list_slot_0.write_to_slot(&mut slot_storage, &slot_key_0);
+        list_slot_0.write_to_slot(&mut ctx, &slot_key_0);
 
-        let mut list_slot_1 = ListSlot::new_from_slot(&slot_storage, slot_key_1);
+        let mut list_slot_1 = ListSlot::new_from_slot(&ctx, slot_key_1);
         list_slot_1.inner = [
             17,
             18,
@@ -290,7 +290,7 @@ mod tests {
             31,
             u16::MAX,
         ];
-        list_slot_1.write_to_slot(&mut slot_storage, &slot_key_1);
+        list_slot_1.write_to_slot(&mut ctx, &slot_key_1);
 
         // Mock outer index count that spans across two slots
         let outer_index_count = 31;
@@ -334,24 +334,24 @@ mod tests {
             assert_eq!(iterator.inner.slot_index(), expected.0);
             assert_eq!(iterator.inner.relative_index(), expected.1);
 
-            let result = iterator.next(&slot_storage).unwrap();
+            let result = iterator.next(&ctx).unwrap();
             assert_eq!(result, expected.3);
             assert_eq!(iterator.list_slot, Some(expected.2));
         }
 
-        assert!(iterator.next(&slot_storage).is_none());
+        assert!(iterator.next(&ctx).is_none());
     }
 
     #[test]
     fn test_iterator_single_slot_descending_for_asks() {
-        let mut slot_storage = ArbContext::new();
+        let mut ctx = ArbContext::new();
         let side = Side::Ask;
         let slot_key = ListKey { index: 0, side };
-        let mut list_slot = ListSlot::new_from_slot(&slot_storage, slot_key);
+        let mut list_slot = ListSlot::new_from_slot(&ctx, slot_key);
 
         // Fill the list_slot with some values for testing
         list_slot.inner = [16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
-        list_slot.write_to_slot(&mut slot_storage, &slot_key);
+        list_slot.write_to_slot(&mut ctx, &slot_key);
 
         // Mocking the behavior, so just test that the iterator works
         let outer_index_count = 16; // Only one slot needed
@@ -380,11 +380,11 @@ mod tests {
             assert_eq!(iterator.inner.slot_index(), expected.0);
             assert_eq!(iterator.inner.relative_index(), expected.1);
 
-            let result = iterator.next(&slot_storage).unwrap();
+            let result = iterator.next(&ctx).unwrap();
             assert_eq!(result, expected.3);
             assert_eq!(iterator.list_slot, Some(expected.2));
         }
 
-        assert!(iterator.next(&slot_storage).is_none());
+        assert!(iterator.next(&ctx).is_none());
     }
 }

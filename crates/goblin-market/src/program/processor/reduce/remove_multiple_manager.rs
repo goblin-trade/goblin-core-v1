@@ -8,8 +8,7 @@ use crate::{
     },
 };
 
-/// Boilerplate code to reduce multiple orders in bulk for both sides
-///
+/// Boilerplate code to remove multiple orders in bulk for both sides
 pub struct RemoveMultipleManager {
     side: Side,
     last_order_ids: [Option<OrderId>; 2],
@@ -39,13 +38,13 @@ impl RemoveMultipleManager {
     /// Checks whether an order is present at the given order ID.
     pub fn find_order(
         &mut self,
-        slot_storage: &mut ArbContext,
+        ctx: &mut ArbContext,
         side: Side,
         order_id: OrderId,
     ) -> GoblinResult<bool> {
         self.check_sorted(side, order_id)?;
 
-        let found = self.remover().find_order(slot_storage, order_id);
+        let found = self.remover().find_order(ctx, order_id);
         Ok(found)
     }
 
@@ -74,19 +73,15 @@ impl RemoveMultipleManager {
 
     /// Remove the last searched order from the book, and update the
     /// best price in market state if the outermost tick closed
-    pub fn remove_order(&mut self, slot_storage: &mut ArbContext, market_state: &mut MarketState) {
-        self.remover().remove_order(slot_storage, market_state)
+    pub fn remove_order(&mut self, ctx: &mut ArbContext, market_state: &mut MarketState) {
+        self.remover().remove_order(ctx, market_state)
     }
 
     /// Write the prepared outer indices to slot and update outer index count in market state
     /// The last cached bitmap group pending a write is also written to slot
-    pub fn write_prepared_indices(
-        &mut self,
-        slot_storage: &mut ArbContext,
-        market_state: &mut MarketState,
-    ) {
-        self.removers[0].write_prepared_indices(slot_storage, market_state);
-        self.removers[1].write_prepared_indices(slot_storage, market_state);
+    pub fn write_prepared_indices(&mut self, ctx: &mut ArbContext, market_state: &mut MarketState) {
+        self.removers[0].write_prepared_indices(ctx, market_state);
+        self.removers[1].write_prepared_indices(ctx, market_state);
     }
 }
 

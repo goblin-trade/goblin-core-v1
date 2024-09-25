@@ -37,13 +37,13 @@ impl OuterIndexInserter {
     /// # Arguments
     ///
     /// * outer_index
-    /// * slot_storage
+    /// * ctx
     ///
     /// # Returns
     ///
     /// Returns true if the value needs insertion, false if it is already present
     ///
-    pub fn insert_if_absent(&mut self, slot_storage: &ArbContext, outer_index: OuterIndex) -> bool {
+    pub fn insert_if_absent(&mut self, ctx: &ArbContext, outer_index: OuterIndex) -> bool {
         // Check last element in the cache
         if let Some(&last_pushed_outer_index) = self.cache.last() {
             // If the element already exists in the cache, return false
@@ -61,7 +61,7 @@ impl OuterIndexInserter {
         }
 
         // Iterate through the list to find the correct position
-        while let Some(current_outer_index) = self.active_outer_index_iterator.next(slot_storage) {
+        while let Some(current_outer_index) = self.active_outer_index_iterator.next(ctx) {
             // If the outer_index is already in the list, only insert once
             if current_outer_index == outer_index {
                 self.cache.push(current_outer_index);
@@ -85,9 +85,9 @@ impl OuterIndexInserter {
     }
 
     /// Write prepared indices to slot
-    pub fn write_index_list(&mut self, slot_storage: &mut ArbContext) {
+    pub fn write_index_list(&mut self, ctx: &mut ArbContext) {
         write_index_list(
-            slot_storage,
+            ctx,
             self.side(),
             &mut self.cache,
             self.active_outer_index_iterator.outer_index_count(),
@@ -104,28 +104,28 @@ mod tests {
 
     #[test]
     fn test_prepare_bid_empty_list() {
-        let slot_storage = &mut ArbContext::new();
+        let ctx = &mut ArbContext::new();
         let mut insertion = OuterIndexInserter::new(Side::Bid, 0);
 
         // Insert into an empty list
-        assert!(insertion.insert_if_absent(slot_storage, OuterIndex::new(100)));
+        assert!(insertion.insert_if_absent(ctx, OuterIndex::new(100)));
         assert_eq!(insertion.cache, vec![OuterIndex::new(100)]);
 
         // Insert duplicate
-        assert!(!insertion.insert_if_absent(slot_storage, OuterIndex::new(100)));
+        assert!(!insertion.insert_if_absent(ctx, OuterIndex::new(100)));
         assert_eq!(insertion.cache, vec![OuterIndex::new(100)]);
 
         // Insert an index closer to the center
         // Externally ensure that subsequent indices move away from the centre.
         // This case is to deal with the last value from .next()
-        assert!(insertion.insert_if_absent(slot_storage, OuterIndex::new(150)));
+        assert!(insertion.insert_if_absent(ctx, OuterIndex::new(150)));
         assert_eq!(
             insertion.cache,
             vec![OuterIndex::new(150), OuterIndex::new(100)]
         );
 
         // Insert an index further away from the center
-        assert!(insertion.insert_if_absent(slot_storage, OuterIndex::new(50)));
+        assert!(insertion.insert_if_absent(ctx, OuterIndex::new(50)));
         assert_eq!(
             insertion.cache,
             vec![
@@ -138,14 +138,14 @@ mod tests {
 
     #[test]
     fn test_prepare_bid_equal_index() {
-        let mut slot_storage = &mut ArbContext::new();
+        let mut ctx = &mut ArbContext::new();
 
         // Setup the initial slot storage with one item
         {
             let mut list_slot = ListSlot::default();
             list_slot.set(0, OuterIndex::new(100));
             list_slot.write_to_slot(
-                &mut slot_storage,
+                &mut ctx,
                 &ListKey {
                     index: 0,
                     side: Side::Bid,
@@ -156,20 +156,20 @@ mod tests {
         let mut insertion = OuterIndexInserter::new(Side::Bid, 1);
 
         // Attempt to insert the same index
-        assert!(!insertion.insert_if_absent(slot_storage, OuterIndex::new(100)));
+        assert!(!insertion.insert_if_absent(ctx, OuterIndex::new(100)));
         assert_eq!(insertion.cache, vec![OuterIndex::new(100)]);
     }
 
     #[test]
     fn test_prepare_bid_closer_to_center() {
-        let slot_storage = &mut ArbContext::new();
+        let ctx = &mut ArbContext::new();
 
         // Setup the initial slot storage with one item
         {
             let mut list_slot = ListSlot::default();
             list_slot.set(0, OuterIndex::new(100));
             list_slot.write_to_slot(
-                slot_storage,
+                ctx,
                 &ListKey {
                     index: 0,
                     side: Side::Bid,
@@ -180,7 +180,7 @@ mod tests {
         let mut insertion = OuterIndexInserter::new(Side::Bid, 1);
 
         // Insert an index closer to the center
-        assert!(insertion.insert_if_absent(slot_storage, OuterIndex::new(150)));
+        assert!(insertion.insert_if_absent(ctx, OuterIndex::new(150)));
         assert_eq!(
             insertion.cache,
             vec![OuterIndex::new(150), OuterIndex::new(100)]
@@ -189,14 +189,14 @@ mod tests {
 
     #[test]
     fn test_prepare_bid_away_from_center() {
-        let mut slot_storage = &mut ArbContext::new();
+        let mut ctx = &mut ArbContext::new();
 
         // Setup the initial slot storage with one item
         {
             let mut list_slot = ListSlot::default();
             list_slot.set(0, OuterIndex::new(100));
             list_slot.write_to_slot(
-                &mut slot_storage,
+                &mut ctx,
                 &ListKey {
                     index: 0,
                     side: Side::Bid,
@@ -207,7 +207,7 @@ mod tests {
         let mut insertion = OuterIndexInserter::new(Side::Bid, 1);
 
         // Insert an index further away from the center
-        assert!(insertion.insert_if_absent(slot_storage, OuterIndex::new(50)));
+        assert!(insertion.insert_if_absent(ctx, OuterIndex::new(50)));
         assert_eq!(
             insertion.cache,
             vec![OuterIndex::new(100), OuterIndex::new(50)]
@@ -216,26 +216,26 @@ mod tests {
 
     #[test]
     fn test_prepare_ask_empty_list() {
-        let slot_storage = &mut ArbContext::new();
+        let ctx = &mut ArbContext::new();
         let mut insertion = OuterIndexInserter::new(Side::Ask, 0);
 
         // Insert into an empty list
-        assert!(insertion.insert_if_absent(slot_storage, OuterIndex::new(100)));
+        assert!(insertion.insert_if_absent(ctx, OuterIndex::new(100)));
         assert_eq!(insertion.cache, vec![OuterIndex::new(100)]);
 
         // Insert duplicate
-        assert!(!insertion.insert_if_absent(slot_storage, OuterIndex::new(100)));
+        assert!(!insertion.insert_if_absent(ctx, OuterIndex::new(100)));
         assert_eq!(insertion.cache, vec![OuterIndex::new(100)]);
 
         // Insert an index closer to the center
-        assert!(insertion.insert_if_absent(slot_storage, OuterIndex::new(50)));
+        assert!(insertion.insert_if_absent(ctx, OuterIndex::new(50)));
         assert_eq!(
             insertion.cache,
             vec![OuterIndex::new(50), OuterIndex::new(100)]
         );
 
         // Insert an index further away from the center
-        assert!(insertion.insert_if_absent(slot_storage, OuterIndex::new(150)));
+        assert!(insertion.insert_if_absent(ctx, OuterIndex::new(150)));
         assert_eq!(
             insertion.cache,
             vec![
@@ -248,39 +248,39 @@ mod tests {
 
     #[test]
     fn test_prepare_ask_equal_index() {
-        let slot_storage = &mut ArbContext::new();
+        let ctx = &mut ArbContext::new();
         let side = Side::Ask;
 
         // Setup the initial slot storage with one item
         {
             let mut list_slot = ListSlot::default();
             list_slot.set(0, OuterIndex::new(100));
-            list_slot.write_to_slot(slot_storage, &ListKey { index: 0, side });
+            list_slot.write_to_slot(ctx, &ListKey { index: 0, side });
         }
 
         let mut insertion = OuterIndexInserter::new(side, 1);
 
         // Attempt to insert the same index
-        assert!(!insertion.insert_if_absent(slot_storage, OuterIndex::new(100)));
+        assert!(!insertion.insert_if_absent(ctx, OuterIndex::new(100)));
         assert_eq!(insertion.cache, vec![OuterIndex::new(100)]);
     }
 
     #[test]
     fn test_prepare_ask_closer_to_center() {
-        let slot_storage = &mut ArbContext::new();
+        let ctx = &mut ArbContext::new();
         let side = Side::Ask;
 
         // Setup the initial slot storage with one item
         {
             let mut list_slot = ListSlot::default();
             list_slot.set(0, OuterIndex::new(100));
-            list_slot.write_to_slot(slot_storage, &ListKey { index: 0, side });
+            list_slot.write_to_slot(ctx, &ListKey { index: 0, side });
         }
 
         let mut insertion = OuterIndexInserter::new(side, 1);
 
         // Insert an index closer to the center
-        assert!(insertion.insert_if_absent(slot_storage, OuterIndex::new(50)));
+        assert!(insertion.insert_if_absent(ctx, OuterIndex::new(50)));
         assert_eq!(
             insertion.cache,
             vec![OuterIndex::new(50), OuterIndex::new(100)]
@@ -289,20 +289,20 @@ mod tests {
 
     #[test]
     fn test_prepare_ask_away_from_center() {
-        let slot_storage = &mut ArbContext::new();
+        let ctx = &mut ArbContext::new();
         let side = Side::Ask;
 
         // Setup the initial slot storage with one item
         {
             let mut list_slot = ListSlot::default();
             list_slot.set(0, OuterIndex::new(100));
-            list_slot.write_to_slot(slot_storage, &ListKey { index: 0, side });
+            list_slot.write_to_slot(ctx, &ListKey { index: 0, side });
         }
 
         let mut insertion = OuterIndexInserter::new(side, 1);
 
         // Insert an index further away from the center
-        assert!(insertion.insert_if_absent(slot_storage, OuterIndex::new(150)));
+        assert!(insertion.insert_if_absent(ctx, OuterIndex::new(150)));
         assert_eq!(
             insertion.cache,
             vec![OuterIndex::new(100), OuterIndex::new(150)]

@@ -149,16 +149,16 @@ impl GroupPositionRemover {
     /// * we always move away from the centre
     /// * outer_index is active and non-empty
     ///
-    pub fn load_outer_index(&mut self, slot_storage: &mut ArbContext, outer_index: OuterIndex) {
+    pub fn load_outer_index(&mut self, ctx: &mut ArbContext, outer_index: OuterIndex) {
         if self.last_outer_index == Some(outer_index) {
             return;
         }
         // Outer index changed. Flush the old bitmap group to slot.
-        self.flush_bitmap_group(slot_storage);
+        self.flush_bitmap_group(ctx);
 
         self.last_outer_index = Some(outer_index);
         self.last_searched_group_position = None;
-        self.bitmap_group = BitmapGroup::new_from_slot(slot_storage, outer_index);
+        self.bitmap_group = BitmapGroup::new_from_slot(ctx, outer_index);
     }
 
     /// Flush the cached bitmap group to slot
@@ -167,15 +167,15 @@ impl GroupPositionRemover {
     ///
     /// # Arguments
     ///
-    /// * `slot_storage`
+    /// * `ctx`
     ///
-    pub fn flush_bitmap_group(&mut self, slot_storage: &mut ArbContext) {
+    pub fn flush_bitmap_group(&mut self, ctx: &mut ArbContext) {
         if !self.pending_write {
             return;
         }
 
         if let Some(last_index) = self.last_outer_index {
-            self.bitmap_group.write_to_slot(slot_storage, &last_index);
+            self.bitmap_group.write_to_slot(ctx, &last_index);
             self.pending_write = false;
         }
     }

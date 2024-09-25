@@ -7,7 +7,7 @@ use super::{
     MarketPrices,
 };
 use crate::state::{
-    slot_storage::{ArbContext, ContextActions, SlotKey},
+    context::{ArbContext, ContextActions, SlotKey},
     InnerIndex, OuterIndex, RestingOrderIndex, Side,
 };
 
@@ -22,9 +22,9 @@ pub struct BitmapGroup {
 }
 
 impl BitmapGroup {
-    pub fn new_from_slot(slot_storage: &ArbContext, key: OuterIndex) -> Self {
+    pub fn new_from_slot(ctx: &ArbContext, key: OuterIndex) -> Self {
         BitmapGroup {
-            inner: slot_storage.sload(&key.get_key()),
+            inner: ctx.sload(&key.get_key()),
         }
     }
 
@@ -142,8 +142,8 @@ impl BitmapGroup {
     // }
 
     /// Write to slot
-    pub fn write_to_slot(&self, slot_storage: &mut ArbContext, key: &OuterIndex) {
-        slot_storage.sstore(&key.get_key(), &self.inner);
+    pub fn write_to_slot(&self, ctx: &mut ArbContext, key: &OuterIndex) {
+        ctx.sstore(&key.get_key(), &self.inner);
     }
 
     /// Set a placeholder non-empty value so that the slot is not cleared
@@ -290,16 +290,16 @@ mod tests {
 
     #[test]
     fn test_decode_group_from_empty_slot() {
-        let slot_storage = ArbContext::new();
+        let ctx = ArbContext::new();
 
-        let bitmap_group = BitmapGroup::new_from_slot(&slot_storage, OuterIndex::new(0));
+        let bitmap_group = BitmapGroup::new_from_slot(&ctx, OuterIndex::new(0));
 
         assert_eq!(bitmap_group.inner, [0u8; 32]);
     }
 
     #[test]
     fn test_decode_filled_slot() {
-        let mut slot_storage = ArbContext::new();
+        let mut ctx = ArbContext::new();
 
         // Tick group 0 contains ticks from 0 to 31
         let outer_index = OuterIndex::new(0);
@@ -309,9 +309,9 @@ mod tests {
             0, 0, 0, 0,
         ];
 
-        slot_storage.sstore(&outer_index.get_key(), &slot_bytes);
+        ctx.sstore(&outer_index.get_key(), &slot_bytes);
 
-        let bitmap_group = BitmapGroup::new_from_slot(&slot_storage, outer_index);
+        let bitmap_group = BitmapGroup::new_from_slot(&ctx, outer_index);
         assert_eq!(bitmap_group.inner, slot_bytes);
 
         let bitmap_0 = bitmap_group.get_bitmap(&InnerIndex::new(0));

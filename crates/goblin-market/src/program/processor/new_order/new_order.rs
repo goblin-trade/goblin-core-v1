@@ -53,11 +53,11 @@ pub fn place_multiple_new_orders(
     client_order_id: u128,
     no_deposit: bool,
 ) -> GoblinResult<()> {
-    let slot_storage = &mut ArbContext::new();
+    let ctx = &mut ArbContext::new();
 
     // Read states
-    let mut market_state = MarketState::read_from_slot(slot_storage);
-    let mut trader_state = TraderState::read_from_slot(slot_storage, trader);
+    let mut market_state = MarketState::read_from_slot(ctx);
+    let mut trader_state = TraderState::read_from_slot(ctx, trader);
 
     let mut quote_lots_to_deposit = QuoteLots::ZERO;
     let mut base_lots_to_deposit = BaseLots::ZERO;
@@ -148,8 +148,8 @@ pub fn place_multiple_new_orders(
                 // matching_engine_response gives the number of tokens required
                 // these are added and then compared in the end
                 let (order_to_insert, matching_engine_response) = place_order_inner(
-                    // order_inserter.index_list_iterator.slot_storage,
-                    slot_storage,
+                    // order_inserter.index_list_iterator.ctx,
+                    ctx,
                     &mut market_state,
                     &mut trader_state,
                     trader,
@@ -169,7 +169,7 @@ pub fn place_multiple_new_orders(
                     } else {
                         // Write the old order to slot and cache the new order
                         resting_order_inserter.insert_resting_order(
-                            slot_storage,
+                            ctx,
                             &mut market_state,
                             &last_order.resting_order,
                             &last_order.order_id,
@@ -205,7 +205,7 @@ pub fn place_multiple_new_orders(
         // Write the last order after the loop ends
         if let Some(last_order_value) = last_order {
             resting_order_inserter.insert_resting_order(
-                slot_storage,
+                ctx,
                 &mut market_state,
                 &last_order_value.resting_order,
                 &last_order_value.order_id,
@@ -215,13 +215,13 @@ pub fn place_multiple_new_orders(
         }
 
         // Write cached outer indices to slot
-        resting_order_inserter.write_prepared_indices(slot_storage, &mut market_state);
+        resting_order_inserter.write_prepared_indices(ctx, &mut market_state);
     }
 
     // Write state
     // TODO check other writes in check_for_cross()
-    market_state.write_to_slot(slot_storage)?;
-    trader_state.write_to_slot(slot_storage, trader);
+    market_state.write_to_slot(ctx)?;
+    trader_state.write_to_slot(ctx, trader);
     ArbContext::storage_flush_cache(true);
 
     if !no_deposit {
@@ -257,9 +257,9 @@ pub fn process_new_order(
     order_packet: &mut OrderPacket,
     trader: Address,
 ) -> GoblinResult<()> {
-    let slot_storage = &mut ArbContext::new();
-    let mut market_state = MarketState::read_from_slot(slot_storage);
-    let mut trader_state = TraderState::read_from_slot(slot_storage, trader);
+    let ctx = &mut ArbContext::new();
+    let mut market_state = MarketState::read_from_slot(ctx);
+    let mut trader_state = TraderState::read_from_slot(ctx, trader);
 
     let side = order_packet.side();
 
@@ -288,7 +288,7 @@ pub fn process_new_order(
         }
 
         let (order_to_insert, matching_engine_response) = place_order_inner(
-            slot_storage,
+            ctx,
             &mut market_state,
             &mut trader_state,
             trader,
@@ -307,12 +307,12 @@ pub fn process_new_order(
             let mut resting_order_inserter =
                 OrderIdInserter::new(side, market_state.outer_index_count(side));
             resting_order_inserter.insert_resting_order(
-                slot_storage,
+                ctx,
                 &mut market_state,
                 &resting_order,
                 &order_id,
             )?;
-            resting_order_inserter.write_prepared_indices(slot_storage, &mut market_state);
+            resting_order_inserter.write_prepared_indices(ctx, &mut market_state);
         }
 
         (
@@ -327,8 +327,8 @@ pub fn process_new_order(
     };
 
     // Write state
-    market_state.write_to_slot(slot_storage)?;
-    trader_state.write_to_slot(slot_storage, trader);
+    market_state.write_to_slot(ctx)?;
+    trader_state.write_to_slot(ctx, trader);
     ArbContext::storage_flush_cache(true);
 
     if !order_packet.no_deposit_or_withdrawal() {

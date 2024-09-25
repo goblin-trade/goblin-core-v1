@@ -132,7 +132,7 @@ mod test {
 
     #[test]
     fn test_write_and_read() {
-        let mut slot_storage = ArbContext::new();
+        let mut ctx = ArbContext::new();
 
         let key = &[0u8; 32];
         let value: [u8; 32] = [
@@ -140,9 +140,9 @@ mod test {
             0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1,
         ];
 
-        assert_eq!(slot_storage.sload(key), [0u8; 32]);
+        assert_eq!(ctx.sload(key), [0u8; 32]);
 
-        slot_storage.sstore(key, &value);
-        assert_eq!(slot_storage.sload(key), value);
+        ctx.sstore(key, &value);
+        assert_eq!(ctx.sload(key), value);
     }
 }

@@ -15,13 +15,13 @@ use crate::{
 ///
 /// # Arguments
 ///
-/// * `slot_storage` - Read only mode
+/// * `ctx` - Read only mode
 /// * `order_packet`
 /// * `last_order` - The last order, if placing multiple post-only orders. If order id
 /// and expiry params match, then return the same order id as the last order.
 ///
 pub fn get_best_available_order_id(
-    slot_storage: &ArbContext,
+    ctx: &ArbContext,
     order_packet: &OrderPacket,
     last_order: Option<OrderToInsert>,
 ) -> Option<OrderId> {
@@ -61,7 +61,7 @@ pub fn get_best_available_order_id(
 
     // 1. Loop through bitmap groups
     loop {
-        let bitmap_group = BitmapGroup::new_from_slot(slot_storage, current_outer_index);
+        let bitmap_group = BitmapGroup::new_from_slot(ctx, current_outer_index);
 
         let previous_inner_index = if current_outer_index == outer_index {
             Some(inner_index)

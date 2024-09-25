@@ -45,8 +45,8 @@ pub struct ListSlot {
 
 impl ListSlot {
     /// Load from slot storage
-    pub fn new_from_slot(slot_storage: &ArbContext, key: ListKey) -> Self {
-        let slot = slot_storage.sload(&key.get_key());
+    pub fn new_from_slot(ctx: &ArbContext, key: ListKey) -> Self {
+        let slot = ctx.sload(&key.get_key());
 
         ListSlot::decode(slot)
     }
@@ -62,9 +62,9 @@ impl ListSlot {
         unsafe { core::mem::transmute::<[u16; 16], [u8; 32]>(self.inner) }
     }
 
-    pub fn write_to_slot(&self, slot_storage: &mut ArbContext, key: &ListKey) {
+    pub fn write_to_slot(&self, ctx: &mut ArbContext, key: &ListKey) {
         let bytes = self.encode();
-        slot_storage.sstore(&key.get_key(), &bytes);
+        ctx.sstore(&key.get_key(), &bytes);
     }
 
     pub fn get(&self, index: usize) -> OuterIndex {

@@ -318,8 +318,8 @@ impl GoblinMarket {
 
     // TODO how to return struct? Facing AbiType trait error
     pub fn trader_state(&self, trader: Address) -> B256 {
-        let slot_storage = ArbContext::new();
-        let trader_state = TraderState::read_from_slot(&slot_storage, trader);
+        let ctx = ArbContext::new();
+        let trader_state = TraderState::read_from_slot(&ctx, trader);
 
         B256::from_slice(&trader_state.encode())
     }

@@ -57,9 +57,9 @@ pub fn process_reduce_multiple_orders(
     claim_funds: bool,
 ) -> GoblinResult<()> {
     // Read
-    let slot_storage = &mut ArbContext::new();
-    let market_state = &mut MarketState::read_from_slot(slot_storage);
-    let trader_state = &mut TraderState::read_from_slot(slot_storage, trader);
+    let ctx = &mut ArbContext::new();
+    let market_state = &mut MarketState::read_from_slot(ctx);
+    let trader_state = &mut TraderState::read_from_slot(ctx, trader);
 
     // Mutate
     // State reads and writes are performed inside reduce_multiple_orders_inner()
@@ -69,7 +69,7 @@ pub fn process_reduce_multiple_orders(
         num_base_lots_out,
         ..
     } = reduce_multiple_orders_inner(
-        slot_storage,
+        ctx,
         market_state,
         trader,
         trader_state,
@@ -78,8 +78,8 @@ pub fn process_reduce_multiple_orders(
     )?;
 
     // Write state
-    market_state.write_to_slot(slot_storage)?;
-    trader_state.write_to_slot(slot_storage, trader);
+    market_state.write_to_slot(ctx)?;
+    trader_state.write_to_slot(ctx, trader);
     ArbContext::storage_flush_cache(true);
 
     // Transfer tokens
@@ -117,7 +117,7 @@ pub fn process_reduce_multiple_orders(
 ///
 /// # Arguments
 ///
-/// * `slot_storage`
+/// * `ctx`
 /// * `market_state`
 /// * `trader`
 /// * `trader_state`
@@ -125,7 +125,7 @@ pub fn process_reduce_multiple_orders(
 /// * `claim_funds`
 ///
 pub fn reduce_multiple_orders_inner(
-    slot_storage: &mut ArbContext,
+    ctx: &mut ArbContext,
     market_state: &mut MarketState,
     trader: Address,
     trader_state: &mut TraderState,
@@ -148,7 +148,7 @@ pub fn reduce_multiple_orders_inner(
         } = ReduceOrderPacket::from(&order_packet_bytes);
 
         let side = order_id.side(market_state);
-        let order_present = manager.find_order(slot_storage, side, order_id)?;
+        let order_present = manager.find_order(ctx, side, order_id)?;
 
         if !order_present {
             if revert_if_fail {
@@ -157,7 +157,7 @@ pub fn reduce_multiple_orders_inner(
             continue;
         }
 
-        let mut resting_order = SlotRestingOrder::new_from_slot(slot_storage, order_id);
+        let mut resting_order = SlotRestingOrder::new_from_slot(ctx, order_id);
 
         if trader != resting_order.trader_address {
             return Err(GoblinError::FailedToReduce(FailedToReduce {}));
@@ -182,13 +182,13 @@ pub fn reduce_multiple_orders_inner(
         if resting_order.is_empty() {
             // Remove empty order from bitmap group. No need to write cleared
             // order to slot.
-            manager.remove_order(slot_storage, market_state);
+            manager.remove_order(ctx, market_state);
         } else {
-            resting_order.write_to_slot(slot_storage, &order_id)?;
+            resting_order.write_to_slot(ctx, &order_id)?;
         }
     }
 
-    manager.write_prepared_indices(slot_storage, market_state);
+    manager.write_prepared_indices(ctx, market_state);
 
     Ok(MatchingEngineResponse::new_withdraw(
         base_lots_released,

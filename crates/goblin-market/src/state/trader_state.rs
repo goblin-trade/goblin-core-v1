@@ -30,9 +30,9 @@ pub struct TraderState {
 }
 
 impl TraderState {
-    pub fn read_from_slot(slot_storage: &ArbContext, trader_id: TraderId) -> Self {
+    pub fn read_from_slot(ctx: &ArbContext, trader_id: TraderId) -> Self {
         let slot_key = trader_id.get_key();
-        let slot = slot_storage.sload(&slot_key);
+        let slot = ctx.sload(&slot_key);
 
         Self::decode(&slot)
     }
@@ -57,8 +57,8 @@ impl TraderState {
         encoded_data
     }
 
-    pub fn write_to_slot(&self, slot_storage: &mut ArbContext, trader_id: TraderId) {
-        slot_storage.sstore(&trader_id.get_key(), &self.encode());
+    pub fn write_to_slot(&self, ctx: &mut ArbContext, trader_id: TraderId) {
+        ctx.sstore(&trader_id.get_key(), &self.encode());
     }
 
     /// Claim a specified number of quote and base lots from the trader state. The

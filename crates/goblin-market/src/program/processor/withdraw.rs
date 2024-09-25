@@ -28,10 +28,10 @@ pub fn process_withdraw_funds(
     quote_lots: QuoteLots,
     base_lots: BaseLots,
 ) -> GoblinResult<()> {
-    let slot_storage = &mut ArbContext::new();
+    let ctx = &mut ArbContext::new();
 
     // Read
-    let mut trader_state = TraderState::read_from_slot(slot_storage, trader);
+    let mut trader_state = TraderState::read_from_slot(ctx, trader);
 
     // Mutate
     let MatchingEngineResponse {
@@ -41,7 +41,7 @@ pub fn process_withdraw_funds(
     } = trader_state.claim_funds(quote_lots, base_lots);
 
     // Write
-    trader_state.write_to_slot(slot_storage, trader);
+    trader_state.write_to_slot(ctx, trader);
     ArbContext::storage_flush_cache(true);
 
     // Transfer

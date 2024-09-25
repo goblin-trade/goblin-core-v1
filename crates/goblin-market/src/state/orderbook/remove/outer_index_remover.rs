@@ -74,11 +74,11 @@ impl OuterIndexRemover {
     ///
     /// # Arguments
     ///
-    /// * `slot_storage`
+    /// * `ctx`
     ///
-    pub fn slide(&mut self, slot_storage: &ArbContext) {
+    pub fn slide(&mut self, ctx: &ArbContext) {
         self.flush_cached_outer_index();
-        self.cached_outer_index = self.active_outer_index_iterator.next(slot_storage);
+        self.cached_outer_index = self.active_outer_index_iterator.next(ctx);
     }
 
     /// Pushes `found_outer_index` to cache and clears the value
@@ -93,18 +93,18 @@ impl OuterIndexRemover {
     /// # Arguments
     ///
     /// * `outer_index` - The index to search for
-    /// * `slot_storage` - The slot storage to read indices from
+    /// * `ctx` - The slot storage to read indices from
     ///
     /// # Returns
     ///
     /// * `true` if the index is found, `false` otherwise.
     ///
-    pub fn find_outer_index(&mut self, slot_storage: &ArbContext, outer_index: OuterIndex) -> bool {
+    pub fn find_outer_index(&mut self, ctx: &ArbContext, outer_index: OuterIndex) -> bool {
         loop {
             if self.cached_outer_index == Some(outer_index) {
                 return true;
             }
-            self.slide(slot_storage);
+            self.slide(ctx);
             if self.cached_outer_index.is_none() {
                 return false;
             }
@@ -125,14 +125,14 @@ impl OuterIndexRemover {
     /// Calling `write_prepared_indices()` after `find_outer_index()` will result
     /// in `found_outer_index`.
     ///
-    pub fn write_index_list(&mut self, slot_storage: &mut ArbContext) {
+    pub fn write_index_list(&mut self, ctx: &mut ArbContext) {
         if !self.pending_write {
             return;
         }
 
         self.flush_cached_outer_index();
         write_index_list(
-            slot_storage,
+            ctx,
             self.side(),
             &mut self.cache,
             self.active_outer_index_iterator.outer_index_count(),
@@ -149,11 +149,11 @@ mod tests {
 
     #[test]
     fn test_find_outer_index_in_empty_list() {
-        let slot_storage = ArbContext::new();
+        let ctx = ArbContext::new();
         let mut remover = OuterIndexRemover::new(Side::Bid, 0);
 
         // Try to find an index in an empty list
-        let found = remover.find_outer_index(&slot_storage, OuterIndex::new(100));
+        let found = remover.find_outer_index(&ctx, OuterIndex::new(100));
         assert!(!found);
         assert_eq!(remover.cache, vec![]);
         assert_eq!(remover.cached_outer_index, None);
@@ -162,14 +162,14 @@ mod tests {
 
     #[test]
     fn test_find_and_remove_outer_index() {
-        let mut slot_storage = ArbContext::new();
+        let mut ctx = ArbContext::new();
 
         // Setup the initial slot storage with one item
         {
             let mut list_slot = ListSlot::default();
             list_slot.set(0, OuterIndex::new(100));
             list_slot.write_to_slot(
-                &mut slot_storage,
+                &mut ctx,
                 &ListKey {
                     index: 0,
                     side: Side::Bid,
@@ -180,7 +180,7 @@ mod tests {
         let mut remover = OuterIndexRemover::new(Side::Bid, 1);
 
         // Find the existing element
-        let found = remover.find_outer_index(&slot_storage, OuterIndex::new(100));
+        let found = remover.find_outer_index(&ctx, OuterIndex::new(100));
         assert!(found);
         assert_eq!(remover.active_outer_index_iterator.outer_index_count(), 0);
         assert_eq!(remover.cache, vec![]);
@@ -196,7 +196,7 @@ mod tests {
 
     #[test]
     fn test_find_one_but_remove_another() {
-        let mut slot_storage = ArbContext::new();
+        let mut ctx = ArbContext::new();
 
         let side = Side::Bid;
         let outer_index_count = 2;
@@ -206,20 +206,20 @@ mod tests {
         let mut list_slot = ListSlot::default();
         list_slot.set(0, OuterIndex::new(100));
         list_slot.set(1, OuterIndex::new(200));
-        list_slot.write_to_slot(&mut slot_storage, &list_key);
+        list_slot.write_to_slot(&mut ctx, &list_key);
 
         let mut remover = OuterIndexRemover::new(side, outer_index_count);
 
         // Find the existing element
 
-        let found_200 = remover.find_outer_index(&slot_storage, OuterIndex::new(200));
+        let found_200 = remover.find_outer_index(&ctx, OuterIndex::new(200));
         assert!(found_200);
         assert_eq!(remover.active_outer_index_iterator.outer_index_count(), 1);
         assert_eq!(remover.cache, vec![]);
         assert_eq!(remover.cached_outer_index, Some(OuterIndex::new(200)));
         assert!(!remover.pending_write);
 
-        let found_100 = remover.find_outer_index(&slot_storage, OuterIndex::new(100));
+        let found_100 = remover.find_outer_index(&ctx, OuterIndex::new(100));
         assert!(found_100);
         assert_eq!(remover.active_outer_index_iterator.outer_index_count(), 0);
         // Previous `cached_outer_index` is pushed to cache array
@@ -236,7 +236,7 @@ mod tests {
 
     #[test]
     fn test_try_write_when_there_are_no_removals() {
-        let mut slot_storage = ArbContext::new();
+        let mut ctx = ArbContext::new();
         let list_key = ListKey {
             index: 0,
             side: Side::Bid,
@@ -244,34 +244,34 @@ mod tests {
         // Setup the initial slot storage with one item
         let mut list_slot = ListSlot::default();
         list_slot.set(0, OuterIndex::new(100));
-        list_slot.write_to_slot(&mut slot_storage, &list_key);
+        list_slot.write_to_slot(&mut ctx, &list_key);
 
         let mut remover = OuterIndexRemover::new(Side::Bid, 1);
 
         // Find the existing element
-        let found = remover.find_outer_index(&slot_storage, OuterIndex::new(100));
+        let found = remover.find_outer_index(&ctx, OuterIndex::new(100));
         assert!(found);
         assert_eq!(remover.active_outer_index_iterator.outer_index_count(), 0);
         assert_eq!(remover.cache, vec![]);
         assert_eq!(remover.cached_outer_index, Some(OuterIndex::new(100)));
         assert_eq!(remover.pending_write, false);
 
-        remover.write_index_list(&mut slot_storage);
+        remover.write_index_list(&mut ctx);
 
-        let read_list_slot = ListSlot::new_from_slot(&slot_storage, list_key);
+        let read_list_slot = ListSlot::new_from_slot(&ctx, list_key);
         assert_eq!(read_list_slot, list_slot);
     }
 
     #[test]
     fn test_find_nonexistent_outer_index() {
-        let mut slot_storage = ArbContext::new();
+        let mut ctx = ArbContext::new();
 
         // Setup the initial slot storage with one item
         {
             let mut list_slot = ListSlot::default();
             list_slot.set(0, OuterIndex::new(100));
             list_slot.write_to_slot(
-                &mut slot_storage,
+                &mut ctx,
                 &ListKey {
                     index: 0,
                     side: Side::Bid,
@@ -282,7 +282,7 @@ mod tests {
         let mut remover = OuterIndexRemover::new(Side::Bid, 1);
 
         // Try to find a nonexistent element
-        let found = remover.find_outer_index(&slot_storage, OuterIndex::new(200));
+        let found = remover.find_outer_index(&ctx, OuterIndex::new(200));
         assert!(!found);
         assert_eq!(remover.active_outer_index_iterator.outer_index_count(), 0);
         assert_eq!(remover.cache, vec![OuterIndex::new(100)]);
@@ -297,7 +297,7 @@ mod tests {
 
     #[test]
     fn test_find_outer_index_and_cache_intermediary_values() {
-        let mut slot_storage = ArbContext::new();
+        let mut ctx = ArbContext::new();
 
         // Setup the initial slot storage with multiple items
         let list_key = ListKey {
@@ -308,12 +308,12 @@ mod tests {
         list_slot.set(0, OuterIndex::new(100));
         list_slot.set(1, OuterIndex::new(200));
         list_slot.set(2, OuterIndex::new(300));
-        list_slot.write_to_slot(&mut slot_storage, &list_key);
+        list_slot.write_to_slot(&mut ctx, &list_key);
 
         let mut remover = OuterIndexRemover::new(Side::Bid, 3);
 
         // Try to find the last element, cache intermediary values
-        let found = remover.find_outer_index(&slot_storage, OuterIndex::new(200));
+        let found = remover.find_outer_index(&ctx, OuterIndex::new(200));
         assert!(found);
         assert_eq!(remover.active_outer_index_iterator.outer_index_count(), 1);
         assert_eq!(remover.cache, vec![OuterIndex::new(300)]);
@@ -326,8 +326,8 @@ mod tests {
         assert_eq!(remover.cached_outer_index, None);
         assert!(remover.pending_write);
 
-        remover.write_index_list(&mut slot_storage);
-        let read_list_slot = ListSlot::new_from_slot(&slot_storage, list_key);
+        remover.write_index_list(&mut ctx);
+        let read_list_slot = ListSlot::new_from_slot(&ctx, list_key);
 
         let mut expected_list_slot = ListSlot::default();
         expected_list_slot.set(0, OuterIndex::new(100));
@@ -340,7 +340,7 @@ mod tests {
 
     #[test]
     fn test_remove_multiple_adjacent_outermost_in_same_slot() {
-        let mut slot_storage = ArbContext::new();
+        let mut ctx = ArbContext::new();
         let side = Side::Bid;
         let outer_index_count = 4;
 
@@ -350,12 +350,12 @@ mod tests {
 
         let mut list_slot_0 = ListSlot::default();
         list_slot_0.inner = [0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-        list_slot_0.write_to_slot(&mut slot_storage, &list_key_0);
+        list_slot_0.write_to_slot(&mut ctx, &list_key_0);
 
-        remover.find_outer_index(&slot_storage, OuterIndex::new(3));
+        remover.find_outer_index(&ctx, OuterIndex::new(3));
         remover.remove_cached_index();
 
-        remover.find_outer_index(&slot_storage, OuterIndex::new(2));
+        remover.find_outer_index(&ctx, OuterIndex::new(2));
         remover.remove_cached_index();
 
         assert!(!remover.pending_write);
@@ -366,7 +366,7 @@ mod tests {
 
     #[test]
     fn test_remove_multiple_adjacent_non_outermost_in_same_slot() {
-        let mut slot_storage = ArbContext::new();
+        let mut ctx = ArbContext::new();
         let side = Side::Bid;
         let outer_index_count = 4;
 
@@ -376,12 +376,12 @@ mod tests {
 
         let mut list_slot_0 = ListSlot::default();
         list_slot_0.inner = [0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-        list_slot_0.write_to_slot(&mut slot_storage, &list_key_0);
+        list_slot_0.write_to_slot(&mut ctx, &list_key_0);
 
-        remover.find_outer_index(&slot_storage, OuterIndex::new(2));
+        remover.find_outer_index(&ctx, OuterIndex::new(2));
         remover.remove_cached_index();
 
-        remover.find_outer_index(&slot_storage, OuterIndex::new(1));
+        remover.find_outer_index(&ctx, OuterIndex::new(1));
         remover.remove_cached_index();
 
         assert!(remover.pending_write);
@@ -392,7 +392,7 @@ mod tests {
 
     #[test]
     fn test_remove_multiple_non_adjacent_in_same_slot() {
-        let mut slot_storage = ArbContext::new();
+        let mut ctx = ArbContext::new();
         let side = Side::Bid;
         let outer_index_count = 4;
 
@@ -402,12 +402,12 @@ mod tests {
 
         let mut list_slot_0 = ListSlot::default();
         list_slot_0.inner = [0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-        list_slot_0.write_to_slot(&mut slot_storage, &list_key_0);
+        list_slot_0.write_to_slot(&mut ctx, &list_key_0);
 
-        remover.find_outer_index(&slot_storage, OuterIndex::new(2));
+        remover.find_outer_index(&ctx, OuterIndex::new(2));
         remover.remove_cached_index();
 
-        remover.find_outer_index(&slot_storage, OuterIndex::new(0));
+        remover.find_outer_index(&ctx, OuterIndex::new(0));
         remover.remove_cached_index();
 
         assert!(remover.pending_write);
@@ -418,7 +418,7 @@ mod tests {
 
     #[test]
     fn test_remove_multiple_different_adjacent_slots() {
-        let mut slot_storage = ArbContext::new();
+        let mut ctx = ArbContext::new();
         let side = Side::Bid;
         let outer_index_count = 18;
 
@@ -430,13 +430,13 @@ mod tests {
         let mut list_slot_1 = ListSlot::default();
         list_slot_0.inner = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
         list_slot_1.inner = [16, 17, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-        list_slot_0.write_to_slot(&mut slot_storage, &list_key_0);
-        list_slot_1.write_to_slot(&mut slot_storage, &list_key_1);
+        list_slot_0.write_to_slot(&mut ctx, &list_key_0);
+        list_slot_1.write_to_slot(&mut ctx, &list_key_1);
 
-        remover.find_outer_index(&slot_storage, OuterIndex::new(17));
+        remover.find_outer_index(&ctx, OuterIndex::new(17));
         remover.remove_cached_index();
 
-        remover.find_outer_index(&slot_storage, OuterIndex::new(14));
+        remover.find_outer_index(&ctx, OuterIndex::new(14));
         remover.remove_cached_index();
 
         assert!(remover.pending_write);
@@ -450,7 +450,7 @@ mod tests {
 
     #[test]
     fn test_remove_multiple_different_non_adjacent_slots() {
-        let mut slot_storage = ArbContext::new();
+        let mut ctx = ArbContext::new();
         let side = Side::Bid;
         let outer_index_count = 34;
 
@@ -467,14 +467,14 @@ mod tests {
             16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
         ];
         list_slot_2.inner = [33, 34, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-        list_slot_0.write_to_slot(&mut slot_storage, &list_key_0);
-        list_slot_1.write_to_slot(&mut slot_storage, &list_key_1);
-        list_slot_2.write_to_slot(&mut slot_storage, &list_key_2);
+        list_slot_0.write_to_slot(&mut ctx, &list_key_0);
+        list_slot_1.write_to_slot(&mut ctx, &list_key_1);
+        list_slot_2.write_to_slot(&mut ctx, &list_key_2);
 
-        remover.find_outer_index(&slot_storage, OuterIndex::new(33));
+        remover.find_outer_index(&ctx, OuterIndex::new(33));
         remover.remove_cached_index();
 
-        remover.find_outer_index(&slot_storage, OuterIndex::new(14));
+        remover.find_outer_index(&ctx, OuterIndex::new(14));
         remover.remove_cached_index();
 
         assert!(remover.pending_write);
@@ -507,7 +507,7 @@ mod tests {
 
     #[test]
     fn test_remove_same_slot_ghost_value_from_no_write_case() {
-        let mut slot_storage = ArbContext::new();
+        let mut ctx = ArbContext::new();
         let side = Side::Bid;
         let outer_index_count = 2;
 
@@ -517,15 +517,15 @@ mod tests {
         let mut list_slot = ListSlot::default();
         list_slot.set(0, OuterIndex::new(100));
         list_slot.set(1, OuterIndex::new(200));
-        list_slot.write_to_slot(&mut slot_storage, &list_key);
+        list_slot.write_to_slot(&mut ctx, &list_key);
 
-        remover.find_outer_index(&slot_storage, OuterIndex::new(200));
+        remover.find_outer_index(&ctx, OuterIndex::new(200));
         remover.remove_cached_index();
         // No need of a write since we only removed the outermost value
         assert!(!remover.pending_write);
 
-        remover.write_index_list(&mut slot_storage);
-        let read_list_slot = ListSlot::new_from_slot(&slot_storage, list_key);
+        remover.write_index_list(&mut ctx);
+        let read_list_slot = ListSlot::new_from_slot(&ctx, list_key);
         // Ghost value 200 at i = 1 due to no write case
         assert_eq!(
             vec![100, 200, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -535,7 +535,7 @@ mod tests {
 
     #[test]
     fn test_remove_same_slot_ghost_value_from_no_write_case_multiple_slots() {
-        let mut slot_storage = ArbContext::new();
+        let mut ctx = ArbContext::new();
         let side = Side::Bid;
         let outer_index_count = 17;
 
@@ -547,17 +547,17 @@ mod tests {
         let mut list_slot_1 = ListSlot::default();
         list_slot_0.inner = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
         list_slot_1.inner = [16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-        list_slot_0.write_to_slot(&mut slot_storage, &list_key_0);
-        list_slot_1.write_to_slot(&mut slot_storage, &list_key_1);
+        list_slot_0.write_to_slot(&mut ctx, &list_key_0);
+        list_slot_1.write_to_slot(&mut ctx, &list_key_1);
 
-        remover.find_outer_index(&slot_storage, OuterIndex::new(16));
+        remover.find_outer_index(&ctx, OuterIndex::new(16));
         remover.remove_cached_index();
         // No need of a write since we only removed the outermost value
         assert!(!remover.pending_write);
 
-        remover.write_index_list(&mut slot_storage);
-        let read_list_slot_0 = ListSlot::new_from_slot(&slot_storage, list_key_0);
-        let read_list_slot_1 = ListSlot::new_from_slot(&slot_storage, list_key_1);
+        remover.write_index_list(&mut ctx);
+        let read_list_slot_0 = ListSlot::new_from_slot(&ctx, list_key_0);
+        let read_list_slot_1 = ListSlot::new_from_slot(&ctx, list_key_1);
         assert_eq!(
             vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
             read_list_slot_0.inner
@@ -571,7 +571,7 @@ mod tests {
 
     #[test]
     fn test_remove_same_slot_ghost_value_from_write_case() {
-        let mut slot_storage = ArbContext::new();
+        let mut ctx = ArbContext::new();
         let side = Side::Bid;
         let outer_index_count = 2;
 
@@ -581,15 +581,15 @@ mod tests {
         let mut list_slot = ListSlot::default();
         list_slot.set(0, OuterIndex::new(100));
         list_slot.set(1, OuterIndex::new(200));
-        list_slot.write_to_slot(&mut slot_storage, &list_key);
+        list_slot.write_to_slot(&mut ctx, &list_key);
 
-        remover.find_outer_index(&slot_storage, OuterIndex::new(100));
+        remover.find_outer_index(&ctx, OuterIndex::new(100));
         remover.remove_cached_index();
         // We need to write because cache was non-empty
         assert!(remover.pending_write);
 
-        remover.write_index_list(&mut slot_storage);
-        let read_list_slot = ListSlot::new_from_slot(&slot_storage, list_key);
+        remover.write_index_list(&mut ctx);
+        let read_list_slot = ListSlot::new_from_slot(&ctx, list_key);
         // Ghost value 200 at i = 1 due to same slot write case
         assert_eq!(
             vec![200, 200, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -599,7 +599,7 @@ mod tests {
 
     #[test]
     fn test_remove_different_slot_no_ghost_value() {
-        let mut slot_storage = ArbContext::new();
+        let mut ctx = ArbContext::new();
         let side = Side::Bid;
         let outer_index_count = 18;
 
@@ -612,17 +612,17 @@ mod tests {
         let mut list_slot_1 = ListSlot::default();
         list_slot_0.inner = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
         list_slot_1.inner = [16, 17, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-        list_slot_0.write_to_slot(&mut slot_storage, &list_key_0);
-        list_slot_1.write_to_slot(&mut slot_storage, &list_key_1);
+        list_slot_0.write_to_slot(&mut ctx, &list_key_0);
+        list_slot_1.write_to_slot(&mut ctx, &list_key_1);
 
-        remover.find_outer_index(&slot_storage, OuterIndex::new(15));
+        remover.find_outer_index(&ctx, OuterIndex::new(15));
         remover.remove_cached_index();
         // We need to write because cache was non-empty
         assert!(remover.pending_write);
 
-        remover.write_index_list(&mut slot_storage);
-        let read_list_slot_0 = ListSlot::new_from_slot(&slot_storage, list_key_0);
-        let read_list_slot_1 = ListSlot::new_from_slot(&slot_storage, list_key_1);
+        remover.write_index_list(&mut ctx);
+        let read_list_slot_0 = ListSlot::new_from_slot(&ctx, list_key_0);
+        let read_list_slot_1 = ListSlot::new_from_slot(&ctx, list_key_1);
         assert_eq!(
             vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16],
             read_list_slot_0.inner
@@ -635,7 +635,7 @@ mod tests {
 
     #[test]
     fn test_remove_from_different_slot_ghost_value_due_to_cleared_slot() {
-        let mut slot_storage = ArbContext::new();
+        let mut ctx = ArbContext::new();
         let side = Side::Bid;
         let outer_index_count = 17;
 
@@ -648,17 +648,17 @@ mod tests {
         let mut list_slot_1 = ListSlot::default();
         list_slot_0.inner = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
         list_slot_1.inner = [16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-        list_slot_0.write_to_slot(&mut slot_storage, &list_key_0);
-        list_slot_1.write_to_slot(&mut slot_storage, &list_key_1);
+        list_slot_0.write_to_slot(&mut ctx, &list_key_0);
+        list_slot_1.write_to_slot(&mut ctx, &list_key_1);
 
-        remover.find_outer_index(&slot_storage, OuterIndex::new(15));
+        remover.find_outer_index(&ctx, OuterIndex::new(15));
         remover.remove_cached_index();
         // We need to write because cache was non-empty
         assert!(remover.pending_write);
 
-        remover.write_index_list(&mut slot_storage);
-        let read_list_slot_0 = ListSlot::new_from_slot(&slot_storage, list_key_0);
-        let read_list_slot_1 = ListSlot::new_from_slot(&slot_storage, list_key_1);
+        remover.write_index_list(&mut ctx);
+        let read_list_slot_0 = ListSlot::new_from_slot(&ctx, list_key_0);
+        let read_list_slot_1 = ListSlot::new_from_slot(&ctx, list_key_1);
         assert_eq!(
             vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16],
             read_list_slot_0.inner
@@ -672,7 +672,7 @@ mod tests {
 
     #[test]
     fn test_two_types_of_ghost_values_due_to_cached_slot_and_cleared_slot() {
-        let mut slot_storage = ArbContext::new();
+        let mut ctx = ArbContext::new();
         let side = Side::Bid;
         let outer_index_count = 17;
 
@@ -685,20 +685,20 @@ mod tests {
         let mut list_slot_1 = ListSlot::default();
         list_slot_0.inner = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
         list_slot_1.inner = [16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-        list_slot_0.write_to_slot(&mut slot_storage, &list_key_0);
-        list_slot_1.write_to_slot(&mut slot_storage, &list_key_1);
+        list_slot_0.write_to_slot(&mut ctx, &list_key_0);
+        list_slot_1.write_to_slot(&mut ctx, &list_key_1);
 
-        remover.find_outer_index(&slot_storage, OuterIndex::new(14));
+        remover.find_outer_index(&ctx, OuterIndex::new(14));
         remover.remove_cached_index();
-        remover.find_outer_index(&slot_storage, OuterIndex::new(13));
+        remover.find_outer_index(&ctx, OuterIndex::new(13));
         remover.remove_cached_index();
 
         // We need to write because cache was non-empty
         assert!(remover.pending_write);
-        remover.write_index_list(&mut slot_storage);
+        remover.write_index_list(&mut ctx);
 
-        let read_list_slot_0 = ListSlot::new_from_slot(&slot_storage, list_key_0);
-        let read_list_slot_1 = ListSlot::new_from_slot(&slot_storage, list_key_1);
+        let read_list_slot_0 = ListSlot::new_from_slot(&ctx, list_key_0);
+        let read_list_slot_1 = ListSlot::new_from_slot(&ctx, list_key_1);
         // Ghost value due to cached slot
         assert_eq!(
             vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 15, 16, 15],

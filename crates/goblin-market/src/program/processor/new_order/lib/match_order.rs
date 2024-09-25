@@ -19,7 +19,7 @@ use super::{compute_fee, round_adjusted_quote_lots_up};
 /// - IOC case: is used to validate fill conditions
 ///
 pub fn match_order(
-    slot_storage: &mut ArbContext,
+    ctx: &mut ArbContext,
     market_state: &mut MarketState,
     inflight_order: &mut InflightOrder,
     taker_address: Address,
@@ -32,7 +32,7 @@ pub fn match_order(
 
     let mut handle_match = |order_id: OrderId,
                             resting_order: &mut SlotRestingOrder,
-                            slot_storage: &mut ArbContext| {
+                            ctx: &mut ArbContext| {
         let num_base_lots_quoted = resting_order.num_base_lots;
 
         let crosses = match inflight_order.side.opposite() {
@@ -44,8 +44,7 @@ pub fn match_order(
             return true;
         }
 
-        let mut maker_state =
-            TraderState::read_from_slot(slot_storage, resting_order.trader_address);
+        let mut maker_state = TraderState::read_from_slot(ctx, resting_order.trader_address);
 
         // 1. Resting order expired case
         if resting_order.is_expired(current_block, current_unix_timestamp_in_seconds) {
@@ -57,7 +56,7 @@ pub fn match_order(
                 true,
                 false,
             );
-            maker_state.write_to_slot(slot_storage, resting_order.trader_address);
+            maker_state.write_to_slot(ctx, resting_order.trader_address);
             inflight_order.match_limit -= 1;
 
             // If match limit is exhausted, this returns false to stop
@@ -124,7 +123,7 @@ pub fn match_order(
                     inflight_order.match_limit -= 1;
                 }
             }
-            maker_state.write_to_slot(slot_storage, resting_order.trader_address);
+            maker_state.write_to_slot(ctx, resting_order.trader_address);
             return !inflight_order.in_progress();
         }
 
@@ -188,7 +187,7 @@ pub fn match_order(
         !inflight_order.in_progress()
     };
 
-    process_resting_orders(slot_storage, market_state, opposite_side, &mut handle_match);
+    process_resting_orders(ctx, market_state, opposite_side, &mut handle_match);
 
     if abort {
         return None;
