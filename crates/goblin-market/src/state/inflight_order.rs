@@ -1,4 +1,8 @@
-use crate::quantities::{AdjustedQuoteLots, BaseLots, QuoteLots, Ticks};
+use crate::{
+    parameters::BASE_LOTS_PER_BASE_UNIT,
+    program::{round_adjusted_quote_lots_down, round_adjusted_quote_lots_up},
+    quantities::{AdjustedQuoteLots, BaseLots, QuoteLots, Ticks},
+};
 
 use super::{SelfTradeBehavior, Side};
 
@@ -84,6 +88,27 @@ impl InflightOrder {
             self.matched_base_lots += matched_base_lots;
             self.matched_adjusted_quote_lots += matched_adjusted_quote_lots;
             self.match_limit -= 1;
+        }
+    }
+
+    /// The matched quote lots
+    ///
+    /// `matched_adjusted_quote_lots` is rounded down to the nearest tick
+    /// for buys and up for sells to yield a whole number of matched_quote_lots.
+    pub(crate) fn matched_quote_lots(&self) -> QuoteLots {
+        match self.side {
+            // We add the quote_lot_fees to account for the fee being paid on a buy order
+            Side::Bid => {
+                (round_adjusted_quote_lots_up(self.matched_adjusted_quote_lots)
+                    / BASE_LOTS_PER_BASE_UNIT)
+                    + self.quote_lot_fees
+            }
+            // We subtract the quote_lot_fees to account for the fee being paid on a sell order
+            Side::Ask => {
+                (round_adjusted_quote_lots_down(self.matched_adjusted_quote_lots)
+                    / BASE_LOTS_PER_BASE_UNIT)
+                    - self.quote_lot_fees
+            }
         }
     }
 }

@@ -658,4 +658,9 @@ mod test {
             max_raw_atoms.as_limbs()
         );
     }
+
+    #[test]
+    fn test_max_adusted_quote_lots() {
+        assert_eq!(AdjustedQuoteLots::MAX.as_u64(), u64::MAX);
+    }
 }

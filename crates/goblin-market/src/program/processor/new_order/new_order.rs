@@ -297,6 +297,8 @@ pub fn process_new_order(
         )
         .ok_or(GoblinError::NewOrderError(NewOrderError {}))?;
 
+        // order_to_insert is not set in IOC case. The RestingOrder instance is
+        // discarded
         if let Some(OrderToInsert {
             order_id,
             resting_order,

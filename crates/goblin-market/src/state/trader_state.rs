@@ -1,8 +1,8 @@
 use stylus_sdk::alloy_primitives::Address;
 
 use crate::{
-    program::types::matching_engine_response::MatchingEngineResponse,
-    quantities::{BaseLots, QuoteLots, WrapperU64},
+    program::{compute_quote_lots, types::matching_engine_response::MatchingEngineResponse},
+    quantities::{BaseLots, QuoteLots, Ticks, WrapperU64},
 };
 
 use super::{Side, SlotActions, SlotKey, SlotStorage, TRADER_STATE_KEY_SEED};
@@ -185,6 +185,90 @@ impl TraderState {
     ) {
         self.lock_base_lots_inner(base_lots);
         matching_engine_response.post_base_lots(base_lots);
+    }
+
+    /// Deduct free tokens for a matched take order and generate
+    /// a matching engine response
+    ///
+    /// # Arguments
+    ///
+    /// * `side` - Whether bid or ask
+    /// * `matched_quote_lots` - Number of quote lots matched
+    /// * `matched_base_lots` - Number of base lots matched
+    pub fn take_order(
+        &mut self,
+        side: Side,
+        matched_quote_lots: QuoteLots,
+        matched_base_lots: BaseLots,
+    ) -> MatchingEngineResponse {
+        match side {
+            // Quote lots in, base lots out
+            Side::Bid => {
+                let quote_lots_free_to_use = self.quote_lots_free.min(matched_quote_lots);
+                self.use_free_quote_lots_inner(quote_lots_free_to_use);
+
+                MatchingEngineResponse::new_from_buy(
+                    matched_quote_lots,
+                    matched_base_lots,
+                    quote_lots_free_to_use,
+                )
+            }
+            // Base lots in, quote lots out
+            Side::Ask => {
+                let base_lots_free_to_use = self.base_lots_free.min(matched_base_lots);
+                self.use_free_base_lots_inner(base_lots_free_to_use);
+
+                MatchingEngineResponse::new_from_sell(
+                    matched_base_lots,
+                    matched_quote_lots,
+                    base_lots_free_to_use,
+                )
+            }
+        }
+    }
+
+    /// Lock up lots and use available free lots to post a resting order
+    ///
+    /// If deposited free lots are insufficient to cover the order, the remainder
+    /// amount will be transferred by an ERC20 transfer later. The remainder amount
+    /// is tracked by MatchingEngineResponse.
+    ///
+    /// # Arguments
+    ///
+    /// * `matching_engine_response`
+    /// * `side`
+    /// * `price_in_ticks` - Price where order should be placed
+    /// * `num_base_lots` - Side of the order
+    ///
+    /// # Updates
+    ///
+    /// * `self`- Adds to locked lots, deducts available free lots
+    /// * `matching_engine_response` - Adds to the lots posted (locked) on the book
+    /// free lots used.
+    pub fn make_order(
+        &mut self,
+        matching_engine_response: &mut MatchingEngineResponse,
+        side: Side,
+        price_in_ticks: Ticks,
+        num_base_lots: BaseLots,
+    ) {
+        match side {
+            Side::Bid => {
+                // Lots needed to place order
+                let quote_lots_to_lock = compute_quote_lots(price_in_ticks, num_base_lots);
+                // Deposited lots available with TraderState
+                let quote_lots_free_to_use = quote_lots_to_lock.min(self.quote_lots_free);
+
+                self.lock_quote_lots(matching_engine_response, quote_lots_to_lock);
+                self.use_free_quote_lots(matching_engine_response, quote_lots_free_to_use);
+            }
+            Side::Ask => {
+                let base_lots_free_to_use = num_base_lots.min(self.base_lots_free);
+
+                self.lock_base_lots(matching_engine_response, num_base_lots);
+                self.use_free_base_lots(matching_engine_response, base_lots_free_to_use);
+            }
+        }
     }
 
     /// Uses up free quote lots from the trader state. This used amount is tracked

@@ -1,8 +1,8 @@
 use crate::quantities::{BaseLots, QuoteLots};
 
-/// Represents the change in lots after a matching engine operation
-/// from the "trader's perspective"
-#[repr(C)]
+/// Tracks the exchange of lots for a trader. Used to verify no deposit case
+/// and for calculating net lots to transfer in when free lots in trader
+/// state are insufficient.
 #[derive(Debug, Eq, PartialEq, Default, Copy, Clone)]
 pub struct MatchingEngineResponse {
     /// The number of quote lots to be transferred in by the trader to the matching engine
@@ -31,10 +31,18 @@ pub struct MatchingEngineResponse {
     /// An equal number of lots are locked up in the trader state.
     pub num_base_lots_posted: BaseLots,
 
-    /// The number of free quote lots used up from trader state.
+    /// The number of free quote lots used up from trader state to provide
+    /// - input lots for matched orders (taker case)
+    /// - lots to post resting orders on the book (maker case)
+    ///
+    /// Used to calculate net deposit amount and for verifying no deposit case
     pub num_free_quote_lots_used: QuoteLots,
 
-    /// The number of free base lots used up from trader state.
+    /// The number of free base lots used up from trader state to provide
+    /// - input lots for matched orders (taker case)
+    /// - lots to post resting orders on the book (maker case)
+    ///
+    /// Used to calculate net deposit amount and for verifying no deposit case
     pub num_free_base_lots_used: BaseLots,
 }
 
@@ -47,7 +55,12 @@ impl MatchingEngineResponse {
     /// # Parameters
     /// - `num_quote_lots_in`: The number of quote lots paid by the trader.
     /// - `num_base_lots_out`: The number of base lots bought by trader.
-    pub fn new_from_buy(num_quote_lots_in: QuoteLots, num_base_lots_out: BaseLots) -> Self {
+    /// - `num_free_quote_lots_used`: The number of free quote lots used up from trader state.
+    pub fn new_from_buy(
+        num_quote_lots_in: QuoteLots,
+        num_base_lots_out: BaseLots,
+        num_free_quote_lots_used: QuoteLots,
+    ) -> Self {
         MatchingEngineResponse {
             num_quote_lots_in,
             num_base_lots_in: BaseLots::ZERO,
@@ -55,7 +68,7 @@ impl MatchingEngineResponse {
             num_base_lots_out,
             num_quote_lots_posted: QuoteLots::ZERO,
             num_base_lots_posted: BaseLots::ZERO,
-            num_free_quote_lots_used: QuoteLots::ZERO,
+            num_free_quote_lots_used,
             num_free_base_lots_used: BaseLots::ZERO,
         }
     }
@@ -68,7 +81,12 @@ impl MatchingEngineResponse {
     /// # Parameters
     /// - `num_base_lots_in`: The number of base lots sold by the trader.
     /// - `num_quote_lots_out`: The number of quote lots received by the trader.
-    pub fn new_from_sell(num_base_lots_in: BaseLots, num_quote_lots_out: QuoteLots) -> Self {
+    /// - `num_free_base_lots_used`: The number of free base lots used up from trader state.
+    pub fn new_from_sell(
+        num_base_lots_in: BaseLots,
+        num_quote_lots_out: QuoteLots,
+        num_free_base_lots_used: BaseLots,
+    ) -> Self {
         MatchingEngineResponse {
             num_quote_lots_in: QuoteLots::ZERO,
             num_base_lots_in,
@@ -77,7 +95,7 @@ impl MatchingEngineResponse {
             num_quote_lots_posted: QuoteLots::ZERO,
             num_base_lots_posted: BaseLots::ZERO,
             num_free_quote_lots_used: QuoteLots::ZERO,
-            num_free_base_lots_used: BaseLots::ZERO,
+            num_free_base_lots_used,
         }
     }
 
@@ -123,29 +141,6 @@ impl MatchingEngineResponse {
         self.num_base_lots_posted += num_base_lots;
     }
 
-    /// Calculates the total number of base lots involved in the operation
-    /// (both incoming and outgoing).
-    ///
-    /// Either `num_base_lots_in` or `num_base_lots_out` is guaranteed to be zero.
-    /// We add the two to avoid using if-else for `side`.
-    ///
-    /// # Returns
-    /// The total number of base lots.
-    #[inline(always)]
-    pub fn num_base_lots(&self) -> BaseLots {
-        self.num_base_lots_in + self.num_base_lots_out
-    }
-
-    /// Calculates the total number of quote lots involved in the operation
-    /// (both incoming and outgoing).
-    ///
-    /// # Returns
-    /// The total number of quote lots.
-    #[inline(always)]
-    pub fn num_quote_lots(&self) -> QuoteLots {
-        self.num_quote_lots_in + self.num_quote_lots_out
-    }
-
     /// Called when free quote lots are deducted from trader state. Tracks the total number
     /// of free quote lots used up
     ///
@@ -182,15 +177,15 @@ impl MatchingEngineResponse {
         self.num_base_lots_in + self.num_base_lots_posted - self.num_free_base_lots_used
     }
 
+    /// Whether the trader's free funds are sufficient to cover the order.
+    ///
+    /// The free lots used up should fully cover
+    /// - lots in: for IOC and limit orders (taker case)
+    /// - lots posted: for limit and post-only orders (maker case)
     #[inline(always)]
     pub fn verify_no_deposit(&self) -> bool {
         self.num_base_lots_in + self.num_base_lots_posted == self.num_free_base_lots_used
             && self.num_quote_lots_in + self.num_quote_lots_posted == self.num_free_quote_lots_used
-    }
-
-    #[inline(always)]
-    pub fn verify_no_withdrawal(&self) -> bool {
-        self.num_base_lots_out == BaseLots::ZERO && self.num_quote_lots_out == QuoteLots::ZERO
     }
 
     /// Whether minimum lot requirements are met for an IOC order
@@ -202,5 +197,33 @@ impl MatchingEngineResponse {
     #[inline(always)]
     pub fn verify_minimum_lots_filled(&self, base_lots: BaseLots, quote_lots: QuoteLots) -> bool {
         self.num_base_lots() >= base_lots && self.num_quote_lots() >= quote_lots
+    }
+
+    /// Calculates the total number of base lots involved in matching a taker
+    /// (IOC or limit) order. Equals to 0 for post-only orders.
+    ///
+    /// For taker orders either `num_base_lots_in` or `num_base_lots_out` is guaranteed
+    /// to be zero. We use the sum to avoid if-else for `side` when testing for minimum
+    /// fill condition.
+    ///
+    /// # Returns
+    /// The total number of base lots involved in matching.
+    #[inline(always)]
+    fn num_base_lots(&self) -> BaseLots {
+        self.num_base_lots_in + self.num_base_lots_out
+    }
+
+    /// Calculates the total number of quote lots involved in matching a taker
+    /// (IOC or limit) order. Equals to 0 for post-only orders.
+    ///
+    /// For taker orders either `num_quote_lots_in` or `num_quote_lots_out` is guaranteed
+    /// to be zero. We use the sum to avoid if-else for `side` when testing for minimum
+    /// fill condition.
+    ///
+    /// # Returns
+    /// The total number of quote lots involved in matching.
+    #[inline(always)]
+    fn num_quote_lots(&self) -> QuoteLots {
+        self.num_quote_lots_in + self.num_quote_lots_out
     }
 }

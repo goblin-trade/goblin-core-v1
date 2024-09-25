@@ -2,9 +2,13 @@ use stylus_sdk::alloy_primitives::Address;
 
 use crate::{
     parameters::{BASE_LOTS_PER_BASE_UNIT, TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT},
-    program::{get_available_base_lots, get_available_quote_lots},
-    quantities::{BaseLots, QuoteLots, Ticks},
-    state::{SelfTradeBehavior, Side},
+    program::{
+        adjusted_quote_lot_budget_post_fee_adjustment_for_buys,
+        adjusted_quote_lot_budget_post_fee_adjustment_for_sells, get_available_base_lots,
+        get_available_quote_lots,
+    },
+    quantities::{AdjustedQuoteLots, BaseLots, QuoteLots, Ticks},
+    state::{order::resting_order::SlotRestingOrder, InflightOrder, SelfTradeBehavior, Side},
     GoblinMarket,
 };
 
@@ -457,6 +461,75 @@ impl OrderPacket {
             }
         }
         true
+    }
+
+    /// The adjusted quote lot budget
+    ///
+    /// Multiply the quote lot budget by the number of base lots per unit to get the number of
+    /// adjusted quote lots (quote_lots * base_lots_per_base_unit).
+    ///
+    /// Externally ensure this is not called for post-only orders.
+    ///
+    /// This function is only called for taker orders (IOC and limit). Since quote_lot_budget()
+    /// is None for limit orders, this function will return AdjustedQuoteLots::MAX for limit.
+    pub fn adjusted_quote_lot_budget(&self) -> AdjustedQuoteLots {
+        debug_assert_eq!(self.is_post_only(), false);
+
+        if let Some(quote_lot_budget) = self.quote_lot_budget() {
+            let size_in_adjusted_quote_lots = quote_lot_budget * BASE_LOTS_PER_BASE_UNIT;
+
+            match self.side() {
+                // For buys, the adjusted quote lot budget is decreased by the max fee.
+                // This is because the fee is added to the quote lots spent after the matching is complete.
+                Side::Bid => adjusted_quote_lot_budget_post_fee_adjustment_for_buys(
+                    size_in_adjusted_quote_lots,
+                ),
+                // For sells, the adjusted quote lot budget is increased by the max fee.
+                // This is because the fee is subtracted from the quote lot received after the matching is complete.
+                Side::Ask => adjusted_quote_lot_budget_post_fee_adjustment_for_sells(
+                    size_in_adjusted_quote_lots,
+                ),
+            }
+            .unwrap_or(AdjustedQuoteLots::MAX)
+        } else {
+            AdjustedQuoteLots::MAX
+        }
+    }
+
+    /// Generate inflight order from a limit or IOC order packet
+    ///
+    /// Externally ensure this is not called for post-only orders.
+    pub fn get_inflight_order(&self) -> InflightOrder {
+        debug_assert_eq!(self.is_post_only(), false);
+
+        InflightOrder::new(
+            self.side(),
+            self.self_trade_behavior(),
+            self.get_price_in_ticks(),
+            self.match_limit(),
+            self.base_lot_budget(),
+            self.adjusted_quote_lot_budget(),
+            self.track_block(),
+            self.last_valid_block_or_unix_timestamp_in_seconds(),
+        )
+    }
+
+    /// Generate resting order for a post-only order packet
+    ///
+    /// Externally ensure this is only called for post-only orders.
+    ///
+    /// # Arguments
+    ///
+    /// * `trader_address` - Address of the trader posting the order
+    pub fn get_resting_order(&self, trader_address: Address) -> SlotRestingOrder {
+        debug_assert_eq!(self.is_post_only(), true);
+
+        SlotRestingOrder::new(
+            trader_address,
+            self.num_base_lots(),
+            self.track_block(),
+            self.last_valid_block_or_unix_timestamp_in_seconds(),
+        )
     }
 }
 
