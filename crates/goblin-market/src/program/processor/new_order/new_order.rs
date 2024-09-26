@@ -18,7 +18,7 @@ use crate::{
     GoblinMarket,
 };
 
-use super::{place_order_inner, CondensedOrder};
+use super::{place_order_inner, BlockDataCache, CondensedOrder};
 
 #[derive(Clone, Copy)]
 pub struct OrderToInsert {
@@ -68,6 +68,9 @@ pub fn place_multiple_new_orders(
     let mut quote_lots_available = trader_state.quote_lots_free;
     let mut base_allowance_read = false;
     let mut quote_allowance_read = false;
+
+    // Lazy load block number and timestamp
+    let mut block_data_cache = BlockDataCache::new();
 
     // The last placed order. Used to
     // - ensure orders are sorted
@@ -148,8 +151,8 @@ pub fn place_multiple_new_orders(
                 // matching_engine_response gives the number of tokens required
                 // these are added and then compared in the end
                 let (order_to_insert, matching_engine_response) = place_order_inner(
-                    // order_inserter.index_list_iterator.ctx,
                     ctx,
+                    &mut block_data_cache,
                     &mut market_state,
                     &mut trader_state,
                     trader,
@@ -258,6 +261,8 @@ pub fn process_new_order(
     trader: Address,
 ) -> GoblinResult<()> {
     let ctx = &mut ArbContext::new();
+    let mut block_data_cache = BlockDataCache::new();
+
     let mut market_state = MarketState::read_from_slot(ctx);
     let mut trader_state = TraderState::read_from_slot(ctx, trader);
 
@@ -289,6 +294,7 @@ pub fn process_new_order(
 
         let (order_to_insert, matching_engine_response) = place_order_inner(
             ctx,
+            &mut block_data_cache,
             &mut market_state,
             &mut trader_state,
             trader,

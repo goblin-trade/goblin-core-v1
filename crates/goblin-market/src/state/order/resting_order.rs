@@ -179,16 +179,16 @@ impl SlotRestingOrder {
         self.trader_address == Address::ZERO || self.trader_address == NULL_ADDRESS
     }
 
-    pub fn is_expired(&self, current_block: u32, current_unix_timestamp_in_seconds: u32) -> bool {
-        if self.last_valid_block_or_unix_timestamp_in_seconds == 0 {
-            return false;
-        }
+    // pub fn is_expired(&self, current_block: u32, current_unix_timestamp_in_seconds: u32) -> bool {
+    //     if self.last_valid_block_or_unix_timestamp_in_seconds == 0 {
+    //         return false;
+    //     }
 
-        (self.track_block && current_block > self.last_valid_block_or_unix_timestamp_in_seconds)
-            || (!self.track_block
-                && current_unix_timestamp_in_seconds
-                    > self.last_valid_block_or_unix_timestamp_in_seconds)
-    }
+    //     (self.track_block && current_block > self.last_valid_block_or_unix_timestamp_in_seconds)
+    //         || (!self.track_block
+    //             && current_unix_timestamp_in_seconds
+    //                 > self.last_valid_block_or_unix_timestamp_in_seconds)
+    // }
 
     /// Whether the order is empty and can be removed from the book.
     ///

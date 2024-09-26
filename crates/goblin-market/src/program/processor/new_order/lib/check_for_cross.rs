@@ -7,6 +7,8 @@ use crate::{
     },
 };
 
+use super::BlockDataCache;
+
 /// This function determines whether a PostOnly order crosses the book.
 /// If the order crosses the book, the function returns the price of the best unexpired
 /// crossing order (price, index) on the opposite side of the book. Otherwise, it returns None.
@@ -16,18 +18,16 @@ use crate::{
 /// # Arguments
 ///
 /// * `market_state`
+/// * `block_data_cache`
 /// * `side`
 /// * `num_ticks`
-/// * `current_block`
-/// * `current_unix_timestamp_in_seconds`
 ///
 pub fn check_for_cross(
     ctx: &mut ArbContext,
+    block_data_cache: &mut BlockDataCache,
     market_state: &mut MarketState,
     side: Side,
     limit_price_in_ticks: Ticks,
-    current_block: u32,
-    current_unix_timestamp_in_seconds: u32,
 ) -> Option<Ticks> {
     let opposite_side = side.opposite();
     let opposite_best_price = market_state.best_price(opposite_side);
@@ -55,7 +55,11 @@ pub fn check_for_cross(
             return true;
         }
 
-        if resting_order.is_expired(current_block, current_unix_timestamp_in_seconds) {
+        if block_data_cache.is_expired(
+            ctx,
+            resting_order.track_block,
+            resting_order.last_valid_block_or_unix_timestamp_in_seconds,
+        ) {
             let mut maker_state = TraderState::read_from_slot(ctx, resting_order.trader_address);
 
             resting_order.reduce_order(

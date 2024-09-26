@@ -1,4 +1,4 @@
-use stylus_sdk::{alloy_primitives::Address, block};
+use stylus_sdk::alloy_primitives::Address;
 
 use crate::{
     program::types::{
@@ -9,7 +9,9 @@ use crate::{
     state::{ArbContext, MarketState, Side, TraderState},
 };
 
-use super::{check_for_cross, get_best_available_order_id, match_order, OrderToInsert};
+use super::{
+    check_for_cross, get_best_available_order_id, match_order, BlockDataCache, OrderToInsert,
+};
 
 /// Try to execute an order packet and place an order
 ///
@@ -25,6 +27,7 @@ use super::{check_for_cross, get_best_available_order_id, match_order, OrderToIn
 ///
 pub fn place_order_inner(
     ctx: &mut ArbContext,
+    block_data_cache: &mut BlockDataCache,
     market_state: &mut MarketState,
     trader_state: &mut TraderState,
     trader: Address,
@@ -71,13 +74,13 @@ pub fn place_order_inner(
         }
     }
 
-    // TODO don't load both
-    let current_block = block::number() as u32;
-    let current_unix_timestamp = block::timestamp() as u32;
-
-    // Fail if order packet expired
-    if order_packet.is_expired(current_block, current_unix_timestamp) {
-        // Do not fail the transaction if the order is expired, but do not place or match the order
+    if block_data_cache.is_expired(
+        ctx,
+        order_packet.track_block(),
+        order_packet.last_valid_block_or_unix_timestamp_in_seconds(),
+    ) {
+        // Exit if expired
+        // Do not fail the transaction by returning None but do not place or match the order
         return Some((None, MatchingEngineResponse::default()));
     }
 
@@ -103,14 +106,9 @@ pub fn place_order_inner(
             {
                 *price_in_ticks = last_price;
             }
-        } else if let Some(ticks) = check_for_cross(
-            ctx,
-            market_state,
-            side,
-            *price_in_ticks,
-            current_block,
-            current_unix_timestamp,
-        ) {
+        } else if let Some(ticks) =
+            check_for_cross(ctx, block_data_cache, market_state, side, *price_in_ticks)
+        {
             if *fail_on_cross {
                 // PostOnly order crosses the book- order rejected
                 return None;
@@ -148,11 +146,10 @@ pub fn place_order_inner(
         // to return None too.
         let resting_order = match_order(
             ctx,
+            block_data_cache,
             market_state,
             &mut inflight_order,
             trader,
-            current_block,
-            current_unix_timestamp,
         )?;
 
         // Update trader state and generate matching engine response
