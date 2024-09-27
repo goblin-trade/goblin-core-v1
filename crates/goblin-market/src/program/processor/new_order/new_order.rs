@@ -18,7 +18,7 @@ use crate::{
     GoblinMarket,
 };
 
-use super::{place_order_inner, BlockDataCache, CondensedOrder, SufficientFundsChecker};
+use super::{place_order_inner, CondensedOrder, ExpiryChecker, SufficientFundsChecker};
 
 #[derive(Clone, Copy)]
 pub struct OrderToInsert {
@@ -62,17 +62,9 @@ pub fn place_multiple_new_orders(
     let mut quote_lots_to_deposit = QuoteLots::ZERO;
     let mut base_lots_to_deposit = BaseLots::ZERO;
 
-    // Read quote and base lots available with trader
-    // Lazy load ERC20 balances
     let mut sufficient_funds_checker =
         SufficientFundsChecker::new(trader_state.base_lots_free, trader_state.quote_lots_free);
-    // let mut base_lots_available = trader_state.base_lots_free;
-    // let mut quote_lots_available = trader_state.quote_lots_free;
-    // let mut base_allowance_read = false;
-    // let mut quote_allowance_read = false;
-
-    // Lazy load block number and timestamp
-    let mut block_data_cache = BlockDataCache::new();
+    let mut expiry_checker = ExpiryChecker::new();
 
     // The last placed order. Used to
     // - ensure orders are sorted
@@ -153,7 +145,7 @@ pub fn place_multiple_new_orders(
                 // these are added and then compared in the end
                 let (order_to_insert, matching_engine_response) = place_order_inner(
                     ctx,
-                    &mut block_data_cache,
+                    &mut expiry_checker,
                     &mut market_state,
                     &mut trader_state,
                     trader,
@@ -260,7 +252,7 @@ pub fn process_new_order(
     trader: Address,
 ) -> GoblinResult<()> {
     let ctx = &mut ArbContext::new();
-    let mut block_data_cache = BlockDataCache::new();
+    let mut expiry_checker = ExpiryChecker::new();
 
     let mut market_state = MarketState::read_from_slot(ctx);
     let mut trader_state = TraderState::read_from_slot(ctx, trader);
@@ -293,7 +285,7 @@ pub fn process_new_order(
 
         let (order_to_insert, matching_engine_response) = place_order_inner(
             ctx,
-            &mut block_data_cache,
+            &mut expiry_checker,
             &mut market_state,
             &mut trader_state,
             trader,

@@ -10,7 +10,7 @@ use crate::{
 };
 
 use super::{
-    check_for_cross, get_best_available_order_id, match_order, BlockDataCache, OrderToInsert,
+    check_for_cross, get_best_available_order_id, match_order, ExpiryChecker, OrderToInsert,
 };
 
 /// Try to execute an order packet and place an order
@@ -27,7 +27,7 @@ use super::{
 ///
 pub fn place_order_inner(
     ctx: &mut ArbContext,
-    block_data_cache: &mut BlockDataCache,
+    expiry_checker: &mut ExpiryChecker,
     market_state: &mut MarketState,
     trader_state: &mut TraderState,
     trader: Address,
@@ -74,7 +74,7 @@ pub fn place_order_inner(
         }
     }
 
-    if block_data_cache.is_expired(
+    if expiry_checker.is_expired(
         ctx,
         order_packet.track_block(),
         order_packet.last_valid_block_or_unix_timestamp_in_seconds(),
@@ -107,7 +107,7 @@ pub fn place_order_inner(
                 *price_in_ticks = last_price;
             }
         } else if let Some(ticks) =
-            check_for_cross(ctx, block_data_cache, market_state, side, *price_in_ticks)
+            check_for_cross(ctx, expiry_checker, market_state, side, *price_in_ticks)
         {
             if *fail_on_cross {
                 // PostOnly order crosses the book- order rejected
@@ -146,7 +146,7 @@ pub fn place_order_inner(
         // to return None too.
         let resting_order = match_order(
             ctx,
-            block_data_cache,
+            expiry_checker,
             market_state,
             &mut inflight_order,
             trader,

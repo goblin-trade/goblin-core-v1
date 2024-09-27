@@ -10,7 +10,7 @@ use crate::{
     },
 };
 
-use super::{compute_fee, round_adjusted_quote_lots_up, BlockDataCache};
+use super::{compute_fee, round_adjusted_quote_lots_up, ExpiryChecker};
 
 /// Match the inflight order with crossing resting orders of the opposite side.
 ///
@@ -20,7 +20,7 @@ use super::{compute_fee, round_adjusted_quote_lots_up, BlockDataCache};
 ///
 pub fn match_order(
     ctx: &mut ArbContext,
-    block_data_cache: &mut BlockDataCache,
+    expiry_checker: &mut ExpiryChecker,
     market_state: &mut MarketState,
     inflight_order: &mut InflightOrder,
     taker_address: Address,
@@ -46,7 +46,7 @@ pub fn match_order(
         let mut maker_state = TraderState::read_from_slot(ctx, resting_order.trader_address);
 
         // 1. Resting order expired case
-        if block_data_cache.is_expired(
+        if expiry_checker.is_expired(
             ctx,
             resting_order.track_block,
             resting_order.last_valid_block_or_unix_timestamp_in_seconds,

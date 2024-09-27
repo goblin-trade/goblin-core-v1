@@ -7,7 +7,7 @@ use crate::{
     },
 };
 
-use super::BlockDataCache;
+use super::ExpiryChecker;
 
 /// This function determines whether a PostOnly order crosses the book.
 /// If the order crosses the book, the function returns the price of the best unexpired
@@ -18,13 +18,13 @@ use super::BlockDataCache;
 /// # Arguments
 ///
 /// * `market_state`
-/// * `block_data_cache`
+/// * `expiry_checker`
 /// * `side`
 /// * `num_ticks`
 ///
 pub fn check_for_cross(
     ctx: &mut ArbContext,
-    block_data_cache: &mut BlockDataCache,
+    expiry_checker: &mut ExpiryChecker,
     market_state: &mut MarketState,
     side: Side,
     limit_price_in_ticks: Ticks,
@@ -55,7 +55,7 @@ pub fn check_for_cross(
             return true;
         }
 
-        if block_data_cache.is_expired(
+        if expiry_checker.is_expired(
             ctx,
             resting_order.track_block,
             resting_order.last_valid_block_or_unix_timestamp_in_seconds,

@@ -1,19 +1,19 @@
 use crate::state::{ArbContext, ContextActions};
 
-/// A structure that lazily loads and caches block number and timestamp for evaluating
-/// the expiration of orders. This reduces repeated calls to the context for the same data.
+/// Checks whether an orders have expired. It optimizes for gas by lazy loading
+/// block number and block timestamp only when they are needed.
 ///
 /// Eager loading both costs 4 gas. The gas saved is small but percentage improvement
 /// should be good.
-pub struct BlockDataCache {
+pub struct ExpiryChecker {
     block_number: Option<u32>,
     block_timestamp: Option<u32>,
 }
 
-impl BlockDataCache {
-    /// Creates a new `BlockDataCache` with no cached values.
+impl ExpiryChecker {
+    /// Creates a new `ExpiryChecker` with no cached values.
     pub fn new() -> Self {
-        BlockDataCache {
+        ExpiryChecker {
             block_number: None,
             block_timestamp: None,
         }
@@ -78,24 +78,24 @@ impl BlockDataCache {
 mod tests {
     use super::*;
 
-    mod block_data_cache {
-        use super::{ArbContext, BlockDataCache};
+    mod expiry_checker {
+        use super::{ArbContext, ExpiryChecker};
 
         #[test]
         fn test_lazy_load() {
             let block_number = 100;
             let block_timestamp = 500;
             let ctx = ArbContext::new_with_block_details(block_number, block_timestamp);
-            let mut block_data_cache = BlockDataCache::new();
+            let mut expiry_checker = ExpiryChecker::new();
 
-            let read_block_number = block_data_cache.block_number(&ctx);
+            let read_block_number = expiry_checker.block_number(&ctx);
             assert_eq!(read_block_number, block_number as u32);
-            assert_eq!(block_data_cache.block_number.unwrap(), block_number as u32);
+            assert_eq!(expiry_checker.block_number.unwrap(), block_number as u32);
 
-            let read_block_timestamp = block_data_cache.block_timestamp(&ctx);
+            let read_block_timestamp = expiry_checker.block_timestamp(&ctx);
             assert_eq!(read_block_timestamp, block_timestamp as u32);
             assert_eq!(
-                block_data_cache.block_timestamp.unwrap(),
+                expiry_checker.block_timestamp.unwrap(),
                 block_timestamp as u32
             );
         }
@@ -106,19 +106,19 @@ mod tests {
             let block_timestamp = 500;
             let ctx = ArbContext::new_with_block_details(block_number, block_timestamp);
 
-            let mut block_data_cache = BlockDataCache::new();
+            let mut expiry_checker = ExpiryChecker::new();
 
             let track_block = true;
             let last_valid_block_or_unix_timestamp_in_seconds = 0;
-            let expired = block_data_cache.is_expired(
+            let expired = expiry_checker.is_expired(
                 &ctx,
                 track_block,
                 last_valid_block_or_unix_timestamp_in_seconds,
             );
 
             assert_eq!(expired, false);
-            assert!(block_data_cache.block_number.is_none());
-            assert!(block_data_cache.block_timestamp.is_none());
+            assert!(expiry_checker.block_number.is_none());
+            assert!(expiry_checker.block_timestamp.is_none());
         }
 
         #[test]
@@ -127,19 +127,19 @@ mod tests {
             let block_timestamp = 500;
             let ctx = ArbContext::new_with_block_details(block_number, block_timestamp);
 
-            let mut block_data_cache = BlockDataCache::new();
+            let mut expiry_checker = ExpiryChecker::new();
 
             let track_block = false;
             let last_valid_block_or_unix_timestamp_in_seconds = 0;
-            let expired = block_data_cache.is_expired(
+            let expired = expiry_checker.is_expired(
                 &ctx,
                 track_block,
                 last_valid_block_or_unix_timestamp_in_seconds,
             );
 
             assert_eq!(expired, false);
-            assert!(block_data_cache.block_number.is_none());
-            assert!(block_data_cache.block_timestamp.is_none());
+            assert!(expiry_checker.block_number.is_none());
+            assert!(expiry_checker.block_timestamp.is_none());
         }
 
         #[test]
@@ -148,22 +148,22 @@ mod tests {
             let block_timestamp = 500;
             let ctx = ArbContext::new_with_block_details(block_number, block_timestamp);
 
-            let mut block_data_cache = BlockDataCache::new();
+            let mut expiry_checker = ExpiryChecker::new();
 
             let track_block = true;
 
             let last_valid_block_0 = 101;
-            let expired_0 = block_data_cache.is_expired(&ctx, track_block, last_valid_block_0);
+            let expired_0 = expiry_checker.is_expired(&ctx, track_block, last_valid_block_0);
             assert_eq!(expired_0, false);
-            assert_eq!(block_data_cache.block_number.unwrap(), block_number as u32);
-            assert!(block_data_cache.block_timestamp.is_none());
+            assert_eq!(expiry_checker.block_number.unwrap(), block_number as u32);
+            assert!(expiry_checker.block_timestamp.is_none());
 
             let last_valid_block_1 = 100;
-            let expired_1 = block_data_cache.is_expired(&ctx, track_block, last_valid_block_1);
+            let expired_1 = expiry_checker.is_expired(&ctx, track_block, last_valid_block_1);
             assert_eq!(expired_1, false);
 
             let last_valid_block_2 = 99;
-            let expired_2 = block_data_cache.is_expired(&ctx, track_block, last_valid_block_2);
+            let expired_2 = expiry_checker.is_expired(&ctx, track_block, last_valid_block_2);
             assert_eq!(expired_2, true);
         }
 
@@ -173,25 +173,25 @@ mod tests {
             let block_timestamp = 500;
             let ctx = ArbContext::new_with_block_details(block_number, block_timestamp);
 
-            let mut block_data_cache = BlockDataCache::new();
+            let mut expiry_checker = ExpiryChecker::new();
 
             let track_block = false;
 
             let last_valid_timestamp_0 = 501;
-            let expired_0 = block_data_cache.is_expired(&ctx, track_block, last_valid_timestamp_0);
+            let expired_0 = expiry_checker.is_expired(&ctx, track_block, last_valid_timestamp_0);
             assert_eq!(expired_0, false);
-            assert!(block_data_cache.block_number.is_none());
+            assert!(expiry_checker.block_number.is_none());
             assert_eq!(
-                block_data_cache.block_timestamp.unwrap(),
+                expiry_checker.block_timestamp.unwrap(),
                 block_timestamp as u32
             );
 
             let last_valid_timestamp_1 = 500;
-            let expired_1 = block_data_cache.is_expired(&ctx, track_block, last_valid_timestamp_1);
+            let expired_1 = expiry_checker.is_expired(&ctx, track_block, last_valid_timestamp_1);
             assert_eq!(expired_1, false);
 
             let last_valid_timestamp_2 = 499;
-            let expired_2 = block_data_cache.is_expired(&ctx, track_block, last_valid_timestamp_2);
+            let expired_2 = expiry_checker.is_expired(&ctx, track_block, last_valid_timestamp_2);
             assert_eq!(expired_2, true);
         }
     }
