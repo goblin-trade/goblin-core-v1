@@ -1,3 +1,6 @@
+/// TODO replace with hostio. Remove `MarketState` context.
+/// TODO investigate re-entrancy. The calls to check available token balances happen
+/// in the middle of the function when state is not fully set.
 use stylus_sdk::{
     alloy_primitives::{Address, U256},
     contract,
@@ -22,6 +25,9 @@ sol_interface! {
         function allowance(address owner, address spender) external view returns (uint256);
     }
 }
+
+// TODO replace `GoblinMarket` with `ArbContext`.
+// Use hostio implementation to read balance
 
 /// Withdraw token if the amount is greater than 0
 pub fn maybe_invoke_withdraw(

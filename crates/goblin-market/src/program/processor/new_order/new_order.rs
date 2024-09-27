@@ -18,7 +18,7 @@ use crate::{
     GoblinMarket,
 };
 
-use super::{place_order_inner, BlockDataCache, CondensedOrder};
+use super::{place_order_inner, BlockDataCache, CondensedOrder, SufficientFundsChecker};
 
 #[derive(Clone, Copy)]
 pub struct OrderToInsert {
@@ -64,10 +64,12 @@ pub fn place_multiple_new_orders(
 
     // Read quote and base lots available with trader
     // Lazy load ERC20 balances
-    let mut base_lots_available = trader_state.base_lots_free;
-    let mut quote_lots_available = trader_state.quote_lots_free;
-    let mut base_allowance_read = false;
-    let mut quote_allowance_read = false;
+    let mut sufficient_funds_checker =
+        SufficientFundsChecker::new(trader_state.base_lots_free, trader_state.quote_lots_free);
+    // let mut base_lots_available = trader_state.base_lots_free;
+    // let mut quote_lots_available = trader_state.quote_lots_free;
+    // let mut base_allowance_read = false;
+    // let mut quote_allowance_read = false;
 
     // Lazy load block number and timestamp
     let mut block_data_cache = BlockDataCache::new();
@@ -135,13 +137,12 @@ pub fn place_multiple_new_orders(
 
             let matching_engine_response = {
                 if order_packet.fail_silently_on_insufficient_funds()
-                    && !order_packet.has_sufficient_funds(
+                    && !sufficient_funds_checker.has_sufficient_funds(
                         context,
                         trader,
-                        &mut base_lots_available,
-                        &mut quote_lots_available,
-                        &mut base_allowance_read,
-                        &mut quote_allowance_read,
+                        *side,
+                        order_packet.get_price_in_ticks(),
+                        order_packet.num_base_lots(),
                     )
                 {
                     // Skip this order if the trader does not have sufficient funds
@@ -187,22 +188,20 @@ pub fn place_multiple_new_orders(
                 matching_engine_response
             };
 
-            let quote_lots_deposited =
-                matching_engine_response.get_deposit_amount_bid_in_quote_lots();
-            let base_lots_deposited =
-                matching_engine_response.get_deposit_amount_ask_in_base_lots();
-
+            // Deduct consumed lots from checker in skip case.
+            // If funds are insufficient in no skip case then the transaction will revert
+            // in the ERC20 transfer contract.
             if skip_on_insufficient_funds {
-                // Decrement the available funds by the amount that was deposited after each iteration
                 // This should never underflow, but if it does, the program will panic and the transaction will fail
-                quote_lots_available -=
-                    quote_lots_deposited + matching_engine_response.num_free_quote_lots_used;
-                base_lots_available -=
-                    base_lots_deposited + matching_engine_response.num_free_base_lots_used;
+                sufficient_funds_checker.deduct_available_lots(
+                    matching_engine_response.get_base_lots_consumed(),
+                    matching_engine_response.get_quote_lots_consumed(),
+                );
             }
 
-            quote_lots_to_deposit += quote_lots_deposited;
-            base_lots_to_deposit += base_lots_deposited;
+            quote_lots_to_deposit +=
+                matching_engine_response.get_deposit_amount_bid_in_quote_lots();
+            base_lots_to_deposit += matching_engine_response.get_deposit_amount_ask_in_base_lots();
         }
 
         // Write the last order after the loop ends
@@ -277,16 +276,16 @@ pub fn process_new_order(
         // If the order should fail silently on insufficient funds, and the trader does not have
         // sufficient funds for the order, return silently without modifying the book.
         if order_packet.fail_silently_on_insufficient_funds() {
-            let mut base_lots_available = trader_state.base_lots_free;
-            let mut quote_lots_available = trader_state.quote_lots_free;
-
-            if !order_packet.has_sufficient_funds(
+            let mut sufficient_funds_checker = SufficientFundsChecker::new(
+                trader_state.base_lots_free,
+                trader_state.quote_lots_free,
+            );
+            if !sufficient_funds_checker.has_sufficient_funds(
                 context,
                 trader,
-                &mut base_lots_available,
-                &mut quote_lots_available,
-                &mut false,
-                &mut false,
+                side,
+                order_packet.get_price_in_ticks(),
+                order_packet.num_base_lots(),
             ) {
                 return Ok(());
             }

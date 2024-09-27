@@ -3,6 +3,8 @@ use crate::quantities::{BaseLots, QuoteLots};
 /// Tracks the exchange of lots for a trader. Used to verify no deposit case
 /// and for calculating net lots to transfer in when free lots in trader
 /// state are insufficient.
+///
+/// TODO replace with separate structs for each order type.
 #[derive(Debug, Eq, PartialEq, Default, Copy, Clone)]
 pub struct MatchingEngineResponse {
     /// The number of quote lots to be transferred in by the trader to the matching engine
@@ -161,6 +163,16 @@ impl MatchingEngineResponse {
     #[inline(always)]
     pub fn use_free_base_lots(&mut self, num_base_lots: BaseLots) {
         self.num_free_base_lots_used += num_base_lots;
+    }
+
+    #[inline(always)]
+    pub fn get_quote_lots_consumed(&self) -> QuoteLots {
+        self.num_quote_lots_in + self.num_quote_lots_posted
+    }
+
+    #[inline(always)]
+    pub fn get_base_lots_consumed(&self) -> BaseLots {
+        self.num_base_lots_in + self.num_base_lots_posted
     }
 
     /// Calculates the total deposit amount in quote lots for bids.
