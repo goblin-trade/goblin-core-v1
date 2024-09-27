@@ -1,9 +1,14 @@
 use stylus_sdk::alloy_primitives::Address;
 
 use crate::{
-    program::ExpiryChecker,
-    quantities::{BaseLots, QuoteLots, Ticks},
-    state::{ArbContext, SelfTradeBehavior, Side},
+    parameters::BASE_LOTS_PER_BASE_UNIT,
+    program::{
+        adjusted_quote_lot_budget_post_fee_adjustment_for_buys_deprecated,
+        adjusted_quote_lot_budget_post_fee_adjustment_for_sells_deprecated,
+        compute_adjusted_quote_lots, ExpiryChecker,
+    },
+    quantities::{AdjustedQuoteLots, BaseLots, QuoteLots, Ticks},
+    state::{ArbContext, InflightOrder, SelfTradeBehavior, Side},
 };
 
 pub struct ImmediateOrCancelOrderPacket {
@@ -53,24 +58,6 @@ pub struct ImmediateOrCancelOrderPacket {
 }
 
 impl ImmediateOrCancelOrderPacket {
-    pub fn base_lot_budget(&self) -> BaseLots {
-        let base_lots = self.num_base_lots;
-        if base_lots == BaseLots::ZERO {
-            BaseLots::MAX
-        } else {
-            base_lots
-        }
-    }
-
-    pub fn quote_lot_budget(&self) -> Option<QuoteLots> {
-        let quote_lots = self.num_quote_lots;
-        if quote_lots == QuoteLots::ZERO {
-            None
-        } else {
-            Some(quote_lots)
-        }
-    }
-
     pub fn set_price_in_ticks(&mut self, price_in_ticks: Ticks) {
         self.price_in_ticks = price_in_ticks;
     }
@@ -89,5 +76,52 @@ impl ImmediateOrCancelOrderPacket {
                 self.track_block,
                 self.last_valid_block_or_unix_timestamp_in_seconds,
             )
+    }
+
+    /// Get the base lot budget. If the number of base lots is zero (bid case)
+    /// then the budget is set to max.
+    pub fn base_lot_budget(&self) -> BaseLots {
+        let base_lots = self.num_base_lots;
+        if base_lots == BaseLots::ZERO {
+            BaseLots::MAX
+        } else {
+            base_lots
+        }
+    }
+
+    // Remove if not used elsehere. Usage skipped in adjusted_quote_lot_budget()
+    // /// Get the quote lot budget. If the number of quote lots is zero (ask case)
+    // /// then the budget is set to max.
+    // pub fn quote_lot_budget(&self) -> Option<QuoteLots> {
+    //     let quote_lots = self.num_quote_lots;
+    //     if quote_lots == QuoteLots::ZERO {
+    //         None
+    //     } else {
+    //         Some(quote_lots)
+    //     }
+    // }
+
+    /// The adjusted quote lot budget (quote lots * base lots / base lot size)
+    ///
+    /// If num_quote_lots are zero (ask case) then budget is set to max.
+    pub fn adjusted_quote_lot_budget(&self) -> AdjustedQuoteLots {
+        if self.num_quote_lots == QuoteLots::ZERO {
+            AdjustedQuoteLots::MAX
+        } else {
+            compute_adjusted_quote_lots(self.side, self.num_quote_lots)
+        }
+    }
+
+    pub fn get_inflight_order(&self) -> InflightOrder {
+        InflightOrder::new(
+            self.side,
+            self.self_trade_behavior,
+            self.price_in_ticks,
+            self.match_limit,
+            self.base_lot_budget(),
+            self.adjusted_quote_lot_budget(),
+            self.track_block,
+            self.last_valid_block_or_unix_timestamp_in_seconds,
+        )
     }
 }

@@ -3,8 +3,8 @@ use stylus_sdk::alloy_primitives::Address;
 use crate::{
     parameters::{BASE_LOTS_PER_BASE_UNIT, TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT},
     program::{
-        adjusted_quote_lot_budget_post_fee_adjustment_for_buys,
-        adjusted_quote_lot_budget_post_fee_adjustment_for_sells, compute_quote_lots,
+        adjusted_quote_lot_budget_post_fee_adjustment_for_buys_deprecated,
+        adjusted_quote_lot_budget_post_fee_adjustment_for_sells_deprecated, compute_quote_lots,
         get_available_base_lots, get_available_quote_lots,
     },
     quantities::{AdjustedQuoteLots, BaseLots, QuoteLots, Ticks},
@@ -479,12 +479,12 @@ impl OrderPacket {
             match self.side() {
                 // For buys, the adjusted quote lot budget is decreased by the max fee.
                 // This is because the fee is added to the quote lots spent after the matching is complete.
-                Side::Bid => adjusted_quote_lot_budget_post_fee_adjustment_for_buys(
+                Side::Bid => adjusted_quote_lot_budget_post_fee_adjustment_for_buys_deprecated(
                     size_in_adjusted_quote_lots,
                 ),
                 // For sells, the adjusted quote lot budget is increased by the max fee.
                 // This is because the fee is subtracted from the quote lot received after the matching is complete.
-                Side::Ask => adjusted_quote_lot_budget_post_fee_adjustment_for_sells(
+                Side::Ask => adjusted_quote_lot_budget_post_fee_adjustment_for_sells_deprecated(
                     size_in_adjusted_quote_lots,
                 ),
             }
