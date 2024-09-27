@@ -1,5 +1,6 @@
 use crate::{
     program::{
+        match_order,
         types::{matching_engine_response::MatchingEngineResponse, order_packet::OrderPacket},
         ExpiryChecker,
     },
@@ -22,7 +23,15 @@ pub fn process_ioc_order_inner(
         return None;
     }
 
-    // let mut inflight_order =
+    let mut inflight_order = order_packet.get_inflight_order();
+
+    match_order(
+        ctx,
+        expiry_checker,
+        market_state,
+        &mut inflight_order,
+        order_packet.trader,
+    )?;
 
     None
 }

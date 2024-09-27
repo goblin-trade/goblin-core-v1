@@ -16,7 +16,7 @@ use super::{compute_fee, round_adjusted_quote_lots_up, ExpiryChecker};
 ///
 /// Returns a SlotRestingOrder which for
 /// - Limit case: should be posted as a resting order
-/// - IOC case: is used to validate fill conditions
+/// - IOC case: ~~is used to validate fill conditions~~ not used anywhere
 ///
 pub fn match_order(
     ctx: &mut ArbContext,
