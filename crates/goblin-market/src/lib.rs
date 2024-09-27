@@ -13,10 +13,11 @@ static ALLOC: mini_alloc::MiniAlloc = mini_alloc::MiniAlloc::INIT;
 use crate::program::GoblinResult;
 use alloc::vec::Vec;
 use program::{
-    place_multiple_new_orders, process_new_order,
+    place_multiple_new_orders, process_ioc_order, process_new_order,
     processor::{deposit, fees, withdraw},
     reduce_multiple_orders,
     types::order_packet::OrderPacket,
+    ImmediateOrCancelOrderPacket,
 };
 use quantities::{BaseLots, QuoteLots, Ticks, WrapperU64};
 use state::{ArbContext, ContextActions, SelfTradeBehavior, Side, TraderState};
@@ -221,6 +222,57 @@ impl GoblinMarket {
         };
 
         process_new_order(self, &mut order_packet, msg::sender())
+    }
+
+    pub fn place_ioc_order_v2(
+        &mut self,
+        is_bid: bool,
+        price_in_ticks: u64,
+        num_lots_in: u64,
+        min_lots_to_fill: u64,
+        self_trade_behavior: u8,
+        match_limit: u64,
+        track_block: bool,
+        last_valid_block_or_unix_timestamp_in_seconds: u32,
+        use_only_deposited_funds: bool,
+    ) -> GoblinResult<()> {
+        let (num_base_lots, num_quote_lots, min_base_lots_to_fill, min_quote_lots_to_fill) =
+            if is_bid {
+                // bid (buy)- quote token in, base token out
+                (
+                    BaseLots::ZERO,
+                    QuoteLots::new(num_lots_in),
+                    BaseLots::new(min_lots_to_fill),
+                    QuoteLots::ZERO,
+                )
+            } else {
+                (
+                    BaseLots::new(num_lots_in),
+                    QuoteLots::ZERO,
+                    BaseLots::ZERO,
+                    QuoteLots::new(min_lots_to_fill),
+                )
+            };
+
+        // TODO read from ctx
+        let trader = msg::sender();
+
+        let mut order_packet = ImmediateOrCancelOrderPacket {
+            side: Side::from(is_bid),
+            trader: msg::sender(),
+            price_in_ticks: Ticks::new(price_in_ticks),
+            num_base_lots,
+            num_quote_lots,
+            min_base_lots_to_fill,
+            min_quote_lots_to_fill,
+            self_trade_behavior: SelfTradeBehavior::from(self_trade_behavior),
+            match_limit,
+            use_only_deposited_funds,
+            track_block,
+            last_valid_block_or_unix_timestamp_in_seconds,
+        };
+
+        process_ioc_order(&mut order_packet)
     }
 
     /// Place a limit order on the book
