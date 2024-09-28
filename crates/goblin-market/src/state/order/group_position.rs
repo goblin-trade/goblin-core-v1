@@ -36,27 +36,52 @@ impl GroupPosition {
     ///
     /// The last group position (31, 7) should not be used to calculate count, since
     /// in this case we must begin lookup in the next bitmap group with count 0.
-    pub fn count(&self, side: Side) -> u8 {
+    pub fn count_exclusive(&self, side: Side) -> u8 {
         debug_assert!(
             side == Side::Bid && *self != GroupPosition::MIN
                 || side == Side::Ask && *self != GroupPosition::MAX,
             "GroupPosition::MIN count is invalid for bids and GroupPosition::MAX count is invalid for asks"
         );
 
+        self.count_inclusive(side) + 1
+
+        // let GroupPosition {
+        //     inner_index,
+        //     resting_order_index,
+        // } = self;
+
+        // // Resting orders always begin from left to right so the latter part is the same
+        // match side {
+        //     Side::Bid => {
+        //         (31 - inner_index.as_usize() as u8) * 8 + (resting_order_index.as_u8() + 1)
+        //     }
+
+        //     Side::Ask => (inner_index.as_usize() as u8) * 8 + (resting_order_index.as_u8() + 1),
+        // }
+    }
+
+    pub fn count_inclusive(&self, side: Side) -> u8 {
         let GroupPosition {
             inner_index,
             resting_order_index,
         } = self;
 
-        // Resting orders always begin from left to right so the latter part is the same
-        match side {
-            Side::Bid => {
-                (31 - inner_index.as_usize() as u8) * 8 + (resting_order_index.as_u8() + 1)
-            }
-
-            Side::Ask => (inner_index.as_usize() as u8) * 8 + (resting_order_index.as_u8() + 1),
-        }
+        (match side {
+            Side::Ask => *inner_index,
+            Side::Bid => InnerIndex::MAX - *inner_index,
+        })
+        .as_usize() as u8
+            * 8
+            + resting_order_index.as_u8()
     }
+
+    // pub fn count_inclusive(&self, side: Side) -> u8 {
+    //     let coordinates = self.coordinates();
+    //     match side {
+    //         Side::Bid => 255 - coordinates,
+    //         Side::Ask => coordinates,
+    //     }
+    // }
 }
 
 impl From<&OrderId> for GroupPosition {
@@ -75,17 +100,42 @@ mod tests {
     use super::GroupPosition;
 
     #[test]
+    fn test_count_inclusive() {
+        let position_0 = GroupPosition::MIN;
+        assert_eq!(position_0.count_inclusive(Side::Ask), 0);
+        assert_eq!(position_0.count_inclusive(Side::Bid), 248);
+
+        let position_1 = GroupPosition {
+            inner_index: InnerIndex::ZERO,
+            resting_order_index: RestingOrderIndex::MAX,
+        };
+        assert_eq!(position_1.count_inclusive(Side::Ask), 7);
+        assert_eq!(position_1.count_inclusive(Side::Bid), 255);
+
+        let position_2 = GroupPosition {
+            inner_index: InnerIndex::MAX,
+            resting_order_index: RestingOrderIndex::ZERO,
+        };
+        assert_eq!(position_2.count_inclusive(Side::Ask), 248);
+        assert_eq!(position_2.count_inclusive(Side::Bid), 0);
+
+        let position_3 = GroupPosition::MAX;
+        assert_eq!(position_3.count_inclusive(Side::Ask), 255);
+        assert_eq!(position_3.count_inclusive(Side::Bid), 7);
+    }
+
+    #[test]
     fn test_count_for_asks() {
         let side = Side::Ask;
 
         let position_0 = GroupPosition::MIN;
-        assert_eq!(position_0.count(side), 1);
+        assert_eq!(position_0.count_exclusive(side), 1);
 
         let position_1 = GroupPosition {
             inner_index: InnerIndex::MAX,
             resting_order_index: RestingOrderIndex::new(6),
         };
-        assert_eq!(position_1.count(side), 255);
+        assert_eq!(position_1.count_exclusive(side), 255);
     }
 
     #[test]
@@ -96,18 +146,18 @@ mod tests {
             inner_index: InnerIndex::MAX,
             resting_order_index: RestingOrderIndex::ZERO,
         };
-        assert_eq!(position_0.count(side), 1);
+        assert_eq!(position_0.count_exclusive(side), 1);
 
         let position_1 = GroupPosition {
             inner_index: InnerIndex::MAX,
             resting_order_index: RestingOrderIndex::MAX,
         };
-        assert_eq!(position_1.count(side), 8);
+        assert_eq!(position_1.count_exclusive(side), 8);
 
         let position_2 = GroupPosition {
             inner_index: InnerIndex::MIN,
             resting_order_index: RestingOrderIndex::new(6),
         };
-        assert_eq!(position_2.count(side), 255);
+        assert_eq!(position_2.count_exclusive(side), 255);
     }
 }

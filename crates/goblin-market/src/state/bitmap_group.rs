@@ -102,7 +102,7 @@ impl BitmapGroup {
     }
 
     /// Get the best active group position in a bitmap group, beginning
-    /// from an optional starting position (inclusive)
+    /// from a starting position (inclusive)
     ///
     /// Returns None if there is no active group position. Externally ensure that this is called
     /// on an active bitmap group.
@@ -115,16 +115,13 @@ impl BitmapGroup {
     pub fn best_active_group_position(
         &self,
         side: Side,
-        starting_position: Option<GroupPosition>,
+        starting_position_inclusive: GroupPosition,
     ) -> Option<GroupPosition> {
-        // This iterator is not used anywhere yet.
-        //
-        let mut iterator = ActiveGroupPositionIterator::new_from_group_position_exclusive(
+        let mut iterator = ActiveGroupPositionIterator::new_with_starting_position(
             self,
             side,
-            starting_position,
+            starting_position_inclusive,
         );
-
         iterator.next()
     }
 

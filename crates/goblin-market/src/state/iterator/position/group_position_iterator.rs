@@ -64,156 +64,148 @@ impl Iterator for GroupPositionIterator {
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_get_indices_for_asks() {
-        let side = Side::Ask;
-        let count = 0;
+    mod test_for_starting_count {
+        use super::*;
 
-        let mut iterator = GroupPositionIterator::new(side, count);
+        #[test]
+        fn test_get_indices_for_asks() {
+            let side = Side::Ask;
+            let count = 0;
 
-        for i in 0..=255 {
-            let bit_index = match side {
-                Side::Bid => 255 - 1 - i,
-                Side::Ask => i,
-            };
+            let mut iterator = GroupPositionIterator::new(side, count);
 
-            let expected_inner_index = InnerIndex::new(bit_index as usize / 8);
-            let expected_resting_order_index = RestingOrderIndex::new(bit_index % 8);
+            for i in 0..=255 {
+                let bit_index = i;
 
-            let GroupPosition {
-                inner_index,
-                resting_order_index,
-            } = iterator.next().unwrap();
+                let expected_inner_index = InnerIndex::new(bit_index as usize / 8);
+                let expected_resting_order_index = RestingOrderIndex::new(bit_index % 8);
 
-            println!(
-                "inner_index {:?}, resting_order_index {:?}",
-                inner_index, resting_order_index
-            );
+                let GroupPosition {
+                    inner_index,
+                    resting_order_index,
+                } = iterator.next().unwrap();
 
-            assert_eq!(inner_index, expected_inner_index);
-            assert_eq!(resting_order_index, expected_resting_order_index);
+                println!(
+                    "inner_index {:?}, resting_order_index {:?}",
+                    inner_index, resting_order_index
+                );
 
-            if i == 255 {
-                assert_eq!(iterator.count, 0);
-            } else {
-                assert_eq!(iterator.count, i + 1);
+                assert_eq!(inner_index, expected_inner_index);
+                assert_eq!(resting_order_index, expected_resting_order_index);
+
+                if i == 255 {
+                    assert_eq!(iterator.count, 0);
+                } else {
+                    assert_eq!(iterator.count, i + 1);
+                }
             }
         }
-    }
 
-    #[test]
-    fn test_get_indices_for_asks_with_count_10() {
-        let side = Side::Ask;
-        let count = 10;
+        #[test]
+        fn test_get_indices_for_asks_with_count_10() {
+            let side = Side::Ask;
+            let count = 10;
 
-        let mut iterator = GroupPositionIterator::new(side, count);
+            let mut iterator = GroupPositionIterator::new(side, count);
 
-        for i in 10..=255 {
-            let bit_index = match side {
-                Side::Bid => 255 - 1 - i,
-                Side::Ask => i,
-            };
+            for i in 10..=255 {
+                let bit_index = i;
 
-            let expected_inner_index = InnerIndex::new(bit_index as usize / 8);
-            let expected_resting_order_index = RestingOrderIndex::new(bit_index % 8);
+                let expected_inner_index = InnerIndex::new(bit_index as usize / 8);
+                let expected_resting_order_index = RestingOrderIndex::new(bit_index % 8);
 
-            let GroupPosition {
-                inner_index,
-                resting_order_index,
-            } = iterator.next().unwrap();
+                let GroupPosition {
+                    inner_index,
+                    resting_order_index,
+                } = iterator.next().unwrap();
 
-            println!(
-                "inner_index {:?}, resting_order_index {:?}",
-                inner_index, resting_order_index
-            );
+                println!(
+                    "inner_index {:?}, resting_order_index {:?}",
+                    inner_index, resting_order_index
+                );
 
-            assert_eq!(inner_index, expected_inner_index);
-            assert_eq!(resting_order_index, expected_resting_order_index);
+                assert_eq!(inner_index, expected_inner_index);
+                assert_eq!(resting_order_index, expected_resting_order_index);
 
-            if i == 255 {
-                assert_eq!(iterator.count, 0);
-            } else {
-                assert_eq!(iterator.count, i + 1);
+                if i == 255 {
+                    assert_eq!(iterator.count, 0);
+                } else {
+                    assert_eq!(iterator.count, i + 1);
+                }
             }
         }
-    }
 
-    #[test]
-    fn test_get_indices_for_bids() {
-        let side = Side::Bid;
-        let count = 0;
+        #[test]
+        fn test_get_indices_for_bids() {
+            let side = Side::Bid;
+            let count = 0;
 
-        let mut iterator = GroupPositionIterator::new(side, count);
+            let mut iterator = GroupPositionIterator::new(side, count);
 
-        for i in 0..=255 {
-            let bit_index = match side {
-                Side::Bid => 255 - i,
-                Side::Ask => i,
-            };
+            for i in 0..=255 {
+                let bit_index = 255 - i;
 
-            let expected_inner_index = InnerIndex::new(bit_index as usize / 8);
-            let expected_resting_order_index = RestingOrderIndex::new(match side {
-                Side::Bid => 7 - (bit_index % 8),
-                Side::Ask => bit_index % 8,
-            });
+                let expected_inner_index = InnerIndex::new(bit_index as usize / 8);
+                let expected_resting_order_index = RestingOrderIndex::new(match side {
+                    Side::Bid => 7 - (bit_index % 8),
+                    Side::Ask => bit_index % 8,
+                });
 
-            let GroupPosition {
-                inner_index,
-                resting_order_index,
-            } = iterator.next().unwrap();
+                let GroupPosition {
+                    inner_index,
+                    resting_order_index,
+                } = iterator.next().unwrap();
 
-            println!(
-                "inner_index {:?}, resting_order_index {:?}",
-                inner_index, resting_order_index
-            );
+                println!(
+                    "inner_index {:?}, resting_order_index {:?}",
+                    inner_index, resting_order_index
+                );
 
-            assert_eq!(inner_index, expected_inner_index);
-            assert_eq!(resting_order_index, expected_resting_order_index);
+                assert_eq!(inner_index, expected_inner_index);
+                assert_eq!(resting_order_index, expected_resting_order_index);
 
-            if i == 255 {
-                assert_eq!(iterator.count, 0);
-            } else {
-                assert_eq!(iterator.count, i + 1);
+                if i == 255 {
+                    assert_eq!(iterator.count, 0);
+                } else {
+                    assert_eq!(iterator.count, i + 1);
+                }
             }
         }
-    }
 
-    #[test]
-    fn test_get_indices_for_bids_with_count_10() {
-        let side = Side::Bid;
-        let count = 10;
+        #[test]
+        fn test_get_indices_for_bids_with_count_10() {
+            let side = Side::Bid;
+            let count = 10;
 
-        let mut iterator = GroupPositionIterator::new(side, count);
+            let mut iterator = GroupPositionIterator::new(side, count);
 
-        for i in 10..=255 {
-            let bit_index = match side {
-                Side::Bid => 255 - i,
-                Side::Ask => i,
-            };
+            for i in 10..=255 {
+                let bit_index = 255 - i;
 
-            let expected_inner_index = InnerIndex::new(bit_index as usize / 8);
-            let expected_resting_order_index = RestingOrderIndex::new(match side {
-                Side::Bid => 7 - (bit_index % 8),
-                Side::Ask => bit_index % 8,
-            });
+                let expected_inner_index = InnerIndex::new(bit_index as usize / 8);
+                let expected_resting_order_index = RestingOrderIndex::new(match side {
+                    Side::Bid => 7 - (bit_index % 8),
+                    Side::Ask => bit_index % 8,
+                });
 
-            let GroupPosition {
-                inner_index,
-                resting_order_index,
-            } = iterator.next().unwrap();
+                let GroupPosition {
+                    inner_index,
+                    resting_order_index,
+                } = iterator.next().unwrap();
 
-            println!(
-                "inner_index {:?}, resting_order_index {:?}",
-                inner_index, resting_order_index
-            );
+                println!(
+                    "inner_index {:?}, resting_order_index {:?}",
+                    inner_index, resting_order_index
+                );
 
-            assert_eq!(inner_index, expected_inner_index);
-            assert_eq!(resting_order_index, expected_resting_order_index);
+                assert_eq!(inner_index, expected_inner_index);
+                assert_eq!(resting_order_index, expected_resting_order_index);
 
-            if i == 255 {
-                assert_eq!(iterator.count, 0);
-            } else {
-                assert_eq!(iterator.count, i + 1);
+                if i == 255 {
+                    assert_eq!(iterator.count, 0);
+                } else {
+                    assert_eq!(iterator.count, i + 1);
+                }
             }
         }
     }
