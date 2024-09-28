@@ -20,7 +20,8 @@ impl<'a> ActiveGroupPositionIterator<'a> {
         }
     }
 
-    pub fn new_from_group_position(
+    /// Lookup for active position starting from a starting position (exclusive)
+    pub fn new_from_group_position_exclusive(
         bitmap_group: &'a BitmapGroup,
         side: Side,
         group_position: Option<GroupPosition>,
@@ -164,11 +165,11 @@ mod tests {
         bitmap_group.inner[1] = 0b10000000;
 
         let side = Side::Ask;
-        let last_position = GroupPosition {
+        let last_position_to_skip = GroupPosition {
             inner_index: InnerIndex::ZERO,
             resting_order_index: RestingOrderIndex::ZERO,
         };
-        let count = last_position.count(side);
+        let count = last_position_to_skip.count(side);
 
         let mut iterator = ActiveGroupPositionIterator::new(&bitmap_group, side, count);
         assert_eq!(
@@ -216,11 +217,11 @@ mod tests {
         bitmap_group.inner[10] = 0b10000000;
 
         let side = Side::Ask;
-        let last_position = GroupPosition {
+        let last_position_to_skip = GroupPosition {
             inner_index: InnerIndex::ONE,
             resting_order_index: RestingOrderIndex::ONE,
         };
-        let count = last_position.count(side);
+        let count = last_position_to_skip.count(side);
         assert_eq!(count, 10);
 
         let mut iterator = ActiveGroupPositionIterator::new(&bitmap_group, side, count);
@@ -273,11 +274,11 @@ mod tests {
         bitmap_group.inner[31] = 0b10000011; // InnerIndex::MAX
 
         let side = Side::Bid;
-        let last_position = GroupPosition {
+        let last_position_to_skip = GroupPosition {
             inner_index: InnerIndex::new(31),
             resting_order_index: RestingOrderIndex::new(0),
         };
-        let count = last_position.count(side);
+        let count = last_position_to_skip.count(side);
         assert_eq!(count, 1);
 
         let mut iterator = ActiveGroupPositionIterator::new(&bitmap_group, side, count);
@@ -332,11 +333,11 @@ mod tests {
         bitmap_group.inner[30] = 0b10000000;
 
         let side = Side::Bid;
-        let last_position = GroupPosition {
+        let last_position_to_skip = GroupPosition {
             inner_index: InnerIndex::new(31),
             resting_order_index: RestingOrderIndex::new(0),
         };
-        let count = last_position.count(side);
+        let count = last_position_to_skip.count(side);
         assert_eq!(count, 1);
 
         let mut iterator = ActiveGroupPositionIterator::new(&bitmap_group, side, count);
@@ -385,11 +386,11 @@ mod tests {
         bitmap_group.inner[21] = 0b10000000;
 
         let side = Side::Bid;
-        let last_position = GroupPosition {
+        let last_position_to_skip = GroupPosition {
             inner_index: InnerIndex::new(30),
             resting_order_index: RestingOrderIndex::new(1),
         };
-        let count = last_position.count(side);
+        let count = last_position_to_skip.count(side);
         assert_eq!(count, 10);
 
         let mut iterator = ActiveGroupPositionIterator::new(&bitmap_group, side, count);

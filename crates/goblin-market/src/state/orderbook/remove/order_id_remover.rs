@@ -174,6 +174,13 @@ impl OrderIdRemover {
         }
     }
 
+    pub fn get_best_order_id(
+        &mut self,
+        ctx: &mut ArbContext,
+        mut starting_index: Option<InnerIndex>,
+    ) {
+    }
+
     /// Move one position down the index list and load the corresponding bitmap group
     ///
     /// Externally ensure that this is only called when we're on the outermost outer index.

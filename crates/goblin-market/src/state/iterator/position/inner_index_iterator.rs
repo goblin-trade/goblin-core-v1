@@ -12,6 +12,7 @@ pub struct InnerIndexIterator {
     pub side: Side,
 
     /// Number of outer indices traversed
+    /// TODO replace with u8
     pub count: usize,
 
     /// Stop iterator when `max_count` is reached
@@ -28,8 +29,11 @@ impl InnerIndexIterator {
     }
 
     /// Begin iteration from a starting position (inclusive)
-    pub fn new_with_starting_index(side: Side, starting_index: Option<InnerIndex>) -> Self {
-        let count = if let Some(start_index_inclusive) = starting_index {
+    pub fn new_with_starting_index(
+        side: Side,
+        starting_index_inclusive: Option<InnerIndex>,
+    ) -> Self {
+        let count = if let Some(start_index_inclusive) = starting_index_inclusive {
             match side {
                 Side::Bid => 31 - start_index_inclusive.as_usize(),
                 Side::Ask => start_index_inclusive.as_usize(),
