@@ -72,7 +72,6 @@ impl OrderIdInserter {
             .load_outer_index(ctx, outer_index, bitmap_group_is_empty);
 
         // Clear garbage bits
-        // TODO fix failed tests
         self.bitmap_inserter.clear_garbage_bits(best_market_prices);
 
         // Active group position in bitmap

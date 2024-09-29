@@ -3,7 +3,7 @@ use crate::{
     state::{
         bitmap_group::BitmapGroup,
         order::{group_position::GroupPosition, order_id::OrderId},
-        ArbContext, InnerIndex, OuterIndex, Side,
+        ArbContext, InnerIndex, MarketPrices, OuterIndex, Side,
     },
 };
 
@@ -40,6 +40,11 @@ impl GroupPositionRemover {
         }
     }
 
+    pub fn set_initial_group_position(&mut self, group_position: GroupPosition) {
+        debug_assert!(self.last_searched_group_position.is_none());
+        self.last_searched_group_position = Some(group_position);
+    }
+
     /// The last searched order ID
     pub fn last_searched_order_id(&self) -> Option<OrderId> {
         if let (Some(outer_index), Some(group_position)) =
@@ -61,6 +66,22 @@ impl GroupPositionRemover {
     pub fn order_present(&mut self, group_position: GroupPosition) -> bool {
         self.last_searched_group_position = Some(group_position);
         self.bitmap_group.order_present(group_position)
+    }
+
+    /// Clear garbage bits in the bitmap group that fall between best market prices
+    ///
+    /// Externally ensure this is not called if outer index is not loaded
+    ///
+    /// # Arguments
+    ///
+    /// * `best_market_prices`
+    ///
+    pub fn clear_garbage_bits(&mut self, best_market_prices: &MarketPrices) {
+        debug_assert!(self.last_outer_index.is_some());
+
+        let outer_index = unsafe { self.last_outer_index.unwrap_unchecked() };
+        self.bitmap_group
+            .clear_garbage_bits(outer_index, best_market_prices);
     }
 
     /// Deactivates `last_searched_group_position` and conditionally
@@ -93,23 +114,36 @@ impl GroupPositionRemover {
     }
 
     /// Get price of the best active order in the current bitmap group,
-    /// beginning from a given position
+    /// beginning from a given position.
+    ///
+    /// Used to find the best market price after removing bits from the group.
+    /// This does NOT update last_searched_group_position removal can happen
+    /// deeper in the group whereas we need the best market price.
     ///
     /// # Arguments
     ///
     /// * `starting_index` - Search beginning from this index (inclusive) if Some,
     /// else begin lookup from the edge of the bitmap group.
     ///
-    pub fn get_best_price_in_current(&self, starting_index: Option<InnerIndex>) -> Option<Ticks> {
+    pub fn get_best_price_in_current(
+        &self,
+        starting_index_inclusive: Option<InnerIndex>,
+    ) -> Option<Ticks> {
         if let (Some(outer_index), Some(inner_index)) = (
             self.last_outer_index,
             self.bitmap_group
-                .best_active_inner_index(self.side, starting_index),
+                .best_active_inner_index(self.side, starting_index_inclusive),
         ) {
             Some(Ticks::from_indices(outer_index, inner_index))
         } else {
             None
         }
+    }
+
+    pub fn traverse_to_best_active_group_position(&mut self) {
+        self.last_searched_group_position = self
+            .bitmap_group
+            .best_active_group_position(self.side, self.last_searched_group_position);
     }
 
     /// Whether the bitmap group has been inactivated for `self.side`. It accounts for
@@ -122,7 +156,7 @@ impl GroupPositionRemover {
     ///
     /// * `best_opposite_price`
     ///
-    pub fn is_inactive(&self, best_opposite_price: Ticks) -> bool {
+    pub fn is_group_inactive(&self, best_opposite_price: Ticks) -> bool {
         let start_index = if self.last_outer_index == Some(best_opposite_price.outer_index()) {
             // Overflow or underflow would happen only if the most extreme bitmap is occupied
             // by opposite side bits. This is not possible because active bits for `side`

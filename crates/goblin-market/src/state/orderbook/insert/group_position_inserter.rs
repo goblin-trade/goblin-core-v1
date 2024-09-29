@@ -70,15 +70,18 @@ impl GroupPositionInserter {
 
     /// Clear garbage bits in the bitmap group that fall between best market prices
     ///
+    /// Externally ensure this is not called if outer index is not loaded
+    ///
     /// # Arguments
     ///
     /// * `best_market_prices`
     ///
     pub fn clear_garbage_bits(&mut self, best_market_prices: &MarketPrices) {
-        if let Some(outer_index) = self.last_outer_index {
-            self.bitmap_group
-                .clear_garbage_bits(outer_index, best_market_prices);
-        }
+        debug_assert!(self.last_outer_index.is_some());
+
+        let outer_index = unsafe { self.last_outer_index.unwrap_unchecked() };
+        self.bitmap_group
+            .clear_garbage_bits(outer_index, best_market_prices);
     }
 
     /// Write cached bitmap group to slot

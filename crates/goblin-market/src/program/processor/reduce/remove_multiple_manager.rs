@@ -44,7 +44,7 @@ impl RemoveMultipleManager {
     ) -> GoblinResult<bool> {
         self.check_sorted(side, order_id)?;
 
-        let found = self.remover().find_order(ctx, order_id);
+        let found = self.remover().order_id_is_active(ctx, order_id);
         Ok(found)
     }
 

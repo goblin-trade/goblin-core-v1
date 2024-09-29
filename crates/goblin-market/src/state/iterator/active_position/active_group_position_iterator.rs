@@ -23,9 +23,13 @@ impl<'a> ActiveGroupPositionIterator<'a> {
     pub fn new_with_starting_position(
         bitmap_group: &'a BitmapGroup,
         side: Side,
-        starting_position_inclusive: GroupPosition,
+        starting_position_inclusive: Option<GroupPosition>,
     ) -> Self {
-        let count = starting_position_inclusive.count_inclusive(side);
+        let count = if let Some(starting_position_inclusive) = starting_position_inclusive {
+            starting_position_inclusive.count_inclusive(side)
+        } else {
+            0
+        };
 
         ActiveGroupPositionIterator {
             bitmap_group,

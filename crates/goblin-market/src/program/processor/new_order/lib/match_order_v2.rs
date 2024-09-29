@@ -2,10 +2,28 @@ use stylus_sdk::alloy_primitives::Address;
 
 use crate::{
     quantities::AdjustedQuoteLots,
-    state::{order::resting_order::SlotRestingOrder, ArbContext, InflightOrder, MarketState},
+    state::{
+        order::resting_order::SlotRestingOrder, remove::order_id_remover::OrderIdRemover,
+        ArbContext, InflightOrder, MarketState, Side,
+    },
 };
 
 use super::ExpiryChecker;
+
+pub struct MatchOrderManager {
+    remover: OrderIdRemover,
+}
+
+impl MatchOrderManager {
+    // pub fn new(ctx: &mut ArbContext, side: Side, market_state: &mut MarketState) -> Option<Self> {
+    //     OrderIdRemover::new_for_matching(ctx, side, market_state)
+    //         .map(|remover| MatchOrderManager { remover })
+    // }
+
+    // pub fn next_order_id(&mut self) {
+    //     self.remover.order_id_is_active(ctx, order_id)
+    // }
+}
 
 /// Match the inflight order with crossing resting orders of the opposite side.
 ///
