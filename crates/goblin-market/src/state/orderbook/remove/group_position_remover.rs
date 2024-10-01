@@ -20,6 +20,7 @@ pub struct GroupPositionRemover {
     pub bitmap_group: BitmapGroup,
 
     /// Outer index corresponding to `bitmap_group`
+    /// TODO remove, pass as params
     pub last_outer_index: Option<OuterIndex>,
 
     /// The current group position used to paginate and for deactivate bits.
@@ -141,10 +142,9 @@ impl GroupPositionRemover {
     /// If an active position is present, updates `group_position` and returns true.
     /// Else returns false.
     pub fn try_traverse_to_best_active_position(&mut self) -> bool {
-        // TODO remove option type
         let next_active_group_position = self
             .bitmap_group
-            .best_active_group_position(self.side, Some(self.group_position));
+            .best_active_group_position(self.side, self.group_position);
 
         if let Some(group_position) = next_active_group_position {
             self.group_position = group_position;
@@ -166,11 +166,7 @@ impl GroupPositionRemover {
     /// * `best_opposite_price`
     ///
     pub fn is_group_inactive(&self, best_opposite_price: Ticks) -> bool {
-        // TODO bug- group remains active due to garbage bit
-        // We must remove garbage bits in memory even if we don't write the bitmap group to slot
         let start_index = if self.last_outer_index == Some(best_opposite_price.outer_index()) {
-            #[cfg(test)]
-            println!("Opposite bit present");
             // Overflow or underflow would happen only if the most extreme bitmap is occupied
             // by opposite side bits. This is not possible because active bits for `side`
             // are guaranteed to be present.
@@ -185,12 +181,6 @@ impl GroupPositionRemover {
             None
         };
 
-        #[cfg(test)]
-        println!(
-            "bitmap_group {:?}, inactive {:?}",
-            self.bitmap_group,
-            self.bitmap_group.is_inactive(self.side, start_index)
-        );
         self.bitmap_group.is_inactive(self.side, start_index)
     }
 

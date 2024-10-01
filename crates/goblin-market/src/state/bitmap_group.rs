@@ -111,12 +111,11 @@ impl BitmapGroup {
     /// # Arguments
     ///
     /// * `side`
-    /// * `starting_index` - Search beginning from this index (inclusive) if Some,
-    /// else begin lookup from the edge of the bitmap group.
+    /// * `starting_index` - Search beginning from this index (inclusive)
     pub fn best_active_group_position(
         &self,
         side: Side,
-        starting_position_inclusive: Option<GroupPosition>,
+        starting_position_inclusive: GroupPosition,
     ) -> Option<GroupPosition> {
         let mut iterator = ActiveGroupPositionIterator::new_with_starting_position(
             self,
