@@ -3,12 +3,13 @@ use crate::{
     state::{
         bitmap_group::BitmapGroup,
         order::{group_position::GroupPosition, order_id::OrderId},
-        ArbContext, InnerIndex, MarketPrices, OuterIndex, Side,
+        ArbContext, InnerIndex, MarketPrices, OuterIndex, RestingOrderIndex, Side,
     },
 };
 
 /// Facilitates efficient batch deactivations at GroupPositions
 pub struct GroupPositionRemover {
+    // TODO use ActiveGroupPositionIterator as inner
     /// Whether for bids or asks
     /// Traverse upwards (ascending) for asks and downwards (descending) for bids
     pub side: Side,
@@ -21,8 +22,9 @@ pub struct GroupPositionRemover {
     /// Outer index corresponding to `bitmap_group`
     pub last_outer_index: Option<OuterIndex>,
 
-    /// The last searched group position. Used to re-construct the last searched order id
-    pub last_searched_group_position: Option<GroupPosition>,
+    /// The current group position used to paginate and for deactivate bits.
+    /// The bit at group_position can either be active or inactive.
+    pub group_position: GroupPosition,
 
     /// Whether the bitmap group was updated in memory and is pending a write.
     /// write_last_bitmap_group() should write to slot only if this is true.
@@ -35,89 +37,68 @@ impl GroupPositionRemover {
             side,
             bitmap_group: BitmapGroup::default(),
             last_outer_index: None,
-            last_searched_group_position: None,
+            // Default group position starts at the starting position of a given side
+            group_position: GroupPosition::initial_for_side(side),
             pending_write: false,
         }
     }
 
-    pub fn set_initial_group_position(&mut self, group_position: GroupPosition) {
-        debug_assert!(self.last_searched_group_position.is_none());
-        self.last_searched_group_position = Some(group_position);
-    }
-
     /// The last searched order ID
     pub fn last_searched_order_id(&self) -> Option<OrderId> {
-        if let (Some(outer_index), Some(group_position)) =
-            (self.last_outer_index, self.last_searched_group_position)
-        {
-            return Some(OrderId {
-                price_in_ticks: Ticks::from_indices(outer_index, group_position.inner_index),
-                resting_order_index: group_position.resting_order_index,
-            });
-        }
-        None
+        self.last_outer_index
+            .map(|outer_index| OrderId::from_group_position(self.group_position, outer_index))
     }
 
-    /// Loads the given group position and tells whether it is active
+    /// Paginates to the given position and tells whether the bit is active
     ///
-    /// Externally ensure that load_outer_index() was called first so that
-    /// `last_outer_index` is not None
+    /// Externally ensure that load_outer_index() was called first otherwise
+    /// this will give a dummy value
     ///
-    pub fn order_present(&mut self, group_position: GroupPosition) -> bool {
-        self.last_searched_group_position = Some(group_position);
-        self.bitmap_group.order_present(group_position)
+    pub fn is_position_active(&mut self, group_position: GroupPosition) -> bool {
+        self.group_position = group_position;
+        self.bitmap_group.is_position_active(group_position)
     }
 
-    /// Clear garbage bits in the bitmap group that fall between best market prices
-    ///
-    /// Externally ensure this is not called if outer index is not loaded
-    ///
-    /// # Arguments
-    ///
-    /// * `best_market_prices`
-    ///
-    pub fn clear_garbage_bits(&mut self, best_market_prices: &MarketPrices) {
-        debug_assert!(self.last_outer_index.is_some());
-
-        let outer_index = unsafe { self.last_outer_index.unwrap_unchecked() };
-        self.bitmap_group
-            .clear_garbage_bits(outer_index, best_market_prices);
+    pub fn is_inner_index_active(&self, inner_index: InnerIndex) -> bool {
+        self.bitmap_group.is_inner_index_active(inner_index)
     }
 
-    /// Deactivates `last_searched_group_position` and conditionally
-    /// enables or disables `pending_write`
+    /// Deactivates `self.group_position` and conditionally enables or disables `pending_write`
     ///
     /// Sets pending_write to false if market price updates or if the whole group is cleared,
     /// else sets it to true.
     ///
     /// # Arguments
     ///
-    /// * `best_market_price` - Best market price for the current side
+    /// * `best_market_price` - Best market price for the current side used to
+    /// conditionally update pending_write state
     ///
-    pub fn deactivate(&mut self, best_market_price: Ticks) {
-        if let (Some(outer_index), Some(group_position)) =
-            (self.last_outer_index, self.last_searched_group_position)
-        {
-            let current_price = Ticks::from_indices(outer_index, group_position.inner_index);
+    pub fn deactivate_current_group_position(&mut self, best_market_price: Ticks) {
+        if let Some(outer_index) = self.last_outer_index {
+            let GroupPosition {
+                inner_index,
+                resting_order_index,
+            } = self.group_position;
+            let current_price = Ticks::from_indices(outer_index, inner_index);
 
-            let mut bitmap = self
-                .bitmap_group
-                .get_bitmap_mut(&group_position.inner_index);
-            bitmap.clear(&group_position.resting_order_index);
+            let mut bitmap = self.bitmap_group.get_bitmap_mut(&inner_index);
+            bitmap.clear(&resting_order_index);
 
-            self.pending_write = (current_price == best_market_price && !bitmap.is_empty())
-                || (current_price != best_market_price
-                    && !self.bitmap_group.is_inactive(self.side, None));
-
-            self.last_searched_group_position = None;
+            // Do not write if
+            // - the best price updated, i.e. the outermost bitmap closed. In this case
+            // we will update the best price in market state.
+            // - the entire group was deactivated. In this case we will remove the outer
+            // index in the list.
+            self.pending_write = !(current_price == best_market_price && bitmap.is_empty()
+                || self.bitmap_group.is_inactive(self.side, None));
         }
     }
 
-    /// Get price of the best active order in the current bitmap group,
-    /// beginning from a given position.
+    /// Get price of the best active order in the current bitmap group
+    /// from a given position (inclusive) and onwards.
     ///
     /// Used to find the best market price after removing bits from the group.
-    /// This does NOT update last_searched_group_position removal can happen
+    /// This does NOT update `self.group_position` because removal can happen
     /// deeper in the group whereas we need the best market price.
     ///
     /// # Arguments
@@ -140,10 +121,38 @@ impl GroupPositionRemover {
         }
     }
 
-    pub fn traverse_to_best_active_group_position(&mut self) {
-        self.last_searched_group_position = self
+    /// Clear garbage bits in the bitmap group that fall between best market prices
+    ///
+    /// Externally ensure this is not called if outer index is not loaded
+    ///
+    /// # Arguments
+    ///
+    /// * `best_market_prices`
+    ///
+    pub fn clear_garbage_bits(&mut self, best_market_prices: &MarketPrices) {
+        debug_assert!(self.last_outer_index.is_some());
+
+        let outer_index = unsafe { self.last_outer_index.unwrap_unchecked() };
+        self.bitmap_group
+            .clear_garbage_bits(outer_index, best_market_prices);
+    }
+
+    /// Try traversing to the next active group position in the current bitmap group.
+    /// If an active position is present, updates `group_position` and returns true.
+    /// Else returns false.
+    pub fn try_traverse_to_best_active_position(&mut self) -> bool {
+        // TODO remove option type
+        let next_active_group_position = self
             .bitmap_group
-            .best_active_group_position(self.side, self.last_searched_group_position);
+            .best_active_group_position(self.side, Some(self.group_position));
+
+        if let Some(group_position) = next_active_group_position {
+            self.group_position = group_position;
+
+            return true;
+        }
+
+        false
     }
 
     /// Whether the bitmap group has been inactivated for `self.side`. It accounts for
@@ -157,7 +166,11 @@ impl GroupPositionRemover {
     /// * `best_opposite_price`
     ///
     pub fn is_group_inactive(&self, best_opposite_price: Ticks) -> bool {
+        // TODO bug- group remains active due to garbage bit
+        // We must remove garbage bits in memory even if we don't write the bitmap group to slot
         let start_index = if self.last_outer_index == Some(best_opposite_price.outer_index()) {
+            #[cfg(test)]
+            println!("Opposite bit present");
             // Overflow or underflow would happen only if the most extreme bitmap is occupied
             // by opposite side bits. This is not possible because active bits for `side`
             // are guaranteed to be present.
@@ -172,6 +185,12 @@ impl GroupPositionRemover {
             None
         };
 
+        #[cfg(test)]
+        println!(
+            "bitmap_group {:?}, inactive {:?}",
+            self.bitmap_group,
+            self.bitmap_group.is_inactive(self.side, start_index)
+        );
         self.bitmap_group.is_inactive(self.side, start_index)
     }
 
@@ -191,7 +210,10 @@ impl GroupPositionRemover {
         self.flush_bitmap_group(ctx);
 
         self.last_outer_index = Some(outer_index);
-        self.last_searched_group_position = None;
+
+        // self.last_searched_group_position = None;
+        self.group_position = GroupPosition::initial_for_side(self.side);
+
         self.bitmap_group = BitmapGroup::new_from_slot(ctx, outer_index);
     }
 
@@ -226,11 +248,11 @@ mod tests {
         group_position: GroupPosition,
         best_market_price: Ticks,
     ) {
-        let present = remover.order_present(group_position);
+        let present = remover.is_position_active(group_position);
         assert_eq!(present, true);
 
-        remover.deactivate(best_market_price);
-        let present_after_deactivation = remover.bitmap_group.order_present(group_position);
+        remover.deactivate_current_group_position(best_market_price);
+        let present_after_deactivation = remover.bitmap_group.is_position_active(group_position);
         assert_eq!(present_after_deactivation, false);
     }
 
@@ -262,7 +284,7 @@ mod tests {
             side,
             bitmap_group,
             last_outer_index: Some(outer_index),
-            last_searched_group_position: None,
+            group_position: GroupPosition::initial_for_side(side),
             pending_write: false,
         };
 
@@ -352,7 +374,7 @@ mod tests {
             side,
             bitmap_group,
             last_outer_index: Some(outer_index),
-            last_searched_group_position: None,
+            group_position: GroupPosition::initial_for_side(side),
             pending_write: false,
         };
 
@@ -394,7 +416,7 @@ mod tests {
             side,
             bitmap_group,
             last_outer_index: Some(outer_index),
-            last_searched_group_position: None,
+            group_position: GroupPosition::initial_for_side(side),
             pending_write: false,
         };
 
@@ -456,7 +478,7 @@ mod tests {
             side,
             bitmap_group,
             last_outer_index: Some(outer_index),
-            last_searched_group_position: None,
+            group_position: GroupPosition::initial_for_side(side),
             pending_write: false,
         };
 
@@ -540,7 +562,7 @@ mod tests {
             side,
             bitmap_group,
             last_outer_index: Some(outer_index),
-            last_searched_group_position: None,
+            group_position: GroupPosition::initial_for_side(side),
             pending_write: false,
         };
 
@@ -580,7 +602,7 @@ mod tests {
             side,
             bitmap_group,
             last_outer_index: Some(outer_index),
-            last_searched_group_position: None,
+            group_position: GroupPosition::initial_for_side(side),
             pending_write: false,
         };
 

@@ -66,7 +66,8 @@ impl BitmapGroup {
         bitmap.clear(&resting_order_index);
     }
 
-    pub fn order_present(&mut self, group_position: GroupPosition) -> bool {
+    /// Whether the bit at the given group position is active
+    pub fn is_position_active(&mut self, group_position: GroupPosition) -> bool {
         let GroupPosition {
             inner_index,
             resting_order_index,
@@ -77,7 +78,7 @@ impl BitmapGroup {
     }
 
     /// Whether the bitmap group has active resting orders at the given inner index
-    pub fn inner_index_is_active(&self, inner_index: InnerIndex) -> bool {
+    pub fn is_inner_index_active(&self, inner_index: InnerIndex) -> bool {
         self.inner[inner_index.as_usize()] != 0
     }
 
@@ -112,7 +113,6 @@ impl BitmapGroup {
     /// * `side`
     /// * `starting_index` - Search beginning from this index (inclusive) if Some,
     /// else begin lookup from the edge of the bitmap group.
-    /// TODO use option type. If value is None then lookup from edge
     pub fn best_active_group_position(
         &self,
         side: Side,

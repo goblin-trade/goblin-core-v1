@@ -17,6 +17,7 @@ use crate::parameters::{
 };
 use crate::program::{GoblinError, GoblinResult, InvalidFeeCollector};
 use crate::require;
+use crate::state::Side;
 
 pub trait WrapperU64 {
     fn new(value: u64) -> Self;
@@ -396,6 +397,11 @@ pub struct BaseLots {
 #[repr(transparent)]
 pub struct Ticks {
     inner: u64,
+}
+
+impl Ticks {
+    pub const BID_DEFAULT: Self = Ticks::MIN;
+    pub const ASK_DEFAULT: Self = Ticks::MAX;
 }
 
 // BaseLots have smaller max size than QuoteLots

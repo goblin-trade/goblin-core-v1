@@ -34,6 +34,11 @@ pub struct MarketPrices {
     pub best_ask_price: Ticks,
 }
 
+pub struct MarketPricesForSide {
+    pub best_market_price: Ticks,
+    pub best_opposite_price: Ticks,
+}
+
 const MARKET_SLOT_KEY: [u8; 32] = [
     MARKET_STATE_KEY_SEED,
     0,
@@ -180,6 +185,19 @@ impl MarketState {
         }
     }
 
+    pub fn get_prices_for_side(&self, side: Side) -> MarketPricesForSide {
+        match side {
+            Side::Bid => MarketPricesForSide {
+                best_market_price: self.best_bid_price,
+                best_opposite_price: self.best_ask_price,
+            },
+            Side::Ask => MarketPricesForSide {
+                best_market_price: self.best_ask_price,
+                best_opposite_price: self.best_bid_price,
+            },
+        }
+    }
+
     /// Update the best price
     ///
     /// # Arguments
@@ -195,6 +213,16 @@ impl MarketState {
         }
     }
 
+    /// Try to update the best price for `side`. If `price` is None, i.e. if all
+    /// resting orders are cleared then set the default price
+    pub fn try_update_best_price(&mut self, side: Side, price: Option<Ticks>) {
+        if side == Side::Bid {
+            self.best_bid_price = price.unwrap_or(Ticks::MIN);
+        } else {
+            self.best_ask_price = price.unwrap_or(Ticks::MAX);
+        }
+    }
+
     /// Update the best price if the new price is closer to the centre
     ///
     /// # Arguments
@@ -202,7 +230,7 @@ impl MarketState {
     /// * `side`
     /// * `price_in_ticks`
     ///
-    pub fn try_set_best_price(&mut self, side: Side, price_in_ticks: Ticks) {
+    pub fn update_best_price_if_better(&mut self, side: Side, price_in_ticks: Ticks) {
         if side == Side::Bid && price_in_ticks > self.best_bid_price {
             self.best_bid_price = price_in_ticks;
         }

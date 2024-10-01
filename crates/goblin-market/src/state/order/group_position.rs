@@ -20,6 +20,16 @@ impl GroupPosition {
         resting_order_index: RestingOrderIndex::MAX,
     };
 
+    pub fn initial_for_side(side: Side) -> Self {
+        GroupPosition {
+            inner_index: match side {
+                Side::Bid => InnerIndex::MAX,
+                Side::Ask => InnerIndex::MIN,
+            },
+            resting_order_index: RestingOrderIndex::MIN,
+        }
+    }
+
     /// Calculate the starting position for GroupPositionIterator
     /// u8::MAX equals 255. A bitmap group has 256 bits
     ///

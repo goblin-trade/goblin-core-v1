@@ -103,7 +103,7 @@ impl OrderIdInserter {
         let market_prices = market_state.get_prices();
 
         self.activate_order_id(ctx, order_id, &market_prices);
-        market_state.try_set_best_price(self.side(), order_id.price_in_ticks);
+        market_state.update_best_price_if_better(self.side(), order_id.price_in_ticks);
         resting_order.write_to_slot(ctx, &order_id)
     }
 

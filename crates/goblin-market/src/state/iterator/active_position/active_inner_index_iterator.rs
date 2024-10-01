@@ -38,7 +38,7 @@ impl<'a> Iterator for ActiveInnerIndexIterator<'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         while let Some(inner_index) = self.inner.next() {
-            if self.bitmap_group.inner_index_is_active(inner_index) {
+            if self.bitmap_group.is_inner_index_active(inner_index) {
                 return Some(inner_index);
             }
         }

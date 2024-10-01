@@ -64,6 +64,18 @@ impl OuterIndexRemover {
 
     /// The total length of index list after accounting for removals
     pub fn index_list_length(&self) -> u16 {
+        #[cfg(test)]
+        println!(
+            " outer_index_count {}, cache.len() {}",
+            self.active_outer_index_iterator.outer_index_count(),
+            self.cache.len()
+        );
+        #[cfg(test)]
+        println!(
+            "cache {:?}, cached_outer_index {:?}",
+            self.cache, self.cached_outer_index
+        );
+
         self.active_outer_index_iterator.outer_index_count()
             + self.cache.len() as u16
             + u16::from(self.cached_outer_index.is_some())
@@ -79,6 +91,9 @@ impl OuterIndexRemover {
     pub fn slide(&mut self, ctx: &ArbContext) {
         self.flush_cached_outer_index();
         self.cached_outer_index = self.active_outer_index_iterator.next(ctx);
+
+        #[cfg(test)]
+        println!("got outer index {:?}", self.cached_outer_index);
     }
 
     /// Pushes `found_outer_index` to cache and clears the value
@@ -126,6 +141,9 @@ impl OuterIndexRemover {
     /// in `found_outer_index`.
     ///
     pub fn write_index_list(&mut self, ctx: &mut ArbContext) {
+        #[cfg(test)]
+        println!("in write_index_list, pending write {}", self.pending_write);
+
         if !self.pending_write {
             return;
         }
