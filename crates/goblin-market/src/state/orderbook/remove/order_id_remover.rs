@@ -5,8 +5,8 @@ use crate::{
             group_position::{self, GroupPosition},
             order_id::OrderId,
         },
-        ArbContext, MarketPricesForSide, MarketState, OuterIndex, RestingOrderIndex, Side,
-        TickIndices,
+        ArbContext, InnerIndex, MarketPricesForSide, MarketState, OuterIndex, RestingOrderIndex,
+        Side, TickIndices,
     },
 };
 
@@ -45,6 +45,13 @@ pub struct OrderIdRemover {
 
     /// To lookup and deactivate bits in bitmap groups
     pub group_position_remover: GroupPositionRemover,
+
+    /// This is used in
+    /// - GroupPositionRemover::flush_bitmap_group() -> GroupPositionRemover::load_outer_index, write_prepared_indices()
+    /// If pending write is false then flush does nothing.
+    /// - GroupPositionRemover::deactivate_current_group_position() -> remove_order()
+    /// It toggles pending write on or off, depending on how the bitmap group updates.
+    pub pending_write: bool,
 }
 
 impl OrderIdRemover {
@@ -52,6 +59,7 @@ impl OrderIdRemover {
         OrderIdRemover {
             group_position_remover: GroupPositionRemover::new(side),
             outer_index_remover: OuterIndexRemover::new(side, outer_index_count),
+            pending_write: false,
         }
     }
 
@@ -98,6 +106,10 @@ impl OrderIdRemover {
         self.group_position_remover.group_position
     }
 
+    pub fn inner_index(&self) -> InnerIndex {
+        self.group_position().inner_index
+    }
+
     // Externally ensure that order index is present
     pub fn outer_index_unchecked(&self) -> OuterIndex {
         let outer_index = self.last_outer_index();
@@ -126,6 +138,28 @@ impl OrderIdRemover {
         best_market_price == self.price()
     }
 
+    pub fn flush_bitmap_group(&mut self, ctx: &mut ArbContext) {
+        if !self.pending_write {
+            return;
+        }
+        // If pending_write is true then outer_index is guaranteed to be present
+        let outer_index = self.outer_index_unchecked();
+        self.group_position_remover
+            .bitmap_group
+            .write_to_slot(ctx, &outer_index);
+        self.pending_write = false;
+    }
+
+    pub fn flush_and_load_outer_index(
+        &mut self,
+        ctx: &mut ArbContext,
+        new_outer_index: OuterIndex,
+    ) {
+        self.flush_bitmap_group(ctx);
+        self.group_position_remover
+            .load_outer_index(ctx, new_outer_index);
+    }
+
     /// Checks whether an order is present at the given order ID.
     /// The bitmap group is updated if the outer index does not match.
     ///
@@ -152,15 +186,13 @@ impl OrderIdRemover {
         if self.last_outer_index() != Some(outer_index) {
             let outer_index_present = self.outer_index_remover.find_outer_index(ctx, outer_index);
 
-            #[cfg(test)]
-            println!("cached outer index {:?}", self.last_outer_index());
             if !outer_index_present {
                 return false;
             }
 
-            // Outer index loaded, but it is not saved in outer_index_remover
-            self.group_position_remover
-                .load_outer_index(ctx, outer_index);
+            // This conditionally writes the previous group to slot and loads
+            // the new index
+            self.flush_and_load_outer_index(ctx, outer_index);
         }
 
         let group_position = GroupPosition {
@@ -188,6 +220,7 @@ impl OrderIdRemover {
     ///
     pub fn remove_order(&mut self, ctx: &mut ArbContext, market_state: &mut MarketState) {
         let outer_index = self.outer_index_unchecked();
+        let inner_index = self.inner_index();
 
         // Clear garbage bits if on outermost group
         self.group_position_remover
@@ -198,71 +231,31 @@ impl OrderIdRemover {
             best_opposite_price,
         } = market_state.get_prices_for_side(self.side());
 
-        // Deactivate position
-        let on_best_market_price = self.on_best_market_price(best_market_price);
-        self.group_position_remover
-            .deactivate_current_group_position(on_best_market_price);
+        // Perform group, index list and market state transitions together
 
-        // Remove outer index if bitmap group was closed
-        // bug- this removes outer_index. We need the value to find next market price
+        // 1. Deactivate in group
+        self.group_position_remover.deactivate();
 
-        let group_inactivated = self
+        let inner_index_deactivated = !self
+            .group_position_remover
+            .is_inner_index_active(inner_index);
+
+        let market_price_deactivated = self.price() == best_market_price && inner_index_deactivated;
+
+        let group_deactivated = self
             .group_position_remover
             .is_group_inactive(best_opposite_price, outer_index);
 
-        // Must be checked before clearing cached outer index
-        let best_market_price_inactivated = self.best_market_price_inactivated(best_market_price);
+        self.pending_write = !(market_price_deactivated || group_deactivated);
 
-        // bug- this shouldn't remove the next searched index
-        if group_inactivated {
+        if group_deactivated {
             self.outer_index_remover.remove_cached_index();
         }
 
-        // If bitmap was
-        if best_market_price_inactivated {
-            #[cfg(test)]
-            println!("updating best market price");
-
+        if market_price_deactivated {
             let new_best_price = self.best_active_price(ctx);
-            #[cfg(test)]
-            println!("got new_best_price {:?}", new_best_price);
-
             market_state.try_update_best_price(self.side(), new_best_price);
         }
-
-        // if self
-        //     .group_position_remover
-        //     .is_group_inactive(best_opposite_price, outer_index)
-        // {
-        //     self.outer_index_remover.remove_cached_index();
-        // }
-
-        // // Update best market price if the outermost tick was closed
-        // if self.best_market_price_inactivated(best_market_price) {
-        //     let new_best_price: Option<Ticks> = self
-        //         .best_active_order_id(ctx)
-        //         .map(|order_id| order_id.price_in_ticks);
-
-        //     market_state.try_update_best_price(self.side(), new_best_price);
-        // }
-    }
-
-    /// Whether all orders on the best market price were deactivated.
-    /// If this is true then the best market price in the market state must be updated.
-    ///
-    /// Externally ensure that last_outer_index is present.
-    fn best_market_price_inactivated(&self, best_market_price: Ticks) -> bool {
-        let last_outer_index = self.outer_index_unchecked();
-
-        let TickIndices {
-            outer_index: best_outer_index,
-            inner_index: best_inner_index,
-        } = best_market_price.to_indices();
-
-        last_outer_index == best_outer_index
-            && !self
-                .group_position_remover
-                .is_inner_index_active(best_inner_index)
     }
 
     /// Get the best active order ID
@@ -326,10 +319,10 @@ impl OrderIdRemover {
         // TODO move pending_write to order_id_remover
         // If there is no cached outer index, then the group was cleared. No need to write
         // to slot
-        if let Some(outer_index) = self.last_outer_index() {
-            self.group_position_remover
-                .flush_bitmap_group(ctx, outer_index);
-        }
+        self.flush_bitmap_group(ctx);
+        // if let Some(outer_index) = self.last_outer_index() {
+        //     self.flush_bitmap_group(ctx);
+        // }
 
         market_state
             .set_outer_index_length(self.side(), self.outer_index_remover.index_list_length());
@@ -423,7 +416,7 @@ mod tests {
             // pending_write is true because
             // - We're in the outermost group
             // - Outermost tick did not close
-            assert!(remover.group_position_remover.pending_write);
+            assert!(remover.pending_write);
 
             // No change in opposite side price
             assert_eq!(market_state.best_bid_price, order_id_bid.price_in_ticks);
@@ -505,7 +498,7 @@ mod tests {
             remover.remove_order(&mut ctx, &mut market_state);
 
             // Pending write is false because the best market price changed
-            assert_eq!(remover.group_position_remover.pending_write, false);
+            assert_eq!(remover.pending_write, false);
 
             // No change in opposite side price
             assert_eq!(market_state.best_bid_price, order_id_bid.price_in_ticks);
@@ -592,7 +585,7 @@ mod tests {
             remover.remove_order(&mut ctx, &mut market_state);
 
             // Pending write is true because the best market price did not change
-            assert_eq!(remover.group_position_remover.pending_write, true);
+            assert_eq!(remover.pending_write, true);
 
             // No change in opposite side price
             assert_eq!(market_state.best_bid_price, order_id_bid.price_in_ticks);
@@ -680,7 +673,7 @@ mod tests {
             remover.remove_order(&mut ctx, &mut market_state);
 
             // No pending write because group was cleared
-            assert_eq!(remover.group_position_remover.pending_write, false);
+            assert_eq!(remover.pending_write, false);
 
             // No change in opposite side price
             assert_eq!(market_state.best_bid_price, order_id_bid.price_in_ticks);
@@ -775,7 +768,7 @@ mod tests {
             remover.remove_order(&mut ctx, &mut market_state);
 
             // pending write because best market price did not change
-            assert_eq!(remover.group_position_remover.pending_write, true);
+            assert_eq!(remover.pending_write, true);
 
             // No change in opposite side price
             assert_eq!(market_state.best_bid_price, order_id_bid.price_in_ticks);
@@ -867,7 +860,7 @@ mod tests {
             remover.remove_order(&mut ctx, &mut market_state);
 
             // Pending write because best price did not change
-            assert_eq!(remover.group_position_remover.pending_write, true);
+            assert_eq!(remover.pending_write, true);
 
             // No change in opposite side price
             assert_eq!(market_state.best_bid_price, order_id_bid.price_in_ticks);
@@ -962,7 +955,7 @@ mod tests {
 
             // Pending write is false because group was closed and because this is not the
             // outermost group
-            assert_eq!(remover.group_position_remover.pending_write, false);
+            assert_eq!(remover.pending_write, false);
 
             // No change in opposite side price
             assert_eq!(market_state.best_bid_price, order_id_bid.price_in_ticks);
