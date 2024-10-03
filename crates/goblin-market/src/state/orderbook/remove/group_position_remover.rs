@@ -7,7 +7,7 @@ use crate::{
     },
 };
 
-/// Facilitates efficient batch deactivations at GroupPositions
+/// Facilitates efficient batch deactivations in a bitmap group
 pub struct GroupPositionRemover {
     // TODO use ActiveGroupPositionIterator as inner
     /// Whether for bids or asks
@@ -19,17 +19,9 @@ pub struct GroupPositionRemover {
     /// when a new outer index is encountered.
     pub bitmap_group: BitmapGroup,
 
-    /// Outer index corresponding to `bitmap_group`
-    /// TODO remove, pass as params
-    // pub last_outer_index: Option<OuterIndex>,
-
     /// The current group position used to paginate and for deactivate bits.
     /// The bit at group_position can either be active or inactive.
     pub group_position: GroupPosition,
-    // /// Whether the bitmap group was updated in memory and is pending a write.
-    // /// write_last_bitmap_group() should write to slot only if this is true.
-    // /// TODO move to order_id_remover
-    // pub pending_write: bool,
 }
 
 impl GroupPositionRemover {
@@ -37,15 +29,13 @@ impl GroupPositionRemover {
         GroupPositionRemover {
             side,
             bitmap_group: BitmapGroup::default(),
-            // last_outer_index: None,
+
             // Default group position starts at the starting position of a given side
             group_position: GroupPosition::initial_for_side(side),
-            // pending_write: false,
         }
     }
 
     /// Loads a new bitmap group for the new outer index. The previous group is flushed.
-    /// No-op if outer index does not change
     ///
     /// # Externally ensure that
     ///
@@ -53,8 +43,8 @@ impl GroupPositionRemover {
     /// * it is not repeated for the same outer index
     ///
     pub fn load_outer_index(&mut self, ctx: &mut ArbContext, outer_index: OuterIndex) {
-        self.group_position = GroupPosition::initial_for_side(self.side);
         self.bitmap_group = BitmapGroup::new_from_slot(ctx, outer_index);
+        self.group_position = GroupPosition::initial_for_side(self.side);
     }
 
     /// Paginates to the given position and tells whether the bit is active
@@ -62,60 +52,39 @@ impl GroupPositionRemover {
     /// Externally ensure that load_outer_index() was called first otherwise
     /// this will give a dummy value
     ///
-    pub fn is_position_active(&mut self, group_position: GroupPosition) -> bool {
+    pub fn paginate_and_check_if_active(&mut self, group_position: GroupPosition) -> bool {
         self.group_position = group_position;
         self.bitmap_group.is_position_active(group_position)
     }
 
+    /// Get the best active position in the group. Returns None if no active
+    /// position is present from the starting from the current group position and onwards
+    pub fn best_active_group_position(&self) -> Option<GroupPosition> {
+        self.bitmap_group
+            .best_active_group_position(self.side, self.group_position)
+    }
+
+    /// Try traversing to the next active group position in the current bitmap group.
+    /// If an active position is present, updates `group_position` and returns true.
+    /// Else returns false.
+    pub fn try_traverse_to_best_active_position(&mut self) -> bool {
+        if let Some(group_position) = self.best_active_group_position() {
+            self.group_position = group_position;
+
+            return true;
+        }
+
+        false
+    }
+
+    /// Whether the inner index has active ticks
     pub fn is_inner_index_active(&self, inner_index: InnerIndex) -> bool {
         self.bitmap_group.is_inner_index_active(inner_index)
     }
 
-    // /// Deactivates `self.group_position` and conditionally enables or disables `pending_write`
-    // ///
-    // /// Sets pending_write to false if market price updates or if the whole group is cleared,
-    // /// else sets it to true.
-    // ///
-    // /// # Arguments
-    // ///
-    // /// * `best_market_price` - Best market price for the current side used to
-    // /// conditionally update pending_write state
-    // ///
-    // pub fn deactivate_current_group_position(
-    //     &mut self,
-    //     on_best_market_price: bool,
-    //     // TODO can replace with is_on_best_price or is_best_price_deactivated?
-    //     // best_market_price: Ticks,
-    //     // outer_index: OuterIndex,
-    // ) {
-    //     let GroupPosition {
-    //         inner_index,
-    //         resting_order_index,
-    //     } = self.group_position;
-
-    //     let mut bitmap = self.bitmap_group.get_bitmap_mut(&inner_index);
-    //     bitmap.clear(&resting_order_index);
-
-    //     // Do not write if
-    //     // - the best price updated, i.e. the outermost bitmap closed. In this case
-    //     // we will update the best price in market state.
-    //     // - the entire group was deactivated. In this case we will remove the outer
-    //     // index in the list.
-
-    //     self.pending_write = !(on_best_market_price && bitmap.is_empty()
-    //         || self.bitmap_group.is_inactive(self.side, None));
-    // }
-
+    /// Deactivate the bit at the current group position
     pub fn deactivate(&mut self) {
         self.bitmap_group.deactivate(self.group_position);
-    }
-
-    pub fn best_active_inner_index(
-        &self,
-        starting_index_inclusive: Option<InnerIndex>,
-    ) -> Option<InnerIndex> {
-        self.bitmap_group
-            .best_active_inner_index(self.side, starting_index_inclusive)
     }
 
     /// Clear garbage bits in the bitmap group that fall between best market prices
@@ -131,28 +100,8 @@ impl GroupPositionRemover {
         best_market_prices: &MarketPrices,
         outer_index: OuterIndex,
     ) {
-        // debug_assert!(self.last_outer_index.is_some());
-
-        // let outer_index = unsafe { self.last_outer_index.unwrap_unchecked() };
         self.bitmap_group
             .clear_garbage_bits(outer_index, best_market_prices);
-    }
-
-    /// Try traversing to the next active group position in the current bitmap group.
-    /// If an active position is present, updates `group_position` and returns true.
-    /// Else returns false.
-    pub fn try_traverse_to_best_active_position(&mut self) -> bool {
-        let next_active_group_position = self
-            .bitmap_group
-            .best_active_group_position(self.side, self.group_position);
-
-        if let Some(group_position) = next_active_group_position {
-            self.group_position = group_position;
-
-            return true;
-        }
-
-        false
     }
 
     /// Whether the bitmap group has been inactivated for `self.side`. It accounts for
@@ -165,13 +114,15 @@ impl GroupPositionRemover {
     /// TODO use inner: ActiveGroupPositionIterator. The opposite best price should be
     /// passed during initialization. ActiveInnerIndexIterator is redundant.
     ///
+    /// Externally ensure that garbage bits are removed
+    ///
     /// # Arguments
     ///
     /// * `best_opposite_price`
     ///
     pub fn is_group_inactive(&self, best_opposite_price: Ticks, outer_index: OuterIndex) -> bool {
         // TODO pass start_index_inclusive externally
-        let start_index = if outer_index == best_opposite_price.outer_index() {
+        let start_index_inclusive = if outer_index == best_opposite_price.outer_index() {
             // Overflow or underflow would happen only if the most extreme bitmap is occupied
             // by opposite side bits. This is not possible because active bits for `side`
             // are guaranteed to be present.
@@ -186,7 +137,12 @@ impl GroupPositionRemover {
             None
         };
 
-        self.bitmap_group.is_inactive(self.side, start_index)
+        self.bitmap_group
+            .is_inactive(self.side, start_index_inclusive)
+    }
+
+    pub fn is_group_inactive_v2(&self) -> bool {
+        self.best_active_group_position().is_none()
     }
 
     // /// Flush the cached bitmap group to slot

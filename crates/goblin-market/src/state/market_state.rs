@@ -34,6 +34,15 @@ pub struct MarketPrices {
     pub best_ask_price: Ticks,
 }
 
+impl MarketPrices {
+    pub fn best_market_price(&self, side: Side) -> Ticks {
+        match side {
+            Side::Bid => self.best_bid_price,
+            Side::Ask => self.best_ask_price,
+        }
+    }
+}
+
 pub struct MarketPricesForSide {
     pub best_market_price: Ticks,
     pub best_opposite_price: Ticks,

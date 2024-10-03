@@ -105,7 +105,7 @@ impl SlotKey for OuterIndex {
 
 /// Key to fetch the bitmap within a bitmap group
 /// TODO replace with u8
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, PartialOrd, Ord)]
 #[repr(transparent)]
 pub struct InnerIndex {
     /// Relative position of the bitmap within the bitmap group
