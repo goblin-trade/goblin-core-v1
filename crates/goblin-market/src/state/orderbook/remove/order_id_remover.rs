@@ -1,10 +1,7 @@
 use crate::{
     quantities::Ticks,
     state::{
-        order::{
-            group_position::{self, GroupPosition},
-            order_id::OrderId,
-        },
+        order::{group_position::GroupPosition, order_id::OrderId},
         ArbContext, InnerIndex, MarketPrices, MarketPricesForSide, MarketState, OuterIndex,
         RestingOrderIndex, Side, TickIndices,
     },
@@ -39,6 +36,8 @@ use super::{group_position_remover::GroupPositionRemover, outer_index_remover::O
 /// updated `BitmapGroup` to slot. Instead simply update the `best_market_price` in
 /// `MarketPrice`. This price will be used to clear garbage bits during insertions.
 ///
+/// TODO split up into SequentialOrderIdRemover and RandomOrderIdRemover.
+/// The latter inherits the former to use its functions.
 pub struct OrderIdRemover {
     /// To lookup and remove outer indices
     pub outer_index_remover: OuterIndexRemover,
@@ -64,10 +63,9 @@ impl OrderIdRemover {
     /// active order ids
     ///
     /// Initialization involves
-    /// - Reading the outermost bitmap group
+    /// - Reading the outermost bitmap group and clearing garbage bits
     /// - Setting the initial position to the best tick
     ///
-    /// Garbage bits are not cleared
     pub fn new_for_matching(
         ctx: &mut ArbContext,
         side: Side,
@@ -79,15 +77,17 @@ impl OrderIdRemover {
         }
         let mut remover = OrderIdRemover::new(outer_index_count, side);
 
-        // Load outermost outer index
-        remover.slide_outer_index_and_load_bitmap_group(ctx);
+        // Load outermost outer index. This is guaranteed to work because
+        // outer_index_count is non zero.
+        remover.try_slide(ctx);
 
         // Clear garbage bits
         remover.try_clear_garbage_bits(market_prices);
 
         let best_market_price = market_prices.best_market_price(side);
 
-        // Set initial group position- this needs to be set after sliding
+        // We need to set starting position manually. We can't call best_active_order_id()
+        // because it'll pick up the opposite side bits. We need to begin from the best market price for this side
         let initial_group_position = GroupPosition {
             inner_index: best_market_price.inner_index(),
             resting_order_index: RestingOrderIndex::ZERO,
@@ -135,30 +135,6 @@ impl OrderIdRemover {
         OrderId::from_group_position(group_position, self.outer_index_unchecked())
     }
 
-    pub fn flush_bitmap_group(&mut self, ctx: &mut ArbContext) {
-        if !self.pending_write {
-            return;
-        }
-        // If pending_write is true then outer_index is guaranteed to be present
-        let outer_index = self.outer_index_unchecked();
-        self.group_position_remover
-            .bitmap_group
-            .write_to_slot(ctx, &outer_index);
-        self.pending_write = false;
-    }
-
-    /// Clear garbage bits in the current bitmap group
-    ///
-    /// # Arguments
-    ///
-    /// * `best_market_prices`- Best market prices before performing any remove operation
-    pub fn try_clear_garbage_bits(&mut self, best_market_prices: &MarketPrices) {
-        let outer_index = self.outer_index_unchecked();
-        self.group_position_remover
-            .bitmap_group
-            .clear_garbage_bits(outer_index, best_market_prices);
-    }
-
     /// Checks whether an order is present at the given order ID.
     /// The bitmap group is updated if the outer index does not match.
     ///
@@ -173,7 +149,7 @@ impl OrderIdRemover {
     /// * `market_prices` - The initial market prices before removing any order.
     /// They're used to clear garbage bits if we're on the outermost group.
     ///
-    pub fn order_id_is_active(
+    pub fn paginate_and_check_if_active(
         &mut self,
         ctx: &mut ArbContext,
         market_prices: &MarketPrices,
@@ -190,15 +166,10 @@ impl OrderIdRemover {
 
         // Read the bitmap group and outer index corresponding to order_id
         if self.last_outer_index() != Some(outer_index) {
-            let outer_index_present = self.outer_index_remover.find_outer_index(ctx, outer_index);
-
+            let outer_index_present = self.try_load_outer_index(ctx, outer_index);
             if !outer_index_present {
                 return false;
             }
-
-            self.flush_bitmap_group(ctx);
-            self.group_position_remover
-                .load_outer_index(ctx, outer_index);
 
             self.try_clear_garbage_bits(market_prices);
         }
@@ -216,36 +187,14 @@ impl OrderIdRemover {
         order_present
     }
 
-    /// Get the best active order ID
-    ///
-    /// Externally ensure that the struct is initialized with new_for_matching() to setup
-    /// outer index and starting group position and for clearing garbage bits
-    pub fn best_active_order_id(&mut self, ctx: &mut ArbContext) -> Option<OrderId> {
-        loop {
-            if self
-                .group_position_remover
-                .try_traverse_to_best_active_position()
-            {
-                return Some(self.order_id());
-            }
-
-            // Slide to the next outer index if the current one is traversed
-            let slide_success = self.slide_outer_index_and_load_bitmap_group(ctx);
-            if !slide_success {
-                return None;
-            }
-        }
-    }
-
-    pub fn best_active_price(&mut self, ctx: &mut ArbContext) -> Option<Ticks> {
-        self.best_active_order_id(ctx)
-            .map(|order_id| order_id.price_in_ticks)
-    }
-
     /// Remove the last searched order from the book, and update the
     /// best price in market state if the outermost tick closed
     ///
-    /// Externally ensure this is not called if no order id was searched
+    /// Externally ensure this is not called if no order id was searched.
+    ///
+    /// This is called for both lookup patterns
+    /// - paginate_and_check_if_active(): to remove random order IDs
+    /// - paginate_and_get_best_active_order_id(): to remove sequential order IDs
     ///
     /// # Arguments
     ///
@@ -283,17 +232,60 @@ impl OrderIdRemover {
         }
 
         if market_price_deactivated {
+            // Find the next active price, moving the group position and outer index in process.
             let new_best_price = self.best_active_price(ctx);
             market_state.try_update_best_price(self.side(), new_best_price);
         }
     }
 
+    /// Get the best active order ID
+    ///
+    /// Externally ensure that the struct is initialized with new_for_matching() to setup
+    /// outer index and starting group position and for clearing garbage bits
+    ///
+    /// TODO update design for matching. best_active_order_id() is being called twice,
+    /// once on removal and then on lookup. The second instance is wasted.
+    /// Update the code to call best_active_order_id() in the constructor,
+    /// after that just call remove() Use self.order_id() to read the order id.
+    /// Turn best_active_order_id() into an internal function.
+    pub fn paginate_and_get_best_active_order_id(
+        &mut self,
+        ctx: &mut ArbContext,
+    ) -> Option<OrderId> {
+        loop {
+            if self
+                .group_position_remover
+                .try_traverse_to_best_active_position()
+            {
+                return Some(self.order_id());
+            }
+
+            // Slide to the next outer index if the current one is traversed
+            let slide_success = self.try_slide(ctx);
+            if !slide_success {
+                return None;
+            }
+        }
+    }
+
+    pub fn best_active_price(&mut self, ctx: &mut ArbContext) -> Option<Ticks> {
+        self.paginate_and_get_best_active_order_id(ctx)
+            .map(|order_id| order_id.price_in_ticks)
+    }
+
     /// Move one position down the index list and load the corresponding bitmap group
     ///
-    /// Externally ensure that this is only called when we're on the outermost outer index.
-    /// This way there is no `found_outer_index` to push to the cache.
+    /// Externally ensure
+    /// - We're on the outermost bitmap group.
+    /// - It is only used for sequential travel in best_active_order_id(), not for looking
+    /// up random order IDs.
     ///
-    pub fn slide_outer_index_and_load_bitmap_group(&mut self, ctx: &mut ArbContext) -> bool {
+    /// This does not flush bitmap groups to slot because
+    /// - If the outermost group was not fully closed, it'll be written by write_prepared_indices()
+    /// - There is no need to write cleared groups to slot, because we update
+    /// the outer index list.
+    ///
+    pub fn try_slide(&mut self, ctx: &mut ArbContext) -> bool {
         self.outer_index_remover.slide(ctx);
         if let Some(next_outer_index) = self.outer_index_remover.cached_outer_index {
             self.group_position_remover
@@ -302,6 +294,52 @@ impl OrderIdRemover {
             return true;
         }
         false
+    }
+
+    /// Load the given outer index and its bitmap group if it exists in the index list
+    ///
+    /// # Arguments
+    ///
+    /// * `outer_index` - Outer index to load
+    ///
+    /// # Returns
+    /// True if load was successful
+    pub fn try_load_outer_index(&mut self, ctx: &mut ArbContext, outer_index: OuterIndex) -> bool {
+        let outer_index_present = self.outer_index_remover.find_outer_index(ctx, outer_index);
+
+        if outer_index_present {
+            self.flush_bitmap_group(ctx);
+            self.group_position_remover
+                .load_outer_index(ctx, outer_index);
+
+            return true;
+        }
+        false
+    }
+
+    /// Clear garbage bits in the current bitmap group
+    ///
+    /// # Arguments
+    ///
+    /// * `best_market_prices`- Best market prices before performing any remove operation
+    pub fn try_clear_garbage_bits(&mut self, best_market_prices: &MarketPrices) {
+        let outer_index = self.outer_index_unchecked();
+        self.group_position_remover
+            .bitmap_group
+            .clear_garbage_bits(outer_index, best_market_prices);
+    }
+
+    /// Writes bitmap group to slot if a write is pending
+    pub fn flush_bitmap_group(&mut self, ctx: &mut ArbContext) {
+        if !self.pending_write {
+            return;
+        }
+        // If pending_write is true then outer_index is guaranteed to be present
+        let outer_index = self.outer_index_unchecked();
+        self.group_position_remover
+            .bitmap_group
+            .write_to_slot(ctx, &outer_index);
+        self.pending_write = false;
     }
 
     /// Write the prepared outer indices to slot and update outer index count in market state
@@ -400,8 +438,11 @@ mod tests {
             let mut remover = OrderIdRemover::new(outer_index_count, side);
 
             // 1. Search
-            let found_0 =
-                remover.order_id_is_active(&mut ctx, &market_state.get_prices(), order_id_0);
+            let found_0 = remover.paginate_and_check_if_active(
+                &mut ctx,
+                &market_state.get_prices(),
+                order_id_0,
+            );
             assert!(found_0);
             assert_eq!(remover.order_id(), order_id_0);
 
@@ -485,8 +526,11 @@ mod tests {
             let mut remover = OrderIdRemover::new(outer_index_count, side);
 
             // 1. Search
-            let found_0 =
-                remover.order_id_is_active(&mut ctx, &market_state.get_prices(), order_id_0);
+            let found_0 = remover.paginate_and_check_if_active(
+                &mut ctx,
+                &market_state.get_prices(),
+                order_id_0,
+            );
             assert!(found_0);
             assert_eq!(remover.order_id(), order_id_0);
 
@@ -573,8 +617,11 @@ mod tests {
             let mut remover = OrderIdRemover::new(outer_index_count, side);
 
             // 1. Search
-            let found_1 =
-                remover.order_id_is_active(&mut ctx, &market_state.get_prices(), order_id_1);
+            let found_1 = remover.paginate_and_check_if_active(
+                &mut ctx,
+                &market_state.get_prices(),
+                order_id_1,
+            );
             assert!(found_1);
             assert_eq!(remover.order_id(), order_id_1);
 
@@ -656,8 +703,11 @@ mod tests {
             let mut remover = OrderIdRemover::new(outer_index_count, side);
 
             // 1. Search
-            let found_0 =
-                remover.order_id_is_active(&mut ctx, &market_state.get_prices(), order_id_0);
+            let found_0 = remover.paginate_and_check_if_active(
+                &mut ctx,
+                &market_state.get_prices(),
+                order_id_0,
+            );
             assert!(found_0);
             assert_eq!(remover.order_id(), order_id_0);
 
@@ -747,14 +797,20 @@ mod tests {
             let mut remover = OrderIdRemover::new(outer_index_count, side);
 
             // 1. Search order_id_0
-            let found_0 =
-                remover.order_id_is_active(&mut ctx, &market_state.get_prices(), order_id_0);
+            let found_0 = remover.paginate_and_check_if_active(
+                &mut ctx,
+                &market_state.get_prices(),
+                order_id_0,
+            );
             assert!(found_0);
             assert_eq!(remover.order_id(), order_id_0);
 
             // 2. Search order_id_1
-            let found_1 =
-                remover.order_id_is_active(&mut ctx, &market_state.get_prices(), order_id_1);
+            let found_1 = remover.paginate_and_check_if_active(
+                &mut ctx,
+                &market_state.get_prices(),
+                order_id_1,
+            );
             assert!(found_1);
             assert_eq!(remover.order_id(), order_id_1);
             assert_eq!(remover.outer_index_unchecked(), outer_index_0);
@@ -841,14 +897,20 @@ mod tests {
             let mut remover = OrderIdRemover::new(outer_index_count, side);
 
             // 1. Search order_id_0
-            let found_0 =
-                remover.order_id_is_active(&mut ctx, &market_state.get_prices(), order_id_0);
+            let found_0 = remover.paginate_and_check_if_active(
+                &mut ctx,
+                &market_state.get_prices(),
+                order_id_0,
+            );
             assert!(found_0);
             assert_eq!(remover.order_id(), order_id_0);
 
             // 2. Search order_id_1
-            let found_1 =
-                remover.order_id_is_active(&mut ctx, &market_state.get_prices(), order_id_1);
+            let found_1 = remover.paginate_and_check_if_active(
+                &mut ctx,
+                &market_state.get_prices(),
+                order_id_1,
+            );
             assert!(found_1);
             assert_eq!(remover.order_id(), order_id_1);
             assert_eq!(remover.outer_index_unchecked(), outer_index_0);
@@ -938,14 +1000,20 @@ mod tests {
             let mut remover = OrderIdRemover::new(outer_index_count, side);
 
             // 1. Search order_id_0
-            let found_0 =
-                remover.order_id_is_active(&mut ctx, &market_state.get_prices(), order_id_0);
+            let found_0 = remover.paginate_and_check_if_active(
+                &mut ctx,
+                &market_state.get_prices(),
+                order_id_0,
+            );
             assert!(found_0);
             assert_eq!(remover.order_id(), order_id_0);
 
             // 2. Search order_id_1
-            let found_1 =
-                remover.order_id_is_active(&mut ctx, &market_state.get_prices(), order_id_1);
+            let found_1 = remover.paginate_and_check_if_active(
+                &mut ctx,
+                &market_state.get_prices(),
+                order_id_1,
+            );
 
             // TODO fix here. Ghost values should only be cleared in the outermost group
             assert!(found_1);
@@ -1075,10 +1143,16 @@ mod tests {
             .unwrap();
 
             // order id 0 is read. Garbage bit is skipped
-            assert_eq!(remover.best_active_order_id(ctx).unwrap(), order_id_0);
+            assert_eq!(
+                remover.paginate_and_get_best_active_order_id(ctx).unwrap(),
+                order_id_0
+            );
 
             // Calling best_active_order_id() without clearing gives same result
-            assert_eq!(remover.best_active_order_id(ctx).unwrap(), order_id_0);
+            assert_eq!(
+                remover.paginate_and_get_best_active_order_id(ctx).unwrap(),
+                order_id_0
+            );
 
             // TODO check if garbage bit was cleared
             let mut expected_bitmap_group_after_read = BitmapGroup::default();
@@ -1091,7 +1165,10 @@ mod tests {
             );
 
             remover.remove_order(ctx, &mut market_state); // remove 0
-            assert_eq!(remover.best_active_order_id(ctx).unwrap(), order_id_1);
+            assert_eq!(
+                remover.paginate_and_get_best_active_order_id(ctx).unwrap(),
+                order_id_1
+            );
             assert_eq!(market_state.best_price(side), order_id_1.price_in_ticks);
 
             remover.write_prepared_indices(ctx, &mut market_state);
@@ -1183,14 +1260,23 @@ mod tests {
             .unwrap();
 
             // order id 0 is read. Garbage bit is skipped
-            assert_eq!(remover.best_active_order_id(ctx).unwrap(), order_id_0);
+            assert_eq!(
+                remover.paginate_and_get_best_active_order_id(ctx).unwrap(),
+                order_id_0
+            );
 
             remover.remove_order(ctx, &mut market_state); // remove 0
-            assert_eq!(remover.best_active_order_id(ctx).unwrap(), order_id_1);
+            assert_eq!(
+                remover.paginate_and_get_best_active_order_id(ctx).unwrap(),
+                order_id_1
+            );
             assert_eq!(market_state.best_price(side), order_id_1.price_in_ticks);
 
             remover.remove_order(ctx, &mut market_state); // remove 1
-            assert_eq!(remover.best_active_order_id(ctx).unwrap(), order_id_2);
+            assert_eq!(
+                remover.paginate_and_get_best_active_order_id(ctx).unwrap(),
+                order_id_2
+            );
             assert_eq!(market_state.best_price(side), order_id_2.price_in_ticks);
 
             remover.write_prepared_indices(ctx, &mut market_state);
@@ -1281,18 +1367,30 @@ mod tests {
             .unwrap();
 
             // order id 0 is read. Garbage bit is skipped
-            assert_eq!(remover.best_active_order_id(ctx).unwrap(), order_id_0);
+            assert_eq!(
+                remover.paginate_and_get_best_active_order_id(ctx).unwrap(),
+                order_id_0
+            );
 
             remover.remove_order(ctx, &mut market_state); // remove 0
-            assert_eq!(remover.best_active_order_id(ctx).unwrap(), order_id_1);
+            assert_eq!(
+                remover.paginate_and_get_best_active_order_id(ctx).unwrap(),
+                order_id_1
+            );
             assert_eq!(market_state.best_price(side), order_id_1.price_in_ticks);
 
             remover.remove_order(ctx, &mut market_state); // remove 1
-            assert_eq!(remover.best_active_order_id(ctx).unwrap(), order_id_2);
+            assert_eq!(
+                remover.paginate_and_get_best_active_order_id(ctx).unwrap(),
+                order_id_2
+            );
             assert_eq!(market_state.best_price(side), order_id_2.price_in_ticks);
 
             remover.remove_order(ctx, &mut market_state); // remove 2
-            assert_eq!(remover.best_active_order_id(ctx).unwrap(), order_id_3);
+            assert_eq!(
+                remover.paginate_and_get_best_active_order_id(ctx).unwrap(),
+                order_id_3
+            );
             assert_eq!(market_state.best_price(side), order_id_3.price_in_ticks);
 
             remover.write_prepared_indices(ctx, &mut market_state);
@@ -1385,23 +1483,35 @@ mod tests {
             .unwrap();
 
             // order id 0 is read. Garbage bit is skipped
-            assert_eq!(remover.best_active_order_id(ctx).unwrap(), order_id_0);
+            assert_eq!(
+                remover.paginate_and_get_best_active_order_id(ctx).unwrap(),
+                order_id_0
+            );
 
             remover.remove_order(ctx, &mut market_state); // remove 0
-            assert_eq!(remover.best_active_order_id(ctx).unwrap(), order_id_1);
+            assert_eq!(
+                remover.paginate_and_get_best_active_order_id(ctx).unwrap(),
+                order_id_1
+            );
             assert_eq!(market_state.best_price(side), order_id_1.price_in_ticks);
 
             remover.remove_order(ctx, &mut market_state); // remove 1
-            assert_eq!(remover.best_active_order_id(ctx).unwrap(), order_id_2);
+            assert_eq!(
+                remover.paginate_and_get_best_active_order_id(ctx).unwrap(),
+                order_id_2
+            );
             assert_eq!(market_state.best_price(side), order_id_2.price_in_ticks);
 
             remover.remove_order(ctx, &mut market_state); // remove 2
-            assert_eq!(remover.best_active_order_id(ctx).unwrap(), order_id_3);
+            assert_eq!(
+                remover.paginate_and_get_best_active_order_id(ctx).unwrap(),
+                order_id_3
+            );
             assert_eq!(market_state.best_price(side), order_id_3.price_in_ticks);
 
             remover.remove_order(ctx, &mut market_state); // remove 3
                                                           // All order ids exhausted
-            assert!(remover.best_active_order_id(ctx).is_none());
+            assert!(remover.paginate_and_get_best_active_order_id(ctx).is_none());
             assert_eq!(market_state.best_price(side), Ticks::MAX);
 
             // TODO problem here
