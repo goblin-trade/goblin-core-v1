@@ -73,7 +73,6 @@ impl OrderIdRemover {
         side: Side,
         outer_index_count: u16,
         market_prices: &MarketPrices,
-        // best_market_price: Ticks,
     ) -> Option<Self> {
         if outer_index_count == 0 {
             return None;
@@ -83,12 +82,8 @@ impl OrderIdRemover {
         // Load outermost outer index
         remover.slide_outer_index_and_load_bitmap_group(ctx);
 
-        let outer_index = remover.outer_index_unchecked();
-
         // Clear garbage bits
-        remover
-            .group_position_remover
-            .clear_garbage_bits(market_prices, outer_index);
+        remover.try_clear_garbage_bits(market_prices);
 
         let best_market_price = market_prices.best_market_price(side);
 
@@ -121,8 +116,6 @@ impl OrderIdRemover {
     // Externally ensure that order index is present
     pub fn outer_index_unchecked(&self) -> OuterIndex {
         let outer_index = self.last_outer_index();
-        #[cfg(test)]
-        println!("read outer index {:?}", outer_index);
         debug_assert!(outer_index.is_some());
 
         unsafe { outer_index.unwrap_unchecked() }
@@ -142,10 +135,6 @@ impl OrderIdRemover {
         OrderId::from_group_position(group_position, self.outer_index_unchecked())
     }
 
-    pub fn on_best_market_price(&self, best_market_price: Ticks) -> bool {
-        best_market_price == self.price()
-    }
-
     pub fn flush_bitmap_group(&mut self, ctx: &mut ArbContext) {
         if !self.pending_write {
             return;
@@ -158,29 +147,17 @@ impl OrderIdRemover {
         self.pending_write = false;
     }
 
-    pub fn try_clear_garbage_bits(&mut self, market_prices: &MarketPrices) {
+    /// Clear garbage bits in the current bitmap group
+    ///
+    /// # Arguments
+    ///
+    /// * `best_market_prices`- Best market prices before performing any remove operation
+    pub fn try_clear_garbage_bits(&mut self, best_market_prices: &MarketPrices) {
         let outer_index = self.outer_index_unchecked();
+        self.group_position_remover
+            .bitmap_group
+            .clear_garbage_bits(outer_index, best_market_prices);
     }
-    // pub fn flush_and_load_new_bitmap_group(
-    //     &mut self,
-    //     ctx: &mut ArbContext,
-    //     best_market_prices: &MarketPrices,
-    //     new_outer_index: OuterIndex,
-    // ) {
-    //     self.flush_bitmap_group(ctx);
-    //     self.group_position_remover
-    //         .load_outer_index(ctx, new_outer_index);
-
-    //     #[cfg(test)]
-    //     println!(
-    //         "bitmap group before clearing {:?}",
-    //         self.group_position_remover.bitmap_group
-    //     );
-
-    //     // This should only clear bits on the outermost groups
-    //     self.group_position_remover
-    //         .clear_garbage_bits(best_market_prices, new_outer_index);
-    // }
 
     /// Checks whether an order is present at the given order ID.
     /// The bitmap group is updated if the outer index does not match.
@@ -211,9 +188,6 @@ impl OrderIdRemover {
             inner_index,
         } = price_in_ticks.to_indices();
 
-        let clear_garbage_bits = self.last_outer_index().is_none()
-            && market_prices.best_market_price(self.side()).outer_index() == outer_index;
-
         // Read the bitmap group and outer index corresponding to order_id
         if self.last_outer_index() != Some(outer_index) {
             let outer_index_present = self.outer_index_remover.find_outer_index(ctx, outer_index);
@@ -226,35 +200,13 @@ impl OrderIdRemover {
             self.group_position_remover
                 .load_outer_index(ctx, outer_index);
 
-            #[cfg(test)]
-            println!(
-                "bitmap group before clearing {:?}",
-                self.group_position_remover.bitmap_group
-            );
-
-            if clear_garbage_bits {
-                self.group_position_remover
-                    .clear_garbage_bits(market_prices, outer_index);
-            }
-
-            // This conditionally writes the previous group to slot, loads
-            // the new bitmap group and deletes garbage bits
-            // TODO this will try to clear garbage bits for every bitmap group loaded.
-            // Call its internals directly and call clear_garbage_bits() only when
-            // incoming outer index equals the outermost index and that cached outer index is none.
-            // self.flush_and_load_new_bitmap_group(ctx, market_prices, outer_index);
+            self.try_clear_garbage_bits(market_prices);
         }
 
         let group_position = GroupPosition {
             inner_index,
             resting_order_index,
         };
-
-        #[cfg(test)]
-        println!(
-            "outer index {:?}, Bitmap group {:?}",
-            outer_index, self.group_position_remover.bitmap_group
-        );
 
         // Search group position in bitmap group
         let order_present = self
@@ -283,6 +235,11 @@ impl OrderIdRemover {
                 return None;
             }
         }
+    }
+
+    pub fn best_active_price(&mut self, ctx: &mut ArbContext) -> Option<Ticks> {
+        self.best_active_order_id(ctx)
+            .map(|order_id| order_id.price_in_ticks)
     }
 
     /// Remove the last searched order from the book, and update the
@@ -315,39 +272,9 @@ impl OrderIdRemover {
 
         let market_price_deactivated = self.price() == best_market_price && inner_index_deactivated;
 
-        // Clear garbage bits if on outermost group
-        // - opposite ticks are only present if outer index of both best prices is equal
-        // - However ghost
-
-        // The outermost group can have opposite side bits and ghost bits.
-        // The bit being closed is not necessarily the outermost. The best market
-        // price can still have active bits.
-        // TODO avoid clearing garbage bits on every remove(). This should happen
-        // only when a new group is loaded
-        // self.group_position_remover
-        //     .clear_garbage_bits(&market_state.get_prices(), outer_index);
-
-        // This doesn't work in find one but remove another case
-        // let group_deactivated =
-        //     inner_index_deactivated && inner_index == InnerIndex::last(self.side());
-
         let group_deactivated = self
             .group_position_remover
             .is_group_inactive(best_opposite_price, outer_index);
-
-        // This looks up for active bits beginning from the current position
-        // This gives an error in find one but remove another case
-        // because the previously searched position is ignored
-        //
-        // let group_deactivated_v2 = self.group_position_remover.is_group_inactive_v2();
-
-        // if group_deactivated != group_deactivated {
-        //     #[cfg(test)]
-        //     println!(
-        //         "group_deactivated_v2 {}, bitmap group {:?}",
-        //         group_deactivated, self.group_position_remover.bitmap_group
-        //     );
-        // }
 
         self.pending_write = !(market_price_deactivated || group_deactivated);
 
@@ -359,11 +286,6 @@ impl OrderIdRemover {
             let new_best_price = self.best_active_price(ctx);
             market_state.try_update_best_price(self.side(), new_best_price);
         }
-    }
-
-    pub fn best_active_price(&mut self, ctx: &mut ArbContext) -> Option<Ticks> {
-        self.best_active_order_id(ctx)
-            .map(|order_id| order_id.price_in_ticks)
     }
 
     /// Move one position down the index list and load the corresponding bitmap group
@@ -394,17 +316,7 @@ impl OrderIdRemover {
     /// * `ctx`
     ///
     pub fn write_prepared_indices(&mut self, ctx: &mut ArbContext, market_state: &mut MarketState) {
-        // bug- we need the outer index ID to write the bitmap group
-        // outer index is removed when the bitmap group closes. There is no need to write
-        // such a bitmap to state
-
-        // TODO move pending_write to order_id_remover
-        // If there is no cached outer index, then the group was cleared. No need to write
-        // to slot
         self.flush_bitmap_group(ctx);
-        // if let Some(outer_index) = self.last_outer_index() {
-        //     self.flush_bitmap_group(ctx);
-        // }
 
         market_state
             .set_outer_index_length(self.side(), self.outer_index_remover.index_list_length());
@@ -1038,54 +950,54 @@ mod tests {
             // TODO fix here. Ghost values should only be cleared in the outermost group
             assert!(found_1);
 
-            // assert_eq!(remover.order_id(), order_id_1);
-            // assert_eq!(remover.outer_index_unchecked(), outer_index_1);
-            // assert_eq!(
-            //     remover.outer_index_remover.cached_outer_index.unwrap(),
-            //     outer_index_1
-            // );
-            // assert_eq!(remover.outer_index_remover.cache, vec![outer_index_0]);
+            assert_eq!(remover.order_id(), order_id_1);
+            assert_eq!(remover.outer_index_unchecked(), outer_index_1);
+            assert_eq!(
+                remover.outer_index_remover.cached_outer_index.unwrap(),
+                outer_index_1
+            );
+            assert_eq!(remover.outer_index_remover.cache, vec![outer_index_0]);
 
-            // // 3. Remove
-            // remover.remove_order(&mut ctx, &mut market_state);
+            // 3. Remove
+            remover.remove_order(&mut ctx, &mut market_state);
 
-            // // Pending write is false because group was closed and because this is not the
-            // // outermost group
-            // assert_eq!(remover.pending_write, false);
+            // Pending write is false because group was closed and because this is not the
+            // outermost group
+            assert_eq!(remover.pending_write, false);
 
-            // // No change in opposite side price
-            // assert_eq!(market_state.best_bid_price, order_id_bid.price_in_ticks);
+            // No change in opposite side price
+            assert_eq!(market_state.best_bid_price, order_id_bid.price_in_ticks);
 
-            // // Best price not changed
-            // assert_eq!(market_state.best_ask_price, order_id_0.price_in_ticks);
+            // Best price not changed
+            assert_eq!(market_state.best_ask_price, order_id_0.price_in_ticks);
 
-            // // Outer index cleared because the group closed
-            // assert!(remover.last_outer_index().is_none());
+            // Outer index cleared because the group closed
+            assert!(remover.last_outer_index().is_none());
 
-            // // 4. Write list
-            // remover.write_prepared_indices(&mut ctx, &mut market_state);
-            // // Changed because outer_index_0 was closed
-            // assert_eq!(market_state.asks_outer_indices, 1);
+            // 4. Write list
+            remover.write_prepared_indices(&mut ctx, &mut market_state);
+            // Changed because outer_index_0 was closed
+            assert_eq!(market_state.asks_outer_indices, 1);
 
-            // // Check bitmap group
-            // let mut expected_bitmap_group_0 = BitmapGroup::default();
-            // expected_bitmap_group_0.inner[0] = 0b00000001;
-            // expected_bitmap_group_0.inner[2] = 0b00000001;
+            // Check bitmap group
+            let mut expected_bitmap_group_0 = BitmapGroup::default();
+            expected_bitmap_group_0.inner[0] = 0b00000001;
+            expected_bitmap_group_0.inner[2] = 0b00000001;
 
-            // let read_bitmap_group_0 = BitmapGroup::new_from_slot(&ctx, outer_index_0);
-            // assert_eq!(read_bitmap_group_0, expected_bitmap_group_0);
+            let read_bitmap_group_0 = BitmapGroup::new_from_slot(&ctx, outer_index_0);
+            assert_eq!(read_bitmap_group_0, expected_bitmap_group_0);
 
-            // let expected_cached_bitmap_group_1 = BitmapGroup::default();
-            // assert_eq!(
-            //     remover.group_position_remover.bitmap_group,
-            //     expected_cached_bitmap_group_1
-            // );
+            let expected_cached_bitmap_group_1 = BitmapGroup::default();
+            assert_eq!(
+                remover.group_position_remover.bitmap_group,
+                expected_cached_bitmap_group_1
+            );
 
-            // // bitmap group 1 is not written to slot. Slot will give the previous value
-            // let mut expected_written_bitmap_group_1 = BitmapGroup::default();
-            // expected_written_bitmap_group_1.inner[0] = 0b00000001;
-            // let read_bitmap_group_1 = BitmapGroup::new_from_slot(&ctx, outer_index_1);
-            // assert_eq!(read_bitmap_group_1, expected_written_bitmap_group_1);
+            // bitmap group 1 is not written to slot. Slot will give the previous value
+            let mut expected_written_bitmap_group_1 = BitmapGroup::default();
+            expected_written_bitmap_group_1.inner[0] = 0b00000001;
+            let read_bitmap_group_1 = BitmapGroup::new_from_slot(&ctx, outer_index_1);
+            assert_eq!(read_bitmap_group_1, expected_written_bitmap_group_1);
         }
     }
 
@@ -1495,28 +1407,28 @@ mod tests {
             // TODO problem here
             remover.write_prepared_indices(ctx, &mut market_state);
 
-            // // Since ask outer index count was decremented, no need to write updated
-            // // list slot
-            // assert_eq!(market_state.asks_outer_indices, 0);
-            // let read_list_slot = ListSlot::new_from_slot(ctx, list_key);
-            // assert_eq!(read_list_slot, list_slot);
+            // Since ask outer index count was decremented, no need to write updated
+            // list slot
+            assert_eq!(market_state.asks_outer_indices, 0);
+            let read_list_slot = ListSlot::new_from_slot(ctx, list_key);
+            assert_eq!(read_list_slot, list_slot);
 
-            // // Bitmap group not written to slot since outer index was removed
-            // let mut expected_bitmap_group_0 = BitmapGroup::default();
-            // expected_bitmap_group_0.inner[0] = 0b0000_0001;
-            // expected_bitmap_group_0.inner[1] = 0b0000_0101;
-            // expected_bitmap_group_0.inner[2] = 0b0000_0001;
-            // assert_eq!(
-            //     BitmapGroup::new_from_slot(ctx, outer_index_0),
-            //     expected_bitmap_group_0
-            // );
+            // Bitmap group not written to slot since outer index was removed
+            let mut expected_bitmap_group_0 = BitmapGroup::default();
+            expected_bitmap_group_0.inner[0] = 0b0000_0001;
+            expected_bitmap_group_0.inner[1] = 0b0000_0101;
+            expected_bitmap_group_0.inner[2] = 0b0000_0001;
+            assert_eq!(
+                BitmapGroup::new_from_slot(ctx, outer_index_0),
+                expected_bitmap_group_0
+            );
 
-            // let mut expected_bitmap_group_1 = BitmapGroup::default();
-            // expected_bitmap_group_1.inner[0] = 0b0000_0001;
-            // assert_eq!(
-            //     BitmapGroup::new_from_slot(ctx, outer_index_1),
-            //     expected_bitmap_group_1
-            // );
+            let mut expected_bitmap_group_1 = BitmapGroup::default();
+            expected_bitmap_group_1.inner[0] = 0b0000_0001;
+            assert_eq!(
+                BitmapGroup::new_from_slot(ctx, outer_index_1),
+                expected_bitmap_group_1
+            );
         }
     }
 }

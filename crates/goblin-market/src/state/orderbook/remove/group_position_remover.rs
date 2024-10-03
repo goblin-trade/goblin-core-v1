@@ -87,23 +87,6 @@ impl GroupPositionRemover {
         self.bitmap_group.deactivate(self.group_position);
     }
 
-    /// Clear garbage bits in the bitmap group that fall between best market prices
-    ///
-    /// Externally ensure this is not called if outer index is not loaded
-    ///
-    /// # Arguments
-    ///
-    /// * `best_market_prices`
-    ///
-    pub fn clear_garbage_bits(
-        &mut self,
-        best_market_prices: &MarketPrices,
-        outer_index: OuterIndex,
-    ) {
-        self.bitmap_group
-            .clear_garbage_bits(outer_index, best_market_prices);
-    }
-
     /// Whether the bitmap group has been inactivated for `self.side`. It accounts for
     /// and excludes bits belonging to the opposite side during lookup.
     ///

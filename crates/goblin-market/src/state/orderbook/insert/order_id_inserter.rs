@@ -72,7 +72,6 @@ impl OrderIdInserter {
             .load_outer_index(ctx, outer_index, bitmap_group_is_empty);
 
         // Clear garbage bits
-        // TODO only call once on outermost bitmap group
         self.bitmap_inserter.clear_garbage_bits(best_market_prices);
 
         // Active group position in bitmap
@@ -918,27 +917,27 @@ mod tests {
     #[test]
     fn test_bits_from_opposite_side_not_cleared_for_newly_activated_outer_indices_for_bids() {
         let ctx = &mut ArbContext::new();
-        let side = Side::Bid;
+        let side = Side::Ask;
 
-        // Outer index 1 with non-empty bitmap is present in ask index list but not bid index list
-        // Ensure that when we write an bid bit to outer index 1, the old bit is preserved.
+        // Outer index 1 with non-empty bitmap is present in bid index list but not ask index list
+        // Ensure that when we write an ask bit to outer index 1, the bid bit is preserved.
         let outer_index = OuterIndex::new(1);
-        let bid_inner_index = InnerIndex::MAX;
+        let bid_inner_index = InnerIndex::ZERO;
 
         let market_prices = MarketPrices {
-            best_ask_price: Ticks::from_indices(OuterIndex::new(2), InnerIndex::ZERO),
             best_bid_price: Ticks::from_indices(outer_index, bid_inner_index),
+            best_ask_price: Ticks::MAX,
         };
 
         let mut bitmap_group = BitmapGroup::default();
-        bitmap_group.inner[bid_inner_index.as_usize()] = 1;
+        bitmap_group.inner[bid_inner_index.as_usize()] = 0b0000_0001;
         bitmap_group.write_to_slot(ctx, &outer_index);
 
         let outer_index_count = 0;
         let mut order_id_inserter = OrderIdInserter::new(side, outer_index_count);
 
         let order_id = OrderId {
-            price_in_ticks: Ticks::from_indices(outer_index, InnerIndex::new(0)),
+            price_in_ticks: Ticks::from_indices(outer_index, InnerIndex::MAX),
             resting_order_index: RestingOrderIndex::ZERO,
         };
         order_id_inserter.activate_order_id(ctx, &order_id, &market_prices);
@@ -947,8 +946,8 @@ mod tests {
         let read_bitmap_group = BitmapGroup::new_from_slot(ctx, outer_index);
 
         let mut expected_bitmap_group = BitmapGroup::default();
-        expected_bitmap_group.inner[0] = 1;
-        expected_bitmap_group.inner[31] = 1; // Belonging to asks
+        expected_bitmap_group.inner[0] = 1; // Belonging to bids. This should not clear
+        expected_bitmap_group.inner[31] = 1; // Newly inserted bit
 
         assert_eq!(read_bitmap_group, expected_bitmap_group);
     }

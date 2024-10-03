@@ -140,42 +140,20 @@ impl BitmapGroup {
     /// # Arguments
     ///
     /// * `side`
-    /// * `outer_index`
-    /// * `best_market_price`
-    /// * `best_opposite_price`
-    ///
+    /// * `outer_index` - Outer index of the bitmap group being looped through
+    /// * `best_market_prices` - The best market prices BEFORE performing any add
+    /// or remove operation
     pub fn clear_garbage_bits(
         &mut self,
         outer_index: OuterIndex,
         best_market_prices: &MarketPrices,
     ) {
-        // TODO fix- if both best prices are not located on outer index, the iterator
-        // loops through the entire range clearing all the bits.
-        // Expected behavior- iterator should return None if neither of the best prices
-        // lie on outer index
         let mut iterator =
-            InnerIndexIterator::new_between_market_prices(best_market_prices, outer_index);
+            InnerIndexIterator::new_for_garbage_bits(outer_index, best_market_prices);
 
         while let Some(inner_index_to_clear) = iterator.next() {
             self.inner[inner_index_to_clear.as_usize()] = 0;
         }
-    }
-
-    pub fn clear_garbage_bits_and_check_if_active(
-        &mut self,
-        outer_index: OuterIndex,
-        best_market_prices: &MarketPrices,
-    ) {
-        let mut iterator =
-            InnerIndexIterator::new_between_market_prices(best_market_prices, outer_index);
-
-        while let Some(inner_index_to_clear) = iterator.next() {
-            self.inner[inner_index_to_clear.as_usize()] = 0;
-        }
-
-        // At least one inner index will remain
-
-        let group_is_empty = iterator.count == 32;
     }
 
     /// Whether the bitmap group is active. If the active state changes then
