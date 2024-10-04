@@ -92,7 +92,7 @@ impl GroupPosition {
     //     // }
     // }
 
-    pub fn count_inclusive(&self, side: Side) -> u8 {
+    pub fn index_inclusive(&self, side: Side) -> u8 {
         let GroupPosition {
             inner_index,
             resting_order_index,
@@ -124,28 +124,28 @@ mod tests {
     use super::GroupPosition;
 
     #[test]
-    fn test_count_inclusive() {
+    fn test_index_inclusive() {
         let position_0 = GroupPosition::MIN;
-        assert_eq!(position_0.count_inclusive(Side::Ask), 0);
-        assert_eq!(position_0.count_inclusive(Side::Bid), 248);
+        assert_eq!(position_0.index_inclusive(Side::Ask), 0);
+        assert_eq!(position_0.index_inclusive(Side::Bid), 248);
 
         let position_1 = GroupPosition {
             inner_index: InnerIndex::ZERO,
             resting_order_index: RestingOrderIndex::MAX,
         };
-        assert_eq!(position_1.count_inclusive(Side::Ask), 7);
-        assert_eq!(position_1.count_inclusive(Side::Bid), 255);
+        assert_eq!(position_1.index_inclusive(Side::Ask), 7);
+        assert_eq!(position_1.index_inclusive(Side::Bid), 255);
 
         let position_2 = GroupPosition {
             inner_index: InnerIndex::MAX,
             resting_order_index: RestingOrderIndex::ZERO,
         };
-        assert_eq!(position_2.count_inclusive(Side::Ask), 248);
-        assert_eq!(position_2.count_inclusive(Side::Bid), 0);
+        assert_eq!(position_2.index_inclusive(Side::Ask), 248);
+        assert_eq!(position_2.index_inclusive(Side::Bid), 0);
 
         let position_3 = GroupPosition::MAX;
-        assert_eq!(position_3.count_inclusive(Side::Ask), 255);
-        assert_eq!(position_3.count_inclusive(Side::Bid), 7);
+        assert_eq!(position_3.index_inclusive(Side::Ask), 255);
+        assert_eq!(position_3.index_inclusive(Side::Bid), 7);
     }
 
     // #[test]

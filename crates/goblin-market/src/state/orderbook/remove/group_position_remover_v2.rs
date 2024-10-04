@@ -3,8 +3,7 @@ use crate::{
     state::{
         bitmap_group::BitmapGroup,
         iterator::active_position::active_group_position_iterator::ActiveGroupPositionIterator,
-        order::{group_position::GroupPosition, order_id::OrderId},
-        ArbContext, InnerIndex, MarketPrices, OuterIndex, RestingOrderIndex, Side,
+        order::group_position::GroupPosition, ArbContext, InnerIndex, OuterIndex, Side,
     },
 };
 
@@ -44,8 +43,38 @@ impl GroupPositionRemoverV2 {
         self.inner.next()
     }
 
+    /// Deactivate the bit at the currently tracked group position
+    ///
+    /// Externally ensure that try_traverse_to_best_active_position() is called
+    /// before deactivation
     pub fn deactivate(&mut self) {
-        // let group_position = self.inner.group_position_iterator.
+        let group_position = self.group_position_unchecked();
+        self.inner.bitmap_group.deactivate(group_position);
+    }
+
+    // TODO use best_market_price to test for inactivity.
+    // This should remove the need to clean garbage bits
+    //
+    pub fn is_group_inactive(&self, best_opposite_price: Ticks, outer_index: OuterIndex) -> bool {
+        // TODO pass start_index_inclusive externally
+        let start_index_inclusive = if outer_index == best_opposite_price.outer_index() {
+            // Overflow or underflow would happen only if the most extreme bitmap is occupied
+            // by opposite side bits. This is not possible because active bits for `side`
+            // are guaranteed to be present.
+
+            let best_opposite_inner_index = best_opposite_price.inner_index();
+            Some(if self.side() == Side::Bid {
+                best_opposite_inner_index - InnerIndex::ONE
+            } else {
+                best_opposite_inner_index + InnerIndex::ONE
+            })
+        } else {
+            None
+        };
+
+        self.inner
+            .bitmap_group
+            .is_inactive(self.side(), start_index_inclusive)
     }
 
     // Getters
@@ -58,10 +87,22 @@ impl GroupPositionRemoverV2 {
         self.inner.bitmap_group.is_position_active(group_position)
     }
 
+    /// Get the currently tracked group position
+    ///
+    /// Unsafe function- Externally ensure that try_traverse_to_best_active_position()
+    /// is called before calling.
+    fn group_position_unchecked(&self) -> GroupPosition {
+        let group_position = self.inner.group_position_iterator.last_group_position();
+        debug_assert!(group_position.is_some());
+        let group_position_unchecked = unsafe { group_position.unwrap_unchecked() };
+
+        group_position_unchecked
+    }
+
     // Setters
 
     pub fn set_group_position(&mut self, group_position: GroupPosition) {
-        let count = group_position.count_inclusive(self.side());
+        let count = group_position.index_inclusive(self.side());
         self.inner.group_position_iterator.index = count;
     }
 
