@@ -4,24 +4,31 @@ use crate::state::{
 };
 
 /// Iterator to find coordinates of active bits in a bitmap group
-pub struct ActiveGroupPositionIterator<'a> {
+pub struct ActiveGroupPositionIterator {
     /// The bitmap group to search
-    bitmap_group: &'a BitmapGroup,
+    pub bitmap_group: BitmapGroup,
 
     /// Iterator to obtain bitmap group coordinates
-    group_position_iterator: GroupPositionIterator,
+    pub group_position_iterator: GroupPositionIterator,
 }
 
-impl<'a> ActiveGroupPositionIterator<'a> {
-    pub fn new(bitmap_group: &'a BitmapGroup, side: Side, count: u8) -> Self {
+impl ActiveGroupPositionIterator {
+    pub fn new(bitmap_group: BitmapGroup, side: Side, count: u8) -> Self {
         ActiveGroupPositionIterator {
             bitmap_group,
             group_position_iterator: GroupPositionIterator::new(side, count),
         }
     }
 
+    pub fn new_default_for_side(side: Side) -> Self {
+        ActiveGroupPositionIterator {
+            bitmap_group: BitmapGroup::default(),
+            group_position_iterator: GroupPositionIterator::new(side, 0),
+        }
+    }
+
     pub fn new_with_starting_position(
-        bitmap_group: &'a BitmapGroup,
+        bitmap_group: BitmapGroup,
         side: Side,
         starting_position_inclusive: GroupPosition,
     ) -> Self {
@@ -30,7 +37,7 @@ impl<'a> ActiveGroupPositionIterator<'a> {
     }
 }
 
-impl<'a> Iterator for ActiveGroupPositionIterator<'a> {
+impl Iterator for ActiveGroupPositionIterator {
     type Item = GroupPosition;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -68,7 +75,7 @@ mod tests {
         let side = Side::Ask;
         let count = 0;
 
-        let mut iterator = ActiveGroupPositionIterator::new(&bitmap_group, side, count);
+        let mut iterator = ActiveGroupPositionIterator::new(bitmap_group, side, count);
         assert_eq!(
             iterator.next().unwrap(),
             GroupPosition {
@@ -106,7 +113,7 @@ mod tests {
         let count = last_position.count_exclusive(side);
         assert_eq!(count, 1);
 
-        let mut iterator = ActiveGroupPositionIterator::new(&bitmap_group, side, count);
+        let mut iterator = ActiveGroupPositionIterator::new(bitmap_group, side, count);
         assert_eq!(
             iterator.next().unwrap(),
             GroupPosition {
@@ -133,7 +140,7 @@ mod tests {
         let side = Side::Ask;
         let count = 0;
 
-        let mut iterator = ActiveGroupPositionIterator::new(&bitmap_group, side, count);
+        let mut iterator = ActiveGroupPositionIterator::new(bitmap_group, side, count);
         assert_eq!(
             iterator.next().unwrap(),
             GroupPosition {
@@ -164,7 +171,7 @@ mod tests {
         };
         let count = last_position_to_skip.count_exclusive(side);
 
-        let mut iterator = ActiveGroupPositionIterator::new(&bitmap_group, side, count);
+        let mut iterator = ActiveGroupPositionIterator::new(bitmap_group, side, count);
         assert_eq!(
             iterator.next().unwrap(),
             GroupPosition {
@@ -184,7 +191,7 @@ mod tests {
         let side = Side::Ask;
         let count = 0;
 
-        let mut iterator = ActiveGroupPositionIterator::new(&bitmap_group, side, count);
+        let mut iterator = ActiveGroupPositionIterator::new(bitmap_group, side, count);
         assert_eq!(
             iterator.next().unwrap(),
             GroupPosition {
@@ -217,7 +224,7 @@ mod tests {
         let count = last_position_to_skip.count_exclusive(side);
         assert_eq!(count, 10);
 
-        let mut iterator = ActiveGroupPositionIterator::new(&bitmap_group, side, count);
+        let mut iterator = ActiveGroupPositionIterator::new(bitmap_group, side, count);
         assert_eq!(
             iterator.next().unwrap(),
             GroupPosition {
@@ -236,7 +243,7 @@ mod tests {
         let side = Side::Bid;
         let count = 0;
 
-        let mut iterator = ActiveGroupPositionIterator::new(&bitmap_group, side, count);
+        let mut iterator = ActiveGroupPositionIterator::new(bitmap_group, side, count);
         assert_eq!(
             iterator.next().unwrap(),
             GroupPosition {
@@ -274,7 +281,7 @@ mod tests {
         let count = last_position_to_skip.count_exclusive(side);
         assert_eq!(count, 1);
 
-        let mut iterator = ActiveGroupPositionIterator::new(&bitmap_group, side, count);
+        let mut iterator = ActiveGroupPositionIterator::new(bitmap_group, side, count);
         assert_eq!(
             iterator.next().unwrap(),
             GroupPosition {
@@ -301,7 +308,7 @@ mod tests {
         let side = Side::Bid;
         let count = 0;
 
-        let mut iterator = ActiveGroupPositionIterator::new(&bitmap_group, side, count);
+        let mut iterator = ActiveGroupPositionIterator::new(bitmap_group, side, count);
         assert_eq!(
             iterator.next().unwrap(),
             GroupPosition {
@@ -333,7 +340,7 @@ mod tests {
         let count = last_position_to_skip.count_exclusive(side);
         assert_eq!(count, 1);
 
-        let mut iterator = ActiveGroupPositionIterator::new(&bitmap_group, side, count);
+        let mut iterator = ActiveGroupPositionIterator::new(bitmap_group, side, count);
         assert_eq!(
             iterator.next().unwrap(),
             GroupPosition {
@@ -353,7 +360,7 @@ mod tests {
         let side = Side::Bid;
         let count = 0;
 
-        let mut iterator = ActiveGroupPositionIterator::new(&bitmap_group, side, count);
+        let mut iterator = ActiveGroupPositionIterator::new(bitmap_group, side, count);
         assert_eq!(
             iterator.next().unwrap(),
             GroupPosition {
@@ -386,7 +393,7 @@ mod tests {
         let count = last_position_to_skip.count_exclusive(side);
         assert_eq!(count, 10);
 
-        let mut iterator = ActiveGroupPositionIterator::new(&bitmap_group, side, count);
+        let mut iterator = ActiveGroupPositionIterator::new(bitmap_group, side, count);
         assert_eq!(
             iterator.next().unwrap(),
             GroupPosition {

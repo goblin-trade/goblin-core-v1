@@ -67,7 +67,7 @@ impl BitmapGroup {
     }
 
     /// Whether the bit at the given group position is active
-    pub fn is_position_active(&mut self, group_position: GroupPosition) -> bool {
+    pub fn is_position_active(&self, group_position: GroupPosition) -> bool {
         let GroupPosition {
             inner_index,
             resting_order_index,
@@ -112,13 +112,15 @@ impl BitmapGroup {
     ///
     /// * `side`
     /// * `starting_index` - Search beginning from this index (inclusive)
+    ///
+    /// TODO remove. Replace with GroupPositionRemoverV2
     pub fn best_active_group_position(
         &self,
         side: Side,
         starting_position_inclusive: GroupPosition,
     ) -> Option<GroupPosition> {
         let mut iterator = ActiveGroupPositionIterator::new_with_starting_position(
-            self,
+            *self,
             side,
             starting_position_inclusive,
         );

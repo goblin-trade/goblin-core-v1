@@ -149,7 +149,7 @@ impl OrderIdRemover {
     /// * `market_prices` - The initial market prices before removing any order.
     /// They're used to clear garbage bits if we're on the outermost group.
     ///
-    pub fn paginate_and_check_if_active(
+    pub fn check_order_id(
         &mut self,
         ctx: &mut ArbContext,
         market_prices: &MarketPrices,
@@ -187,6 +187,37 @@ impl OrderIdRemover {
         order_present
     }
 
+    /// Get the best active order ID
+    ///
+    /// Externally ensure that the struct is initialized with new_for_matching() to setup
+    /// outer index and starting group position and for clearing garbage bits
+    ///
+    /// TODO update design for matching. best_active_order_id() is being called twice,
+    /// once on removal and then on lookup. The second instance is wasted.
+    /// Update the code to call best_active_order_id() in the constructor,
+    /// after that just call remove() Use self.order_id() to read the order id.
+    /// Turn best_active_order_id() into an internal function.
+    pub fn get_best_active_order_id(&mut self, ctx: &mut ArbContext) -> Option<OrderId> {
+        loop {
+            if self
+                .group_position_remover
+                .try_traverse_to_best_active_position()
+            {
+                return Some(self.order_id());
+            }
+
+            // Slide to the next outer index if the current one is traversed
+            let slide_success = self.try_slide(ctx);
+            if !slide_success {
+                return None;
+            }
+        }
+    }
+
+    // TODO replace constructor with a get_next() function
+    // This function will pop the old value and return the new one.
+    // It should take care of initialization case.
+
     /// Remove the last searched order from the book, and update the
     /// best price in market state if the outermost tick closed
     ///
@@ -202,6 +233,18 @@ impl OrderIdRemover {
     /// * `market_state`
     ///
     pub fn remove_order(&mut self, ctx: &mut ArbContext, market_state: &mut MarketState) {
+        // TODO check if this is the outermost beforehand, if true then call get_next().
+        // Else run through remaining steps.
+        // TODO study pending_write behavior in this case.
+        // If the outermost is removed but the tick doen't close, then a write is pending.
+        // SequentialOrderIdRemover can handle this by writing in write_prepared_indices().
+        //
+        // - write_prepared_indices() will have different implementations? RandomOrderIdRemover
+        // will have pending_write condition.
+        // - Its possible that SequentialOrderIdRemover just reads the first value and doesn't
+        // remove anything. How to prevent write in write_prepared_indices() then?
+        // but wha
+        // However we need to write if
         let outer_index = self.outer_index_unchecked();
         let inner_index = self.inner_index();
 
@@ -221,16 +264,26 @@ impl OrderIdRemover {
 
         let market_price_deactivated = self.price() == best_market_price && inner_index_deactivated;
 
+        // Alternate design to check for group deactivation-
+        // begin lookup from
+        // - inner index of best market price if on outermost group, or
+        // - from beginning of the group if not on outermost
+        //
+        // Redundant code
+        // - As orders are removed we traverse down groups. Best opposite price
+        // is only
         let group_deactivated = self
             .group_position_remover
             .is_group_inactive(best_opposite_price, outer_index);
 
         self.pending_write = !(market_price_deactivated || group_deactivated);
 
+        // 2. Update index list
         if group_deactivated {
             self.outer_index_remover.remove_cached_index();
         }
 
+        // 3. Update market state
         if market_price_deactivated {
             // Find the next active price, moving the group position and outer index in process.
             let new_best_price = self.best_active_price(ctx);
@@ -238,38 +291,8 @@ impl OrderIdRemover {
         }
     }
 
-    /// Get the best active order ID
-    ///
-    /// Externally ensure that the struct is initialized with new_for_matching() to setup
-    /// outer index and starting group position and for clearing garbage bits
-    ///
-    /// TODO update design for matching. best_active_order_id() is being called twice,
-    /// once on removal and then on lookup. The second instance is wasted.
-    /// Update the code to call best_active_order_id() in the constructor,
-    /// after that just call remove() Use self.order_id() to read the order id.
-    /// Turn best_active_order_id() into an internal function.
-    pub fn paginate_and_get_best_active_order_id(
-        &mut self,
-        ctx: &mut ArbContext,
-    ) -> Option<OrderId> {
-        loop {
-            if self
-                .group_position_remover
-                .try_traverse_to_best_active_position()
-            {
-                return Some(self.order_id());
-            }
-
-            // Slide to the next outer index if the current one is traversed
-            let slide_success = self.try_slide(ctx);
-            if !slide_success {
-                return None;
-            }
-        }
-    }
-
     pub fn best_active_price(&mut self, ctx: &mut ArbContext) -> Option<Ticks> {
-        self.paginate_and_get_best_active_order_id(ctx)
+        self.get_best_active_order_id(ctx)
             .map(|order_id| order_id.price_in_ticks)
     }
 
@@ -438,11 +461,7 @@ mod tests {
             let mut remover = OrderIdRemover::new(outer_index_count, side);
 
             // 1. Search
-            let found_0 = remover.paginate_and_check_if_active(
-                &mut ctx,
-                &market_state.get_prices(),
-                order_id_0,
-            );
+            let found_0 = remover.check_order_id(&mut ctx, &market_state.get_prices(), order_id_0);
             assert!(found_0);
             assert_eq!(remover.order_id(), order_id_0);
 
@@ -526,11 +545,7 @@ mod tests {
             let mut remover = OrderIdRemover::new(outer_index_count, side);
 
             // 1. Search
-            let found_0 = remover.paginate_and_check_if_active(
-                &mut ctx,
-                &market_state.get_prices(),
-                order_id_0,
-            );
+            let found_0 = remover.check_order_id(&mut ctx, &market_state.get_prices(), order_id_0);
             assert!(found_0);
             assert_eq!(remover.order_id(), order_id_0);
 
@@ -617,11 +632,7 @@ mod tests {
             let mut remover = OrderIdRemover::new(outer_index_count, side);
 
             // 1. Search
-            let found_1 = remover.paginate_and_check_if_active(
-                &mut ctx,
-                &market_state.get_prices(),
-                order_id_1,
-            );
+            let found_1 = remover.check_order_id(&mut ctx, &market_state.get_prices(), order_id_1);
             assert!(found_1);
             assert_eq!(remover.order_id(), order_id_1);
 
@@ -703,11 +714,7 @@ mod tests {
             let mut remover = OrderIdRemover::new(outer_index_count, side);
 
             // 1. Search
-            let found_0 = remover.paginate_and_check_if_active(
-                &mut ctx,
-                &market_state.get_prices(),
-                order_id_0,
-            );
+            let found_0 = remover.check_order_id(&mut ctx, &market_state.get_prices(), order_id_0);
             assert!(found_0);
             assert_eq!(remover.order_id(), order_id_0);
 
@@ -797,20 +804,12 @@ mod tests {
             let mut remover = OrderIdRemover::new(outer_index_count, side);
 
             // 1. Search order_id_0
-            let found_0 = remover.paginate_and_check_if_active(
-                &mut ctx,
-                &market_state.get_prices(),
-                order_id_0,
-            );
+            let found_0 = remover.check_order_id(&mut ctx, &market_state.get_prices(), order_id_0);
             assert!(found_0);
             assert_eq!(remover.order_id(), order_id_0);
 
             // 2. Search order_id_1
-            let found_1 = remover.paginate_and_check_if_active(
-                &mut ctx,
-                &market_state.get_prices(),
-                order_id_1,
-            );
+            let found_1 = remover.check_order_id(&mut ctx, &market_state.get_prices(), order_id_1);
             assert!(found_1);
             assert_eq!(remover.order_id(), order_id_1);
             assert_eq!(remover.outer_index_unchecked(), outer_index_0);
@@ -897,20 +896,12 @@ mod tests {
             let mut remover = OrderIdRemover::new(outer_index_count, side);
 
             // 1. Search order_id_0
-            let found_0 = remover.paginate_and_check_if_active(
-                &mut ctx,
-                &market_state.get_prices(),
-                order_id_0,
-            );
+            let found_0 = remover.check_order_id(&mut ctx, &market_state.get_prices(), order_id_0);
             assert!(found_0);
             assert_eq!(remover.order_id(), order_id_0);
 
             // 2. Search order_id_1
-            let found_1 = remover.paginate_and_check_if_active(
-                &mut ctx,
-                &market_state.get_prices(),
-                order_id_1,
-            );
+            let found_1 = remover.check_order_id(&mut ctx, &market_state.get_prices(), order_id_1);
             assert!(found_1);
             assert_eq!(remover.order_id(), order_id_1);
             assert_eq!(remover.outer_index_unchecked(), outer_index_0);
@@ -1000,20 +991,12 @@ mod tests {
             let mut remover = OrderIdRemover::new(outer_index_count, side);
 
             // 1. Search order_id_0
-            let found_0 = remover.paginate_and_check_if_active(
-                &mut ctx,
-                &market_state.get_prices(),
-                order_id_0,
-            );
+            let found_0 = remover.check_order_id(&mut ctx, &market_state.get_prices(), order_id_0);
             assert!(found_0);
             assert_eq!(remover.order_id(), order_id_0);
 
             // 2. Search order_id_1
-            let found_1 = remover.paginate_and_check_if_active(
-                &mut ctx,
-                &market_state.get_prices(),
-                order_id_1,
-            );
+            let found_1 = remover.check_order_id(&mut ctx, &market_state.get_prices(), order_id_1);
 
             // TODO fix here. Ghost values should only be cleared in the outermost group
             assert!(found_1);
@@ -1143,16 +1126,10 @@ mod tests {
             .unwrap();
 
             // order id 0 is read. Garbage bit is skipped
-            assert_eq!(
-                remover.paginate_and_get_best_active_order_id(ctx).unwrap(),
-                order_id_0
-            );
+            assert_eq!(remover.get_best_active_order_id(ctx).unwrap(), order_id_0);
 
             // Calling best_active_order_id() without clearing gives same result
-            assert_eq!(
-                remover.paginate_and_get_best_active_order_id(ctx).unwrap(),
-                order_id_0
-            );
+            assert_eq!(remover.get_best_active_order_id(ctx).unwrap(), order_id_0);
 
             // TODO check if garbage bit was cleared
             let mut expected_bitmap_group_after_read = BitmapGroup::default();
@@ -1165,10 +1142,7 @@ mod tests {
             );
 
             remover.remove_order(ctx, &mut market_state); // remove 0
-            assert_eq!(
-                remover.paginate_and_get_best_active_order_id(ctx).unwrap(),
-                order_id_1
-            );
+            assert_eq!(remover.get_best_active_order_id(ctx).unwrap(), order_id_1);
             assert_eq!(market_state.best_price(side), order_id_1.price_in_ticks);
 
             remover.write_prepared_indices(ctx, &mut market_state);
@@ -1260,23 +1234,14 @@ mod tests {
             .unwrap();
 
             // order id 0 is read. Garbage bit is skipped
-            assert_eq!(
-                remover.paginate_and_get_best_active_order_id(ctx).unwrap(),
-                order_id_0
-            );
+            assert_eq!(remover.get_best_active_order_id(ctx).unwrap(), order_id_0);
 
             remover.remove_order(ctx, &mut market_state); // remove 0
-            assert_eq!(
-                remover.paginate_and_get_best_active_order_id(ctx).unwrap(),
-                order_id_1
-            );
+            assert_eq!(remover.get_best_active_order_id(ctx).unwrap(), order_id_1);
             assert_eq!(market_state.best_price(side), order_id_1.price_in_ticks);
 
             remover.remove_order(ctx, &mut market_state); // remove 1
-            assert_eq!(
-                remover.paginate_and_get_best_active_order_id(ctx).unwrap(),
-                order_id_2
-            );
+            assert_eq!(remover.get_best_active_order_id(ctx).unwrap(), order_id_2);
             assert_eq!(market_state.best_price(side), order_id_2.price_in_ticks);
 
             remover.write_prepared_indices(ctx, &mut market_state);
@@ -1367,30 +1332,18 @@ mod tests {
             .unwrap();
 
             // order id 0 is read. Garbage bit is skipped
-            assert_eq!(
-                remover.paginate_and_get_best_active_order_id(ctx).unwrap(),
-                order_id_0
-            );
+            assert_eq!(remover.get_best_active_order_id(ctx).unwrap(), order_id_0);
 
             remover.remove_order(ctx, &mut market_state); // remove 0
-            assert_eq!(
-                remover.paginate_and_get_best_active_order_id(ctx).unwrap(),
-                order_id_1
-            );
+            assert_eq!(remover.get_best_active_order_id(ctx).unwrap(), order_id_1);
             assert_eq!(market_state.best_price(side), order_id_1.price_in_ticks);
 
             remover.remove_order(ctx, &mut market_state); // remove 1
-            assert_eq!(
-                remover.paginate_and_get_best_active_order_id(ctx).unwrap(),
-                order_id_2
-            );
+            assert_eq!(remover.get_best_active_order_id(ctx).unwrap(), order_id_2);
             assert_eq!(market_state.best_price(side), order_id_2.price_in_ticks);
 
             remover.remove_order(ctx, &mut market_state); // remove 2
-            assert_eq!(
-                remover.paginate_and_get_best_active_order_id(ctx).unwrap(),
-                order_id_3
-            );
+            assert_eq!(remover.get_best_active_order_id(ctx).unwrap(), order_id_3);
             assert_eq!(market_state.best_price(side), order_id_3.price_in_ticks);
 
             remover.write_prepared_indices(ctx, &mut market_state);
@@ -1483,35 +1436,23 @@ mod tests {
             .unwrap();
 
             // order id 0 is read. Garbage bit is skipped
-            assert_eq!(
-                remover.paginate_and_get_best_active_order_id(ctx).unwrap(),
-                order_id_0
-            );
+            assert_eq!(remover.get_best_active_order_id(ctx).unwrap(), order_id_0);
 
             remover.remove_order(ctx, &mut market_state); // remove 0
-            assert_eq!(
-                remover.paginate_and_get_best_active_order_id(ctx).unwrap(),
-                order_id_1
-            );
+            assert_eq!(remover.get_best_active_order_id(ctx).unwrap(), order_id_1);
             assert_eq!(market_state.best_price(side), order_id_1.price_in_ticks);
 
             remover.remove_order(ctx, &mut market_state); // remove 1
-            assert_eq!(
-                remover.paginate_and_get_best_active_order_id(ctx).unwrap(),
-                order_id_2
-            );
+            assert_eq!(remover.get_best_active_order_id(ctx).unwrap(), order_id_2);
             assert_eq!(market_state.best_price(side), order_id_2.price_in_ticks);
 
             remover.remove_order(ctx, &mut market_state); // remove 2
-            assert_eq!(
-                remover.paginate_and_get_best_active_order_id(ctx).unwrap(),
-                order_id_3
-            );
+            assert_eq!(remover.get_best_active_order_id(ctx).unwrap(), order_id_3);
             assert_eq!(market_state.best_price(side), order_id_3.price_in_ticks);
 
             remover.remove_order(ctx, &mut market_state); // remove 3
                                                           // All order ids exhausted
-            assert!(remover.paginate_and_get_best_active_order_id(ctx).is_none());
+            assert!(remover.get_best_active_order_id(ctx).is_none());
             assert_eq!(market_state.best_price(side), Ticks::MAX);
 
             // TODO problem here

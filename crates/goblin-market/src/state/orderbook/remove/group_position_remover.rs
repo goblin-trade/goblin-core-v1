@@ -59,7 +59,7 @@ impl GroupPositionRemover {
 
     /// Get the best active position in the group. Returns None if no active
     /// position is present from the starting from the current group position and onwards
-    pub fn best_active_group_position(&self) -> Option<GroupPosition> {
+    fn best_active_group_position(&self) -> Option<GroupPosition> {
         self.bitmap_group
             .best_active_group_position(self.side, self.group_position)
     }
@@ -78,6 +78,7 @@ impl GroupPositionRemover {
     }
 
     /// Whether the inner index has active ticks
+    /// Used to check whether market price was deactivated
     pub fn is_inner_index_active(&self, inner_index: InnerIndex) -> bool {
         self.bitmap_group.is_inner_index_active(inner_index)
     }
@@ -124,6 +125,8 @@ impl GroupPositionRemover {
             .is_inactive(self.side, start_index_inclusive)
     }
 
+    // Skip- doesn't work.
+    // This ignores previous bits in random lookup case
     pub fn is_group_inactive_v2(&self) -> bool {
         self.best_active_group_position().is_none()
     }

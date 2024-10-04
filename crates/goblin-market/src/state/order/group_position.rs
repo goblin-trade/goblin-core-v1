@@ -30,6 +30,25 @@ impl GroupPosition {
         }
     }
 
+    pub fn from_count_inclusive(side: Side, count: u8) -> Self {
+        let bit_index = match side {
+            Side::Bid => 255 - count,
+            Side::Ask => count,
+        };
+
+        let inner_index = InnerIndex::new(bit_index as usize / 8);
+
+        let resting_order_index = RestingOrderIndex::new(match side {
+            Side::Bid => 7 - (bit_index % 8),
+            Side::Ask => bit_index % 8,
+        });
+
+        GroupPosition {
+            inner_index,
+            resting_order_index,
+        }
+    }
+
     /// Calculate the starting position for GroupPositionIterator
     /// u8::MAX equals 255. A bitmap group has 256 bits
     ///
@@ -84,14 +103,6 @@ impl GroupPosition {
             * 8
             + resting_order_index.as_u8()
     }
-
-    // pub fn count_inclusive(&self, side: Side) -> u8 {
-    //     let coordinates = self.coordinates();
-    //     match side {
-    //         Side::Bid => 255 - coordinates,
-    //         Side::Ask => coordinates,
-    //     }
-    // }
 }
 
 impl From<&OrderId> for GroupPosition {
