@@ -62,7 +62,7 @@ impl GroupPositionRemoverV2 {
 
     pub fn set_group_position(&mut self, group_position: GroupPosition) {
         let count = group_position.count_inclusive(self.side());
-        self.inner.group_position_iterator.count = count;
+        self.inner.group_position_iterator.index = count;
     }
 
     pub fn set_count(&mut self) {

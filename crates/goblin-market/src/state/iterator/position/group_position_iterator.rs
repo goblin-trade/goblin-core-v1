@@ -8,8 +8,8 @@ pub struct GroupPositionIterator {
     /// - Asks: Bottom to top (ascending)
     pub side: Side,
 
-    /// Number of elements traversed
-    pub count: u8,
+    /// Position of the element from 0 to 255 (inclusive)
+    pub index: u8,
 
     /// Whether iteration is complete.
     /// Special property of iterators- we need a flag to know when to stop.
@@ -18,23 +18,23 @@ pub struct GroupPositionIterator {
 }
 
 impl GroupPositionIterator {
-    pub fn new(side: Side, count: u8) -> Self {
+    pub fn new(side: Side, index: u8) -> Self {
         GroupPositionIterator {
             side,
-            count,
+            index,
             finished: false,
         }
     }
 
     /// Returns the last group position that was returned by the iterator
     pub fn last_group_position(&self) -> Option<GroupPosition> {
-        if !self.finished && self.count == 0 {
+        if !self.finished && self.index == 0 {
             return None;
         }
 
-        // finished, count = 0 will wrap to 255 which gives the last value correctly
-        let last_count = self.count.wrapping_sub(1);
-        Some(GroupPosition::from_count_inclusive(self.side, last_count))
+        // finished, index = 0 will wrap to 255 which gives the last value correctly
+        let last_index = self.index.wrapping_sub(1);
+        Some(GroupPosition::from_index_inclusive(self.side, last_index))
     }
 
     /// Returns the next group position that will be returned by the iterator
@@ -42,7 +42,7 @@ impl GroupPositionIterator {
         if self.finished {
             return None;
         }
-        Some(GroupPosition::from_count_inclusive(self.side, self.count))
+        Some(GroupPosition::from_index_inclusive(self.side, self.index))
     }
 }
 impl Iterator for GroupPositionIterator {
@@ -51,8 +51,8 @@ impl Iterator for GroupPositionIterator {
     fn next(&mut self) -> Option<Self::Item> {
         let result = self.next_group_position();
 
-        self.count = self.count.wrapping_add(1);
-        self.finished = self.count == 0;
+        self.index = self.index.wrapping_add(1);
+        self.finished = self.index == 0;
 
         result
     }
@@ -63,16 +63,16 @@ mod tests {
     use super::*;
     use crate::state::{InnerIndex, RestingOrderIndex};
 
-    mod test_for_starting_count {
+    mod test_for_starting_index {
 
         use super::*;
 
         #[test]
         fn test_get_indices_for_asks() {
             let side = Side::Ask;
-            let count = 0;
+            let index = 0;
 
-            let mut iterator = GroupPositionIterator::new(side, count);
+            let mut iterator = GroupPositionIterator::new(side, index);
             assert!(iterator.last_group_position().is_none());
 
             for i in 0..=255 {
@@ -99,20 +99,20 @@ mod tests {
                 assert_eq!(resting_order_index, expected_resting_order_index);
 
                 if i == 255 {
-                    assert_eq!(iterator.count, 0);
+                    assert_eq!(iterator.index, 0);
                 } else {
-                    assert_eq!(iterator.count, i + 1);
+                    assert_eq!(iterator.index, i + 1);
                 }
             }
             assert!(iterator.next().is_none());
         }
 
         #[test]
-        fn test_get_indices_for_asks_with_count_10() {
+        fn test_get_indices_for_asks_with_index_10() {
             let side = Side::Ask;
-            let count = 10;
+            let index = 10;
 
-            let mut iterator = GroupPositionIterator::new(side, count);
+            let mut iterator = GroupPositionIterator::new(side, index);
             assert_eq!(
                 iterator.last_group_position().unwrap(),
                 GroupPosition {
@@ -145,9 +145,9 @@ mod tests {
                 assert_eq!(resting_order_index, expected_resting_order_index);
 
                 if i == 255 {
-                    assert_eq!(iterator.count, 0);
+                    assert_eq!(iterator.index, 0);
                 } else {
-                    assert_eq!(iterator.count, i + 1);
+                    assert_eq!(iterator.index, i + 1);
                 }
             }
             assert!(iterator.next().is_none());
@@ -156,9 +156,9 @@ mod tests {
         #[test]
         fn test_get_indices_for_bids() {
             let side = Side::Bid;
-            let count = 0;
+            let index = 0;
 
-            let mut iterator = GroupPositionIterator::new(side, count);
+            let mut iterator = GroupPositionIterator::new(side, index);
             assert!(iterator.last_group_position().is_none());
 
             for i in 0..=255 {
@@ -188,20 +188,20 @@ mod tests {
                 assert_eq!(resting_order_index, expected_resting_order_index);
 
                 if i == 255 {
-                    assert_eq!(iterator.count, 0);
+                    assert_eq!(iterator.index, 0);
                 } else {
-                    assert_eq!(iterator.count, i + 1);
+                    assert_eq!(iterator.index, i + 1);
                 }
             }
             assert!(iterator.next().is_none());
         }
 
         #[test]
-        fn test_get_indices_for_bids_with_count_10() {
+        fn test_get_indices_for_bids_with_index_10() {
             let side = Side::Bid;
-            let count = 10;
+            let index = 10;
 
-            let mut iterator = GroupPositionIterator::new(side, count);
+            let mut iterator = GroupPositionIterator::new(side, index);
             assert_eq!(
                 iterator.last_group_position().unwrap(),
                 GroupPosition {
@@ -237,9 +237,9 @@ mod tests {
                 assert_eq!(resting_order_index, expected_resting_order_index);
 
                 if i == 255 {
-                    assert_eq!(iterator.count, 0);
+                    assert_eq!(iterator.index, 0);
                 } else {
-                    assert_eq!(iterator.count, i + 1);
+                    assert_eq!(iterator.index, i + 1);
                 }
             }
             assert!(iterator.next().is_none());
