@@ -19,9 +19,13 @@ impl GroupPositionRemoverV2 {
         }
     }
 
-    // pub fn is_uninitialized(&self) -> bool {
-    //     self.inner.group_position_iterator.index == 0
-    // }
+    pub fn is_uninitialized(&self) -> bool {
+        self.inner.group_position_iterator.index == 0
+    }
+
+    pub fn is_finished(&self) -> bool {
+        self.inner.group_position_iterator.finished
+    }
 
     pub fn is_uninitialized_or_finished(&self) -> bool {
         self.inner.group_position_iterator.index == 0 || self.inner.group_position_iterator.finished

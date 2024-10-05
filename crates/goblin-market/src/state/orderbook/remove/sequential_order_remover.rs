@@ -24,21 +24,24 @@ pub struct SequentialOrderRemover<'a> {
     pub best_market_price: &'a mut Ticks,
 
     pub best_opposite_price: Ticks,
+
+    pub outer_index_count: &'a mut u16,
 }
 
 impl<'a> SequentialOrderRemover<'a> {
     pub fn new(
-        outer_index_count: u16,
+        outer_index_count: &'a mut u16,
         side: Side,
         best_market_price: &'a mut Ticks,
         best_opposite_price: Ticks,
     ) -> Self {
         SequentialOrderRemover {
             group_position_remover: GroupPositionRemoverV2::new(side),
-            outer_index_remover: OuterIndexRemover::new(side, outer_index_count),
+            outer_index_remover: OuterIndexRemover::new(side, *outer_index_count),
             pending_write: false,
             best_market_price,
             best_opposite_price,
+            outer_index_count,
         }
     }
 
@@ -50,6 +53,9 @@ impl<'a> SequentialOrderRemover<'a> {
             match outer_index {
                 None => return None,
                 Some(outer_index) => {
+                    // Sequential removal is a special case
+                    if self.group_position_remover.is_finished() {}
+
                     // Do we need to load bitmap group, or is it already present?
                     if self.group_position_remover.is_uninitialized_or_finished() {
                         self.group_position_remover
@@ -76,6 +82,24 @@ impl<'a> SequentialOrderRemover<'a> {
         }
     }
 
+    /// Concludes the removal. Writes the bitmap group if `pending_write` is true, updates
+    /// the outer index count and writes the updated outer indices to slot.
+    ///
+    /// In sequential remove case-
+    /// The bitmap group is written only if the last removal does not update the best market price.
+    ///
+    /// Slot writes- bitmap_group, index list. Market state is only updated in memory.
+    ///
+    /// # Arguments
+    ///
+    /// * `ctx`
+    ///
+    pub fn commit(&mut self, ctx: &mut ArbContext) {
+        self.write_bitmap_group(ctx);
+        *self.outer_index_count = self.outer_index_remover.index_list_length();
+        self.outer_index_remover.write_index_list(ctx);
+    }
+
     // Setters
 
     /// Updates pending write state and best market price if the next active
@@ -92,6 +116,21 @@ impl<'a> SequentialOrderRemover<'a> {
     /// Sets pending write to true if the best tick does not close, and false if otherwise
     pub fn update_pending_write_on_sequential_remove(&mut self, best_price_closed: bool) {
         self.pending_write = !best_price_closed
+    }
+
+    /// Writes bitmap group to slot if a write is pending
+    pub fn write_bitmap_group(&mut self, ctx: &mut ArbContext) {
+        if !self.pending_write {
+            return;
+        }
+        // If pending_write is true then outer_index is guaranteed to be present
+        let outer_index = self.outer_index_unchecked();
+
+        self.group_position_remover
+            .inner
+            .bitmap_group
+            .write_to_slot(ctx, &outer_index);
+        self.pending_write = false;
     }
 
     /// TODO move outside

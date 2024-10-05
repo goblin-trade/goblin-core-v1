@@ -64,18 +64,6 @@ impl OuterIndexRemover {
 
     /// The total length of index list after accounting for removals
     pub fn index_list_length(&self) -> u16 {
-        #[cfg(test)]
-        println!(
-            " outer_index_count {}, cache.len() {}",
-            self.active_outer_index_iterator.outer_index_count(),
-            self.cache.len()
-        );
-        #[cfg(test)]
-        println!(
-            "cache {:?}, cached_outer_index {:?}",
-            self.cache, self.cached_outer_index
-        );
-
         self.active_outer_index_iterator.outer_index_count()
             + self.cache.len() as u16
             + u16::from(self.cached_outer_index.is_some())
