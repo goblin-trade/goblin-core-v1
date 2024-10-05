@@ -91,9 +91,18 @@ impl OuterIndexRemover {
     pub fn slide(&mut self, ctx: &ArbContext) {
         self.flush_cached_outer_index();
         self.cached_outer_index = self.active_outer_index_iterator.next(ctx);
+    }
 
-        #[cfg(test)]
-        println!("got outer index {:?}", self.cached_outer_index);
+    /// Returns the cached outer index if it exists, else loads it from slot
+    /// and returns it
+    pub fn read_outer_index(&mut self, ctx: &ArbContext) -> Option<OuterIndex> {
+        if self.cached_outer_index.is_some() {
+            return self.cached_outer_index;
+        }
+
+        self.slide(ctx);
+
+        self.cached_outer_index
     }
 
     /// Pushes `found_outer_index` to cache and clears the value

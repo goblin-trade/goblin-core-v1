@@ -14,7 +14,7 @@ pub struct GroupPositionIterator {
     /// Whether iteration is complete.
     /// Special property of iterators- we need a flag to know when to stop.
     /// Using the value itself is not sufficient.
-    finished: bool,
+    pub finished: bool,
 }
 
 impl GroupPositionIterator {

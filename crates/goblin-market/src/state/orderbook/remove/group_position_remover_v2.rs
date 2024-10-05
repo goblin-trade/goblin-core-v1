@@ -19,6 +19,14 @@ impl GroupPositionRemoverV2 {
         }
     }
 
+    // pub fn is_uninitialized(&self) -> bool {
+    //     self.inner.group_position_iterator.index == 0
+    // }
+
+    pub fn is_uninitialized_or_finished(&self) -> bool {
+        self.inner.group_position_iterator.index == 0 || self.inner.group_position_iterator.finished
+    }
+
     pub fn load_outer_index(&mut self, ctx: &mut ArbContext, outer_index: OuterIndex) {
         let bitmap_group = BitmapGroup::new_from_slot(ctx, outer_index);
         let side = self.side();
@@ -41,6 +49,14 @@ impl GroupPositionRemoverV2 {
     // Breaking- pointer now moves to end of the group even if no active bit is present
     pub fn try_traverse_to_best_active_position(&mut self) -> Option<GroupPosition> {
         self.inner.next()
+    }
+
+    pub fn clear_previous_and_get_next(&mut self) -> Option<GroupPosition> {
+        if let Some(group_position) = self.group_position() {
+            self.inner.bitmap_group.deactivate(group_position);
+        }
+
+        self.try_traverse_to_best_active_position()
     }
 
     /// Deactivate the bit at the currently tracked group position
@@ -87,12 +103,16 @@ impl GroupPositionRemoverV2 {
         self.inner.bitmap_group.is_position_active(group_position)
     }
 
+    pub fn group_position(&self) -> Option<GroupPosition> {
+        self.inner.group_position_iterator.last_group_position()
+    }
+
     /// Get the currently tracked group position
     ///
     /// Unsafe function- Externally ensure that try_traverse_to_best_active_position()
     /// is called before calling.
-    fn group_position_unchecked(&self) -> GroupPosition {
-        let group_position = self.inner.group_position_iterator.last_group_position();
+    pub fn group_position_unchecked(&self) -> GroupPosition {
+        let group_position = self.group_position();
         debug_assert!(group_position.is_some());
         let group_position_unchecked = unsafe { group_position.unwrap_unchecked() };
 
