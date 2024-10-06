@@ -83,6 +83,9 @@ impl OuterIndexRemover {
     ///
     pub fn slide(&mut self, ctx: &ArbContext) {
         self.flush_cached_outer_index();
+
+        // TODO bug? This can clear cached_outer_index. It is not clearing the
+        // value because we already flushed it.
         self.cached_outer_index = self.active_outer_index_iterator.next(ctx);
     }
 
