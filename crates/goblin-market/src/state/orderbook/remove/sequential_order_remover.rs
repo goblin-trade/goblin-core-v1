@@ -2,7 +2,7 @@ use crate::{
     quantities::Ticks,
     state::{
         order::{group_position::GroupPosition, order_id::OrderId},
-        ArbContext, InnerIndex, OuterIndex, RestingOrderIndex, Side,
+        ArbContext, InnerIndex, MarketPrices, OuterIndex, RestingOrderIndex, Side,
     },
 };
 
@@ -45,6 +45,10 @@ impl<'a> SequentialOrderRemover<'a> {
         }
     }
 
+    /// Gets the next active order ID and clears the previously returned one.
+    ///
+    /// There is no need to clear garbage bits since we always begin from
+    /// best market price
     pub fn next_active_order(&mut self, ctx: &mut ArbContext) -> Option<OrderId> {
         loop {
             // Check if outer index is loaded
@@ -53,13 +57,18 @@ impl<'a> SequentialOrderRemover<'a> {
             match outer_index {
                 None => return None,
                 Some(outer_index) => {
-                    // Sequential removal is a special case
-                    if self.group_position_remover.is_finished() {}
-
                     // Do we need to load bitmap group, or is it already present?
                     if self.group_position_remover.is_uninitialized_or_finished() {
                         self.group_position_remover
                             .load_outer_index(ctx, outer_index);
+
+                        // If the outermost group was loaded, clear the garbage bits
+                        if self
+                            .outer_index_remover
+                            .on_outermost_index(*self.outer_index_count)
+                        {
+                            self.clear_garbage_bits(outer_index);
+                        }
                     }
 
                     // Find next active group position in group
@@ -102,6 +111,30 @@ impl<'a> SequentialOrderRemover<'a> {
 
     // Setters
 
+    /// Loads bitmap group for the outer index and clears garbage bits if needed
+    // fn load_group(&mut self, ctx: &mut ArbContext, outer_index: OuterIndex) {
+    //     self.group_position_remover
+    //         .load_outer_index(ctx, outer_index);
+
+    //     self.clear_garbage_bits(outer_index);
+    // }
+
+    /// Clear garbage bits between the best market prices if on the outermost bitmap group
+    ///
+    /// Since the best market price updates as we remove orders, call this
+    /// function only on the outermost bitmap group to save compute.
+    fn clear_garbage_bits(&mut self, outer_index: OuterIndex) {
+        if self
+            .outer_index_remover
+            .on_outermost_index(*self.outer_index_count)
+        {
+            self.group_position_remover
+                .inner
+                .bitmap_group
+                .clear_garbage_bits(outer_index, &self.market_prices());
+        }
+    }
+
     /// Updates pending write state and best market price if the next active
     /// order has a different price
     fn update_pending_state_and_best_price(&mut self, new_price: Ticks) {
@@ -140,8 +173,25 @@ impl<'a> SequentialOrderRemover<'a> {
 
     // Getters
 
+    pub fn side(&self) -> Side {
+        self.group_position_remover.side()
+    }
+
     pub fn last_outer_index(&self) -> Option<OuterIndex> {
         self.outer_index_remover.cached_outer_index
+    }
+
+    pub fn market_prices(&self) -> MarketPrices {
+        match self.side() {
+            Side::Bid => MarketPrices {
+                best_bid_price: *self.best_market_price,
+                best_ask_price: self.best_opposite_price,
+            },
+            Side::Ask => MarketPrices {
+                best_bid_price: self.best_opposite_price,
+                best_ask_price: *self.best_market_price,
+            },
+        }
     }
 
     // Unsafe getters
