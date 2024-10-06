@@ -18,7 +18,7 @@ pub struct ActiveOuterIndexIteratorV2<'a> {
     pub side: Side,
 
     /// Inner iterator
-    inner: OuterIndexPositionIteratorV2<'a>,
+    pub inner: OuterIndexPositionIteratorV2<'a>,
 
     /// The currently read list slot
     pub list_slot: Option<ListSlot>,
