@@ -11,17 +11,17 @@ pub struct SequentialOuterIndexRemover<'a> {
     pub cached_outer_index: Option<OuterIndex>,
 }
 
-pub trait ISequentialOuterIndexRemover {
-    fn next(&mut self, ctx: &mut ArbContext) -> Option<OuterIndex>;
-}
+// pub trait ISequentialOuterIndexRemover {
+//     fn next(&mut self, ctx: &mut ArbContext) -> Option<OuterIndex>;
+// }
 
-impl<'a> ISequentialOuterIndexRemover for SequentialOuterIndexRemover<'a> {
-    /// Cache and return the next value in the index list
-    fn next(&mut self, ctx: &mut ArbContext) -> Option<OuterIndex> {
-        self.slide(ctx);
-        self.cached_outer_index
-    }
-}
+// impl<'a> ISequentialOuterIndexRemover for SequentialOuterIndexRemover<'a> {
+//     /// Cache and return the next value in the index list
+//     fn next(&mut self, ctx: &mut ArbContext) -> Option<OuterIndex> {
+//         self.slide(ctx);
+//         self.cached_outer_index
+//     }
+// }
 
 impl<'a> SequentialOuterIndexRemover<'a> {
     pub fn new(side: Side, outer_index_count: &'a mut u16) -> Self {
@@ -31,11 +31,21 @@ impl<'a> SequentialOuterIndexRemover<'a> {
         }
     }
 
-    // /// Cache and return the next value in the index list
-    // pub fn next(&mut self, ctx: &mut ArbContext) -> Option<OuterIndex> {
-    //     self.slide(ctx);
-    //     self.cached_outer_index
-    // }
+    /// Returns the current cached outer index if present, else tries to read and
+    /// return the next value
+    pub fn get_outer_index(&mut self, ctx: &mut ArbContext) -> Option<OuterIndex> {
+        if self.cached_outer_index.is_some() {
+            return self.cached_outer_index;
+        }
+
+        self.next(ctx)
+    }
+
+    /// Cache and return the next value in the index list
+    fn next(&mut self, ctx: &mut ArbContext) -> Option<OuterIndex> {
+        self.slide(ctx);
+        self.cached_outer_index
+    }
 
     /// Read and cache the next outer index
     ///
@@ -45,10 +55,16 @@ impl<'a> SequentialOuterIndexRemover<'a> {
         self.cached_outer_index = self.active_outer_index_iterator.next(ctx);
     }
 
+    /// Remove the cached index, and set `pending_write` to true if the cached list
+    /// is not empty
+    pub fn remove_cached_index(&mut self) {
+        self.cached_outer_index = None;
+    }
+
     /// Concludes removals by adding the cached value back to the list
     ///
     /// This simply involves incrementing the count if a value is cached
-    pub fn write_index_list(&mut self) {
+    pub fn commit(&mut self) {
         *self.unread_outer_index_count_mut() += u16::from(self.cached_outer_index.is_some());
         self.cached_outer_index = None;
     }
@@ -140,7 +156,7 @@ mod tests {
         assert_eq!(remover.index_list_length(), 0);
         assert_eq!(remover.unread_outer_index_count(), 0);
 
-        remover.write_index_list();
+        remover.commit();
         assert_eq!(remover.unread_outer_index_count(), 0);
     }
 
@@ -171,7 +187,7 @@ mod tests {
         assert_eq!(remover.index_list_length(), 2);
         assert_eq!(remover.unread_outer_index_count(), 1);
 
-        remover.write_index_list();
+        remover.commit();
         assert_eq!(remover.unread_outer_index_count(), 2);
     }
 
@@ -212,7 +228,7 @@ mod tests {
         assert_eq!(remover.index_list_length(), 0);
         assert_eq!(remover.unread_outer_index_count(), 0);
 
-        remover.write_index_list();
+        remover.commit();
         assert_eq!(remover.unread_outer_index_count(), 0);
     }
 
@@ -243,7 +259,7 @@ mod tests {
         assert_eq!(remover.index_list_length(), 2);
         assert_eq!(remover.unread_outer_index_count(), 1);
 
-        remover.write_index_list();
+        remover.commit();
         assert_eq!(remover.unread_outer_index_count(), 2);
     }
 }

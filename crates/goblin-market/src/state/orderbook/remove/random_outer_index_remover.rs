@@ -48,7 +48,7 @@ impl<'a> RandomOuterIndexRemover<'a> {
     }
 
     pub fn write_index_list(&mut self, ctx: &mut ArbContext) {
-        self.inner.write_index_list();
+        self.inner.commit();
 
         write_index_list(
             ctx,

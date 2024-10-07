@@ -52,7 +52,7 @@ impl<'a> SequentialOrderRemover<'a> {
     pub fn next_active_order(&mut self, ctx: &mut ArbContext) -> Option<OrderId> {
         loop {
             // Check if outer index is loaded
-            let outer_index = self.outer_index_remover.read_outer_index(ctx);
+            let outer_index = self.outer_index_remover.get_outer_index(ctx);
 
             match outer_index {
                 None => return None,
