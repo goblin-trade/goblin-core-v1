@@ -11,6 +11,18 @@ pub struct SequentialOuterIndexRemover<'a> {
     pub cached_outer_index: Option<OuterIndex>,
 }
 
+pub trait ISequentialOuterIndexRemover {
+    fn next(&mut self, ctx: &mut ArbContext) -> Option<OuterIndex>;
+}
+
+impl<'a> ISequentialOuterIndexRemover for SequentialOuterIndexRemover<'a> {
+    /// Cache and return the next value in the index list
+    fn next(&mut self, ctx: &mut ArbContext) -> Option<OuterIndex> {
+        self.slide(ctx);
+        self.cached_outer_index
+    }
+}
+
 impl<'a> SequentialOuterIndexRemover<'a> {
     pub fn new(side: Side, outer_index_count: &'a mut u16) -> Self {
         Self {
@@ -19,11 +31,11 @@ impl<'a> SequentialOuterIndexRemover<'a> {
         }
     }
 
-    /// Cache and return the next value in the index list
-    pub fn next(&mut self, ctx: &mut ArbContext) -> Option<OuterIndex> {
-        self.slide(ctx);
-        self.cached_outer_index
-    }
+    // /// Cache and return the next value in the index list
+    // pub fn next(&mut self, ctx: &mut ArbContext) -> Option<OuterIndex> {
+    //     self.slide(ctx);
+    //     self.cached_outer_index
+    // }
 
     /// Read and cache the next outer index
     ///
@@ -37,7 +49,8 @@ impl<'a> SequentialOuterIndexRemover<'a> {
     ///
     /// This simply involves incrementing the count if a value is cached
     pub fn write_index_list(&mut self) {
-        *self.unread_outer_index_count_mut() += u16::from(self.cached_outer_index.is_some())
+        *self.unread_outer_index_count_mut() += u16::from(self.cached_outer_index.is_some());
+        self.cached_outer_index = None;
     }
 
     /// Mutable reference to outer index count from market state
@@ -68,21 +81,36 @@ mod tests {
 
     use super::*;
 
+    fn write_outer_indices(ctx: &mut ArbContext, side: Side, indices: Vec<u16>) {
+        let slot_count = indices.len() / 16;
+
+        for i in 0..=slot_count {
+            let list_key = ListKey {
+                index: i as u16,
+                side,
+            };
+            let mut list_slot = ListSlot::default();
+            for j in 0..16 {
+                let outer_index = indices.get(i * 16 + j);
+
+                if let Some(outer_index) = outer_index {
+                    list_slot.set(j, OuterIndex::new(*outer_index));
+                } else {
+                    break;
+                }
+            }
+            list_slot.write_to_slot(ctx, &list_key);
+        }
+    }
+
     #[test]
     fn sequentially_remove_all_bids() {
-        let mut ctx = &mut ArbContext::new();
+        let ctx = &mut ArbContext::new();
 
         let side = Side::Bid;
-        let mut outer_index_count = 4;
-
-        // Setup the initial slot storage with one item
-        let list_key = ListKey { index: 0, side };
-        let mut list_slot = ListSlot::default();
-        list_slot.set(0, OuterIndex::new(1));
-        list_slot.set(1, OuterIndex::new(2));
-        list_slot.set(2, OuterIndex::new(3));
-        list_slot.set(3, OuterIndex::new(4));
-        list_slot.write_to_slot(&mut ctx, &list_key);
+        let indices = vec![1, 2, 3, 4];
+        let mut outer_index_count = indices.len() as u16;
+        write_outer_indices(ctx, side, indices);
 
         let mut remover = SequentialOuterIndexRemover::new(side, &mut outer_index_count);
         assert_eq!(remover.index_list_length(), 4);
@@ -118,19 +146,12 @@ mod tests {
 
     #[test]
     fn sequentially_remove_some_bids() {
-        let mut ctx = &mut ArbContext::new();
+        let ctx = &mut ArbContext::new();
 
         let side = Side::Bid;
-        let mut outer_index_count = 4;
-
-        // Setup the initial slot storage with one item
-        let list_key = ListKey { index: 0, side };
-        let mut list_slot = ListSlot::default();
-        list_slot.set(0, OuterIndex::new(1));
-        list_slot.set(1, OuterIndex::new(2));
-        list_slot.set(2, OuterIndex::new(3));
-        list_slot.set(3, OuterIndex::new(4));
-        list_slot.write_to_slot(&mut ctx, &list_key);
+        let indices = vec![1, 2, 3, 4];
+        let mut outer_index_count = indices.len() as u16;
+        write_outer_indices(ctx, side, indices);
 
         let mut remover = SequentialOuterIndexRemover::new(side, &mut outer_index_count);
         assert_eq!(remover.index_list_length(), 4);
@@ -156,19 +177,12 @@ mod tests {
 
     #[test]
     fn sequentially_remove_all_asks() {
-        let mut ctx = &mut ArbContext::new();
+        let ctx = &mut ArbContext::new();
 
         let side = Side::Ask;
-        let mut outer_index_count = 4;
-
-        // Setup the initial slot storage with one item
-        let list_key = ListKey { index: 0, side };
-        let mut list_slot = ListSlot::default();
-        list_slot.set(0, OuterIndex::new(4));
-        list_slot.set(1, OuterIndex::new(3));
-        list_slot.set(2, OuterIndex::new(2));
-        list_slot.set(3, OuterIndex::new(1));
-        list_slot.write_to_slot(&mut ctx, &list_key);
+        let indices = vec![4, 3, 2, 1];
+        let mut outer_index_count = indices.len() as u16;
+        write_outer_indices(ctx, side, indices);
 
         let mut remover = SequentialOuterIndexRemover::new(side, &mut outer_index_count);
         assert_eq!(remover.index_list_length(), 4);
@@ -204,19 +218,12 @@ mod tests {
 
     #[test]
     fn sequentially_remove_some_asks() {
-        let mut ctx = &mut ArbContext::new();
+        let ctx = &mut ArbContext::new();
 
         let side = Side::Ask;
-        let mut outer_index_count = 4;
-
-        // Setup the initial slot storage with one item
-        let list_key = ListKey { index: 0, side };
-        let mut list_slot = ListSlot::default();
-        list_slot.set(0, OuterIndex::new(4));
-        list_slot.set(1, OuterIndex::new(3));
-        list_slot.set(2, OuterIndex::new(2));
-        list_slot.set(3, OuterIndex::new(1));
-        list_slot.write_to_slot(&mut ctx, &list_key);
+        let indices = vec![4, 3, 2, 1];
+        let mut outer_index_count = indices.len() as u16;
+        write_outer_indices(ctx, side, indices);
 
         let mut remover = SequentialOuterIndexRemover::new(side, &mut outer_index_count);
         assert_eq!(remover.index_list_length(), 4);

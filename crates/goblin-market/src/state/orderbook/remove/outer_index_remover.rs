@@ -150,6 +150,11 @@ impl OuterIndexRemover {
             return;
         }
 
+        // Current approach- flush the outer index to the cache, then
+        // write the cache
+        // New approach- since the cached outer index is the last read value,
+        // no need to write it back. Simply increment the index list count by 1
+        // and write the cached values
         self.flush_cached_outer_index();
         write_index_list(
             ctx,
