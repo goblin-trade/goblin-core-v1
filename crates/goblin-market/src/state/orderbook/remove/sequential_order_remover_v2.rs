@@ -47,7 +47,7 @@ impl<'a> SequentialOrderRemoverV2<'a> {
     pub fn next_active_order(&mut self, ctx: &mut ArbContext) -> Option<OrderId> {
         loop {
             // Check if outer index is loaded
-            let outer_index = self.outer_index_remover.get_outer_index(ctx);
+            let outer_index = self.outer_index_remover.get_or_load_outer_index(ctx);
 
             match outer_index {
                 None => return None,
@@ -76,7 +76,7 @@ impl<'a> SequentialOrderRemoverV2<'a> {
                             return Some(order_id);
                         }
                         None => {
-                            self.outer_index_remover.remove_cached_index();
+                            self.outer_index_remover.remove_loaded_index();
                         }
                     };
                 }
@@ -117,7 +117,7 @@ impl<'a> SequentialOrderRemoverV2<'a> {
     }
 
     pub fn outer_index(&self) -> Option<OuterIndex> {
-        self.outer_index_remover.cached_outer_index
+        self.outer_index_remover.current_outer_index
     }
 
     pub fn group_position(&self) -> Option<GroupPosition> {

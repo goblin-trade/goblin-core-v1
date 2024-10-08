@@ -28,7 +28,7 @@ impl<'a> RandomOuterIndexRemover<'a> {
         loop {
             if let Some(read_outer_index) = self.inner.active_outer_index_iterator.next(ctx) {
                 if read_outer_index == outer_index {
-                    self.inner.cached_outer_index = Some(read_outer_index);
+                    self.inner.current_outer_index = Some(read_outer_index);
                     return true;
                 } else if self.side() == Side::Bid && read_outer_index > outer_index
                     || self.side() == Side::Ask && read_outer_index < outer_index
@@ -44,7 +44,7 @@ impl<'a> RandomOuterIndexRemover<'a> {
     }
 
     pub fn remove(&mut self) {
-        self.inner.cached_outer_index = None;
+        self.inner.current_outer_index = None;
     }
 
     pub fn write_index_list(&mut self, ctx: &mut ArbContext) {
@@ -54,7 +54,7 @@ impl<'a> RandomOuterIndexRemover<'a> {
             ctx,
             self.inner.side(),
             &mut self.cache,
-            self.inner.unread_outer_index_count(),
+            *self.inner.unread_outer_index_count_mut(),
             self.inner.active_outer_index_iterator.list_slot,
         );
     }
@@ -106,7 +106,7 @@ mod tests {
         let found = remover.find(ctx, OuterIndex::new(4));
         assert_eq!(found, false);
 
-        assert!(remover.inner.cached_outer_index.is_none());
+        assert!(remover.inner.current_outer_index.is_none());
         assert_eq!(remover.cache, vec![OuterIndex::new(6), OuterIndex::new(5)]);
     }
 
@@ -126,14 +126,14 @@ mod tests {
         // 1. Find and outermost
         remover.find(ctx, OuterIndex::new(19));
         assert_eq!(
-            remover.inner.cached_outer_index.unwrap(),
+            remover.inner.current_outer_index.unwrap(),
             OuterIndex::new(19)
         );
         assert!(remover.cache.is_empty());
         assert_eq!(remover.inner.unread_outer_index_count(), 18);
 
         remover.remove();
-        assert!(remover.inner.cached_outer_index.is_none());
+        assert!(remover.inner.current_outer_index.is_none());
         assert_eq!(remover.inner.unread_outer_index_count(), 18);
 
         // 2. TODO find and remove from different slot

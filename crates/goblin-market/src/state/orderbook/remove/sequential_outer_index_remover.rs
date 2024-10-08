@@ -3,70 +3,65 @@ use crate::state::{
     ArbContext, OuterIndex, Side,
 };
 
+/// Helper to sequentially read and remove outer indices from the index list
+/// in slot storage
 pub struct SequentialOuterIndexRemover<'a> {
     /// Iterator to read active outer indices from index list
     pub active_outer_index_iterator: ActiveOuterIndexIteratorV2<'a>,
 
     /// The currently read outer index
-    pub cached_outer_index: Option<OuterIndex>,
+    pub current_outer_index: Option<OuterIndex>,
 }
 
-// pub trait ISequentialOuterIndexRemover {
-//     fn next(&mut self, ctx: &mut ArbContext) -> Option<OuterIndex>;
-// }
-
-// impl<'a> ISequentialOuterIndexRemover for SequentialOuterIndexRemover<'a> {
-//     /// Cache and return the next value in the index list
-//     fn next(&mut self, ctx: &mut ArbContext) -> Option<OuterIndex> {
-//         self.slide(ctx);
-//         self.cached_outer_index
-//     }
-// }
-
 impl<'a> SequentialOuterIndexRemover<'a> {
+    /// Constructs a new SequentialOuterIndexRemover
+    ///
+    /// # Arguments
+    ///
+    /// * `side`
+    /// * `outer_index_count` - Reference to outer index count for the given
+    /// side in MarketState
     pub fn new(side: Side, outer_index_count: &'a mut u16) -> Self {
         Self {
             active_outer_index_iterator: ActiveOuterIndexIteratorV2::new(side, outer_index_count),
-            cached_outer_index: None,
+            current_outer_index: None,
         }
     }
 
-    /// Returns the current cached outer index if present, else tries to read and
+    /// Returns the current cached outer index if present, else tries to load and
     /// return the next value
-    pub fn get_outer_index(&mut self, ctx: &mut ArbContext) -> Option<OuterIndex> {
-        if self.cached_outer_index.is_some() {
-            return self.cached_outer_index;
+    pub fn get_or_load_outer_index(&mut self, ctx: &mut ArbContext) -> Option<OuterIndex> {
+        if self.current_outer_index.is_some() {
+            return self.current_outer_index;
         }
 
-        self.next(ctx)
+        self.load_and_return_outer_index(ctx)
     }
 
-    /// Cache and return the next value in the index list
-    fn next(&mut self, ctx: &mut ArbContext) -> Option<OuterIndex> {
-        self.slide(ctx);
-        self.cached_outer_index
+    /// Load the next value from index list and return it
+    fn load_and_return_outer_index(&mut self, ctx: &mut ArbContext) -> Option<OuterIndex> {
+        self.load_outer_index(ctx);
+        self.current_outer_index
     }
 
-    /// Read and cache the next outer index
+    /// Load the next value from index list
     ///
     /// Once the last element is read and loaded in to cached_outer_index,
-    /// calling slide() again will clear the value
-    pub fn slide(&mut self, ctx: &mut ArbContext) {
-        self.cached_outer_index = self.active_outer_index_iterator.next(ctx);
+    /// calling load_outer_index() again will clear the value
+    fn load_outer_index(&mut self, ctx: &mut ArbContext) {
+        self.current_outer_index = self.active_outer_index_iterator.next(ctx);
     }
 
-    /// Remove the cached index, and set `pending_write` to true if the cached list
-    /// is not empty
-    pub fn remove_cached_index(&mut self) {
-        self.cached_outer_index = None;
+    /// Remove the currently loaded index
+    pub fn remove_loaded_index(&mut self) {
+        self.current_outer_index = None;
     }
 
     /// Concludes removals by adding the cached value back to the list
     ///
     /// This simply involves incrementing the count if a value is cached
     pub fn commit(&mut self) {
-        *self.unread_outer_index_count_mut() += u16::from(self.cached_outer_index.is_some());
-        self.cached_outer_index = None;
+        *self.unread_outer_index_count_mut() += u16::from(self.current_outer_index.is_some());
     }
 
     /// Mutable reference to outer index count from market state
@@ -75,6 +70,7 @@ impl<'a> SequentialOuterIndexRemover<'a> {
         self.active_outer_index_iterator.inner.outer_index_count
     }
 
+    /// The unread outer index count
     pub fn unread_outer_index_count(&self) -> u16 {
         *self.active_outer_index_iterator.inner.outer_index_count
     }
@@ -84,15 +80,6 @@ impl<'a> SequentialOuterIndexRemover<'a> {
     pub fn side(&self) -> Side {
         self.active_outer_index_iterator.side
     }
-
-    /// The total length of index list after accounting for removals
-    pub fn index_list_length(&self) -> u16 {
-        self.unread_outer_index_count() + u16::from(self.cached_outer_index.is_some())
-    }
-
-    // pub fn outer_index_count_mut(&mut self) -> &mut u16 {
-    //     self.active_outer_index_iterator.inner.outer_index_count
-    // }
 }
 
 #[cfg(test)]
@@ -133,31 +120,26 @@ mod tests {
         write_outer_indices(ctx, side, indices);
 
         let mut remover = SequentialOuterIndexRemover::new(side, &mut outer_index_count);
-        assert_eq!(remover.index_list_length(), 4);
+        assert_eq!(remover.unread_outer_index_count(), 4);
 
-        let index_0 = remover.next(ctx);
+        let index_0 = remover.load_and_return_outer_index(ctx);
         assert_eq!(index_0.unwrap(), OuterIndex::new(4));
-        assert_eq!(remover.index_list_length(), 4);
         assert_eq!(remover.unread_outer_index_count(), 3);
 
-        let index_1 = remover.next(ctx);
+        let index_1 = remover.load_and_return_outer_index(ctx);
         assert_eq!(index_1.unwrap(), OuterIndex::new(3));
-        assert_eq!(remover.index_list_length(), 3);
         assert_eq!(remover.unread_outer_index_count(), 2);
 
-        let index_2 = remover.next(ctx);
+        let index_2 = remover.load_and_return_outer_index(ctx);
         assert_eq!(index_2.unwrap(), OuterIndex::new(2));
-        assert_eq!(remover.index_list_length(), 2);
         assert_eq!(remover.unread_outer_index_count(), 1);
 
-        let index_3 = remover.next(ctx);
+        let index_3 = remover.load_and_return_outer_index(ctx);
         assert_eq!(index_3.unwrap(), OuterIndex::new(1));
-        assert_eq!(remover.index_list_length(), 1);
         assert_eq!(remover.unread_outer_index_count(), 0);
 
-        let index_4 = remover.next(ctx);
+        let index_4 = remover.load_and_return_outer_index(ctx);
         assert!(index_4.is_none());
-        assert_eq!(remover.index_list_length(), 0);
         assert_eq!(remover.unread_outer_index_count(), 0);
 
         remover.commit();
@@ -174,25 +156,25 @@ mod tests {
         write_outer_indices(ctx, side, indices);
 
         let mut remover = SequentialOuterIndexRemover::new(side, &mut outer_index_count);
-        assert_eq!(remover.index_list_length(), 4);
+        assert_eq!(remover.unread_outer_index_count(), 4);
 
-        let index_0 = remover.next(ctx);
+        let index_0 = remover.load_and_return_outer_index(ctx);
         assert_eq!(index_0.unwrap(), OuterIndex::new(4));
-        assert_eq!(remover.index_list_length(), 4);
         assert_eq!(remover.unread_outer_index_count(), 3);
 
-        let index_1 = remover.next(ctx);
+        let index_1 = remover.load_and_return_outer_index(ctx);
         assert_eq!(index_1.unwrap(), OuterIndex::new(3));
-        assert_eq!(remover.index_list_length(), 3);
         assert_eq!(remover.unread_outer_index_count(), 2);
 
-        let index_2 = remover.next(ctx);
+        let index_2 = remover.load_and_return_outer_index(ctx);
         assert_eq!(index_2.unwrap(), OuterIndex::new(2));
-        assert_eq!(remover.index_list_length(), 2);
         assert_eq!(remover.unread_outer_index_count(), 1);
 
         remover.commit();
         assert_eq!(remover.unread_outer_index_count(), 2);
+
+        // spec- commit will not remove the outer index
+        assert_eq!(remover.current_outer_index.unwrap(), OuterIndex::new(2));
     }
 
     #[test]
@@ -205,31 +187,26 @@ mod tests {
         write_outer_indices(ctx, side, indices);
 
         let mut remover = SequentialOuterIndexRemover::new(side, &mut outer_index_count);
-        assert_eq!(remover.index_list_length(), 4);
+        assert_eq!(remover.unread_outer_index_count(), 4);
 
-        let index_0 = remover.next(ctx);
+        let index_0 = remover.load_and_return_outer_index(ctx);
         assert_eq!(index_0.unwrap(), OuterIndex::new(1));
-        assert_eq!(remover.index_list_length(), 4);
         assert_eq!(remover.unread_outer_index_count(), 3);
 
-        let index_1 = remover.next(ctx);
+        let index_1 = remover.load_and_return_outer_index(ctx);
         assert_eq!(index_1.unwrap(), OuterIndex::new(2));
-        assert_eq!(remover.index_list_length(), 3);
         assert_eq!(remover.unread_outer_index_count(), 2);
 
-        let index_2 = remover.next(ctx);
+        let index_2 = remover.load_and_return_outer_index(ctx);
         assert_eq!(index_2.unwrap(), OuterIndex::new(3));
-        assert_eq!(remover.index_list_length(), 2);
         assert_eq!(remover.unread_outer_index_count(), 1);
 
-        let index_3 = remover.next(ctx);
+        let index_3 = remover.load_and_return_outer_index(ctx);
         assert_eq!(index_3.unwrap(), OuterIndex::new(4));
-        assert_eq!(remover.index_list_length(), 1);
         assert_eq!(remover.unread_outer_index_count(), 0);
 
-        let index_4 = remover.next(ctx);
+        let index_4 = remover.load_and_return_outer_index(ctx);
         assert!(index_4.is_none());
-        assert_eq!(remover.index_list_length(), 0);
         assert_eq!(remover.unread_outer_index_count(), 0);
 
         remover.commit();
@@ -246,24 +223,23 @@ mod tests {
         write_outer_indices(ctx, side, indices);
 
         let mut remover = SequentialOuterIndexRemover::new(side, &mut outer_index_count);
-        assert_eq!(remover.index_list_length(), 4);
 
-        let index_0 = remover.next(ctx);
+        let index_0 = remover.load_and_return_outer_index(ctx);
         assert_eq!(index_0.unwrap(), OuterIndex::new(1));
-        assert_eq!(remover.index_list_length(), 4);
         assert_eq!(remover.unread_outer_index_count(), 3);
 
-        let index_1 = remover.next(ctx);
+        let index_1 = remover.load_and_return_outer_index(ctx);
         assert_eq!(index_1.unwrap(), OuterIndex::new(2));
-        assert_eq!(remover.index_list_length(), 3);
         assert_eq!(remover.unread_outer_index_count(), 2);
 
-        let index_2 = remover.next(ctx);
+        let index_2 = remover.load_and_return_outer_index(ctx);
         assert_eq!(index_2.unwrap(), OuterIndex::new(3));
-        assert_eq!(remover.index_list_length(), 2);
         assert_eq!(remover.unread_outer_index_count(), 1);
 
         remover.commit();
         assert_eq!(remover.unread_outer_index_count(), 2);
+
+        // spec- commit will not remove the outer index
+        assert_eq!(remover.current_outer_index.unwrap(), OuterIndex::new(3));
     }
 }

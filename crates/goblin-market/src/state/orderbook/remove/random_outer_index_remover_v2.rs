@@ -19,7 +19,7 @@ pub fn find_outer_index(
     loop {
         if let Some(read_outer_index) = outer_index_remover.active_outer_index_iterator.next(ctx) {
             if read_outer_index == outer_index {
-                outer_index_remover.cached_outer_index = Some(read_outer_index);
+                outer_index_remover.current_outer_index = Some(read_outer_index);
                 return true;
             } else {
                 cached_outer_indices.push(read_outer_index);
@@ -42,13 +42,11 @@ pub fn commit_outer_index_remover(
 ) {
     let side = outer_index_remover.side();
     let list_slot = outer_index_remover.active_outer_index_iterator.list_slot;
-    let cached_outer_index = outer_index_remover.cached_outer_index;
-
     let cached_count = cached_outer_indices.len() as u16;
 
-    let outer_index_count = outer_index_remover.unread_outer_index_count_mut();
-    *outer_index_count += u16::from(cached_outer_index.is_some());
+    outer_index_remover.commit(); // Adds 1 if current_outer_index is present
 
+    let outer_index_count = outer_index_remover.unread_outer_index_count_mut();
     write_index_list(
         ctx,
         side,
@@ -57,5 +55,6 @@ pub fn commit_outer_index_remover(
         list_slot,
     );
 
+    // Increase count to account for values written from cache
     *outer_index_count += cached_count;
 }

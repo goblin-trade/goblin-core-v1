@@ -105,7 +105,7 @@ impl<'a> RandomOrderRemoverV2<'a> {
                 self.set_pending_write(group_is_active);
 
                 if !group_is_active {
-                    self.inner.outer_index_remover.remove_cached_index();
+                    self.inner.outer_index_remover.remove_loaded_index();
                 }
             }
         }
