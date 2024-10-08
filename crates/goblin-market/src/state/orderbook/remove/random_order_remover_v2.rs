@@ -2,21 +2,19 @@ use crate::{
     quantities::Ticks,
     state::{
         order::{group_position::GroupPosition, order_id::OrderId},
-        write_index_list::write_index_list,
         ArbContext, OuterIndex, Side,
     },
 };
 
 use super::{
+    random_outer_index_remover_v2::{commit_outer_index_remover, find_outer_index},
     sequential_order_remover_v2::SequentialOrderRemoverV2,
-    sequential_outer_index_remover::SequentialOuterIndexRemover,
 };
 
 use alloc::vec::Vec;
 
 pub struct RandomOrderRemoverV2<'a> {
     inner: SequentialOrderRemoverV2<'a>,
-
     cached_outer_indices: Vec<OuterIndex>,
 }
 
@@ -32,14 +30,7 @@ impl<'a> RandomOrderRemoverV2<'a> {
         }
     }
 
-    // fn random_outer_index_remover(&'a mut self) -> RandomOuterIndexRemover {
-    //     RandomOuterIndexRemover {
-    //         inner: &mut self.inner.outer_index_remover,
-    //         cached_outer_indices: &mut self.cached_outer_indices,
-    //     }
-    // }
-
-    pub fn find(&'a mut self, ctx: &mut ArbContext, order_id: OrderId) -> bool {
+    pub fn find(&mut self, ctx: &mut ArbContext, order_id: OrderId) -> bool {
         let price = order_id.price_in_ticks;
         let outer_index = price.outer_index();
 
@@ -57,7 +48,12 @@ impl<'a> RandomOrderRemoverV2<'a> {
 
         // Prevous outer index is None or not equal to the new outer index
         if previous_outer_index != Some(outer_index) {
-            let outer_index_found = self.find_outer_index(ctx, outer_index);
+            let outer_index_found = find_outer_index(
+                ctx,
+                &mut self.inner.outer_index_remover,
+                &mut self.cached_outer_indices,
+                outer_index,
+            );
 
             if !outer_index_found {
                 return false;
@@ -125,7 +121,11 @@ impl<'a> RandomOrderRemoverV2<'a> {
             self.inner.pending_write = false;
         }
 
-        self.commit_outer_index_remover(ctx);
+        commit_outer_index_remover(
+            ctx,
+            &mut self.inner.outer_index_remover,
+            &mut self.cached_outer_indices,
+        );
     }
 
     // Getters
@@ -142,120 +142,5 @@ impl<'a> RandomOrderRemoverV2<'a> {
 
     pub fn set_pending_write(&mut self, non_outermost_group_is_active: bool) {
         self.inner.pending_write = non_outermost_group_is_active;
-    }
-
-    // Random outer index remover
-
-    pub fn find_outer_index(&mut self, ctx: &mut ArbContext, outer_index: OuterIndex) -> bool {
-        // loop till the given outer index is found
-        // - write the found value to cached_outer_index
-        // - write other values to cache
-        //
-        // return true if found, false if the list concludes
-
-        let side = self.side();
-        let remover = &mut self.inner.outer_index_remover;
-
-        loop {
-            if let Some(read_outer_index) = remover.active_outer_index_iterator.next(ctx) {
-                if read_outer_index == outer_index {
-                    remover.cached_outer_index = Some(read_outer_index);
-                    return true;
-                } else if side == Side::Bid && read_outer_index > outer_index
-                    || side == Side::Ask && read_outer_index < outer_index
-                {
-                    self.cached_outer_indices.push(read_outer_index);
-                } else {
-                    return false;
-                }
-            } else {
-                return false;
-            }
-        }
-    }
-
-    pub fn commit_outer_index_remover(&mut self, ctx: &mut ArbContext) {
-        // If cached outer index exists, increment the outer index count. No
-        // need to push this value to the cached list. This is because the
-        // cached outer index is the current outermost value in the index list.
-        let unread_count = *self
-            .inner
-            .outer_index_remover
-            .active_outer_index_iterator
-            .inner
-            .outer_index_count
-            + u16::from(self.inner.outer_index().is_some());
-
-        // TODO simplify. write_index_list() is only used here so we
-        // can use its code
-        write_index_list(
-            ctx,
-            self.side(),
-            &mut self.cached_outer_indices,
-            unread_count,
-            self.inner
-                .outer_index_remover
-                .active_outer_index_iterator
-                .list_slot,
-        );
-    }
-}
-
-pub struct RandomOuterIndexRemover<'a> {
-    inner: &'a mut SequentialOuterIndexRemover<'a>,
-    cached_outer_indices: &'a mut Vec<OuterIndex>,
-}
-
-impl<'a> RandomOuterIndexRemover<'a> {
-    pub fn find_outer_index(&mut self, ctx: &mut ArbContext, outer_index: OuterIndex) -> bool {
-        // loop till the given outer index is found
-        // - write the found value to cached_outer_index
-        // - write other values to cache
-        //
-        // return true if found, false if the list concludes
-
-        let side = self.side();
-
-        let RandomOuterIndexRemover {
-            inner: remover,
-            cached_outer_indices,
-        } = self;
-
-        loop {
-            if let Some(read_outer_index) = remover.active_outer_index_iterator.next(ctx) {
-                if read_outer_index == outer_index {
-                    remover.cached_outer_index = Some(read_outer_index);
-                    return true;
-                } else if side == Side::Bid && read_outer_index > outer_index
-                    || side == Side::Ask && read_outer_index < outer_index
-                {
-                    cached_outer_indices.push(read_outer_index);
-                } else {
-                    return false;
-                }
-            } else {
-                return false;
-            }
-        }
-    }
-
-    pub fn write_index_list(&mut self, ctx: &mut ArbContext) {
-        self.inner.commit();
-
-        write_index_list(
-            ctx,
-            self.side(),
-            &mut self.cached_outer_indices,
-            self.inner.unread_outer_index_count(),
-            self.inner.active_outer_index_iterator.list_slot,
-        );
-    }
-
-    pub fn remove(&mut self) {
-        self.inner.remove_cached_index();
-    }
-
-    pub fn side(&self) -> Side {
-        self.inner.side()
     }
 }

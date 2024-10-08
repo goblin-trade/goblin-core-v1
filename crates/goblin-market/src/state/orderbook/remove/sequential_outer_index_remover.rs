@@ -89,6 +89,10 @@ impl<'a> SequentialOuterIndexRemover<'a> {
     pub fn index_list_length(&self) -> u16 {
         self.unread_outer_index_count() + u16::from(self.cached_outer_index.is_some())
     }
+
+    // pub fn outer_index_count_mut(&mut self) -> &mut u16 {
+    //     self.active_outer_index_iterator.inner.outer_index_count
+    // }
 }
 
 #[cfg(test)]
