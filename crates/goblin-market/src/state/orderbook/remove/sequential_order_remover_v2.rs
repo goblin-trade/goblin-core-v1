@@ -1,6 +1,12 @@
 use crate::{
     quantities::Ticks,
-    state::{order::order_id::OrderId, ArbContext, OuterIndex, Side},
+    state::{
+        order::{
+            group_position::{self, GroupPosition},
+            order_id::OrderId,
+        },
+        ArbContext, OuterIndex, Side,
+    },
 };
 
 use super::{
@@ -112,5 +118,16 @@ impl<'a> SequentialOrderRemoverV2<'a> {
 
     pub fn outer_index(&self) -> Option<OuterIndex> {
         self.outer_index_remover.cached_outer_index
+    }
+
+    pub fn group_position(&self) -> Option<GroupPosition> {
+        self.group_position_remover.group_position()
+    }
+
+    pub fn order_id(&self) -> Option<OrderId> {
+        let outer_index = self.outer_index()?;
+        let group_position = self.group_position()?;
+
+        Some(OrderId::from_group_position(group_position, outer_index))
     }
 }

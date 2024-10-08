@@ -132,9 +132,31 @@ impl BitmapGroup {
     /// Even if bits for a side have closed, the opposite side bits can remain open.
     /// Therefore avoid `is_active = self.inner != [0u8; 32]`
     ///
+    /// TODO remove, unused
+    ///
     pub fn is_inactive(&self, side: Side, start_index_inclusive: Option<InnerIndex>) -> bool {
         let best_active_index = self.best_active_inner_index(side, start_index_inclusive);
         best_active_index.is_none()
+    }
+
+    /// Whether the bitmap group has active bits
+    pub fn is_group_active(&self) -> bool {
+        *self != BitmapGroup::default()
+    }
+
+    /// Checks if the bit at the given group position is the only active bit at its price.
+    ///
+    /// # Arguments
+    ///
+    /// * `group_position` - The group position to check.
+    ///
+    /// # Returns
+    ///
+    /// * `true` if the bit at `group_position` is the only active bit.
+    /// * `false` otherwise.
+    pub fn is_only_active_bit_on_tick(&self, group_position: GroupPosition) -> bool {
+        let bitmap = self.get_bitmap(&group_position.inner_index);
+        bitmap.is_only_active_bit(group_position.resting_order_index)
     }
 
     /// Clear garbage bits in the bitmap group that fall between best market prices
@@ -157,16 +179,6 @@ impl BitmapGroup {
             self.inner[inner_index_to_clear.as_usize()] = 0;
         }
     }
-
-    /// Whether the bitmap group is active. If the active state changes then
-    /// the tick group list must be updated
-    ///
-    /// Important- Avoid this function for index list deactivations. Use is_inactive()
-    /// instead
-    ///
-    // pub fn is_active(&self) -> bool {
-    //     self.inner != [0u8; 32]
-    // }
 
     /// Write to slot
     pub fn write_to_slot(&self, ctx: &mut ArbContext, key: &OuterIndex) {
@@ -200,6 +212,42 @@ impl Bitmap<'_> {
         // Use bitwise AND operation to check if the bit at the given index is set
         // If the bit is set, it means that an order is present at that index
         (*self.inner & (1 << index.as_u8())) != 0
+    }
+
+    // /// Checks whether the given index is active and is the best (earliest)
+    // /// active order, i.e. no active order exists at a lower index
+    // ///
+    // /// # Algorithm
+    // ///
+    // /// * The mask clears all bits with a higher relative index than i.
+    // /// For example 1000_0100 will have a mask 0000_0111 resulting in 0000_0100.
+    // /// * Ensure that there are no active bits below i. This is true if the
+    // /// result equals exactly 2^i or 1 << i.
+    // pub fn is_best_active_index(&self, index: RestingOrderIndex) -> bool {
+    //     let i = index.as_u8();
+    //     // The below mask overflows for i = 7 so take longer route
+    //     // let mask = (1 << (i + 1)) - 1;
+    //     let mask = (1 << i) + ((1 << i) - 1);
+
+    //     (*self.inner & mask) == (1 << i)
+    // }
+
+    /// Checks if the bit at the given index is the only active bit in the bitmap.
+    ///
+    /// # Arguments
+    ///
+    /// * `index` - The index to check.
+    ///
+    /// # Returns
+    ///
+    /// * `true` if the bit at `index` is the only active bit.
+    /// * `false` otherwise.
+    pub fn is_only_active_bit(&self, index: RestingOrderIndex) -> bool {
+        let i = index.as_u8();
+        let current_is_active_mask = 1 << i;
+        let others_are_active_mask = !(current_is_active_mask);
+
+        *self.inner & current_is_active_mask != 0 && *self.inner & others_are_active_mask == 0
     }
 
     /// Find the best available slot with the lowest index
@@ -403,6 +451,34 @@ mod tests {
 
             bitmap_group.inner[starting_index.as_usize()] = 0b00000001;
             assert_eq!(bitmap_group.is_inactive(side, Some(starting_index)), false);
+        }
+    }
+
+    mod is_only_active_bit {
+        use super::*;
+
+        #[test]
+        fn test_is_only_active_bit_when_multiple_bits_are_active() {
+            let bitmap = Bitmap {
+                inner: &0b1000_0010,
+            };
+
+            for i in 0..8 {
+                assert_eq!(bitmap.is_only_active_bit(RestingOrderIndex::new(i)), false);
+            }
+        }
+
+        #[test]
+        fn test_is_only_active_bit_when_single_bit_is_active() {
+            let bitmap = Bitmap {
+                inner: &0b0000_0010,
+            };
+            assert_eq!(bitmap.is_only_active_bit(RestingOrderIndex::new(0)), false);
+            assert_eq!(bitmap.is_only_active_bit(RestingOrderIndex::new(1)), true);
+
+            for i in 2..8 {
+                assert_eq!(bitmap.is_only_active_bit(RestingOrderIndex::new(i)), false);
+            }
         }
     }
 

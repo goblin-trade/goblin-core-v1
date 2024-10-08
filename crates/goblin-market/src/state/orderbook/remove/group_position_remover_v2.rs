@@ -40,6 +40,10 @@ impl GroupPositionRemoverV2 {
         self.inner = new_iterator;
     }
 
+    pub fn write_to_slot(&self, ctx: &mut ArbContext, outer_index: OuterIndex) {
+        self.inner.bitmap_group.write_to_slot(ctx, &outer_index);
+    }
+
     /// Paginates to the given position and tells whether the bit is active
     ///
     /// Externally ensure that load_outer_index() was called first otherwise
@@ -72,30 +76,34 @@ impl GroupPositionRemoverV2 {
         self.inner.bitmap_group.deactivate(group_position);
     }
 
-    // TODO use best_market_price to test for inactivity.
-    // This should remove the need to clean garbage bits
-    //
-    pub fn is_group_inactive(&self, best_opposite_price: Ticks, outer_index: OuterIndex) -> bool {
-        // TODO pass start_index_inclusive externally
-        let start_index_inclusive = if outer_index == best_opposite_price.outer_index() {
-            // Overflow or underflow would happen only if the most extreme bitmap is occupied
-            // by opposite side bits. This is not possible because active bits for `side`
-            // are guaranteed to be present.
-
-            let best_opposite_inner_index = best_opposite_price.inner_index();
-            Some(if self.side() == Side::Bid {
-                best_opposite_inner_index - InnerIndex::ONE
-            } else {
-                best_opposite_inner_index + InnerIndex::ONE
-            })
-        } else {
-            None
-        };
-
-        self.inner
-            .bitmap_group
-            .is_inactive(self.side(), start_index_inclusive)
+    pub fn is_group_active(&self) -> bool {
+        self.inner.bitmap_group.is_group_active()
     }
+
+    // // TODO use best_market_price to test for inactivity.
+    // // This should remove the need to clean garbage bits
+    // //
+    // pub fn is_group_inactive(&self, best_opposite_price: Ticks, outer_index: OuterIndex) -> bool {
+    //     // TODO pass start_index_inclusive externally
+    //     let start_index_inclusive = if outer_index == best_opposite_price.outer_index() {
+    //         // Overflow or underflow would happen only if the most extreme bitmap is occupied
+    //         // by opposite side bits. This is not possible because active bits for `side`
+    //         // are guaranteed to be present.
+
+    //         let best_opposite_inner_index = best_opposite_price.inner_index();
+    //         Some(if self.side() == Side::Bid {
+    //             best_opposite_inner_index - InnerIndex::ONE
+    //         } else {
+    //             best_opposite_inner_index + InnerIndex::ONE
+    //         })
+    //     } else {
+    //         None
+    //     };
+
+    //     self.inner
+    //         .bitmap_group
+    //         .is_inactive(self.side(), start_index_inclusive)
+    // }
 
     // Getters
 
@@ -105,6 +113,12 @@ impl GroupPositionRemoverV2 {
 
     fn is_position_active(&self, group_position: GroupPosition) -> bool {
         self.inner.bitmap_group.is_position_active(group_position)
+    }
+
+    pub fn is_only_active_bit_on_tick(&self, group_position: GroupPosition) -> bool {
+        self.inner
+            .bitmap_group
+            .is_only_active_bit_on_tick(group_position)
     }
 
     pub fn group_position(&self) -> Option<GroupPosition> {
