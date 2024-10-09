@@ -13,6 +13,42 @@ pub struct SequentialOuterIndexRemover<'a> {
     pub current_outer_index: Option<OuterIndex>,
 }
 
+pub trait ISequentialOuterIndexRemover {
+    // 'a lifetime
+    // * As long as self lives, the reference to ActiveOuterIndexIteratorV2 will be valid
+    // * While this lifetime is valid, no references to self are created elsewhere.
+    fn active_outer_index_iterator<'a>(&'a mut self) -> &mut ActiveOuterIndexIteratorV2;
+    fn current_outer_index(&mut self) -> &mut Option<OuterIndex>;
+
+    // private functions
+
+    fn load_outer_index<'a>(&'a mut self, ctx: &mut ArbContext) {
+        *self.current_outer_index() = self.active_outer_index_iterator().next(ctx);
+    }
+
+    // fn load_outer_index(&'a mut self, ctx: &mut ArbContext) {
+    //     // let outer_index = *self.current_outer_index();
+
+    //     let mut next_outer_index: Option<OuterIndex> = None;
+    //     {
+    //         let iterator = self.active_outer_index_iterator();
+    //         next_outer_index = iterator.next(ctx);
+    //     }
+
+    //     self.set_outer_index(next_outer_index);
+    // }
+}
+
+// impl<'a> ISequentialOuterIndexRemover for SequentialOuterIndexRemover<'a> {
+//     fn active_outer_index_iterator(&'a mut self) -> &mut ActiveOuterIndexIteratorV2 {
+//         &mut self.active_outer_index_iterator
+//     }
+
+//     // fn current_outer_index(&mut self) -> &mut Option<OuterIndex> {
+//     //     &mut self.current_outer_index
+//     // }
+// }
+
 impl<'a> SequentialOuterIndexRemover<'a> {
     /// Constructs a new SequentialOuterIndexRemover
     ///
@@ -71,6 +107,7 @@ impl<'a> SequentialOuterIndexRemover<'a> {
     }
 
     /// The unread outer index count
+    /// TODO remove, unused
     pub fn unread_outer_index_count(&self) -> u16 {
         *self.active_outer_index_iterator.inner.outer_index_count
     }
