@@ -7,6 +7,7 @@ use crate::{
 };
 
 use super::{
+    group_position_remover_v2::RandomGroupPositionRemover,
     random_outer_index_remover_v2::{commit_outer_index_remover, find_outer_index},
     sequential_order_remover_v2::SequentialOrderRemoverV2,
 };
@@ -92,7 +93,7 @@ impl<'a> RandomOrderRemoverV2<'a> {
                 // * Group is still active
                 // * Non-outermost group closed
 
-                self.inner.group_position_remover.deactivate();
+                self.inner.group_position_remover.deactivate(group_position);
 
                 // Don't write bitmap group if
                 // - Entire group was closed. We will simply remove the outer index.

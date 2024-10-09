@@ -1,16 +1,13 @@
 use crate::{
     quantities::Ticks,
     state::{
-        order::{
-            group_position::{self, GroupPosition},
-            order_id::OrderId,
-        },
+        order::{group_position::GroupPosition, order_id::OrderId},
         ArbContext, OuterIndex, Side,
     },
 };
 
 use super::{
-    group_position_remover_v2::GroupPositionRemoverV2,
+    group_position_remover_v2::{GroupPositionRemoverV2, SequentialGroupPositionRemover},
     sequential_outer_index_remover::SequentialOuterIndexRemover,
 };
 
@@ -58,9 +55,11 @@ impl<'a> SequentialOrderRemoverV2<'a> {
                     }
 
                     // Find next active group position in group
-                    let group_position = self.group_position_remover.clear_previous_and_get_next();
+                    let next_group_position = self
+                        .group_position_remover
+                        .deactivate_current_and_get_next();
 
-                    match group_position {
+                    match next_group_position {
                         Some(group_position) => {
                             let order_id =
                                 OrderId::from_group_position(group_position, outer_index);
@@ -87,6 +86,9 @@ impl<'a> SequentialOrderRemoverV2<'a> {
     /// Concludes the removal. Writes the bitmap group if `pending_write` is true, updates
     /// the outer index count and writes the updated outer indices to slot.
     ///
+    /// This is the only place in sequential order remover where the bitmap group
+    /// can be written to slot.
+    ///
     /// Slot writes- bitmap_group only. Market state is updated in memory, where the
     /// best market price and outer index count is updated.
     ///
@@ -97,12 +99,7 @@ impl<'a> SequentialOrderRemoverV2<'a> {
     pub fn commit(&mut self, ctx: &mut ArbContext) {
         if let Some(outer_index) = self.outer_index() {
             if self.pending_write {
-                self.group_position_remover
-                    .inner
-                    .bitmap_group
-                    .write_to_slot(ctx, &outer_index);
-
-                // design change- pending_write not set to false after writing
+                self.group_position_remover.write_to_slot(ctx, outer_index);
             }
 
             self.outer_index_remover.commit();

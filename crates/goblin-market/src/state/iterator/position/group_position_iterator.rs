@@ -44,6 +44,11 @@ impl GroupPositionIterator {
         }
         Some(GroupPosition::from_index_inclusive(self.side, self.index))
     }
+
+    /// Skip ahead to `group_position`
+    pub fn set_group_position(&mut self, group_position: GroupPosition) {
+        self.index = group_position.index_inclusive(self.side)
+    }
 }
 impl Iterator for GroupPositionIterator {
     type Item = GroupPosition;

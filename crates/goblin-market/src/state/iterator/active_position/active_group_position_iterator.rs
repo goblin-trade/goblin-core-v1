@@ -27,6 +27,10 @@ impl ActiveGroupPositionIterator {
         }
     }
 
+    pub fn side(&self) -> Side {
+        self.group_position_iterator.side
+    }
+
     pub fn new_with_starting_position(
         bitmap_group: BitmapGroup,
         side: Side,
@@ -34,6 +38,13 @@ impl ActiveGroupPositionIterator {
     ) -> Self {
         let count = starting_position_inclusive.index_inclusive(side);
         ActiveGroupPositionIterator::new(bitmap_group, side, count)
+    }
+
+    /// Paginates to the given position and check whether the bit is active
+    pub fn paginate_and_check_if_active(&mut self, group_position: GroupPosition) -> bool {
+        self.group_position_iterator
+            .set_group_position(group_position);
+        self.bitmap_group.is_position_active(group_position)
     }
 }
 
