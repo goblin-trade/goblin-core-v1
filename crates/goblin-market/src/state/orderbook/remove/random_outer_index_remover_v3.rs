@@ -20,6 +20,23 @@ pub struct RandomOuterIndexRemoverV3<'a> {
     pub cached_outer_indices: Vec<OuterIndex>,
 }
 
+impl<'a> RandomOuterIndexRemoverV3<'a> {
+    /// Constructs a new RandomOuterIndexRemover
+    ///
+    /// # Arguments
+    ///
+    /// * `side`
+    /// * `outer_index_count` - Reference to outer index count for the given
+    /// side in MarketState
+    pub fn new(side: Side, outer_index_count: &'a mut u16) -> Self {
+        Self {
+            active_outer_index_iterator: ActiveOuterIndexIteratorV2::new(side, outer_index_count),
+            current_outer_index: None,
+            cached_outer_indices: Vec::new(),
+        }
+    }
+}
+
 pub trait IRandomOuterIndexRemover<'a> {
     fn active_outer_index_iterator(&mut self) -> &mut ActiveOuterIndexIteratorV2<'a>;
     fn current_outer_index(&mut self) -> &mut Option<OuterIndex>;

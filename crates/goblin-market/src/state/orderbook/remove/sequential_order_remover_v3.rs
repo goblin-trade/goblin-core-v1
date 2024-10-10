@@ -1,6 +1,6 @@
 use crate::{
     quantities::Ticks,
-    state::{order::order_id::OrderId, ArbContext, OuterIndex},
+    state::{order::order_id::OrderId, ArbContext, OuterIndex, Side},
 };
 
 use super::{
@@ -26,6 +26,21 @@ pub struct SequentialOrderRemoverV3<'a> {
 
     /// Whether the bitmap group is pending a write
     pub pending_write: bool,
+}
+
+impl<'a> SequentialOrderRemoverV3<'a> {
+    pub fn new(
+        side: Side,
+        best_market_price: &'a mut Ticks,
+        outer_index_count: &'a mut u16,
+    ) -> Self {
+        SequentialOrderRemoverV3 {
+            outer_index_remover: SequentialOuterIndexRemoverV3::new(side, outer_index_count),
+            group_position_remover: GroupPositionRemoverV2::new(side),
+            pending_write: false,
+            best_market_price,
+        }
+    }
 }
 
 pub trait ISequentialOrderRemoverV3<'a> {

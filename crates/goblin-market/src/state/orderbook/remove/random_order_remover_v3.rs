@@ -31,6 +31,21 @@ pub struct RandomOrderRemoverV3<'a> {
     pub pending_write: bool,
 }
 
+impl<'a> RandomOrderRemoverV3<'a> {
+    pub fn new(
+        side: Side,
+        best_market_price: &'a mut Ticks,
+        outer_index_count: &'a mut u16,
+    ) -> Self {
+        RandomOrderRemoverV3 {
+            outer_index_remover: RandomOuterIndexRemoverV3::new(side, outer_index_count),
+            group_position_remover: GroupPositionRemoverV2::new(side),
+            pending_write: false,
+            best_market_price,
+        }
+    }
+}
+
 // pub trait IRandomOrderRemover<'a> {
 //     fn outer_index_remover(&mut self) -> &mut impl IRandomOuterIndexRemover<'a>;
 
