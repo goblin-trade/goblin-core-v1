@@ -19,9 +19,9 @@ pub struct OuterStruct<'a> {
 pub trait OuterStructTrait<'a> {
     fn inner(&mut self) -> &mut InnerStruct<'a>;
 
-    fn inner_v2(&'a mut self) -> &mut impl InnerStructTrait;
+    fn inner_v2(&mut self) -> &mut impl InnerStructTrait<'a>;
 
-    fn use_inner(&'a mut self) {
+    fn use_inner(&mut self) {
         let inner = self.inner_v2();
         *inner.data() = 10;
     }
@@ -32,7 +32,7 @@ impl<'a> OuterStructTrait<'a> for OuterStruct<'a> {
         &mut self.inner
     }
 
-    fn inner_v2(&'a mut self) -> &mut impl InnerStructTrait {
+    fn inner_v2(&mut self) -> &mut impl InnerStructTrait<'a> {
         &mut self.inner
     }
 }

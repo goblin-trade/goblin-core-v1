@@ -29,10 +29,7 @@ pub struct SequentialOrderRemoverV3<'a> {
 pub trait ISequentialOrderRemoverV3<'a> {
     fn group_position_remover(&mut self) -> &mut GroupPositionRemoverV2;
 
-    // TODO This should return trait
-    fn outer_index_remover(&mut self) -> &mut SequentialOuterIndexRemoverV3<'a>;
-
-    fn outer_index_remover_v2(&'a mut self) -> &mut impl ISequentialOuterIndexRemover;
+    fn outer_index_remover(&mut self) -> &mut impl ISequentialOuterIndexRemover<'a>;
 
     fn best_market_price(&mut self) -> &mut Ticks;
 
@@ -42,7 +39,7 @@ pub trait ISequentialOrderRemoverV3<'a> {
     ///
     /// There is no need to clear garbage bits since we always begin from
     /// best market price
-    fn next(&'a mut self, ctx: &mut ArbContext) -> Option<OrderId> {
+    fn next(&mut self, ctx: &mut ArbContext) -> Option<OrderId> {
         loop {
             let group_is_uninitialized_or_finished =
                 self.group_position_remover().is_uninitialized_or_finished();
@@ -109,7 +106,7 @@ pub trait ISequentialOrderRemoverV3<'a> {
 
     /// The current outer index
     fn outer_index(&mut self) -> Option<OuterIndex> {
-        self.outer_index_remover().current_outer_index
+        *self.outer_index_remover().current_outer_index()
     }
 
     /// Bitmap group must be written if active orders remain on the
@@ -125,11 +122,7 @@ impl<'a> ISequentialOrderRemoverV3<'a> for SequentialOrderRemoverV3<'a> {
         &mut self.group_position_remover
     }
 
-    fn outer_index_remover(&mut self) -> &mut SequentialOuterIndexRemoverV3<'a> {
-        &mut self.outer_index_remover
-    }
-
-    fn outer_index_remover_v2(&'a mut self) -> &mut impl ISequentialOuterIndexRemover {
+    fn outer_index_remover(&mut self) -> &mut impl ISequentialOuterIndexRemover<'a> {
         &mut self.outer_index_remover
     }
 
