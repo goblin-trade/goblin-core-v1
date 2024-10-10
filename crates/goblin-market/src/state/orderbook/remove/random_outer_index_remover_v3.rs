@@ -5,9 +5,7 @@ use crate::state::{
 
 use alloc::vec::Vec;
 
-use super::sequential_outer_index_remover::{
-    ISequentialOuterIndexRemover, SequentialOuterIndexRemover,
-};
+use super::sequential_outer_index_remover::ISequentialOuterIndexRemover;
 
 pub struct RandomOuterIndexRemoverV3<'a> {
     /// Iterator to read active outer indices from index list
@@ -19,12 +17,12 @@ pub struct RandomOuterIndexRemoverV3<'a> {
     pub cached_outer_indices: Vec<OuterIndex>,
 }
 
-// impl<'a> ISequentialOuterIndexRemover<'a> for RandomOuterIndexRemoverV3<'a> {
-//     fn active_outer_index_iterator(&'a mut self) -> &mut ActiveOuterIndexIteratorV2 {
-//         &mut self.active_outer_index_iterator
-//     }
+impl<'a> ISequentialOuterIndexRemover<'a> for RandomOuterIndexRemoverV3<'a> {
+    fn active_outer_index_iterator(&mut self) -> &mut ActiveOuterIndexIteratorV2<'a> {
+        &mut self.active_outer_index_iterator
+    }
 
-//     fn current_outer_index(&mut self) -> &mut Option<OuterIndex> {
-//         &mut self.current_outer_index
-//     }
-// }
+    fn current_outer_index(&mut self) -> &mut Option<OuterIndex> {
+        &mut self.current_outer_index
+    }
+}

@@ -130,11 +130,11 @@ mod tests {
             OuterIndex::new(19)
         );
         assert!(remover.cache.is_empty());
-        assert_eq!(remover.inner.unread_outer_index_count(), 18);
+        assert_eq!(*remover.inner.unread_outer_index_count_mut(), 18);
 
         remover.remove();
         assert!(remover.inner.current_outer_index.is_none());
-        assert_eq!(remover.inner.unread_outer_index_count(), 18);
+        assert_eq!(*remover.inner.unread_outer_index_count_mut(), 18);
 
         // 2. TODO find and remove from different slot
     }
