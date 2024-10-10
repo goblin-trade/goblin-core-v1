@@ -22,13 +22,49 @@ impl GroupPositionRemoverV2 {
         }
     }
 
+    // /// Load bitmap group for the given outer index
+    // ///
+    // /// # Arguments
+    // ///
+    // /// * `ctx` - Context to read from slot
+    // /// * `outer_index` - Load bitmap group for this outer index
+    // pub fn load_outer_index(&mut self, ctx: &mut ArbContext, outer_index: OuterIndex) {
+    //     let bitmap_group = BitmapGroup::new_from_slot(ctx, outer_index);
+    //     let side = self.side();
+    //     let count = 0;
+
+    //     self.inner = ActiveGroupPositionIterator::new(bitmap_group, side, count);
+    // }
+
+    // /// Write the bitmap group to slot
+    // pub fn write_to_slot(&self, ctx: &mut ArbContext, outer_index: OuterIndex) {
+    //     self.inner.bitmap_group.write_to_slot(ctx, &outer_index);
+    // }
+
+    // /// Get side for this remover
+    // pub fn side(&self) -> Side {
+    //     self.inner.group_position_iterator.side
+    // }
+}
+
+pub trait IGroupPositionRemover {
     /// Load bitmap group for the given outer index
     ///
     /// # Arguments
     ///
     /// * `ctx` - Context to read from slot
     /// * `outer_index` - Load bitmap group for this outer index
-    pub fn load_outer_index(&mut self, ctx: &mut ArbContext, outer_index: OuterIndex) {
+    fn load_outer_index(&mut self, ctx: &mut ArbContext, outer_index: OuterIndex);
+
+    /// Write the bitmap group to slot
+    fn write_to_slot(&self, ctx: &mut ArbContext, outer_index: OuterIndex);
+
+    /// Get side for this remover
+    fn side(&self) -> Side;
+}
+
+impl IGroupPositionRemover for GroupPositionRemoverV2 {
+    fn load_outer_index(&mut self, ctx: &mut ArbContext, outer_index: OuterIndex) {
         let bitmap_group = BitmapGroup::new_from_slot(ctx, outer_index);
         let side = self.side();
         let count = 0;
@@ -36,20 +72,23 @@ impl GroupPositionRemoverV2 {
         self.inner = ActiveGroupPositionIterator::new(bitmap_group, side, count);
     }
 
-    /// Write the bitmap group to slot
-    pub fn write_to_slot(&self, ctx: &mut ArbContext, outer_index: OuterIndex) {
+    fn write_to_slot(&self, ctx: &mut ArbContext, outer_index: OuterIndex) {
         self.inner.bitmap_group.write_to_slot(ctx, &outer_index);
     }
 
-    /// Get side for this remover
-    pub fn side(&self) -> Side {
+    fn side(&self) -> Side {
         self.inner.group_position_iterator.side
     }
 }
 
-pub trait SequentialGroupPositionRemover {
+pub trait SequentialGroupPositionRemover: IGroupPositionRemover {
+    /// Deactivate current position and get next
     fn deactivate_current_and_get_next(&mut self) -> Option<GroupPosition>;
+
+    /// Get the current group position if it is loaded
     fn group_position(&self) -> Option<GroupPosition>;
+
+    /// Whether the group is uninitialized or whether reads are finished
     fn is_uninitialized_or_finished(&self) -> bool;
 }
 
@@ -64,54 +103,55 @@ impl SequentialGroupPositionRemover for GroupPositionRemoverV2 {
         self.inner.next()
     }
 
-    /// Get the current group position if it is loaded
     fn group_position(&self) -> Option<GroupPosition> {
         self.inner.group_position_iterator.last_group_position()
     }
 
-    /// Whether the group is uninitialized or whether reads are finished
     fn is_uninitialized_or_finished(&self) -> bool {
         self.inner.group_position_iterator.index == 0 || self.inner.group_position_iterator.finished
     }
 }
 
-pub trait RandomGroupPositionRemover {
-    fn paginate_and_check_if_active(&mut self, group_position: GroupPosition) -> bool;
-    fn deactivate(&mut self, group_position: GroupPosition);
-    fn is_only_active_bit_on_tick(&self, group_position: GroupPosition) -> bool;
-    fn is_group_active(&self) -> bool;
-}
-
-impl RandomGroupPositionRemover for GroupPositionRemoverV2 {
+pub trait RandomGroupPositionRemover: IGroupPositionRemover {
     // Setters
 
     /// Paginates to the given position and check whether the bit is active
     ///
     /// Externally ensure that load_outer_index() was called first otherwise
     /// this will give a blank value.
-    fn paginate_and_check_if_active(&mut self, group_position: GroupPosition) -> bool {
-        self.inner.paginate_and_check_if_active(group_position)
-    }
+    fn paginate_and_check_if_active(&mut self, group_position: GroupPosition) -> bool;
 
     /// Deactivate the bit at the currently tracked group position
     ///
     /// Externally ensure that try_traverse_to_best_active_position() is called
     /// before deactivation
-    fn deactivate(&mut self, group_position: GroupPosition) {
-        self.inner.bitmap_group.deactivate(group_position);
-    }
+    fn deactivate(&mut self, group_position: GroupPosition);
 
     // Getters
 
     /// Whether `group_position` holds the only active bit on its corresponding
     /// inner index and by extension price
+    fn is_only_active_bit_on_tick(&self, group_position: GroupPosition) -> bool;
+
+    /// Whether the current bitmap group has any active positions
+    fn is_group_active(&self) -> bool;
+}
+
+impl RandomGroupPositionRemover for GroupPositionRemoverV2 {
+    fn paginate_and_check_if_active(&mut self, group_position: GroupPosition) -> bool {
+        self.inner.paginate_and_check_if_active(group_position)
+    }
+
+    fn deactivate(&mut self, group_position: GroupPosition) {
+        self.inner.bitmap_group.deactivate(group_position);
+    }
+
     fn is_only_active_bit_on_tick(&self, group_position: GroupPosition) -> bool {
         self.inner
             .bitmap_group
             .is_only_active_bit_on_tick(group_position)
     }
 
-    /// Whether the current bitmap group has any active positions
     fn is_group_active(&self) -> bool {
         self.inner.bitmap_group.is_group_active()
     }

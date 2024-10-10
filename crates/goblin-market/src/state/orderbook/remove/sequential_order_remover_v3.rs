@@ -4,7 +4,9 @@ use crate::{
 };
 
 use super::{
-    group_position_remover_v2::{GroupPositionRemoverV2, SequentialGroupPositionRemover},
+    group_position_remover_v2::{
+        GroupPositionRemoverV2, IGroupPositionRemover, SequentialGroupPositionRemover,
+    },
     sequential_outer_index_remover_v3::{
         ISequentialOuterIndexRemover, SequentialOuterIndexRemoverV3,
     },
@@ -27,7 +29,7 @@ pub struct SequentialOrderRemoverV3<'a> {
 }
 
 pub trait ISequentialOrderRemoverV3<'a> {
-    fn group_position_remover(&mut self) -> &mut GroupPositionRemoverV2;
+    fn group_position_remover(&mut self) -> &mut impl SequentialGroupPositionRemover;
 
     fn outer_index_remover(&mut self) -> &mut impl ISequentialOuterIndexRemover<'a>;
 
@@ -118,7 +120,7 @@ pub trait ISequentialOrderRemoverV3<'a> {
 }
 
 impl<'a> ISequentialOrderRemoverV3<'a> for SequentialOrderRemoverV3<'a> {
-    fn group_position_remover(&mut self) -> &mut GroupPositionRemoverV2 {
+    fn group_position_remover(&mut self) -> &mut impl SequentialGroupPositionRemover {
         &mut self.group_position_remover
     }
 

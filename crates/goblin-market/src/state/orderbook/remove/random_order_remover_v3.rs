@@ -7,10 +7,10 @@ use crate::{
 };
 
 use super::{
-    group_position_remover_v2::{GroupPositionRemoverV2, RandomGroupPositionRemover},
-    random_outer_index_remover_v2::{commit_outer_index_remover, find_outer_index},
-    random_outer_index_remover_v3::RandomOuterIndexRemoverV3,
-    sequential_order_remover_v2::SequentialOrderRemoverV2,
+    group_position_remover_v2::{
+        GroupPositionRemoverV2, RandomGroupPositionRemover, SequentialGroupPositionRemover,
+    },
+    random_outer_index_remover_v3::{IRandomOuterIndexRemover, RandomOuterIndexRemoverV3},
     sequential_order_remover_v3::ISequentialOrderRemoverV3,
     sequential_outer_index_remover_v3::ISequentialOuterIndexRemover,
 };
@@ -31,8 +31,18 @@ pub struct RandomOrderRemoverV3<'a> {
     pub pending_write: bool,
 }
 
+// pub trait IRandomOrderRemover<'a> {
+//     fn outer_index_remover(&mut self) -> &mut impl IRandomOuterIndexRemover<'a>;
+
+//     fn group_position_remover(&mut self) -> &mut GroupPositionRemoverV2;
+
+//     fn best_market_price(&mut self) -> &mut Ticks;
+
+//     fn pending_write(&mut self) -> &mut bool;
+// }
+
 impl<'a> ISequentialOrderRemoverV3<'a> for RandomOrderRemoverV3<'a> {
-    fn group_position_remover(&mut self) -> &mut GroupPositionRemoverV2 {
+    fn group_position_remover(&mut self) -> &mut impl SequentialGroupPositionRemover {
         &mut self.group_position_remover
     }
 
