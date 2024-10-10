@@ -29,7 +29,10 @@ pub struct SequentialOrderRemoverV3<'a> {
 pub trait ISequentialOrderRemoverV3<'a> {
     fn group_position_remover(&mut self) -> &mut GroupPositionRemoverV2;
 
+    // TODO This should return trait
     fn outer_index_remover(&mut self) -> &mut SequentialOuterIndexRemoverV3<'a>;
+
+    fn outer_index_remover_v2(&'a mut self) -> &mut impl ISequentialOuterIndexRemover;
 
     fn best_market_price(&mut self) -> &mut Ticks;
 
@@ -123,6 +126,10 @@ impl<'a> ISequentialOrderRemoverV3<'a> for SequentialOrderRemoverV3<'a> {
     }
 
     fn outer_index_remover(&mut self) -> &mut SequentialOuterIndexRemoverV3<'a> {
+        &mut self.outer_index_remover
+    }
+
+    fn outer_index_remover_v2(&'a mut self) -> &mut impl ISequentialOuterIndexRemover {
         &mut self.outer_index_remover
     }
 
