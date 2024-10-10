@@ -18,10 +18,14 @@ pub trait ISequentialOuterIndexRemover<'a> {
 
     fn current_outer_index(&mut self) -> &mut Option<OuterIndex>;
 
-    fn next(&'a mut self, ctx: &mut ArbContext) {
+    /// Read the next outer index from index list and set it as current
+    fn next(&mut self, ctx: &mut ArbContext) {
         *self.current_outer_index() = self.active_outer_index_iterator().next(ctx);
     }
 
+    /// Concludes removals by adding the cached value back to the list
+    ///
+    /// This simply involves incrementing the count if a value is cached
     fn commit(&mut self) {
         *self.active_outer_index_iterator().inner.outer_index_count +=
             u16::from(self.current_outer_index().is_some());
