@@ -37,6 +37,10 @@ impl<'a> ActiveOuterIndexIteratorV2<'a> {
         *self.inner.outer_index_count
     }
 
+    pub fn outer_index_count_mut(&mut self) -> &mut u16 {
+        self.inner.outer_index_count
+    }
+
     /// Update the cached list slot if no value was cached or if we reached
     /// a new slot
     ///

@@ -8,3 +8,4 @@ pub mod random_outer_index_remover_v2;
 pub mod random_outer_index_remover_v3;
 pub mod sequential_order_remover_v2;
 pub mod sequential_outer_index_remover;
+pub mod sequential_outer_index_remover_v3;

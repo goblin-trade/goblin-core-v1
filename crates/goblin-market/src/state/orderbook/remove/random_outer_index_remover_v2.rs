@@ -44,6 +44,7 @@ pub fn commit_outer_index_remover(
     let list_slot = outer_index_remover.active_outer_index_iterator.list_slot;
     let cached_count = cached_outer_indices.len() as u16;
 
+    // TODO don't use commit, call underlying function directly
     outer_index_remover.commit(); // Adds 1 if current_outer_index is present
 
     let outer_index_count = outer_index_remover.unread_outer_index_count_mut();

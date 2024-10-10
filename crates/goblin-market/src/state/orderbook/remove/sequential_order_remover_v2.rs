@@ -1,7 +1,10 @@
 use crate::{
     quantities::Ticks,
     state::{
-        order::{group_position::GroupPosition, order_id::OrderId},
+        order::{
+            group_position::{self, GroupPosition},
+            order_id::OrderId,
+        },
         ArbContext, OuterIndex, Side,
     },
 };
@@ -43,13 +46,17 @@ impl<'a> SequentialOrderRemoverV2<'a> {
     /// best market price
     pub fn next_active_order(&mut self, ctx: &mut ArbContext) -> Option<OrderId> {
         loop {
-            // Check if outer index is loaded
-            let outer_index = self.outer_index_remover.get_or_load_outer_index(ctx);
+            let group_is_uninitialized_or_finished =
+                self.group_position_remover.is_uninitialized_or_finished();
 
-            match outer_index {
+            if group_is_uninitialized_or_finished {
+                self.outer_index_remover.next(ctx);
+            }
+
+            match self.outer_index() {
                 None => return None,
                 Some(outer_index) => {
-                    if self.group_position_remover.is_uninitialized_or_finished() {
+                    if group_is_uninitialized_or_finished {
                         self.group_position_remover
                             .load_outer_index(ctx, outer_index);
                     }
@@ -59,41 +66,19 @@ impl<'a> SequentialOrderRemoverV2<'a> {
                         .group_position_remover
                         .deactivate_current_and_get_next();
 
-                    match next_group_position {
-                        Some(group_position) => {
-                            let order_id =
-                                OrderId::from_group_position(group_position, outer_index);
-                            let order_price = order_id.price_in_ticks;
+                    if let Some(group_position) = next_group_position {
+                        let order_id = OrderId::from_group_position(group_position, outer_index);
+                        let order_price = order_id.price_in_ticks;
 
-                            // Update pending write state
-                            let best_price_unchanged = order_price == *self.best_market_price;
-                            self.update_pending_write(best_price_unchanged);
+                        // Update pending write state
+                        let best_price_unchanged = order_price == *self.best_market_price;
+                        self.update_pending_write(best_price_unchanged);
 
-                            // Update best market price
-                            *self.best_market_price = order_price;
+                        // Update best market price
+                        *self.best_market_price = order_price;
 
-                            return Some(order_id);
-                        }
-                        None => {
-                            // This will clear outer index
-                            // Can we avoid this call?
-                            // * Instead of calling get_or_load_outer_index() in the top,
-                            // call load_and_return_outer_index(). This will clear the previous
-                            // value, load the new one and return it.
-                            //
-                            // However outer index must be persisted across loops.
-                            // Can we have an inner loop.
-                            //
-                            // Suppose outer index 0 has two positions in its group.
-                            // 1. First call: return position 1.
-                            // 2. Second call: return position 2.
-                            // The outer index was retained.
-                            //
-                            // Solution- check if group position is present at the start.
-                            // If not then load new outer index.
-                            self.outer_index_remover.remove_loaded_index();
-                        }
-                    };
+                        return Some(order_id);
+                    }
                 }
             };
         }
