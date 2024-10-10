@@ -61,6 +61,9 @@ pub trait IGroupPositionRemover {
 
     /// Get side for this remover
     fn side(&self) -> Side;
+
+    /// Get the current group position if it is loaded
+    fn group_position(&self) -> Option<GroupPosition>;
 }
 
 impl IGroupPositionRemover for GroupPositionRemoverV2 {
@@ -79,14 +82,15 @@ impl IGroupPositionRemover for GroupPositionRemoverV2 {
     fn side(&self) -> Side {
         self.inner.group_position_iterator.side
     }
+
+    fn group_position(&self) -> Option<GroupPosition> {
+        self.inner.group_position_iterator.last_group_position()
+    }
 }
 
 pub trait SequentialGroupPositionRemover: IGroupPositionRemover {
     /// Deactivate current position and get next
     fn deactivate_current_and_get_next(&mut self) -> Option<GroupPosition>;
-
-    /// Get the current group position if it is loaded
-    fn group_position(&self) -> Option<GroupPosition>;
 
     /// Whether the group is uninitialized or whether reads are finished
     fn is_uninitialized_or_finished(&self) -> bool;
@@ -101,10 +105,6 @@ impl SequentialGroupPositionRemover for GroupPositionRemoverV2 {
         // If the group has no active positions, the inner iterator will traverse
         // to the last position and mark itself as finished
         self.inner.next()
-    }
-
-    fn group_position(&self) -> Option<GroupPosition> {
-        self.inner.group_position_iterator.last_group_position()
     }
 
     fn is_uninitialized_or_finished(&self) -> bool {

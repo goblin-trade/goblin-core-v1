@@ -8,14 +8,13 @@ use crate::{
 
 use super::{
     group_position_remover_v2::{
-        GroupPositionRemoverV2, RandomGroupPositionRemover, SequentialGroupPositionRemover,
+        GroupPositionRemoverV2, IGroupPositionRemover, RandomGroupPositionRemover,
+        SequentialGroupPositionRemover,
     },
     random_outer_index_remover_v3::{IRandomOuterIndexRemover, RandomOuterIndexRemoverV3},
     sequential_order_remover_v3::ISequentialOrderRemoverV3,
     sequential_outer_index_remover_v3::ISequentialOuterIndexRemover,
 };
-
-use alloc::vec::Vec;
 
 pub struct RandomOrderRemoverV3<'a> {
     /// To lookup and remove outer indices
@@ -46,15 +45,151 @@ impl<'a> RandomOrderRemoverV3<'a> {
     }
 }
 
-// pub trait IRandomOrderRemover<'a> {
-//     fn outer_index_remover(&mut self) -> &mut impl IRandomOuterIndexRemover<'a>;
+pub trait IRandomOrderRemoverV3<'a> {
+    /// To lookup and remove outer indices
+    fn group_position_remover(&mut self) -> &mut impl RandomGroupPositionRemover;
 
-//     fn group_position_remover(&mut self) -> &mut GroupPositionRemoverV2;
+    /// To lookup and deactivate bits in bitmap groups
+    fn outer_index_remover(&mut self) -> &mut impl IRandomOuterIndexRemover<'a>;
 
-//     fn best_market_price(&mut self) -> &mut Ticks;
+    /// Reference to best market price for current side from market state
+    fn best_market_price(&mut self) -> &mut Ticks;
 
-//     fn pending_write(&mut self) -> &mut bool;
-// }
+    /// Whether the bitmap group is pending a write
+    fn pending_write(&mut self) -> &mut bool;
+
+    fn sequential_order_remover(&mut self) -> &mut impl ISequentialOrderRemoverV3<'a>;
+
+    /// Lookup the given order ID
+    ///
+    /// # Arguments
+    ///
+    /// * `ctx`
+    /// * `order_id` - Order to search
+    ///
+    /// # Returns
+    ///
+    /// * `true` if the order id is present in the book
+    /// * `false` if the order id is not present
+    fn find(&mut self, ctx: &mut ArbContext, order_id: OrderId) -> bool {
+        let price = order_id.price_in_ticks;
+        let outer_index = price.outer_index();
+        let previous_outer_index = *self.outer_index_remover().current_outer_index();
+
+        if *self.pending_write() {
+            // previous_outer_index is guaranteed to exist if pending_write is true
+            let previous_outer_index = previous_outer_index.unwrap();
+            if previous_outer_index != outer_index {
+                self.group_position_remover()
+                    .write_to_slot(ctx, previous_outer_index);
+
+                *self.pending_write() = false;
+            }
+        }
+        // Prevous outer index is None or not equal to the new outer index
+        if previous_outer_index != Some(outer_index) {
+            let outer_index_found = self.outer_index_remover().find(ctx, outer_index);
+            if !outer_index_found {
+                return false;
+            }
+            self.group_position_remover()
+                .load_outer_index(ctx, outer_index);
+        }
+        self.group_position_remover()
+            .paginate_and_check_if_active(GroupPosition::from(&order_id))
+    }
+
+    /// Remove the last searched order id from the book
+    ///
+    /// # Arguments
+    ///
+    /// * `ctx`
+    fn remove(&mut self, ctx: &mut ArbContext) {
+        if let Some(order_id) = self.order_id() {
+            let price = order_id.price_in_ticks;
+            let group_position = GroupPosition::from(&order_id);
+
+            // If market price will change on removal, i.e. current order id
+            // is the only active bit on best price use the sequential remover
+            // to deactivate it and discover the next best market price.
+            //
+            // Closure of best market price has two subcases
+            // * Outermost group closed- sequential remover will decrement
+            // outer index count
+            // * Outermost group not closed
+            if price == *self.best_market_price()
+                && self
+                    .group_position_remover()
+                    .is_only_active_bit_on_tick(group_position)
+            {
+                self.sequential_order_remover().next(ctx);
+            } else {
+                // Closure will not change the best market price.
+                // This has 3 cases
+                // * Removal on the best price but there are other active bits present.
+                // * Removal on outermost bitmap group
+                // * Removal on an inner bitmap group
+                //
+                // Group remains active in case 1 and 2, but it can close in
+                // case 3. If bitmap group remains active we need to write the pending
+                // group to slot. Otherwise we can simply remove its outer index.
+                //
+                self.group_position_remover().deactivate(group_position);
+
+                let group_is_active = self.group_position_remover().is_group_active();
+                self.set_pending_write(group_is_active);
+                if !group_is_active {
+                    self.outer_index_remover().remove();
+                }
+            }
+        }
+    }
+
+    // Setters
+    fn set_pending_write(&mut self, non_outermost_group_is_active: bool) {
+        *self.pending_write() = non_outermost_group_is_active;
+    }
+
+    // Getters
+    // TODO avoid &mut in getters
+
+    fn outer_index(&mut self) -> Option<OuterIndex> {
+        *self.outer_index_remover().current_outer_index()
+    }
+
+    fn group_position(&mut self) -> Option<GroupPosition> {
+        self.group_position_remover().group_position()
+    }
+
+    fn order_id(&mut self) -> Option<OrderId> {
+        let outer_index = self.outer_index()?;
+        let group_position = self.group_position()?;
+
+        Some(OrderId::from_group_position(group_position, outer_index))
+    }
+}
+
+impl<'a> IRandomOrderRemoverV3<'a> for RandomOrderRemoverV3<'a> {
+    fn group_position_remover(&mut self) -> &mut impl RandomGroupPositionRemover {
+        &mut self.group_position_remover
+    }
+
+    fn outer_index_remover(&mut self) -> &mut impl IRandomOuterIndexRemover<'a> {
+        &mut self.outer_index_remover
+    }
+
+    fn best_market_price(&mut self) -> &mut Ticks {
+        &mut self.best_market_price
+    }
+
+    fn pending_write(&mut self) -> &mut bool {
+        &mut self.pending_write
+    }
+
+    fn sequential_order_remover(&mut self) -> &mut impl ISequentialOrderRemoverV3<'a> {
+        self
+    }
+}
 
 impl<'a> ISequentialOrderRemoverV3<'a> for RandomOrderRemoverV3<'a> {
     fn group_position_remover(&mut self) -> &mut impl SequentialGroupPositionRemover {
