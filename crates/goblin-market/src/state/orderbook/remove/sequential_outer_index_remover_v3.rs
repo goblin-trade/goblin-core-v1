@@ -29,33 +29,53 @@ impl<'a> SequentialOuterIndexRemoverV3<'a> {
     }
 }
 
-pub trait ISequentialOuterIndexRemover<'a> {
-    /// Iterator to read active outer indices from index list
-    fn active_outer_index_iterator(&mut self) -> &mut ActiveOuterIndexIteratorV2<'a>;
-
-    /// The currently read outer index
-    fn current_outer_index(&mut self) -> &mut Option<OuterIndex>;
-
+pub trait ISequentialOuterIndexRemover<'a>: IOuterIndexRemover<'a> {
     /// Read the next outer index from index list and set it as current
     fn next(&mut self, ctx: &mut ArbContext) {
-        *self.current_outer_index() = self.active_outer_index_iterator().next(ctx);
+        *self.current_outer_index_mut() = self.active_outer_index_iterator_mut().next(ctx);
     }
 
     /// Concludes removals by adding the cached value back to the list
     ///
     /// This simply involves incrementing the count if a value is cached
     fn commit(&mut self) {
-        *self.active_outer_index_iterator().inner.outer_index_count +=
-            u16::from(self.current_outer_index().is_some());
+        *self
+            .active_outer_index_iterator_mut()
+            .inner
+            .outer_index_count += u16::from(self.current_outer_index_mut().is_some());
     }
 }
 
-impl<'a> ISequentialOuterIndexRemover<'a> for SequentialOuterIndexRemoverV3<'a> {
-    fn active_outer_index_iterator(&mut self) -> &mut ActiveOuterIndexIteratorV2<'a> {
+impl<'a> ISequentialOuterIndexRemover<'a> for SequentialOuterIndexRemoverV3<'a> {}
+
+pub trait IOuterIndexRemover<'a> {
+    /// Readonly reference to ActiveOuterIndexIteratorV2
+    fn active_outer_index_iterator(&self) -> &ActiveOuterIndexIteratorV2<'a>;
+
+    /// Iterator to read active outer indices from index list
+    fn active_outer_index_iterator_mut(&mut self) -> &mut ActiveOuterIndexIteratorV2<'a>;
+
+    /// The currently read outer index
+    fn current_outer_index(&self) -> Option<OuterIndex>;
+
+    /// Mutable reference to the currently read outer index
+    fn current_outer_index_mut(&mut self) -> &mut Option<OuterIndex>;
+}
+
+impl<'a> IOuterIndexRemover<'a> for SequentialOuterIndexRemoverV3<'a> {
+    fn active_outer_index_iterator(&self) -> &ActiveOuterIndexIteratorV2<'a> {
+        &self.active_outer_index_iterator
+    }
+
+    fn active_outer_index_iterator_mut(&mut self) -> &mut ActiveOuterIndexIteratorV2<'a> {
         &mut self.active_outer_index_iterator
     }
 
-    fn current_outer_index(&mut self) -> &mut Option<OuterIndex> {
+    fn current_outer_index(&self) -> Option<OuterIndex> {
+        self.current_outer_index
+    }
+
+    fn current_outer_index_mut(&mut self) -> &mut Option<OuterIndex> {
         &mut self.current_outer_index
     }
 }

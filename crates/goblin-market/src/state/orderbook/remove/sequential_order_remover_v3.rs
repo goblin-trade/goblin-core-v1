@@ -4,11 +4,11 @@ use crate::{
 };
 
 use super::{
-    group_position_remover_v2::{
-        GroupPositionRemoverV2, IGroupPositionRemover, SequentialGroupPositionRemover,
+    group_position_remover_v3::{
+        GroupPositionRemoverV3, IGroupPositionRemover, SequentialGroupPositionRemover,
     },
     sequential_outer_index_remover_v3::{
-        ISequentialOuterIndexRemover, SequentialOuterIndexRemoverV3,
+        IOuterIndexRemover, ISequentialOuterIndexRemover, SequentialOuterIndexRemoverV3,
     },
 };
 
@@ -19,7 +19,7 @@ pub struct SequentialOrderRemoverV3<'a> {
     pub outer_index_remover: SequentialOuterIndexRemoverV3<'a>,
 
     /// To lookup and deactivate bits in bitmap groups
-    pub group_position_remover: GroupPositionRemoverV2,
+    pub group_position_remover: GroupPositionRemoverV3,
 
     /// Reference to best market price for current side from market state
     pub best_market_price: &'a mut Ticks,
@@ -36,7 +36,7 @@ impl<'a> SequentialOrderRemoverV3<'a> {
     ) -> Self {
         SequentialOrderRemoverV3 {
             outer_index_remover: SequentialOuterIndexRemoverV3::new(side, outer_index_count),
-            group_position_remover: GroupPositionRemoverV2::new(side),
+            group_position_remover: GroupPositionRemoverV3::new(side),
             pending_write: false,
             best_market_price,
         }
@@ -44,12 +44,19 @@ impl<'a> SequentialOrderRemoverV3<'a> {
 }
 
 pub trait ISequentialOrderRemoverV3<'a> {
-    fn group_position_remover(&mut self) -> &mut impl SequentialGroupPositionRemover;
+    /// /// Mutable reference to group position remover, to lookup and remove outer indices
+    fn group_position_remover_mut(&mut self) -> &mut impl SequentialGroupPositionRemover;
 
-    fn outer_index_remover(&mut self) -> &mut impl ISequentialOuterIndexRemover<'a>;
+    /// To lookup and deactivate bits in bitmap groups
+    fn outer_index_remover(&self) -> &impl ISequentialOuterIndexRemover<'a>;
 
-    fn best_market_price(&mut self) -> &mut Ticks;
+    /// Mutable reference to outer index remover
+    fn outer_index_remover_mut(&mut self) -> &mut impl ISequentialOuterIndexRemover<'a>;
 
+    /// Reference to best market price for current side from market state
+    fn best_market_price_mut(&mut self) -> &mut Ticks;
+
+    /// Whether the bitmap group is pending a write
     fn pending_write(&mut self) -> &mut bool;
 
     /// Gets the next active order ID and clears the previously returned one.
@@ -58,11 +65,12 @@ pub trait ISequentialOrderRemoverV3<'a> {
     /// best market price
     fn next(&mut self, ctx: &mut ArbContext) -> Option<OrderId> {
         loop {
-            let group_is_uninitialized_or_finished =
-                self.group_position_remover().is_uninitialized_or_finished();
+            let group_is_uninitialized_or_finished = self
+                .group_position_remover_mut()
+                .is_uninitialized_or_finished();
 
             if group_is_uninitialized_or_finished {
-                self.outer_index_remover().next(ctx);
+                self.outer_index_remover_mut().next(ctx);
             }
 
             let current_outer_index = self.outer_index();
@@ -70,13 +78,13 @@ pub trait ISequentialOrderRemoverV3<'a> {
                 None => return None,
                 Some(outer_index) => {
                     if group_is_uninitialized_or_finished {
-                        self.group_position_remover()
+                        self.group_position_remover_mut()
                             .load_outer_index(ctx, outer_index);
                     }
 
                     // Find next active group position in group
                     let next_group_position = self
-                        .group_position_remover()
+                        .group_position_remover_mut()
                         .deactivate_current_and_get_next();
 
                     if let Some(group_position) = next_group_position {
@@ -84,11 +92,11 @@ pub trait ISequentialOrderRemoverV3<'a> {
                         let order_price = order_id.price_in_ticks;
 
                         // Update pending write state
-                        let best_price_unchanged = order_price == *self.best_market_price();
+                        let best_price_unchanged = order_price == *self.best_market_price_mut();
                         self.update_pending_write(best_price_unchanged);
 
                         // Update best market price
-                        *self.best_market_price() = order_price;
+                        *self.best_market_price_mut() = order_price;
 
                         return Some(order_id);
                     }
@@ -113,17 +121,12 @@ pub trait ISequentialOrderRemoverV3<'a> {
     fn commit(&mut self, ctx: &mut ArbContext) {
         if let Some(outer_index) = self.outer_index() {
             if *self.pending_write() {
-                self.group_position_remover()
+                self.group_position_remover_mut()
                     .write_to_slot(ctx, outer_index);
             }
 
-            self.outer_index_remover().commit();
+            self.outer_index_remover_mut().commit();
         }
-    }
-
-    /// The current outer index
-    fn outer_index(&mut self) -> Option<OuterIndex> {
-        *self.outer_index_remover().current_outer_index()
     }
 
     /// Bitmap group must be written if active orders remain on the
@@ -132,18 +135,29 @@ pub trait ISequentialOrderRemoverV3<'a> {
     fn update_pending_write(&mut self, best_price_unchanged: bool) {
         *self.pending_write() = best_price_unchanged;
     }
+
+    // Getters
+
+    /// The current outer index
+    fn outer_index(&self) -> Option<OuterIndex> {
+        self.outer_index_remover().current_outer_index()
+    }
 }
 
 impl<'a> ISequentialOrderRemoverV3<'a> for SequentialOrderRemoverV3<'a> {
-    fn group_position_remover(&mut self) -> &mut impl SequentialGroupPositionRemover {
+    fn group_position_remover_mut(&mut self) -> &mut impl SequentialGroupPositionRemover {
         &mut self.group_position_remover
     }
 
-    fn outer_index_remover(&mut self) -> &mut impl ISequentialOuterIndexRemover<'a> {
+    fn outer_index_remover(&self) -> &impl ISequentialOuterIndexRemover<'a> {
+        &self.outer_index_remover
+    }
+
+    fn outer_index_remover_mut(&mut self) -> &mut impl ISequentialOuterIndexRemover<'a> {
         &mut self.outer_index_remover
     }
 
-    fn best_market_price(&mut self) -> &mut Ticks {
+    fn best_market_price_mut(&mut self) -> &mut Ticks {
         &mut self.best_market_price
     }
 

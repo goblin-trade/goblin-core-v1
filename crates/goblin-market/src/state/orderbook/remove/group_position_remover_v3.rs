@@ -5,46 +5,22 @@ use crate::state::{
 };
 
 /// Facilitates efficient batch deactivations in a bitmap group
-pub struct GroupPositionRemoverV2 {
+pub struct GroupPositionRemoverV3 {
     /// Iterator to read active positions in a bitmap group
     pub inner: ActiveGroupPositionIterator,
 }
 
-impl GroupPositionRemoverV2 {
+impl GroupPositionRemoverV3 {
     /// Initialize a new group position remover
     ///
     /// # Arguments
     ///
     /// * `side`
     pub fn new(side: Side) -> Self {
-        GroupPositionRemoverV2 {
+        GroupPositionRemoverV3 {
             inner: ActiveGroupPositionIterator::new_default_for_side(side),
         }
     }
-
-    // /// Load bitmap group for the given outer index
-    // ///
-    // /// # Arguments
-    // ///
-    // /// * `ctx` - Context to read from slot
-    // /// * `outer_index` - Load bitmap group for this outer index
-    // pub fn load_outer_index(&mut self, ctx: &mut ArbContext, outer_index: OuterIndex) {
-    //     let bitmap_group = BitmapGroup::new_from_slot(ctx, outer_index);
-    //     let side = self.side();
-    //     let count = 0;
-
-    //     self.inner = ActiveGroupPositionIterator::new(bitmap_group, side, count);
-    // }
-
-    // /// Write the bitmap group to slot
-    // pub fn write_to_slot(&self, ctx: &mut ArbContext, outer_index: OuterIndex) {
-    //     self.inner.bitmap_group.write_to_slot(ctx, &outer_index);
-    // }
-
-    // /// Get side for this remover
-    // pub fn side(&self) -> Side {
-    //     self.inner.group_position_iterator.side
-    // }
 }
 
 pub trait IGroupPositionRemover {
@@ -66,7 +42,7 @@ pub trait IGroupPositionRemover {
     fn group_position(&self) -> Option<GroupPosition>;
 }
 
-impl IGroupPositionRemover for GroupPositionRemoverV2 {
+impl IGroupPositionRemover for GroupPositionRemoverV3 {
     fn load_outer_index(&mut self, ctx: &mut ArbContext, outer_index: OuterIndex) {
         let bitmap_group = BitmapGroup::new_from_slot(ctx, outer_index);
         let side = self.side();
@@ -96,7 +72,7 @@ pub trait SequentialGroupPositionRemover: IGroupPositionRemover {
     fn is_uninitialized_or_finished(&self) -> bool;
 }
 
-impl SequentialGroupPositionRemover for GroupPositionRemoverV2 {
+impl SequentialGroupPositionRemover for GroupPositionRemoverV3 {
     fn deactivate_current_and_get_next(&mut self) -> Option<GroupPosition> {
         if let Some(group_position) = self.group_position() {
             self.inner.bitmap_group.deactivate(group_position);
@@ -137,7 +113,7 @@ pub trait RandomGroupPositionRemover: IGroupPositionRemover {
     fn is_group_active(&self) -> bool;
 }
 
-impl RandomGroupPositionRemover for GroupPositionRemoverV2 {
+impl RandomGroupPositionRemover for GroupPositionRemoverV3 {
     fn paginate_and_check_if_active(&mut self, group_position: GroupPosition) -> bool {
         self.inner.paginate_and_check_if_active(group_position)
     }
