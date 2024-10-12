@@ -29,25 +29,6 @@ impl<'a> SequentialOuterIndexRemoverV3<'a> {
     }
 }
 
-pub trait ISequentialOuterIndexRemover<'a>: IOuterIndexRemover<'a> {
-    /// Read the next outer index from index list and set it as current
-    fn next(&mut self, ctx: &mut ArbContext) {
-        *self.current_outer_index_mut() = self.active_outer_index_iterator_mut().next(ctx);
-    }
-
-    /// Concludes removals by adding the cached value back to the list
-    ///
-    /// This simply involves incrementing the count if a value is cached
-    fn commit(&mut self) {
-        *self
-            .active_outer_index_iterator_mut()
-            .inner
-            .outer_index_count += u16::from(self.current_outer_index_mut().is_some());
-    }
-}
-
-impl<'a> ISequentialOuterIndexRemover<'a> for SequentialOuterIndexRemoverV3<'a> {}
-
 pub trait IOuterIndexRemover<'a> {
     /// Readonly reference to ActiveOuterIndexIteratorV2
     fn active_outer_index_iterator(&self) -> &ActiveOuterIndexIteratorV2<'a>;
@@ -79,3 +60,22 @@ impl<'a> IOuterIndexRemover<'a> for SequentialOuterIndexRemoverV3<'a> {
         &mut self.current_outer_index
     }
 }
+
+pub trait ISequentialOuterIndexRemover<'a>: IOuterIndexRemover<'a> {
+    /// Read the next outer index from index list and set it as current
+    fn next(&mut self, ctx: &mut ArbContext) {
+        *self.current_outer_index_mut() = self.active_outer_index_iterator_mut().next(ctx);
+    }
+
+    /// Concludes removals by adding the cached value back to the list
+    ///
+    /// This simply involves incrementing the count if a value is cached
+    fn commit(&mut self) {
+        *self
+            .active_outer_index_iterator_mut()
+            .inner
+            .outer_index_count += u16::from(self.current_outer_index_mut().is_some());
+    }
+}
+
+impl<'a> ISequentialOuterIndexRemover<'a> for SequentialOuterIndexRemoverV3<'a> {}
