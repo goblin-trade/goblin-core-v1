@@ -1,14 +1,48 @@
 use crate::{
     program::{GoblinError, GoblinResult, PricesNotInOrder},
+    quantities::Ticks,
     require,
     state::{
         order::{order_id::OrderId, sorted_order_id::orders_are_sorted},
-        // remove::order_id_remover::OrderIdRemover,
-        ArbContext,
-        MarketState,
-        Side,
+        remove::{IOrderLookupRemover, OrderLookupRemover},
+        ArbContext, MarketState, Side,
     },
 };
+
+/// Boilerplate code to remove multiple orders in bulk for both sides
+pub struct RemoveMultipleManagerV2<'a> {
+    side: Side,
+    removers: [OrderLookupRemover<'a>; 2],
+}
+
+impl<'a> RemoveMultipleManagerV2<'a> {
+    pub fn new(
+        best_bid_price: &'a mut Ticks,
+        best_ask_price: &'a mut Ticks,
+        bids_outer_indices: &'a mut u16,
+        asks_outer_indices: &'a mut u16,
+    ) -> Self {
+        RemoveMultipleManagerV2 {
+            side: Side::Bid,
+            removers: [
+                OrderLookupRemover::new(Side::Bid, best_bid_price, bids_outer_indices),
+                OrderLookupRemover::new(Side::Bid, best_ask_price, asks_outer_indices),
+            ],
+        }
+    }
+
+    fn remover(&self) -> &OrderLookupRemover<'a> {
+        &self.removers[self.side as usize]
+    }
+
+    fn remover_mut(&mut self) -> &mut OrderLookupRemover<'a> {
+        &mut self.removers[self.side as usize]
+    }
+
+    fn order_id(&self) -> Option<OrderId> {
+        self.remover().order_id()
+    }
+}
 
 // /// Boilerplate code to remove multiple orders in bulk for both sides
 // pub struct RemoveMultipleManager {
