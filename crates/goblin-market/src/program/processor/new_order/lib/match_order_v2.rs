@@ -2,16 +2,13 @@ use stylus_sdk::alloy_primitives::Address;
 
 use crate::{
     quantities::AdjustedQuoteLots,
-    state::{
-        order::resting_order::SlotRestingOrder, remove::order_id_remover::OrderIdRemover,
-        ArbContext, InflightOrder, MarketState, Side,
-    },
+    state::{order::resting_order::SlotRestingOrder, ArbContext, InflightOrder, MarketState, Side},
 };
 
 use super::ExpiryChecker;
 
 pub struct MatchOrderManager {
-    remover: OrderIdRemover,
+    // remover: OrderIdRemover,
 }
 
 impl MatchOrderManager {

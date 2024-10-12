@@ -14,7 +14,7 @@ use crate::{
     GoblinMarket,
 };
 
-use super::RemoveMultipleManager;
+// use super::RemoveMultipleManager;
 
 pub struct ReduceOrderPacket {
     // ID of order to reduce
@@ -132,66 +132,68 @@ pub fn reduce_multiple_orders_inner(
     order_packets: Vec<FixedBytes<17>>,
     claim_funds: bool,
 ) -> GoblinResult<MatchingEngineResponse> {
-    let mut quote_lots_released = QuoteLots::ZERO;
-    let mut base_lots_released = BaseLots::ZERO;
+    Ok(MatchingEngineResponse::default())
 
-    let mut manager = RemoveMultipleManager::new(
-        market_state.bids_outer_indices,
-        market_state.asks_outer_indices,
-    );
+    // let mut quote_lots_released = QuoteLots::ZERO;
+    // let mut base_lots_released = BaseLots::ZERO;
 
-    for order_packet_bytes in order_packets {
-        let ReduceOrderPacket {
-            order_id,
-            lots_to_remove,
-            revert_if_fail,
-        } = ReduceOrderPacket::from(&order_packet_bytes);
+    // let mut manager = RemoveMultipleManager::new(
+    //     market_state.bids_outer_indices,
+    //     market_state.asks_outer_indices,
+    // );
 
-        let side = order_id.side(market_state);
-        let order_present = manager.find_order(ctx, side, order_id)?;
+    // for order_packet_bytes in order_packets {
+    //     let ReduceOrderPacket {
+    //         order_id,
+    //         lots_to_remove,
+    //         revert_if_fail,
+    //     } = ReduceOrderPacket::from(&order_packet_bytes);
 
-        if !order_present {
-            if revert_if_fail {
-                return Err(GoblinError::FailedToReduce(FailedToReduce {}));
-            }
-            continue;
-        }
+    //     let side = order_id.side(market_state);
+    //     let order_present = manager.find_order(ctx, side, order_id)?;
 
-        let mut resting_order = SlotRestingOrder::new_from_slot(ctx, order_id);
+    //     if !order_present {
+    //         if revert_if_fail {
+    //             return Err(GoblinError::FailedToReduce(FailedToReduce {}));
+    //         }
+    //         continue;
+    //     }
 
-        if trader != resting_order.trader_address {
-            return Err(GoblinError::FailedToReduce(FailedToReduce {}));
-        }
+    //     let mut resting_order = SlotRestingOrder::new_from_slot(ctx, order_id);
 
-        let order_is_expired = false;
+    //     if trader != resting_order.trader_address {
+    //         return Err(GoblinError::FailedToReduce(FailedToReduce {}));
+    //     }
 
-        // TODO check- where is base_lots_free subtracted from trader state?
-        // If tokens are withdrawn then this should be subtracted
-        let matching_engine_response = resting_order.reduce_order(
-            trader_state,
-            side,
-            order_id.price_in_ticks,
-            lots_to_remove,
-            order_is_expired,
-            claim_funds,
-        );
+    //     let order_is_expired = false;
 
-        quote_lots_released += matching_engine_response.num_quote_lots_out;
-        base_lots_released += matching_engine_response.num_base_lots_out;
+    //     // TODO check- where is base_lots_free subtracted from trader state?
+    //     // If tokens are withdrawn then this should be subtracted
+    //     let matching_engine_response = resting_order.reduce_order(
+    //         trader_state,
+    //         side,
+    //         order_id.price_in_ticks,
+    //         lots_to_remove,
+    //         order_is_expired,
+    //         claim_funds,
+    //     );
 
-        if resting_order.is_empty() {
-            // Remove empty order from bitmap group. No need to write cleared
-            // order to slot.
-            manager.remove_order(ctx, market_state);
-        } else {
-            resting_order.write_to_slot(ctx, &order_id)?;
-        }
-    }
+    //     quote_lots_released += matching_engine_response.num_quote_lots_out;
+    //     base_lots_released += matching_engine_response.num_base_lots_out;
 
-    manager.write_prepared_indices(ctx, market_state);
+    //     if resting_order.is_empty() {
+    //         // Remove empty order from bitmap group. No need to write cleared
+    //         // order to slot.
+    //         manager.remove_order(ctx, market_state);
+    //     } else {
+    //         resting_order.write_to_slot(ctx, &order_id)?;
+    //     }
+    // }
 
-    Ok(MatchingEngineResponse::new_withdraw(
-        base_lots_released,
-        quote_lots_released,
-    ))
+    // manager.write_prepared_indices(ctx, market_state);
+
+    // Ok(MatchingEngineResponse::new_withdraw(
+    //     base_lots_released,
+    //     quote_lots_released,
+    // ))
 }
