@@ -48,7 +48,9 @@ impl IGroupPositionRemover for GroupPositionRemover {
 }
 
 impl IGroupPositionSequentialRemover for GroupPositionRemover {
-    fn deactivate_current_and_get_next(&mut self) -> Option<GroupPosition> {
+    fn next(&mut self) -> Option<GroupPosition> {
+        // #[cfg(test)]
+        // println!("group_position {:?}", self.group_position());
         if let Some(group_position) = self.group_position() {
             self.inner.bitmap_group.deactivate(group_position);
         }
@@ -60,6 +62,14 @@ impl IGroupPositionSequentialRemover for GroupPositionRemover {
 
     fn is_uninitialized_or_finished(&self) -> bool {
         self.inner.group_position_iterator.index == 0 || self.inner.group_position_iterator.finished
+    }
+
+    fn is_uninitialized(&self) -> bool {
+        self.inner.group_position_iterator.index == 0
+    }
+
+    fn is_finished(&self) -> bool {
+        self.inner.group_position_iterator.finished
     }
 }
 

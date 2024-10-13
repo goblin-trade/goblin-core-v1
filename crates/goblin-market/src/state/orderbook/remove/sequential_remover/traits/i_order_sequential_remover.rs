@@ -51,9 +51,7 @@ pub trait IOrderSequentialRemover<'a> {
                     }
 
                     // Find next active group position in group
-                    let next_group_position = self
-                        .group_position_remover_mut()
-                        .deactivate_current_and_get_next();
+                    let next_group_position = self.group_position_remover_mut().next();
 
                     if let Some(group_position) = next_group_position {
                         let order_id = OrderId::from_group_position(group_position, outer_index);

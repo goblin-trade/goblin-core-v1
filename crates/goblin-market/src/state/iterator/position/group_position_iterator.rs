@@ -2,6 +2,7 @@ use crate::state::{order::group_position::GroupPosition, Side};
 
 /// Efficient iterator to loop through Group positions (inner index, resting order index)
 /// of a bitmap group.
+#[derive(Debug)]
 pub struct GroupPositionIterator {
     /// Side determines looping direction.
     /// - Bids: Top to bottom (descending)
@@ -56,8 +57,10 @@ impl Iterator for GroupPositionIterator {
     fn next(&mut self) -> Option<Self::Item> {
         let result = self.next_group_position();
 
-        self.index = self.index.wrapping_add(1);
-        self.finished = self.index == 0;
+        if result.is_some() {
+            self.index = self.index.wrapping_add(1);
+            self.finished = self.index == 0;
+        }
 
         result
     }
