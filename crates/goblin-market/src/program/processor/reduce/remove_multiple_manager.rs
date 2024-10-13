@@ -10,19 +10,24 @@ use crate::{
 };
 
 /// Boilerplate code to remove multiple orders in bulk for both sides
-pub struct RemoveMultipleManagerV2<'a> {
+pub struct RemoveMultipleManager<'a> {
     side: Side,
     removers: [OrderLookupRemover<'a>; 2],
 }
 
-impl<'a> RemoveMultipleManagerV2<'a> {
+pub struct FoundResult {
+    pub side: Side,
+    pub found: bool,
+}
+
+impl<'a> RemoveMultipleManager<'a> {
     pub fn new(
         best_bid_price: &'a mut Ticks,
         best_ask_price: &'a mut Ticks,
         bids_outer_indices: &'a mut u16,
         asks_outer_indices: &'a mut u16,
     ) -> Self {
-        RemoveMultipleManagerV2 {
+        RemoveMultipleManager {
             side: Side::Bid,
             removers: [
                 OrderLookupRemover::new(Side::Bid, best_bid_price, bids_outer_indices),
@@ -31,16 +36,67 @@ impl<'a> RemoveMultipleManagerV2<'a> {
         }
     }
 
-    fn remover(&self) -> &OrderLookupRemover<'a> {
-        &self.removers[self.side as usize]
+    pub fn new_from_market(market_state: &'a mut MarketState) -> Self {
+        RemoveMultipleManager::new(
+            &mut market_state.best_bid_price,
+            &mut market_state.best_ask_price,
+            &mut market_state.bids_outer_indices,
+            &mut market_state.asks_outer_indices,
+        )
     }
 
-    fn remover_mut(&mut self) -> &mut OrderLookupRemover<'a> {
-        &mut self.removers[self.side as usize]
+    fn remover(&self, side: Side) -> &OrderLookupRemover<'a> {
+        &self.removers[side as usize]
     }
 
-    fn order_id(&self) -> Option<OrderId> {
-        self.remover().order_id()
+    fn remover_mut(&mut self, side: Side) -> &mut OrderLookupRemover<'a> {
+        &mut self.removers[side as usize]
+    }
+
+    pub fn find(&mut self, ctx: &mut ArbContext, order_id: OrderId) -> bool {
+        // Compute side with from_removal_price()
+        let price = order_id.price_in_ticks;
+
+        // Determines side and ensures that successive prices are sorted to move
+        // away from the centre.
+        // This enforces sort order on price in ticks but not resting order index,
+        // i.e. order ids on the same tick can be in random order
+        let side = Side::from_removal_price(
+            price,
+            self.last_price(Side::Bid),
+            self.last_price(Side::Ask),
+        );
+
+        if let Some(side) = side {
+            self.side = side;
+
+            let remover_mut = self.remover_mut(side);
+            remover_mut.find(ctx, order_id)
+        } else {
+            false
+        }
+    }
+
+    pub fn remove(&mut self, ctx: &mut ArbContext) {
+        let side = self.side;
+        let remover = self.remover_mut(side);
+        remover.remove(ctx)
+    }
+
+    // Getters
+
+    /// Get price of the last removed order, defaulting to best market price if
+    /// no order was previously removed.
+    fn last_price(&self, side: Side) -> Ticks {
+        let remover = self.remover(side);
+        remover
+            .order_id()
+            .map(|order_id| order_id.price_in_ticks)
+            .unwrap_or(*remover.best_market_price)
+    }
+
+    pub fn side(&self) -> Side {
+        self.side
     }
 }
 

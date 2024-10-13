@@ -89,6 +89,10 @@ impl<'a> IOrderLookupRemover<'a> for OrderLookupRemover<'a> {
         &mut self.best_market_price
     }
 
+    fn pending_write(&self) -> bool {
+        self.pending_write
+    }
+
     fn pending_write_mut(&mut self) -> &mut bool {
         &mut self.pending_write
     }

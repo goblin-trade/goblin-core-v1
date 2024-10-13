@@ -26,6 +26,9 @@ pub trait IOrderLookupRemover<'a> {
     fn best_market_price_mut(&mut self) -> &mut Ticks;
 
     /// Whether the bitmap group is pending a write
+    fn pending_write(&self) -> bool;
+
+    /// Mutable reference to pending write
     fn pending_write_mut(&mut self) -> &mut bool;
 
     /// Lookup the given order ID
@@ -110,6 +113,17 @@ pub trait IOrderLookupRemover<'a> {
                     self.outer_index_remover_mut().remove();
                 }
             }
+        }
+    }
+
+    // TODO commit function
+    fn commit(&'a mut self, ctx: &mut ArbContext) {
+        if let Some(outer_index) = self.outer_index() {
+            if self.pending_write() {
+                self.group_position_remover()
+                    .write_to_slot(ctx, outer_index);
+            }
+            self.outer_index_remover().commit_outer_index_remover(ctx);
         }
     }
 
