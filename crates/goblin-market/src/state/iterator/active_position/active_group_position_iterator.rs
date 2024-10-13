@@ -52,17 +52,11 @@ impl Iterator for ActiveGroupPositionIterator {
     type Item = GroupPosition;
 
     fn next(&mut self) -> Option<Self::Item> {
-        while let Some(GroupPosition {
-            inner_index,
-            resting_order_index,
-        }) = self.group_position_iterator.next()
-        {
-            let bitmap = self.bitmap_group.get_bitmap(&inner_index);
-            if bitmap.order_present(resting_order_index) {
-                return Some(GroupPosition {
-                    inner_index,
-                    resting_order_index,
-                });
+        while let Some(group_position) = self.group_position_iterator.next() {
+            let bitmap = self.bitmap_group.get_bitmap(&group_position.inner_index);
+
+            if bitmap.order_present(group_position.resting_order_index) {
+                return Some(group_position);
             }
         }
 
