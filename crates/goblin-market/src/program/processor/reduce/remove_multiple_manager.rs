@@ -1,9 +1,7 @@
 use crate::{
-    program::{GoblinError, GoblinResult, PricesNotInOrder},
     quantities::Ticks,
-    require,
     state::{
-        order::{order_id::OrderId, sorted_order_id::orders_are_sorted},
+        order::order_id::OrderId,
         remove::{IOrderLookupRemover, OrderLookupRemover},
         ArbContext, MarketState, Side,
     },
@@ -13,11 +11,6 @@ use crate::{
 pub struct RemoveMultipleManager<'a> {
     side: Side,
     removers: [OrderLookupRemover<'a>; 2],
-}
-
-pub struct FoundResult {
-    pub side: Side,
-    pub found: bool,
 }
 
 impl<'a> RemoveMultipleManager<'a> {
@@ -45,24 +38,19 @@ impl<'a> RemoveMultipleManager<'a> {
         )
     }
 
-    fn remover(&self, side: Side) -> &OrderLookupRemover<'a> {
-        &self.removers[side as usize]
-    }
-
-    fn remover_mut(&mut self, side: Side) -> &mut OrderLookupRemover<'a> {
-        &mut self.removers[side as usize]
-    }
-
+    /// Check whether the given order ID is present in the book
+    ///
+    /// Successive order IDs must be sorted by price to move away from the centre,
+    /// i.e. in descending order for bids and in ascending order for asks.
+    /// Sort order is not enforced on resting order index.
+    ///
+    /// # Arguments
+    ///
+    /// * `ctx`
+    /// * `order_id` - Order ID to search
     pub fn find(&mut self, ctx: &mut ArbContext, order_id: OrderId) -> bool {
-        // Compute side with from_removal_price()
-        let price = order_id.price_in_ticks;
-
-        // Determines side and ensures that successive prices are sorted to move
-        // away from the centre.
-        // This enforces sort order on price in ticks but not resting order index,
-        // i.e. order ids on the same tick can be in random order
         let side = Side::from_removal_price(
-            price,
+            order_id.price_in_ticks,
             self.last_price(Side::Bid),
             self.last_price(Side::Ask),
         );
@@ -77,13 +65,31 @@ impl<'a> RemoveMultipleManager<'a> {
         }
     }
 
+    /// Remove the last found order id from book.
+    ///
+    /// This function be called after calling find(). Trying to remove a None
+    /// order id is a no-op
     pub fn remove(&mut self, ctx: &mut ArbContext) {
         let side = self.side;
         let remover = self.remover_mut(side);
         remover.remove(ctx)
     }
 
+    /// Conclude the removals
+    pub fn commit(&mut self, ctx: &mut ArbContext) {
+        self.remover_mut(Side::Bid).commit(ctx);
+        self.remover_mut(Side::Ask).commit(ctx);
+    }
+
     // Getters
+
+    fn remover(&self, side: Side) -> &OrderLookupRemover<'a> {
+        &self.removers[side as usize]
+    }
+
+    fn remover_mut(&mut self, side: Side) -> &mut OrderLookupRemover<'a> {
+        &mut self.removers[side as usize]
+    }
 
     /// Get price of the last removed order, defaulting to best market price if
     /// no order was previously removed.

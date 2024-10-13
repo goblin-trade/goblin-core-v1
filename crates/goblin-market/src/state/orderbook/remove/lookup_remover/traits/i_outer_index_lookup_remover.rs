@@ -38,7 +38,7 @@ pub trait IOuterIndexLookupRemover<'a>: IOuterIndexRemover<'a> {
     /// If cached outer index exists, increment the outer index count. No
     /// need to push this value to the cached list. This is because the
     /// cached outer index is the current outermost value in the index list.
-    fn commit_outer_index_remover(&'a mut self, ctx: &mut ArbContext) {
+    fn commit_outer_index_remover(&mut self, ctx: &mut ArbContext) {
         let list_slot = self.active_outer_index_iterator().list_slot;
         let cached_count = self.cached_outer_indices_mut().len() as u16;
 

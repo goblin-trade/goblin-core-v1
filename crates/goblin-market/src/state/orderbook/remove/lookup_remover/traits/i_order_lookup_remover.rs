@@ -116,14 +116,15 @@ pub trait IOrderLookupRemover<'a> {
         }
     }
 
-    // TODO commit function
-    fn commit(&'a mut self, ctx: &mut ArbContext) {
+    // Commit pending data and conclude the removal
+    fn commit(&mut self, ctx: &mut ArbContext) {
         if let Some(outer_index) = self.outer_index() {
             if self.pending_write() {
                 self.group_position_remover()
                     .write_to_slot(ctx, outer_index);
             }
-            self.outer_index_remover().commit_outer_index_remover(ctx);
+            self.outer_index_remover_mut()
+                .commit_outer_index_remover(ctx);
         }
     }
 

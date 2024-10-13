@@ -25,18 +25,24 @@ impl Side {
 
     /// Find the side of an order ID during removals
     ///
-    /// Since removals cannot happen within the spread, we can ignore prices
-    /// within the spread
+    /// # Notes
+    ///
+    /// * Since no orders are present between best bid price and best ask price,
+    /// return None if price falls within the spread.
+    ///
+    /// * Additionally we can ensure that orders are sorted in correct order
+    /// moving away from the centre by using the last price instead of best
+    /// market price to determine side.
     pub fn from_removal_price(
         price: Ticks,
-        best_bid_price: Ticks,
-        best_ask_price: Ticks,
+        last_bid_price: Ticks,
+        last_ask_price: Ticks,
     ) -> Option<Self> {
-        debug_assert!(best_ask_price > best_bid_price);
+        debug_assert!(last_ask_price > last_bid_price);
 
-        if price >= best_ask_price {
+        if price >= last_ask_price {
             Some(Side::Ask)
-        } else if price <= best_bid_price {
+        } else if price <= last_bid_price {
             Some(Side::Bid)
         } else {
             None

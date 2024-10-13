@@ -14,7 +14,7 @@ use crate::{
     GoblinMarket,
 };
 
-use super::{FoundResult, RemoveMultipleManager};
+use super::RemoveMultipleManager;
 
 pub struct ReduceOrderPacket {
     // ID of order to reduce
@@ -132,19 +132,10 @@ pub fn reduce_multiple_orders_inner(
     order_packets: Vec<FixedBytes<17>>,
     claim_funds: bool,
 ) -> GoblinResult<MatchingEngineResponse> {
-    Ok(MatchingEngineResponse::default())
-
     let mut quote_lots_released = QuoteLots::ZERO;
     let mut base_lots_released = BaseLots::ZERO;
 
-    let manager = RemoveMultipleManager::new_from_market(market_state);
-
-    // let mut manager = RemoveMultipleManager::new(
-    //     &mut market_state.best_bid_price,
-    //     &mut market_state.best_ask_price,
-    //     &mut market_state.bids_outer_indices,
-    //     &mut market_state.asks_outer_indices,
-    // );
+    let mut manager = RemoveMultipleManager::new_from_market(market_state);
 
     for order_packet_bytes in order_packets {
         let ReduceOrderPacket {
@@ -153,12 +144,8 @@ pub fn reduce_multiple_orders_inner(
             revert_if_fail,
         } = ReduceOrderPacket::from(&order_packet_bytes);
 
-        let order_present = manager.find(ctx, order_id);
-
-        // let side = order_id.side(market_state);
-        // let order_present = manager.find(ctx, side, order_id)?;
-
-        if !order_present {
+        let order_found = manager.find(ctx, order_id);
+        if !order_found {
             if revert_if_fail {
                 return Err(GoblinError::FailedToReduce(FailedToReduce {}));
             }
@@ -196,7 +183,7 @@ pub fn reduce_multiple_orders_inner(
         }
     }
 
-    manager.write_prepared_indices(ctx, market_state);
+    manager.commit(ctx);
 
     Ok(MatchingEngineResponse::new_withdraw(
         base_lots_released,
