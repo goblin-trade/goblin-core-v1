@@ -116,15 +116,24 @@ pub trait IOrderLookupRemover<'a> {
         }
     }
 
-    // Commit pending data and conclude the removal
+    /// Concludes the removal. Writes the bitmap group if `pending_write` is true,
+    /// updates the outer index count and writes any pending outer index list slots.
+    ///
+    ///
+    /// Slot writes- bitmap_group and index list. Market state is updated in memory, where the
+    /// best market price and outer index count is updated.
+    ///
+    /// # Arguments
+    ///
+    /// * `ctx`
+    ///
     fn commit(&mut self, ctx: &mut ArbContext) {
         if let Some(outer_index) = self.outer_index() {
             if self.pending_write() {
                 self.group_position_remover()
                     .write_to_slot(ctx, outer_index);
             }
-            self.outer_index_remover_mut()
-                .commit_outer_index_remover(ctx);
+            self.outer_index_remover_mut().commit(ctx);
         }
     }
 

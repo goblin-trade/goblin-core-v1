@@ -1,13 +1,8 @@
-use crate::{
-    quantities::Ticks,
-    state::{
-        order::order_id::OrderId,
-        remove::{IGroupPositionRemover, IOuterIndexRemover},
-        ArbContext, OuterIndex,
-    },
-};
+use crate::state::{order::order_id::OrderId, remove::IGroupPositionRemover, ArbContext};
 
-use super::{IGroupPositionSequentialRemover, IOuterIndexSequentialRemover};
+use super::{
+    IGroupPositionSequentialRemover, IOrderSequentialRemoverInner, IOuterIndexSequentialRemover,
+};
 
 pub trait IOrderSequentialRemover<'a>: IOrderSequentialRemoverInner<'a> {
     /// Gets the next active order ID and clears the previously returned one.
@@ -53,8 +48,9 @@ pub trait IOrderSequentialRemover<'a>: IOrderSequentialRemoverInner<'a> {
         }
     }
 
-    /// Concludes the removal. Writes the bitmap group if `pending_write` is true, updates
-    /// the outer index count and writes the updated outer indices to slot.
+    /// Concludes the removal. Writes the bitmap group if `pending_write` is true and
+    /// updates the outer index count. There are no slot writes involved in the outer
+    /// index list for the sequential remover.
     ///
     /// This is the only place in sequential order remover where the bitmap group
     /// can be written to slot.
@@ -62,52 +58,21 @@ pub trait IOrderSequentialRemover<'a>: IOrderSequentialRemoverInner<'a> {
     /// Slot writes- bitmap_group only. Market state is updated in memory, where the
     /// best market price and outer index count is updated.
     ///
+    /// TODO This function is identical to IOrderLookupRemover::commit(). Can we
+    /// have a common interface for both?
+    ///
     /// # Arguments
     ///
     /// * `ctx`
     ///
     fn commit(&mut self, ctx: &mut ArbContext) {
         if let Some(outer_index) = self.outer_index() {
-            if *self.pending_write_mut() {
-                self.group_position_remover_mut()
+            if self.pending_write() {
+                self.group_position_remover()
                     .write_to_slot(ctx, outer_index);
             }
 
             self.outer_index_remover_mut().commit();
         }
-    }
-}
-
-pub trait IOrderSequentialRemoverInner<'a> {
-    /// To lookup and remove outer indices
-    fn group_position_remover(&self) -> &impl IGroupPositionSequentialRemover;
-
-    /// Mutable reference to group position remover, to lookup and remove outer indices
-    fn group_position_remover_mut(&mut self) -> &mut impl IGroupPositionSequentialRemover;
-
-    /// To lookup and deactivate bits in bitmap groups
-    fn outer_index_remover(&self) -> &impl IOuterIndexSequentialRemover<'a>;
-
-    /// Mutable reference to outer index remover
-    fn outer_index_remover_mut(&mut self) -> &mut impl IOuterIndexSequentialRemover<'a>;
-
-    /// Reference to best market price for current side from market state
-    fn best_market_price_mut(&mut self) -> &mut Ticks;
-
-    /// Whether the bitmap group is pending a write
-    fn pending_write_mut(&mut self) -> &mut bool;
-
-    /// Bitmap group must be written if active orders remain on the
-    /// best price even after closing the bit, i.e. the best market price
-    /// remains unchanged
-    fn update_pending_write(&mut self, best_price_unchanged: bool) {
-        *self.pending_write_mut() = best_price_unchanged;
-    }
-
-    // Getters
-
-    /// The current outer index
-    fn outer_index(&self) -> Option<OuterIndex> {
-        self.outer_index_remover().current_outer_index()
     }
 }
