@@ -1,4 +1,4 @@
-use crate::state::{order::group_position::GroupPosition, ArbContext, OuterIndex, Side};
+use crate::state::{ArbContext, OuterIndex, Side};
 
 pub trait IGroupPositionRemover {
     /// Load bitmap group for the given outer index
@@ -14,7 +14,4 @@ pub trait IGroupPositionRemover {
 
     /// Get side for this remover
     fn side(&self) -> Side;
-
-    /// Get the current group position if it is loaded
-    fn group_position(&self) -> Option<GroupPosition>;
 }

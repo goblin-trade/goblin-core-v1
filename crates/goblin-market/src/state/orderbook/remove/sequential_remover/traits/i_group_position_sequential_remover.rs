@@ -1,7 +1,10 @@
 use crate::state::{order::group_position::GroupPosition, remove::IGroupPositionRemover};
 
 pub trait IGroupPositionSequentialRemover: IGroupPositionRemover {
-    /// Deactivate current position and get next
+    /// The previous position getting deactivated
+    fn last_group_position(&self) -> Option<GroupPosition>;
+
+    /// Get the next position and deactivate the previous one
     fn next(&mut self) -> Option<GroupPosition>;
 
     /// Whether the remover is still uninitialized
@@ -38,7 +41,6 @@ mod tests {
         bitmap_group.inner[1] = 0b0000_0010;
         bitmap_group.inner[31] = 0b0000_0001;
         bitmap_group.write_to_slot(ctx, &outer_index);
-
         remover.load_outer_index(ctx, outer_index);
 
         assert_eq!(

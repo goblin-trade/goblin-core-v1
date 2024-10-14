@@ -67,7 +67,7 @@ pub trait IOrderLookupRemover<'a> {
                 .load_outer_index(ctx, outer_index);
         }
         self.group_position_remover_mut()
-            .paginate_and_check_if_active(GroupPosition::from(&order_id))
+            .find(GroupPosition::from(&order_id))
     }
 
     /// Remove the last searched order id from the book
@@ -105,7 +105,7 @@ pub trait IOrderLookupRemover<'a> {
                 // case 3. If bitmap group remains active we need to write the pending
                 // group to slot. Otherwise we can simply remove its outer index.
                 //
-                self.group_position_remover_mut().deactivate(group_position);
+                self.group_position_remover_mut().remove();
 
                 let group_is_active = self.group_position_remover_mut().is_group_active();
                 self.set_pending_write(group_is_active);

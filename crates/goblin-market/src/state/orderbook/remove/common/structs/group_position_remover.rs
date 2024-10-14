@@ -41,15 +41,15 @@ impl IGroupPositionRemover for GroupPositionRemover {
     fn side(&self) -> Side {
         self.inner.group_position_iterator.side
     }
-
-    fn group_position(&self) -> Option<GroupPosition> {
-        self.inner.group_position_iterator.last_group_position()
-    }
 }
 
 impl IGroupPositionSequentialRemover for GroupPositionRemover {
+    fn last_group_position(&self) -> Option<GroupPosition> {
+        self.inner.group_position_iterator.last_group_position()
+    }
+
     fn next(&mut self) -> Option<GroupPosition> {
-        if let Some(group_position) = self.group_position() {
+        if let Some(group_position) = self.last_group_position() {
             self.inner.bitmap_group.deactivate(group_position);
         }
 
@@ -72,12 +72,18 @@ impl IGroupPositionSequentialRemover for GroupPositionRemover {
 }
 
 impl IGroupPositionLookupRemover for GroupPositionRemover {
-    fn paginate_and_check_if_active(&mut self, group_position: GroupPosition) -> bool {
-        self.inner.paginate_and_check_if_active(group_position)
+    fn find(&mut self, group_position: GroupPosition) -> bool {
+        self.inner.find(group_position)
     }
 
-    fn deactivate(&mut self, group_position: GroupPosition) {
-        self.inner.bitmap_group.deactivate(group_position);
+    fn remove(&mut self) {
+        if let Some(group_position) = self.group_position() {
+            self.inner.bitmap_group.deactivate(group_position);
+        }
+    }
+
+    fn group_position(&self) -> Option<GroupPosition> {
+        self.inner.group_position_iterator.group_position()
     }
 
     fn is_only_active_bit_on_tick(&self, group_position: GroupPosition) -> bool {

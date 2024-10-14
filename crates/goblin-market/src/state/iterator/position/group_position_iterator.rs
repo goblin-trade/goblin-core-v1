@@ -15,6 +15,9 @@ pub struct GroupPositionIterator {
     /// Whether iteration is complete.
     /// Special property of iterators- we need a flag to know when to stop.
     /// Using the value itself is not sufficient.
+    ///
+    /// `finished` is never set to true when using the lookup remover. It is only
+    /// updated in sequential remover when the entire group is traversed.
     pub finished: bool,
 }
 
@@ -39,7 +42,7 @@ impl GroupPositionIterator {
     }
 
     /// Returns the next group position that will be returned by the iterator
-    pub fn next_group_position(&self) -> Option<GroupPosition> {
+    pub fn group_position(&self) -> Option<GroupPosition> {
         if self.finished {
             return None;
         }
@@ -48,14 +51,14 @@ impl GroupPositionIterator {
 
     /// Skip ahead to `group_position`
     pub fn set_group_position(&mut self, group_position: GroupPosition) {
-        self.index = group_position.index_inclusive(self.side)
+        self.index = group_position.index_inclusive(self.side);
     }
 }
 impl Iterator for GroupPositionIterator {
     type Item = GroupPosition;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let result = self.next_group_position();
+        let result = self.group_position();
 
         if result.is_some() {
             self.index = self.index.wrapping_add(1);
