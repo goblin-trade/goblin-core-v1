@@ -9,25 +9,7 @@ use crate::{
 
 use super::{IGroupPositionSequentialRemover, IOuterIndexSequentialRemover};
 
-pub trait IOrderSequentialRemover<'a> {
-    /// To lookup and remove outer indices
-    fn group_position_remover(&self) -> &impl IGroupPositionSequentialRemover;
-
-    /// Mutable reference to group position remover, to lookup and remove outer indices
-    fn group_position_remover_mut(&mut self) -> &mut impl IGroupPositionSequentialRemover;
-
-    /// To lookup and deactivate bits in bitmap groups
-    fn outer_index_remover(&self) -> &impl IOuterIndexSequentialRemover<'a>;
-
-    /// Mutable reference to outer index remover
-    fn outer_index_remover_mut(&mut self) -> &mut impl IOuterIndexSequentialRemover<'a>;
-
-    /// Reference to best market price for current side from market state
-    fn best_market_price_mut(&mut self) -> &mut Ticks;
-
-    /// Whether the bitmap group is pending a write
-    fn pending_write_mut(&mut self) -> &mut bool;
-
+pub trait IOrderSequentialRemover<'a>: IOrderSequentialRemoverInner<'a> {
     /// Gets the next active order ID and clears the previously returned one.
     ///
     /// There is no need to clear garbage bits since we always begin from
@@ -94,6 +76,26 @@ pub trait IOrderSequentialRemover<'a> {
             self.outer_index_remover_mut().commit();
         }
     }
+}
+
+pub trait IOrderSequentialRemoverInner<'a> {
+    /// To lookup and remove outer indices
+    fn group_position_remover(&self) -> &impl IGroupPositionSequentialRemover;
+
+    /// Mutable reference to group position remover, to lookup and remove outer indices
+    fn group_position_remover_mut(&mut self) -> &mut impl IGroupPositionSequentialRemover;
+
+    /// To lookup and deactivate bits in bitmap groups
+    fn outer_index_remover(&self) -> &impl IOuterIndexSequentialRemover<'a>;
+
+    /// Mutable reference to outer index remover
+    fn outer_index_remover_mut(&mut self) -> &mut impl IOuterIndexSequentialRemover<'a>;
+
+    /// Reference to best market price for current side from market state
+    fn best_market_price_mut(&mut self) -> &mut Ticks;
+
+    /// Whether the bitmap group is pending a write
+    fn pending_write_mut(&mut self) -> &mut bool;
 
     /// Bitmap group must be written if active orders remain on the
     /// best price even after closing the bit, i.e. the best market price
