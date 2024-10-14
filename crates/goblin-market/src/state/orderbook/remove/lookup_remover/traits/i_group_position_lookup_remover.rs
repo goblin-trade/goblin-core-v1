@@ -92,6 +92,7 @@ mod tests {
         assert_eq!(remover.group_position().unwrap(), position_3);
         assert_eq!(remover.inner.group_position_iterator.index, 255);
 
+        // is_finished() belongs to the sequential trait
         // Random remover does not affect finished
         assert_eq!(remover.is_finished(), false);
     }
