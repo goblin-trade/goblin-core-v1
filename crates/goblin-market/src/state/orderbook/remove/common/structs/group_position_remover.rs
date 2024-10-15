@@ -1,9 +1,14 @@
-use crate::state::{
-    bitmap_group::BitmapGroup,
-    iterator::active_position::active_group_position_iterator::ActiveGroupPositionIterator,
-    order::group_position::GroupPosition,
-    remove::{IGroupPositionLookupRemover, IGroupPositionRemover, IGroupPositionSequentialRemover},
-    ArbContext, OuterIndex, Side,
+use crate::{
+    quantities::Ticks,
+    state::{
+        bitmap_group::BitmapGroup,
+        iterator::active_position::active_group_position_iterator::ActiveGroupPositionIterator,
+        order::group_position::GroupPosition,
+        remove::{
+            IGroupPositionLookupRemover, IGroupPositionRemover, IGroupPositionSequentialRemover,
+        },
+        ArbContext, OuterIndex, RestingOrderIndex, Side, TickIndices,
+    },
 };
 
 /// Facilitates efficient batch deactivations in a bitmap group
@@ -29,9 +34,27 @@ impl IGroupPositionRemover for GroupPositionRemover {
     fn load_outer_index(&mut self, ctx: &mut ArbContext, outer_index: OuterIndex) {
         let bitmap_group = BitmapGroup::new_from_slot(ctx, outer_index);
         let side = self.side();
-        let count = 0;
+        let index = 0;
 
-        self.inner = ActiveGroupPositionIterator::new(bitmap_group, side, count);
+        self.inner = ActiveGroupPositionIterator::new(bitmap_group, side, index);
+    }
+
+    fn load_outermost_group(&mut self, ctx: &mut ArbContext, best_market_price: Ticks) {
+        let TickIndices {
+            outer_index,
+            inner_index,
+        } = best_market_price.to_indices();
+
+        let bitmap_group = BitmapGroup::new_from_slot(ctx, outer_index);
+        let side = self.side();
+
+        let starting_position = GroupPosition {
+            inner_index,
+            resting_order_index: RestingOrderIndex::ZERO,
+        };
+        let index = starting_position.index_inclusive(side);
+
+        self.inner = ActiveGroupPositionIterator::new(bitmap_group, side, index);
     }
 
     fn write_to_slot(&self, ctx: &mut ArbContext, outer_index: OuterIndex) {

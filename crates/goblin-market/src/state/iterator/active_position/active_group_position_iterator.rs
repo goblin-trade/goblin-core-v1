@@ -13,10 +13,10 @@ pub struct ActiveGroupPositionIterator {
 }
 
 impl ActiveGroupPositionIterator {
-    pub fn new(bitmap_group: BitmapGroup, side: Side, count: u8) -> Self {
+    pub fn new(bitmap_group: BitmapGroup, side: Side, index: u8) -> Self {
         ActiveGroupPositionIterator {
             bitmap_group,
-            group_position_iterator: GroupPositionIterator::new(side, count),
+            group_position_iterator: GroupPositionIterator::new(side, index),
         }
     }
 

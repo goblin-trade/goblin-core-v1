@@ -165,8 +165,7 @@ impl BitmapGroup {
     ///
     /// * `side`
     /// * `outer_index` - Outer index of the bitmap group being looped through
-    /// * `best_market_prices` - The best market prices BEFORE performing any add
-    /// or remove operation
+    /// * `best_market_prices` - The best market prices BEFORE performing any add operation
     pub fn clear_garbage_bits(
         &mut self,
         outer_index: OuterIndex,

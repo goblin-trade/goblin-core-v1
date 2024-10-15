@@ -402,6 +402,13 @@ pub struct Ticks {
 impl Ticks {
     pub const BID_DEFAULT: Self = Ticks::MIN;
     pub const ASK_DEFAULT: Self = Ticks::MAX;
+
+    pub fn default_for_side(side: Side) -> Self {
+        match side {
+            Side::Bid => Ticks::BID_DEFAULT,
+            Side::Ask => Ticks::ASK_DEFAULT,
+        }
+    }
 }
 
 // BaseLots have smaller max size than QuoteLots

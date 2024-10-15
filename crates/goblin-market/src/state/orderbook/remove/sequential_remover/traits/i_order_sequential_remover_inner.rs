@@ -1,6 +1,10 @@
 use crate::{
     quantities::Ticks,
-    state::{remove::IOuterIndexRemover, OuterIndex},
+    state::{
+        order::{group_position::GroupPosition, order_id::OrderId},
+        remove::IOuterIndexRemover,
+        OuterIndex, Side,
+    },
 };
 
 use super::{IGroupPositionSequentialRemover, IOuterIndexSequentialRemover};
@@ -17,6 +21,9 @@ pub trait IOrderSequentialRemoverInner<'a> {
 
     /// Mutable reference to outer index remover
     fn outer_index_remover_mut(&mut self) -> &mut impl IOuterIndexSequentialRemover<'a>;
+
+    /// The market price for current side from market state
+    fn best_market_price(&self) -> Ticks;
 
     /// Reference to best market price for current side from market state
     fn best_market_price_mut(&mut self) -> &mut Ticks;

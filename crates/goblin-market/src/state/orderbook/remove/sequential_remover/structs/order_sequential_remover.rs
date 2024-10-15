@@ -2,8 +2,8 @@ use crate::{
     quantities::Ticks,
     state::{
         remove::{
-            GroupPositionRemover, IGroupPositionSequentialRemover, IOrderSequentialRemoverInner,
-            IOuterIndexSequentialRemover,
+            GroupPositionRemover, IGroupPositionSequentialRemover, IOrderSequentialRemover,
+            IOrderSequentialRemoverInner, IOuterIndexSequentialRemover,
         },
         Side,
     },
@@ -42,6 +42,8 @@ impl<'a> OrderSequentialRemover<'a> {
     }
 }
 
+impl<'a> IOrderSequentialRemover<'a> for OrderSequentialRemover<'a> {}
+
 impl<'a> IOrderSequentialRemoverInner<'a> for OrderSequentialRemover<'a> {
     fn group_position_remover(&self) -> &impl IGroupPositionSequentialRemover {
         &self.group_position_remover
@@ -57,6 +59,10 @@ impl<'a> IOrderSequentialRemoverInner<'a> for OrderSequentialRemover<'a> {
 
     fn outer_index_remover_mut(&mut self) -> &mut impl IOuterIndexSequentialRemover<'a> {
         &mut self.outer_index_remover
+    }
+
+    fn best_market_price(&self) -> Ticks {
+        *self.best_market_price
     }
 
     fn best_market_price_mut(&mut self) -> &mut Ticks {
