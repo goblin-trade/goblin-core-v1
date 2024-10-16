@@ -1,11 +1,4 @@
-use crate::{
-    quantities::Ticks,
-    state::{
-        order::{group_position::GroupPosition, order_id::OrderId},
-        remove::IGroupPositionRemover,
-        ArbContext, RestingOrderIndex,
-    },
-};
+use crate::state::{order::order_id::OrderId, remove::IGroupPositionRemover, ArbContext};
 
 use super::{
     IGroupPositionSequentialRemover, IOrderSequentialRemoverInner, IOuterIndexSequentialRemover,
@@ -18,7 +11,7 @@ pub trait IOrderSequentialRemover<'a>: IOrderSequentialRemoverInner<'a> {
     /// best market price
     fn next(&mut self, ctx: &mut ArbContext) -> Option<OrderId> {
         let best_market_price = self.best_market_price_inner();
-        let no_previous_value = self.outer_index().is_none();
+        let is_first_read = self.outer_index().is_none();
 
         loop {
             let group_is_uninitialized_or_finished =
@@ -28,10 +21,9 @@ pub trait IOrderSequentialRemover<'a>: IOrderSequentialRemoverInner<'a> {
                 self.outer_index_remover_mut().next(ctx);
             }
 
-            let current_outer_index = self.outer_index();
-            match current_outer_index {
+            match self.outer_index() {
                 Some(outer_index) => {
-                    if no_previous_value {
+                    if is_first_read {
                         self.group_position_remover_mut()
                             .load_outermost_group(ctx, best_market_price);
                     } else if group_is_uninitialized_or_finished {
@@ -46,9 +38,8 @@ pub trait IOrderSequentialRemover<'a>: IOrderSequentialRemoverInner<'a> {
                             OrderId::from_group_position(next_group_position, outer_index);
                         let next_order_price = next_order_id.price_in_ticks;
 
-                        let best_price_unchanged =
-                            !no_previous_value && next_order_price == best_market_price;
-                        self.update_pending_write(best_price_unchanged);
+                        let best_price_unchanged = next_order_price == best_market_price;
+                        self.update_pending_write(is_first_read, best_price_unchanged);
 
                         // Update best market price
                         *self.best_market_price_inner_mut() = next_order_price;
@@ -57,14 +48,10 @@ pub trait IOrderSequentialRemover<'a>: IOrderSequentialRemoverInner<'a> {
                     }
                 }
                 None => {
-                    // All outer indices and by exension all active bits are exhausted
+                    // All active bits are exhausted
                     // Set pending write to false so that the group position is not written
-                    self.update_pending_write(false);
+                    self.update_pending_write(false, false);
 
-                    // TODO need spec on default prices
-                    // What if an order is actually present on Tick::MAX?
-                    // *self.best_market_price_mut() =
-                    //     Ticks::default_for_side(self.outer_index_remover().side());
                     return None;
                 }
             };
@@ -105,8 +92,9 @@ mod tests {
     use crate::{
         quantities::Ticks,
         state::{
-            bitmap_group::BitmapGroup, remove::OrderSequentialRemover, ContextActions, InnerIndex,
-            ListKey, ListSlot, OuterIndex, RestingOrderIndex, Side,
+            bitmap_group::BitmapGroup,
+            remove::{IOuterIndexRemover, OrderSequentialRemover},
+            ContextActions, InnerIndex, ListKey, ListSlot, OuterIndex, RestingOrderIndex, Side,
         },
     };
 
@@ -115,7 +103,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_pending_write_is_true_if_best_price_does_not_change_in_asks() {
+    fn test_read_asks_across_groups() {
         let ctx = &mut ArbContext::new();
         let side = Side::Ask;
 
@@ -123,19 +111,32 @@ mod tests {
         let mut bitmap_group_0 = BitmapGroup::default();
         bitmap_group_0.inner[0] = 0b1000_0000; // Garbage bit
         bitmap_group_0.inner[1] = 0b0000_0101; // Best market price starts here
+        bitmap_group_0.inner[31] = 0b0000_0001;
         bitmap_group_0.write_to_slot(ctx, &outer_index_0);
 
+        let outer_index_1 = OuterIndex::new(2);
+        let mut bitmap_group_1 = BitmapGroup::default();
+        bitmap_group_1.inner[0] = 0b0000_0001;
+        bitmap_group_1.write_to_slot(ctx, &outer_index_1);
+
+        let outer_index_2 = OuterIndex::new(5);
+        let mut bitmap_group_2 = BitmapGroup::default();
+        bitmap_group_2.inner[0] = 0b0000_0001;
+        bitmap_group_2.write_to_slot(ctx, &outer_index_2);
+
         let mut list_slot = ListSlot::default();
-        list_slot.set(0, outer_index_0);
+        list_slot.set(0, outer_index_2);
+        list_slot.set(1, outer_index_1);
+        list_slot.set(2, outer_index_0);
         list_slot.write_to_slot(ctx, &ListKey { index: 0, side });
 
-        let mut outer_index_count = 1;
+        let mut outer_index_count = 3;
         let mut best_ask_price = Ticks::from_indices(outer_index_0, InnerIndex::new(1));
 
         let mut remover =
             OrderSequentialRemover::new(side, &mut best_ask_price, &mut outer_index_count);
 
-        // Read the first value
+        // Read the first value- garbage bit is ignored
         assert_eq!(
             remover.next(ctx).unwrap(),
             OrderId {
@@ -153,11 +154,39 @@ mod tests {
                 resting_order_index: RestingOrderIndex::new(2)
             }
         );
+        // pending write is true because the previous value was cleared yet best
+        // market price did not close
         assert_eq!(remover.pending_write, true);
 
-        // All active bits exhausted
-        assert_eq!(remover.next(ctx), None);
+        assert_eq!(
+            remover.next(ctx).unwrap(),
+            OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(31)),
+                resting_order_index: RestingOrderIndex::new(0)
+            }
+        );
         assert_eq!(remover.pending_write, false);
+
+        // All active bits on current group exhausted, move to next group
+        assert_eq!(
+            remover.next(ctx).unwrap(),
+            OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index_1, InnerIndex::new(0)),
+                resting_order_index: RestingOrderIndex::new(0)
+            }
+        );
+        assert_eq!(remover.pending_write, false);
+
+        // Move to final group
+        assert_eq!(
+            remover.next(ctx).unwrap(),
+            OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index_2, InnerIndex::new(0)),
+                resting_order_index: RestingOrderIndex::new(0)
+            }
+        );
+        assert_eq!(remover.pending_write, false);
+
         assert_eq!(
             remover
                 .outer_index_remover
@@ -165,21 +194,132 @@ mod tests {
                 .outer_index_count(),
             0
         );
+        assert_eq!(remover.outer_index().unwrap(), outer_index_2);
+
+        assert_eq!(remover.next(ctx), None);
+        assert_eq!(remover.pending_write, false);
+        assert_eq!(remover.outer_index(), None);
+
         // Best market price does not change when the last active bit is closed
         assert_eq!(
             remover.best_market_price_inner(),
-            Ticks::from_indices(outer_index_0, InnerIndex::new(1))
+            Ticks::from_indices(outer_index_2, InnerIndex::new(0))
         );
     }
 
     #[test]
-    fn test_read_asks() {
+    fn test_read_bids_across_groups() {
+        let ctx = &mut ArbContext::new();
+        let side = Side::Bid;
+
+        let outer_index_0 = OuterIndex::new(5);
+        let mut bitmap_group_0 = BitmapGroup::default();
+        bitmap_group_0.inner[0] = 0b1000_0000;
+        bitmap_group_0.inner[1] = 0b0000_0101; // Best market price starts here
+        bitmap_group_0.inner[31] = 0b0000_0001; // Garbage bit
+        bitmap_group_0.write_to_slot(ctx, &outer_index_0);
+
+        let outer_index_1 = OuterIndex::new(2);
+        let mut bitmap_group_1 = BitmapGroup::default();
+        bitmap_group_1.inner[31] = 0b0000_0001;
+        bitmap_group_1.write_to_slot(ctx, &outer_index_1);
+
+        let outer_index_2 = OuterIndex::new(1);
+        let mut bitmap_group_2 = BitmapGroup::default();
+        bitmap_group_2.inner[0] = 0b0000_0001;
+        bitmap_group_2.write_to_slot(ctx, &outer_index_2);
+
+        let mut list_slot = ListSlot::default();
+        list_slot.set(0, outer_index_2);
+        list_slot.set(1, outer_index_1);
+        list_slot.set(2, outer_index_0);
+        list_slot.write_to_slot(ctx, &ListKey { index: 0, side });
+
+        let mut outer_index_count = 3;
+        let mut best_ask_price = Ticks::from_indices(outer_index_0, InnerIndex::new(1));
+
+        let mut remover =
+            OrderSequentialRemover::new(side, &mut best_ask_price, &mut outer_index_count);
+
+        // Read the first value- garbage bit is ignored
+        assert_eq!(
+            remover.next(ctx).unwrap(),
+            OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(1)),
+                resting_order_index: RestingOrderIndex::new(0)
+            }
+        );
+        // assert_eq!(remover.pending_write, false);
+
+        // Read the next value and clear previous
+        assert_eq!(
+            remover.next(ctx).unwrap(),
+            OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(1)),
+                resting_order_index: RestingOrderIndex::new(2)
+            }
+        );
+        // pending write is true because the previous value was cleared yet best
+        // market price did not close
+        assert_eq!(remover.pending_write, true);
+
+        assert_eq!(
+            remover.next(ctx).unwrap(),
+            OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(0)),
+                resting_order_index: RestingOrderIndex::new(7)
+            }
+        );
+        assert_eq!(remover.pending_write, false);
+
+        // All active bits on current group exhausted, move to next group
+        assert_eq!(
+            remover.next(ctx).unwrap(),
+            OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index_1, InnerIndex::new(31)),
+                resting_order_index: RestingOrderIndex::new(0)
+            }
+        );
+        assert_eq!(remover.pending_write, false);
+
+        // Move to final group
+        assert_eq!(
+            remover.next(ctx).unwrap(),
+            OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index_2, InnerIndex::new(0)),
+                resting_order_index: RestingOrderIndex::new(0)
+            }
+        );
+        assert_eq!(remover.pending_write, false);
+
+        assert_eq!(
+            remover
+                .outer_index_remover
+                .active_outer_index_iterator
+                .outer_index_count(),
+            0
+        );
+        assert_eq!(remover.outer_index().unwrap(), outer_index_2);
+
+        assert_eq!(remover.next(ctx), None);
+        assert_eq!(remover.pending_write, false);
+        assert_eq!(remover.outer_index(), None);
+
+        // Best market price does not change when the last active bit is closed
+        assert_eq!(
+            remover.best_market_price_inner(),
+            Ticks::from_indices(outer_index_2, InnerIndex::new(0))
+        );
+    }
+
+    #[test]
+    fn test_commit() {
         let ctx = &mut ArbContext::new();
         let side = Side::Ask;
 
         let outer_index_0 = OuterIndex::new(1);
         let mut bitmap_group_0 = BitmapGroup::default();
-        bitmap_group_0.inner[0] = 0b0000_0001; // Garbage bit
+        bitmap_group_0.inner[0] = 0b1000_0000; // Garbage bit
         bitmap_group_0.inner[1] = 0b0000_0101; // Best market price starts here
         bitmap_group_0.inner[31] = 0b0000_0001;
         bitmap_group_0.write_to_slot(ctx, &outer_index_0);
@@ -189,47 +329,29 @@ mod tests {
         bitmap_group_1.inner[0] = 0b0000_0001;
         bitmap_group_1.write_to_slot(ctx, &outer_index_1);
 
-        let outer_index_2 = OuterIndex::new(2);
-        let mut bitmap_group_2 = BitmapGroup::default();
-        bitmap_group_2.inner[0] = 0b0000_0001;
-        bitmap_group_2.write_to_slot(ctx, &outer_index_2);
-
-        let outer_index_3 = OuterIndex::new(5);
-        let mut bitmap_group_3 = BitmapGroup::default();
-        bitmap_group_3.inner[0] = 0b0000_0001;
-        bitmap_group_3.write_to_slot(ctx, &outer_index_3);
-
         let mut list_slot = ListSlot::default();
-        list_slot.set(0, outer_index_3);
-        list_slot.set(1, outer_index_2);
-        list_slot.set(2, outer_index_1);
-        list_slot.set(3, outer_index_0);
+        list_slot.set(0, outer_index_1);
+        list_slot.set(1, outer_index_0);
         list_slot.write_to_slot(ctx, &ListKey { index: 0, side });
 
-        let mut outer_index_count = 4;
+        let mut outer_index_count = 2;
         let mut best_ask_price = Ticks::from_indices(outer_index_0, InnerIndex::new(1));
 
         let mut remover =
             OrderSequentialRemover::new(side, &mut best_ask_price, &mut outer_index_count);
 
-        // 1. Remove from best market price. This tick has more active bits
-        // so the best market price does not change. Pending write should be true.
-        assert_eq!(
-            remover.next(ctx).unwrap(),
-            OrderId {
-                price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(1)),
-                resting_order_index: RestingOrderIndex::new(0)
-            }
-        );
-        assert_eq!(remover.pending_write, true);
+        remover.next(ctx);
 
+        assert!(remover.outer_index().is_some());
         assert_eq!(
-            remover.next(ctx).unwrap(),
-            OrderId {
-                price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(1)),
-                resting_order_index: RestingOrderIndex::new(0)
-            }
+            remover
+                .outer_index_remover()
+                .active_outer_index_iterator()
+                .outer_index_count(),
+            1
         );
-        assert_eq!(remover.pending_write, true);
+
+        remover.commit(ctx);
+        assert_eq!(outer_index_count, 2);
     }
 }

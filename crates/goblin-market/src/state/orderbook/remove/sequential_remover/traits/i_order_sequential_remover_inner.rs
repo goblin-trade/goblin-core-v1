@@ -34,11 +34,17 @@ pub trait IOrderSequentialRemoverInner<'a> {
     /// Mutable reference to pending write
     fn pending_write_mut(&mut self) -> &mut bool;
 
-    /// Bitmap group must be written if active orders remain on the
-    /// best price even after closing the bit, i.e. the best market price
-    /// remains unchanged
-    fn update_pending_write(&mut self, best_price_unchanged: bool) {
-        *self.pending_write_mut() = best_price_unchanged;
+    /// Upates pending write state for bitmap group. If pending write is true
+    /// when reads have concluded then we must write the bitmap group to slot.
+    ///
+    /// # Arguments
+    ///
+    /// * `is_first_read` - Nothing is removed on the first read since there is no
+    /// previous value.
+    /// * `best_price_unchanged` - If best market price did not update after closing
+    /// the current bit, we must write the group to slot.
+    fn update_pending_write(&mut self, is_first_read: bool, best_price_unchanged: bool) {
+        *self.pending_write_mut() = !is_first_read && best_price_unchanged;
     }
 
     // Getters
