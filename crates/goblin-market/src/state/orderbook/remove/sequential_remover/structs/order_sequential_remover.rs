@@ -5,7 +5,7 @@ use crate::{
             GroupPositionRemover, IGroupPositionSequentialRemover, IOrderSequentialRemover,
             IOrderSequentialRemoverInner, IOuterIndexSequentialRemover,
         },
-        Side,
+        BestPriceAndIndexCount, Side,
     },
 };
 
@@ -21,7 +21,7 @@ pub struct OrderSequentialRemover<'a> {
     pub group_position_remover: GroupPositionRemover,
 
     /// Reference to best market price for current side from market state
-    pub best_market_price: &'a mut Ticks,
+    pub best_market_price_inner: &'a mut Ticks,
 
     /// Whether the bitmap group is pending a write
     pub pending_write: bool,
@@ -37,7 +37,19 @@ impl<'a> OrderSequentialRemover<'a> {
             outer_index_remover: OuterIndexSequentialRemover::new(side, outer_index_count),
             group_position_remover: GroupPositionRemover::new(side),
             pending_write: false,
-            best_market_price,
+            best_market_price_inner: best_market_price,
+        }
+    }
+
+    pub fn new_v2(side: Side, best_price_and_index_count: &'a mut BestPriceAndIndexCount) -> Self {
+        OrderSequentialRemover {
+            outer_index_remover: OuterIndexSequentialRemover::new(
+                side,
+                &mut best_price_and_index_count.outer_index_count,
+            ),
+            group_position_remover: GroupPositionRemover::new(side),
+            pending_write: false,
+            best_market_price_inner: &mut best_price_and_index_count.best_price_inner,
         }
     }
 }
@@ -61,12 +73,12 @@ impl<'a> IOrderSequentialRemoverInner<'a> for OrderSequentialRemover<'a> {
         &mut self.outer_index_remover
     }
 
-    fn best_market_price(&self) -> Ticks {
-        *self.best_market_price
+    fn best_market_price_inner(&self) -> Ticks {
+        *self.best_market_price_inner
     }
 
-    fn best_market_price_mut(&mut self) -> &mut Ticks {
-        &mut self.best_market_price
+    fn best_market_price_inner_mut(&mut self) -> &mut Ticks {
+        &mut self.best_market_price_inner
     }
 
     fn pending_write(&self) -> bool {

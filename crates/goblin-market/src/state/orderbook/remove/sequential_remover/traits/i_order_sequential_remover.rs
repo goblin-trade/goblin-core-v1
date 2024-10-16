@@ -17,10 +17,9 @@ pub trait IOrderSequentialRemover<'a>: IOrderSequentialRemoverInner<'a> {
     /// There is no need to clear garbage bits since we always begin from
     /// best market price
     fn next(&mut self, ctx: &mut ArbContext) -> Option<OrderId> {
-        let best_market_price = self.best_market_price();
+        let best_market_price = self.best_market_price_inner();
         let no_previous_value = self.outer_index().is_none();
 
-        // need last order id
         loop {
             let group_is_uninitialized_or_finished =
                 self.group_position_remover().is_uninitialized_or_finished();
@@ -52,7 +51,7 @@ pub trait IOrderSequentialRemover<'a>: IOrderSequentialRemoverInner<'a> {
                         self.update_pending_write(best_price_unchanged);
 
                         // Update best market price
-                        *self.best_market_price_mut() = next_order_price;
+                        *self.best_market_price_inner_mut() = next_order_price;
 
                         return Some(next_order_id);
                     }
@@ -167,13 +166,8 @@ mod tests {
             0
         );
         // Best market price does not change when the last active bit is closed
-        // How to deal with garbage bits during insertion if market price was
-        // not cleared?
-        // * Must add a condition to check for outer index count. If this count is
-        // zero then best market price has no meaning. We must take a best market
-        // price as Tick::MAX_FOR_SIDE to clear garbage bits
         assert_eq!(
-            remover.best_market_price(),
+            remover.best_market_price_inner(),
             Ticks::from_indices(outer_index_0, InnerIndex::new(1))
         );
     }

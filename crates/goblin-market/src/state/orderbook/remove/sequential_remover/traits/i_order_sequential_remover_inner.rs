@@ -23,10 +23,10 @@ pub trait IOrderSequentialRemoverInner<'a> {
     fn outer_index_remover_mut(&mut self) -> &mut impl IOuterIndexSequentialRemover<'a>;
 
     /// The market price for current side from market state
-    fn best_market_price(&self) -> Ticks;
+    fn best_market_price_inner(&self) -> Ticks;
 
     /// Reference to best market price for current side from market state
-    fn best_market_price_mut(&mut self) -> &mut Ticks;
+    fn best_market_price_inner_mut(&mut self) -> &mut Ticks;
 
     /// Whether the bitmap group is pending a write
     fn pending_write(&self) -> bool;

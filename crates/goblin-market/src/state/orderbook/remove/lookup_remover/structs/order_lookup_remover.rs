@@ -59,11 +59,11 @@ impl<'a> IOrderSequentialRemoverInner<'a> for OrderLookupRemover<'a> {
         &mut self.outer_index_remover
     }
 
-    fn best_market_price(&self) -> Ticks {
+    fn best_market_price_inner(&self) -> Ticks {
         *self.best_market_price
     }
 
-    fn best_market_price_mut(&mut self) -> &mut Ticks {
+    fn best_market_price_inner_mut(&mut self) -> &mut Ticks {
         &mut self.best_market_price
     }
 
