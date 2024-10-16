@@ -2,7 +2,7 @@ use crate::{
     quantities::Ticks,
     state::{
         order::order_id::OrderId,
-        remove::{IOrderLookupRemover, OrderLookupRemover},
+        remove::{IOrderLookupRemover, IOrderLookupRemoverInner, OrderLookupRemover},
         ArbContext, MarketState, Side,
     },
 };

@@ -8,12 +8,22 @@ use alloc::vec::Vec;
 ///
 /// Indices are written from the left (start) to right.
 ///
+/// # Arguments
+///
+/// * `ctx`
+/// * `side`
+/// * `cache` - Cached outer indices to be written to slot
+/// * `unread_count` - Number of outer indices in the index list that were not
+/// read yet.
+/// * `cached_list_slot` - The last read list slot where remove or insert operations
+/// were performed
+///
 pub fn write_index_list(
     ctx: &mut ArbContext,
     side: Side,
     cache: &mut Vec<OuterIndex>,
     unread_count: u16,
-    first_list_slot: Option<ListSlot>,
+    cached_list_slot: Option<ListSlot>,
 ) {
     if cache.is_empty() {
         return;
@@ -27,7 +37,7 @@ pub fn write_index_list(
     // TODO avoid inclusive range loop, internally they need extra state variable
     for slot_index in start_slot_index..=final_slot_index_inclusive {
         let (mut list_slot, start_relative_index) = if slot_index == start_slot_index {
-            (first_list_slot.unwrap_or_default(), unread_count % 16)
+            (cached_list_slot.unwrap_or_default(), unread_count % 16)
         } else {
             (ListSlot::default(), 0)
         };

@@ -354,4 +354,6 @@ mod tests {
         remover.commit(ctx);
         assert_eq!(outer_index_count, 2);
     }
+
+    // TODO random input tests with quickcheck
 }
