@@ -47,7 +47,7 @@ pub trait IOrderLookupRemover<'a> {
         let outer_index = price.outer_index();
         let previous_outer_index = self.outer_index();
 
-        if *self.pending_write_mut() {
+        if self.pending_write() {
             // previous_outer_index is guaranteed to exist if pending_write is true
             let previous_outer_index = previous_outer_index.unwrap();
             if previous_outer_index != outer_index {

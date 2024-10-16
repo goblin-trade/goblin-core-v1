@@ -108,7 +108,7 @@ pub fn place_multiple_new_orders(
                 }
                 // Price can't exceed max
                 require!(
-                    condensed_order.price_in_ticks <= Ticks::new(MAX_TICK),
+                    condensed_order.price_in_ticks <= Ticks::new(MAX_TICK as u64),
                     GoblinError::PricesNotInOrder(PricesNotInOrder {})
                 );
             }

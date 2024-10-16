@@ -15,7 +15,7 @@ use crate::parameters::{
     BASE_DECIMALS_TO_IGNORE, BASE_LOT_SIZE, MAX_RAW_BASE_ATOMS, MAX_RAW_QUOTE_ATOMS,
     QUOTE_DECIMALS_TO_IGNORE, QUOTE_LOT_SIZE,
 };
-use crate::program::{GoblinError, GoblinResult, InvalidFeeCollector};
+use crate::program::{ExceedTickSize, GoblinError, GoblinResult, InvalidFeeCollector};
 use crate::require;
 use crate::state::Side;
 
@@ -399,9 +399,16 @@ pub struct Ticks {
     inner: u64,
 }
 
+// Discrete price unit (quote quantity per base quantity)
+// 16 bits from bitmap index, 5 bits from resting order index
+// Ticks can be fit within u32, but we're using u64 for convenience
+basic_u64!(Ticks, 21); // TODO impose limit elsewhere
+
+pub const MAX_TICK: u32 = 2097151; // 2^21 - 1
+
 impl Ticks {
     pub const BID_DEFAULT: Self = Ticks::MIN;
-    pub const ASK_DEFAULT: Self = Ticks::MAX;
+    pub const ASK_DEFAULT: Self = Ticks::MAX; // TODO should be equal to MAX_TICK
 
     pub fn default_for_side(side: Side) -> Self {
         match side {
@@ -409,19 +416,22 @@ impl Ticks {
             Side::Ask => Ticks::ASK_DEFAULT,
         }
     }
+
+    pub fn try_encode(value: u32) -> GoblinResult<Self> {
+        require!(
+            value <= MAX_TICK,
+            GoblinError::ExceedTickSize(ExceedTickSize {})
+        );
+
+        Ok(Ticks {
+            inner: value as u64,
+        })
+    }
 }
 
 // BaseLots have smaller max size than QuoteLots
 basic_u64!(QuoteLots, 64);
 basic_u64!(BaseLots, 64); // size limit imposed in RestingOrder::encode()
-
-// Discrete price unit (quote quantity per base quantity)
-// 16 bits from bitmap index, 5 bits from resting order index
-basic_u64!(Ticks, 21); // TODO impose limit elsewhere
-
-// limited_size_u64!(Ticks, 21, GoblinError::InvalidFeeCollector(InvalidFeeCollector {}));
-
-pub const MAX_TICK: u64 = 2097151; // 2^21 - 1
 
 // Quantities
 basic_u64_struct!(QuoteAtoms);

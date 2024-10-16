@@ -142,7 +142,7 @@ impl MarketState {
         // Externally ensure that tick values during insertion are within bounds.
         // This check below can be removed
         require!(
-            best_bid_price <= MAX_TICK && best_ask_price <= MAX_TICK,
+            best_bid_price <= MAX_TICK as u64 && best_ask_price <= MAX_TICK as u64,
             GoblinError::ExceedTickSize(ExceedTickSize {})
         );
 

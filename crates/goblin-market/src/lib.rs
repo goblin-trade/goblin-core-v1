@@ -178,7 +178,7 @@ impl GoblinMarket {
     pub fn place_ioc_order(
         &mut self,
         is_bid: bool,
-        price_in_ticks: u64,
+        price_in_ticks: u64, // TODO use u32 or FixedBytes<21> since max tick size is 2^21 - 1
         num_lots_in: u64,
         min_lots_to_fill: u64,
         self_trade_behavior: u8,
@@ -208,7 +208,7 @@ impl GoblinMarket {
 
         let mut order_packet = OrderPacket::ImmediateOrCancel {
             side: Side::from(is_bid),
-            price_in_ticks: Ticks::new(price_in_ticks),
+            price_in_ticks: Ticks::new(price_in_ticks), // TODO use Ticks::try_encode(value)
             num_base_lots,
             num_quote_lots,
             min_base_lots_to_fill,
@@ -227,7 +227,7 @@ impl GoblinMarket {
     pub fn place_ioc_order_v2(
         &mut self,
         is_bid: bool,
-        price_in_ticks: u64,
+        price_in_ticks: u64, // TODO use u32 or FixedBytes<21> since max tick size is 2^21 - 1
         num_lots_in: u64,
         min_lots_to_fill: u64,
         self_trade_behavior: u8,
@@ -295,7 +295,7 @@ impl GoblinMarket {
     pub fn place_limit_order(
         &mut self,
         is_bid: bool,
-        price_in_ticks: u64,
+        price_in_ticks: u64, // TODO use u32 or FixedBytes<21> since max tick size is 2^21 - 1
         num_base_lots: u64,
         self_trade_behavior: u8,
         match_limit: u64,
