@@ -68,7 +68,7 @@ pub trait IOrderSequentialRemover<'a>: IOrderSequentialRemoverInner<'a> {
     /// Slot writes- bitmap_group only. Market state is updated in memory, where the
     /// best market price and outer index count is updated.
     ///
-    /// TODO This function is identical to IOrderLookupRemover::commit(). Can we
+    /// TODO This function is similar to IOrderLookupRemover::commit(). Can we
     /// have a common interface for both?
     ///
     /// # Arguments
@@ -82,6 +82,7 @@ pub trait IOrderSequentialRemover<'a>: IOrderSequentialRemoverInner<'a> {
                     .write_to_slot(ctx, outer_index);
             }
 
+            // difference- ctx not passed to commit()
             self.outer_index_remover_mut().commit();
         }
     }
