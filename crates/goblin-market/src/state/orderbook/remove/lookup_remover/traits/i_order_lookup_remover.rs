@@ -77,9 +77,12 @@ pub trait IOrderLookupRemover<'a>: IOrderLookupRemoverInner<'a> {
                 // position behind the current group position. We need to increment
                 // in order to point last_group_position() to the current position,
                 // then decrement after the next active value is found.
+                // TODO handle overflow and underflow
                 self.group_position_remover_mut().increment_group_position();
-                self.sequential_order_remover().next(ctx);
-                self.group_position_remover_mut().decrement_group_position();
+                let next_order_id = self.sequential_order_remover().next(ctx);
+                if next_order_id.is_some() {
+                    self.group_position_remover_mut().decrement_group_position();
+                }
             } else {
                 // Closure will not change the best market price.
                 // This has 2 cases
@@ -183,6 +186,14 @@ mod tests {
             price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(31)),
             resting_order_index: RestingOrderIndex::new(0),
         };
+        let order_id_3 = OrderId {
+            price_in_ticks: Ticks::from_indices(outer_index_1, InnerIndex::new(0)),
+            resting_order_index: RestingOrderIndex::new(0),
+        };
+        let order_id_4 = OrderId {
+            price_in_ticks: Ticks::from_indices(outer_index_2, InnerIndex::new(0)),
+            resting_order_index: RestingOrderIndex::new(0),
+        };
 
         // 1- remove first
 
@@ -193,9 +204,15 @@ mod tests {
         remover.remove(ctx);
         assert_eq!(remover.order_id().unwrap(), order_id_1); // move to next active order
         assert_eq!(remover.pending_write, true);
+
+        // still on the same group
+        let mut expected_bitmap_group_0 = BitmapGroup::default();
+        expected_bitmap_group_0.inner[0] = 0b1000_0000; // Garbage bit
+        expected_bitmap_group_0.inner[1] = 0b0000_0100; // i = 0 deactivated
+        expected_bitmap_group_0.inner[31] = 0b0000_0001;
         assert_eq!(
-            remover.group_position_remover.inner.bitmap_group.inner[1],
-            0b0000_0100
+            remover.group_position_remover.inner.bitmap_group,
+            expected_bitmap_group_0
         );
         assert_eq!(
             *remover.best_market_price,
@@ -209,24 +226,76 @@ mod tests {
         assert_eq!(remover.pending_write, true); // because we didn't write after previous remove
 
         remover.remove(ctx);
-
-        // what happened to order id after removal?
-        // resting order index 3. It moved one position ahead.
-        // Sequential and lookup removers return different outer indices
-        // - Sequential: we need previous_outer_index() to get the last value because
-        // next() will cause a shift.
-        // - Lookup: it stays at the current position
-        println!("new order id {:?}", remover.order_id());
         assert_eq!(remover.order_id().unwrap(), order_id_2); // moved to the next active order id
-
         assert_eq!(remover.pending_write, false); // false because best market price updated
+        expected_bitmap_group_0.inner[1] = 0b0000_0000;
+        expected_bitmap_group_0.inner[31] = 0b0000_0001;
         assert_eq!(
-            remover.group_position_remover.inner.bitmap_group.inner[1],
-            0b0000_0000
+            remover.group_position_remover.inner.bitmap_group,
+            expected_bitmap_group_0
         );
         assert_eq!(
             *remover.best_market_price,
             order_id_2.price_in_ticks // changed
+        );
+
+        // 3- find and remove from same group with different inner index
+        assert_eq!(remover.find(ctx, order_id_2), true);
+        assert_eq!(remover.pending_write, false);
+
+        remover.remove(ctx);
+        assert_eq!(remover.order_id().unwrap(), order_id_3);
+        assert_eq!(remover.pending_write, false);
+
+        let mut expected_bitmap_group_1 = BitmapGroup::default();
+        expected_bitmap_group_1.inner[0] = 0b0000_0001;
+        assert_eq!(
+            remover.group_position_remover.inner.bitmap_group,
+            expected_bitmap_group_1
+        );
+        assert_eq!(
+            *remover.best_market_price,
+            order_id_3.price_in_ticks // changed
+        );
+
+        // 4- find and remove from next group
+        assert_eq!(remover.find(ctx, order_id_3), true);
+        assert_eq!(remover.pending_write, false);
+
+        remover.remove(ctx);
+        assert_eq!(remover.order_id().unwrap(), order_id_4);
+        assert_eq!(remover.pending_write, false);
+
+        let mut expected_bitmap_group_2 = BitmapGroup::default();
+        expected_bitmap_group_2.inner[0] = 0b0000_0001;
+        assert_eq!(
+            remover.group_position_remover.inner.bitmap_group,
+            expected_bitmap_group_2
+        );
+        assert_eq!(
+            *remover.best_market_price,
+            order_id_4.price_in_ticks // changed
+        );
+
+        // 5- find and remove last active order
+        assert_eq!(remover.find(ctx, order_id_4), true);
+        assert_eq!(remover.pending_write, false);
+
+        // underflow bug
+        remover.remove(ctx);
+        assert_eq!(remover.order_id(), None);
+        assert_eq!(remover.group_position(), None);
+        assert_eq!(remover.pending_write, false);
+
+        expected_bitmap_group_2 = BitmapGroup::default();
+        expected_bitmap_group_2.inner[0] = 0b0000_0000;
+        assert_eq!(
+            remover.group_position_remover.inner.bitmap_group,
+            expected_bitmap_group_2
+        );
+        assert_eq!(
+            *remover.best_market_price,
+            order_id_4.price_in_ticks // no change because last tick was exhausted
         );
     }
 }
