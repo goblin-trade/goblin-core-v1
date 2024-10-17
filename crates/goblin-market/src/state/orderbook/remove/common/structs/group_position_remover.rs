@@ -117,10 +117,17 @@ impl IGroupPositionLookupRemover for GroupPositionRemover {
         self.inner.group_position_iterator.index -= 1;
     }
 
+    // TODO remove
     fn is_only_active_bit_on_tick(&self, group_position: GroupPosition) -> bool {
         self.inner
             .bitmap_group
             .is_only_active_bit_on_tick(group_position)
+    }
+
+    fn is_lowest_active_bit_on_tick(&self, group_position: GroupPosition) -> bool {
+        self.inner
+            .bitmap_group
+            .is_lowest_active_bit_on_tick(group_position)
     }
 
     fn is_group_active(&self) -> bool {

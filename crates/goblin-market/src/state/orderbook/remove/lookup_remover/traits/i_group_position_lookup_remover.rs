@@ -28,6 +28,10 @@ pub trait IGroupPositionLookupRemover: IGroupPositionRemover {
     /// inner index and by extension price
     fn is_only_active_bit_on_tick(&self, group_position: GroupPosition) -> bool;
 
+    /// Whether `group_position` holds the lowest active bit on its corresponding
+    /// inner index and by extension aprice
+    fn is_lowest_active_bit_on_tick(&self, group_position: GroupPosition) -> bool;
+
     /// Whether the current bitmap group has any active positions
     fn is_group_active(&self) -> bool;
 }

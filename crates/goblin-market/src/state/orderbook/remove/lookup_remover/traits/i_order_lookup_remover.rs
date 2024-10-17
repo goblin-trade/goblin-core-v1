@@ -1,9 +1,6 @@
 use crate::state::{
     order::{group_position::GroupPosition, order_id::OrderId},
-    remove::{
-        IGroupPositionRemover, IGroupPositionSequentialRemover, IOrderSequentialRemover,
-        IOrderSequentialRemoverInner,
-    },
+    remove::{IGroupPositionRemover, IOrderSequentialRemover},
     ArbContext,
 };
 
@@ -63,9 +60,9 @@ pub trait IOrderLookupRemover<'a>: IOrderLookupRemoverInner<'a> {
             let price = order_id.price_in_ticks;
             let group_position = GroupPosition::from(&order_id);
 
-            // If market price will change on removal, i.e. current order id
-            // is the only active bit on best price use the sequential remover
-            // to deactivate it and discover the next best market price.
+            // Use the sequential remover if this is the outermost active tick.
+            // The sequential remover will paginate to the next active tick and
+            // update the best market price.
             //
             // Closure of best market price has two subcases
             // * Outermost group closed- sequential remover will decrement
@@ -74,8 +71,7 @@ pub trait IOrderLookupRemover<'a>: IOrderLookupRemoverInner<'a> {
             if price == *self.best_market_price_inner_mut()
                 && self
                     .group_position_remover()
-                    .is_only_active_bit_on_tick(group_position)
-            // can use is_lowest_active_bit_on_tick()?
+                    .is_lowest_active_bit_on_tick(group_position)
             {
                 // The sequential remover uses last_group_position() which is one
                 // position behind the current group position. We need to increment
@@ -86,13 +82,13 @@ pub trait IOrderLookupRemover<'a>: IOrderLookupRemoverInner<'a> {
                 self.group_position_remover_mut().decrement_group_position();
             } else {
                 // Closure will not change the best market price.
-                // This has 3 cases
-                // * Removal on the best price but there are other active bits present.
-                // * Removal on outermost bitmap group
+                // This has 2 cases
+                // * Removing any bit on the outermost group except for the outermost
+                // active tick
                 // * Removal on an inner bitmap group
                 //
-                // Group remains active in case 1 and 2, but it can close in
-                // case 3. If bitmap group remains active we need to write the pending
+                // Group remains active in case 1 but it can close in
+                // case 2. If bitmap group remains active we need to write the pending
                 // group to slot. Otherwise we can simply remove its outer index.
                 //
                 self.group_position_remover_mut().remove();
@@ -134,9 +130,8 @@ mod tests {
     use crate::{
         quantities::Ticks,
         state::{
-            bitmap_group::BitmapGroup,
-            remove::{IOuterIndexRemover, OrderLookupRemover, OrderSequentialRemover},
-            ContextActions, InnerIndex, ListKey, ListSlot, OuterIndex, RestingOrderIndex, Side,
+            bitmap_group::BitmapGroup, remove::OrderLookupRemover, ContextActions, InnerIndex,
+            ListKey, ListSlot, OuterIndex, RestingOrderIndex, Side,
         },
     };
 
@@ -196,7 +191,7 @@ mod tests {
         assert_eq!(remover.pending_write, false);
 
         remover.remove(ctx);
-        assert_eq!(remover.order_id().unwrap(), order_id_0);
+        assert_eq!(remover.order_id().unwrap(), order_id_1); // move to next active order
         assert_eq!(remover.pending_write, true);
         assert_eq!(
             remover.group_position_remover.inner.bitmap_group.inner[1],
@@ -204,7 +199,7 @@ mod tests {
         );
         assert_eq!(
             *remover.best_market_price,
-            Ticks::from_indices(outer_index_0, InnerIndex::new(1)) // no change in market price
+            order_id_1.price_in_ticks // no change in market price
         );
 
         // 2- remove last item from best market price
@@ -224,14 +219,14 @@ mod tests {
         println!("new order id {:?}", remover.order_id());
         assert_eq!(remover.order_id().unwrap(), order_id_2); // moved to the next active order id
 
-        // assert_eq!(remover.pending_write, false); // false because best market price updated
-        // assert_eq!(
-        //     remover.group_position_remover.inner.bitmap_group.inner[1],
-        //     0b0000_0000
-        // );
-        // assert_eq!(
-        //     *remover.best_market_price,
-        //     Ticks::from_indices(outer_index_0, InnerIndex::new(31)) // changed
-        // );
+        assert_eq!(remover.pending_write, false); // false because best market price updated
+        assert_eq!(
+            remover.group_position_remover.inner.bitmap_group.inner[1],
+            0b0000_0000
+        );
+        assert_eq!(
+            *remover.best_market_price,
+            order_id_2.price_in_ticks // changed
+        );
     }
 }

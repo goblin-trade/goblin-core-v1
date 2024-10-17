@@ -159,6 +159,21 @@ impl BitmapGroup {
         bitmap.is_only_active_bit(group_position.resting_order_index)
     }
 
+    /// Checks if the bit at the given group position is the lowest active bit at its price.
+    ///
+    /// # Arguments
+    ///
+    /// * `group_position` - The group position to check.
+    ///
+    /// # Returns
+    ///
+    /// * `true` if the bit at `group_position` is the only active bit.
+    /// * `false` otherwise.
+    pub fn is_lowest_active_bit_on_tick(&self, group_position: GroupPosition) -> bool {
+        let bitmap = self.get_bitmap(&group_position.inner_index);
+        bitmap.is_lowest_active_bit(group_position.resting_order_index)
+    }
+
     /// Clear garbage bits in the bitmap group that fall between best market prices
     ///
     /// # Arguments
@@ -213,23 +228,20 @@ impl Bitmap<'_> {
         (*self.inner & (1 << index.as_u8())) != 0
     }
 
-    // /// Checks whether the given index is active and is the best (earliest)
-    // /// active order, i.e. no active order exists at a lower index
-    // ///
-    // /// # Algorithm
-    // ///
-    // /// * The mask clears all bits with a higher relative index than i.
-    // /// For example 1000_0100 will have a mask 0000_0111 resulting in 0000_0100.
-    // /// * Ensure that there are no active bits below i. This is true if the
-    // /// result equals exactly 2^i or 1 << i.
-    // pub fn is_best_active_index(&self, index: RestingOrderIndex) -> bool {
-    //     let i = index.as_u8();
-    //     // The below mask overflows for i = 7 so take longer route
-    //     // let mask = (1 << (i + 1)) - 1;
-    //     let mask = (1 << i) + ((1 << i) - 1);
-
-    //     (*self.inner & mask) == (1 << i)
-    // }
+    /// Checks whether the given index is active and is the best (earliest)
+    /// active order, i.e. no active order exists at a lower index
+    ///
+    /// # Algorithm
+    ///
+    /// * The mask clears all bits with a higher relative index than i.
+    /// For example 1000_0100 will have a mask 0000_0111 resulting in 0000_0100.
+    /// * Ensure that there are no active bits below i. This is true if the
+    /// result equals exactly 2^i or 1 << i.
+    pub fn is_lowest_active_bit(&self, index: RestingOrderIndex) -> bool {
+        let i = index.as_u8();
+        let mask = (1 << i) + ((1 << i) - 1); // long form of (1 << (i + 1)) - 1 to avoid overflow
+        (*self.inner & mask) == (1 << i)
+    }
 
     /// Checks if the bit at the given index is the only active bit in the bitmap.
     ///
@@ -450,6 +462,48 @@ mod tests {
 
             bitmap_group.inner[starting_index.as_usize()] = 0b00000001;
             assert_eq!(bitmap_group.is_inactive(side, Some(starting_index)), false);
+        }
+    }
+
+    mod is_lowest_active_bit {
+        use super::*;
+
+        #[test]
+        fn test_is_lowest_active_bit_when_single_bit_is_active() {
+            let bitmap = Bitmap {
+                inner: &0b0000_0010,
+            };
+            assert_eq!(
+                bitmap.is_lowest_active_bit(RestingOrderIndex::new(0)),
+                false
+            );
+            assert_eq!(bitmap.is_lowest_active_bit(RestingOrderIndex::new(1)), true);
+
+            for i in 2..8 {
+                assert_eq!(
+                    bitmap.is_lowest_active_bit(RestingOrderIndex::new(i)),
+                    false
+                );
+            }
+        }
+
+        #[test]
+        fn test_is_lowest_active_bit_when_multiple_bits_are_active() {
+            let bitmap = Bitmap {
+                inner: &0b0100_0110,
+            };
+            assert_eq!(
+                bitmap.is_lowest_active_bit(RestingOrderIndex::new(0)),
+                false
+            );
+            assert_eq!(bitmap.is_lowest_active_bit(RestingOrderIndex::new(1)), true);
+
+            for i in 2..8 {
+                assert_eq!(
+                    bitmap.is_lowest_active_bit(RestingOrderIndex::new(i)),
+                    false
+                );
+            }
         }
     }
 
