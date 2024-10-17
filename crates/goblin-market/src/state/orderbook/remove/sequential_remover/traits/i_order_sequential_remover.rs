@@ -27,6 +27,8 @@ pub trait IOrderSequentialRemover<'a>: IOrderSequentialRemoverInner<'a> {
                         self.group_position_remover_mut()
                             .load_outermost_group(ctx, best_market_price);
                     } else if group_is_uninitialized_or_finished {
+                        // uninitialized case is reached only when next() is called
+                        // for the first time.
                         self.group_position_remover_mut()
                             .load_outer_index(ctx, outer_index);
                     }

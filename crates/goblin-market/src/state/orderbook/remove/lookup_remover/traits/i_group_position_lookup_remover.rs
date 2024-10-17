@@ -15,8 +15,13 @@ pub trait IGroupPositionLookupRemover: IGroupPositionRemover {
     /// before deactivation
     fn remove(&mut self);
 
+    /// Increment so that last group position points to the current position.
+    /// When index = 255, i.e. we cannot increment further then set finished = true.
     fn increment_group_position(&mut self);
 
+    /// Decrement to send last group position one place behind the current position.
+    /// When finished = true, index equals 0 so we cannot decrement. This case happens
+    /// when all active bits are traversed.
     fn decrement_group_position(&mut self);
 
     // Getters

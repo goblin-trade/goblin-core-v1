@@ -1,9 +1,6 @@
 use crate::state::{
     order::{group_position::GroupPosition, order_id::OrderId},
-    remove::{
-        IGroupPositionRemover, IGroupPositionSequentialRemover, IOrderSequentialRemover,
-        IOrderSequentialRemoverInner,
-    },
+    remove::{IGroupPositionRemover, IOrderSequentialRemover},
     ArbContext,
 };
 
@@ -76,30 +73,11 @@ pub trait IOrderLookupRemover<'a>: IOrderLookupRemoverInner<'a> {
                     .group_position_remover()
                     .is_lowest_active_bit_on_tick(group_position)
             {
-                // The sequential remover uses last_group_position() which is one
-                // position behind the current group position. We need to increment
-                // in order to point last_group_position() to the current position,
-                // then decrement after the next active value is found.
-                // TODO handle overflow and underflow
-
-                // This overflows if position is already 255
+                // Convert group_position() into last_group_position() by decrementing
+                // to use the sequential remover, then increment it back.
                 self.group_position_remover_mut().increment_group_position();
-
-                #[cfg(test)]
-                println!("group position inside {:?}", self.group_position());
-
-                #[cfg(test)]
-                println!(
-                    "last group position inside {:?}",
-                    self.sequential_order_remover()
-                        .group_position_remover()
-                        .last_group_position()
-                );
-
-                let next_order_id = self.sequential_order_remover().next(ctx);
-                if next_order_id.is_some() {
-                    self.group_position_remover_mut().decrement_group_position();
-                }
+                self.sequential_order_remover().next(ctx);
+                self.group_position_remover_mut().decrement_group_position();
             } else {
                 // Closure will not change the best market price.
                 // This has 2 cases
@@ -301,7 +279,6 @@ mod tests {
         assert_eq!(remover.find(ctx, order_id_4), true);
         assert_eq!(remover.pending_write, false);
 
-        // underflow bug
         remover.remove(ctx);
         assert_eq!(remover.order_id(), None);
         assert_eq!(remover.group_position(), None);
@@ -356,6 +333,15 @@ mod tests {
 
         assert_eq!(remover.find(ctx, order_id_0), true);
         remover.remove(ctx);
+
+        println!("group position {:?}", remover.group_position());
+        println!(
+            "last group position {:?}",
+            remover
+                .sequential_order_remover()
+                .group_position_remover()
+                .last_group_position()
+        );
 
         assert_eq!(remover.order_id().unwrap(), order_id_1); // move to next active order
         assert_eq!(*remover.best_market_price, order_id_1.price_in_ticks);
