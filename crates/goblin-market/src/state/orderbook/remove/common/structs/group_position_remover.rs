@@ -126,9 +126,6 @@ impl IGroupPositionLookupRemover for GroupPositionRemover {
         if !self.is_finished() {
             self.inner.group_position_iterator.index -= 1;
         }
-        // if self.inner.group_position_iterator.index > 0 {
-        //     self.inner.group_position_iterator.index -= 1;
-        // }
     }
 
     // TODO remove

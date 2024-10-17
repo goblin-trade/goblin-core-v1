@@ -371,6 +371,40 @@ mod tests {
             assert_eq!(remover.order_id().unwrap(), order_id_1); // move to next active order
             assert_eq!(*remover.best_market_price, order_id_1.price_in_ticks);
         }
+
+        #[test]
+        fn test_no_underflow_in_sequential_removes() {
+            // index = 0 is reached when next() by wrapping addition on index = 255
+            // when we reach the end of the group without finding any active bit.
+            let ctx = &mut ArbContext::new();
+            let side = Side::Ask;
+
+            let outer_index_0 = OuterIndex::new(1);
+            let mut bitmap_group_0 = BitmapGroup::default();
+            bitmap_group_0.inner[31] = 0b0100_0000;
+            bitmap_group_0.write_to_slot(ctx, &outer_index_0);
+
+            let mut list_slot = ListSlot::default();
+            list_slot.set(0, outer_index_0);
+            list_slot.write_to_slot(ctx, &ListKey { index: 0, side });
+
+            let mut outer_index_count = 1;
+
+            let order_id_0 = OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(31)),
+                resting_order_index: RestingOrderIndex::new(6),
+            };
+            let mut best_ask_price = order_id_0.price_in_ticks;
+
+            let mut remover =
+                OrderLookupRemover::new(side, &mut best_ask_price, &mut outer_index_count);
+
+            assert_eq!(remover.find(ctx, order_id_0), true);
+            remover.remove(ctx);
+
+            assert_eq!(remover.order_id(), None); // move to next active order
+            assert_eq!(*remover.best_market_price, order_id_0.price_in_ticks);
+        }
     }
 
     mod random_removals {
