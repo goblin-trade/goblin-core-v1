@@ -15,6 +15,10 @@ pub trait IGroupPositionLookupRemover: IGroupPositionRemover {
     /// before deactivation
     fn remove(&mut self);
 
+    fn increment_group_position(&mut self);
+
+    fn decrement_group_position(&mut self);
+
     // Getters
 
     /// The group position that was looked up

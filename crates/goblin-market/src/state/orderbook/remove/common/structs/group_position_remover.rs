@@ -109,6 +109,14 @@ impl IGroupPositionLookupRemover for GroupPositionRemover {
         self.inner.group_position_iterator.group_position()
     }
 
+    fn increment_group_position(&mut self) {
+        self.inner.group_position_iterator.index += 1;
+    }
+
+    fn decrement_group_position(&mut self) {
+        self.inner.group_position_iterator.index -= 1;
+    }
+
     fn is_only_active_bit_on_tick(&self, group_position: GroupPosition) -> bool {
         self.inner
             .bitmap_group
