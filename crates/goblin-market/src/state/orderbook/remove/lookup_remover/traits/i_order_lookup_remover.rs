@@ -1,6 +1,9 @@
 use crate::state::{
     order::{group_position::GroupPosition, order_id::OrderId},
-    remove::{IGroupPositionRemover, IOrderSequentialRemover},
+    remove::{
+        IGroupPositionRemover, IGroupPositionSequentialRemover, IOrderSequentialRemover,
+        IOrderSequentialRemoverInner,
+    },
     ArbContext,
 };
 
@@ -78,7 +81,21 @@ pub trait IOrderLookupRemover<'a>: IOrderLookupRemoverInner<'a> {
                 // in order to point last_group_position() to the current position,
                 // then decrement after the next active value is found.
                 // TODO handle overflow and underflow
+
+                // This overflows if position is already 255
                 self.group_position_remover_mut().increment_group_position();
+
+                #[cfg(test)]
+                println!("group position inside {:?}", self.group_position());
+
+                #[cfg(test)]
+                println!(
+                    "last group position inside {:?}",
+                    self.sequential_order_remover()
+                        .group_position_remover()
+                        .last_group_position()
+                );
+
                 let next_order_id = self.sequential_order_remover().next(ctx);
                 if next_order_id.is_some() {
                     self.group_position_remover_mut().decrement_group_position();
@@ -133,8 +150,11 @@ mod tests {
     use crate::{
         quantities::Ticks,
         state::{
-            bitmap_group::BitmapGroup, remove::OrderLookupRemover, ContextActions, InnerIndex,
-            ListKey, ListSlot, OuterIndex, RestingOrderIndex, Side,
+            bitmap_group::BitmapGroup,
+            remove::{
+                IGroupPositionSequentialRemover, IOrderSequentialRemoverInner, OrderLookupRemover,
+            },
+            ContextActions, InnerIndex, ListKey, ListSlot, OuterIndex, RestingOrderIndex, Side,
         },
     };
 
@@ -297,5 +317,47 @@ mod tests {
             *remover.best_market_price,
             order_id_4.price_in_ticks // no change because last tick was exhausted
         );
+    }
+
+    #[test]
+    fn test_no_overflow_in_sequential_removes() {
+        let ctx = &mut ArbContext::new();
+        let side = Side::Ask;
+
+        let outer_index_0 = OuterIndex::new(1);
+        let mut bitmap_group_0 = BitmapGroup::default();
+        bitmap_group_0.inner[31] = 0b1000_0000;
+        bitmap_group_0.write_to_slot(ctx, &outer_index_0);
+
+        let outer_index_1 = OuterIndex::new(2);
+        let mut bitmap_group_1 = BitmapGroup::default();
+        bitmap_group_1.inner[0] = 0b0000_0001;
+        bitmap_group_1.write_to_slot(ctx, &outer_index_1);
+
+        let mut list_slot = ListSlot::default();
+        list_slot.set(0, outer_index_1);
+        list_slot.set(1, outer_index_0);
+        list_slot.write_to_slot(ctx, &ListKey { index: 0, side });
+
+        let mut outer_index_count = 2;
+
+        let order_id_0 = OrderId {
+            price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(31)),
+            resting_order_index: RestingOrderIndex::new(7),
+        };
+        let order_id_1 = OrderId {
+            price_in_ticks: Ticks::from_indices(outer_index_1, InnerIndex::new(0)),
+            resting_order_index: RestingOrderIndex::new(0),
+        };
+        let mut best_ask_price = order_id_0.price_in_ticks;
+
+        let mut remover =
+            OrderLookupRemover::new(side, &mut best_ask_price, &mut outer_index_count);
+
+        assert_eq!(remover.find(ctx, order_id_0), true);
+        remover.remove(ctx);
+
+        assert_eq!(remover.order_id().unwrap(), order_id_1); // move to next active order
+        assert_eq!(*remover.best_market_price, order_id_1.price_in_ticks);
     }
 }

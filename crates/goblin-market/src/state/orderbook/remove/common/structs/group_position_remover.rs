@@ -110,7 +110,11 @@ impl IGroupPositionLookupRemover for GroupPositionRemover {
     }
 
     fn increment_group_position(&mut self) {
-        self.inner.group_position_iterator.index += 1;
+        if self.inner.group_position_iterator.index < 255 {
+            self.inner.group_position_iterator.index += 1;
+        } else {
+            self.inner.group_position_iterator.finished = true;
+        }
     }
 
     fn decrement_group_position(&mut self) {
