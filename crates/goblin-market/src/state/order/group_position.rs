@@ -148,6 +148,18 @@ mod tests {
         assert_eq!(position_3.index_inclusive(Side::Bid), 7);
     }
 
+    #[test]
+    fn get_for_zero_index() {
+        let index_inclusive = 255;
+        let position_bid = GroupPosition::from_index_inclusive(Side::Bid, index_inclusive);
+        let position_ask = GroupPosition::from_index_inclusive(Side::Ask, index_inclusive);
+
+        println!(
+            "position_bid {:?}, position_ask {:?}",
+            position_bid, position_ask
+        );
+    }
+
     // #[test]
     // fn test_count_for_asks() {
     //     let side = Side::Ask;

@@ -110,11 +110,9 @@ impl IGroupPositionLookupRemover for GroupPositionRemover {
     }
 
     fn increment_group_position(&mut self) {
-        if self.inner.group_position_iterator.index < 255 {
-            self.inner.group_position_iterator.index += 1;
-        } else {
-            self.inner.group_position_iterator.finished = true;
-        }
+        self.inner.group_position_iterator.index =
+            self.inner.group_position_iterator.index.wrapping_add(1);
+        self.inner.group_position_iterator.finished = self.inner.group_position_iterator.index == 0;
     }
 
     fn decrement_group_position(&mut self) {
@@ -123,9 +121,9 @@ impl IGroupPositionLookupRemover for GroupPositionRemover {
         // Decrement only when `finished` is false. In the false case all bitmap groups
         // were read but no active position was found.
 
-        if !self.is_finished() {
-            self.inner.group_position_iterator.index -= 1;
-        }
+        self.inner.group_position_iterator.index =
+            self.inner.group_position_iterator.index.wrapping_sub(1);
+        self.inner.group_position_iterator.finished = false;
     }
 
     // TODO remove
