@@ -39,277 +39,515 @@ mod tests {
 
     use super::IGroupPositionLookupRemover;
 
-    #[test]
-    fn test_find_positions_for_asks() {
-        let ctx = &mut ArbContext::new();
-        let side = Side::Ask;
-        let mut remover = GroupPositionRemover::new(side);
+    mod test_find_and_remove {
+        use super::*;
 
-        let outer_index = OuterIndex::ONE;
-        let mut bitmap_group = BitmapGroup::default();
-        bitmap_group.inner[0] = 0b0000_0101;
-        bitmap_group.inner[31] = 0b1000_0000;
-        bitmap_group.write_to_slot(ctx, &outer_index);
-        remover.load_outer_index(ctx, outer_index);
+        #[test]
+        fn test_find_positions_for_asks() {
+            let ctx = &mut ArbContext::new();
+            let side = Side::Ask;
+            let mut remover = GroupPositionRemover::new(side);
 
-        // Position is active
-        let position_0 = GroupPosition {
-            inner_index: InnerIndex::new(0),
-            resting_order_index: RestingOrderIndex::new(0),
-        };
-        assert_eq!(remover.find(position_0), true);
+            let outer_index = OuterIndex::ONE;
+            let mut bitmap_group = BitmapGroup::default();
+            bitmap_group.inner[0] = 0b0000_0101;
+            bitmap_group.inner[31] = 0b1000_0000;
+            bitmap_group.write_to_slot(ctx, &outer_index);
+            remover.load_outer_index(ctx, outer_index);
 
-        assert_eq!(remover.looked_up_group_position().unwrap(), position_0);
+            // Position is active
+            let position_0 = GroupPosition {
+                inner_index: InnerIndex::new(0),
+                resting_order_index: RestingOrderIndex::new(0),
+            };
+            assert_eq!(remover.find(position_0), true);
 
-        assert_eq!(
-            remover
-                .active_group_position_iterator
-                .group_position_iterator
-                .next_index,
-            1
-        );
+            assert_eq!(remover.looked_up_group_position().unwrap(), position_0);
 
-        // Position is not active
-        let position_1 = GroupPosition {
-            inner_index: InnerIndex::new(0),
-            resting_order_index: RestingOrderIndex::new(1),
-        };
-        assert_eq!(remover.find(position_1), false);
-        assert_eq!(remover.looked_up_group_position().unwrap(), position_1);
-        assert_eq!(
-            remover
-                .active_group_position_iterator
-                .group_position_iterator
-                .next_index,
-            2
-        );
+            assert_eq!(
+                remover
+                    .active_group_position_iterator
+                    .group_position_iterator
+                    .next_index,
+                1
+            );
 
-        // Return to position 0
-        assert_eq!(remover.find(position_0), true);
-        assert_eq!(
-            remover
-                .active_group_position_iterator
-                .group_position_iterator
-                .next_index,
-            1
-        );
+            // Position is not active
+            let position_1 = GroupPosition {
+                inner_index: InnerIndex::new(0),
+                resting_order_index: RestingOrderIndex::new(1),
+            };
+            assert_eq!(remover.find(position_1), false);
+            assert_eq!(remover.looked_up_group_position().unwrap(), position_1);
+            assert_eq!(
+                remover
+                    .active_group_position_iterator
+                    .group_position_iterator
+                    .next_index,
+                2
+            );
 
-        // Another position that is active
-        let position_2 = GroupPosition {
-            inner_index: InnerIndex::new(0),
-            resting_order_index: RestingOrderIndex::new(2),
-        };
-        assert_eq!(remover.find(position_2), true);
-        assert_eq!(remover.looked_up_group_position().unwrap(), position_2);
-        assert_eq!(
-            remover
-                .active_group_position_iterator
-                .group_position_iterator
-                .next_index,
-            3
-        );
+            // Return to position 0
+            assert_eq!(remover.find(position_0), true);
+            assert_eq!(
+                remover
+                    .active_group_position_iterator
+                    .group_position_iterator
+                    .next_index,
+                1
+            );
 
-        // Last position
-        let position_3 = GroupPosition {
-            inner_index: InnerIndex::new(31),
-            resting_order_index: RestingOrderIndex::new(7),
-        };
-        assert_eq!(remover.find(position_3), true);
-        assert_eq!(remover.looked_up_group_position().unwrap(), position_3);
+            // Another position that is active
+            let position_2 = GroupPosition {
+                inner_index: InnerIndex::new(0),
+                resting_order_index: RestingOrderIndex::new(2),
+            };
+            assert_eq!(remover.find(position_2), true);
+            assert_eq!(remover.looked_up_group_position().unwrap(), position_2);
+            assert_eq!(
+                remover
+                    .active_group_position_iterator
+                    .group_position_iterator
+                    .next_index,
+                3
+            );
 
-        // Exhausted as we navigated to the last item
-        assert_eq!(
-            remover
-                .active_group_position_iterator
-                .group_position_iterator
-                .next_index,
-            255
-        );
-        assert_eq!(
-            remover
-                .active_group_position_iterator
-                .group_position_iterator
-                .exhausted,
-            true
-        );
-        assert_eq!(remover.is_exhausted(), true);
+            // Last position
+            let position_3 = GroupPosition {
+                inner_index: InnerIndex::new(31),
+                resting_order_index: RestingOrderIndex::new(7),
+            };
+            assert_eq!(remover.find(position_3), true);
+            assert_eq!(remover.looked_up_group_position().unwrap(), position_3);
+
+            // Exhausted as we navigated to the last item
+            assert_eq!(
+                remover
+                    .active_group_position_iterator
+                    .group_position_iterator
+                    .next_index,
+                255
+            );
+            assert_eq!(
+                remover
+                    .active_group_position_iterator
+                    .group_position_iterator
+                    .exhausted,
+                true
+            );
+            assert_eq!(remover.is_exhausted(), true);
+        }
+
+        #[test]
+        fn test_find_positions_for_bids() {
+            let ctx = &mut ArbContext::new();
+            let side = Side::Bid;
+            let mut remover = GroupPositionRemover::new(side);
+
+            let outer_index = OuterIndex::ONE;
+            let mut bitmap_group = BitmapGroup::default();
+            bitmap_group.inner[0] = 0b1000_0000;
+            bitmap_group.inner[31] = 0b0000_0101;
+            bitmap_group.write_to_slot(ctx, &outer_index);
+            remover.load_outer_index(ctx, outer_index);
+
+            // Position is active
+            let position_0 = GroupPosition {
+                inner_index: InnerIndex::new(31),
+                resting_order_index: RestingOrderIndex::new(0),
+            };
+            assert_eq!(remover.find(position_0), true);
+
+            assert_eq!(remover.looked_up_group_position().unwrap(), position_0);
+
+            assert_eq!(
+                remover
+                    .active_group_position_iterator
+                    .group_position_iterator
+                    .next_index,
+                1
+            );
+
+            // Position is not active
+            let position_1 = GroupPosition {
+                inner_index: InnerIndex::new(31),
+                resting_order_index: RestingOrderIndex::new(1),
+            };
+            assert_eq!(remover.find(position_1), false);
+            assert_eq!(remover.looked_up_group_position().unwrap(), position_1);
+            assert_eq!(
+                remover
+                    .active_group_position_iterator
+                    .group_position_iterator
+                    .next_index,
+                2
+            );
+
+            // Return to position 0
+            assert_eq!(remover.find(position_0), true);
+            assert_eq!(
+                remover
+                    .active_group_position_iterator
+                    .group_position_iterator
+                    .next_index,
+                1
+            );
+
+            // Another position that is active
+            let position_2 = GroupPosition {
+                inner_index: InnerIndex::new(31),
+                resting_order_index: RestingOrderIndex::new(2),
+            };
+            assert_eq!(remover.find(position_2), true);
+            assert_eq!(remover.looked_up_group_position().unwrap(), position_2);
+            assert_eq!(
+                remover
+                    .active_group_position_iterator
+                    .group_position_iterator
+                    .next_index,
+                3
+            );
+
+            // Last position
+            let position_3 = GroupPosition {
+                inner_index: InnerIndex::new(0),
+                resting_order_index: RestingOrderIndex::new(7),
+            };
+            assert_eq!(remover.find(position_3), true);
+            assert_eq!(remover.looked_up_group_position().unwrap(), position_3);
+
+            // Exhausted as we navigated to the last item
+            assert_eq!(
+                remover
+                    .active_group_position_iterator
+                    .group_position_iterator
+                    .next_index,
+                255
+            );
+            assert_eq!(
+                remover
+                    .active_group_position_iterator
+                    .group_position_iterator
+                    .exhausted,
+                true
+            );
+            assert_eq!(remover.is_exhausted(), true);
+        }
+
+        #[test]
+        fn test_remove_positions_for_asks() {
+            let ctx = &mut ArbContext::new();
+            let side = Side::Ask;
+            let mut remover = GroupPositionRemover::new(side);
+
+            let outer_index = OuterIndex::ONE;
+            let mut bitmap_group = BitmapGroup::default();
+            bitmap_group.inner[0] = 0b0000_0101;
+            bitmap_group.inner[31] = 0b1000_0000;
+            bitmap_group.write_to_slot(ctx, &outer_index);
+            remover.load_outer_index(ctx, outer_index);
+
+            let position_0 = GroupPosition {
+                inner_index: InnerIndex::new(0),
+                resting_order_index: RestingOrderIndex::new(0),
+            };
+            assert_eq!(remover.find(position_0), true);
+            remover.remove();
+            assert_eq!(
+                remover.active_group_position_iterator.bitmap_group.inner[0],
+                0b0000_0100
+            );
+
+            // Removal does not change group_position()
+            assert_eq!(remover.looked_up_group_position().unwrap(), position_0);
+
+            // Last position
+            let position_1 = GroupPosition {
+                inner_index: InnerIndex::new(31),
+                resting_order_index: RestingOrderIndex::new(7),
+            };
+            assert_eq!(remover.find(position_1), true);
+            remover.remove();
+            assert_eq!(
+                remover.active_group_position_iterator.bitmap_group.inner[31],
+                0b0000_0000
+            );
+            assert_eq!(remover.looked_up_group_position().unwrap(), position_1);
+        }
+
+        #[test]
+        fn test_remove_positions_for_bids() {
+            let ctx = &mut ArbContext::new();
+            let side = Side::Bid;
+            let mut remover = GroupPositionRemover::new(side);
+
+            let outer_index = OuterIndex::ONE;
+            let mut bitmap_group = BitmapGroup::default();
+            bitmap_group.inner[0] = 0b1000_0000;
+            bitmap_group.inner[31] = 0b0000_0101;
+            bitmap_group.write_to_slot(ctx, &outer_index);
+            remover.load_outer_index(ctx, outer_index);
+
+            let position_0 = GroupPosition {
+                inner_index: InnerIndex::new(31),
+                resting_order_index: RestingOrderIndex::new(0),
+            };
+            assert_eq!(remover.find(position_0), true);
+            remover.remove();
+            assert_eq!(
+                remover.active_group_position_iterator.bitmap_group.inner[31],
+                0b0000_0100
+            );
+
+            // Removal does not change group_position()
+            assert_eq!(remover.looked_up_group_position().unwrap(), position_0);
+
+            // Last position
+            let position_1 = GroupPosition {
+                inner_index: InnerIndex::new(0),
+                resting_order_index: RestingOrderIndex::new(7),
+            };
+            assert_eq!(remover.find(position_1), true);
+            remover.remove();
+            assert_eq!(
+                remover.active_group_position_iterator.bitmap_group.inner[0],
+                0b0000_0000
+            );
+            assert_eq!(remover.looked_up_group_position().unwrap(), position_1);
+        }
     }
 
-    #[test]
-    fn test_find_positions_for_bids() {
-        let ctx = &mut ArbContext::new();
-        let side = Side::Bid;
-        let mut remover = GroupPositionRemover::new(side);
+    mod lookup_first_then_sequentially_remove {
+        use super::*;
 
-        let outer_index = OuterIndex::ONE;
-        let mut bitmap_group = BitmapGroup::default();
-        bitmap_group.inner[0] = 0b1000_0000;
-        bitmap_group.inner[31] = 0b0000_0101;
-        bitmap_group.write_to_slot(ctx, &outer_index);
-        remover.load_outer_index(ctx, outer_index);
+        #[test]
+        fn test_lookup_ask_then_sequentially_remove() {
+            let ctx = &mut ArbContext::new();
+            let side = Side::Ask;
+            let mut remover = GroupPositionRemover::new(side);
 
-        // Position is active
-        let position_0 = GroupPosition {
-            inner_index: InnerIndex::new(31),
-            resting_order_index: RestingOrderIndex::new(0),
-        };
-        assert_eq!(remover.find(position_0), true);
+            let outer_index = OuterIndex::ONE;
+            let mut bitmap_group = BitmapGroup::default();
+            bitmap_group.inner[0] = 0b0000_0101;
+            bitmap_group.inner[1] = 0b0000_0010;
+            bitmap_group.inner[31] = 0b1000_0000;
+            bitmap_group.write_to_slot(ctx, &outer_index);
+            remover.load_outer_index(ctx, outer_index);
 
-        assert_eq!(remover.looked_up_group_position().unwrap(), position_0);
+            let position_0 = GroupPosition {
+                inner_index: InnerIndex::new(0),
+                resting_order_index: RestingOrderIndex::new(0),
+            };
+            let position_1 = GroupPosition {
+                inner_index: InnerIndex::new(0),
+                resting_order_index: RestingOrderIndex::new(2),
+            };
+            let position_2 = GroupPosition {
+                inner_index: InnerIndex::new(1),
+                resting_order_index: RestingOrderIndex::new(1),
+            };
+            let position_3 = GroupPosition {
+                inner_index: InnerIndex::new(31),
+                resting_order_index: RestingOrderIndex::new(7),
+            };
 
-        assert_eq!(
-            remover
-                .active_group_position_iterator
-                .group_position_iterator
-                .next_index,
-            1
-        );
+            assert_eq!(remover.find(position_0), true);
 
-        // Position is not active
-        let position_1 = GroupPosition {
-            inner_index: InnerIndex::new(31),
-            resting_order_index: RestingOrderIndex::new(1),
-        };
-        assert_eq!(remover.find(position_1), false);
-        assert_eq!(remover.looked_up_group_position().unwrap(), position_1);
-        assert_eq!(
-            remover
-                .active_group_position_iterator
-                .group_position_iterator
-                .next_index,
-            2
-        );
+            assert_eq!(remover.next().unwrap(), position_1);
+            assert_eq!(
+                remover.active_group_position_iterator.bitmap_group.inner[0],
+                0b0000_0100
+            );
 
-        // Return to position 0
-        assert_eq!(remover.find(position_0), true);
-        assert_eq!(
-            remover
-                .active_group_position_iterator
-                .group_position_iterator
-                .next_index,
-            1
-        );
+            assert_eq!(remover.next().unwrap(), position_2);
+            assert_eq!(
+                remover.active_group_position_iterator.bitmap_group.inner[0],
+                0b0000_0000
+            );
 
-        // Another position that is active
-        let position_2 = GroupPosition {
-            inner_index: InnerIndex::new(31),
-            resting_order_index: RestingOrderIndex::new(2),
-        };
-        assert_eq!(remover.find(position_2), true);
-        assert_eq!(remover.looked_up_group_position().unwrap(), position_2);
-        assert_eq!(
-            remover
-                .active_group_position_iterator
-                .group_position_iterator
-                .next_index,
-            3
-        );
+            assert_eq!(remover.next().unwrap(), position_3);
+            assert_eq!(
+                remover.active_group_position_iterator.bitmap_group.inner[1],
+                0b0000_0000
+            );
 
-        // Last position
-        let position_3 = GroupPosition {
-            inner_index: InnerIndex::new(0),
-            resting_order_index: RestingOrderIndex::new(7),
-        };
-        assert_eq!(remover.find(position_3), true);
-        assert_eq!(remover.looked_up_group_position().unwrap(), position_3);
+            assert_eq!(remover.next(), None);
+            assert_eq!(
+                remover.active_group_position_iterator.bitmap_group.inner[31],
+                0b0000_0000
+            );
+        }
 
-        // Exhausted as we navigated to the last item
-        assert_eq!(
-            remover
-                .active_group_position_iterator
-                .group_position_iterator
-                .next_index,
-            255
-        );
-        assert_eq!(
-            remover
-                .active_group_position_iterator
-                .group_position_iterator
-                .exhausted,
-            true
-        );
-        assert_eq!(remover.is_exhausted(), true);
-    }
+        #[test]
+        fn test_lookup_bid_then_sequentially_remove() {
+            let ctx = &mut ArbContext::new();
+            let side = Side::Bid;
+            let mut remover = GroupPositionRemover::new(side);
 
-    #[test]
-    fn test_remove_positions_for_asks() {
-        let ctx = &mut ArbContext::new();
-        let side = Side::Ask;
-        let mut remover = GroupPositionRemover::new(side);
+            let outer_index = OuterIndex::ONE;
+            let mut bitmap_group = BitmapGroup::default();
+            bitmap_group.inner[0] = 0b1000_0000;
+            bitmap_group.inner[1] = 0b0000_0010;
+            bitmap_group.inner[31] = 0b0000_0101;
+            bitmap_group.write_to_slot(ctx, &outer_index);
+            remover.load_outer_index(ctx, outer_index);
 
-        let outer_index = OuterIndex::ONE;
-        let mut bitmap_group = BitmapGroup::default();
-        bitmap_group.inner[0] = 0b0000_0101;
-        bitmap_group.inner[31] = 0b1000_0000;
-        bitmap_group.write_to_slot(ctx, &outer_index);
-        remover.load_outer_index(ctx, outer_index);
+            let position_0 = GroupPosition {
+                inner_index: InnerIndex::new(31),
+                resting_order_index: RestingOrderIndex::new(0),
+            };
+            let position_1 = GroupPosition {
+                inner_index: InnerIndex::new(31),
+                resting_order_index: RestingOrderIndex::new(2),
+            };
+            let position_2 = GroupPosition {
+                inner_index: InnerIndex::new(1),
+                resting_order_index: RestingOrderIndex::new(1),
+            };
+            let position_3 = GroupPosition {
+                inner_index: InnerIndex::new(0),
+                resting_order_index: RestingOrderIndex::new(7),
+            };
 
-        let position_0 = GroupPosition {
-            inner_index: InnerIndex::new(0),
-            resting_order_index: RestingOrderIndex::new(0),
-        };
-        assert_eq!(remover.find(position_0), true);
-        remover.remove();
-        assert_eq!(
-            remover.active_group_position_iterator.bitmap_group.inner[0],
-            0b0000_0100
-        );
+            assert_eq!(remover.find(position_0), true);
 
-        // Removal does not change group_position()
-        assert_eq!(remover.looked_up_group_position().unwrap(), position_0);
+            assert_eq!(remover.next().unwrap(), position_1);
+            assert_eq!(
+                remover.active_group_position_iterator.bitmap_group.inner[31],
+                0b0000_0100
+            );
 
-        // Last position
-        let position_1 = GroupPosition {
-            inner_index: InnerIndex::new(31),
-            resting_order_index: RestingOrderIndex::new(7),
-        };
-        assert_eq!(remover.find(position_1), true);
-        remover.remove();
-        assert_eq!(
-            remover.active_group_position_iterator.bitmap_group.inner[31],
-            0b0000_0000
-        );
-        assert_eq!(remover.looked_up_group_position().unwrap(), position_1);
-    }
+            assert_eq!(remover.next().unwrap(), position_2);
+            assert_eq!(
+                remover.active_group_position_iterator.bitmap_group.inner[31],
+                0b0000_0000
+            );
 
-    #[test]
-    fn test_remove_positions_for_bids() {
-        let ctx = &mut ArbContext::new();
-        let side = Side::Bid;
-        let mut remover = GroupPositionRemover::new(side);
+            assert_eq!(remover.next().unwrap(), position_3);
+            assert_eq!(
+                remover.active_group_position_iterator.bitmap_group.inner[1],
+                0b0000_0000
+            );
 
-        let outer_index = OuterIndex::ONE;
-        let mut bitmap_group = BitmapGroup::default();
-        bitmap_group.inner[0] = 0b1000_0000;
-        bitmap_group.inner[31] = 0b0000_0101;
-        bitmap_group.write_to_slot(ctx, &outer_index);
-        remover.load_outer_index(ctx, outer_index);
+            assert_eq!(remover.next(), None);
+            assert_eq!(
+                remover.active_group_position_iterator.bitmap_group.inner[0],
+                0b0000_0000
+            );
+        }
 
-        let position_0 = GroupPosition {
-            inner_index: InnerIndex::new(31),
-            resting_order_index: RestingOrderIndex::new(0),
-        };
-        assert_eq!(remover.find(position_0), true);
-        remover.remove();
-        assert_eq!(
-            remover.active_group_position_iterator.bitmap_group.inner[31],
-            0b0000_0100
-        );
+        #[test]
+        fn test_lookup_ask_sequentially_remove_then_lookup_again() {
+            let ctx = &mut ArbContext::new();
+            let side = Side::Ask;
+            let mut remover = GroupPositionRemover::new(side);
 
-        // Removal does not change group_position()
-        assert_eq!(remover.looked_up_group_position().unwrap(), position_0);
+            let outer_index = OuterIndex::ONE;
+            let mut bitmap_group = BitmapGroup::default();
+            bitmap_group.inner[0] = 0b0000_0101;
+            bitmap_group.inner[1] = 0b0000_0010;
+            bitmap_group.inner[31] = 0b1000_0000;
+            bitmap_group.write_to_slot(ctx, &outer_index);
+            remover.load_outer_index(ctx, outer_index);
 
-        // Last position
-        let position_1 = GroupPosition {
-            inner_index: InnerIndex::new(0),
-            resting_order_index: RestingOrderIndex::new(7),
-        };
-        assert_eq!(remover.find(position_1), true);
-        remover.remove();
-        assert_eq!(
-            remover.active_group_position_iterator.bitmap_group.inner[0],
-            0b0000_0000
-        );
-        assert_eq!(remover.looked_up_group_position().unwrap(), position_1);
+            let position_0 = GroupPosition {
+                inner_index: InnerIndex::new(0),
+                resting_order_index: RestingOrderIndex::new(0),
+            };
+            let position_1 = GroupPosition {
+                inner_index: InnerIndex::new(0),
+                resting_order_index: RestingOrderIndex::new(2),
+            };
+            let position_2 = GroupPosition {
+                inner_index: InnerIndex::new(1),
+                resting_order_index: RestingOrderIndex::new(1),
+            };
+            let position_3 = GroupPosition {
+                inner_index: InnerIndex::new(31),
+                resting_order_index: RestingOrderIndex::new(7),
+            };
+
+            assert_eq!(remover.find(position_0), true);
+
+            assert_eq!(remover.next().unwrap(), position_1);
+            assert_eq!(
+                remover.active_group_position_iterator.bitmap_group.inner[0],
+                0b0000_0100
+            );
+
+            assert_eq!(remover.next().unwrap(), position_2);
+            assert_eq!(
+                remover.active_group_position_iterator.bitmap_group.inner[0],
+                0b0000_0000
+            );
+
+            // skip removing position_2, lookup position 3
+            assert_eq!(remover.find(position_3), true);
+            assert_eq!(
+                remover.active_group_position_iterator.bitmap_group.inner[1],
+                0b0000_0010
+            );
+            assert_eq!(
+                remover.active_group_position_iterator.bitmap_group.inner[31],
+                0b1000_0000
+            );
+        }
+
+        #[test]
+        fn test_lookup_bid_sequentially_remove_then_lookup_again() {
+            let ctx = &mut ArbContext::new();
+            let side = Side::Bid;
+            let mut remover = GroupPositionRemover::new(side);
+
+            let outer_index = OuterIndex::ONE;
+            let mut bitmap_group = BitmapGroup::default();
+            bitmap_group.inner[0] = 0b1000_0000;
+            bitmap_group.inner[1] = 0b0000_0010;
+            bitmap_group.inner[31] = 0b0000_0101;
+            bitmap_group.write_to_slot(ctx, &outer_index);
+            remover.load_outer_index(ctx, outer_index);
+
+            let position_0 = GroupPosition {
+                inner_index: InnerIndex::new(31),
+                resting_order_index: RestingOrderIndex::new(0),
+            };
+            let position_1 = GroupPosition {
+                inner_index: InnerIndex::new(31),
+                resting_order_index: RestingOrderIndex::new(2),
+            };
+            let position_2 = GroupPosition {
+                inner_index: InnerIndex::new(1),
+                resting_order_index: RestingOrderIndex::new(1),
+            };
+            let position_3 = GroupPosition {
+                inner_index: InnerIndex::new(0),
+                resting_order_index: RestingOrderIndex::new(7),
+            };
+
+            assert_eq!(remover.find(position_0), true);
+
+            assert_eq!(remover.next().unwrap(), position_1);
+            assert_eq!(
+                remover.active_group_position_iterator.bitmap_group.inner[31],
+                0b0000_0100
+            );
+
+            assert_eq!(remover.next().unwrap(), position_2);
+            assert_eq!(
+                remover.active_group_position_iterator.bitmap_group.inner[31],
+                0b0000_0000
+            );
+
+            // skip removing position_2, lookup position 3
+            assert_eq!(remover.find(position_3), true);
+            assert_eq!(
+                remover.active_group_position_iterator.bitmap_group.inner[1],
+                0b0000_0010
+            );
+            assert_eq!(
+                remover.active_group_position_iterator.bitmap_group.inner[0],
+                0b1000_0000
+            );
+        }
     }
 }

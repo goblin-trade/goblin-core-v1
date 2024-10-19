@@ -1,10 +1,6 @@
 use crate::{
     quantities::Ticks,
-    state::{
-        order::{group_position::GroupPosition, order_id::OrderId},
-        remove::IOuterIndexRemover,
-        OuterIndex, Side,
-    },
+    state::{remove::IOuterIndexRemover, OuterIndex},
 };
 
 use super::{IGroupPositionSequentialRemover, IOuterIndexSequentialRemover};
