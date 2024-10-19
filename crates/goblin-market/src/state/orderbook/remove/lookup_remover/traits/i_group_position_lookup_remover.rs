@@ -61,7 +61,13 @@ mod tests {
 
         assert_eq!(remover.group_position().unwrap(), position_0);
 
-        assert_eq!(remover.inner.group_position_iterator.next_index, 1);
+        assert_eq!(
+            remover
+                .active_group_position_iterator
+                .group_position_iterator
+                .next_index,
+            1
+        );
 
         // Position is not active
         let position_1 = GroupPosition {
@@ -70,11 +76,23 @@ mod tests {
         };
         assert_eq!(remover.find(position_1), false);
         assert_eq!(remover.group_position().unwrap(), position_1);
-        assert_eq!(remover.inner.group_position_iterator.next_index, 2);
+        assert_eq!(
+            remover
+                .active_group_position_iterator
+                .group_position_iterator
+                .next_index,
+            2
+        );
 
         // Return to position 0
         assert_eq!(remover.find(position_0), true);
-        assert_eq!(remover.inner.group_position_iterator.next_index, 1);
+        assert_eq!(
+            remover
+                .active_group_position_iterator
+                .group_position_iterator
+                .next_index,
+            1
+        );
 
         // Another position that is active
         let position_2 = GroupPosition {
@@ -83,7 +101,13 @@ mod tests {
         };
         assert_eq!(remover.find(position_2), true);
         assert_eq!(remover.group_position().unwrap(), position_2);
-        assert_eq!(remover.inner.group_position_iterator.next_index, 3);
+        assert_eq!(
+            remover
+                .active_group_position_iterator
+                .group_position_iterator
+                .next_index,
+            3
+        );
 
         // Last position
         let position_3 = GroupPosition {
@@ -94,9 +118,21 @@ mod tests {
         assert_eq!(remover.group_position().unwrap(), position_3);
 
         // Exhausted as we navigated to the last item
-        assert_eq!(remover.inner.group_position_iterator.next_index, 255);
-        assert_eq!(remover.inner.group_position_iterator.exhausted, true);
-        assert_eq!(remover.is_finished(), true);
+        assert_eq!(
+            remover
+                .active_group_position_iterator
+                .group_position_iterator
+                .next_index,
+            255
+        );
+        assert_eq!(
+            remover
+                .active_group_position_iterator
+                .group_position_iterator
+                .exhausted,
+            true
+        );
+        assert_eq!(remover.is_exhausted(), true);
     }
 
     #[test]
@@ -118,7 +154,10 @@ mod tests {
         };
         assert_eq!(remover.find(position_0), true);
         remover.remove();
-        assert_eq!(remover.inner.bitmap_group.inner[0], 0b0000_0100);
+        assert_eq!(
+            remover.active_group_position_iterator.bitmap_group.inner[0],
+            0b0000_0100
+        );
 
         // Removal does not change group_position()
         assert_eq!(remover.group_position().unwrap(), position_0);
@@ -130,7 +169,10 @@ mod tests {
         };
         assert_eq!(remover.find(position_1), true);
         remover.remove();
-        assert_eq!(remover.inner.bitmap_group.inner[31], 0b0000_0000);
+        assert_eq!(
+            remover.active_group_position_iterator.bitmap_group.inner[31],
+            0b0000_0000
+        );
         assert_eq!(remover.group_position().unwrap(), position_1);
     }
 

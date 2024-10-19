@@ -211,7 +211,10 @@ mod tests {
             expected_bitmap_group_0.inner[1] = 0b0000_0100; // i = 0 deactivated
             expected_bitmap_group_0.inner[31] = 0b1000_0000;
             assert_eq!(
-                remover.group_position_remover.inner.bitmap_group,
+                remover
+                    .group_position_remover
+                    .active_group_position_iterator
+                    .bitmap_group,
                 expected_bitmap_group_0
             );
             assert_eq!(
@@ -234,7 +237,10 @@ mod tests {
             expected_bitmap_group_0.inner[1] = 0b0000_0000;
             expected_bitmap_group_0.inner[31] = 0b1000_0000;
             assert_eq!(
-                remover.group_position_remover.inner.bitmap_group,
+                remover
+                    .group_position_remover
+                    .active_group_position_iterator
+                    .bitmap_group,
                 expected_bitmap_group_0
             );
             assert_eq!(
@@ -257,7 +263,10 @@ mod tests {
             let mut expected_bitmap_group_1 = BitmapGroup::default();
             expected_bitmap_group_1.inner[0] = 0b0000_0001;
             assert_eq!(
-                remover.group_position_remover.inner.bitmap_group,
+                remover
+                    .group_position_remover
+                    .active_group_position_iterator
+                    .bitmap_group,
                 expected_bitmap_group_1
             );
             assert_eq!(
@@ -282,7 +291,10 @@ mod tests {
             let mut expected_bitmap_group_2 = BitmapGroup::default();
             expected_bitmap_group_2.inner[0] = 0b0000_0001;
             assert_eq!(
-                remover.group_position_remover.inner.bitmap_group,
+                remover
+                    .group_position_remover
+                    .active_group_position_iterator
+                    .bitmap_group,
                 expected_bitmap_group_2
             );
             assert_eq!(
@@ -317,7 +329,10 @@ mod tests {
             expected_bitmap_group_2 = BitmapGroup::default();
             expected_bitmap_group_2.inner[0] = 0b0000_0000;
             assert_eq!(
-                remover.group_position_remover.inner.bitmap_group,
+                remover
+                    .group_position_remover
+                    .active_group_position_iterator
+                    .bitmap_group,
                 expected_bitmap_group_2
             );
             assert_eq!(
@@ -407,7 +422,10 @@ mod tests {
             expected_bitmap_group_0.inner[1] = 0b0000_0100; // i = 0 deactivated
             expected_bitmap_group_0.inner[31] = 0b0000_0001; // Garbage bit
             assert_eq!(
-                remover.group_position_remover.inner.bitmap_group,
+                remover
+                    .group_position_remover
+                    .active_group_position_iterator
+                    .bitmap_group,
                 expected_bitmap_group_0
             );
             assert_eq!(
@@ -435,7 +453,10 @@ mod tests {
             expected_bitmap_group_0.inner[1] = 0b0000_0000;
             expected_bitmap_group_0.inner[31] = 0b0000_0001;
             assert_eq!(
-                remover.group_position_remover.inner.bitmap_group,
+                remover
+                    .group_position_remover
+                    .active_group_position_iterator
+                    .bitmap_group,
                 expected_bitmap_group_0
             );
             assert_eq!(
@@ -458,7 +479,10 @@ mod tests {
             let mut expected_bitmap_group_1 = BitmapGroup::default();
             expected_bitmap_group_1.inner[0] = 0b0000_0001;
             assert_eq!(
-                remover.group_position_remover.inner.bitmap_group,
+                remover
+                    .group_position_remover
+                    .active_group_position_iterator
+                    .bitmap_group,
                 expected_bitmap_group_1
             );
             assert_eq!(
@@ -483,7 +507,10 @@ mod tests {
             let mut expected_bitmap_group_2 = BitmapGroup::default();
             expected_bitmap_group_2.inner[0] = 0b0000_0001;
             assert_eq!(
-                remover.group_position_remover.inner.bitmap_group,
+                remover
+                    .group_position_remover
+                    .active_group_position_iterator
+                    .bitmap_group,
                 expected_bitmap_group_2
             );
             assert_eq!(
@@ -515,7 +542,10 @@ mod tests {
             expected_bitmap_group_2 = BitmapGroup::default();
             expected_bitmap_group_2.inner[0] = 0b0000_0000;
             assert_eq!(
-                remover.group_position_remover.inner.bitmap_group,
+                remover
+                    .group_position_remover
+                    .active_group_position_iterator
+                    .bitmap_group,
                 expected_bitmap_group_2
             );
             assert_eq!(
@@ -569,7 +599,9 @@ mod tests {
 
             println!(
                 "last group position {:?}",
-                remover.group_position_remover.last_group_position()
+                remover
+                    .group_position_remover
+                    .previous_position_to_deactivate()
             );
 
             assert_eq!(remover.order_id().unwrap(), order_id_1); // move to next active order

@@ -14,8 +14,9 @@ pub trait IOrderSequentialRemover<'a>: IOrderSequentialRemoverInner<'a> {
         let is_first_read = self.outer_index().is_none();
 
         loop {
-            let group_is_uninitialized_or_finished =
-                self.group_position_remover().is_uninitialized_or_finished();
+            let group_is_uninitialized_or_finished = self
+                .group_position_remover()
+                .is_uninitialized_or_exhausted();
 
             if group_is_uninitialized_or_finished {
                 self.outer_index_remover_mut().next(ctx);
