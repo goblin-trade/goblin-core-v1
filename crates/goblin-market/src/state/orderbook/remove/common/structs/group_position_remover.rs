@@ -115,17 +115,16 @@ impl IGroupPositionLookupRemover for GroupPositionRemover {
     }
 
     fn remove(&mut self) {
-        if let Some(group_position) = self.group_position() {
+        if let Some(group_position) = self.looked_up_group_position() {
             self.active_group_position_iterator
                 .bitmap_group
                 .deactivate(group_position);
         }
     }
 
-    fn group_position(&self) -> Option<GroupPosition> {
+    fn looked_up_group_position(&self) -> Option<GroupPosition> {
         self.active_group_position_iterator
-            .group_position_iterator
-            .peek_previous()
+            .looked_up_group_position()
     }
 
     fn is_lowest_active_bit_on_tick(&self, group_position: GroupPosition) -> bool {

@@ -44,7 +44,7 @@ pub trait IOrderLookupRemoverInner<'a> {
     }
 
     fn group_position(&self) -> Option<GroupPosition> {
-        self.group_position_remover().group_position()
+        self.group_position_remover().looked_up_group_position()
     }
 
     fn order_id(&self) -> Option<OrderId> {
