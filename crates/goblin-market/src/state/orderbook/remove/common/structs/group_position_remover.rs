@@ -68,7 +68,7 @@ impl IGroupPositionRemover for GroupPositionRemover {
 
 impl IGroupPositionSequentialRemover for GroupPositionRemover {
     fn last_group_position(&self) -> Option<GroupPosition> {
-        self.inner.group_position_iterator.last_group_position()
+        self.inner.group_position_iterator.peek_previous()
     }
 
     fn next(&mut self) -> Option<GroupPosition> {
@@ -86,11 +86,11 @@ impl IGroupPositionSequentialRemover for GroupPositionRemover {
     }
 
     fn is_uninitialized(&self) -> bool {
-        self.inner.group_position_iterator.index == 0
+        self.inner.group_position_iterator.next_index == 0
     }
 
     fn is_finished(&self) -> bool {
-        self.inner.group_position_iterator.finished
+        self.inner.group_position_iterator.exhausted
     }
 }
 
@@ -106,31 +106,7 @@ impl IGroupPositionLookupRemover for GroupPositionRemover {
     }
 
     fn group_position(&self) -> Option<GroupPosition> {
-        self.inner.group_position_iterator.group_position()
-    }
-
-    fn increment_group_position(&mut self) {
-        self.inner.group_position_iterator.index =
-            self.inner.group_position_iterator.index.wrapping_add(1);
-        self.inner.group_position_iterator.finished = self.inner.group_position_iterator.index == 0;
-    }
-
-    fn decrement_group_position(&mut self) {
-        // When GroupPositionIterator::next() is called on an empty group, a wrapping
-        // add will turn index = 0 and set finished = true.
-        // Decrement only when `finished` is false. In the false case all bitmap groups
-        // were read but no active position was found.
-
-        self.inner.group_position_iterator.index =
-            self.inner.group_position_iterator.index.wrapping_sub(1);
-        self.inner.group_position_iterator.finished = false;
-    }
-
-    // TODO remove
-    fn is_only_active_bit_on_tick(&self, group_position: GroupPosition) -> bool {
-        self.inner
-            .bitmap_group
-            .is_only_active_bit_on_tick(group_position)
+        self.inner.group_position_iterator.peek_previous()
     }
 
     fn is_lowest_active_bit_on_tick(&self, group_position: GroupPosition) -> bool {

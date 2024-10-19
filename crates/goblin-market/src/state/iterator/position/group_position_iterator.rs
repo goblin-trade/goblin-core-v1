@@ -1,7 +1,9 @@
 use crate::state::{order::group_position::GroupPosition, Side};
 
-/// Efficient iterator to loop through Group positions (inner index, resting order index)
-/// of a bitmap group.
+/// Efficient iterator to loop through Group positions of a bitmap group.
+///
+/// In addition to iterations, this struct is used to paginate across
+/// group positions in the order lookup remover.
 #[derive(Debug)]
 pub struct GroupPositionIterator {
     /// Side determines looping direction.
@@ -9,60 +11,101 @@ pub struct GroupPositionIterator {
     /// - Asks: Bottom to top (ascending)
     pub side: Side,
 
-    /// Position of the element from 0 to 255 (inclusive)
-    pub index: u8,
+    /// Index of the next element to be returned, from 0 to 255 (inclusive)
+    pub next_index: u8,
 
     /// Whether iteration is complete.
-    /// Special property of iterators- we need a flag to know when to stop.
-    /// Using the value itself is not sufficient.
-    ///
-    /// `finished` is never set to true when using the lookup remover. It is only
-    /// updated in sequential remover when the entire group is traversed.
-    pub finished: bool,
+    /// Since u8 can store 256 states but we have an additional 257th state
+    /// for completed iteration, use a boolean flag to track whether iteration
+    /// is completed. When iteration is complete next_index = 255 and exhausted = true.
+    pub exhausted: bool,
 }
 
 impl GroupPositionIterator {
     pub fn new(side: Side, index: u8) -> Self {
         GroupPositionIterator {
             side,
-            index,
-            finished: false,
+            next_index: index,
+            exhausted: false,
         }
     }
 
-    /// Returns the last group position that was returned by the iterator
-    pub fn last_group_position(&self) -> Option<GroupPosition> {
-        if !self.finished && self.index == 0 {
+    /// Returns the upcoming group position to be returned by next()
+    fn peek(&self) -> Option<GroupPosition> {
+        if self.exhausted {
             return None;
         }
-
-        // finished, index = 0 will wrap to 255 which gives the last value correctly
-        let last_index = self.index.wrapping_sub(1);
-        Some(GroupPosition::from_index_inclusive(self.side, last_index))
+        Some(GroupPosition::from_index_inclusive(
+            self.side,
+            self.next_index,
+        ))
     }
 
-    /// Returns the next group position that will be returned by the iterator
-    pub fn group_position(&self) -> Option<GroupPosition> {
-        if self.finished {
-            return None;
+    // Lookup remover utils
+
+    /// Return the group position that was returned by .next() previously.
+    /// Also acts as a getter for group position in lookup remover.
+    pub fn peek_previous(&self) -> Option<GroupPosition> {
+        self.previous_index()
+            .map(|previous_index| GroupPosition::from_index_inclusive(self.side, previous_index))
+    }
+
+    /// Paginate the iterator to a given group position, setting it as
+    /// the previous position.
+    ///
+    /// This is used by GroupPositionLookupRemover::find() to paginate
+    /// to a position and check whether it is active. We use the previous and
+    /// not next position for pagination because the sequential remover removes
+    /// the previous position. The lookup remover invokes the sequential remover
+    /// in a special case.
+    ///
+    /// # Arguments
+    ///
+    /// * `group_position`
+    pub fn set_previous_position(&mut self, group_position: GroupPosition) {
+        let previous_index = group_position.index_inclusive(self.side);
+        self.set_previous_index(previous_index);
+    }
+
+    /// Index of the previous value that was returned by the iterator.
+    ///
+    /// The previous index is one position behind next_index.
+    fn previous_index(&self) -> Option<u8> {
+        if self.next_index == 0 {
+            // next_index is zero, i.e. iterator is freshly initialized
+            // and next() was never called. There is no previous position.
+            None
+        } else if self.exhausted {
+            // If iterator is exhausted, the previous index was 255
+            Some(255)
+        } else {
+            // General case- previous index is one position behind next index
+            Some(self.next_index - 1)
         }
-        Some(GroupPosition::from_index_inclusive(self.side, self.index))
     }
 
-    /// Skip ahead to `group_position`
-    pub fn set_group_position(&mut self, group_position: GroupPosition) {
-        self.index = group_position.index_inclusive(self.side);
+    /// Paginates to the given previous index  by updating inner variables
+    fn set_previous_index(&mut self, previous_index: u8) {
+        if previous_index == 255 {
+            self.next_index = 255;
+            self.exhausted = true;
+        } else {
+            self.next_index = previous_index + 1;
+        };
     }
 }
+
 impl Iterator for GroupPositionIterator {
     type Item = GroupPosition;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let result = self.group_position();
+        let result = self.peek();
 
-        if result.is_some() {
-            self.index = self.index.wrapping_add(1);
-            self.finished = self.index == 0;
+        // increment if less than 255, else set exhausted to true
+        if self.next_index == 255 {
+            self.exhausted = true;
+        } else {
+            self.next_index += 1;
         }
 
         result
@@ -74,186 +117,187 @@ mod tests {
     use super::*;
     use crate::state::{InnerIndex, RestingOrderIndex};
 
-    mod test_for_starting_index {
-
+    mod test_iteration {
         use super::*;
 
         #[test]
         fn test_get_indices_for_asks() {
             let side = Side::Ask;
-            let index = 0;
+            let next_index = 0;
 
-            let mut iterator = GroupPositionIterator::new(side, index);
-            assert!(iterator.last_group_position().is_none());
+            let mut iterator = GroupPositionIterator::new(side, next_index);
+            assert!(iterator.peek_previous().is_none());
 
             for i in 0..=255 {
-                let bit_index = i;
+                assert_eq!(iterator.next_index, i);
+                assert_eq!(iterator.exhausted, false);
 
-                let expected_inner_index = InnerIndex::new(bit_index as usize / 8);
-                let expected_resting_order_index = RestingOrderIndex::new(bit_index % 8);
+                let expected_position = Some(GroupPosition::from_index_inclusive(side, i));
 
-                let GroupPosition {
-                    inner_index,
-                    resting_order_index,
-                } = iterator.next().unwrap();
+                let peeked_position = iterator.peek();
+                let next_position = iterator.next();
+                let peeked_previous_position = iterator.peek_previous();
 
-                let current_position = iterator.last_group_position().unwrap();
-                assert_eq!(inner_index, current_position.inner_index);
-                assert_eq!(resting_order_index, current_position.resting_order_index);
-
-                println!(
-                    "inner_index {:?}, resting_order_index {:?}",
-                    inner_index, resting_order_index
-                );
-
-                assert_eq!(inner_index, expected_inner_index);
-                assert_eq!(resting_order_index, expected_resting_order_index);
-
-                if i == 255 {
-                    assert_eq!(iterator.index, 0);
-                } else {
-                    assert_eq!(iterator.index, i + 1);
-                }
+                assert_eq!(peeked_position, expected_position);
+                assert_eq!(next_position, expected_position);
+                assert_eq!(peeked_previous_position, expected_position);
             }
+            assert_eq!(iterator.next_index, 255);
+            assert_eq!(iterator.exhausted, true);
+            assert!(iterator.peek().is_none());
             assert!(iterator.next().is_none());
+            assert_eq!(
+                iterator.peek_previous(),
+                Some(GroupPosition::from_index_inclusive(side, 255))
+            );
         }
 
         #[test]
         fn test_get_indices_for_asks_with_index_10() {
             let side = Side::Ask;
-            let index = 10;
+            let next_index = 10;
 
-            let mut iterator = GroupPositionIterator::new(side, index);
+            let mut iterator = GroupPositionIterator::new(side, next_index);
             assert_eq!(
-                iterator.last_group_position().unwrap(),
+                iterator.peek_previous().unwrap(),
                 GroupPosition {
                     inner_index: InnerIndex::ONE,
                     resting_order_index: RestingOrderIndex::new(1)
                 }
             );
+            assert_eq!(
+                iterator.peek().unwrap(),
+                GroupPosition {
+                    inner_index: InnerIndex::ONE,
+                    resting_order_index: RestingOrderIndex::new(2)
+                }
+            );
 
             for i in 10..=255 {
-                let bit_index = i;
+                assert_eq!(iterator.next_index, i);
+                assert_eq!(iterator.exhausted, false);
 
-                let expected_inner_index = InnerIndex::new(bit_index as usize / 8);
-                let expected_resting_order_index = RestingOrderIndex::new(bit_index % 8);
+                let expected_position = Some(GroupPosition::from_index_inclusive(side, i));
 
-                let GroupPosition {
-                    inner_index,
-                    resting_order_index,
-                } = iterator.next().unwrap();
+                let peeked_position = iterator.peek();
+                let next_position = iterator.next();
+                let peeked_previous_position = iterator.peek_previous();
 
-                let current_position = iterator.last_group_position().unwrap();
-                assert_eq!(inner_index, current_position.inner_index);
-                assert_eq!(resting_order_index, current_position.resting_order_index);
-
-                println!(
-                    "inner_index {:?}, resting_order_index {:?}",
-                    inner_index, resting_order_index
-                );
-
-                assert_eq!(inner_index, expected_inner_index);
-                assert_eq!(resting_order_index, expected_resting_order_index);
-
-                if i == 255 {
-                    assert_eq!(iterator.index, 0);
-                } else {
-                    assert_eq!(iterator.index, i + 1);
-                }
+                assert_eq!(peeked_position, expected_position);
+                assert_eq!(next_position, expected_position);
+                assert_eq!(peeked_previous_position, expected_position);
             }
+            assert_eq!(iterator.next_index, 255);
+            assert_eq!(iterator.exhausted, true);
+            assert!(iterator.peek().is_none());
             assert!(iterator.next().is_none());
+            assert_eq!(
+                iterator.peek_previous(),
+                Some(GroupPosition::from_index_inclusive(side, 255))
+            );
         }
 
         #[test]
         fn test_get_indices_for_bids() {
             let side = Side::Bid;
-            let index = 0;
+            let next_index = 0;
 
-            let mut iterator = GroupPositionIterator::new(side, index);
-            assert!(iterator.last_group_position().is_none());
+            let mut iterator = GroupPositionIterator::new(side, next_index);
+            assert!(iterator.peek_previous().is_none());
 
             for i in 0..=255 {
-                let bit_index = 255 - i;
+                assert_eq!(iterator.next_index, i);
+                assert_eq!(iterator.exhausted, false);
 
-                let expected_inner_index = InnerIndex::new(bit_index as usize / 8);
-                let expected_resting_order_index = RestingOrderIndex::new(match side {
-                    Side::Bid => 7 - (bit_index % 8),
-                    Side::Ask => bit_index % 8,
-                });
+                let expected_position = Some(GroupPosition::from_index_inclusive(side, i));
 
-                let GroupPosition {
-                    inner_index,
-                    resting_order_index,
-                } = iterator.next().unwrap();
+                let peeked_position = iterator.peek();
+                let next_position = iterator.next();
+                let peeked_previous_position = iterator.peek_previous();
 
-                let current_position = iterator.last_group_position().unwrap();
-                assert_eq!(inner_index, current_position.inner_index);
-                assert_eq!(resting_order_index, current_position.resting_order_index);
-
-                println!(
-                    "inner_index {:?}, resting_order_index {:?}",
-                    inner_index, resting_order_index
-                );
-
-                assert_eq!(inner_index, expected_inner_index);
-                assert_eq!(resting_order_index, expected_resting_order_index);
-
-                if i == 255 {
-                    assert_eq!(iterator.index, 0);
-                } else {
-                    assert_eq!(iterator.index, i + 1);
-                }
+                assert_eq!(peeked_position, expected_position);
+                assert_eq!(next_position, expected_position);
+                assert_eq!(peeked_previous_position, expected_position);
             }
+            assert_eq!(iterator.next_index, 255);
+            assert_eq!(iterator.exhausted, true);
+            assert!(iterator.peek().is_none());
             assert!(iterator.next().is_none());
+            assert_eq!(
+                iterator.peek_previous(),
+                Some(GroupPosition::from_index_inclusive(side, 255))
+            );
         }
 
         #[test]
         fn test_get_indices_for_bids_with_index_10() {
             let side = Side::Bid;
-            let index = 10;
+            let next_index = 10;
 
-            let mut iterator = GroupPositionIterator::new(side, index);
+            let mut iterator = GroupPositionIterator::new(side, next_index);
             assert_eq!(
-                iterator.last_group_position().unwrap(),
+                iterator.peek_previous().unwrap(),
                 GroupPosition {
                     inner_index: InnerIndex::new(30),
                     resting_order_index: RestingOrderIndex::new(1)
                 }
             );
+            assert_eq!(
+                iterator.peek().unwrap(),
+                GroupPosition {
+                    inner_index: InnerIndex::new(30),
+                    resting_order_index: RestingOrderIndex::new(2)
+                }
+            );
 
             for i in 10..=255 {
-                let bit_index = 255 - i;
+                assert_eq!(iterator.next_index, i);
+                assert_eq!(iterator.exhausted, false);
 
-                let expected_inner_index = InnerIndex::new(bit_index as usize / 8);
-                let expected_resting_order_index = RestingOrderIndex::new(match side {
-                    Side::Bid => 7 - (bit_index % 8),
-                    Side::Ask => bit_index % 8,
-                });
+                let expected_position = Some(GroupPosition::from_index_inclusive(side, i));
 
-                let GroupPosition {
-                    inner_index,
-                    resting_order_index,
-                } = iterator.next().unwrap();
+                let peeked_position = iterator.peek();
+                let next_position = iterator.next();
+                let peeked_previous_position = iterator.peek_previous();
 
-                let current_position = iterator.last_group_position().unwrap();
-                assert_eq!(inner_index, current_position.inner_index);
-                assert_eq!(resting_order_index, current_position.resting_order_index);
-
-                println!(
-                    "inner_index {:?}, resting_order_index {:?}",
-                    inner_index, resting_order_index
-                );
-
-                assert_eq!(inner_index, expected_inner_index);
-                assert_eq!(resting_order_index, expected_resting_order_index);
-
-                if i == 255 {
-                    assert_eq!(iterator.index, 0);
-                } else {
-                    assert_eq!(iterator.index, i + 1);
-                }
+                assert_eq!(peeked_position, expected_position);
+                assert_eq!(next_position, expected_position);
+                assert_eq!(peeked_previous_position, expected_position);
             }
+            assert_eq!(iterator.next_index, 255);
+            assert_eq!(iterator.exhausted, true);
+            assert!(iterator.peek().is_none());
             assert!(iterator.next().is_none());
+            assert_eq!(
+                iterator.peek_previous(),
+                Some(GroupPosition::from_index_inclusive(side, 255))
+            );
+        }
+    }
+
+    mod test_lookup {
+        use super::*;
+
+        #[test]
+        fn test_set_previous_position() {
+            let side = Side::Ask;
+            let next_index = 0;
+            let mut iterator = GroupPositionIterator::new(side, next_index);
+
+            assert_eq!(iterator.previous_index(), None);
+
+            for previous_index in 0..=254 {
+                iterator.set_previous_index(previous_index);
+                assert_eq!(iterator.previous_index().unwrap(), previous_index);
+                assert_eq!(iterator.next_index, previous_index + 1);
+                assert_eq!(iterator.exhausted, false);
+            }
+
+            iterator.set_previous_index(255);
+            assert_eq!(iterator.previous_index().unwrap(), 255);
+            assert_eq!(iterator.next_index, 255);
+            assert_eq!(iterator.exhausted, true);
+            assert_eq!(iterator.peek(), None);
         }
     }
 }

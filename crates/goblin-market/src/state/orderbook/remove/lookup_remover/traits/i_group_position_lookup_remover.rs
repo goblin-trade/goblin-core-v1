@@ -15,23 +15,10 @@ pub trait IGroupPositionLookupRemover: IGroupPositionRemover {
     /// before deactivation
     fn remove(&mut self);
 
-    /// Increment so that last group position points to the current position.
-    /// When index = 255, i.e. we cannot increment further then set finished = true.
-    fn increment_group_position(&mut self);
-
-    /// Decrement to send last group position one place behind the current position.
-    /// When finished = true, index equals 0 so we cannot decrement. This case happens
-    /// when all active bits are traversed.
-    fn decrement_group_position(&mut self);
-
     // Getters
 
     /// The group position that was looked up
     fn group_position(&self) -> Option<GroupPosition>;
-
-    /// Whether `group_position` holds the only active bit on its corresponding
-    /// inner index and by extension price
-    fn is_only_active_bit_on_tick(&self, group_position: GroupPosition) -> bool;
 
     /// Whether `group_position` holds the lowest active bit on its corresponding
     /// inner index and by extension aprice
@@ -53,7 +40,7 @@ mod tests {
     use super::IGroupPositionLookupRemover;
 
     #[test]
-    fn test_find_positions() {
+    fn test_find_positions_for_asks() {
         let ctx = &mut ArbContext::new();
         let side = Side::Ask;
         let mut remover = GroupPositionRemover::new(side);
@@ -71,8 +58,10 @@ mod tests {
             resting_order_index: RestingOrderIndex::new(0),
         };
         assert_eq!(remover.find(position_0), true);
+
         assert_eq!(remover.group_position().unwrap(), position_0);
-        assert_eq!(remover.inner.group_position_iterator.index, 0);
+
+        assert_eq!(remover.inner.group_position_iterator.next_index, 1);
 
         // Position is not active
         let position_1 = GroupPosition {
@@ -81,11 +70,11 @@ mod tests {
         };
         assert_eq!(remover.find(position_1), false);
         assert_eq!(remover.group_position().unwrap(), position_1);
-        assert_eq!(remover.inner.group_position_iterator.index, 1);
+        assert_eq!(remover.inner.group_position_iterator.next_index, 2);
 
         // Return to position 0
         assert_eq!(remover.find(position_0), true);
-        assert_eq!(remover.inner.group_position_iterator.index, 0);
+        assert_eq!(remover.inner.group_position_iterator.next_index, 1);
 
         // Another position that is active
         let position_2 = GroupPosition {
@@ -94,7 +83,7 @@ mod tests {
         };
         assert_eq!(remover.find(position_2), true);
         assert_eq!(remover.group_position().unwrap(), position_2);
-        assert_eq!(remover.inner.group_position_iterator.index, 2);
+        assert_eq!(remover.inner.group_position_iterator.next_index, 3);
 
         // Last position
         let position_3 = GroupPosition {
@@ -103,15 +92,15 @@ mod tests {
         };
         assert_eq!(remover.find(position_3), true);
         assert_eq!(remover.group_position().unwrap(), position_3);
-        assert_eq!(remover.inner.group_position_iterator.index, 255);
 
-        // is_finished() belongs to the sequential trait
-        // Random remover does not affect finished
-        assert_eq!(remover.is_finished(), false);
+        // Exhausted as we navigated to the last item
+        assert_eq!(remover.inner.group_position_iterator.next_index, 255);
+        assert_eq!(remover.inner.group_position_iterator.exhausted, true);
+        assert_eq!(remover.is_finished(), true);
     }
 
     #[test]
-    fn test_remove_positions() {
+    fn test_remove_positions_for_asks() {
         let ctx = &mut ArbContext::new();
         let side = Side::Ask;
         let mut remover = GroupPositionRemover::new(side);
@@ -143,8 +132,7 @@ mod tests {
         remover.remove();
         assert_eq!(remover.inner.bitmap_group.inner[31], 0b0000_0000);
         assert_eq!(remover.group_position().unwrap(), position_1);
-
-        // Random remover does not affect finished
-        assert_eq!(remover.is_finished(), false);
     }
+
+    // TODO tests for bids
 }

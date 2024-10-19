@@ -73,13 +73,7 @@ pub trait IOrderLookupRemover<'a>: IOrderLookupRemoverInner<'a> {
                     .group_position_remover()
                     .is_lowest_active_bit_on_tick(group_position)
             {
-                // Convert group_position() into last_group_position() by decrementing
-                // to use the sequential remover, then increment it back.
-                self.group_position_remover_mut().increment_group_position();
-
                 self.sequential_order_remover().next(ctx);
-
-                self.group_position_remover_mut().decrement_group_position();
             } else {
                 // Closure will not change the best market price.
                 // This has 2 cases
