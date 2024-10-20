@@ -573,7 +573,290 @@ mod tests {
     }
 
     mod random_removals {
+        use super::*;
+
         #[test]
-        fn test_lookup_and_remove_across_groups_for_asks() {}
+        fn test_lookup_asks_sequentially_then_randomly() {
+            let ctx = &mut ArbContext::new();
+            let side = Side::Ask;
+
+            let mut outer_index_count = 2;
+            let outer_index_0 = OuterIndex::new(1);
+            let outer_index_1 = OuterIndex::new(2);
+            write_outer_indices(ctx, side, vec![outer_index_1, outer_index_0]);
+
+            let mut bitmap_group_0 = BitmapGroup::default();
+            bitmap_group_0.inner[0] = 0b1000_0000; // Garbage bit
+            bitmap_group_0.inner[1] = 0b0000_0101; // Best market price starts here
+            bitmap_group_0.inner[31] = 0b1000_0000;
+            bitmap_group_0.write_to_slot(ctx, &outer_index_0);
+
+            let mut bitmap_group_1 = BitmapGroup::default();
+            bitmap_group_1.inner[0] = 0b0000_0001;
+            bitmap_group_1.inner[1] = 0b0000_0001;
+            bitmap_group_1.write_to_slot(ctx, &outer_index_1);
+
+            let order_id_0 = OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(1)),
+                resting_order_index: RestingOrderIndex::new(0),
+            };
+            let order_id_1 = OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(1)),
+                resting_order_index: RestingOrderIndex::new(2),
+            };
+            let order_id_2 = OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(31)),
+                resting_order_index: RestingOrderIndex::new(7),
+            };
+            let order_id_3 = OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index_1, InnerIndex::new(0)),
+                resting_order_index: RestingOrderIndex::new(0),
+            };
+            let order_id_4 = OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index_1, InnerIndex::new(1)),
+                resting_order_index: RestingOrderIndex::new(0),
+            };
+
+            let mut best_market_price = order_id_0.price_in_ticks;
+            let mut remover =
+                OrderLookupRemover::new(side, &mut best_market_price, &mut outer_index_count);
+
+            // Sequentially remove order id 0 and 1
+            remover.find(ctx, order_id_0);
+            remover.remove(ctx);
+            remover.find(ctx, order_id_1);
+            remover.remove(ctx);
+
+            // Jump to order id 3 and remove it
+            remover.find(ctx, order_id_3);
+            assert_eq!(remover.order_id().unwrap(), order_id_3);
+            assert_eq!(remover.outer_index().unwrap(), outer_index_1);
+            assert_eq!(
+                remover.outer_index_remover.cached_outer_indices,
+                vec![outer_index_0]
+            );
+
+            let mut expected_bitmap_group_1 = BitmapGroup::default();
+            expected_bitmap_group_1.inner[0] = 0b0000_0001;
+            expected_bitmap_group_1.inner[1] = 0b0000_0001;
+            assert_eq!(
+                remover
+                    .group_position_remover
+                    .active_group_position_iterator
+                    .bitmap_group,
+                expected_bitmap_group_1
+            );
+
+            remover.remove(ctx);
+            assert_eq!(remover.order_id().unwrap(), order_id_3);
+            assert_eq!(remover.outer_index().unwrap(), outer_index_1);
+            assert_eq!(
+                remover.outer_index_remover.cached_outer_indices,
+                vec![outer_index_0]
+            );
+            // Best market price remains on order id 2
+            assert_eq!(*remover.best_market_price, order_id_2.price_in_ticks);
+
+            let mut expected_bitmap_group_1 = BitmapGroup::default();
+            expected_bitmap_group_1.inner[0] = 0b0000_0000;
+            expected_bitmap_group_1.inner[1] = 0b0000_0001;
+            assert_eq!(
+                remover
+                    .group_position_remover
+                    .active_group_position_iterator
+                    .bitmap_group,
+                expected_bitmap_group_1
+            );
+
+            // Remove last item
+            remover.find(ctx, order_id_4);
+            assert_eq!(remover.order_id().unwrap(), order_id_4);
+            assert_eq!(remover.outer_index().unwrap(), outer_index_1);
+            assert_eq!(
+                remover.outer_index_remover.cached_outer_indices,
+                vec![outer_index_0]
+            );
+            let mut expected_bitmap_group_1 = BitmapGroup::default();
+            expected_bitmap_group_1.inner[0] = 0b0000_0000;
+            expected_bitmap_group_1.inner[1] = 0b0000_0001;
+            assert_eq!(
+                remover
+                    .group_position_remover
+                    .active_group_position_iterator
+                    .bitmap_group,
+                expected_bitmap_group_1
+            );
+
+            remover.remove(ctx);
+
+            // Outer index removed because group closed
+            assert_eq!(remover.order_id(), None);
+            assert_eq!(remover.outer_index(), None);
+            assert_eq!(
+                remover.outer_index_remover.cached_outer_indices,
+                vec![outer_index_0]
+            );
+            // Group position remains unchanged
+            assert_eq!(
+                remover.group_position().unwrap(),
+                GroupPosition::from(&order_id_4)
+            );
+
+            // Best market price remains on order id 2
+            assert_eq!(*remover.best_market_price, order_id_2.price_in_ticks);
+
+            let mut expected_bitmap_group_1 = BitmapGroup::default();
+            expected_bitmap_group_1.inner[0] = 0b0000_0000;
+            expected_bitmap_group_1.inner[1] = 0b0000_0000;
+            assert_eq!(
+                remover
+                    .group_position_remover
+                    .active_group_position_iterator
+                    .bitmap_group,
+                expected_bitmap_group_1
+            );
+        }
+
+        #[test]
+        fn test_lookup_bids_sequentially_then_randomly() {
+            let ctx = &mut ArbContext::new();
+            let side = Side::Bid;
+
+            let mut outer_index_count = 2;
+            let outer_index_0 = OuterIndex::new(1);
+            let outer_index_1 = OuterIndex::new(2);
+            write_outer_indices(ctx, side, vec![outer_index_1, outer_index_0]);
+
+            let mut bitmap_group_0 = BitmapGroup::default();
+            bitmap_group_0.inner[0] = 0b1000_0000;
+            bitmap_group_0.inner[1] = 0b0000_0101; // Best market price starts here
+            bitmap_group_0.inner[31] = 0b1000_0000; // Garbage bit
+            bitmap_group_0.write_to_slot(ctx, &outer_index_0);
+
+            let mut bitmap_group_1 = BitmapGroup::default();
+            bitmap_group_1.inner[0] = 0b0000_0001;
+            bitmap_group_1.inner[1] = 0b0000_0001;
+            bitmap_group_1.write_to_slot(ctx, &outer_index_1);
+
+            let order_id_0 = OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(1)),
+                resting_order_index: RestingOrderIndex::new(0),
+            };
+            let order_id_1 = OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(1)),
+                resting_order_index: RestingOrderIndex::new(2),
+            };
+            let order_id_2 = OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(0)),
+                resting_order_index: RestingOrderIndex::new(7),
+            };
+            let order_id_3 = OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index_1, InnerIndex::new(1)),
+                resting_order_index: RestingOrderIndex::new(0),
+            };
+            let order_id_4 = OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index_1, InnerIndex::new(0)),
+                resting_order_index: RestingOrderIndex::new(0),
+            };
+
+            let mut best_market_price = order_id_0.price_in_ticks;
+            let mut remover =
+                OrderLookupRemover::new(side, &mut best_market_price, &mut outer_index_count);
+
+            // Sequentially remove order id 0 and 1
+            remover.find(ctx, order_id_0);
+            remover.remove(ctx);
+            remover.find(ctx, order_id_1);
+            remover.remove(ctx);
+
+            // Jump to order id 3 and remove it
+            remover.find(ctx, order_id_3);
+            assert_eq!(remover.order_id().unwrap(), order_id_3);
+            assert_eq!(remover.outer_index().unwrap(), outer_index_1);
+            assert_eq!(
+                remover.outer_index_remover.cached_outer_indices,
+                vec![outer_index_0]
+            );
+
+            let mut expected_bitmap_group_1 = BitmapGroup::default();
+            expected_bitmap_group_1.inner[0] = 0b0000_0001;
+            expected_bitmap_group_1.inner[1] = 0b0000_0001;
+            assert_eq!(
+                remover
+                    .group_position_remover
+                    .active_group_position_iterator
+                    .bitmap_group,
+                expected_bitmap_group_1
+            );
+
+            remover.remove(ctx);
+            assert_eq!(remover.order_id().unwrap(), order_id_3);
+            assert_eq!(remover.outer_index().unwrap(), outer_index_1);
+            assert_eq!(
+                remover.outer_index_remover.cached_outer_indices,
+                vec![outer_index_0]
+            );
+            // Best market price remains on order id 2
+            assert_eq!(*remover.best_market_price, order_id_2.price_in_ticks);
+
+            let mut expected_bitmap_group_1 = BitmapGroup::default();
+            expected_bitmap_group_1.inner[0] = 0b0000_0001;
+            expected_bitmap_group_1.inner[1] = 0b0000_0000;
+            assert_eq!(
+                remover
+                    .group_position_remover
+                    .active_group_position_iterator
+                    .bitmap_group,
+                expected_bitmap_group_1
+            );
+
+            // Remove last item
+            remover.find(ctx, order_id_4);
+            assert_eq!(remover.order_id().unwrap(), order_id_4);
+            assert_eq!(remover.outer_index().unwrap(), outer_index_1);
+            assert_eq!(
+                remover.outer_index_remover.cached_outer_indices,
+                vec![outer_index_0]
+            );
+            let mut expected_bitmap_group_1 = BitmapGroup::default();
+            expected_bitmap_group_1.inner[0] = 0b0000_0001;
+            expected_bitmap_group_1.inner[1] = 0b0000_0000;
+            assert_eq!(
+                remover
+                    .group_position_remover
+                    .active_group_position_iterator
+                    .bitmap_group,
+                expected_bitmap_group_1
+            );
+
+            remover.remove(ctx);
+
+            // Outer index removed because group closed
+            assert_eq!(remover.order_id(), None);
+            assert_eq!(remover.outer_index(), None);
+            assert_eq!(
+                remover.outer_index_remover.cached_outer_indices,
+                vec![outer_index_0]
+            );
+            // Group position remains unchanged
+            assert_eq!(
+                remover.group_position().unwrap(),
+                GroupPosition::from(&order_id_4)
+            );
+
+            // Best market price remains on order id 2
+            assert_eq!(*remover.best_market_price, order_id_2.price_in_ticks);
+
+            let mut expected_bitmap_group_1 = BitmapGroup::default();
+            expected_bitmap_group_1.inner[0] = 0b0000_0000;
+            expected_bitmap_group_1.inner[1] = 0b0000_0000;
+            assert_eq!(
+                remover
+                    .group_position_remover
+                    .active_group_position_iterator
+                    .bitmap_group,
+                expected_bitmap_group_1
+            );
+        }
     }
 }
