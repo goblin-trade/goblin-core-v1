@@ -40,9 +40,18 @@ impl<'a> RemoveMultipleManager<'a> {
 
     /// Check whether the given order ID is present in the book
     ///
-    /// Successive order IDs must be sorted by price to move away from the centre,
+    /// # Rules
+    /// * Successive order IDs must be sorted by price to move away from the centre,
     /// i.e. in descending order for bids and in ascending order for asks.
-    /// Sort order is not enforced on resting order index.
+    /// * Sort order is not enforced on resting order index.
+    /// * Removing the outermost active bit invokes the sequential remover. If all
+    /// active bits on a group are exhausted, the sequential remover reads the next
+    /// outer index. If the outer index changes we cannot find an order id from the
+    /// previous outer index.
+    /// Example- bitmap group 0 has a single active tick at (0, 0). The sequential remover
+    /// removes this tick and moves to bitmap group 1. Now we cannot read (0, 1) or
+    /// any other position from group 0.
+    ///
     ///
     /// # Arguments
     ///
