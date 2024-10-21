@@ -27,18 +27,20 @@ pub struct ActiveOuterIndexIteratorV2<'a> {
 impl<'a> ActiveOuterIndexIteratorV2<'a> {
     pub fn new(side: Side, outer_index_count: &'a mut u16) -> Self {
         Self {
-            inner: OuterIndexPositionIteratorV2 { outer_index_count },
+            inner: OuterIndexPositionIteratorV2 {
+                unread_outer_indices: outer_index_count,
+            },
             list_slot: None, // Initialize with None
             side,
         }
     }
 
-    pub fn outer_index_count(&self) -> u16 {
-        *self.inner.outer_index_count
+    pub fn unread_outer_indices(&self) -> u16 {
+        *self.inner.unread_outer_indices
     }
 
-    pub fn outer_index_count_mut(&mut self) -> &mut u16 {
-        self.inner.outer_index_count
+    pub fn unread_outer_indices_mut(&mut self) -> &mut u16 {
+        self.inner.unread_outer_indices
     }
 
     /// Update the cached list slot if no value was cached or if we reached

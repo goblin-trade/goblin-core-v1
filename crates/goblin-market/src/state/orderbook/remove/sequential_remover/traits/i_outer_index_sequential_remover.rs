@@ -18,7 +18,7 @@ pub trait IOuterIndexSequentialRemover<'a>: IOuterIndexRemover<'a> {
         *self
             .active_outer_index_iterator_mut()
             .inner
-            .outer_index_count += u16::from(self.current_outer_index_mut().is_some());
+            .unread_outer_indices += u16::from(self.current_outer_index_mut().is_some());
     }
 }
 
@@ -57,7 +57,10 @@ mod tests {
         }
         remover.next(ctx);
         assert_eq!(remover.current_outer_index, None);
-        assert_eq!(remover.active_outer_index_iterator.outer_index_count(), 0);
+        assert_eq!(
+            remover.active_outer_index_iterator.unread_outer_indices(),
+            0
+        );
 
         // No effect on commit since all values were cleared
         remover.commit();
@@ -90,7 +93,10 @@ mod tests {
         }
         remover.next(ctx);
         assert_eq!(remover.current_outer_index, None);
-        assert_eq!(remover.active_outer_index_iterator.outer_index_count(), 0);
+        assert_eq!(
+            remover.active_outer_index_iterator.unread_outer_indices(),
+            0
+        );
 
         // No effect on commit since all values were cleared
         remover.commit();
@@ -120,16 +126,25 @@ mod tests {
 
         // Remove two values and commit
         remover.next(ctx);
-        assert_eq!(remover.active_outer_index_iterator.outer_index_count(), 16);
+        assert_eq!(
+            remover.active_outer_index_iterator.unread_outer_indices(),
+            16
+        );
 
         remover.next(ctx);
-        assert_eq!(remover.active_outer_index_iterator.outer_index_count(), 15);
+        assert_eq!(
+            remover.active_outer_index_iterator.unread_outer_indices(),
+            15
+        );
 
         remover.commit();
-        assert_eq!(remover.active_outer_index_iterator.outer_index_count(), 16);
+        assert_eq!(
+            remover.active_outer_index_iterator.unread_outer_indices(),
+            16
+        );
 
         // New remover for remaining values
-        let mut outer_index_count_new = remover.active_outer_index_iterator.outer_index_count();
+        let mut outer_index_count_new = remover.active_outer_index_iterator.unread_outer_indices();
         let mut remover_new = OuterIndexSequentialRemover::new(side, &mut outer_index_count_new);
         for i in (0..=15).rev() {
             remover_new.next(ctx);

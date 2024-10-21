@@ -11,7 +11,10 @@ pub trait IOuterIndexLookupRemover<'a>: IOuterIndexRemover<'a> {
     ///
     /// Externally ensure that outer indices are sorted in an order moving
     /// away from the centre, i.e. descending for bids and ascending for asks.
-    /// This order is enforced by RandomOrderRemover
+    /// This order is enforced by RandomOrderRemover.
+    ///
+    /// Externally avoid calling find() for the same outer index. During the second
+    /// call the current outer index will be removed and pushed to the cache list.
     ///
     fn find(&mut self, ctx: &mut ArbContext, outer_index: OuterIndex) -> bool {
         if let Some(outer_index) = self.current_outer_index_mut().take() {
@@ -20,6 +23,8 @@ pub trait IOuterIndexLookupRemover<'a>: IOuterIndexRemover<'a> {
 
         loop {
             if let Some(read_outer_index) = self.active_outer_index_iterator_mut().next(ctx) {
+                // TODO stop if `outer_index` is closer to the centre than read_outer_index?
+                // This read value can be pushed to cache.
                 if read_outer_index == outer_index {
                     *self.current_outer_index_mut() = Some(read_outer_index);
                     return true;
@@ -45,27 +50,26 @@ pub trait IOuterIndexLookupRemover<'a>: IOuterIndexRemover<'a> {
     fn commit(&mut self, ctx: &mut ArbContext) {
         let list_slot = self.active_outer_index_iterator().list_slot;
         let cached_count = self.cached_outer_indices_mut().len() as u16;
+        let remaining_outer_indices = self.remaining_outer_indices();
 
-        let outer_index_present = self.current_outer_index().is_some();
-        let outer_index_count = self.outer_index_count() + u16::from(outer_index_present);
         write_index_list(
             ctx,
             self.side(),
             self.cached_outer_indices_mut(),
-            outer_index_count,
+            remaining_outer_indices,
             list_slot,
         );
 
         // Increase count to account for values written from cache
-        self.set_outer_index_count(outer_index_count + cached_count);
+        self.set_unread_outer_indices(remaining_outer_indices + cached_count);
     }
 
     // Setters
 
-    fn set_outer_index_count(&mut self, new_count: u16) {
+    fn set_unread_outer_indices(&mut self, new_count: u16) {
         *self
             .active_outer_index_iterator_mut()
-            .outer_index_count_mut() = new_count;
+            .unread_outer_indices_mut() = new_count;
     }
 
     // Getters
@@ -74,8 +78,14 @@ pub trait IOuterIndexLookupRemover<'a>: IOuterIndexRemover<'a> {
         self.active_outer_index_iterator().side
     }
 
-    fn outer_index_count(&self) -> u16 {
-        self.active_outer_index_iterator().outer_index_count()
+    fn unread_outer_indices(&self) -> u16 {
+        self.active_outer_index_iterator().unread_outer_indices()
+    }
+
+    /// Number of outer indices yet to be read plus the cached index if present
+    fn remaining_outer_indices(&self) -> u16 {
+        let outer_index_present = self.current_outer_index().is_some();
+        self.unread_outer_indices() + u16::from(outer_index_present)
     }
 }
 
@@ -111,23 +121,35 @@ mod tests {
         let outer_index_0 = OuterIndex::new(18);
         remover.find(ctx, outer_index_0);
         assert_eq!(remover.current_outer_index.unwrap(), outer_index_0);
-        assert_eq!(remover.active_outer_index_iterator.outer_index_count(), 18);
+        assert_eq!(
+            remover.active_outer_index_iterator.unread_outer_indices(),
+            18
+        );
         assert_eq!(remover.cached_outer_indices, vec![]);
 
         remover.remove();
         assert_eq!(remover.current_outer_index, None);
-        assert_eq!(remover.active_outer_index_iterator.outer_index_count(), 18);
+        assert_eq!(
+            remover.active_outer_index_iterator.unread_outer_indices(),
+            18
+        );
         assert_eq!(remover.cached_outer_indices, vec![]);
 
         let outer_index_1 = OuterIndex::new(16);
         remover.find(ctx, outer_index_1);
         assert_eq!(remover.current_outer_index.unwrap(), outer_index_1);
-        assert_eq!(remover.active_outer_index_iterator.outer_index_count(), 16);
+        assert_eq!(
+            remover.active_outer_index_iterator.unread_outer_indices(),
+            16
+        );
         assert_eq!(remover.cached_outer_indices, vec![OuterIndex::new(17)]);
 
         remover.remove();
         assert_eq!(remover.current_outer_index, None);
-        assert_eq!(remover.active_outer_index_iterator.outer_index_count(), 16);
+        assert_eq!(
+            remover.active_outer_index_iterator.unread_outer_indices(),
+            16
+        );
         assert_eq!(remover.cached_outer_indices, vec![OuterIndex::new(17)]);
 
         // Remove in different group
@@ -135,7 +157,10 @@ mod tests {
         let outer_index_2 = OuterIndex::new(14);
         remover.find(ctx, outer_index_2);
         assert_eq!(remover.current_outer_index.unwrap(), outer_index_2);
-        assert_eq!(remover.active_outer_index_iterator.outer_index_count(), 14);
+        assert_eq!(
+            remover.active_outer_index_iterator.unread_outer_indices(),
+            14
+        );
         assert_eq!(
             remover.cached_outer_indices,
             vec![OuterIndex::new(17), OuterIndex::new(15)]
@@ -143,7 +168,10 @@ mod tests {
 
         remover.remove();
         assert_eq!(remover.current_outer_index, None);
-        assert_eq!(remover.active_outer_index_iterator.outer_index_count(), 14);
+        assert_eq!(
+            remover.active_outer_index_iterator.unread_outer_indices(),
+            14
+        );
         assert_eq!(
             remover.cached_outer_indices,
             vec![OuterIndex::new(17), OuterIndex::new(15)]
@@ -188,23 +216,35 @@ mod tests {
         let outer_index_0 = OuterIndex::new(0);
         remover.find(ctx, outer_index_0);
         assert_eq!(remover.current_outer_index.unwrap(), outer_index_0);
-        assert_eq!(remover.active_outer_index_iterator.outer_index_count(), 18);
+        assert_eq!(
+            remover.active_outer_index_iterator.unread_outer_indices(),
+            18
+        );
         assert_eq!(remover.cached_outer_indices, vec![]);
 
         remover.remove();
         assert_eq!(remover.current_outer_index, None);
-        assert_eq!(remover.active_outer_index_iterator.outer_index_count(), 18);
+        assert_eq!(
+            remover.active_outer_index_iterator.unread_outer_indices(),
+            18
+        );
         assert_eq!(remover.cached_outer_indices, vec![]);
 
         let outer_index_1 = OuterIndex::new(2);
         remover.find(ctx, outer_index_1);
         assert_eq!(remover.current_outer_index.unwrap(), outer_index_1);
-        assert_eq!(remover.active_outer_index_iterator.outer_index_count(), 16);
+        assert_eq!(
+            remover.active_outer_index_iterator.unread_outer_indices(),
+            16
+        );
         assert_eq!(remover.cached_outer_indices, vec![OuterIndex::new(1)]);
 
         remover.remove();
         assert_eq!(remover.current_outer_index, None);
-        assert_eq!(remover.active_outer_index_iterator.outer_index_count(), 16);
+        assert_eq!(
+            remover.active_outer_index_iterator.unread_outer_indices(),
+            16
+        );
         assert_eq!(remover.cached_outer_indices, vec![OuterIndex::new(1)]);
 
         // Remove in different group
@@ -212,7 +252,10 @@ mod tests {
         let outer_index_2 = OuterIndex::new(4);
         remover.find(ctx, outer_index_2);
         assert_eq!(remover.current_outer_index.unwrap(), outer_index_2);
-        assert_eq!(remover.active_outer_index_iterator.outer_index_count(), 14);
+        assert_eq!(
+            remover.active_outer_index_iterator.unread_outer_indices(),
+            14
+        );
         assert_eq!(
             remover.cached_outer_indices,
             vec![OuterIndex::new(1), OuterIndex::new(3)]
@@ -220,7 +263,10 @@ mod tests {
 
         remover.remove();
         assert_eq!(remover.current_outer_index, None);
-        assert_eq!(remover.active_outer_index_iterator.outer_index_count(), 14);
+        assert_eq!(
+            remover.active_outer_index_iterator.unread_outer_indices(),
+            14
+        );
         assert_eq!(
             remover.cached_outer_indices,
             vec![OuterIndex::new(1), OuterIndex::new(3)]
@@ -253,7 +299,10 @@ mod tests {
         let outer_index_1 = OuterIndex::new(14);
         remover.find(ctx, outer_index_1);
         assert_eq!(remover.current_outer_index.unwrap(), outer_index_1);
-        assert_eq!(remover.active_outer_index_iterator.outer_index_count(), 14);
+        assert_eq!(
+            remover.active_outer_index_iterator.unread_outer_indices(),
+            14
+        );
         assert_eq!(
             remover.cached_outer_indices,
             vec![
@@ -266,7 +315,10 @@ mod tests {
 
         remover.remove();
         assert_eq!(remover.current_outer_index, None);
-        assert_eq!(remover.active_outer_index_iterator.outer_index_count(), 14);
+        assert_eq!(
+            remover.active_outer_index_iterator.unread_outer_indices(),
+            14
+        );
         assert_eq!(
             remover.cached_outer_indices,
             vec![
@@ -304,7 +356,10 @@ mod tests {
         let outer_index_1 = OuterIndex::new(4);
         remover.find(ctx, outer_index_1);
         assert_eq!(remover.current_outer_index.unwrap(), outer_index_1);
-        assert_eq!(remover.active_outer_index_iterator.outer_index_count(), 14);
+        assert_eq!(
+            remover.active_outer_index_iterator.unread_outer_indices(),
+            14
+        );
         assert_eq!(
             remover.cached_outer_indices,
             vec![
@@ -317,7 +372,10 @@ mod tests {
 
         remover.remove();
         assert_eq!(remover.current_outer_index, None);
-        assert_eq!(remover.active_outer_index_iterator.outer_index_count(), 14);
+        assert_eq!(
+            remover.active_outer_index_iterator.unread_outer_indices(),
+            14
+        );
         assert_eq!(
             remover.cached_outer_indices,
             vec![
@@ -357,7 +415,10 @@ mod tests {
         let outer_index_1 = OuterIndex::new(10);
         remover.find(ctx, outer_index_1);
         assert_eq!(remover.current_outer_index.unwrap(), outer_index_1);
-        assert_eq!(remover.active_outer_index_iterator.outer_index_count(), 10);
+        assert_eq!(
+            remover.active_outer_index_iterator.unread_outer_indices(),
+            10
+        );
         assert_eq!(
             remover.cached_outer_indices,
             vec![
@@ -390,5 +451,34 @@ mod tests {
                 inner: [17, 18, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
             }
         );
+    }
+
+    mod absent_outer_index {
+        use super::*;
+
+        #[test]
+        fn test_search_absent_outer_index() {
+            let ctx = &mut ArbContext::new();
+            let side = Side::Bid;
+            let mut outer_index_count = 3;
+
+            let list_key_0 = ListKey { index: 0, side };
+
+            let list_item_0 = ListSlot {
+                inner: [1, 3, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            };
+            list_item_0.write_to_slot(ctx, &list_key_0);
+
+            let mut remover = OuterIndexLookupRemover::new(side, &mut outer_index_count);
+
+            let outer_index_0 = OuterIndex::new(2);
+            // TODO stop the remover if read outer index is further from the centre
+            assert_eq!(remover.find(ctx, outer_index_0), false);
+            assert_eq!(remover.current_outer_index, None);
+            assert_eq!(
+                remover.cached_outer_indices,
+                vec![OuterIndex::new(4), OuterIndex::new(3), OuterIndex::new(1)]
+            );
+        }
     }
 }

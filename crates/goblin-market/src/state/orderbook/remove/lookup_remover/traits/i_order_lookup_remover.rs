@@ -12,6 +12,11 @@ use super::{IGroupPositionLookupRemover, IOrderLookupRemoverInner, IOuterIndexLo
 pub trait IOrderLookupRemover<'a>: IOrderLookupRemoverInner<'a> {
     /// Paginate to the given order id and check whether it is active.
     ///
+    /// # Externally ensure
+    ///
+    /// * Order ids are sorted to move away from the centre
+    /// * Do not pass an order id whose outer index is greater than outer
+    /// index of best market price
     ///
     /// # Arguments
     ///
@@ -39,6 +44,8 @@ pub trait IOrderLookupRemover<'a>: IOrderLookupRemoverInner<'a> {
         }
         // Prevous outer index is None or not equal to the new outer index
         if previous_outer_index != Some(outer_index) {
+            // Above condition ensures that outer_index_remover_mut().find() is not
+            // called again for the same outer index
             let outer_index_found = self.outer_index_remover_mut().find(ctx, outer_index);
             if !outer_index_found {
                 return false;
@@ -219,13 +226,13 @@ mod tests {
             assert_eq!(remover.pending_write, false);
             assert_eq!(remover.order_id().unwrap(), order_id_0);
             assert_eq!(remover.outer_index().unwrap(), outer_index_0);
-            assert_eq!(remover.outer_index_remover.outer_index_count(), 2);
+            assert_eq!(remover.outer_index_remover.unread_outer_indices(), 2);
 
             remover.remove(ctx);
             assert_eq!(remover.pending_write, true);
             assert_eq!(remover.order_id().unwrap(), order_id_1); // move to next active order
             assert_eq!(remover.outer_index().unwrap(), outer_index_0);
-            assert_eq!(remover.outer_index_remover.outer_index_count(), 2);
+            assert_eq!(remover.outer_index_remover.unread_outer_indices(), 2);
 
             // still on the same group
             let mut expected_bitmap_group_0 = BitmapGroup::default();
@@ -250,7 +257,7 @@ mod tests {
             assert_eq!(remover.pending_write, true); // because we didn't write after previous remove
             assert_eq!(remover.order_id().unwrap(), order_id_1);
             assert_eq!(remover.outer_index().unwrap(), outer_index_0);
-            assert_eq!(remover.outer_index_remover.outer_index_count(), 2);
+            assert_eq!(remover.outer_index_remover.unread_outer_indices(), 2);
 
             remover.remove(ctx);
             assert_eq!(remover.pending_write, false); // false because best market price updated
@@ -270,13 +277,13 @@ mod tests {
                 order_id_2.price_in_ticks // changed
             );
             assert_eq!(remover.outer_index().unwrap(), outer_index_0);
-            assert_eq!(remover.outer_index_remover.outer_index_count(), 2);
+            assert_eq!(remover.outer_index_remover.unread_outer_indices(), 2);
 
             // 3- find and remove from same group with different inner index
             assert_eq!(remover.find(ctx, order_id_2), true);
             assert_eq!(remover.pending_write, false);
             assert_eq!(remover.outer_index().unwrap(), outer_index_0);
-            assert_eq!(remover.outer_index_remover.outer_index_count(), 2);
+            assert_eq!(remover.outer_index_remover.unread_outer_indices(), 2);
 
             remover.remove(ctx);
             assert_eq!(remover.order_id().unwrap(), order_id_3);
@@ -296,14 +303,14 @@ mod tests {
                 order_id_3.price_in_ticks // changed
             );
             assert_eq!(remover.outer_index().unwrap(), outer_index_1);
-            assert_eq!(remover.outer_index_remover.outer_index_count(), 1);
+            assert_eq!(remover.outer_index_remover.unread_outer_indices(), 1);
             assert_eq!(remover.outer_index_remover.cached_outer_indices, vec![]);
 
             // 4- find and remove from next group
             assert_eq!(remover.find(ctx, order_id_3), true);
             assert_eq!(remover.pending_write, false);
             assert_eq!(remover.outer_index().unwrap(), outer_index_1);
-            assert_eq!(remover.outer_index_remover.outer_index_count(), 1);
+            assert_eq!(remover.outer_index_remover.unread_outer_indices(), 1);
             assert_eq!(remover.outer_index_remover.cached_outer_indices, vec![]);
 
             remover.remove(ctx);
@@ -324,13 +331,13 @@ mod tests {
                 order_id_4.price_in_ticks // changed
             );
             assert_eq!(remover.outer_index().unwrap(), outer_index_2);
-            assert_eq!(remover.outer_index_remover.outer_index_count(), 0);
+            assert_eq!(remover.outer_index_remover.unread_outer_indices(), 0);
             assert_eq!(remover.outer_index_remover.cached_outer_indices, vec![]);
 
             // 5- find and remove last active order
             assert_eq!(remover.find(ctx, order_id_4), true);
             assert_eq!(remover.pending_write, false);
-            assert_eq!(remover.outer_index_remover.outer_index_count(), 0);
+            assert_eq!(remover.outer_index_remover.unread_outer_indices(), 0);
             assert_eq!(remover.outer_index().unwrap(), outer_index_2);
             assert_eq!(remover.outer_index_remover.cached_outer_indices, vec![]);
 
@@ -360,7 +367,7 @@ mod tests {
                 order_id_4.price_in_ticks // no change because last tick was exhausted
             );
             assert_eq!(remover.outer_index(), None);
-            assert_eq!(remover.outer_index_remover.outer_index_count(), 0);
+            assert_eq!(remover.outer_index_remover.unread_outer_indices(), 0);
             assert_eq!(remover.outer_index_remover.cached_outer_indices, vec![]);
         }
 
@@ -422,13 +429,13 @@ mod tests {
             assert_eq!(remover.pending_write, false);
             assert_eq!(remover.order_id().unwrap(), order_id_0);
             assert_eq!(remover.outer_index().unwrap(), outer_index_0);
-            assert_eq!(remover.outer_index_remover.outer_index_count(), 2);
+            assert_eq!(remover.outer_index_remover.unread_outer_indices(), 2);
 
             remover.remove(ctx);
             assert_eq!(remover.pending_write, true);
             assert_eq!(remover.order_id().unwrap(), order_id_1); // move to next active order
             assert_eq!(remover.outer_index().unwrap(), outer_index_0);
-            assert_eq!(remover.outer_index_remover.outer_index_count(), 2);
+            assert_eq!(remover.outer_index_remover.unread_outer_indices(), 2);
 
             // still on the same group
             let mut expected_bitmap_group_0 = BitmapGroup::default();
@@ -453,7 +460,7 @@ mod tests {
             assert_eq!(remover.pending_write, true); // because we didn't write after previous remove
             assert_eq!(remover.order_id().unwrap(), order_id_1);
             assert_eq!(remover.outer_index().unwrap(), outer_index_0);
-            assert_eq!(remover.outer_index_remover.outer_index_count(), 2);
+            assert_eq!(remover.outer_index_remover.unread_outer_indices(), 2);
 
             remover.remove(ctx);
 
@@ -478,13 +485,13 @@ mod tests {
                 order_id_2.price_in_ticks // changed
             );
             assert_eq!(remover.outer_index().unwrap(), outer_index_0);
-            assert_eq!(remover.outer_index_remover.outer_index_count(), 2);
+            assert_eq!(remover.outer_index_remover.unread_outer_indices(), 2);
 
             // 3- find and remove from same group with different inner index
             assert_eq!(remover.find(ctx, order_id_2), true);
             assert_eq!(remover.pending_write, false);
             assert_eq!(remover.outer_index().unwrap(), outer_index_0);
-            assert_eq!(remover.outer_index_remover.outer_index_count(), 2);
+            assert_eq!(remover.outer_index_remover.unread_outer_indices(), 2);
 
             remover.remove(ctx);
             assert_eq!(remover.order_id().unwrap(), order_id_3);
@@ -504,14 +511,14 @@ mod tests {
                 order_id_3.price_in_ticks // changed
             );
             assert_eq!(remover.outer_index().unwrap(), outer_index_1);
-            assert_eq!(remover.outer_index_remover.outer_index_count(), 1);
+            assert_eq!(remover.outer_index_remover.unread_outer_indices(), 1);
             assert_eq!(remover.outer_index_remover.cached_outer_indices, vec![]);
 
             // 4- find and remove from next group
             assert_eq!(remover.find(ctx, order_id_3), true);
             assert_eq!(remover.pending_write, false);
             assert_eq!(remover.outer_index().unwrap(), outer_index_1);
-            assert_eq!(remover.outer_index_remover.outer_index_count(), 1);
+            assert_eq!(remover.outer_index_remover.unread_outer_indices(), 1);
             assert_eq!(remover.outer_index_remover.cached_outer_indices, vec![]);
 
             remover.remove(ctx);
@@ -532,14 +539,14 @@ mod tests {
                 order_id_4.price_in_ticks // changed
             );
             assert_eq!(remover.outer_index().unwrap(), outer_index_2);
-            assert_eq!(remover.outer_index_remover.outer_index_count(), 0);
+            assert_eq!(remover.outer_index_remover.unread_outer_indices(), 0);
             assert_eq!(remover.outer_index_remover.cached_outer_indices, vec![]);
 
             // 5- find and remove last active order
             assert_eq!(remover.find(ctx, order_id_4), true);
             assert_eq!(remover.pending_write, false);
             assert_eq!(remover.outer_index().unwrap(), outer_index_2);
-            assert_eq!(remover.outer_index_remover.outer_index_count(), 0);
+            assert_eq!(remover.outer_index_remover.unread_outer_indices(), 0);
             assert_eq!(remover.outer_index_remover.cached_outer_indices, vec![]);
 
             remover.remove(ctx);
@@ -567,7 +574,7 @@ mod tests {
                 order_id_4.price_in_ticks // no change because last tick was exhausted
             );
             assert_eq!(remover.outer_index(), None);
-            assert_eq!(remover.outer_index_remover.outer_index_count(), 0);
+            assert_eq!(remover.outer_index_remover.unread_outer_indices(), 0);
             assert_eq!(remover.outer_index_remover.cached_outer_indices, vec![]);
         }
     }
@@ -896,7 +903,7 @@ mod tests {
                 remover.outer_index().unwrap(),
                 inactive_order_id.price_in_ticks.outer_index()
             );
-            assert_eq!(remover.outer_index_remover.outer_index_count(), 0);
+            assert_eq!(remover.outer_index_remover.unread_outer_indices(), 0);
             assert_eq!(remover.outer_index_remover.cached_outer_indices, vec![]);
 
             // No change in price
@@ -938,15 +945,61 @@ mod tests {
                 remover.outer_index_remover.cached_outer_indices,
                 vec![outer_index_0]
             );
-            assert_eq!(remover.outer_index_remover.outer_index_count(), 0);
+            assert_eq!(remover.outer_index_remover.unread_outer_indices(), 0);
             assert_eq!(*remover.best_market_price, order_id_0.price_in_ticks);
 
             // Group position is None because no position was set
             assert_eq!(remover.group_position(), None);
         }
 
+        // Special case- lookup beyond market price after sequential remove.
+        // If order_price > best_market price, should we handle this in the remover
+        // or in the manager?
+        // The manager sets side to None if price is beyond best market price. In this
+        // case the remover is never called. If sequential remover updates the best market
+        // price, the side for the subsequent order id should be None and find() should
+        // never be called.
         #[test]
-        fn test_lookup_ask_beyond_best_market_price() {}
+        fn test_lookup_ask_beyond_best_market_price() {
+            let ctx = &mut ArbContext::new();
+            let side = Side::Ask;
+
+            let mut outer_index_count = 1;
+            let outer_index_0 = OuterIndex::new(2);
+            write_outer_indices(ctx, side, vec![outer_index_0]);
+
+            let mut bitmap_group_0 = BitmapGroup::default();
+            bitmap_group_0.inner[0] = 0b0000_0001;
+            bitmap_group_0.write_to_slot(ctx, &outer_index_0);
+
+            let order_id_0 = OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(0)),
+                resting_order_index: RestingOrderIndex::new(0),
+            };
+
+            let inactive_outer_index = OuterIndex::new(1);
+            let inactive_order_id = OrderId {
+                price_in_ticks: Ticks::from_indices(inactive_outer_index, InnerIndex::new(0)),
+                resting_order_index: RestingOrderIndex::new(0),
+            };
+
+            let mut best_market_price = order_id_0.price_in_ticks;
+            let mut remover =
+                OrderLookupRemover::new(side, &mut best_market_price, &mut outer_index_count);
+
+            assert_eq!(remover.find(ctx, inactive_order_id), false);
+
+            // assert_eq!(remover.order_id().unwrap(), inactive_order_id);
+            // assert_eq!(
+            //     remover.outer_index().unwrap(),
+            //     inactive_order_id.price_in_ticks.outer_index()
+            // );
+            // assert_eq!(remover.outer_index_remover.outer_index_count(), 0);
+            // assert_eq!(remover.outer_index_remover.cached_outer_indices, vec![]);
+
+            // // No change in price
+            // assert_eq!(*remover.best_market_price, order_id_0.price_in_ticks);
+        }
 
         // TODO test lookup in old group after sequential remover updates best market price
     }

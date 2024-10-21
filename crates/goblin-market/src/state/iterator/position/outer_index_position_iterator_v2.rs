@@ -22,16 +22,16 @@ use super::outer_index_position_iterator::OuterIndexPosition;
 ///
 pub struct OuterIndexPositionIteratorV2<'a> {
     /// Number of indices yet to be read
-    pub outer_index_count: &'a mut u16,
+    pub unread_outer_indices: &'a mut u16,
 }
 
 impl<'a> OuterIndexPositionIteratorV2<'a> {
     pub fn slot_index(&self) -> u16 {
-        (*self.outer_index_count - 1) / 16
+        (*self.unread_outer_indices - 1) / 16
     }
 
     pub fn relative_index(&self) -> u8 {
-        ((*self.outer_index_count - 1) % 16) as u8
+        ((*self.unread_outer_indices - 1) % 16) as u8
     }
 
     pub fn outer_index_position(&self) -> OuterIndexPosition {
@@ -46,11 +46,11 @@ impl<'a> Iterator for OuterIndexPositionIteratorV2<'a> {
     type Item = OuterIndexPosition;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if *self.outer_index_count == 0 {
+        if *self.unread_outer_indices == 0 {
             return None;
         }
         let result = Some(self.outer_index_position());
-        *self.outer_index_count -= 1;
+        *self.unread_outer_indices -= 1;
 
         result
     }
@@ -65,7 +65,7 @@ mod tests {
         let mut outer_index_count = 17;
 
         let mut iterator = OuterIndexPositionIteratorV2 {
-            outer_index_count: &mut outer_index_count,
+            unread_outer_indices: &mut outer_index_count,
         };
 
         assert_eq!(

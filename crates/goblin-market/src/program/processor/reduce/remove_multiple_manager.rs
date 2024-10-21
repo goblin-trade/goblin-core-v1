@@ -2,7 +2,10 @@ use crate::{
     quantities::Ticks,
     state::{
         order::order_id::OrderId,
-        remove::{IOrderLookupRemover, IOrderLookupRemoverInner, OrderLookupRemover},
+        remove::{
+            IOrderLookupRemover, IOrderLookupRemoverInner, IOuterIndexLookupRemover,
+            OrderLookupRemover,
+        },
         ArbContext, MarketState, Side,
     },
 };
@@ -58,16 +61,36 @@ impl<'a> RemoveMultipleManager<'a> {
     /// * `ctx`
     /// * `order_id` - Order ID to search
     pub fn find(&mut self, ctx: &mut ArbContext, order_id: OrderId) -> bool {
-        let side = Side::from_removal_price(
-            order_id.price_in_ticks,
-            self.last_price(Side::Bid),
-            self.last_price(Side::Ask),
-        );
+        // 1. Find side and the remover to use
+        // 2. Read last outer index from remover
+        // let side = Side::from_removal_price(
+        //     order_id.price_in_ticks,
+        //     self.last_price(Side::Bid),
+        //     self.last_price(Side::Ask),
+        // );
+
+        let order_price = order_id.price_in_ticks;
+        let side = self.get_side(order_price);
 
         if let Some(side) = side {
             self.side = side;
-
             let remover_mut = self.remover_mut(side);
+
+            // outer index condition
+            // Move it inside the remover?
+            if let Some(last_outer_index) = remover_mut.outer_index() {
+                let outer_index = order_price.outer_index();
+
+                if side == Side::Bid && outer_index > last_outer_index
+                    || side == Side::Ask && outer_index < last_outer_index
+                {
+                    return false;
+                }
+            }
+            // suppose previous outer index for ask was 10, which was closed.
+            // Now what if outer index 9 is passed? Since last outer index was
+            // None the above condition will not execute
+
             remover_mut.find(ctx, order_id)
         } else {
             false
@@ -100,9 +123,38 @@ impl<'a> RemoveMultipleManager<'a> {
         &mut self.removers[side as usize]
     }
 
+    fn get_side(&self, order_price: Ticks) -> Option<Side> {
+        // No side if price is in the middle of both best prices.
+        // No side if outer index count is 0
+
+        let bid_remover = self.remover(Side::Bid);
+        let best_bid_price = *bid_remover.best_market_price;
+        let remaining_bids_outer_indices =
+            bid_remover.outer_index_remover().remaining_outer_indices();
+
+        if remaining_bids_outer_indices > 0 && order_price <= best_bid_price {
+            return Some(Side::Bid);
+        }
+
+        let ask_remover = self.remover(Side::Ask);
+        let best_ask_price = *ask_remover.best_market_price;
+        let remaining_asks_outer_indices =
+            ask_remover.outer_index_remover().remaining_outer_indices();
+
+        if remaining_asks_outer_indices > 0 && order_price >= best_ask_price {
+            return Some(Side::Ask);
+        }
+
+        None
+    }
+
     /// Get price of the last removed order, defaulting to best market price if
     /// no order was previously removed.
     fn last_price(&self, side: Side) -> Ticks {
+        // TODO order id becomes None in some cases. TODO check
+        // Two birds in one stone? Sequential remover updates order_id() to the next
+        // active tick.
+        // TODO handle outer index count = 0 case
         let remover = self.remover(side);
         remover
             .order_id()

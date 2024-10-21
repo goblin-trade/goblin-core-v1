@@ -195,7 +195,7 @@ mod tests {
             remover
                 .outer_index_remover
                 .active_outer_index_iterator
-                .outer_index_count(),
+                .unread_outer_indices(),
             0
         );
         assert_eq!(remover.outer_index().unwrap(), outer_index_2);
@@ -300,7 +300,7 @@ mod tests {
             remover
                 .outer_index_remover
                 .active_outer_index_iterator
-                .outer_index_count(),
+                .unread_outer_indices(),
             0
         );
         assert_eq!(remover.outer_index().unwrap(), outer_index_2);
@@ -351,7 +351,7 @@ mod tests {
             remover
                 .outer_index_remover()
                 .active_outer_index_iterator()
-                .outer_index_count(),
+                .unread_outer_indices(),
             1
         );
 
