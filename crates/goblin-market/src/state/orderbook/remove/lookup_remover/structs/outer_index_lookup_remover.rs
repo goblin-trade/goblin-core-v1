@@ -56,6 +56,10 @@ impl<'a> IOuterIndexRemover<'a> for OuterIndexLookupRemover<'a> {
 impl<'a> IOuterIndexSequentialRemover<'a> for OuterIndexLookupRemover<'a> {}
 
 impl<'a> IOuterIndexLookupRemover<'a> for OuterIndexLookupRemover<'a> {
+    fn cached_outer_indices(&self) -> &Vec<OuterIndex> {
+        &self.cached_outer_indices
+    }
+
     fn cached_outer_indices_mut(&mut self) -> &mut Vec<OuterIndex> {
         &mut self.cached_outer_indices
     }

@@ -1,6 +1,7 @@
 use crate::{
     quantities::Ticks,
     state::{
+        get_best_market_price,
         order::order_id::OrderId,
         remove::{
             IOrderLookupRemover, IOrderLookupRemoverInner, IOuterIndexLookupRemover,
@@ -61,36 +62,12 @@ impl<'a> RemoveMultipleManager<'a> {
     /// * `ctx`
     /// * `order_id` - Order ID to search
     pub fn find(&mut self, ctx: &mut ArbContext, order_id: OrderId) -> bool {
-        // 1. Find side and the remover to use
-        // 2. Read last outer index from remover
-        // let side = Side::from_removal_price(
-        //     order_id.price_in_ticks,
-        //     self.last_price(Side::Bid),
-        //     self.last_price(Side::Ask),
-        // );
-
-        let order_price = order_id.price_in_ticks;
-        let side = self.get_side(order_price);
-
-        if let Some(side) = side {
+        if let Some(side) = self.get_side(order_id.price_in_ticks) {
+            // Set side
             self.side = side;
+
+            // This checks for valid outer index and finds whether order id is active
             let remover_mut = self.remover_mut(side);
-
-            // outer index condition
-            // Move it inside the remover?
-            if let Some(last_outer_index) = remover_mut.outer_index() {
-                let outer_index = order_price.outer_index();
-
-                if side == Side::Bid && outer_index > last_outer_index
-                    || side == Side::Ask && outer_index < last_outer_index
-                {
-                    return false;
-                }
-            }
-            // suppose previous outer index for ask was 10, which was closed.
-            // Now what if outer index 9 is passed? Since last outer index was
-            // None the above condition will not execute
-
             remover_mut.find(ctx, order_id)
         } else {
             false
@@ -124,42 +101,26 @@ impl<'a> RemoveMultipleManager<'a> {
     }
 
     fn get_side(&self, order_price: Ticks) -> Option<Side> {
-        // No side if price is in the middle of both best prices.
-        // No side if outer index count is 0
-
-        let bid_remover = self.remover(Side::Bid);
-        let best_bid_price = *bid_remover.best_market_price;
-        let remaining_bids_outer_indices =
-            bid_remover.outer_index_remover().remaining_outer_indices();
-
-        if remaining_bids_outer_indices > 0 && order_price <= best_bid_price {
+        let best_bid_price = self.get_best_price_for_side(Side::Bid);
+        if best_bid_price.is_some_and(|best_bid_price| order_price <= best_bid_price) {
             return Some(Side::Bid);
         }
 
-        let ask_remover = self.remover(Side::Ask);
-        let best_ask_price = *ask_remover.best_market_price;
-        let remaining_asks_outer_indices =
-            ask_remover.outer_index_remover().remaining_outer_indices();
-
-        if remaining_asks_outer_indices > 0 && order_price >= best_ask_price {
+        let best_ask_price = self.get_best_price_for_side(Side::Ask);
+        if best_ask_price.is_some_and(|best_ask_price| order_price >= best_ask_price) {
             return Some(Side::Ask);
         }
 
         None
     }
 
-    /// Get price of the last removed order, defaulting to best market price if
-    /// no order was previously removed.
-    fn last_price(&self, side: Side) -> Ticks {
-        // TODO order id becomes None in some cases. TODO check
-        // Two birds in one stone? Sequential remover updates order_id() to the next
-        // active tick.
-        // TODO handle outer index count = 0 case
+    fn get_best_price_for_side(&self, side: Side) -> Option<Ticks> {
         let remover = self.remover(side);
-        remover
-            .order_id()
-            .map(|order_id| order_id.price_in_ticks)
-            .unwrap_or(*remover.best_market_price)
+        let market_price_inner = *remover.best_market_price;
+        let outer_index_count = remover.outer_index_remover().outer_index_count();
+        let best_price = get_best_market_price(market_price_inner, outer_index_count);
+
+        best_price
     }
 
     pub fn side(&self) -> Side {

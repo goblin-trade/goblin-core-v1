@@ -4,7 +4,56 @@ use crate::state::{
 use alloc::vec::Vec;
 
 pub trait IOuterIndexLookupRemover<'a>: IOuterIndexRemover<'a> {
+    fn cached_outer_indices(&self) -> &Vec<OuterIndex>;
     fn cached_outer_indices_mut(&mut self) -> &mut Vec<OuterIndex>;
+
+    fn find_v2(&mut self, ctx: &mut ArbContext, outer_index: OuterIndex) -> bool {
+        let side = self.side();
+
+        loop {
+            // write a wrapper iterator that also includes cached outer index
+            if let Some(read_outer_index) = self.next_outer_index(ctx) {
+                if side == Side::Bid && outer_index > read_outer_index
+                    || side == Side::Ask && outer_index < read_outer_index
+                {
+                    // Set as current outer index so it can be used for future
+                    // comparisons
+                    *self.current_outer_index_mut() = Some(read_outer_index);
+                    return false;
+                } else if read_outer_index == outer_index {
+                    *self.current_outer_index_mut() = Some(read_outer_index);
+                    return true;
+                } else {
+                    self.cached_outer_indices_mut().push(read_outer_index);
+                }
+            } else {
+                return false;
+            }
+        }
+    }
+
+    fn next_outer_index(&mut self, ctx: &mut ArbContext) -> Option<OuterIndex> {
+        if let Some(cached_outer_index) = self.current_outer_index_mut().take() {
+            Some(cached_outer_index)
+        } else {
+            self.active_outer_index_iterator_mut().next(ctx)
+        }
+    }
+
+    // fn handle_indices(&mut self, read_outer_index: OuterIndex, outer_index: OuterIndex) -> bool {
+    //     let side = self.side();
+
+    //     if side == Side::Bid && outer_index > read_outer_index
+    //         || side == Side::Ask && outer_index < read_outer_index
+    //     {
+    //         return false;
+    //     } else if read_outer_index == outer_index {
+    //         *self.current_outer_index_mut() = Some(read_outer_index);
+    //         return true;
+    //     } else {
+    //         self.cached_outer_indices_mut().push(read_outer_index);
+    //     }
+    // }
 
     /// Tries to find the outer index in the index list. If the outer index
     /// is found, it is loaded in outer_index_remover.
@@ -15,22 +64,39 @@ pub trait IOuterIndexLookupRemover<'a>: IOuterIndexRemover<'a> {
     ///
     /// Externally avoid calling find() for the same outer index. During the second
     /// call the current outer index will be removed and pushed to the cache list.
+    /// It is illegal to call find_next() if the outer index is already cached.
     ///
-    fn find(&mut self, ctx: &mut ArbContext, outer_index: OuterIndex) -> bool {
+    fn find_next(&mut self, ctx: &mut ArbContext, outer_index: OuterIndex) -> bool {
         if let Some(outer_index) = self.current_outer_index_mut().take() {
             self.cached_outer_indices_mut().push(outer_index);
         }
 
+        let side = self.side();
         loop {
             if let Some(read_outer_index) = self.active_outer_index_iterator_mut().next(ctx) {
-                // TODO stop if `outer_index` is closer to the centre than read_outer_index?
-                // This read value can be pushed to cache.
-                if read_outer_index == outer_index {
+                if side == Side::Bid && outer_index > read_outer_index
+                    || side == Side::Ask && outer_index < read_outer_index
+                {
+                    return false;
+                } else if read_outer_index == outer_index {
                     *self.current_outer_index_mut() = Some(read_outer_index);
                     return true;
                 } else {
                     self.cached_outer_indices_mut().push(read_outer_index);
                 }
+
+                // // TODO stop if `outer_index` is closer to the centre than read_outer_index?
+                // // This read value can be pushed to cache.
+                // if read_outer_index == outer_index {
+                //     *self.current_outer_index_mut() = Some(read_outer_index);
+                //     return true;
+                // } else if self.side() == Side::Bid && read_outer_index > outer_index
+                //     || self.side() == Side::Ask && read_outer_index < outer_index
+                // {
+                //     self.cached_outer_indices_mut().push(read_outer_index);
+                // } else {
+                //     return false;
+                // }
             } else {
                 return false;
             }
@@ -87,6 +153,10 @@ pub trait IOuterIndexLookupRemover<'a>: IOuterIndexRemover<'a> {
         let outer_index_present = self.current_outer_index().is_some();
         self.unread_outer_indices() + u16::from(outer_index_present)
     }
+
+    fn outer_index_count(&self) -> u16 {
+        self.remaining_outer_indices() + self.cached_outer_indices().len() as u16
+    }
 }
 
 #[cfg(test)]
@@ -119,7 +189,7 @@ mod tests {
         let mut remover = OuterIndexLookupRemover::new(side, &mut outer_index_count);
 
         let outer_index_0 = OuterIndex::new(18);
-        remover.find(ctx, outer_index_0);
+        remover.find_next(ctx, outer_index_0);
         assert_eq!(remover.current_outer_index.unwrap(), outer_index_0);
         assert_eq!(
             remover.active_outer_index_iterator.unread_outer_indices(),
@@ -136,7 +206,7 @@ mod tests {
         assert_eq!(remover.cached_outer_indices, vec![]);
 
         let outer_index_1 = OuterIndex::new(16);
-        remover.find(ctx, outer_index_1);
+        remover.find_next(ctx, outer_index_1);
         assert_eq!(remover.current_outer_index.unwrap(), outer_index_1);
         assert_eq!(
             remover.active_outer_index_iterator.unread_outer_indices(),
@@ -155,7 +225,7 @@ mod tests {
         // Remove in different group
 
         let outer_index_2 = OuterIndex::new(14);
-        remover.find(ctx, outer_index_2);
+        remover.find_next(ctx, outer_index_2);
         assert_eq!(remover.current_outer_index.unwrap(), outer_index_2);
         assert_eq!(
             remover.active_outer_index_iterator.unread_outer_indices(),
@@ -214,7 +284,7 @@ mod tests {
         let mut remover = OuterIndexLookupRemover::new(side, &mut outer_index_count);
 
         let outer_index_0 = OuterIndex::new(0);
-        remover.find(ctx, outer_index_0);
+        remover.find_next(ctx, outer_index_0);
         assert_eq!(remover.current_outer_index.unwrap(), outer_index_0);
         assert_eq!(
             remover.active_outer_index_iterator.unread_outer_indices(),
@@ -231,7 +301,7 @@ mod tests {
         assert_eq!(remover.cached_outer_indices, vec![]);
 
         let outer_index_1 = OuterIndex::new(2);
-        remover.find(ctx, outer_index_1);
+        remover.find_next(ctx, outer_index_1);
         assert_eq!(remover.current_outer_index.unwrap(), outer_index_1);
         assert_eq!(
             remover.active_outer_index_iterator.unread_outer_indices(),
@@ -250,7 +320,7 @@ mod tests {
         // Remove in different group
 
         let outer_index_2 = OuterIndex::new(4);
-        remover.find(ctx, outer_index_2);
+        remover.find_next(ctx, outer_index_2);
         assert_eq!(remover.current_outer_index.unwrap(), outer_index_2);
         assert_eq!(
             remover.active_outer_index_iterator.unread_outer_indices(),
@@ -294,10 +364,10 @@ mod tests {
         let mut remover = OuterIndexLookupRemover::new(side, &mut outer_index_count);
 
         let outer_index_0 = OuterIndex::new(18);
-        remover.find(ctx, outer_index_0);
+        remover.find_next(ctx, outer_index_0);
 
         let outer_index_1 = OuterIndex::new(14);
-        remover.find(ctx, outer_index_1);
+        remover.find_next(ctx, outer_index_1);
         assert_eq!(remover.current_outer_index.unwrap(), outer_index_1);
         assert_eq!(
             remover.active_outer_index_iterator.unread_outer_indices(),
@@ -351,10 +421,10 @@ mod tests {
         let mut remover = OuterIndexLookupRemover::new(side, &mut outer_index_count);
 
         let outer_index_0 = OuterIndex::new(0);
-        remover.find(ctx, outer_index_0);
+        remover.find_next(ctx, outer_index_0);
 
         let outer_index_1 = OuterIndex::new(4);
-        remover.find(ctx, outer_index_1);
+        remover.find_next(ctx, outer_index_1);
         assert_eq!(remover.current_outer_index.unwrap(), outer_index_1);
         assert_eq!(
             remover.active_outer_index_iterator.unread_outer_indices(),
@@ -408,12 +478,12 @@ mod tests {
         let mut remover = OuterIndexLookupRemover::new(side, &mut outer_index_count);
 
         let outer_index_0 = OuterIndex::new(12);
-        remover.find(ctx, outer_index_0);
+        remover.find_next(ctx, outer_index_0);
         remover.remove();
 
         // Find but not remove
         let outer_index_1 = OuterIndex::new(10);
-        remover.find(ctx, outer_index_1);
+        remover.find_next(ctx, outer_index_1);
         assert_eq!(remover.current_outer_index.unwrap(), outer_index_1);
         assert_eq!(
             remover.active_outer_index_iterator.unread_outer_indices(),
@@ -473,7 +543,7 @@ mod tests {
 
             let outer_index_0 = OuterIndex::new(2);
             // TODO stop the remover if read outer index is further from the centre
-            assert_eq!(remover.find(ctx, outer_index_0), false);
+            assert_eq!(remover.find_next(ctx, outer_index_0), false);
             assert_eq!(remover.current_outer_index, None);
             assert_eq!(
                 remover.cached_outer_indices,

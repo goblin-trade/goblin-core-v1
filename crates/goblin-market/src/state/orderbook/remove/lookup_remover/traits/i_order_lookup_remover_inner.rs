@@ -2,8 +2,8 @@ use crate::{
     quantities::Ticks,
     state::{
         order::{group_position::GroupPosition, order_id::OrderId},
-        remove::{IOrderSequentialRemover, IOuterIndexRemover},
-        OuterIndex,
+        remove::{IGroupPositionRemover, IOrderSequentialRemover, IOuterIndexRemover},
+        OuterIndex, Side,
     },
 };
 
@@ -47,7 +47,11 @@ pub trait IOrderLookupRemoverInner<'a> {
         self.group_position_remover().looked_up_group_position()
     }
 
-    fn order_id(&self) -> Option<OrderId> {
+    fn side(&self) -> Side {
+        self.group_position_remover().side()
+    }
+
+    fn order_id_to_remove(&self) -> Option<OrderId> {
         let outer_index = self.outer_index()?;
         let group_position = self.group_position()?;
 

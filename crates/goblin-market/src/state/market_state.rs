@@ -249,6 +249,14 @@ impl MarketState {
     }
 }
 
+pub fn get_best_market_price(market_price_inner: Ticks, outer_index_count: u16) -> Option<Ticks> {
+    if outer_index_count == 0 {
+        None
+    } else {
+        Some(market_price_inner)
+    }
+}
+
 #[cfg(test)]
 mod test {
     use crate::quantities::{QuoteLots, Ticks, WrapperU64};
