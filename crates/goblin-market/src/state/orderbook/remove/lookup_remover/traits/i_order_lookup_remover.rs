@@ -1,7 +1,7 @@
 use crate::state::{
     order::{group_position::GroupPosition, order_id::OrderId},
     remove::{IGroupPositionRemover, IOrderSequentialRemover},
-    ArbContext, Side,
+    ArbContext,
 };
 
 use super::{IGroupPositionLookupRemover, IOrderLookupRemoverInner, IOuterIndexLookupRemover};
@@ -135,8 +135,8 @@ mod tests {
     use crate::{
         quantities::Ticks,
         state::{
-            bitmap_group::BitmapGroup, order::order_id, remove::OrderLookupRemover, ContextActions,
-            InnerIndex, ListKey, ListSlot, OuterIndex, RestingOrderIndex, Side,
+            bitmap_group::BitmapGroup, remove::OrderLookupRemover, ContextActions, InnerIndex,
+            ListKey, ListSlot, OuterIndex, RestingOrderIndex, Side,
         },
     };
 
