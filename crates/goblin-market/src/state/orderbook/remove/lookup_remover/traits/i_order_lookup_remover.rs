@@ -12,11 +12,8 @@ use super::{IGroupPositionLookupRemover, IOrderLookupRemoverInner, IOuterIndexLo
 pub trait IOrderLookupRemover<'a>: IOrderLookupRemoverInner<'a> {
     /// Paginate to the given order id and check whether it is active.
     ///
-    /// # Externally ensure
-    ///
-    /// * Order ids are sorted to move away from the centre
-    /// * Do not pass an order id whose outer index is greater than outer
-    /// index of best market price
+    /// # Externally ensure that outer indices move away from the centre,
+    /// otherwise the the order cannot be found.
     ///
     /// # Arguments
     ///
@@ -45,27 +42,32 @@ pub trait IOrderLookupRemover<'a>: IOrderLookupRemoverInner<'a> {
             }
         }
 
+        // cases when outer index is found
+        // - New outer index. Load the group.
+        // - Outer index was found in a previous read. If pending read is true then
+        // we need to load the group.
+        //
         let outer_index_found = self.outer_index_remover_mut().find_v2(ctx, outer_index);
         if !outer_index_found {
+            if self.outer_index().is_some() {
+                // Can pending read become true when pending write is true? No.
+                // If pending_write was true, it is set to false unless outer index
+                // is the same. If outer index is same then the outer index will be found.
+                debug_assert!(self.pending_write() == false);
+                *self.pending_read_mut() = true;
+            }
+
             return false;
         }
+
         // Load group if previously loaded outer index is None or not equal to the current one
-        if Some(outer_index) != previous_outer_index {
+        if Some(outer_index) != previous_outer_index || self.pending_read() {
             self.group_position_remover_mut()
                 .load_outer_index(ctx, outer_index);
-        }
 
-        // // Prevous outer index is None or not equal to the new outer index
-        // if previous_outer_index != Some(outer_index) {
-        //     // Above condition ensures that outer_index_remover_mut().find() is not
-        //     // called again for the same outer index
-        //     let outer_index_found = self.outer_index_remover_mut().find_next(ctx, outer_index);
-        //     if !outer_index_found {
-        //         return false;
-        //     }
-        //     self.group_position_remover_mut()
-        //         .load_outer_index(ctx, outer_index);
-        // }
+            // If the pending read group was skipped, this will reset pending_read to false
+            *self.pending_read_mut() = false;
+        }
 
         self.group_position_remover_mut()
             .find(GroupPosition::from(&order_id))

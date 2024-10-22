@@ -24,6 +24,9 @@ pub struct OrderLookupRemover<'a> {
     pub best_market_price: &'a mut Ticks,
 
     /// Whether the bitmap group is pending a write
+    pub pending_read: bool,
+
+    /// Whether the bitmap group is pending a write
     pub pending_write: bool,
 }
 
@@ -36,6 +39,7 @@ impl<'a> OrderLookupRemover<'a> {
         OrderLookupRemover {
             outer_index_remover: OuterIndexLookupRemover::new(side, outer_index_count),
             group_position_remover: GroupPositionRemover::new(side),
+            pending_read: false,
             pending_write: false,
             best_market_price,
         }
@@ -97,6 +101,14 @@ impl<'a> IOrderLookupRemoverInner<'a> for OrderLookupRemover<'a> {
 
     fn best_market_price_inner_mut(&mut self) -> &mut Ticks {
         &mut self.best_market_price
+    }
+
+    fn pending_read(&self) -> bool {
+        self.pending_read
+    }
+
+    fn pending_read_mut(&mut self) -> &mut bool {
+        &mut self.pending_read
     }
 
     fn pending_write(&self) -> bool {

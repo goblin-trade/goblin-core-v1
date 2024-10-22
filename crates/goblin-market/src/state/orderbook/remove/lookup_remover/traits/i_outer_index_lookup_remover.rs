@@ -13,18 +13,18 @@ pub trait IOuterIndexLookupRemover<'a>: IOuterIndexRemover<'a> {
         loop {
             // write a wrapper iterator that also includes cached outer index
             if let Some(read_outer_index) = self.next_outer_index(ctx) {
-                if side == Side::Bid && outer_index > read_outer_index
-                    || side == Side::Ask && outer_index < read_outer_index
+                if side == Side::Bid && outer_index < read_outer_index
+                    || side == Side::Ask && outer_index > read_outer_index
                 {
-                    // Set as current outer index so it can be used for future
-                    // comparisons
-                    *self.current_outer_index_mut() = Some(read_outer_index);
-                    return false;
-                } else if read_outer_index == outer_index {
-                    *self.current_outer_index_mut() = Some(read_outer_index);
-                    return true;
-                } else {
+                    // Need to traverse deeper. Push the read value to cache list
                     self.cached_outer_indices_mut().push(read_outer_index);
+                } else {
+                    // Stop looping. Subsequently read values will be equal to or
+                    // further from the centre than the value to find.
+                    *self.current_outer_index_mut() = Some(read_outer_index);
+
+                    // Whether the value is found
+                    return read_outer_index == outer_index;
                 }
             } else {
                 return false;

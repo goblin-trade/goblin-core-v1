@@ -25,6 +25,12 @@ pub trait IOrderLookupRemoverInner<'a> {
     /// Reference to best market price for current side from market state
     fn best_market_price_inner_mut(&mut self) -> &mut Ticks;
 
+    /// Whether the outer index changed and the bitmap group is pending a read
+    fn pending_read(&self) -> bool;
+
+    /// Mutable reference to pending read
+    fn pending_read_mut(&mut self) -> &mut bool;
+
     /// Whether the bitmap group is pending a write
     fn pending_write(&self) -> bool;
 
