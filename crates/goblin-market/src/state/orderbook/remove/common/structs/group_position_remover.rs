@@ -115,7 +115,13 @@ impl IGroupPositionLookupRemover for GroupPositionRemover {
     }
 
     fn remove(&mut self) {
+        #[cfg(test)]
+        println!("removing");
+
         if let Some(group_position) = self.looked_up_group_position() {
+            #[cfg(test)]
+            println!("removing group position {:?}", group_position);
+
             self.active_group_position_iterator
                 .bitmap_group
                 .deactivate(group_position);

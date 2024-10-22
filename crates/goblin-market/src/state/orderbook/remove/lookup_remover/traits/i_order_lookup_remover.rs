@@ -96,6 +96,10 @@ pub trait IOrderLookupRemover<'a>: IOrderLookupRemoverInner<'a> {
                 // case 2. If bitmap group remains active we need to write the pending
                 // group to slot. Otherwise we can simply remove its outer index.
                 //
+
+                #[cfg(test)]
+                println!("removing bit");
+
                 self.group_position_remover_mut().remove();
 
                 let group_active_after_removal = self.group_position_remover().is_group_active();
@@ -734,8 +738,8 @@ mod tests {
             let side = Side::Bid;
 
             let mut outer_index_count = 2;
-            let outer_index_0 = OuterIndex::new(1);
-            let outer_index_1 = OuterIndex::new(2);
+            let outer_index_0 = OuterIndex::new(2);
+            let outer_index_1 = OuterIndex::new(1);
             write_outer_indices(ctx, side, vec![outer_index_1, outer_index_0]);
 
             let mut bitmap_group_0 = BitmapGroup::default();
@@ -782,7 +786,10 @@ mod tests {
 
             // Jump to order id 3 and remove it
             remover.find(ctx, order_id_3);
+
+            // TODO fix
             assert_eq!(remover.order_id_to_remove().unwrap(), order_id_3);
+
             assert_eq!(remover.outer_index().unwrap(), outer_index_1);
             assert_eq!(
                 remover.outer_index_remover.cached_outer_indices,
@@ -869,6 +876,61 @@ mod tests {
                 expected_bitmap_group_1
             );
         }
+
+        #[test]
+        fn test_lookup_out_of_order_within_ordered_outer_indices() {
+            let ctx = &mut ArbContext::new();
+            let side = Side::Ask;
+
+            let mut outer_index_count = 1;
+            let outer_index_0 = OuterIndex::new(1);
+            write_outer_indices(ctx, side, vec![outer_index_0]);
+
+            let mut bitmap_group_0 = BitmapGroup::default();
+            bitmap_group_0.inner[0] = 0b1000_0000; // Garbage bit
+            bitmap_group_0.inner[1] = 0b0000_0101; // Best market price starts here
+            bitmap_group_0.inner[31] = 0b1000_0000;
+            bitmap_group_0.write_to_slot(ctx, &outer_index_0);
+
+            let order_id_0 = OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(1)),
+                resting_order_index: RestingOrderIndex::new(0),
+            };
+            let order_id_1 = OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(1)),
+                resting_order_index: RestingOrderIndex::new(2),
+            };
+            let order_id_2 = OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(31)),
+                resting_order_index: RestingOrderIndex::new(7),
+            };
+
+            let mut best_market_price = order_id_0.price_in_ticks;
+            let mut remover =
+                OrderLookupRemover::new(side, &mut best_market_price, &mut outer_index_count);
+
+            assert_eq!(remover.find(ctx, order_id_2), true);
+            remover.remove(ctx);
+
+            assert_eq!(remover.find(ctx, order_id_1), true);
+            remover.remove(ctx);
+
+            let mut expected_bitmap_group_0 = BitmapGroup::default();
+            expected_bitmap_group_0.inner[0] = 0b1000_0000;
+            expected_bitmap_group_0.inner[1] = 0b0000_0001;
+            assert_eq!(
+                remover
+                    .group_position_remover
+                    .active_group_position_iterator
+                    .bitmap_group,
+                expected_bitmap_group_0
+            );
+
+            IOrderLookupRemover::commit(&mut remover, ctx);
+
+            let read_bitmap_group_0 = BitmapGroup::new_from_slot(ctx, outer_index_0);
+            assert_eq!(read_bitmap_group_0, expected_bitmap_group_0);
+        }
     }
 
     mod inactive_orders {
@@ -944,11 +1006,9 @@ mod tests {
 
             assert_eq!(remover.find(ctx, inactive_order_id), false);
             assert_eq!(remover.order_id_to_remove(), None);
-            assert_eq!(remover.outer_index(), None);
-            assert_eq!(
-                remover.outer_index_remover.cached_outer_indices,
-                vec![outer_index_0]
-            );
+
+            assert_eq!(remover.outer_index().unwrap(), outer_index_0);
+            assert_eq!(remover.outer_index_remover.cached_outer_indices, vec![]);
             assert_eq!(remover.outer_index_remover.unread_outer_indices(), 0);
             assert_eq!(*remover.best_market_price, order_id_0.price_in_ticks);
 
@@ -1006,5 +1066,6 @@ mod tests {
         }
 
         // TODO test lookup in old group after sequential remover updates best market price
+        // TODO test lookup in same group with group position out of order (we don't enforce sort order on price now)
     }
 }
