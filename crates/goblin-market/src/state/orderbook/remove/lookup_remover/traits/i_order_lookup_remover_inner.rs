@@ -39,11 +39,6 @@ pub trait IOrderLookupRemoverInner<'a> {
 
     fn sequential_order_remover(&mut self) -> &mut impl IOrderSequentialRemover<'a>;
 
-    // Setters
-    fn set_pending_write(&mut self, non_outermost_group_is_active: bool) {
-        *self.pending_write_mut() = non_outermost_group_is_active;
-    }
-
     // Getters
     fn outer_index(&self) -> Option<OuterIndex> {
         self.outer_index_remover().current_outer_index()

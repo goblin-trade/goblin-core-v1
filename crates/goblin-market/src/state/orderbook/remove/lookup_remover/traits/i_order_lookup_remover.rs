@@ -6,9 +6,11 @@ use crate::state::{
 
 use super::{IGroupPositionLookupRemover, IOrderLookupRemoverInner, IOuterIndexLookupRemover};
 
-/// Utility to lookup whether a set of order IDs are active and to optionally deactivate them.
-/// Successive order ids passed to find() must be move away from the centre, i.e.
-/// in descending order for bids and in ascending order for asks.
+/// Utility to lookup whether a set of order IDs are active and to optionally
+/// deactivate them.
+///
+/// Outer indices of successive order ids must move away from the centre otherwise
+/// find() will return false for an out of order search.
 pub trait IOrderLookupRemover<'a>: IOrderLookupRemoverInner<'a> {
     /// Paginate to the given order id and check whether it is active.
     ///
@@ -29,43 +31,29 @@ pub trait IOrderLookupRemover<'a>: IOrderLookupRemoverInner<'a> {
         let outer_index = price.outer_index();
         let previous_outer_index = self.outer_index();
 
-        if self.pending_write() {
+        if previous_outer_index != Some(outer_index) {
+            // Write group if outer index changed and pending write is true.
+            // If outer index remains same then don't write yet.
             // previous_outer_index is guaranteed to exist if pending_write is true
-            let previous_outer_index = previous_outer_index.unwrap();
-
-            // If next order id is on the same group, don't write group to slot yet
-            if previous_outer_index != outer_index {
+            if self.pending_write() {
                 self.group_position_remover()
-                    .write_to_slot(ctx, previous_outer_index);
+                    .write_to_slot(ctx, previous_outer_index.unwrap());
 
                 *self.pending_write_mut() = false;
             }
-        }
 
-        // cases when outer index is found
-        // - New outer index. Load the group.
-        // - Outer index was found in a previous read. If pending read is true then
-        // we need to load the group.
-        //
-        let outer_index_found = self.outer_index_remover_mut().find_v2(ctx, outer_index);
-        if !outer_index_found {
-            if self.outer_index().is_some() {
-                // Can pending read become true when pending write is true? No.
-                // If pending_write was true, it is set to false unless outer index
-                // is the same. If outer index is same then the outer index will be found.
-                debug_assert!(self.pending_write() == false);
-                *self.pending_read_mut() = true;
+            let outer_index_found = self.outer_index_remover_mut().find_v2(ctx, outer_index);
+            // pending_write() is always set to false before setting pending_read to true.
+            *self.pending_read_mut() = self.outer_index().is_some();
+
+            if !outer_index_found {
+                return false;
             }
-
-            return false;
         }
 
-        // Load group if previously loaded outer index is None or not equal to the current one
-        if Some(outer_index) != previous_outer_index || self.pending_read() {
+        if self.pending_read() {
             self.group_position_remover_mut()
                 .load_outer_index(ctx, outer_index);
-
-            // If the pending read group was skipped, this will reset pending_read to false
             *self.pending_read_mut() = false;
         }
 
@@ -110,9 +98,9 @@ pub trait IOrderLookupRemover<'a>: IOrderLookupRemoverInner<'a> {
                 //
                 self.group_position_remover_mut().remove();
 
-                let group_is_active = self.group_position_remover().is_group_active();
-                self.set_pending_write(group_is_active);
-                if !group_is_active {
+                let group_active_after_removal = self.group_position_remover().is_group_active();
+                *self.pending_write_mut() = group_active_after_removal;
+                if !group_active_after_removal {
                     self.outer_index_remover_mut().remove();
                 }
             }
