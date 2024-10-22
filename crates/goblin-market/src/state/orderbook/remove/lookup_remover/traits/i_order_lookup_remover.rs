@@ -42,7 +42,7 @@ pub trait IOrderLookupRemover<'a>: IOrderLookupRemoverInner<'a> {
                 *self.pending_write_mut() = false;
             }
 
-            let outer_index_found = self.outer_index_remover_mut().find_v2(ctx, outer_index);
+            let outer_index_found = self.outer_index_remover_mut().find(ctx, outer_index);
             // pending_write() is always set to false before setting pending_read to true.
             *self.pending_read_mut() = self.outer_index().is_some();
 
