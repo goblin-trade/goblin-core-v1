@@ -40,10 +40,27 @@ pub trait IOrderLookupRemoverInner<'a> {
     fn sequential_order_remover(&mut self) -> &mut impl IOrderSequentialRemover<'a>;
 
     // Getters
+
+    /// The current outer index. If the bitmap group becomes empty on removal
+    /// then outer index is removed and this function returns None.
+    ///
+    /// Incoming order ids should be sorted by outer index, moving away from
+    /// the centre. If the cached outer index is None due to its group closing,
+    /// the next outer index is read from the bitmap list for comparison.
     fn outer_index(&self) -> Option<OuterIndex> {
         self.outer_index_remover().current_outer_index()
     }
 
+    /// Group position of the looked up order.
+    ///
+    /// This value can have 3 scenarios
+    /// * Group position corresponds to the order id looked up
+    /// * If the outermost value was removed by the sequential remover then
+    /// group position will point to the next active bit.
+    /// * Group position corresponds to the order id removed, but outer index changes.
+    /// This happens when the current outer index cleared and we try to lookup order
+    /// from a previous group. A new outer index is loaded for comparion but the
+    /// group position does not change.
     fn group_position(&self) -> Option<GroupPosition> {
         self.group_position_remover().looked_up_group_position()
     }
