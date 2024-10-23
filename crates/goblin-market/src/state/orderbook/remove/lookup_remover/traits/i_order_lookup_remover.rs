@@ -161,18 +161,7 @@ mod tests {
                 let outer_index = outer_indices.get(inner_slot_index).unwrap();
                 list_slot.set(outer_index_position, *outer_index);
             }
-            println!("writing list slot {:?}", list_slot.inner);
             list_slot.write_to_slot(ctx, &slot_key);
-        }
-    }
-
-    fn write_order_ids(ctx: &mut ArbContext, order_ids: Vec<OrderId>) {
-        for order_id in order_ids {
-            let outer_index = order_id.price_in_ticks.outer_index();
-
-            let mut bitmap_group = BitmapGroup::new_from_slot(ctx, outer_index);
-            bitmap_group.activate(GroupPosition::from(&order_id));
-            bitmap_group.write_to_slot(ctx, &outer_index);
         }
     }
 
@@ -591,6 +580,282 @@ mod tests {
         use super::*;
 
         #[test]
+        fn test_lookup_asks_across_groups() {
+            let ctx = &mut ArbContext::new();
+            let side = Side::Ask;
+
+            let mut outer_index_count = 4;
+            let outer_index_0 = OuterIndex::new(1);
+            let outer_index_1 = OuterIndex::new(2);
+            let outer_index_2 = OuterIndex::new(3);
+            let outer_index_3 = OuterIndex::new(5);
+            write_outer_indices(
+                ctx,
+                side,
+                vec![outer_index_3, outer_index_2, outer_index_1, outer_index_0],
+            );
+
+            let mut bitmap_group_0 = BitmapGroup::default();
+            bitmap_group_0.inner[0] = 0b1000_0000; // Garbage bit
+            bitmap_group_0.inner[1] = 0b0000_0001; // Best market price starts here
+            bitmap_group_0.inner[2] = 0b0000_0011;
+            bitmap_group_0.inner[31] = 0b1000_0000;
+            bitmap_group_0.write_to_slot(ctx, &outer_index_0);
+
+            // Remove but don't close group
+            let mut bitmap_group_1 = BitmapGroup::default();
+            bitmap_group_1.inner[0] = 0b0000_0001;
+            bitmap_group_1.inner[1] = 0b0000_0001;
+            bitmap_group_1.write_to_slot(ctx, &outer_index_1);
+
+            // Close group
+            let mut bitmap_group_2 = BitmapGroup::default();
+            bitmap_group_2.inner[0] = 0b0000_0001;
+            bitmap_group_2.write_to_slot(ctx, &outer_index_2);
+
+            // Close last group
+            let mut bitmap_group_3 = BitmapGroup::default();
+            bitmap_group_3.inner[0] = 0b0000_0001;
+            bitmap_group_3.write_to_slot(ctx, &outer_index_3);
+
+            let order_id_0 = OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(2)),
+                resting_order_index: RestingOrderIndex::new(0),
+            };
+            let order_id_1 = OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(2)),
+                resting_order_index: RestingOrderIndex::new(1),
+            };
+            let order_id_2 = OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(31)),
+                resting_order_index: RestingOrderIndex::new(7),
+            };
+            let order_id_3 = OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index_1, InnerIndex::new(0)),
+                resting_order_index: RestingOrderIndex::new(0),
+            };
+            let order_id_absent_order = OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index_1, InnerIndex::new(0)),
+                resting_order_index: RestingOrderIndex::new(1),
+            };
+            let order_id_find_but_dont_remove = OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index_1, InnerIndex::new(1)),
+                resting_order_index: RestingOrderIndex::new(0),
+            };
+            let order_id_4 = OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index_2, InnerIndex::new(0)),
+                resting_order_index: RestingOrderIndex::new(0),
+            };
+            let order_id_5 = OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index_3, InnerIndex::new(0)),
+                resting_order_index: RestingOrderIndex::new(0),
+            };
+
+            let mut best_market_price = Ticks::from_indices(outer_index_0, InnerIndex::new(1));
+            let mut remover =
+                OrderLookupRemover::new(side, &mut best_market_price, &mut outer_index_count);
+
+            assert_eq!(remover.find(ctx, order_id_0), true);
+
+            remover.remove(ctx);
+            assert_eq!(remover.order_id_to_remove().unwrap(), order_id_0);
+
+            assert_eq!(remover.find(ctx, order_id_1), true);
+            remover.remove(ctx);
+            assert_eq!(remover.order_id_to_remove().unwrap(), order_id_1);
+
+            assert_eq!(remover.find(ctx, order_id_2), true);
+            remover.remove(ctx);
+            assert_eq!(remover.order_id_to_remove().unwrap(), order_id_2);
+
+            assert_eq!(remover.find(ctx, order_id_3), true);
+            remover.remove(ctx);
+            assert_eq!(remover.order_id_to_remove().unwrap(), order_id_3);
+
+            // Absent order lookup
+            assert_eq!(remover.find(ctx, order_id_absent_order), false);
+            assert_eq!(remover.order_id_to_remove().unwrap(), order_id_absent_order);
+
+            // Find but don't remove this order
+            assert_eq!(remover.find(ctx, order_id_find_but_dont_remove), true);
+            assert_eq!(
+                remover.order_id_to_remove().unwrap(),
+                order_id_find_but_dont_remove
+            );
+
+            // Removal closes the group so outer index is None
+            assert_eq!(remover.find(ctx, order_id_4), true);
+            remover.remove(ctx);
+            assert_eq!(remover.outer_index(), None);
+            assert_eq!(
+                remover.group_position().unwrap(),
+                GroupPosition::from(&order_id_4)
+            );
+            assert_eq!(
+                remover.outer_index_remover.cached_outer_indices,
+                vec![outer_index_0, outer_index_1]
+            );
+
+            // Removal closes the group so outer index is None
+            assert_eq!(remover.find(ctx, order_id_5), true);
+            remover.remove(ctx);
+            assert_eq!(remover.outer_index(), None);
+            assert_eq!(
+                remover.group_position().unwrap(),
+                GroupPosition::from(&order_id_5)
+            );
+            assert_eq!(
+                remover.outer_index_remover.cached_outer_indices,
+                vec![outer_index_0, outer_index_1]
+            );
+
+            IOrderLookupRemover::commit(&mut remover, ctx);
+            assert_eq!(
+                *remover.best_market_price,
+                Ticks::from_indices(outer_index_0, InnerIndex::new(1))
+            );
+            assert_eq!(remover.outer_index_remover.total_outer_index_count(), 2);
+        }
+
+        #[test]
+        fn test_lookup_bids_across_groups() {
+            let ctx = &mut ArbContext::new();
+            let side = Side::Bid;
+
+            let mut outer_index_count = 4;
+            let outer_index_0 = OuterIndex::new(5);
+            let outer_index_1 = OuterIndex::new(4);
+            let outer_index_2 = OuterIndex::new(3);
+            let outer_index_3 = OuterIndex::new(1);
+            write_outer_indices(
+                ctx,
+                side,
+                vec![outer_index_3, outer_index_2, outer_index_1, outer_index_0],
+            );
+
+            let mut bitmap_group_0 = BitmapGroup::default();
+            bitmap_group_0.inner[0] = 0b1000_0000;
+            bitmap_group_0.inner[2] = 0b0000_0011; // Best market price starts here
+            bitmap_group_0.inner[30] = 0b0000_0001;
+            bitmap_group_0.inner[31] = 0b1000_0000; // Garbage bit
+            bitmap_group_0.write_to_slot(ctx, &outer_index_0);
+
+            // Remove but don't close group
+            let mut bitmap_group_1 = BitmapGroup::default();
+            bitmap_group_1.inner[0] = 0b0000_0001;
+            bitmap_group_1.inner[1] = 0b0000_0001;
+            bitmap_group_1.write_to_slot(ctx, &outer_index_1);
+
+            // Close group
+            let mut bitmap_group_2 = BitmapGroup::default();
+            bitmap_group_2.inner[0] = 0b0000_0001;
+            bitmap_group_2.write_to_slot(ctx, &outer_index_2);
+
+            // Close last group
+            let mut bitmap_group_3 = BitmapGroup::default();
+            bitmap_group_3.inner[0] = 0b0000_0001;
+            bitmap_group_3.write_to_slot(ctx, &outer_index_3);
+
+            let order_id_0 = OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(2)),
+                resting_order_index: RestingOrderIndex::new(0),
+            };
+            let order_id_1 = OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(2)),
+                resting_order_index: RestingOrderIndex::new(1),
+            };
+            let order_id_2 = OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(0)),
+                resting_order_index: RestingOrderIndex::new(7),
+            };
+            let order_id_3 = OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index_1, InnerIndex::new(1)),
+                resting_order_index: RestingOrderIndex::new(0),
+            };
+            let order_id_absent_order = OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index_1, InnerIndex::new(1)),
+                resting_order_index: RestingOrderIndex::new(1),
+            };
+            let order_id_find_but_dont_remove = OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index_1, InnerIndex::new(0)),
+                resting_order_index: RestingOrderIndex::new(0),
+            };
+            let order_id_4 = OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index_2, InnerIndex::new(0)),
+                resting_order_index: RestingOrderIndex::new(0),
+            };
+            let order_id_5 = OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index_3, InnerIndex::new(0)),
+                resting_order_index: RestingOrderIndex::new(0),
+            };
+
+            let mut best_market_price = Ticks::from_indices(outer_index_0, InnerIndex::new(30));
+            let mut remover =
+                OrderLookupRemover::new(side, &mut best_market_price, &mut outer_index_count);
+
+            assert_eq!(remover.find(ctx, order_id_0), true);
+
+            remover.remove(ctx);
+            assert_eq!(remover.order_id_to_remove().unwrap(), order_id_0);
+
+            assert_eq!(remover.find(ctx, order_id_1), true);
+            remover.remove(ctx);
+            assert_eq!(remover.order_id_to_remove().unwrap(), order_id_1);
+
+            assert_eq!(remover.find(ctx, order_id_2), true);
+            remover.remove(ctx);
+            assert_eq!(remover.order_id_to_remove().unwrap(), order_id_2);
+
+            assert_eq!(remover.find(ctx, order_id_3), true);
+            remover.remove(ctx);
+            assert_eq!(remover.order_id_to_remove().unwrap(), order_id_3);
+
+            // Absent order lookup
+            assert_eq!(remover.find(ctx, order_id_absent_order), false);
+            assert_eq!(remover.order_id_to_remove().unwrap(), order_id_absent_order);
+
+            // Find but don't remove this order
+            assert_eq!(remover.find(ctx, order_id_find_but_dont_remove), true);
+            assert_eq!(
+                remover.order_id_to_remove().unwrap(),
+                order_id_find_but_dont_remove
+            );
+
+            // Removal closes the group so outer index is None
+            assert_eq!(remover.find(ctx, order_id_4), true);
+            remover.remove(ctx);
+            assert_eq!(remover.outer_index(), None);
+            assert_eq!(
+                remover.group_position().unwrap(),
+                GroupPosition::from(&order_id_4)
+            );
+            assert_eq!(
+                remover.outer_index_remover.cached_outer_indices,
+                vec![outer_index_0, outer_index_1]
+            );
+
+            // Removal closes the group so outer index is None
+            assert_eq!(remover.find(ctx, order_id_5), true);
+            remover.remove(ctx);
+            assert_eq!(remover.outer_index(), None);
+            assert_eq!(
+                remover.group_position().unwrap(),
+                GroupPosition::from(&order_id_5)
+            );
+            assert_eq!(
+                remover.outer_index_remover.cached_outer_indices,
+                vec![outer_index_0, outer_index_1]
+            );
+
+            IOrderLookupRemover::commit(&mut remover, ctx);
+            assert_eq!(
+                *remover.best_market_price,
+                Ticks::from_indices(outer_index_0, InnerIndex::new(30))
+            );
+            assert_eq!(remover.outer_index_remover.total_outer_index_count(), 2);
+        }
+
+        #[test]
         fn test_lookup_asks_sequentially_then_randomly() {
             let ctx = &mut ArbContext::new();
             let side = Side::Ask;
@@ -786,8 +1051,6 @@ mod tests {
 
             // Jump to order id 3 and remove it
             remover.find(ctx, order_id_3);
-
-            // TODO fix
             assert_eq!(remover.order_id_to_remove().unwrap(), order_id_3);
 
             assert_eq!(remover.outer_index().unwrap(), outer_index_1);
