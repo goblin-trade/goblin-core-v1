@@ -87,7 +87,7 @@ impl GroupPositionIterator {
         }
     }
 
-    /// Paginates to the given previous index  by updating inner variables
+    /// Paginates to the given previous index by updating inner variables
     fn set_previous_index(&mut self, previous_index: u8) {
         if previous_index == 255 {
             self.next_index = 255;
@@ -283,7 +283,7 @@ mod tests {
         use super::*;
 
         #[test]
-        fn test_set_previous_position() {
+        fn test_set_previous_index() {
             let side = Side::Ask;
             let next_index = 0;
             let mut iterator = GroupPositionIterator::new(side, next_index);
@@ -302,6 +302,20 @@ mod tests {
             assert_eq!(iterator.next_index, 255);
             assert_eq!(iterator.exhausted, true);
             assert_eq!(iterator.peek(), None);
+        }
+
+        #[test]
+        fn test_set_previous_index_on_exhausted() {
+            let side = Side::Ask;
+            for previous_index in 0..=255 {
+                let mut iterator = GroupPositionIterator {
+                    side,
+                    next_index: 255,
+                    exhausted: true,
+                };
+                iterator.set_previous_index(previous_index);
+                assert_eq!(iterator.previous_index().unwrap(), previous_index);
+            }
         }
     }
 }
