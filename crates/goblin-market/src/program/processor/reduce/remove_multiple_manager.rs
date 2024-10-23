@@ -100,12 +100,19 @@ impl<'a> RemoveMultipleManager<'a> {
         &mut self.removers[side as usize]
     }
 
+    /// Determine side for the order id being removed.
+    ///
+    /// Side is None if order id is beyond either of the best market prices. This ensures
+    /// inside the remover that outer index is equal to or further from the centre than
+    /// the best market price.
     fn get_side(&self, order_price: Ticks) -> Option<Side> {
+        // Side is bid if price is equal to or futher from the centre than best bid price
         let best_bid_price = self.get_best_price_for_side(Side::Bid);
         if best_bid_price.is_some_and(|best_bid_price| order_price <= best_bid_price) {
             return Some(Side::Bid);
         }
 
+        // Side is ask if price is equal to or futher from the centre than best ask price
         let best_ask_price = self.get_best_price_for_side(Side::Ask);
         if best_ask_price.is_some_and(|best_ask_price| order_price >= best_ask_price) {
             return Some(Side::Ask);
@@ -127,6 +134,9 @@ impl<'a> RemoveMultipleManager<'a> {
         self.side
     }
 }
+
+// TODO test when both best prices are on the same group.
+// Opposite side bits should not be closed.
 
 // /// Boilerplate code to remove multiple orders in bulk for both sides
 // pub struct RemoveMultipleManager {

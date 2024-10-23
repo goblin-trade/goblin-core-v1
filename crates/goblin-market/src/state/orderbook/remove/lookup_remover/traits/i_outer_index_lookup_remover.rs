@@ -7,6 +7,13 @@ pub trait IOuterIndexLookupRemover<'a>: IOuterIndexRemover<'a> {
     fn cached_outer_indices(&self) -> &Vec<OuterIndex>;
     fn cached_outer_indices_mut(&mut self) -> &mut Vec<OuterIndex>;
 
+    /// Finds whether the given outer index is active. Outer indices should
+    /// be sorted to move away from the centre.
+    ///
+    /// RemoveMultipleManager ensures that outer indices being searched
+    /// cannot lie beyond outer index of the best market price. However we still
+    /// need to check if the incoming outer index is closer to the centre if
+    /// the order id lies deeper.
     fn find(&mut self, ctx: &mut ArbContext, outer_index: OuterIndex) -> bool {
         let side = self.side();
 

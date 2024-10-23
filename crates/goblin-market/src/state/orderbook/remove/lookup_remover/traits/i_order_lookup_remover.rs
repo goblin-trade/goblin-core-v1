@@ -1173,14 +1173,92 @@ mod tests {
             assert_eq!(*remover.best_market_price, order_id_0.price_in_ticks);
         }
 
+        // Removal manager externally ensures that outer indices do not lie beyond
+        // outer index of the best market price. However even if such lookups are
+        // performed, the result should be false.
         #[test]
-        fn test_lookup_ask_from_inactive_group() {
+        fn test_lookup_in_group_beyond_best_market_price() {
             let ctx = &mut ArbContext::new();
             let side = Side::Ask;
 
             let mut outer_index_count = 1;
             let outer_index_0 = OuterIndex::new(2);
-            let outer_index_inactive = OuterIndex::new(1);
+            let outer_index_beyond = OuterIndex::new(1);
+            write_outer_indices(ctx, side, vec![outer_index_0]);
+
+            let mut bitmap_group_0 = BitmapGroup::default();
+            bitmap_group_0.inner[0] = 0b0000_0001;
+            bitmap_group_0.write_to_slot(ctx, &outer_index_0);
+
+            let order_id_0 = OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(0)),
+                resting_order_index: RestingOrderIndex::new(0),
+            };
+
+            let inactive_order_id = OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index_beyond, InnerIndex::new(0)),
+                resting_order_index: RestingOrderIndex::new(0),
+            };
+
+            let mut best_market_price = order_id_0.price_in_ticks;
+            let mut remover =
+                OrderLookupRemover::new(side, &mut best_market_price, &mut outer_index_count);
+
+            assert_eq!(remover.find(ctx, inactive_order_id), false);
+
+            // The outermost outer index gets loaded
+            assert_eq!(remover.outer_index().unwrap(), outer_index_0);
+            assert_eq!(remover.outer_index_remover.cached_outer_indices, vec![]);
+            assert_eq!(remover.outer_index_remover.unread_outer_indices(), 0);
+            assert_eq!(*remover.best_market_price, order_id_0.price_in_ticks);
+
+            // Group position is None because no position was set
+            assert_eq!(remover.group_position(), None);
+            assert_eq!(remover.order_id_to_remove(), None);
+        }
+
+        // RemoveMultipleManager ensures that order id price does not lie
+        // beyond best market price. Howevever this case should still work.
+        #[test]
+        fn test_lookup_ask_beyond_best_market_price_in_same_group() {
+            let ctx = &mut ArbContext::new();
+            let side = Side::Ask;
+
+            let mut outer_index_count = 1;
+            let outer_index_0 = OuterIndex::new(2);
+            write_outer_indices(ctx, side, vec![outer_index_0]);
+
+            let mut bitmap_group_0 = BitmapGroup::default();
+            bitmap_group_0.inner[1] = 0b0000_0001;
+            bitmap_group_0.write_to_slot(ctx, &outer_index_0);
+
+            let order_id_0 = OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(1)),
+                resting_order_index: RestingOrderIndex::new(0),
+            };
+
+            let inactive_order_id = OrderId {
+                price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(0)),
+                resting_order_index: RestingOrderIndex::new(0),
+            };
+
+            let mut best_market_price = order_id_0.price_in_ticks;
+            let mut remover =
+                OrderLookupRemover::new(side, &mut best_market_price, &mut outer_index_count);
+
+            assert_eq!(remover.find(ctx, inactive_order_id), false);
+
+            assert_eq!(remover.order_id_to_remove().unwrap(), inactive_order_id);
+        }
+
+        #[test]
+        fn test_lookup_from_exhausted_list() {
+            let ctx = &mut ArbContext::new();
+            let side = Side::Ask;
+
+            let mut outer_index_count = 1;
+            let outer_index_0 = OuterIndex::new(2);
+            let outer_index_inactive = OuterIndex::new(3);
             write_outer_indices(ctx, side, vec![outer_index_0]);
 
             let mut bitmap_group_0 = BitmapGroup::default();
@@ -1202,66 +1280,13 @@ mod tests {
                 OrderLookupRemover::new(side, &mut best_market_price, &mut outer_index_count);
 
             assert_eq!(remover.find(ctx, inactive_order_id), false);
-            assert_eq!(remover.order_id_to_remove(), None);
 
-            assert_eq!(remover.outer_index().unwrap(), outer_index_0);
-            assert_eq!(remover.outer_index_remover.cached_outer_indices, vec![]);
-            assert_eq!(remover.outer_index_remover.unread_outer_indices(), 0);
-            assert_eq!(*remover.best_market_price, order_id_0.price_in_ticks);
-
-            // Group position is None because no position was set
+            assert_eq!(remover.outer_index(), None);
+            assert_eq!(
+                remover.outer_index_remover.cached_outer_indices,
+                vec![outer_index_0]
+            );
             assert_eq!(remover.group_position(), None);
         }
-
-        // Special case- lookup beyond market price after sequential remove.
-        // If order_price > best_market price, should we handle this in the remover
-        // or in the manager?
-        // The manager sets side to None if price is beyond best market price. In this
-        // case the remover is never called. If sequential remover updates the best market
-        // price, the side for the subsequent order id should be None and find() should
-        // never be called.
-        #[test]
-        fn test_lookup_ask_beyond_best_market_price() {
-            let ctx = &mut ArbContext::new();
-            let side = Side::Ask;
-
-            let mut outer_index_count = 1;
-            let outer_index_0 = OuterIndex::new(2);
-            write_outer_indices(ctx, side, vec![outer_index_0]);
-
-            let mut bitmap_group_0 = BitmapGroup::default();
-            bitmap_group_0.inner[0] = 0b0000_0001;
-            bitmap_group_0.write_to_slot(ctx, &outer_index_0);
-
-            let order_id_0 = OrderId {
-                price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(0)),
-                resting_order_index: RestingOrderIndex::new(0),
-            };
-
-            let inactive_outer_index = OuterIndex::new(1);
-            let inactive_order_id = OrderId {
-                price_in_ticks: Ticks::from_indices(inactive_outer_index, InnerIndex::new(0)),
-                resting_order_index: RestingOrderIndex::new(0),
-            };
-
-            let mut best_market_price = order_id_0.price_in_ticks;
-            let mut remover =
-                OrderLookupRemover::new(side, &mut best_market_price, &mut outer_index_count);
-
-            assert_eq!(remover.find(ctx, inactive_order_id), false);
-
-            // assert_eq!(remover.order_id().unwrap(), inactive_order_id);
-            // assert_eq!(
-            //     remover.outer_index().unwrap(),
-            //     inactive_order_id.price_in_ticks.outer_index()
-            // );
-            // assert_eq!(remover.outer_index_remover.outer_index_count(), 0);
-            // assert_eq!(remover.outer_index_remover.cached_outer_indices, vec![]);
-
-            // // No change in price
-            // assert_eq!(*remover.best_market_price, order_id_0.price_in_ticks);
-        }
-
-        // TODO test lookup in old group after sequential remover updates best market price
     }
 }
