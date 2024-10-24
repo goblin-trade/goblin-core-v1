@@ -11,9 +11,9 @@ use crate::{
     },
 };
 
-/// Boilerplate code to remove multiple orders in bulk for both sides
+/// Manager to remove multiple orders in bulk for both sides
 pub struct RemoveMultipleManager<'a> {
-    side: Side,
+    pub side: Side,
     removers: [OrderLookupRemover<'a>; 2],
 }
 
@@ -45,17 +45,15 @@ impl<'a> RemoveMultipleManager<'a> {
     /// Check whether the given order ID is present in the book
     ///
     /// # Rules
-    /// * Successive order IDs must be sorted by price to move away from the centre,
-    /// i.e. in descending order for bids and in ascending order for asks.
-    /// * Sort order is not enforced on resting order index.
-    /// * Removing the outermost active bit invokes the sequential remover. If all
-    /// active bits on a group are exhausted, the sequential remover reads the next
-    /// outer index. If the outer index changes we cannot find an order id from the
-    /// previous outer index.
-    /// Example- bitmap group 0 has a single active tick at (0, 0). The sequential remover
-    /// removes this tick and moves to bitmap group 1. Now we cannot read (0, 1) or
-    /// any other position from group 0.
     ///
+    /// 1. If price lies between best bid and best ask prices (exclusive) then side
+    /// is indeterminate and lookup returns false.
+    /// 2. Successive order ids being searched must be arranged so that their
+    /// outer indices move away from the centre, i.e. in ascending order for asks
+    /// and descending order for bids.
+    /// 3. Group positions can be random as long as outer indices are sorted.
+    /// 4. Order ids for bids and asks can be mixed up as long as sorting per side
+    /// under rule 2 is maintained.
     ///
     /// # Arguments
     ///
@@ -63,10 +61,7 @@ impl<'a> RemoveMultipleManager<'a> {
     /// * `order_id` - Order ID to search
     pub fn find(&mut self, ctx: &mut ArbContext, order_id: OrderId) -> bool {
         if let Some(side) = self.get_side(order_id.price_in_ticks) {
-            // Set side
             self.side = side;
-
-            // This checks for valid outer index and finds whether order id is active
             let remover_mut = self.remover_mut(side);
             remover_mut.find(ctx, order_id)
         } else {
@@ -79,14 +74,15 @@ impl<'a> RemoveMultipleManager<'a> {
     /// This function be called after calling find(). Trying to remove a None
     /// order id is a no-op
     pub fn remove(&mut self, ctx: &mut ArbContext) {
-        let side = self.side;
-        let remover = self.remover_mut(side);
+        let remover = self.remover_mut(self.side);
         remover.remove(ctx)
     }
 
     /// Conclude the removals
     pub fn commit(&mut self, ctx: &mut ArbContext) {
         self.remover_mut(Side::Bid).commit(ctx);
+        // TODO fix- this can overwrite bitmap group if outer index of both
+        // is the same
         self.remover_mut(Side::Ask).commit(ctx);
     }
 
@@ -129,94 +125,217 @@ impl<'a> RemoveMultipleManager<'a> {
 
         best_price
     }
-
-    pub fn side(&self) -> Side {
-        self.side
-    }
 }
 
-// TODO test when both best prices are on the same group.
-// Opposite side bits should not be closed.
+#[cfg(test)]
+mod tests {
+    use crate::{
+        quantities::WrapperU64,
+        state::{
+            bitmap_group::BitmapGroup, write_outer_indices_for_tests, ContextActions, InnerIndex,
+            OuterIndex, RestingOrderIndex,
+        },
+    };
 
-// /// Boilerplate code to remove multiple orders in bulk for both sides
-// pub struct RemoveMultipleManager {
-//     side: Side,
-//     last_order_ids: [Option<OrderId>; 2],
-//     removers: [OrderIdRemover; 2],
-// }
+    use super::*;
 
-// impl RemoveMultipleManager {
-//     pub fn new(bids_outer_indices: u16, asks_outer_indices: u16) -> Self {
-//         RemoveMultipleManager {
-//             side: Side::Bid,
-//             last_order_ids: [None, None],
-//             removers: [
-//                 OrderIdRemover::new(bids_outer_indices, Side::Bid),
-//                 OrderIdRemover::new(asks_outer_indices, Side::Ask),
-//             ],
-//         }
-//     }
+    mod get_side {
+        use super::*;
 
-//     fn remover(&mut self) -> &mut OrderIdRemover {
-//         &mut self.removers[self.side as usize]
-//     }
+        #[test]
+        fn test_get_side_for_price() {
+            let best_bid_price = &mut Ticks::new(1);
+            let best_ask_price = &mut Ticks::new(3);
+            let bids_outer_indices = &mut 1;
+            let asks_outer_indices = &mut 1;
+            let manager = RemoveMultipleManager::new(
+                best_bid_price,
+                best_ask_price,
+                bids_outer_indices,
+                asks_outer_indices,
+            );
 
-//     fn last_order_id(&mut self) -> &mut Option<OrderId> {
-//         &mut self.last_order_ids[self.side as usize]
-//     }
+            let order_price_0 = Ticks::new(1);
+            assert_eq!(manager.get_side(order_price_0).unwrap(), Side::Bid);
 
-//     /// Checks whether an order is present at the given order ID.
-//     pub fn find_order(
-//         &mut self,
-//         ctx: &mut ArbContext,
-//         side: Side,
-//         order_id: OrderId,
-//     ) -> GoblinResult<bool> {
-//         self.check_sorted(side, order_id)?;
+            let order_price_1 = Ticks::new(2);
+            assert_eq!(manager.get_side(order_price_1), None);
 
-//         // let found = self.remover().order_id_is_active(ctx, order_id);
-//         // Ok(found)
-//         //
+            let order_price_2 = Ticks::new(3);
+            assert_eq!(manager.get_side(order_price_2).unwrap(), Side::Ask);
+        }
 
-//         Ok(false)
-//     }
+        #[test]
+        fn test_get_side_when_outer_index_count_is_zero() {
+            let best_bid_price = &mut Ticks::new(1);
+            let best_ask_price = &mut Ticks::new(3);
+            let bids_outer_indices = &mut 0;
+            let asks_outer_indices = &mut 0;
+            let manager = RemoveMultipleManager::new(
+                best_bid_price,
+                best_ask_price,
+                bids_outer_indices,
+                asks_outer_indices,
+            );
 
-//     /// Ensures that successive order ids to remove are sorted in correct order
-//     ///
-//     /// Successive IDs must be in ascending order for asks and in descending order for bids
-//     ///
-//     /// Externally ensure that `remove_order()` is not called if incoming order is not in
-//     /// correct order to avoid duplicate removal. This function updates `self.side`
-//     /// even though the incoming order is not added to state.
-//     ///
-//     pub(crate) fn check_sorted(&mut self, side: Side, order_id: OrderId) -> GoblinResult<()> {
-//         self.side = side;
-//         let last_order_id = self.last_order_id();
+            let order_price_0 = Ticks::new(1);
+            assert_eq!(manager.get_side(order_price_0), None);
 
-//         // Successive orders must move away from the centre
-//         if let Some(last_order_id) = *last_order_id {
-//             let sorted = orders_are_sorted(side, order_id, last_order_id);
-//             require!(sorted, GoblinError::PricesNotInOrder(PricesNotInOrder {}));
-//         }
-//         // Set as last order ID
-//         *last_order_id = Some(order_id);
+            let order_price_1 = Ticks::new(2);
+            assert_eq!(manager.get_side(order_price_1), None);
 
-//         Ok(())
-//     }
+            let order_price_2 = Ticks::new(3);
+            assert_eq!(manager.get_side(order_price_2), None);
+        }
+    }
 
-//     /// Remove the last searched order from the book, and update the
-//     /// best price in market state if the outermost tick closed
-//     pub fn remove_order(&mut self, ctx: &mut ArbContext, market_state: &mut MarketState) {
-//         self.remover().remove_order(ctx, market_state)
-//     }
+    // tests
+    // - ask and bid order ids in jumbled order
+    // - best ask price and best bid price are on same group. Removal of bids shouldn't
+    // rewrite bits belonging to asks
 
-//     /// Write the prepared outer indices to slot and update outer index count in market state
-//     /// The last cached bitmap group pending a write is also written to slot
-//     pub fn write_prepared_indices(&mut self, ctx: &mut ArbContext, market_state: &mut MarketState) {
-//         self.removers[0].write_prepared_indices(ctx, market_state);
-//         self.removers[1].write_prepared_indices(ctx, market_state);
-//     }
-// }
+    #[test]
+    fn test_removing_bids_does_not_affect_ask_bits() {
+        let ctx = &mut ArbContext::new();
+        let outer_index_0 = OuterIndex::new(0);
+
+        let mut bitmap_group_0 = BitmapGroup::default();
+        bitmap_group_0.inner[2] = 0b0000_0001; // Best ask
+        bitmap_group_0.inner[1] = 0b0000_0011; // Best bid
+        bitmap_group_0.write_to_slot(ctx, &outer_index_0);
+
+        write_outer_indices_for_tests(ctx, Side::Ask, vec![outer_index_0]);
+        write_outer_indices_for_tests(ctx, Side::Bid, vec![outer_index_0]);
+
+        let ask_order_id_0 = OrderId {
+            price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(2)),
+            resting_order_index: RestingOrderIndex::new(0),
+        };
+        let bid_order_id_0 = OrderId {
+            price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(1)),
+            resting_order_index: RestingOrderIndex::new(0),
+        };
+        let bid_order_id_1 = OrderId {
+            price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(1)),
+            resting_order_index: RestingOrderIndex::new(1),
+        };
+
+        let mut best_bid_price = bid_order_id_0.price_in_ticks;
+        let mut best_ask_price = ask_order_id_0.price_in_ticks;
+        let mut bids_outer_indices = 1;
+        let mut asks_outer_indices = 1;
+        let mut manager = RemoveMultipleManager::new(
+            &mut best_bid_price,
+            &mut best_ask_price,
+            &mut bids_outer_indices,
+            &mut asks_outer_indices,
+        );
+
+        // to test whether side changed.
+        // we can statically look at code to see that side changes when
+
+        manager.find(ctx, bid_order_id_0);
+        assert_eq!(manager.side, Side::Bid);
+        manager.remove(ctx);
+        manager.commit(ctx);
+        drop(manager);
+
+        let mut expected_bitmap_group_0 = BitmapGroup::default();
+        expected_bitmap_group_0.inner[2] = 0b0000_0001; // Best ask
+        expected_bitmap_group_0.inner[1] = 0b0000_0010; // Best bid
+
+        // No change in bitmap group. Outer index is updated
+        let read_bitmap_group_0 = BitmapGroup::new_from_slot(ctx, outer_index_0);
+        assert_eq!(read_bitmap_group_0, expected_bitmap_group_0);
+
+        assert_eq!(best_bid_price, bid_order_id_1.price_in_ticks);
+        assert_eq!(best_ask_price, ask_order_id_0.price_in_ticks);
+    }
+
+    // problem- both removers hold their own copies of bitmap group. What
+    // if the second commit overwrites the group written in the first commit?
+    // We cannot have a common share by reference because different outer
+    // indices will be traversed.
+    #[test]
+    fn test_removers_do_not_overwrite_bitmap_group() {
+        let ctx = &mut ArbContext::new();
+        let outer_index_0 = OuterIndex::new(0);
+
+        let mut bitmap_group_0 = BitmapGroup::default();
+        bitmap_group_0.inner[2] = 0b0000_0011; // Best ask
+        bitmap_group_0.inner[1] = 0b0000_0011; // Best bid
+        bitmap_group_0.write_to_slot(ctx, &outer_index_0);
+
+        write_outer_indices_for_tests(ctx, Side::Ask, vec![outer_index_0]);
+        write_outer_indices_for_tests(ctx, Side::Bid, vec![outer_index_0]);
+
+        let ask_order_id_0 = OrderId {
+            price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(2)),
+            resting_order_index: RestingOrderIndex::new(0),
+        };
+        let bid_order_id_0 = OrderId {
+            price_in_ticks: Ticks::from_indices(outer_index_0, InnerIndex::new(1)),
+            resting_order_index: RestingOrderIndex::new(0),
+        };
+
+        let mut best_bid_price = bid_order_id_0.price_in_ticks;
+        let mut best_ask_price = ask_order_id_0.price_in_ticks;
+        let mut bids_outer_indices = 1;
+        let mut asks_outer_indices = 1;
+        let mut manager = RemoveMultipleManager::new(
+            &mut best_bid_price,
+            &mut best_ask_price,
+            &mut bids_outer_indices,
+            &mut asks_outer_indices,
+        );
+
+        // to test whether side changed.
+        // we can statically look at code to see that side changes when
+
+        manager.find(ctx, bid_order_id_0);
+        assert_eq!(manager.side, Side::Bid);
+        manager.remove(ctx);
+
+        manager.find(ctx, ask_order_id_0);
+        assert_eq!(manager.side, Side::Ask);
+        manager.remove(ctx);
+
+        let mut expected_bitmap_group_for_bid_remover = BitmapGroup::default();
+        expected_bitmap_group_for_bid_remover.inner[2] = 0b0000_0011; // Best ask
+        expected_bitmap_group_for_bid_remover.inner[1] = 0b0000_0010; // Best bid
+        assert_eq!(
+            manager
+                .remover(Side::Bid)
+                .group_position_remover
+                .active_group_position_iterator
+                .bitmap_group,
+            expected_bitmap_group_for_bid_remover
+        );
+
+        let mut expected_bitmap_group_for_ask_remover = BitmapGroup::default();
+        expected_bitmap_group_for_ask_remover.inner[2] = 0b0000_0010; // Best ask
+        expected_bitmap_group_for_ask_remover.inner[1] = 0b0000_0011; // Best bid
+        assert_eq!(
+            manager
+                .remover(Side::Ask)
+                .group_position_remover
+                .active_group_position_iterator
+                .bitmap_group,
+            expected_bitmap_group_for_ask_remover
+        );
+
+        manager.commit(ctx);
+
+        let read_bitmap_group = BitmapGroup::new_from_slot(ctx, outer_index_0);
+        assert_eq!(read_bitmap_group, expected_bitmap_group_for_ask_remover);
+    }
+
+    // scenarios
+    // bids first
+    // asks first
+    // mixed up bids and asks
+    mod ensure_sort_order {}
+}
 
 // #[cfg(test)]
 // mod tests {

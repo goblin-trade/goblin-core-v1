@@ -17,7 +17,6 @@ pub struct OrderLookupRemover<'a> {
     pub outer_index_remover: OuterIndexLookupRemover<'a>,
 
     /// To lookup and deactivate bits in bitmap groups
-    /// TODO use IGroupPositionLookupRemover?
     pub group_position_remover: GroupPositionRemover,
 
     /// Reference to best market price for current side from market state

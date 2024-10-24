@@ -71,8 +71,8 @@ pub trait IOrderSequentialRemover<'a>: IOrderSequentialRemoverInner<'a> {
     /// Slot writes- bitmap_group only. Market state is updated in memory, where the
     /// best market price and outer index count is updated.
     ///
-    /// TODO This function is similar to IOrderLookupRemover::commit(). Can we
-    /// have a common interface for both?
+    /// IOrderLookupRemover::commit() has a similar looking function but it passes
+    /// ctx to outer_index_remover_mut.commit() while the sequential remover does not.
     ///
     /// # Arguments
     ///

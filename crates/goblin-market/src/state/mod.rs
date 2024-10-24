@@ -12,6 +12,9 @@ pub mod orderbook;
 pub mod tick_indices;
 pub mod trader_state;
 
+#[cfg(test)]
+pub mod test_utils;
+
 pub use constants::*;
 pub use context::*;
 pub use enums::*;
@@ -20,5 +23,7 @@ pub use inflight_order::*;
 pub use market_state::*;
 pub use market_state_v2::*;
 pub use orderbook::*;
+#[cfg(test)]
+pub use test_utils::*;
 pub use tick_indices::*;
 pub use trader_state::*;

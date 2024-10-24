@@ -9,8 +9,16 @@ use super::{IGroupPositionLookupRemover, IOrderLookupRemoverInner, IOuterIndexLo
 /// Utility to lookup whether a set of order IDs are active and to optionally
 /// deactivate them.
 ///
+/// Successive order ids being searched must be arranged so that their
+/// outer indices move away from the centre, i.e. in ascending order for asks
+/// and descending order for bids.
+///
 /// Outer indices of successive order ids must move away from the centre otherwise
 /// find() will return false for an out of order search.
+///
+/// Behavior is identical to sequential remover when outermost orders on the
+/// best market price are removed. In this case the best market price will update
+/// and current order id will navigate to the next active order.
 pub trait IOrderLookupRemover<'a>: IOrderLookupRemoverInner<'a> {
     /// Paginate to the given order id and check whether it is active.
     ///
@@ -139,33 +147,13 @@ mod tests {
     use crate::{
         quantities::Ticks,
         state::{
-            bitmap_group::BitmapGroup, remove::OrderLookupRemover, ContextActions, InnerIndex,
-            ListKey, ListSlot, OuterIndex, RestingOrderIndex, Side,
+            bitmap_group::BitmapGroup, remove::OrderLookupRemover, write_outer_indices_for_tests,
+            ContextActions, InnerIndex, OuterIndex, RestingOrderIndex, Side,
         },
     };
 
-    fn write_outer_indices(ctx: &mut ArbContext, side: Side, outer_indices: Vec<OuterIndex>) {
-        let slot_count = outer_indices.len() / 16;
-
-        for slot_index in 0..=slot_count {
-            let mut list_slot = ListSlot::default();
-            let slot_key = ListKey {
-                side,
-                index: slot_index as u16,
-            };
-
-            let end_outer_index_position = outer_indices.len() - slot_index * 16;
-
-            for outer_index_position in 0..end_outer_index_position {
-                let inner_slot_index = 16 * slot_index + outer_index_position;
-                let outer_index = outer_indices.get(inner_slot_index).unwrap();
-                list_slot.set(outer_index_position, *outer_index);
-            }
-            list_slot.write_to_slot(ctx, &slot_key);
-        }
-    }
-
     mod sequential_removals {
+
         use super::*;
 
         #[test]
@@ -177,7 +165,11 @@ mod tests {
             let outer_index_0 = OuterIndex::new(1);
             let outer_index_1 = OuterIndex::new(2);
             let outer_index_2 = OuterIndex::new(5);
-            write_outer_indices(ctx, side, vec![outer_index_2, outer_index_1, outer_index_0]);
+            write_outer_indices_for_tests(
+                ctx,
+                side,
+                vec![outer_index_2, outer_index_1, outer_index_0],
+            );
 
             let mut bitmap_group_0 = BitmapGroup::default();
             bitmap_group_0.inner[0] = 0b1000_0000; // Garbage bit
@@ -377,7 +369,11 @@ mod tests {
             let outer_index_0 = OuterIndex::new(5);
             let outer_index_1 = OuterIndex::new(2);
             let outer_index_2 = OuterIndex::new(1);
-            write_outer_indices(ctx, side, vec![outer_index_2, outer_index_1, outer_index_0]);
+            write_outer_indices_for_tests(
+                ctx,
+                side,
+                vec![outer_index_2, outer_index_1, outer_index_0],
+            );
 
             let mut bitmap_group_0 = BitmapGroup::default();
             // This holds the last bit at 255
@@ -589,7 +585,7 @@ mod tests {
             let outer_index_1 = OuterIndex::new(2);
             let outer_index_2 = OuterIndex::new(3);
             let outer_index_3 = OuterIndex::new(5);
-            write_outer_indices(
+            write_outer_indices_for_tests(
                 ctx,
                 side,
                 vec![outer_index_3, outer_index_2, outer_index_1, outer_index_0],
@@ -727,7 +723,7 @@ mod tests {
             let outer_index_1 = OuterIndex::new(4);
             let outer_index_2 = OuterIndex::new(3);
             let outer_index_3 = OuterIndex::new(1);
-            write_outer_indices(
+            write_outer_indices_for_tests(
                 ctx,
                 side,
                 vec![outer_index_3, outer_index_2, outer_index_1, outer_index_0],
@@ -863,7 +859,7 @@ mod tests {
             let mut outer_index_count = 2;
             let outer_index_0 = OuterIndex::new(1);
             let outer_index_1 = OuterIndex::new(2);
-            write_outer_indices(ctx, side, vec![outer_index_1, outer_index_0]);
+            write_outer_indices_for_tests(ctx, side, vec![outer_index_1, outer_index_0]);
 
             let mut bitmap_group_0 = BitmapGroup::default();
             bitmap_group_0.inner[0] = 0b1000_0000; // Garbage bit
@@ -1005,7 +1001,7 @@ mod tests {
             let mut outer_index_count = 2;
             let outer_index_0 = OuterIndex::new(2);
             let outer_index_1 = OuterIndex::new(1);
-            write_outer_indices(ctx, side, vec![outer_index_1, outer_index_0]);
+            write_outer_indices_for_tests(ctx, side, vec![outer_index_1, outer_index_0]);
 
             let mut bitmap_group_0 = BitmapGroup::default();
             bitmap_group_0.inner[0] = 0b1000_0000;
@@ -1147,7 +1143,7 @@ mod tests {
 
             let mut outer_index_count = 1;
             let outer_index_0 = OuterIndex::new(1);
-            write_outer_indices(ctx, side, vec![outer_index_0]);
+            write_outer_indices_for_tests(ctx, side, vec![outer_index_0]);
 
             let mut bitmap_group_0 = BitmapGroup::default();
             bitmap_group_0.inner[0] = 0b1000_0000; // Garbage bit
@@ -1202,7 +1198,7 @@ mod tests {
 
             let mut outer_index_count = 1;
             let outer_index_0 = OuterIndex::new(1);
-            write_outer_indices(ctx, side, vec![outer_index_0]);
+            write_outer_indices_for_tests(ctx, side, vec![outer_index_0]);
 
             let mut bitmap_group_0 = BitmapGroup::default();
             bitmap_group_0.inner[0] = 0b1000_0000; // Garbage bit
@@ -1258,7 +1254,7 @@ mod tests {
             let mut outer_index_count = 2;
             let outer_index_0 = OuterIndex::new(1);
             let outer_index_1 = OuterIndex::new(2);
-            write_outer_indices(ctx, side, vec![outer_index_1, outer_index_0]);
+            write_outer_indices_for_tests(ctx, side, vec![outer_index_1, outer_index_0]);
 
             let mut bitmap_group_0 = BitmapGroup::default();
             bitmap_group_0.inner[1] = 0b0000_0001; // Best market price starts here
@@ -1302,7 +1298,11 @@ mod tests {
             let outer_index_0 = OuterIndex::new(1);
             let outer_index_1 = OuterIndex::new(2);
             let outer_index_2 = OuterIndex::new(3);
-            write_outer_indices(ctx, side, vec![outer_index_2, outer_index_1, outer_index_0]);
+            write_outer_indices_for_tests(
+                ctx,
+                side,
+                vec![outer_index_2, outer_index_1, outer_index_0],
+            );
 
             let mut bitmap_group_0 = BitmapGroup::default();
             bitmap_group_0.inner[1] = 0b0000_0001; // Best market price starts here
@@ -1355,7 +1355,7 @@ mod tests {
             let mut outer_index_count = 2;
             let outer_index_0 = OuterIndex::new(1);
             let outer_index_1 = OuterIndex::new(2);
-            write_outer_indices(ctx, side, vec![outer_index_1, outer_index_0]);
+            write_outer_indices_for_tests(ctx, side, vec![outer_index_1, outer_index_0]);
 
             let mut bitmap_group_0 = BitmapGroup::default();
             bitmap_group_0.inner[1] = 0b0000_0001; // Best market price starts here
@@ -1403,7 +1403,7 @@ mod tests {
 
             let mut outer_index_count = 1;
             let outer_index_0 = OuterIndex::new(2);
-            write_outer_indices(ctx, side, vec![outer_index_0]);
+            write_outer_indices_for_tests(ctx, side, vec![outer_index_0]);
 
             let mut bitmap_group_0 = BitmapGroup::default();
             bitmap_group_0.inner[0] = 0b0000_0001;
@@ -1447,7 +1447,7 @@ mod tests {
             let mut outer_index_count = 1;
             let outer_index_0 = OuterIndex::new(2);
             let outer_index_beyond = OuterIndex::new(1);
-            write_outer_indices(ctx, side, vec![outer_index_0]);
+            write_outer_indices_for_tests(ctx, side, vec![outer_index_0]);
 
             let mut bitmap_group_0 = BitmapGroup::default();
             bitmap_group_0.inner[0] = 0b0000_0001;
@@ -1489,7 +1489,7 @@ mod tests {
 
             let mut outer_index_count = 1;
             let outer_index_0 = OuterIndex::new(2);
-            write_outer_indices(ctx, side, vec![outer_index_0]);
+            write_outer_indices_for_tests(ctx, side, vec![outer_index_0]);
 
             let mut bitmap_group_0 = BitmapGroup::default();
             bitmap_group_0.inner[1] = 0b0000_0001;
@@ -1522,7 +1522,7 @@ mod tests {
             let mut outer_index_count = 1;
             let outer_index_0 = OuterIndex::new(2);
             let outer_index_inactive = OuterIndex::new(3);
-            write_outer_indices(ctx, side, vec![outer_index_0]);
+            write_outer_indices_for_tests(ctx, side, vec![outer_index_0]);
 
             let mut bitmap_group_0 = BitmapGroup::default();
             bitmap_group_0.inner[0] = 0b0000_0001;

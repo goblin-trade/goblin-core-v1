@@ -164,7 +164,7 @@ pub fn reduce_multiple_orders_inner(
         // If tokens are withdrawn then this should be subtracted
         let matching_engine_response = resting_order.reduce_order(
             trader_state,
-            manager.side(),
+            manager.side,
             order_id.price_in_ticks,
             lots_to_remove,
             order_is_expired,
