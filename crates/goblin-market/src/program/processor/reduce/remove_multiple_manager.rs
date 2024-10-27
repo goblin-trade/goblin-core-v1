@@ -46,24 +46,56 @@ impl<'a> RemoveMultipleManager<'a> {
     ///
     /// # Rules
     ///
-    /// 1. If price lies between best bid and best ask prices (exclusive) then side
-    /// is indeterminate and lookup returns false.
-    /// 2. Successive order ids being searched must be arranged so that their
-    /// outer indices move away from the centre, i.e. in ascending order for asks
-    /// and descending order for bids.
-    /// 3. Group positions can be random as long as outer indices are sorted.
-    /// 4. Order ids for bids and asks can be mixed up as long as sorting per side
-    /// under rule 2 is maintained.
+    /// * Bids must be searched first, then asks. If you try to search for a bid
+    /// when self.side is Ask, the result will always be false.
+    /// * order ids must be sorted such that their outer indices move away
+    /// from the centre. I.e. outer indices of bids must be in descending order
+    /// and for asks in ascending order.
+    /// * inner indices can be random as long as outer ids are sorted, but it is
+    /// recommended for sanity sake to have them sorted too.
     ///
     /// # Arguments
     ///
     /// * `ctx`
     /// * `order_id` - Order ID to search
     pub fn find(&mut self, ctx: &mut ArbContext, order_id: OrderId) -> bool {
-        if let Some(side) = self.get_side(order_id.price_in_ticks) {
-            self.side = side;
-            let remover_mut = self.remover_mut(side);
-            remover_mut.find(ctx, order_id)
+        if let Some(new_side) = self.get_side(order_id.price_in_ticks) {
+            if new_side != self.side {
+                let outer_index = order_id.price_in_ticks.outer_index();
+                let old_remover = self.remover_mut(self.side);
+
+                if old_remover.outer_index() == Some(outer_index) && !old_remover.pending_read {
+                    // Bitmap group has already been read by old remover
+                    // Copy over the bitmap group and set pending read to false there
+                    // Have a find_with_known_group() to the remover which accepts
+                    // the bitmap group.
+                    // What if the new remover uses sequential remover and moves to the next
+                    // group? In this case the bitmap group is not supposed to be written.
+                }
+
+                if old_remover.pending_write && old_remover.outer_index() == Some(outer_index) {
+                    // write old remover. pending_write toggle rules don't account for opposite
+                    // side orders so we must write the group.
+                    // Avoid committing old remover, as it could be needed again. When writing
+                    // the common bitmap, we should see if pending_write in either of the removers
+                    // is true.
+                    // TODO old remover should remain usable after commiting.
+                    // TODO commit should
+                    old_remover.commit(ctx);
+
+                    // pass bitmap group to new remover
+                }
+            }
+
+            if self.side == Side::Ask && new_side == Side::Bid {
+                // Cannot search for bids after asks were searched
+                return false;
+            } else if self.side == Side::Bid && new_side == Side::Ask {
+                self.current_remover_mut().commit(ctx);
+                self.side = Side::Ask;
+            }
+
+            self.current_remover_mut().find(ctx, order_id)
         } else {
             false
         }
@@ -74,16 +106,12 @@ impl<'a> RemoveMultipleManager<'a> {
     /// This function be called after calling find(). Trying to remove a None
     /// order id is a no-op
     pub fn remove(&mut self, ctx: &mut ArbContext) {
-        let remover = self.remover_mut(self.side);
-        remover.remove(ctx)
+        self.current_remover_mut().remove(ctx)
     }
 
-    /// Conclude the removals
+    /// Conclude the removals by commiting the last used remover
     pub fn commit(&mut self, ctx: &mut ArbContext) {
-        self.remover_mut(Side::Bid).commit(ctx);
-        // TODO fix- this can overwrite bitmap group if outer index of both
-        // is the same
-        self.remover_mut(Side::Ask).commit(ctx);
+        self.current_remover_mut().commit(ctx);
     }
 
     // Getters
@@ -96,11 +124,14 @@ impl<'a> RemoveMultipleManager<'a> {
         &mut self.removers[side as usize]
     }
 
+    fn current_remover_mut(&mut self) -> &mut OrderLookupRemover<'a> {
+        self.remover_mut(self.side)
+    }
+
     /// Determine side for the order id being removed.
     ///
-    /// Side is None if order id is beyond either of the best market prices. This ensures
-    /// inside the remover that outer index is equal to or further from the centre than
-    /// the best market price.
+    /// The side for prices between best bid price and best ask price is indeterminate
+    /// (None) since no removable orders exist here.
     fn get_side(&self, order_price: Ticks) -> Option<Side> {
         // Side is bid if price is equal to or futher from the centre than best bid price
         let best_bid_price = self.get_best_price_for_side(Side::Bid);
@@ -314,7 +345,7 @@ mod tests {
 
         let mut expected_bitmap_group_for_ask_remover = BitmapGroup::default();
         expected_bitmap_group_for_ask_remover.inner[2] = 0b0000_0010; // Best ask
-        expected_bitmap_group_for_ask_remover.inner[1] = 0b0000_0011; // Best bid
+        expected_bitmap_group_for_ask_remover.inner[1] = 0b0000_0010; // Best bid
         assert_eq!(
             manager
                 .remover(Side::Ask)
