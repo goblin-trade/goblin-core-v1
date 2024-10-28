@@ -46,7 +46,9 @@ pub trait IOrderLookupRemover<'a>: IOrderLookupRemoverInner<'a> {
             // previous_outer_index is guaranteed to exist if pending_write is true
 
             if let Some(previous_outer_index) = previous_outer_index {
-                self.write_bitmap_group_if_pending(ctx, previous_outer_index);
+                if self.pending_write() {
+                    self.write_bitmap_group(ctx, previous_outer_index);
+                }
             }
 
             let outer_index_found = self
@@ -130,10 +132,6 @@ pub trait IOrderLookupRemover<'a>: IOrderLookupRemoverInner<'a> {
                 // case 2. If bitmap group remains active we need to write the pending
                 // group to slot. Otherwise we can simply remove its outer index.
                 //
-
-                #[cfg(test)]
-                println!("removing bit");
-
                 self.group_position_remover_mut().remove();
 
                 let group_active_after_removal = self.group_position_remover().is_group_active();
@@ -145,13 +143,12 @@ pub trait IOrderLookupRemover<'a>: IOrderLookupRemoverInner<'a> {
         }
     }
 
-    fn write_bitmap_group_if_pending(&mut self, ctx: &mut ArbContext, outer_index: OuterIndex) {
-        if self.pending_write() {
-            self.group_position_remover()
-                .write_to_slot(ctx, outer_index);
+    fn write_bitmap_group(&mut self, ctx: &mut ArbContext, outer_index: OuterIndex) {
+        debug_assert!(self.pending_write());
+        self.group_position_remover()
+            .write_to_slot(ctx, outer_index);
 
-            *self.pending_write_mut() = false;
-        }
+        *self.pending_write_mut() = false;
     }
 
     /// Concludes the removal. Writes the bitmap group if `pending_write` is true,
@@ -166,11 +163,9 @@ pub trait IOrderLookupRemover<'a>: IOrderLookupRemoverInner<'a> {
     /// * `ctx`
     fn commit(&mut self, ctx: &mut ArbContext) {
         if let Some(outer_index) = self.outer_index() {
-            // if self.pending_write() {
-            //     self.group_position_remover()
-            //         .write_to_slot(ctx, outer_index);
-            // }
-            self.write_bitmap_group_if_pending(ctx, outer_index);
+            if self.pending_write() {
+                self.write_bitmap_group(ctx, outer_index);
+            }
             self.outer_index_remover_mut().commit(ctx);
         }
     }

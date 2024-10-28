@@ -64,9 +64,6 @@ impl GroupPositionIterator {
     /// * `group_position`
     pub fn set_previous_position(&mut self, group_position: GroupPosition) {
         let previous_index = group_position.index_inclusive(self.side);
-        #[cfg(test)]
-        println!("setting previous index {:?}", previous_index);
-
         self.set_previous_index(previous_index);
     }
 

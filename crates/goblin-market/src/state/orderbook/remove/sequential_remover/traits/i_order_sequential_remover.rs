@@ -1,8 +1,4 @@
-use crate::state::{
-    order::order_id::OrderId,
-    remove::{IGroupPositionRemover, IOuterIndexRemover},
-    ArbContext,
-};
+use crate::state::{order::order_id::OrderId, remove::IGroupPositionRemover, ArbContext};
 
 use super::{
     IGroupPositionSequentialRemover, IOrderSequentialRemoverInner, IOuterIndexSequentialRemover,
