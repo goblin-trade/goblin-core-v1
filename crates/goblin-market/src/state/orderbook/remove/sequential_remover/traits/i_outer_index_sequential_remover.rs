@@ -7,7 +7,7 @@ use crate::state::{remove::IOuterIndexRemover, ArbContext};
 /// the market state. There is no need to cache values or perform slot writes.
 pub trait IOuterIndexSequentialRemover<'a>: IOuterIndexRemover<'a> {
     /// Read the next outer index from index list and set it as current
-    fn next(&mut self, ctx: &mut ArbContext) {
+    fn load_next(&mut self, ctx: &mut ArbContext) {
         *self.current_outer_index_mut() = self.active_outer_index_iterator_mut().next(ctx);
     }
 
@@ -52,10 +52,10 @@ mod tests {
         assert_eq!(remover.current_outer_index, None);
 
         for i in (0..=16).rev() {
-            remover.next(ctx);
+            remover.load_next(ctx);
             assert_eq!(remover.current_outer_index.unwrap().as_u16(), i);
         }
-        remover.next(ctx);
+        remover.load_next(ctx);
         assert_eq!(remover.current_outer_index, None);
         assert_eq!(
             remover.active_outer_index_iterator.unread_outer_indices(),
@@ -88,10 +88,10 @@ mod tests {
         let mut remover = OuterIndexSequentialRemover::new(side, &mut outer_index_count);
 
         for i in 1..=17 {
-            remover.next(ctx);
+            remover.load_next(ctx);
             assert_eq!(remover.current_outer_index.unwrap().as_u16(), i);
         }
-        remover.next(ctx);
+        remover.load_next(ctx);
         assert_eq!(remover.current_outer_index, None);
         assert_eq!(
             remover.active_outer_index_iterator.unread_outer_indices(),
@@ -125,13 +125,13 @@ mod tests {
         assert_eq!(remover.current_outer_index, None);
 
         // Remove two values and commit
-        remover.next(ctx);
+        remover.load_next(ctx);
         assert_eq!(
             remover.active_outer_index_iterator.unread_outer_indices(),
             16
         );
 
-        remover.next(ctx);
+        remover.load_next(ctx);
         assert_eq!(
             remover.active_outer_index_iterator.unread_outer_indices(),
             15
@@ -147,11 +147,11 @@ mod tests {
         let mut outer_index_count_new = remover.active_outer_index_iterator.unread_outer_indices();
         let mut remover_new = OuterIndexSequentialRemover::new(side, &mut outer_index_count_new);
         for i in (0..=15).rev() {
-            remover_new.next(ctx);
+            remover_new.load_next(ctx);
             assert_eq!(remover_new.current_outer_index.unwrap().as_u16(), i);
         }
 
-        remover_new.next(ctx);
+        remover_new.load_next(ctx);
         assert_eq!(remover_new.current_outer_index, None);
         assert_eq!(outer_index_count_new, 0);
     }

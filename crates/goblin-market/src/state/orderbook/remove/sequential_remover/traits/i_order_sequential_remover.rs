@@ -1,4 +1,8 @@
-use crate::state::{order::order_id::OrderId, remove::IGroupPositionRemover, ArbContext};
+use crate::state::{
+    order::order_id::OrderId,
+    remove::{IGroupPositionRemover, IOuterIndexRemover},
+    ArbContext,
+};
 
 use super::{
     IGroupPositionSequentialRemover, IOrderSequentialRemoverInner, IOuterIndexSequentialRemover,
@@ -19,7 +23,7 @@ pub trait IOrderSequentialRemover<'a>: IOrderSequentialRemoverInner<'a> {
                 .is_uninitialized_or_exhausted();
 
             if group_is_uninitialized_or_finished {
-                self.outer_index_remover_mut().next(ctx);
+                self.outer_index_remover_mut().load_next(ctx);
             }
 
             match self.outer_index() {

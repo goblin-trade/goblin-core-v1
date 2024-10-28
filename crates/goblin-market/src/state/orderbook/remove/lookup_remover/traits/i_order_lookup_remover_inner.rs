@@ -22,6 +22,9 @@ pub trait IOrderLookupRemoverInner<'a> {
     /// Mutable reference to outer index remover
     fn outer_index_remover_mut(&mut self) -> &mut impl IOuterIndexLookupRemover<'a>;
 
+    /// Best market price for current side from market state
+    fn best_market_price_inner(&self) -> Ticks;
+
     /// Reference to best market price for current side from market state
     fn best_market_price_inner_mut(&mut self) -> &mut Ticks;
 

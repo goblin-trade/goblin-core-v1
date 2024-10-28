@@ -40,6 +40,14 @@ impl IGroupPositionRemover for GroupPositionRemover {
             ActiveGroupPositionIterator::new(bitmap_group, side, index);
     }
 
+    fn set_bitmap_group(&mut self, bitmap_group: BitmapGroup) {
+        self.active_group_position_iterator.bitmap_group = bitmap_group;
+    }
+
+    fn get_bitmap_group(&self) -> BitmapGroup {
+        self.active_group_position_iterator.bitmap_group
+    }
+
     fn load_outermost_group(&mut self, ctx: &mut ArbContext, best_market_price: Ticks) {
         let TickIndices {
             outer_index,

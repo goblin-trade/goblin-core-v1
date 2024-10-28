@@ -4,8 +4,8 @@ use crate::{
         get_best_market_price,
         order::order_id::OrderId,
         remove::{
-            IOrderLookupRemover, IOrderLookupRemoverInner, IOuterIndexLookupRemover,
-            OrderLookupRemover,
+            IGroupPositionRemover, IOrderLookupRemover, IOrderLookupRemoverInner,
+            IOuterIndexLookupRemover, OrderLookupRemover,
         },
         ArbContext, MarketState, Side,
     },
@@ -64,35 +64,16 @@ impl<'a> RemoveMultipleManager<'a> {
                 let outer_index = order_id.price_in_ticks.outer_index();
                 let old_remover = self.remover_mut(self.side);
 
-                if old_remover.outer_index() == Some(outer_index) && !old_remover.pending_read {
-                    // Bitmap group has already been read by old remover
-                    // Copy over the bitmap group and set pending read to false there
-                    // Have a find_with_known_group() to the remover which accepts
-                    // the bitmap group.
-                    // What if the new remover uses sequential remover and moves to the next
-                    // group? In this case the bitmap group is not supposed to be written.
+                // Write the bitmap group if pending and share it with the opposite side remover
+                if old_remover.outer_index() == Some(outer_index) {
+                    old_remover.write_bitmap_group_if_pending(ctx, outer_index);
+                    let shared_bitmap_group = old_remover.get_shared_bitmap_group();
+
+                    let new_remover = self.remover_mut(new_side);
+                    new_remover.set_shared_bitmap_group(ctx, outer_index, shared_bitmap_group);
                 }
 
-                if old_remover.pending_write && old_remover.outer_index() == Some(outer_index) {
-                    // write old remover. pending_write toggle rules don't account for opposite
-                    // side orders so we must write the group.
-                    // Avoid committing old remover, as it could be needed again. When writing
-                    // the common bitmap, we should see if pending_write in either of the removers
-                    // is true.
-                    // TODO old remover should remain usable after commiting.
-                    // TODO commit should
-                    old_remover.commit(ctx);
-
-                    // pass bitmap group to new remover
-                }
-            }
-
-            if self.side == Side::Ask && new_side == Side::Bid {
-                // Cannot search for bids after asks were searched
-                return false;
-            } else if self.side == Side::Bid && new_side == Side::Ask {
-                self.current_remover_mut().commit(ctx);
-                self.side = Side::Ask;
+                self.side = new_side;
             }
 
             self.current_remover_mut().find(ctx, order_id)
@@ -111,7 +92,8 @@ impl<'a> RemoveMultipleManager<'a> {
 
     /// Conclude the removals by commiting the last used remover
     pub fn commit(&mut self, ctx: &mut ArbContext) {
-        self.current_remover_mut().commit(ctx);
+        self.remover_mut(Side::Bid).commit(ctx);
+        self.remover_mut(Side::Ask).commit(ctx);
     }
 
     // Getters

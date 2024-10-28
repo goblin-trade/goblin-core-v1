@@ -1,7 +1,8 @@
 use crate::state::{
+    bitmap_group::BitmapGroup,
     order::{group_position::GroupPosition, order_id::OrderId},
     remove::{IGroupPositionRemover, IOrderSequentialRemover},
-    ArbContext,
+    ArbContext, OuterIndex,
 };
 
 use super::{IGroupPositionLookupRemover, IOrderLookupRemoverInner, IOuterIndexLookupRemover};
@@ -43,14 +44,14 @@ pub trait IOrderLookupRemover<'a>: IOrderLookupRemoverInner<'a> {
             // Write group if outer index changed and pending write is true.
             // If outer index remains same then don't write yet.
             // previous_outer_index is guaranteed to exist if pending_write is true
-            if self.pending_write() {
-                self.group_position_remover()
-                    .write_to_slot(ctx, previous_outer_index.unwrap());
 
-                *self.pending_write_mut() = false;
+            if let Some(previous_outer_index) = previous_outer_index {
+                self.write_bitmap_group_if_pending(ctx, previous_outer_index);
             }
 
-            let outer_index_found = self.outer_index_remover_mut().find(ctx, outer_index);
+            let outer_index_found = self
+                .outer_index_remover_mut()
+                .find_and_load(ctx, outer_index);
             // pending_write() is always set to false before setting pending_read to true.
             *self.pending_read_mut() = self.outer_index().is_some();
 
@@ -67,6 +68,31 @@ pub trait IOrderLookupRemover<'a>: IOrderLookupRemoverInner<'a> {
 
         self.group_position_remover_mut()
             .find(GroupPosition::from(&order_id))
+    }
+
+    /// Get the current bitmap group for sharing with the opposite side remover
+    fn get_shared_bitmap_group(&self) -> BitmapGroup {
+        debug_assert!(self.outer_index().is_some());
+        debug_assert!(self.outer_index().unwrap() == self.best_market_price_inner().outer_index());
+
+        self.group_position_remover().get_bitmap_group()
+    }
+
+    /// Set the shared bitmap group from the opposite side remover and load the outermost
+    /// outer index if necessary.
+    fn set_shared_bitmap_group(
+        &mut self,
+        ctx: &mut ArbContext,
+        outer_index: OuterIndex,
+        shared_bitmap_group: BitmapGroup,
+    ) {
+        debug_assert!(outer_index == self.best_market_price_inner().outer_index());
+
+        self.outer_index_remover_mut()
+            .find_and_load(ctx, outer_index);
+
+        self.group_position_remover_mut()
+            .set_bitmap_group(shared_bitmap_group);
     }
 
     /// Remove the last searched order id from the book
@@ -119,6 +145,15 @@ pub trait IOrderLookupRemover<'a>: IOrderLookupRemoverInner<'a> {
         }
     }
 
+    fn write_bitmap_group_if_pending(&mut self, ctx: &mut ArbContext, outer_index: OuterIndex) {
+        if self.pending_write() {
+            self.group_position_remover()
+                .write_to_slot(ctx, outer_index);
+
+            *self.pending_write_mut() = false;
+        }
+    }
+
     /// Concludes the removal. Writes the bitmap group if `pending_write` is true,
     /// updates the outer index count and writes any pending outer index list slots.
     ///
@@ -131,10 +166,11 @@ pub trait IOrderLookupRemover<'a>: IOrderLookupRemoverInner<'a> {
     /// * `ctx`
     fn commit(&mut self, ctx: &mut ArbContext) {
         if let Some(outer_index) = self.outer_index() {
-            if self.pending_write() {
-                self.group_position_remover()
-                    .write_to_slot(ctx, outer_index);
-            }
+            // if self.pending_write() {
+            //     self.group_position_remover()
+            //         .write_to_slot(ctx, outer_index);
+            // }
+            self.write_bitmap_group_if_pending(ctx, outer_index);
             self.outer_index_remover_mut().commit(ctx);
         }
     }
