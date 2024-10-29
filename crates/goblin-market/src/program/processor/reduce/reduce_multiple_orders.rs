@@ -6,41 +6,17 @@ use crate::{
         try_withdraw, types::matching_engine_response::MatchingEngineResponse, FailedToReduce,
         GoblinError, GoblinResult,
     },
-    quantities::{BaseAtomsRaw, BaseLots, QuoteAtomsRaw, QuoteLots, Ticks, WrapperU64},
+    quantities::{BaseAtomsRaw, BaseLots, QuoteAtomsRaw, QuoteLots},
     state::{
-        order::{order_id::OrderId, resting_order::SlotRestingOrder},
-        ArbContext, ContextActions, MarketState, RestingOrderIndex, TraderState,
+        order::resting_order::SlotRestingOrder, ArbContext, ContextActions, MarketState,
+        TraderState,
     },
     GoblinMarket,
 };
 
-use super::RemoveMultipleManager;
+use super::{ReduceOrderPacket, RemoveMultipleManager};
 
-pub struct ReduceOrderPacket {
-    // ID of order to reduce
-    pub order_id: OrderId,
-
-    // Reduce at most these many lots. Pass u64::MAX to close
-    pub lots_to_remove: BaseLots,
-
-    // Revert entire TX if reduction fails for this order
-    pub revert_if_fail: bool,
-}
-
-impl From<&FixedBytes<17>> for ReduceOrderPacket {
-    fn from(bytes: &FixedBytes<17>) -> Self {
-        ReduceOrderPacket {
-            order_id: OrderId {
-                price_in_ticks: Ticks::new(u64::from_be_bytes(bytes[0..8].try_into().unwrap())),
-                resting_order_index: RestingOrderIndex::new(bytes[8]),
-            },
-            lots_to_remove: BaseLots::new(u64::from_be_bytes(bytes[9..16].try_into().unwrap())),
-            revert_if_fail: (bytes[16] & 0b0000_0001) != 0,
-        }
-    }
-}
-
-/// Try to reduce or cancel one or more resting orders. Pass MAX amount to cancel an order.
+/// Try to reduce or cancel multiple orders
 ///
 /// # Arguments
 ///
@@ -62,8 +38,6 @@ pub fn process_reduce_multiple_orders(
     let trader_state = &mut TraderState::read_from_slot(ctx, trader);
 
     // Mutate
-    // State reads and writes are performed inside reduce_multiple_orders_inner()
-    // The number of slot reads is dynamic
     let MatchingEngineResponse {
         num_quote_lots_out,
         num_base_lots_out,
@@ -94,26 +68,13 @@ pub fn process_reduce_multiple_orders(
 
 /// Try to reduce multiple orders by ID
 ///
-/// It is possible that an order ID is already closed, and also occupied by
-/// another trader. The current behavior is that if one reduction fails,
-/// continue trying to reduction others.
-///
-/// Order IDs should be in correct order
-/// - Asks in ascending order and bids in desecnding order of price. The call reverts if
-/// they are not in order.
-/// - Order IDs for bids and asks can be interspersed but the sorting in the
-/// respective side must be maintained.
-///
 /// Reduction involves
 ///
 /// - Updating trader state
-/// - Updating / closing the order slot
-/// - Updating the bitmap
-/// - Removing the outer index from index list if the outer index is closed
-/// - Updating outer index sizes and best prices in market state
+/// - Updating the order slot if order does not close
+/// - Update bitmap group, best market price and outer index list
 ///
-/// Opportunity to use VM cache is limited to bitmap group. We need order IDs in
-/// correct order for index list updations
+/// Sorting rules for order ids are described in RemoveMultipleManager.
 ///
 /// # Arguments
 ///
@@ -146,6 +107,8 @@ pub fn reduce_multiple_orders_inner(
 
         let order_found = manager.find(ctx, order_id);
         if !order_found {
+            // If order is not found and revert_if_fail is true then revert the transaction.
+            // If revert_if_fail is false then continue to the next order packet.
             if revert_if_fail {
                 return Err(GoblinError::FailedToReduce(FailedToReduce {}));
             }
@@ -159,9 +122,6 @@ pub fn reduce_multiple_orders_inner(
         }
 
         let order_is_expired = false;
-
-        // TODO check- where is base_lots_free subtracted from trader state?
-        // If tokens are withdrawn then this should be subtracted
         let matching_engine_response = resting_order.reduce_order(
             trader_state,
             manager.side,
