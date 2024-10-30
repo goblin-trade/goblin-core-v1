@@ -4,7 +4,10 @@ use crate::state::{
 use alloc::vec::Vec;
 
 pub trait IOuterIndexLookupRemover<'a>: IOuterIndexRemover<'a> {
+    /// Cached active outer indices which will be written back to slots.
     fn cached_outer_indices(&self) -> &Vec<OuterIndex>;
+
+    /// Mutable reference to cached outer indices
     fn cached_outer_indices_mut(&mut self) -> &mut Vec<OuterIndex>;
 
     /// Get the outermost outer index from the list. First take from
@@ -116,6 +119,26 @@ mod tests {
 
     mod lookup_present_values {
         use super::*;
+
+        #[test]
+        fn test_cached_outer_index_written_back() {
+            let ctx = &mut ArbContext::new();
+            let side = Side::Bid;
+            let mut outer_index_count = 6;
+
+            let list_key_0 = ListKey { index: 0, side };
+            let list_item_0 = ListSlot {
+                inner: [0, 1, 2, 3, 4, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            };
+            list_item_0.write_to_slot(ctx, &list_key_0);
+
+            let mut remover = OuterIndexLookupRemover::new(side, &mut outer_index_count);
+            remover.find_and_load(ctx, OuterIndex::new(3));
+            remover.commit(ctx);
+
+            let read_list_item_0 = ListSlot::new_from_slot(ctx, list_key_0);
+            assert_eq!(read_list_item_0, list_item_0);
+        }
 
         #[test]
         fn test_lookup_across_list_items_for_bids() {
