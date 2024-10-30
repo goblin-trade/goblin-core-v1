@@ -18,8 +18,9 @@ pub struct OuterIndexInserterV2<'a> {
     /// Cached active outer indices which will be written back to slots.
     pub cached_outer_indices: Vec<OuterIndex>,
 
-    /// The last read outer index from the index list
-    pub last_read_outer_index: Option<OuterIndex>,
+    /// The currently read outer index from the index list.
+    /// This does not hold inserted values.
+    pub current_outer_index: Option<OuterIndex>,
 }
 
 impl<'a> OuterIndexInserterV2<'a> {
@@ -33,13 +34,9 @@ impl<'a> OuterIndexInserterV2<'a> {
     pub fn new(side: Side, outer_index_count: &'a mut u16) -> Self {
         Self {
             active_outer_index_iterator: ActiveOuterIndexIteratorV2::new(side, outer_index_count),
-            last_read_outer_index: None,
+            current_outer_index: None,
             cached_outer_indices: Vec::new(),
         }
-    }
-
-    pub fn side(&self) -> Side {
-        self.active_outer_index_iterator.side
     }
 
     /// Prepare an outer index for insertion in the index list. Insertions are always
@@ -58,9 +55,9 @@ impl<'a> OuterIndexInserterV2<'a> {
     ///
     /// Returns true if the value needs insertion, false if it is already present
     ///
-    pub fn insert_if_absent(&mut self, ctx: &ArbContext, outer_index: OuterIndex) -> bool {
+    pub fn insert_if_absent_old(&mut self, ctx: &ArbContext, outer_index: OuterIndex) -> bool {
         loop {
-            if let Some(current_outer_index) = self.last_read_outer_index {
+            if let Some(current_outer_index) = self.current_outer_index {
                 if current_outer_index == outer_index {
                     // value found, no need to insert
                     return false;
@@ -72,13 +69,13 @@ impl<'a> OuterIndexInserterV2<'a> {
                     return true;
                 } else {
                     // need to look deeper. Push current value to cache and continue looking
-                    self.last_read_outer_index = None;
                     self.cached_outer_indices.push(current_outer_index);
+                    self.current_outer_index = None;
                 }
             }
 
             if let Some(next_outer_index) = self.active_outer_index_iterator.next(ctx) {
-                self.last_read_outer_index = Some(next_outer_index);
+                self.current_outer_index = Some(next_outer_index);
             } else if self
                 .cached_outer_indices
                 .last()
@@ -87,6 +84,34 @@ impl<'a> OuterIndexInserterV2<'a> {
                 // Avoid writing duplicate values
                 return false;
             } else {
+                self.cached_outer_indices.push(outer_index);
+                return true;
+            }
+        }
+    }
+
+    pub fn insert_if_absent(&mut self, ctx: &ArbContext, outer_index: OuterIndex) -> bool {
+        loop {
+            if self
+                .last_added_outer_index()
+                .is_some_and(|last_outer_index| last_outer_index == outer_index)
+            {
+                return false;
+            } else if let Some(current_outer_index) = self.current_outer_index {
+                if outer_index.is_closer_to_center(self.side(), current_outer_index) {
+                    // value inserted
+                    self.cached_outer_indices.push(outer_index);
+                    return true;
+                } else {
+                    // need to look deeper. Push current value to cache and continue looking
+                    self.cached_outer_indices.push(current_outer_index);
+                    self.current_outer_index = None;
+                }
+            } else if let Some(next_outer_index) = self.active_outer_index_iterator.next(ctx) {
+                // Read next item from index list
+                self.current_outer_index = Some(next_outer_index);
+            } else {
+                // If index list is exhausted save the outer index and exit
                 self.cached_outer_indices.push(outer_index);
                 return true;
             }
@@ -117,9 +142,21 @@ impl<'a> OuterIndexInserterV2<'a> {
 
     // Getters
 
+    pub fn side(&self) -> Side {
+        self.active_outer_index_iterator.side
+    }
+
+    pub fn last_added_outer_index(&self) -> Option<OuterIndex> {
+        if self.current_outer_index.is_some() {
+            self.current_outer_index
+        } else {
+            self.cached_outer_indices.last().map(|last| *last)
+        }
+    }
+
     /// Number of outer indices yet to be read plus the last cached index if present
     fn remaining_outer_indices(&self) -> u16 {
-        let outer_index_present = self.last_read_outer_index.is_some();
+        let outer_index_present = self.current_outer_index.is_some();
         self.active_outer_index_iterator.unread_outer_indices() + u16::from(outer_index_present)
     }
 }
@@ -142,7 +179,7 @@ mod tests {
 
         // Insert first
         assert_eq!(inserter.insert_if_absent(ctx, outer_index_0), true);
-        assert_eq!(inserter.last_read_outer_index, None);
+        assert_eq!(inserter.current_outer_index, None);
         assert_eq!(inserter.cached_outer_indices, vec![outer_index_0]);
         assert_eq!(
             inserter.active_outer_index_iterator.unread_outer_indices(),
@@ -151,7 +188,7 @@ mod tests {
 
         // Insert duplicate- no effect
         assert_eq!(inserter.insert_if_absent(ctx, outer_index_0), false);
-        assert_eq!(inserter.last_read_outer_index, None);
+        assert_eq!(inserter.current_outer_index, None);
         assert_eq!(inserter.cached_outer_indices, vec![outer_index_0]);
         assert_eq!(
             inserter.active_outer_index_iterator.unread_outer_indices(),
@@ -160,7 +197,7 @@ mod tests {
 
         // Insert next
         assert_eq!(inserter.insert_if_absent(ctx, outer_index_1), true);
-        assert_eq!(inserter.last_read_outer_index, None);
+        assert_eq!(inserter.current_outer_index, None);
         assert_eq!(
             inserter.cached_outer_indices,
             vec![outer_index_0, outer_index_1]
@@ -172,7 +209,7 @@ mod tests {
 
         // Commit
         inserter.commit(ctx);
-        assert_eq!(inserter.last_read_outer_index, None);
+        assert_eq!(inserter.current_outer_index, None);
         assert_eq!(inserter.cached_outer_indices, vec![]);
         assert_eq!(
             inserter.active_outer_index_iterator.unread_outer_indices(),
@@ -205,7 +242,7 @@ mod tests {
         let outer_index_to_insert = OuterIndex::new(3);
         assert_eq!(inserter.insert_if_absent(ctx, outer_index_to_insert), true);
 
-        assert_eq!(inserter.last_read_outer_index.unwrap(), outer_index_0);
+        assert_eq!(inserter.current_outer_index.unwrap(), outer_index_0);
         assert_eq!(inserter.cached_outer_indices, vec![outer_index_to_insert]);
         assert_eq!(
             inserter.active_outer_index_iterator.unread_outer_indices(),
@@ -244,7 +281,7 @@ mod tests {
 
         // Try to insert duplicate
         assert_eq!(inserter.insert_if_absent(ctx, outer_index_0), false);
-        assert_eq!(inserter.last_read_outer_index.unwrap(), outer_index_0);
+        assert_eq!(inserter.current_outer_index.unwrap(), outer_index_0);
         assert_eq!(inserter.cached_outer_indices, vec![]);
         assert_eq!(
             inserter.active_outer_index_iterator.unread_outer_indices(),
@@ -279,7 +316,7 @@ mod tests {
 
         let outer_index_to_insert = OuterIndex::new(1);
         assert_eq!(inserter.insert_if_absent(ctx, outer_index_to_insert), true);
-        assert_eq!(inserter.last_read_outer_index, None);
+        assert_eq!(inserter.current_outer_index, None);
         assert_eq!(
             inserter.cached_outer_indices,
             vec![outer_index_0, outer_index_to_insert]
@@ -322,7 +359,7 @@ mod tests {
 
         let outer_index_to_insert = OuterIndex::new(16);
         assert_eq!(inserter.insert_if_absent(ctx, outer_index_to_insert), true);
-        assert_eq!(inserter.last_read_outer_index.unwrap(), OuterIndex::new(15));
+        assert_eq!(inserter.current_outer_index.unwrap(), OuterIndex::new(15));
         assert_eq!(
             inserter.cached_outer_indices,
             vec![OuterIndex::new(17), outer_index_to_insert]

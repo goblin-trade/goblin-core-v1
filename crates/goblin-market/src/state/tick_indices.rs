@@ -84,6 +84,7 @@ impl OuterIndex {
         self.inner
     }
 
+    /// Whether the current outer index is closer to the centre than `other`
     pub fn is_closer_to_center(&self, side: Side, other: OuterIndex) -> bool {
         match side {
             Side::Bid => other > *self,

@@ -59,7 +59,7 @@ impl Ord for SortedOrderId {
 }
 
 /// Whether two order ids for a side are sorted
-pub fn orders_are_sorted(side: Side, new_order_id: OrderId, last_order_id: OrderId) -> bool {
+pub fn orders_sorted_for_side(side: Side, new_order_id: OrderId, last_order_id: OrderId) -> bool {
     let new_sorted_order_id = SortedOrderId {
         side,
         order_id: new_order_id,
@@ -204,7 +204,7 @@ mod tests {
                 resting_order_index: RestingOrderIndex::ZERO,
             };
 
-            let sorted = orders_are_sorted(side, new_order_id, last_order_id);
+            let sorted = orders_sorted_for_side(side, new_order_id, last_order_id);
             assert_eq!(sorted, true);
         }
 
@@ -222,7 +222,7 @@ mod tests {
                 resting_order_index: RestingOrderIndex::ZERO,
             };
 
-            let sorted = orders_are_sorted(side, new_order_id, last_order_id);
+            let sorted = orders_sorted_for_side(side, new_order_id, last_order_id);
             assert_eq!(sorted, false);
         }
 
@@ -240,7 +240,7 @@ mod tests {
                 resting_order_index: RestingOrderIndex::ZERO,
             };
 
-            let sorted = orders_are_sorted(side, new_order_id, last_order_id);
+            let sorted = orders_sorted_for_side(side, new_order_id, last_order_id);
             assert_eq!(sorted, true);
         }
 
@@ -258,7 +258,7 @@ mod tests {
                 resting_order_index: RestingOrderIndex::ZERO,
             };
 
-            let sorted = orders_are_sorted(side, new_order_id, last_order_id);
+            let sorted = orders_sorted_for_side(side, new_order_id, last_order_id);
             assert_eq!(sorted, false);
         }
     }
