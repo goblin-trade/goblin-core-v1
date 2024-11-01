@@ -29,6 +29,43 @@ pub struct MarketState {
     pub best_ask_price: Ticks,
 }
 
+// #[cfg(test)]
+// mod mutref_test {
+//     use crate::quantities::Ticks;
+
+//     use super::MarketState;
+
+//     #[test]
+//     fn test_borrow() {
+//         let mut market_state = MarketState::default();
+//         let outer_index_count = &mut market_state.bids_outer_indices;
+//         let best_market_price = &mut market_state.best_bid_price;
+
+//         // *outer_index_count = 1;
+//         *best_market_price = Ticks::default();
+//     }
+
+//     #[test]
+//     fn test_borrow_from_ref() {
+//         let mut market_state = &mut MarketState::default();
+//         let outer_index_count = &mut market_state.bids_outer_indices;
+//         let best_market_price = &mut market_state.best_bid_price;
+
+//         *best_market_price = Ticks::default();
+//     }
+
+//     #[test]
+//     fn test_borrow_from_function() {
+//         let market_state = &mut MarketState::default();
+//         let opposite_side = crate::state::Side::Bid;
+
+//         let outer_index_count = market_state.outer_index_count_mut(opposite_side);
+//         let best_market_price = market_state.best_market_price_mut(opposite_side);
+
+//         *outer_index_count = 1;
+//     }
+// }
+
 pub struct MarketPrices {
     pub best_bid_price: Ticks,
     pub best_ask_price: Ticks,
@@ -171,6 +208,17 @@ impl MarketState {
             &mut self.bids_outer_indices
         } else {
             &mut self.asks_outer_indices
+        }
+    }
+
+    pub fn best_market_price_and_outer_index_count(
+        &mut self,
+        side: Side,
+    ) -> (&mut Ticks, &mut u16) {
+        if side == Side::Bid {
+            (&mut self.best_bid_price, &mut self.bids_outer_indices)
+        } else {
+            (&mut self.best_ask_price, &mut self.asks_outer_indices)
         }
     }
 

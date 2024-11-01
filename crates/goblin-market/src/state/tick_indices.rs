@@ -49,6 +49,24 @@ impl Ticks {
     pub fn from_indices(outer_index: OuterIndex, inner_index: InnerIndex) -> Ticks {
         Ticks::new(outer_index.as_u16() as u64 * BITMAPS_PER_GROUP + inner_index.as_usize() as u64)
     }
+
+    /// Whether the current tick is closer to the centre than `other`
+    ///
+    /// # Arguments
+    ///
+    /// * `side`- Side of self
+    /// * `other` - The other tick to compare
+    pub fn is_closer_to_center(&self, side: Side, other: Ticks) -> bool {
+        match side {
+            // Bids are stored in descending order.
+            // Current should be greater than `other`
+            Side::Bid => *self > other,
+
+            // Asks are stored in ascending order.
+            // Current should be less than `other`
+            Side::Ask => *self < other,
+        }
+    }
 }
 
 /// Key to fetch a Bitmap group. A Bitmap consists of multiple Bitmaps
@@ -87,8 +105,13 @@ impl OuterIndex {
     /// Whether the current outer index is closer to the centre than `other`
     pub fn is_closer_to_center(&self, side: Side, other: OuterIndex) -> bool {
         match side {
-            Side::Bid => other > *self,
-            Side::Ask => other < *self,
+            // Bids are stored in descending order.
+            // Current should be greater than `other`
+            Side::Bid => *self > other,
+
+            // Asks are stored in ascending order.
+            // Current should be less than `other`
+            Side::Ask => *self < other,
         }
     }
 }

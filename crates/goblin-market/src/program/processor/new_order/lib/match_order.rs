@@ -175,7 +175,8 @@ pub fn match_order(
 
         // EMIT fill event
 
-        // Update the maker's state to reflect the match
+        // TODO fix? This should be taker state
+        // Update the taker's state to reflect the match
         match inflight_order.side {
             Side::Bid => maker_state.process_limit_sell(
                 matched_base_lots,
@@ -186,6 +187,7 @@ pub fn match_order(
                 matched_base_lots,
             ),
         }
+        maker_state.write_to_slot(ctx, resting_order.trader_address);
 
         !inflight_order.in_progress()
     };
