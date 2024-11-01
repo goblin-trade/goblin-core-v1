@@ -25,7 +25,7 @@ pub fn process_resting_orders(
     side: Side,
     lambda: &mut dyn FnMut(OrderId, &mut SlotRestingOrder, &mut ArbContext) -> bool,
 ) {
-    let mut price_in_ticks = market_state.best_price(side);
+    let mut price_in_ticks = market_state.best_market_price(side);
     let mut previous_inner_index = Some(price_in_ticks.inner_index());
 
     let mut outer_index_count = market_state.outer_index_count(side);

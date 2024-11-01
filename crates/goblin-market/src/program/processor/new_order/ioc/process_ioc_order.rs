@@ -6,7 +6,7 @@ use crate::{
     GoblinMarket,
 };
 
-use super::ImmediateOrCancelOrderPacket;
+use super::{process_ioc_order_inner, ImmediateOrCancelOrderPacket};
 
 pub fn process_ioc_order(order_packet: &mut ImmediateOrCancelOrderPacket) -> GoblinResult<()> {
     let ctx = &mut ArbContext::new();
@@ -15,12 +15,17 @@ pub fn process_ioc_order(order_packet: &mut ImmediateOrCancelOrderPacket) -> Gob
     let mut market_state = MarketState::read_from_slot(ctx);
     let mut trader_state = TraderState::read_from_slot(ctx, order_packet.trader);
 
-    let side = order_packet.side;
-
     // fail_silently_on_insufficient_funds is always false for ImmediateOrCancel
     // Skip check
 
     // call process_ioc_order_inner
+    process_ioc_order_inner(
+        ctx,
+        &mut expiry_checker,
+        &mut market_state,
+        &mut trader_state,
+        order_packet,
+    );
     // Obtain tokens to transfer in and tokens to transfer out
 
     // No object returned. Skip resting order insertion

@@ -257,6 +257,7 @@ impl GoblinMarket {
         // TODO read from ctx
         let trader = msg::sender();
 
+        // TODO use shorter order packet. Half of the fields are empty
         let mut order_packet = ImmediateOrCancelOrderPacket {
             side: Side::from(is_bid),
             trader: msg::sender(),

@@ -166,6 +166,14 @@ impl MarketState {
         }
     }
 
+    pub fn outer_index_count_mut(&mut self, side: Side) -> &mut u16 {
+        if side == Side::Bid {
+            &mut self.bids_outer_indices
+        } else {
+            &mut self.asks_outer_indices
+        }
+    }
+
     pub fn set_outer_index_length(&mut self, side: Side, value: u16) {
         if side == Side::Bid {
             self.bids_outer_indices = value;
@@ -174,11 +182,19 @@ impl MarketState {
         }
     }
 
-    pub fn best_price(&self, side: Side) -> Ticks {
+    pub fn best_market_price(&self, side: Side) -> Ticks {
         if side == Side::Bid {
             self.best_bid_price
         } else {
             self.best_ask_price
+        }
+    }
+
+    pub fn best_market_price_mut(&mut self, side: Side) -> &mut Ticks {
+        if side == Side::Bid {
+            &mut self.best_bid_price
+        } else {
+            &mut self.best_ask_price
         }
     }
 

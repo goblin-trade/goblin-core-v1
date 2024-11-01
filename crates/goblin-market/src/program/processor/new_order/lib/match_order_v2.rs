@@ -2,7 +2,11 @@ use stylus_sdk::alloy_primitives::Address;
 
 use crate::{
     quantities::AdjustedQuoteLots,
-    state::{order::resting_order::SlotRestingOrder, ArbContext, InflightOrder, MarketState, Side},
+    state::{
+        order::resting_order::SlotRestingOrder,
+        remove::{IOrderSequentialRemover, OrderSequentialRemover},
+        ArbContext, InflightOrder, MarketState, Side,
+    },
 };
 
 use super::ExpiryChecker;
@@ -35,12 +39,21 @@ pub fn match_order_v2(
     inflight_order: &mut InflightOrder,
     taker_address: Address,
 ) -> Option<SlotRestingOrder> {
-    let mut total_matched_adjusted_quote_lots = AdjustedQuoteLots::ZERO;
-    while inflight_order.in_progress() {
-        // Read opposite side orders starting from the centre
-        // Write an interator in /orderbook to loop through active bits
-        // If the resting order is exhausted then this cached order is cleared
-        // and we move on
-    }
+    let opposite_side = inflight_order.side.opposite();
+    let best_market_price = market_state.best_market_price_mut(opposite_side);
+    let outer_index_count = market_state.outer_index_count_mut(opposite_side);
+
+    let mut remover =
+        OrderSequentialRemover::new(opposite_side, best_market_price, outer_index_count);
+
+    // let mut total_matched_adjusted_quote_lots = AdjustedQuoteLots::ZERO;
+    // while inflight_order.in_progress() {
+    //     // Read opposite side orders starting from the centre
+    //     // Write an interator in /orderbook to loop through active bits
+    //     // If the resting order is exhausted then this cached order is cleared
+    //     // and we move on
+
+    //     if let Some(order_id) = remover.next(ctx) {}
+    // }
     None
 }
