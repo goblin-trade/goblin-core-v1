@@ -1,7 +1,7 @@
 use crate::{
-    parameters::BASE_LOTS_PER_BASE_UNIT,
+    parameters::{BASE_LOTS_PER_BASE_UNIT, TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT},
     program::{round_adjusted_quote_lots_down, round_adjusted_quote_lots_up},
-    quantities::{AdjustedQuoteLots, BaseLots, QuoteLots, Ticks},
+    quantities::{AdjustedQuoteLots, BaseLots, QuoteLots, QuoteLotsPerBaseUnit, Ticks},
 };
 
 use super::{SelfTradeBehavior, Side};
@@ -91,6 +91,28 @@ impl InflightOrder {
         }
     }
 
+    /// Process a self trade of type DecrementTake.
+    ///
+    /// The available budgets and match limit are decremented but matched lots
+    /// are not added to matched lots. This is because matched lots are used to calculate fees.
+    /// DecrementTake self trades should not produce taker fees.
+    ///
+    pub(crate) fn process_decrement_take(
+        &mut self,
+        matched_adjusted_quote_lots: AdjustedQuoteLots,
+        matched_base_lots: BaseLots,
+    ) {
+        debug_assert!(self.match_limit > 0);
+
+        // TODO need saturated sub?
+        // - base_lot_budget is guaranteed to be smaller
+        // - What about adjusted_quote_lot_budget?
+        self.base_lot_budget -= matched_base_lots;
+        self.adjusted_quote_lot_budget -= matched_adjusted_quote_lots;
+        // Self trades will count towards the match limit
+        self.match_limit -= 1;
+    }
+
     /// The matched quote lots
     ///
     /// `matched_adjusted_quote_lots` is rounded down to the nearest tick
@@ -110,5 +132,19 @@ impl InflightOrder {
                     - self.quote_lot_fees
             }
         }
+    }
+
+    /// Number of base lots available to match at a given price
+    ///
+    /// # Arguments
+    ///
+    /// * `price_in_ticks` - Price where the inflight order is getting matched
+    pub fn base_lots_available_to_match(&self, price_in_ticks: Ticks) -> BaseLots {
+        self.base_lot_budget.min(
+            self.adjusted_quote_lot_budget
+                .unchecked_div::<QuoteLotsPerBaseUnit, BaseLots>(
+                    price_in_ticks * TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT,
+                ),
+        )
     }
 }

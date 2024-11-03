@@ -41,7 +41,11 @@ impl<'a> SlabReader<'a> {
     }
 }
 
-/// Match an inflight order against the opposite side slab
+/// Match an inflight order against the opposite side slab.
+///
+/// An inflight order has a base lot budget that is depleted as the order
+/// is matched with resting orders on the opposite side book. Control variables
+/// like `limit_price_in_ticks` and `match_limit` are used to restrict matching.
 pub fn match_order_v2(
     ctx: &mut ArbContext,
     market_state: &mut MarketState,
@@ -54,7 +58,7 @@ pub fn match_order_v2(
     let mut slab_reader = SlabReader::new(opposite_side, market_state);
 
     while inflight_order.in_progress() {
-        if let Some((order_id, mut resting_order)) = slab_reader.next(ctx) {
+        if let Some((OrderId { price_in_ticks, .. }, mut resting_order)) = slab_reader.next(ctx) {
             let num_base_lots_quoted = resting_order.num_base_lots;
 
             // 0. Not crossed case
@@ -62,7 +66,7 @@ pub fn match_order_v2(
             // than price of the best available order
             let not_crossed = inflight_order
                 .limit_price_in_ticks
-                .is_closer_to_center(opposite_side, order_id.price_in_ticks);
+                .is_closer_to_center(opposite_side, price_in_ticks);
 
             if not_crossed {
                 break;
@@ -71,17 +75,18 @@ pub fn match_order_v2(
             let mut maker_state = TraderState::read_from_slot(ctx, resting_order.trader_address);
 
             // 1. Resting order expired case
+            // Free up tokens for maker and continue to read the next order.
+            // We do not write the cleared resting order to slot. The sequential remover
+            // will deactivate it when next() is called.
             if expiry_checker.is_expired(
                 ctx,
                 resting_order.track_block,
                 resting_order.last_valid_block_or_unix_timestamp_in_seconds,
             ) {
-                resting_order.reduce_order(
-                    &mut maker_state,
+                maker_state.cancel_order_and_claim_funds(
+                    &mut resting_order,
                     opposite_side,
-                    order_id.price_in_ticks,
-                    BaseLots::MAX,
-                    true,
+                    price_in_ticks,
                     false, // don't claim funds for maker
                 );
                 maker_state.write_to_slot(ctx, resting_order.trader_address);
@@ -93,67 +98,68 @@ pub fn match_order_v2(
             if taker_address == resting_order.trader_address {
                 match inflight_order.self_trade_behavior {
                     SelfTradeBehavior::Abort => {
+                        // Return None to abort the transaction
                         return None;
                     }
                     SelfTradeBehavior::CancelProvide => {
                         // Cancel the resting order without charging fees.
-                        resting_order.reduce_order(
-                            &mut maker_state,
+                        maker_state.cancel_order_and_claim_funds(
+                            &mut resting_order,
                             opposite_side,
-                            order_id.price_in_ticks,
-                            BaseLots::MAX,
-                            false,
-                            false,
+                            price_in_ticks,
+                            false, // don't claim funds for maker
                         );
-
                         inflight_order.match_limit -= 1;
+                        maker_state.write_to_slot(ctx, resting_order.trader_address);
+                        continue;
                     }
                     SelfTradeBehavior::DecrementTake => {
                         // Match against the maker order, but don't add fees
                         // Similar matching logic is used later, but here the amount matched is
                         // not added to total_matched_adjusted_quote_lots
-                        let base_lots_removed = inflight_order
-                            .base_lot_budget
-                            .min(
-                                inflight_order
-                                    .adjusted_quote_lot_budget
-                                    .unchecked_div::<QuoteLotsPerBaseUnit, BaseLots>(
-                                        order_id.price_in_ticks
-                                            * TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT,
-                                    ),
-                            )
-                            .min(num_base_lots_quoted);
+                        let base_lots_to_remove = inflight_order
+                            .base_lots_available_to_match(price_in_ticks)
+                            .min(num_base_lots_quoted); // Cap base lots to the amount quoted
+
+                        let adjusted_quote_lots_to_remove = price_in_ticks
+                            * TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT
+                            * base_lots_to_remove;
+
+                        inflight_order.process_decrement_take(
+                            adjusted_quote_lots_to_remove,
+                            base_lots_to_remove,
+                        );
 
                         resting_order.reduce_order(
                             &mut maker_state,
                             opposite_side,
-                            order_id.price_in_ticks,
-                            base_lots_removed,
+                            price_in_ticks,
+                            base_lots_to_remove,
                             false,
                             false,
                         );
+                        // TODO resting order not written?
 
-                        // In the case that the self trade behavior is DecrementTake, we decrement the
-                        // the base lot and adjusted quote lot budgets accordingly
-                        inflight_order.base_lot_budget = inflight_order
-                            .base_lot_budget
-                            .saturating_sub(base_lots_removed);
-                        inflight_order.adjusted_quote_lot_budget =
-                            inflight_order.adjusted_quote_lot_budget.saturating_sub(
-                                TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT
-                                    * order_id.price_in_ticks
-                                    * base_lots_removed,
-                            );
-                        // Self trades will count towards the match limit
-                        inflight_order.match_limit -= 1;
+                        // TODO why not use InflightOrder::process_match()?
+                        // Decrement base lot and adjusted quote lot budgets
+                        // inflight_order.base_lot_budget = inflight_order
+                        //     .base_lot_budget
+                        //     .saturating_sub(base_lots_to_remove);
+
+                        // inflight_order.adjusted_quote_lot_budget = inflight_order
+                        //     .adjusted_quote_lot_budget
+                        //     .saturating_sub(adjusted_quote_lots_to_remove);
+
+                        // // Self trades will count towards the match limit
+                        // inflight_order.match_limit -= 1;
+
+                        maker_state.write_to_slot(ctx, resting_order.trader_address);
+                        continue;
                     }
                 }
-                maker_state.write_to_slot(ctx, resting_order.trader_address);
-                continue;
             }
-            let num_adjusted_quote_lots_quoted = order_id.price_in_ticks
-                * TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT
-                * num_base_lots_quoted;
+            let num_adjusted_quote_lots_quoted =
+                price_in_ticks * TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT * num_base_lots_quoted;
 
             // Use matched_base_lots and matched_adjusted_quote_lots to update the
             // inflight order and trader state
@@ -165,22 +171,20 @@ pub fn match_order_v2(
                 let has_remaining_base_lots =
                     num_base_lots_quoted <= inflight_order.base_lot_budget;
 
-                // Budget exceeds quote. Clear the resting order.
+                // Inflight order has sufficient budget to consume the quote.
+                // Clear the resting order.
                 if has_remaining_base_lots && has_remaining_adjusted_quote_lots {
                     // TODO remove clear_order() function. No need to clear closed orders,
                     // simply clear its corresponding bitmap slot.
                     resting_order.clear_order();
+
+                    // Entire quote is matched
                     (num_base_lots_quoted, num_adjusted_quote_lots_quoted)
                 } else {
                     // If the order's budget is exhausted, we match as much as we can
-                    let base_lots_to_remove = inflight_order.base_lot_budget.min(
-                        inflight_order
-                            .adjusted_quote_lot_budget
-                            .unchecked_div::<QuoteLotsPerBaseUnit, BaseLots>(
-                                order_id.price_in_ticks * TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT,
-                            ),
-                    );
-                    let adjusted_quote_lots_to_remove = order_id.price_in_ticks
+                    let base_lots_to_remove =
+                        inflight_order.base_lots_available_to_match(price_in_ticks);
+                    let adjusted_quote_lots_to_remove = price_in_ticks
                         * TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT
                         * base_lots_to_remove;
 

@@ -5,7 +5,10 @@ use crate::{
     quantities::{BaseLots, QuoteLots, Ticks, WrapperU64},
 };
 
-use super::{ArbContext, ContextActions, Side, SlotKey, TRADER_STATE_KEY_SEED};
+use super::{
+    order::resting_order::{RestingOrder, SlotRestingOrder},
+    ArbContext, ContextActions, Side, SlotKey, TRADER_STATE_KEY_SEED,
+};
 
 pub type TraderId = Address;
 
@@ -326,6 +329,64 @@ impl TraderState {
     #[inline(always)]
     fn use_free_base_lots_inner(&mut self, base_lots: BaseLots) {
         self.base_lots_free -= base_lots;
+    }
+
+    /// Cancel a resting order, credit funds to the trader state and
+    /// generate a matching engine response.
+    ///
+    /// Externally ensure that the resting order is removed from the book
+    /// using the sequential remover. This function clears base lots from
+    /// the resting order but does not remove it from the orderbook.
+    ///
+    /// # Arguments
+    ///
+    /// * `resting_order`
+    /// * `side`
+    /// * `price_in_ticks`
+    /// * `claim_funds` - Whether funds should be claimed via token transfer
+    /// or be credited to the trader state.
+    ///
+    pub fn cancel_order_and_claim_funds(
+        &mut self,
+        resting_order: &mut SlotRestingOrder,
+        side: Side,
+        price_in_ticks: Ticks,
+        claim_funds: bool,
+    ) -> MatchingEngineResponse {
+        // Deduct all lots
+        let base_lots_to_remove = resting_order.num_base_lots;
+        resting_order.num_base_lots = BaseLots::ZERO;
+
+        // EMIT ExpiredOrder / Reduce
+
+        // Free up tokens from trader state
+        let (num_quote_lots, num_base_lots) = {
+            match side {
+                Side::Bid => {
+                    // A bid order consists of locked up 'quote tokens' bidding to buy the base token.
+                    // Quote tokens are released on reducing the order.
+                    let quote_lots = compute_quote_lots(price_in_ticks, base_lots_to_remove);
+
+                    self.unlock_quote_lots(quote_lots);
+                    (quote_lots, BaseLots::ZERO)
+                }
+                Side::Ask => {
+                    // A bid order consists of locked up 'base tokens' bidding to sell the base token
+                    // in exchange of the quote token.
+                    // Base tokens are released on reducing the order.
+                    self.unlock_base_lots(base_lots_to_remove);
+                    (QuoteLots::ZERO, base_lots_to_remove)
+                }
+            }
+        };
+
+        if claim_funds {
+            self.claim_funds(num_quote_lots, num_base_lots)
+        } else {
+            // No claim case
+            // The order is reduced but no funds will be claimed
+            MatchingEngineResponse::default()
+        }
     }
 }
 

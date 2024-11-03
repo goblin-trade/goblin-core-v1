@@ -212,6 +212,8 @@ impl SlotRestingOrder {
     /// * `order_is_expired`
     /// * `claim_funds`
     ///
+    /// TODO rewrite. Expired case moved to TraderState::reclaim_funds_from_expired_order()
+    ///
     /// # Returns
     ///
     /// Number of base and quote lots released after reducing the order.

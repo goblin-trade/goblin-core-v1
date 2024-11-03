@@ -82,9 +82,12 @@ impl ImmediateOrCancelOrderPacket {
     /// then the budget is set to max.
     pub fn base_lot_budget(&self) -> BaseLots {
         let base_lots = self.num_base_lots;
+        // TODO Why do 0 base lots map to MAX?
         if base_lots == BaseLots::ZERO {
+            // Bid case
             BaseLots::MAX
         } else {
+            // Ask case
             base_lots
         }
     }
@@ -106,8 +109,10 @@ impl ImmediateOrCancelOrderPacket {
     /// If num_quote_lots are zero (ask case) then budget is set to max.
     pub fn adjusted_quote_lot_budget(&self) -> AdjustedQuoteLots {
         if self.num_quote_lots == QuoteLots::ZERO {
+            // Ask case
             AdjustedQuoteLots::MAX
         } else {
+            // Bid case
             compute_adjusted_quote_lots(self.side, self.num_quote_lots)
         }
     }
