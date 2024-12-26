@@ -80,15 +80,25 @@ impl ImmediateOrCancelOrderPacket {
 
     /// Get the base lot budget. If the number of base lots is zero (bid case)
     /// then the budget is set to max.
-    pub fn base_lot_budget(&self) -> BaseLots {
-        let base_lots = self.num_base_lots;
-        // TODO Why do 0 base lots map to MAX?
-        if base_lots == BaseLots::ZERO {
-            // Bid case
-            BaseLots::MAX
-        } else {
-            // Ask case
-            base_lots
+    // pub fn base_lot_budget(&self) -> BaseLots {
+    //     let base_lots = self.num_base_lots;
+    //     // TODO Why do 0 base lots map to MAX?
+    //     if base_lots == BaseLots::ZERO {
+    //         // Bid case
+    //         BaseLots::MAX
+    //     } else {
+    //         // Ask case
+    //         base_lots
+    //     }
+    // }
+
+    pub fn base_lot_budget_v2(&self) -> BaseLots {
+        // TODO check limit orders. Does base_lots == BaseLots::ZERO apply for
+        // asks in limit orders?
+        match self.side {
+            // Bid IOC orders have num_base_lots = 0. Map it to MAX
+            Side::Bid => BaseLots::MAX,
+            Side::Ask => self.num_base_lots,
         }
     }
 
@@ -107,24 +117,36 @@ impl ImmediateOrCancelOrderPacket {
     /// The adjusted quote lot budget (quote lots * base lots / base lot size)
     ///
     /// If num_quote_lots are zero (ask case) then budget is set to max.
-    pub fn adjusted_quote_lot_budget(&self) -> AdjustedQuoteLots {
-        if self.num_quote_lots == QuoteLots::ZERO {
-            // Ask case
-            AdjustedQuoteLots::MAX
-        } else {
-            // Bid case
-            compute_adjusted_quote_lots(self.side, self.num_quote_lots)
+    // pub fn adjusted_quote_lot_budget(&self) -> AdjustedQuoteLots {
+    //     if self.num_quote_lots == QuoteLots::ZERO {
+    //         // Ask case
+    //         AdjustedQuoteLots::MAX
+    //     } else {
+    //         // Bid case
+    //         compute_adjusted_quote_lots(self.side, self.num_quote_lots)
+    //     }
+    // }
+
+    pub fn adjusted_quote_lot_budget_v2(&self) -> AdjustedQuoteLots {
+        match self.side {
+            // compute_adjusted_quote_lots() has an Ask branch. It is possible
+            // that Asks in limit orders have self.num_quote_lots == QuoteLots::ZERO
+            Side::Bid => compute_adjusted_quote_lots(self.side, self.num_quote_lots),
+            // Ask IOC orders have num_quote_lots = 0. Map it to MAX
+            Side::Ask => AdjustedQuoteLots::MAX,
         }
     }
 
     pub fn get_inflight_order(&self) -> InflightOrder {
+        // Retain v1 functions. Perhaps limit orders have a different condition
+        // when finding base_lot_budget() and adjusted_quote_lot_budget()
         InflightOrder::new(
             self.side,
             self.self_trade_behavior,
             self.price_in_ticks,
             self.match_limit,
-            self.base_lot_budget(),
-            self.adjusted_quote_lot_budget(),
+            self.base_lot_budget_v2(),
+            self.adjusted_quote_lot_budget_v2(),
             self.track_block,
             self.last_valid_block_or_unix_timestamp_in_seconds,
         )

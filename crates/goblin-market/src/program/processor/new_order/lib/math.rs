@@ -20,6 +20,20 @@ use crate::{
 
 /// Round up the fee to the nearest adjusted quote lot
 pub fn compute_fee(size_in_adjusted_quote_lots: AdjustedQuoteLots) -> AdjustedQuoteLots {
+    // 1 bps = 1 / 10_000
+    AdjustedQuoteLots::new(
+        ((size_in_adjusted_quote_lots.as_u128() * TAKER_FEE_BPS as u128 + 10_000 - 1) / 10_000)
+            as u64,
+    )
+}
+
+pub fn compute_fee_v2(size_in_adjusted_quote_lots: AdjustedQuoteLots) -> AdjustedQuoteLots {
+    AdjustedQuoteLots::new(
+        (size_in_adjusted_quote_lots.as_u64() * TAKER_FEE_BPS as u64).div_ceil(10_000),
+    )
+}
+
+pub fn size_plus_fee(size_in_adjusted_quote_lots: AdjustedQuoteLots) -> AdjustedQuoteLots {
     AdjustedQuoteLots::new(
         ((size_in_adjusted_quote_lots.as_u128() * TAKER_FEE_BPS as u128 + 10000 - 1) / 10000)
             as u64,
@@ -27,9 +41,15 @@ pub fn compute_fee(size_in_adjusted_quote_lots: AdjustedQuoteLots) -> AdjustedQu
 }
 
 /// Adjusted quote lots, rounded up to the nearest multiple of base_lots_per_base_unit
+///
+/// div_ceil = (numerator + denominator - 1) / denominator
+///
+/// * Multiplication with BASE_LOTS_PER_BASE_UNIT in the end is redundant. The result
+/// of each BASE_LOTS_PER_BASE_UNIT call is divided by BASE_LOTS_PER_BASE_UNIT.
 pub fn round_adjusted_quote_lots_up(
     num_adjusted_quote_lots: AdjustedQuoteLots,
 ) -> AdjustedQuoteLots {
+    // num_adjusted_quote_lots.div_ceil(BASE_LOTS_PER_BASE_UNIT) * BASE_LOTS_PER_BASE_UNIT
     ((num_adjusted_quote_lots + AdjustedQuoteLots::new(BASE_LOTS_PER_BASE_UNIT.as_u64() - 1))
         .unchecked_div::<BaseLotsPerBaseUnit, QuoteLots>(BASE_LOTS_PER_BASE_UNIT))
         * BASE_LOTS_PER_BASE_UNIT
@@ -41,6 +61,18 @@ pub fn round_adjusted_quote_lots_down(
 ) -> AdjustedQuoteLots {
     num_adjusted_quote_lots.unchecked_div::<BaseLotsPerBaseUnit, QuoteLots>(BASE_LOTS_PER_BASE_UNIT)
         * BASE_LOTS_PER_BASE_UNIT
+}
+
+pub fn compute_quote_lots_from_adjusted_quote_lots_ceil(
+    num_adjusted_quote_lots: AdjustedQuoteLots,
+) -> QuoteLots {
+    num_adjusted_quote_lots.div_ceil::<BaseLotsPerBaseUnit, QuoteLots>(BASE_LOTS_PER_BASE_UNIT)
+}
+
+pub fn compute_quote_lots_from_adjusted_quote_lots_floor(
+    num_adjusted_quote_lots: AdjustedQuoteLots,
+) -> QuoteLots {
+    num_adjusted_quote_lots.unchecked_div::<BaseLotsPerBaseUnit, QuoteLots>(BASE_LOTS_PER_BASE_UNIT)
 }
 
 /// Obtain quote lots for an order
@@ -59,28 +91,41 @@ pub fn compute_quote_lots(price_in_ticks: Ticks, base_lots: BaseLots) -> QuoteLo
     (price_in_ticks * TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT * base_lots) / BASE_LOTS_PER_BASE_UNIT
 }
 
-/// Compute adjusted quote lots.
+/// Compute adjusted quote lots for a given side and quote lot budget
+///
+/// Adjustment means increasing (for asks) or decreasing (for bids) the budget
+/// to pay taker fee. The taker fee is always paid in quote token, therefore
+/// the input budget is increased for asks and decreased for bids.
 ///
 /// # Formula
 ///
-/// Adjusted quote lots = quote lots * base lots / base lots per base unit
+/// - Size in adjusted quote lots = side in quote lots * base lots / base lots per base unit
+/// - Adjust, i.e. increase or decrease the budget to account for taker fee.
 ///
 /// # Arguments
 ///
 /// * `side` - Adjusted quote lot budget is decreased by dividing with (1 + fee_bps)
 /// for bids and increased by dividing with (1 - fee_bps) for asks
-/// * `quote_lots`
+/// * `quote_lots`- Quote lot budget
 pub fn compute_adjusted_quote_lots(side: Side, quote_lots: QuoteLots) -> AdjustedQuoteLots {
     let size_in_adjusted_quote_lots = quote_lots * BASE_LOTS_PER_BASE_UNIT;
 
     match side {
         // For buys, the adjusted quote lot budget is decreased by dividing with (1 + fee_bps)
         // This is because the fee is added to the quote lots spent after the matching is complete.
+
+        // Bid orders trade quote tokens for base tokens. Since the fee is only paid in quote token,
+        // we a-priori reserve some quote tokens before the trade.
+        // We reserve some quote tokens to pay fees by decreasing the available quote lot budget for matching.
         Side::Bid => {
             adjusted_quote_lot_budget_post_fee_adjustment_for_buys(size_in_adjusted_quote_lots)
         }
         // For sells, the adjusted quote lot budget is increased by dividing with (1 + fee_bps)
         // This is because the fee is subtracted from the quote lot received after the matching is complete.
+
+        // Ask orders trade base tokens for quote tokens. Since the fee is only paid in quote token,
+        // we a-posteriori subtract the output quote token after matching happens.
+        // The adjusted quote lot budget is increased in order to cover the fee charged after swapping.
         Side::Ask => {
             adjusted_quote_lot_budget_post_fee_adjustment_for_sells(size_in_adjusted_quote_lots)
         }
@@ -93,7 +138,11 @@ pub fn compute_adjusted_quote_lots(side: Side, quote_lots: QuoteLots) -> Adjuste
 ///
 /// # Formula
 ///
-/// adjusted_quote_lots = size_in_adjusted_quote_lots / (1 + fee_bps)
+/// * input budget = budget spent on matching (i.e. adjusted budget) + budget spent on fee (% of adjusted budget)
+/// * input budget = adjusted budget (1 + taker fee)
+/// * adjusted buget = input budget / (1 + taker fee)
+/// * Since TAKER_FEE_BPS has a denominator of 10_000
+///   adjusted budget = input budget * 10_000 / (10_000 + TAKER_FEE_BPS)
 pub fn adjusted_quote_lot_budget_post_fee_adjustment_for_buys(
     size_in_adjusted_quote_lots: AdjustedQuoteLots,
 ) -> AdjustedQuoteLots {
@@ -109,12 +158,17 @@ pub fn adjusted_quote_lot_budget_post_fee_adjustment_for_buys(
 ///
 /// # Formula
 ///
-/// adjusted_quote_lots = size_in_adjusted_quote_lots / (1 - fee_bps)
+/// * input budget + budget spent on fee (% of adjusted budget) = budget spent on matching (i.e. adjusted budget)
+/// * input budget = adjusted budget (1 - taker fee)
+/// * adjusted buget = input budget / (1 - taker fee)
+/// * Since TAKER_FEE_BPS has a denominator of 10_000
+///   adjusted budget = input budget * 10_000 / (10_000 - TAKER_FEE_BPS)
+///
+/// Cap to u64::MAX if value oveflows u64
+///
 pub fn adjusted_quote_lot_budget_post_fee_adjustment_for_sells(
     size_in_adjusted_quote_lots: AdjustedQuoteLots,
 ) -> AdjustedQuoteLots {
-    // The new value will be greater than the previous value. It can overflow
-    // u64::MAX. In that case we must cap the result to u64::MAX
     let adjusted_raw_u128 =
         size_in_adjusted_quote_lots.as_u128() * 10000 / (10000 - TAKER_FEE_BPS as u128);
     let adjusted_raw = u64::try_from(adjusted_raw_u128).unwrap_or(u64::MAX);

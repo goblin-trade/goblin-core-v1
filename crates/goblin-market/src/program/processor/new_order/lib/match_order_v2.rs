@@ -53,7 +53,7 @@ pub fn match_order_v2(
     expiry_checker: &mut ExpiryChecker,
     taker_address: Address,
 ) -> Option<SlotRestingOrder> {
-    let mut total_matched_adjusted_quote_lots = AdjustedQuoteLots::ZERO;
+    // let mut total_matched_adjusted_quote_lots = AdjustedQuoteLots::ZERO;
     let opposite_side = inflight_order.side.opposite();
     let mut slab_reader = SlabReader::new(opposite_side, market_state);
 
@@ -117,6 +117,11 @@ pub fn match_order_v2(
                         // Match against the maker order, but don't add fees
                         // Similar matching logic is used later, but here the amount matched is
                         // not added to total_matched_adjusted_quote_lots
+                        // - Matched lots not added to total_matched_adjusted_quote_lots. This way the
+                        // fee does not increase.
+                        // - Matched lots not added to matched_base_lots and matched_adjusted_quote_lots
+                        // in InflightOrder. This way the self match does not add to the minimum match
+                        // requirement.
                         let base_lots_to_remove = inflight_order
                             .base_lots_available_to_match(price_in_ticks)
                             .min(num_base_lots_quoted); // Cap base lots to the amount quoted
@@ -139,19 +144,7 @@ pub fn match_order_v2(
                             false,
                         );
                         // TODO resting order not written?
-
-                        // TODO why not use InflightOrder::process_match()?
-                        // Decrement base lot and adjusted quote lot budgets
-                        // inflight_order.base_lot_budget = inflight_order
-                        //     .base_lot_budget
-                        //     .saturating_sub(base_lots_to_remove);
-
-                        // inflight_order.adjusted_quote_lot_budget = inflight_order
-                        //     .adjusted_quote_lot_budget
-                        //     .saturating_sub(adjusted_quote_lots_to_remove);
-
-                        // // Self trades will count towards the match limit
-                        // inflight_order.match_limit -= 1;
+                        // Need 2 cases- order closed and not closed
 
                         maker_state.write_to_slot(ctx, resting_order.trader_address);
                         continue;
@@ -198,7 +191,9 @@ pub fn match_order_v2(
             inflight_order.process_match(matched_adjusted_quote_lots, matched_base_lots);
 
             // Increment the matched adjusted quote lots for fee calculation
-            total_matched_adjusted_quote_lots += matched_adjusted_quote_lots;
+            // TODO is this always equal to inflight_order.matched_adjusted_quote_lots?
+            // We could get rid of this variable.
+            // total_matched_adjusted_quote_lots += matched_adjusted_quote_lots;
 
             // EMIT fill event
 
@@ -221,11 +216,14 @@ pub fn match_order_v2(
 
     // Fees are updated based on the total amount matched
 
-    inflight_order.quote_lot_fees =
-        round_adjusted_quote_lots_up(compute_fee(total_matched_adjusted_quote_lots))
-            / BASE_LOTS_PER_BASE_UNIT;
+    // inflight_order.quote_lot_fees =
+    //     round_adjusted_quote_lots_up(compute_fee(total_matched_adjusted_quote_lots))
+    //         / BASE_LOTS_PER_BASE_UNIT;
 
+    inflight_order.compute_fees_after_matching_concludes();
     market_state.unclaimed_quote_lot_fees += inflight_order.quote_lot_fees;
+
+    // market_state.unclaimed_quote_lot_fees += inflight_order.compute_fees();
 
     Some(SlotRestingOrder {
         trader_address: taker_address,

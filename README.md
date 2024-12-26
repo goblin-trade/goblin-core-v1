@@ -1,3 +1,19 @@
+# Rounding numbers
+
+## Rounding up division
+
+```
+(numerator + denominator - 1) / denominator
+```
+
+Used in
+- compute_fee()
+- compute_fees_after_matching_concludes()
+
+## Rounding down division
+
+Divide like usual
+
 # Steps
 
 ```sh

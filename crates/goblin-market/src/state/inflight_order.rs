@@ -1,6 +1,10 @@
 use crate::{
     parameters::{BASE_LOTS_PER_BASE_UNIT, TICK_SIZE_IN_QUOTE_LOTS_PER_BASE_UNIT},
-    program::{round_adjusted_quote_lots_down, round_adjusted_quote_lots_up},
+    program::{
+        compute_fee, compute_fee_v2, compute_quote_lots_from_adjusted_quote_lots_ceil,
+        compute_quote_lots_from_adjusted_quote_lots_floor, round_adjusted_quote_lots_down,
+        round_adjusted_quote_lots_up,
+    },
     quantities::{AdjustedQuoteLots, BaseLots, QuoteLots, QuoteLotsPerBaseUnit, Ticks},
 };
 
@@ -15,7 +19,7 @@ pub struct InflightOrder {
     /// This is the most aggressive price than an order can be filled at
     pub limit_price_in_ticks: Ticks,
 
-    /// Number of orders to match against.
+    /// Max number of orders to match against.
     pub match_limit: u64,
 
     /// Available lots to fill against the order book adjusted for fees. If num_base_lots is not set in the `OrderPacket`,
@@ -26,10 +30,13 @@ pub struct InflightOrder {
     /// in the OrderPacket, this will be unbounded
     pub adjusted_quote_lot_budget: AdjustedQuoteLots,
 
-    /// Number of lots matched in the trade
+    /// Number of lots matched in the trade.
+    /// Evaluated against `min_base_lots_to_fill` for minimum fill condition.
     pub matched_base_lots: BaseLots,
 
-    /// Number of adjusted quote lots matched in the trade
+    /// Number of adjusted quote lots matched in the trade.
+    /// Used to calculate fees and matched_quote_lots(). The latter is evaluated
+    /// against `min_quote_lots_to_fill` for minimum fill condition.
     pub matched_adjusted_quote_lots: AdjustedQuoteLots,
 
     /// Number of quote lots paid in fees
@@ -107,17 +114,70 @@ impl InflightOrder {
         // TODO need saturated sub?
         // - base_lot_budget is guaranteed to be smaller
         // - What about adjusted_quote_lot_budget?
+        // adjusted_quote_lot_budget is MAX for quote orders. Subtraction
+        // cannot underflow.
         self.base_lot_budget -= matched_base_lots;
         self.adjusted_quote_lot_budget -= matched_adjusted_quote_lots;
         // Self trades will count towards the match limit
         self.match_limit -= 1;
     }
 
-    /// The matched quote lots
+    pub(crate) fn compute_fees(&self) -> QuoteLots {
+        let fee_in_adjusted_quote_lots = compute_fee(self.matched_adjusted_quote_lots);
+        round_adjusted_quote_lots_up(fee_in_adjusted_quote_lots) / BASE_LOTS_PER_BASE_UNIT
+    }
+
+    /// Compute fees in quote lots from matched_adjusted_quote_lots
+    ///
+    /// * fees = fee_in_adjusted_quote_lots.div_ceil(BASE_LOTS_PER_BASE_UNIT)
+    /// * fees should be a multiple of BASE_LOTS_PER_BASE_UNIT
+    pub(crate) fn compute_fees_after_matching_concludes(&mut self) {
+        let fee_in_adjusted_quote_lots = compute_fee_v2(self.matched_adjusted_quote_lots);
+
+        // Fee rounded up to a multiple of BASE_LOTS_PER_BASE_UNIT
+        let rounded_fee_in_adjusted_quote_lots =
+            round_adjusted_quote_lots_up(fee_in_adjusted_quote_lots);
+
+        // fee_in_adjusted_quote_lots
+        self.quote_lot_fees = rounded_fee_in_adjusted_quote_lots / BASE_LOTS_PER_BASE_UNIT;
+    }
+
+    pub(crate) fn compute_fees_after_matching_concludes_v2(&mut self) {
+        let fee_in_adjusted_quote_lots = compute_fee_v2(self.matched_adjusted_quote_lots);
+
+        // fee_in_adjusted_quote_lots
+        self.quote_lot_fees =
+            compute_quote_lots_from_adjusted_quote_lots_ceil(fee_in_adjusted_quote_lots);
+    }
+
+    // compute_fees() always rounds up, but matched_quote_lots() rounds down for asks.
+    // Can we still do addition here?
+    pub(crate) fn matched_quote_lots_v2(&self) -> QuoteLots {
+        // TODO quote_lot_fees used anywhere else? We could compute matched_quote_lots()
+        // directly as round_adjusted_quote_lots_up(self.matched_adjusted_quote_lots +- compute_fee(self.matched_adjusted_quote_lots)) / BASE_LOTS_PER_BASE_UNIT)
+        match self.side {
+            // We add the quote_lot_fees to account for the fee being paid on a buy order
+            Side::Bid => {
+                compute_quote_lots_from_adjusted_quote_lots_ceil(self.matched_adjusted_quote_lots)
+                    + self.quote_lot_fees
+            }
+            // We subtract the quote_lot_fees to account for the fee being paid on a sell order
+            Side::Ask => {
+                // Why is lhs rounded down but rhs is rounded up?
+                compute_quote_lots_from_adjusted_quote_lots_floor(self.matched_adjusted_quote_lots)
+                    - self.quote_lot_fees
+            }
+        }
+    }
+
+    /// Computes matched quote lots from matched_adjusted_quote_lots after matching
+    /// is complete.
     ///
     /// `matched_adjusted_quote_lots` is rounded down to the nearest tick
     /// for buys and up for sells to yield a whole number of matched_quote_lots.
     pub(crate) fn matched_quote_lots(&self) -> QuoteLots {
+        // TODO quote_lot_fees used anywhere else? We could compute matched_quote_lots()
+        // directly as round_adjusted_quote_lots_up(self.matched_adjusted_quote_lots +- compute_fee(self.matched_adjusted_quote_lots)) / BASE_LOTS_PER_BASE_UNIT)
         match self.side {
             // We add the quote_lot_fees to account for the fee being paid on a buy order
             Side::Bid => {

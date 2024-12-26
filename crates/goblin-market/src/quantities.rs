@@ -87,6 +87,13 @@ macro_rules! basic_u64 {
             ) -> Quotient {
                 Quotient::new(self.inner / other.as_u64())
             }
+
+            pub fn div_ceil<Divisor: WrapperU64, Quotient: WrapperU64>(
+                self,
+                other: Divisor,
+            ) -> Quotient {
+                Quotient::new(self.inner.div_ceil(other.as_u64()))
+            }
         }
 
         // TODO remove
@@ -366,6 +373,22 @@ macro_rules! allow_multiply {
                 $type_1::new(self.inner / other.inner)
             }
         }
+
+        // impl $type_result {
+        //     /// Division with ceiling for cases where the result is not an integer.
+        //     #[track_caller]
+        //     pub fn div_ceil(self, other: $type_1) -> $type_2 {
+        //         let result = (self.inner + other.inner - 1) / other.inner;
+        //         $type_2::new(result)
+        //     }
+
+        //     // /// Division with ceiling for cases where the result is not an integer.
+        //     // #[track_caller]
+        //     // pub fn div_ceil(self, other: $type_2) -> $type_1 {
+        //     //     let result = (self.inner + other.inner - 1) / other.inner;
+        //     //     $type_1::new(result)
+        //     // }
+        // }
     };
 }
 
