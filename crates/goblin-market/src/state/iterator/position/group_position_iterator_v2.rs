@@ -1,14 +1,31 @@
 use crate::state::{order::group_position::GroupPosition, Side};
 
 pub struct GroupPositionIteratorV2 {
-    side: Side,
+    pub side: Side,
     // initialized: bool,
-    current_index: u8,
+    pub current_index: u8,
 }
 
 impl GroupPositionIteratorV2 {
-    fn current_position(&self) -> GroupPosition {
+    pub fn new(side: Side, current_index: u8) -> Self {
+        GroupPositionIteratorV2 {
+            side,
+            current_index,
+        }
+    }
+
+    pub fn increment_index(&mut self) {
+        debug_assert!(self.current_index < 255);
+        self.current_index += 1;
+    }
+
+    pub fn current_position(&self) -> GroupPosition {
         GroupPosition::from_index_inclusive(self.side, self.current_index)
+    }
+
+    pub fn set_position(&mut self, position: GroupPosition) {
+        let new_index = position.index_inclusive(self.side);
+        self.current_index = new_index;
     }
 }
 
@@ -19,8 +36,7 @@ impl Iterator for GroupPositionIteratorV2 {
         if self.current_index == 255 {
             return None;
         }
-
-        self.current_index += 1;
+        self.increment_index();
         Some(self.current_position())
     }
 }
