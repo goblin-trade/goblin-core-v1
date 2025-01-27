@@ -46,6 +46,10 @@ impl<'a> SlabReader<'a> {
 /// An inflight order has a base lot budget that is depleted as the order
 /// is matched with resting orders on the opposite side book. Control variables
 /// like `limit_price_in_ticks` and `match_limit` are used to restrict matching.
+///
+/// TODO get rid of the returned SlotRestingOrder object. It is unused in ioc order case/
+/// We can derive the object using `InflightOrder`.
+///
 pub fn match_order_v2(
     ctx: &mut ArbContext,
     market_state: &mut MarketState,

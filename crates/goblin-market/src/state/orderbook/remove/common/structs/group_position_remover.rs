@@ -81,14 +81,8 @@ impl IGroupPositionRemover for GroupPositionRemover {
 }
 
 impl IGroupPositionSequentialRemover for GroupPositionRemover {
-    fn previous_position_to_deactivate(&self) -> Option<GroupPosition> {
-        self.active_group_position_iterator
-            .group_position_iterator
-            .peek_previous()
-    }
-
     fn next(&mut self) -> Option<GroupPosition> {
-        if let Some(group_position) = self.previous_position_to_deactivate() {
+        if let Some(group_position) = self.current_position() {
             self.active_group_position_iterator
                 .bitmap_group
                 .deactivate(group_position);
@@ -97,6 +91,12 @@ impl IGroupPositionSequentialRemover for GroupPositionRemover {
         // If the group has no active positions, the inner iterator will traverse
         // to the last position and mark itself as finished
         self.active_group_position_iterator.next()
+    }
+
+    fn current_position(&self) -> Option<GroupPosition> {
+        self.active_group_position_iterator
+            .group_position_iterator
+            .peek_previous()
     }
 
     fn is_uninitialized_or_exhausted(&self) -> bool {
@@ -135,10 +135,10 @@ impl IGroupPositionLookupRemover for GroupPositionRemover {
             .looked_up_group_position()
     }
 
-    fn is_lowest_active_bit_on_tick(&self, group_position: GroupPosition) -> bool {
+    fn is_lowest_resting_order_on_tick(&self, group_position: GroupPosition) -> bool {
         self.active_group_position_iterator
             .bitmap_group
-            .is_lowest_active_bit_on_tick(group_position)
+            .is_lowest_active_resting_order_on_tick(group_position)
     }
 
     fn is_group_active(&self) -> bool {

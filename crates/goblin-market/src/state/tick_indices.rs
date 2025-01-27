@@ -11,7 +11,7 @@ use crate::{
 
 use super::BITMAPS_PER_GROUP;
 
-/// To read orders at a tick we need two to derive variables. The `group_key` gives
+/// To read orders at a tick we need to derive 2 variables. The `group_key` gives
 /// the bitmap group in the tick's bitmap belongs. The `bitmap_key` gives the location
 /// of the tick.
 ///

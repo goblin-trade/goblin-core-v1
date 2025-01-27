@@ -27,6 +27,7 @@ pub struct SlotRestingOrder {
     pub last_valid_block_or_unix_timestamp_in_seconds: u32, // 32
 }
 
+// TODO remove? Unused
 impl AddAssign for SlotRestingOrder {
     /// Adds the `num_base_lots` of another `SlotRestingOrder` to this one.
     ///
@@ -150,6 +151,10 @@ impl SlotRestingOrder {
     }
 
     /// Adds the `num_base_lots` of another `SlotRestingOrder` to this one.
+    ///
+    /// If when placing multiple post-only orders two order ids are equal, this function helps
+    /// combine them into a single resting order.
+    /// TODO remove, this should be illegal behavior
     ///
     /// # Safety
     /// This function assumes that both `SlotRestingOrder` instances have the same `trader_address`

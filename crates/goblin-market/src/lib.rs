@@ -39,6 +39,8 @@ impl GoblinMarket {
     ///
     /// A wallet can credit funds to another trader.
     ///
+    /// Important- deposited funds are namespaced per market
+    ///
     /// # Arguments
     ///
     /// * `trader` - Credit funds to this trader. A wallet can credit funds to another trader.
@@ -224,6 +226,8 @@ impl GoblinMarket {
         process_new_order(self, &mut order_packet, msg::sender())
     }
 
+    // v2- We're using the dedicated struct ImmediateOrCancelOrderPacket instead of
+    // using `OrderPacket` enum
     pub fn place_ioc_order_v2(
         &mut self,
         is_bid: bool,
@@ -324,7 +328,7 @@ impl GoblinMarket {
         process_new_order(self, &mut order_packet, msg::sender())
     }
 
-    /// Place a limit order on the book
+    /// Place a single limit order on the book
     ///
     /// # Arguments
     ///

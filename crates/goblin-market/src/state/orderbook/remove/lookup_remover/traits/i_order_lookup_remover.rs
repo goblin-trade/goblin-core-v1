@@ -118,7 +118,7 @@ pub trait IOrderLookupRemover<'a>: IOrderLookupRemoverInner<'a> {
             if price == *self.best_market_price_inner_mut()
                 && self
                     .group_position_remover()
-                    .is_lowest_active_bit_on_tick(group_position)
+                    .is_lowest_resting_order_on_tick(group_position)
             {
                 self.sequential_order_remover().next(ctx);
             } else {

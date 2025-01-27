@@ -88,6 +88,8 @@ impl BitmapGroup {
     /// Returns None if there is no active index. Externally ensure that this is called on an active
     /// bitmap group.
     ///
+    /// TODO remove, unused
+    ///
     /// # Arguments
     ///
     /// * `side`
@@ -159,7 +161,8 @@ impl BitmapGroup {
         bitmap.is_only_active_bit(group_position.resting_order_index)
     }
 
-    /// Checks if the bit at the given group position is the lowest active bit at its price.
+    /// Checks if the bit at the given group position is the lowest active bit at its price,
+    /// i.e. whether bit is active and at the first resting order index available for matching
     ///
     /// # Arguments
     ///
@@ -169,7 +172,7 @@ impl BitmapGroup {
     ///
     /// * `true` if the bit at `group_position` is the only active bit.
     /// * `false` otherwise.
-    pub fn is_lowest_active_bit_on_tick(&self, group_position: GroupPosition) -> bool {
+    pub fn is_lowest_active_resting_order_on_tick(&self, group_position: GroupPosition) -> bool {
         let bitmap = self.get_bitmap(&group_position.inner_index);
         bitmap.is_lowest_active_bit(group_position.resting_order_index)
     }

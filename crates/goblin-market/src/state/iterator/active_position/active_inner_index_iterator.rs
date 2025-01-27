@@ -1,3 +1,6 @@
+// TODO remove, unused
+// -> BitmapGroup::best_active_inner_index() -> BitmapGroup::is_inactive()
+//
 use crate::state::{
     bitmap_group::BitmapGroup, iterator::position::inner_index_iterator::InnerIndexIterator,
     InnerIndex, Side,

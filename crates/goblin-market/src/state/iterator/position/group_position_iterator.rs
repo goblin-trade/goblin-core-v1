@@ -4,6 +4,10 @@ use crate::state::{order::group_position::GroupPosition, Side};
 ///
 /// In addition to iterations, this struct is used to paginate across
 /// group positions in the order lookup remover.
+///
+/// TODO simplify- use `current_index` instead of `next_index` to track state
+/// We can use a single `range: std::ops::RangeInclusive<u8>` instead of having separate
+/// next_index and exhausted variables
 #[derive(Debug)]
 pub struct GroupPositionIterator {
     /// Side determines looping direction.

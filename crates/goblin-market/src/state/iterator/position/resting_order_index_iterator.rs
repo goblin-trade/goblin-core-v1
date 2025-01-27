@@ -1,3 +1,5 @@
+// TODO remove, unused
+
 use crate::state::RestingOrderIndex;
 
 /// Loop from the min (0) to max (7) value of RestingOrderIndex

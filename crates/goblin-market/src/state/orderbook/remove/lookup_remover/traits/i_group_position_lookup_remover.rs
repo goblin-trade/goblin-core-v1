@@ -21,8 +21,11 @@ pub trait IGroupPositionLookupRemover: IGroupPositionRemover {
     fn looked_up_group_position(&self) -> Option<GroupPosition>;
 
     /// Whether `group_position` holds the lowest active bit on its corresponding
-    /// inner index and by extension aprice
-    fn is_lowest_active_bit_on_tick(&self, group_position: GroupPosition) -> bool;
+    /// inner index (i.e. price).
+    ///
+    /// Whether the given group position is active and and the lowest resting
+    /// order index
+    fn is_lowest_resting_order_on_tick(&self, group_position: GroupPosition) -> bool;
 
     /// Whether the current bitmap group has any active positions
     fn is_group_active(&self) -> bool;

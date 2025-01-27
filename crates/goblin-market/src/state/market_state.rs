@@ -6,85 +6,6 @@ use crate::{
 
 use super::{ArbContext, ContextActions, Side, MARKET_STATE_KEY_SEED};
 
-#[repr(C)]
-#[derive(Default, Debug, PartialEq)]
-pub struct MarketState {
-    /// Amount of fees collected from the market in its lifetime, in quote lots.
-    pub collected_quote_lot_fees: QuoteLots,
-
-    /// Amount of unclaimed fees accrued to the market, in quote lots.
-    pub unclaimed_quote_lot_fees: QuoteLots,
-
-    /// The number of active outer indices for bids
-    pub bids_outer_indices: u16,
-
-    /// The number of active outer indices for bids
-    pub asks_outer_indices: u16,
-
-    // These are encoded as u32. In practice they only need 21 bits, so this can be optimized
-    /// Price of the highest bid
-    pub best_bid_price: Ticks,
-
-    /// The lowest ask
-    pub best_ask_price: Ticks,
-}
-
-// #[cfg(test)]
-// mod mutref_test {
-//     use crate::quantities::Ticks;
-
-//     use super::MarketState;
-
-//     #[test]
-//     fn test_borrow() {
-//         let mut market_state = MarketState::default();
-//         let outer_index_count = &mut market_state.bids_outer_indices;
-//         let best_market_price = &mut market_state.best_bid_price;
-
-//         // *outer_index_count = 1;
-//         *best_market_price = Ticks::default();
-//     }
-
-//     #[test]
-//     fn test_borrow_from_ref() {
-//         let mut market_state = &mut MarketState::default();
-//         let outer_index_count = &mut market_state.bids_outer_indices;
-//         let best_market_price = &mut market_state.best_bid_price;
-
-//         *best_market_price = Ticks::default();
-//     }
-
-//     #[test]
-//     fn test_borrow_from_function() {
-//         let market_state = &mut MarketState::default();
-//         let opposite_side = crate::state::Side::Bid;
-
-//         let outer_index_count = market_state.outer_index_count_mut(opposite_side);
-//         let best_market_price = market_state.best_market_price_mut(opposite_side);
-
-//         *outer_index_count = 1;
-//     }
-// }
-
-pub struct MarketPrices {
-    pub best_bid_price: Ticks,
-    pub best_ask_price: Ticks,
-}
-
-impl MarketPrices {
-    pub fn best_market_price(&self, side: Side) -> Ticks {
-        match side {
-            Side::Bid => self.best_bid_price,
-            Side::Ask => self.best_ask_price,
-        }
-    }
-}
-
-pub struct MarketPricesForSide {
-    pub best_market_price: Ticks,
-    pub best_opposite_price: Ticks,
-}
-
 const MARKET_SLOT_KEY: [u8; 32] = [
     MARKET_STATE_KEY_SEED,
     0,
@@ -119,6 +40,29 @@ const MARKET_SLOT_KEY: [u8; 32] = [
     0,
     0,
 ];
+
+#[repr(C)]
+#[derive(Default, Debug, PartialEq)]
+pub struct MarketState {
+    /// Amount of fees collected from the market in its lifetime, in quote lots.
+    pub collected_quote_lot_fees: QuoteLots,
+
+    /// Amount of unclaimed fees accrued to the market, in quote lots.
+    pub unclaimed_quote_lot_fees: QuoteLots,
+
+    /// The number of active outer indices for bids
+    pub bids_outer_indices: u16,
+
+    /// The number of active outer indices for asks
+    pub asks_outer_indices: u16,
+
+    // These are encoded as u32. In practice they only need 21 bits, so this can be optimized
+    /// Price of the highest bid
+    pub best_bid_price: Ticks,
+
+    /// The lowest ask
+    pub best_ask_price: Ticks,
+}
 
 impl MarketState {
     pub fn read_from_slot(ctx: &ArbContext) -> Self {
@@ -288,6 +232,8 @@ impl MarketState {
 
     /// Try to update the best price for `side`. If `price` is None, i.e. if all
     /// resting orders are cleared then set the default price
+    ///
+    /// TOODO unused function. Should we remove it?
     pub fn try_update_best_price(&mut self, side: Side, price: Option<Ticks>) {
         if side == Side::Bid {
             self.best_bid_price = price.unwrap_or(Ticks::MIN);
@@ -311,6 +257,25 @@ impl MarketState {
             self.best_ask_price = price_in_ticks;
         }
     }
+}
+
+pub struct MarketPrices {
+    pub best_bid_price: Ticks,
+    pub best_ask_price: Ticks,
+}
+
+impl MarketPrices {
+    pub fn best_market_price(&self, side: Side) -> Ticks {
+        match side {
+            Side::Bid => self.best_bid_price,
+            Side::Ask => self.best_ask_price,
+        }
+    }
+}
+
+pub struct MarketPricesForSide {
+    pub best_market_price: Ticks,
+    pub best_opposite_price: Ticks,
 }
 
 pub fn get_best_market_price(market_price_inner: Ticks, outer_index_count: u16) -> Option<Ticks> {

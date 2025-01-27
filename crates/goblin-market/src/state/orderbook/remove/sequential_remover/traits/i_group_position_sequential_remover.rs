@@ -1,8 +1,9 @@
 use crate::state::{order::group_position::GroupPosition, remove::IGroupPositionRemover};
 
 pub trait IGroupPositionSequentialRemover: IGroupPositionRemover {
-    /// The previous position getting deactivated
-    fn previous_position_to_deactivate(&self) -> Option<GroupPosition>;
+    /// The current position pending a deactivation. It will be deactivated on calling
+    /// .next()
+    fn current_position(&self) -> Option<GroupPosition>;
 
     /// Get the next position and deactivate the previous one
     fn next(&mut self) -> Option<GroupPosition>;

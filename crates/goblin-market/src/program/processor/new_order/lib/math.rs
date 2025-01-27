@@ -154,17 +154,19 @@ pub fn adjusted_quote_lot_budget_post_fee_adjustment_for_buys(
 
 /// Adjusted quote lot budget for sells
 ///
+/// The adjusted budget must be greater than input budget to accomodate for fees that will be cut
+/// after the trade.
+///
 /// The result will be greater than the input. If the value overflows then use u64::MAX
 ///
 /// # Formula
 ///
-/// * input budget + budget spent on fee (% of adjusted budget) = budget spent on matching (i.e. adjusted budget)
 /// * input budget = adjusted budget (1 - taker fee)
 /// * adjusted buget = input budget / (1 - taker fee)
 /// * Since TAKER_FEE_BPS has a denominator of 10_000
 ///   adjusted budget = input budget * 10_000 / (10_000 - TAKER_FEE_BPS)
 ///
-/// Cap to u64::MAX if value oveflows u64
+/// Cap to u64::MAX if value overflows u64
 ///
 pub fn adjusted_quote_lot_budget_post_fee_adjustment_for_sells(
     size_in_adjusted_quote_lots: AdjustedQuoteLots,

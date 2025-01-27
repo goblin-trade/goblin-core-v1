@@ -157,6 +157,7 @@ pub fn place_multiple_new_orders(
                 if let Some(ref mut last_order) = last_order {
                     let new_order = order_to_insert.unwrap();
 
+                    // TODO it should be illegal to pass two orders with same order id
                     if last_order.order_id == new_order.order_id {
                         // Combine resting orders
                         last_order
@@ -239,6 +240,8 @@ pub fn place_multiple_new_orders(
 }
 
 /// Process a single, IOC, Post-only or limit order for both deposit and no-deposit cases
+///
+/// TODO replace with dedicated handlers for each type. Eg ioc_/process_ioc_order()
 ///
 /// # Arguments
 ///
