@@ -45,13 +45,13 @@ impl ActiveGroupPositionIterator {
     /// Paginates to the given position and check whether the bit is active
     pub fn find(&mut self, group_position: GroupPosition) -> bool {
         self.group_position_iterator
-            .set_previous_position(group_position);
+            .set_current_position(group_position);
         self.bitmap_group.is_position_active(group_position)
     }
 
     /// The group position looked up by find()
     pub fn looked_up_group_position(&self) -> Option<GroupPosition> {
-        self.group_position_iterator.peek_previous()
+        self.group_position_iterator.current_position()
     }
 }
 

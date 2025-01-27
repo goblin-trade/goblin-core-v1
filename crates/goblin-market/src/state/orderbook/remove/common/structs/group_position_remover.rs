@@ -96,7 +96,7 @@ impl IGroupPositionSequentialRemover for GroupPositionRemover {
     fn current_position(&self) -> Option<GroupPosition> {
         self.active_group_position_iterator
             .group_position_iterator
-            .peek_previous()
+            .current_position()
     }
 
     fn is_uninitialized_or_exhausted(&self) -> bool {
