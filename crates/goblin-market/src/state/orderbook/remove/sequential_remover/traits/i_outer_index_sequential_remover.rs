@@ -7,7 +7,7 @@ use crate::state::{remove::IOuterIndexRemover, ArbContext};
 /// the market state. There is no need to cache values or perform slot writes.
 pub trait IOuterIndexSequentialRemover<'a>: IOuterIndexRemover<'a> {
     /// Read the next outer index from index list and set it as current
-    fn load_next(&mut self, ctx: &mut ArbContext) {
+    fn load_next(&mut self, ctx: &ArbContext) {
         *self.current_outer_index_mut() = self.active_outer_index_iterator_mut().next(ctx);
     }
 

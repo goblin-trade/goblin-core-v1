@@ -31,7 +31,7 @@ impl GroupPositionRemover {
 }
 
 impl IGroupPositionRemover for GroupPositionRemover {
-    fn load_outer_index(&mut self, ctx: &mut ArbContext, outer_index: OuterIndex) {
+    fn load_outer_index(&mut self, ctx: &ArbContext, outer_index: OuterIndex) {
         let bitmap_group = BitmapGroup::new_from_slot(ctx, outer_index);
         let side = self.side();
         let index = 0;
@@ -48,7 +48,7 @@ impl IGroupPositionRemover for GroupPositionRemover {
         self.active_group_position_iterator.bitmap_group
     }
 
-    fn load_outermost_group(&mut self, ctx: &mut ArbContext, best_market_price: Ticks) {
+    fn load_outermost_group(&mut self, ctx: &ArbContext, best_market_price: Ticks) {
         let TickIndices {
             outer_index,
             inner_index,

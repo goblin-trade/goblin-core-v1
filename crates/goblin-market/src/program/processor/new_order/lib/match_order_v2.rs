@@ -21,13 +21,18 @@ struct SlabReader<'a> {
 }
 
 impl<'a> SlabReader<'a> {
-    pub fn new(opposite_side: Side, market_state: &'a mut MarketState) -> Self {
+    pub fn new(ctx: &ArbContext, opposite_side: Side, market_state: &'a mut MarketState) -> Self {
         // let unclaimed_quote_lot_fees = &mut market_state.unclaimed_quote_lot_fees;
         let (best_market_price, outer_index_count) =
             market_state.best_market_price_and_outer_index_count(opposite_side);
 
         SlabReader {
-            inner: OrderSequentialRemover::new(opposite_side, best_market_price, outer_index_count),
+            inner: OrderSequentialRemover::new(
+                ctx,
+                opposite_side,
+                best_market_price,
+                outer_index_count,
+            ),
         }
     }
 
@@ -59,7 +64,7 @@ pub fn match_order_v2(
 ) -> Option<SlotRestingOrder> {
     // let mut total_matched_adjusted_quote_lots = AdjustedQuoteLots::ZERO;
     let opposite_side = inflight_order.side.opposite();
-    let mut slab_reader = SlabReader::new(opposite_side, market_state);
+    let mut slab_reader = SlabReader::new(ctx, opposite_side, market_state);
 
     while inflight_order.in_progress() {
         if let Some((OrderId { price_in_ticks, .. }, mut resting_order)) = slab_reader.next(ctx) {

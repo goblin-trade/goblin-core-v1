@@ -2,10 +2,10 @@ use crate::{
     quantities::Ticks,
     state::{
         remove::{
-            GroupPositionRemover, IGroupPositionSequentialRemover, IOrderSequentialRemover,
-            IOrderSequentialRemoverInner, IOuterIndexSequentialRemover,
+            GroupPositionRemover, IGroupPositionRemover, IGroupPositionSequentialRemover,
+            IOrderSequentialRemover, IOrderSequentialRemoverInner, IOuterIndexSequentialRemover,
         },
-        BestPriceAndIndexCount, Side,
+        ArbContext, BestPriceAndIndexCount, Side,
     },
 };
 
@@ -29,13 +29,20 @@ pub struct OrderSequentialRemover<'a> {
 
 impl<'a> OrderSequentialRemover<'a> {
     pub fn new(
+        ctx: &ArbContext,
         side: Side,
         best_market_price: &'a mut Ticks,
         outer_index_count: &'a mut u16,
     ) -> Self {
+        let mut outer_index_remover = OuterIndexSequentialRemover::new(side, outer_index_count);
+        outer_index_remover.load_next(ctx);
+
+        let mut group_position_remover = GroupPositionRemover::new(side);
+        group_position_remover.load_outermost_group(ctx, *best_market_price);
+
         OrderSequentialRemover {
-            outer_index_remover: OuterIndexSequentialRemover::new(side, outer_index_count),
-            group_position_remover: GroupPositionRemover::new(side),
+            outer_index_remover,
+            group_position_remover,
             pending_write: false,
             best_market_price_inner: best_market_price,
         }
