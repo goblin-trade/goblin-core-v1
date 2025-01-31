@@ -116,8 +116,9 @@ pub trait IOrderLookupRemover<'a>: IOrderLookupRemoverInner<'a> {
             // * Outermost group not closed
             if price == *self.best_market_price_inner_mut()
                 && self
-                    .group_position_remover()
-                    .is_lowest_resting_order_on_tick(group_position)
+                    .group_position_remover_mut()
+                    .bitmap_group_mut()
+                    .is_lowest_active_resting_order_on_tick(group_position)
             {
                 self.sequential_order_remover().next(ctx);
             } else {

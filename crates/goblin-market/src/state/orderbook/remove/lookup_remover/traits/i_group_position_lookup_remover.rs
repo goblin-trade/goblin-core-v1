@@ -14,15 +14,6 @@ pub trait IGroupPositionLookupRemover: IGroupPositionRemover {
     /// Externally ensure that try_traverse_to_best_active_position() is called
     /// before deactivation
     fn deactivate_current(&mut self);
-
-    // Getters
-
-    /// Whether `group_position` holds the lowest active bit on its corresponding
-    /// inner index (i.e. price).
-    ///
-    /// Whether the given group position is active and and the lowest resting
-    /// order index
-    fn is_lowest_resting_order_on_tick(&self, group_position: GroupPosition) -> bool;
 }
 
 #[cfg(test)]

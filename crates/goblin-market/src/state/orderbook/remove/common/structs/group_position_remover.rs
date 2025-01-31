@@ -119,10 +119,4 @@ impl IGroupPositionLookupRemover for GroupPositionRemover {
                 .deactivate(group_position);
         }
     }
-
-    fn is_lowest_resting_order_on_tick(&self, group_position: GroupPosition) -> bool {
-        self.active_group_position_iterator
-            .bitmap_group
-            .is_lowest_active_resting_order_on_tick(group_position)
-    }
 }
