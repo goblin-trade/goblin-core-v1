@@ -191,6 +191,15 @@ mod tests {
         );
     }
 
+    #[test]
+    fn test_range_for_bids() {
+        let side = Side::Bid;
+        for bit_index in 0..255 {
+            let position = GroupPosition::from_bit_index(side, bit_index);
+            println!("{:?}", position);
+        }
+    }
+
     // #[test]
     // fn test_count_for_asks() {
     //     let side = Side::Ask;

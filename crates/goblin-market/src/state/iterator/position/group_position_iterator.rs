@@ -5,9 +5,22 @@ use crate::state::{order::group_position::GroupPosition, Side};
 /// In addition to iterations, this struct is used to paginate across
 /// group positions in the order lookup remover.
 ///
-/// TODO simplify- use `current_index` instead of `next_index` to track state
-/// We can use a single `range: std::ops::RangeInclusive<u8>` instead of having separate
-/// next_index and exhausted variables
+/// # Working
+///
+/// * `next_index` is used to track state
+///
+/// * next() returns the current value of `next_index`, but increments it for future calls.
+///
+/// * The iterator has 256 states, the range [0, 255] is covered by next_index. When the range
+/// is completed `exhausted` is set to `true` to conclude iterations. If `exhausted` is true
+/// then calling `next()` gives None.
+///
+/// * `next()` is used by the sequential remover. We first read a value. If the order present at
+/// this position gets exhausted during matching, we call `next()` again to clear this value and
+/// move to the next position.
+///
+/// * `current_index()` gives the value returned previously by `next()`. This is different from
+/// `peek()`. Peeking will give `next_index` without incrementing it.
 #[derive(Debug)]
 pub struct GroupPositionIterator {
     /// Side determines looping direction.
@@ -36,9 +49,7 @@ impl GroupPositionIterator {
         }
     }
 
-    /// Index of the previous value that was returned by the iterator.
-    ///
-    /// The previous index is one position behind next_index.
+    /// The current index. This is one position behind next_index
     fn current_index(&self) -> Option<u8> {
         if self.next_index == 0 {
             // next_index is zero, i.e. iterator is freshly initialized
@@ -53,13 +64,13 @@ impl GroupPositionIterator {
         }
     }
 
-    /// Paginates to the given previous index by updating inner variables
-    fn set_previous_index(&mut self, previous_index: u8) {
-        if previous_index == 255 {
+    /// Set current index by adjusting the next_index
+    fn set_current_index(&mut self, current_index: u8) {
+        if current_index == 255 {
             self.next_index = 255;
             self.exhausted = true;
         } else {
-            self.next_index = previous_index + 1;
+            self.next_index = current_index + 1;
             self.exhausted = false;
         };
     }
@@ -70,10 +81,7 @@ impl GroupPositionIterator {
         if self.exhausted {
             return None;
         }
-        Some(GroupPosition::from_bit_index(
-            self.side,
-            self.next_index,
-        ))
+        Some(GroupPosition::from_bit_index(self.side, self.next_index))
     }
 
     // Lookup remover utils
@@ -99,7 +107,7 @@ impl GroupPositionIterator {
     /// * `group_position`
     pub fn set_current_position(&mut self, group_position: GroupPosition) {
         let previous_index = group_position.bit_index(self.side);
-        self.set_previous_index(previous_index);
+        self.set_current_index(previous_index);
     }
 }
 
@@ -295,13 +303,13 @@ mod tests {
             assert_eq!(iterator.current_index(), None);
 
             for previous_index in 0..=254 {
-                iterator.set_previous_index(previous_index);
+                iterator.set_current_index(previous_index);
                 assert_eq!(iterator.current_index().unwrap(), previous_index);
                 assert_eq!(iterator.next_index, previous_index + 1);
                 assert_eq!(iterator.exhausted, false);
             }
 
-            iterator.set_previous_index(255);
+            iterator.set_current_index(255);
             assert_eq!(iterator.current_index().unwrap(), 255);
             assert_eq!(iterator.next_index, 255);
             assert_eq!(iterator.exhausted, true);
@@ -317,7 +325,7 @@ mod tests {
                     next_index: 255,
                     exhausted: true,
                 };
-                iterator.set_previous_index(previous_index);
+                iterator.set_current_index(previous_index);
                 assert_eq!(iterator.current_index().unwrap(), previous_index);
             }
         }
