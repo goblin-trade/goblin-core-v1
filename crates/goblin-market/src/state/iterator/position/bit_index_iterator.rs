@@ -10,7 +10,7 @@
 /// * This iterator tracks the **current** bit index, not next.
 ///
 pub struct BitIndexIterator {
-    pub current_index: Option<u8>,
+    current_index: Option<u8>,
 }
 
 impl BitIndexIterator {
@@ -18,8 +18,8 @@ impl BitIndexIterator {
         self.current_index
     }
 
-    pub fn set_current_index(&mut self, index: u8) {
-        self.current_index = Some(index);
+    pub fn set_current_index(&mut self, index: Option<u8>) {
+        self.current_index = index;
     }
 
     pub fn peek(&self) -> Option<u8> {
@@ -82,17 +82,17 @@ mod tests {
 
         // Test set_current_index
         // Set to middle value
-        iter.set_current_index(100);
+        iter.set_current_index(Some(100));
         assert_eq!(iter.current_index(), Some(100));
         assert_eq!(iter.next(), Some(101));
 
         // Set to last value
-        iter.set_current_index(255);
+        iter.set_current_index(Some(255));
         assert_eq!(iter.current_index(), Some(255));
         assert_eq!(iter.next(), None);
 
         // Set back to start
-        iter.set_current_index(0);
+        iter.set_current_index(Some(0));
         assert_eq!(iter.current_index(), Some(0));
         assert_eq!(iter.next(), Some(1));
 
