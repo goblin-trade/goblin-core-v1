@@ -7,7 +7,7 @@ pub trait IGroupPositionLookupRemover: IGroupPositionRemover {
     ///
     /// Externally ensure that load_outer_index() was called first otherwise
     /// this will give a blank value.
-    fn find(&mut self, group_position: GroupPosition) -> bool;
+    fn visit_and_check_if_active(&mut self, group_position: GroupPosition) -> bool;
 
     /// Deactivate the bit at the currently tracked group position
     ///
@@ -16,9 +16,6 @@ pub trait IGroupPositionLookupRemover: IGroupPositionRemover {
     fn remove(&mut self);
 
     // Getters
-
-    /// The group position that was looked up
-    fn looked_up_group_position(&self) -> Option<GroupPosition>;
 
     /// Whether `group_position` holds the lowest active bit on its corresponding
     /// inner index (i.e. price).
@@ -63,9 +60,9 @@ mod tests {
                 inner_index: InnerIndex::new(0),
                 resting_order_index: RestingOrderIndex::new(0),
             };
-            assert_eq!(remover.find(position_0), true);
+            assert_eq!(remover.visit_and_check_if_active(position_0), true);
 
-            assert_eq!(remover.looked_up_group_position().unwrap(), position_0);
+            assert_eq!(remover.current_position().unwrap(), position_0);
 
             assert_eq!(
                 remover
@@ -80,8 +77,8 @@ mod tests {
                 inner_index: InnerIndex::new(0),
                 resting_order_index: RestingOrderIndex::new(1),
             };
-            assert_eq!(remover.find(position_1), false);
-            assert_eq!(remover.looked_up_group_position().unwrap(), position_1);
+            assert_eq!(remover.visit_and_check_if_active(position_1), false);
+            assert_eq!(remover.current_position().unwrap(), position_1);
             assert_eq!(
                 remover
                     .active_group_position_iterator
@@ -91,7 +88,7 @@ mod tests {
             );
 
             // Return to position 0
-            assert_eq!(remover.find(position_0), true);
+            assert_eq!(remover.visit_and_check_if_active(position_0), true);
             assert_eq!(
                 remover
                     .active_group_position_iterator
@@ -105,8 +102,8 @@ mod tests {
                 inner_index: InnerIndex::new(0),
                 resting_order_index: RestingOrderIndex::new(2),
             };
-            assert_eq!(remover.find(position_2), true);
-            assert_eq!(remover.looked_up_group_position().unwrap(), position_2);
+            assert_eq!(remover.visit_and_check_if_active(position_2), true);
+            assert_eq!(remover.current_position().unwrap(), position_2);
             assert_eq!(
                 remover
                     .active_group_position_iterator
@@ -120,8 +117,8 @@ mod tests {
                 inner_index: InnerIndex::new(31),
                 resting_order_index: RestingOrderIndex::new(7),
             };
-            assert_eq!(remover.find(position_3), true);
-            assert_eq!(remover.looked_up_group_position().unwrap(), position_3);
+            assert_eq!(remover.visit_and_check_if_active(position_3), true);
+            assert_eq!(remover.current_position().unwrap(), position_3);
 
             // Exhausted as we navigated to the last item
             assert_eq!(
@@ -159,9 +156,9 @@ mod tests {
                 inner_index: InnerIndex::new(31),
                 resting_order_index: RestingOrderIndex::new(0),
             };
-            assert_eq!(remover.find(position_0), true);
+            assert_eq!(remover.visit_and_check_if_active(position_0), true);
 
-            assert_eq!(remover.looked_up_group_position().unwrap(), position_0);
+            assert_eq!(remover.current_position().unwrap(), position_0);
 
             assert_eq!(
                 remover
@@ -176,8 +173,8 @@ mod tests {
                 inner_index: InnerIndex::new(31),
                 resting_order_index: RestingOrderIndex::new(1),
             };
-            assert_eq!(remover.find(position_1), false);
-            assert_eq!(remover.looked_up_group_position().unwrap(), position_1);
+            assert_eq!(remover.visit_and_check_if_active(position_1), false);
+            assert_eq!(remover.current_position().unwrap(), position_1);
             assert_eq!(
                 remover
                     .active_group_position_iterator
@@ -187,7 +184,7 @@ mod tests {
             );
 
             // Return to position 0
-            assert_eq!(remover.find(position_0), true);
+            assert_eq!(remover.visit_and_check_if_active(position_0), true);
             assert_eq!(
                 remover
                     .active_group_position_iterator
@@ -201,8 +198,8 @@ mod tests {
                 inner_index: InnerIndex::new(31),
                 resting_order_index: RestingOrderIndex::new(2),
             };
-            assert_eq!(remover.find(position_2), true);
-            assert_eq!(remover.looked_up_group_position().unwrap(), position_2);
+            assert_eq!(remover.visit_and_check_if_active(position_2), true);
+            assert_eq!(remover.current_position().unwrap(), position_2);
             assert_eq!(
                 remover
                     .active_group_position_iterator
@@ -216,8 +213,8 @@ mod tests {
                 inner_index: InnerIndex::new(0),
                 resting_order_index: RestingOrderIndex::new(7),
             };
-            assert_eq!(remover.find(position_3), true);
-            assert_eq!(remover.looked_up_group_position().unwrap(), position_3);
+            assert_eq!(remover.visit_and_check_if_active(position_3), true);
+            assert_eq!(remover.current_position().unwrap(), position_3);
 
             // Exhausted as we navigated to the last item
             assert_eq!(
@@ -254,7 +251,7 @@ mod tests {
                 inner_index: InnerIndex::new(0),
                 resting_order_index: RestingOrderIndex::new(0),
             };
-            assert_eq!(remover.find(position_0), true);
+            assert_eq!(remover.visit_and_check_if_active(position_0), true);
             remover.remove();
             assert_eq!(
                 remover.active_group_position_iterator.bitmap_group.inner[0],
@@ -262,20 +259,20 @@ mod tests {
             );
 
             // Removal does not change group_position()
-            assert_eq!(remover.looked_up_group_position().unwrap(), position_0);
+            assert_eq!(remover.current_position().unwrap(), position_0);
 
             // Last position
             let position_1 = GroupPosition {
                 inner_index: InnerIndex::new(31),
                 resting_order_index: RestingOrderIndex::new(7),
             };
-            assert_eq!(remover.find(position_1), true);
+            assert_eq!(remover.visit_and_check_if_active(position_1), true);
             remover.remove();
             assert_eq!(
                 remover.active_group_position_iterator.bitmap_group.inner[31],
                 0b0000_0000
             );
-            assert_eq!(remover.looked_up_group_position().unwrap(), position_1);
+            assert_eq!(remover.current_position().unwrap(), position_1);
         }
 
         #[test]
@@ -295,7 +292,7 @@ mod tests {
                 inner_index: InnerIndex::new(31),
                 resting_order_index: RestingOrderIndex::new(0),
             };
-            assert_eq!(remover.find(position_0), true);
+            assert_eq!(remover.visit_and_check_if_active(position_0), true);
             remover.remove();
             assert_eq!(
                 remover.active_group_position_iterator.bitmap_group.inner[31],
@@ -303,20 +300,20 @@ mod tests {
             );
 
             // Removal does not change group_position()
-            assert_eq!(remover.looked_up_group_position().unwrap(), position_0);
+            assert_eq!(remover.current_position().unwrap(), position_0);
 
             // Last position
             let position_1 = GroupPosition {
                 inner_index: InnerIndex::new(0),
                 resting_order_index: RestingOrderIndex::new(7),
             };
-            assert_eq!(remover.find(position_1), true);
+            assert_eq!(remover.visit_and_check_if_active(position_1), true);
             remover.remove();
             assert_eq!(
                 remover.active_group_position_iterator.bitmap_group.inner[0],
                 0b0000_0000
             );
-            assert_eq!(remover.looked_up_group_position().unwrap(), position_1);
+            assert_eq!(remover.current_position().unwrap(), position_1);
         }
     }
 
@@ -354,7 +351,7 @@ mod tests {
                 resting_order_index: RestingOrderIndex::new(7),
             };
 
-            assert_eq!(remover.find(position_0), true);
+            assert_eq!(remover.visit_and_check_if_active(position_0), true);
 
             assert_eq!(remover.next().unwrap(), position_1);
             assert_eq!(
@@ -412,7 +409,7 @@ mod tests {
                 resting_order_index: RestingOrderIndex::new(7),
             };
 
-            assert_eq!(remover.find(position_0), true);
+            assert_eq!(remover.visit_and_check_if_active(position_0), true);
 
             assert_eq!(remover.next().unwrap(), position_1);
             assert_eq!(
@@ -470,7 +467,7 @@ mod tests {
                 resting_order_index: RestingOrderIndex::new(7),
             };
 
-            assert_eq!(remover.find(position_0), true);
+            assert_eq!(remover.visit_and_check_if_active(position_0), true);
 
             assert_eq!(remover.next().unwrap(), position_1);
             assert_eq!(
@@ -485,7 +482,7 @@ mod tests {
             );
 
             // skip removing position_2, lookup position 3
-            assert_eq!(remover.find(position_3), true);
+            assert_eq!(remover.visit_and_check_if_active(position_3), true);
             assert_eq!(
                 remover.active_group_position_iterator.bitmap_group.inner[1],
                 0b0000_0010
@@ -527,7 +524,7 @@ mod tests {
                 resting_order_index: RestingOrderIndex::new(7),
             };
 
-            assert_eq!(remover.find(position_0), true);
+            assert_eq!(remover.visit_and_check_if_active(position_0), true);
 
             assert_eq!(remover.next().unwrap(), position_1);
             assert_eq!(
@@ -542,7 +539,7 @@ mod tests {
             );
 
             // skip removing position_2, lookup position 3
-            assert_eq!(remover.find(position_3), true);
+            assert_eq!(remover.visit_and_check_if_active(position_3), true);
             assert_eq!(
                 remover.active_group_position_iterator.bitmap_group.inner[1],
                 0b0000_0010

@@ -1,10 +1,9 @@
-use crate::state::{order::group_position::GroupPosition, remove::IGroupPositionRemover};
+use crate::{
+    quantities::Ticks,
+    state::{order::group_position::GroupPosition, remove::IGroupPositionRemover, ArbContext},
+};
 
 pub trait IGroupPositionSequentialRemover: IGroupPositionRemover {
-    /// The current position pending a deactivation. It will be deactivated on calling
-    /// .next()
-    fn current_position(&self) -> Option<GroupPosition>;
-
     /// Get the next position and deactivate the previous one
     fn next(&mut self) -> Option<GroupPosition>;
 
@@ -16,6 +15,14 @@ pub trait IGroupPositionSequentialRemover: IGroupPositionRemover {
 
     /// Whether the group is uninitialized or whether reads are finished
     fn is_uninitialized_or_exhausted(&self) -> bool;
+
+    /// Load bitmap group for the outermost outer index, ignoring the garbage bits
+    ///
+    /// # Arguments
+    ///
+    /// * `ctx` - Context to read from slot
+    /// * `best_market_price` - Best market price for side
+    fn load_outermost_group(&mut self, ctx: &ArbContext, best_market_price: Ticks);
 }
 
 #[cfg(test)]

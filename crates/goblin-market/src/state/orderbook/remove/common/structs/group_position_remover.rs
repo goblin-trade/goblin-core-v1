@@ -48,25 +48,6 @@ impl IGroupPositionRemover for GroupPositionRemover {
         self.active_group_position_iterator.bitmap_group
     }
 
-    fn load_outermost_group(&mut self, ctx: &ArbContext, best_market_price: Ticks) {
-        let TickIndices {
-            outer_index,
-            inner_index,
-        } = best_market_price.to_indices();
-
-        let bitmap_group = BitmapGroup::new_from_slot(ctx, outer_index);
-        let side = self.side();
-
-        let starting_position = GroupPosition {
-            inner_index,
-            resting_order_index: RestingOrderIndex::ZERO,
-        };
-        let index = starting_position.bit_index(side);
-
-        self.active_group_position_iterator =
-            ActiveGroupPositionIterator::new(bitmap_group, side, index);
-    }
-
     fn write_to_slot(&self, ctx: &mut ArbContext, outer_index: OuterIndex) {
         self.active_group_position_iterator
             .bitmap_group
@@ -77,6 +58,12 @@ impl IGroupPositionRemover for GroupPositionRemover {
         self.active_group_position_iterator
             .group_position_iterator
             .side
+    }
+
+    fn current_position(&self) -> Option<GroupPosition> {
+        self.active_group_position_iterator
+            .group_position_iterator
+            .current_position()
     }
 }
 
@@ -91,12 +78,6 @@ impl IGroupPositionSequentialRemover for GroupPositionRemover {
         // If the group has no active positions, the inner iterator will traverse
         // to the last position and mark itself as finished
         self.active_group_position_iterator.next()
-    }
-
-    fn current_position(&self) -> Option<GroupPosition> {
-        self.active_group_position_iterator
-            .group_position_iterator
-            .current_position()
     }
 
     fn is_uninitialized_or_exhausted(&self) -> bool {
@@ -115,25 +96,38 @@ impl IGroupPositionSequentialRemover for GroupPositionRemover {
             .group_position_iterator
             .exhausted
     }
+
+    fn load_outermost_group(&mut self, ctx: &ArbContext, best_market_price: Ticks) {
+        let TickIndices {
+            outer_index,
+            inner_index,
+        } = best_market_price.to_indices();
+
+        let bitmap_group = BitmapGroup::new_from_slot(ctx, outer_index);
+        let side = self.side();
+
+        let starting_position = GroupPosition {
+            inner_index,
+            resting_order_index: RestingOrderIndex::ZERO,
+        };
+        let index = starting_position.bit_index(side);
+
+        self.active_group_position_iterator =
+            ActiveGroupPositionIterator::new(bitmap_group, side, index);
+    }
 }
 
 impl IGroupPositionLookupRemover for GroupPositionRemover {
-    fn find(&mut self, group_position: GroupPosition) -> bool {
+    fn visit_and_check_if_active(&mut self, group_position: GroupPosition) -> bool {
         self.active_group_position_iterator.find(group_position)
     }
 
     fn remove(&mut self) {
-        if let Some(group_position) = self.looked_up_group_position() {
+        if let Some(group_position) = self.current_position() {
             self.active_group_position_iterator
                 .bitmap_group
                 .deactivate(group_position);
         }
-    }
-
-    // Same as current_position()
-    fn looked_up_group_position(&self) -> Option<GroupPosition> {
-        self.active_group_position_iterator
-            .looked_up_group_position()
     }
 
     fn is_lowest_resting_order_on_tick(&self, group_position: GroupPosition) -> bool {

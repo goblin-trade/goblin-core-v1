@@ -10,7 +10,7 @@
 /// * This iterator tracks the **current** bit index, not next.
 ///
 pub struct BitIndexIterator {
-    current_index: Option<u8>,
+    pub current_index: Option<u8>,
 }
 
 impl BitIndexIterator {

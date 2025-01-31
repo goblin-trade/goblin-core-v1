@@ -50,7 +50,7 @@ impl ActiveGroupPositionIterator {
     }
 
     /// The group position looked up by find()
-    pub fn looked_up_group_position(&self) -> Option<GroupPosition> {
+    pub fn current_position(&self) -> Option<GroupPosition> {
         self.group_position_iterator.current_position()
     }
 }

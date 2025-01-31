@@ -65,7 +65,7 @@ pub trait IOrderLookupRemoverInner<'a> {
     /// from a previous group. A new outer index is loaded for comparion but the
     /// group position does not change.
     fn group_position(&self) -> Option<GroupPosition> {
-        self.group_position_remover().looked_up_group_position()
+        self.group_position_remover().current_position()
     }
 
     fn side(&self) -> Side {

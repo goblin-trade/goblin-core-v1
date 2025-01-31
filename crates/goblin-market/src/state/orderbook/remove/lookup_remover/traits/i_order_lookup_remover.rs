@@ -69,7 +69,7 @@ pub trait IOrderLookupRemover<'a>: IOrderLookupRemoverInner<'a> {
         }
 
         self.group_position_remover_mut()
-            .find(GroupPosition::from(&order_id))
+            .visit_and_check_if_active(GroupPosition::from(&order_id))
     }
 
     /// Get the current bitmap group for sharing with the opposite side remover
