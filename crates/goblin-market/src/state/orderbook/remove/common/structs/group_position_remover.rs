@@ -40,18 +40,8 @@ impl IGroupPositionRemover for GroupPositionRemover {
             ActiveGroupPositionIterator::new(bitmap_group, side, index);
     }
 
-    fn set_bitmap_group(&mut self, bitmap_group: BitmapGroup) {
-        self.active_group_position_iterator.bitmap_group = bitmap_group;
-    }
-
-    fn get_bitmap_group(&self) -> BitmapGroup {
-        self.active_group_position_iterator.bitmap_group
-    }
-
-    fn write_to_slot(&self, ctx: &mut ArbContext, outer_index: OuterIndex) {
-        self.active_group_position_iterator
-            .bitmap_group
-            .write_to_slot(ctx, &outer_index);
+    fn bitmap_group_mut(&mut self) -> &mut BitmapGroup {
+        &mut self.active_group_position_iterator.bitmap_group
     }
 
     fn side(&self) -> Side {

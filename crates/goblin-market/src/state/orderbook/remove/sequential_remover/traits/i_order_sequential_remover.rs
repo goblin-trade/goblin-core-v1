@@ -86,8 +86,9 @@ pub trait IOrderSequentialRemover<'a>: IOrderSequentialRemoverInner<'a> {
     fn commit(&mut self, ctx: &mut ArbContext) {
         if let Some(outer_index) = self.outer_index() {
             if self.pending_write() {
-                self.group_position_remover()
-                    .write_to_slot(ctx, outer_index);
+                self.group_position_remover_mut()
+                    .bitmap_group_mut()
+                    .write_to_slot(ctx, &outer_index);
             }
 
             // difference- ctx not passed to commit()

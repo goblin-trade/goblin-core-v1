@@ -64,24 +64,12 @@ impl IGroupPositionRemover for ActiveGroupPositionIteratorV2 {
             .set_current_index(Some(bit_index));
     }
 
-    fn get_bitmap_group(&self) -> BitmapGroup {
-        self.bitmap_group
-    }
-
     fn current_position(&self) -> Option<GroupPosition> {
         self.group_position_iterator.current_position()
     }
 
-    fn set_bitmap_group(&mut self, bitmap_group: BitmapGroup) {
-        self.bitmap_group = bitmap_group;
-    }
-
-    fn write_to_slot(
-        &self,
-        ctx: &mut crate::state::ArbContext,
-        outer_index: crate::state::OuterIndex,
-    ) {
-        self.bitmap_group.write_to_slot(ctx, &outer_index);
+    fn bitmap_group_mut(&mut self) -> &mut BitmapGroup {
+        &mut self.bitmap_group
     }
 }
 

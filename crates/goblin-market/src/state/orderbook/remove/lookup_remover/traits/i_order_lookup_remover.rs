@@ -73,11 +73,11 @@ pub trait IOrderLookupRemover<'a>: IOrderLookupRemoverInner<'a> {
     }
 
     /// Get the current bitmap group for sharing with the opposite side remover
-    fn get_shared_bitmap_group(&self) -> BitmapGroup {
+    fn get_shared_bitmap_group(&mut self) -> BitmapGroup {
         debug_assert!(self.outer_index().is_some());
         debug_assert!(self.outer_index().unwrap() == self.best_market_price_inner().outer_index());
 
-        self.group_position_remover().get_bitmap_group()
+        *self.group_position_remover_mut().bitmap_group_mut()
     }
 
     /// Set the shared bitmap group from the opposite side remover and load the outermost
@@ -93,8 +93,7 @@ pub trait IOrderLookupRemover<'a>: IOrderLookupRemoverInner<'a> {
         self.outer_index_remover_mut()
             .find_and_load(ctx, outer_index);
 
-        self.group_position_remover_mut()
-            .set_bitmap_group(shared_bitmap_group);
+        *self.group_position_remover_mut().bitmap_group_mut() = shared_bitmap_group;
     }
 
     /// Remove the last searched order id from the book
@@ -145,8 +144,9 @@ pub trait IOrderLookupRemover<'a>: IOrderLookupRemoverInner<'a> {
 
     fn write_bitmap_group(&mut self, ctx: &mut ArbContext, outer_index: OuterIndex) {
         debug_assert!(self.pending_write());
-        self.group_position_remover()
-            .write_to_slot(ctx, outer_index);
+
+        let bitmap_group = self.group_position_remover_mut().bitmap_group_mut();
+        bitmap_group.write_to_slot(ctx, &outer_index);
 
         *self.pending_write_mut() = false;
     }

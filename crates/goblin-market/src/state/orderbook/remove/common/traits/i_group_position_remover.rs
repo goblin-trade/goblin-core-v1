@@ -16,17 +16,11 @@ pub trait IGroupPositionRemover {
     /// * `outer_index` - Load bitmap group for this outer index
     fn load_outer_index(&mut self, ctx: &ArbContext, outer_index: OuterIndex);
 
-    /// Get the current bitmap group
-    fn get_bitmap_group(&self) -> BitmapGroup;
-
     /// The group position that was looked up
     fn current_position(&self) -> Option<GroupPosition>;
 
-    /// Externally set the bitmap group
-    fn set_bitmap_group(&mut self, bitmap_group: BitmapGroup);
-
-    /// Write the bitmap group to slot
-    fn write_to_slot(&self, ctx: &mut ArbContext, outer_index: OuterIndex);
+    /// Return a mutable reference to the bitmap group
+    fn bitmap_group_mut(&mut self) -> &mut BitmapGroup;
 
     /// Get side for this remover
     fn side(&self) -> Side;
