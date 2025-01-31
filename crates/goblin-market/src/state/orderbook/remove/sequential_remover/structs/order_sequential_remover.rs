@@ -2,8 +2,8 @@ use crate::{
     quantities::Ticks,
     state::{
         remove::{
-            GroupPositionRemover, IGroupPositionRemover, IGroupPositionSequentialRemover,
-            IOrderSequentialRemover, IOrderSequentialRemoverInner, IOuterIndexSequentialRemover,
+            GroupPositionRemover, IGroupPositionSequentialRemover, IOrderSequentialRemover,
+            IOuterIndexSequentialRemover,
         },
         ArbContext, BestPriceAndIndexCount, Side,
     },
@@ -94,5 +94,3 @@ impl<'a> IOrderSequentialRemover<'a> for OrderSequentialRemover<'a> {
         &mut self.pending_write
     }
 }
-
-// impl<'a> IOrderSequentialRemover<'a> for OrderSequentialRemover<'a> {}

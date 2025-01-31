@@ -3,10 +3,7 @@ use crate::{
     state::{
         get_best_market_price,
         order::order_id::OrderId,
-        remove::{
-            IOrderLookupRemover, IOrderLookupRemoverInner, IOuterIndexLookupRemover,
-            OrderLookupRemover,
-        },
+        remove::{IOrderLookupRemover, IOuterIndexLookupRemover, OrderLookupRemover},
         ArbContext, MarketState, Side,
     },
 };

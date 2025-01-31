@@ -7,9 +7,7 @@ use crate::{
     },
 };
 
-use super::{
-    IGroupPositionSequentialRemover, IOrderSequentialRemoverInner, IOuterIndexSequentialRemover,
-};
+use super::{IGroupPositionSequentialRemover, IOuterIndexSequentialRemover};
 
 pub trait IOrderSequentialRemover<'a> {
     /// To lookup and remove outer indices

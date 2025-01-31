@@ -3,8 +3,8 @@ use crate::{
     state::{
         remove::{
             GroupPositionRemover, IGroupPositionLookupRemover, IGroupPositionSequentialRemover,
-            IOrderLookupRemover, IOrderLookupRemoverInner, IOrderSequentialRemover,
-            IOrderSequentialRemoverInner, IOuterIndexLookupRemover, IOuterIndexSequentialRemover,
+            IOrderLookupRemover, IOrderSequentialRemover, IOuterIndexLookupRemover,
+            IOuterIndexSequentialRemover,
         },
         Side,
     },
@@ -83,9 +83,7 @@ impl<'a> IOrderSequentialRemover<'a> for OrderLookupRemover<'a> {
     }
 }
 
-// impl<'a> IOrderSequentialRemover<'a> for OrderLookupRemover<'a> {}
-
-impl<'a> IOrderLookupRemoverInner<'a> for OrderLookupRemover<'a> {
+impl<'a> IOrderLookupRemover<'a> for OrderLookupRemover<'a> {
     fn group_position_remover(&self) -> &impl IGroupPositionLookupRemover {
         &self.group_position_remover
     }
@@ -130,5 +128,3 @@ impl<'a> IOrderLookupRemoverInner<'a> for OrderLookupRemover<'a> {
         self
     }
 }
-
-impl<'a> IOrderLookupRemover<'a> for OrderLookupRemover<'a> {}
