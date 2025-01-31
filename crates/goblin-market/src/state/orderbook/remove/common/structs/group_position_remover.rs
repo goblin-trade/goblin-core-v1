@@ -112,7 +112,7 @@ impl IGroupPositionLookupRemover for GroupPositionRemover {
         self.active_group_position_iterator.find(group_position)
     }
 
-    fn remove(&mut self) {
+    fn deactivate_current(&mut self) {
         if let Some(group_position) = self.current_position() {
             self.active_group_position_iterator
                 .bitmap_group
@@ -124,11 +124,5 @@ impl IGroupPositionLookupRemover for GroupPositionRemover {
         self.active_group_position_iterator
             .bitmap_group
             .is_lowest_active_resting_order_on_tick(group_position)
-    }
-
-    fn is_group_active(&self) -> bool {
-        self.active_group_position_iterator
-            .bitmap_group
-            .is_group_active()
     }
 }

@@ -13,7 +13,7 @@ pub trait IGroupPositionLookupRemover: IGroupPositionRemover {
     ///
     /// Externally ensure that try_traverse_to_best_active_position() is called
     /// before deactivation
-    fn remove(&mut self);
+    fn deactivate_current(&mut self);
 
     // Getters
 
@@ -23,9 +23,6 @@ pub trait IGroupPositionLookupRemover: IGroupPositionRemover {
     /// Whether the given group position is active and and the lowest resting
     /// order index
     fn is_lowest_resting_order_on_tick(&self, group_position: GroupPosition) -> bool;
-
-    /// Whether the current bitmap group has any active positions
-    fn is_group_active(&self) -> bool;
 }
 
 #[cfg(test)]
@@ -252,7 +249,7 @@ mod tests {
                 resting_order_index: RestingOrderIndex::new(0),
             };
             assert_eq!(remover.visit_and_check_if_active(position_0), true);
-            remover.remove();
+            remover.deactivate_current();
             assert_eq!(
                 remover.active_group_position_iterator.bitmap_group.inner[0],
                 0b0000_0100
@@ -267,7 +264,7 @@ mod tests {
                 resting_order_index: RestingOrderIndex::new(7),
             };
             assert_eq!(remover.visit_and_check_if_active(position_1), true);
-            remover.remove();
+            remover.deactivate_current();
             assert_eq!(
                 remover.active_group_position_iterator.bitmap_group.inner[31],
                 0b0000_0000
@@ -293,7 +290,7 @@ mod tests {
                 resting_order_index: RestingOrderIndex::new(0),
             };
             assert_eq!(remover.visit_and_check_if_active(position_0), true);
-            remover.remove();
+            remover.deactivate_current();
             assert_eq!(
                 remover.active_group_position_iterator.bitmap_group.inner[31],
                 0b0000_0100
@@ -308,7 +305,7 @@ mod tests {
                 resting_order_index: RestingOrderIndex::new(7),
             };
             assert_eq!(remover.visit_and_check_if_active(position_1), true);
-            remover.remove();
+            remover.deactivate_current();
             assert_eq!(
                 remover.active_group_position_iterator.bitmap_group.inner[0],
                 0b0000_0000

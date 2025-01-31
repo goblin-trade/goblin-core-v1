@@ -131,11 +131,13 @@ pub trait IOrderLookupRemover<'a>: IOrderLookupRemoverInner<'a> {
                 // case 2. If bitmap group remains active we need to write the pending
                 // group to slot. Otherwise we can simply remove its outer index.
                 //
-                self.group_position_remover_mut().remove();
+                self.group_position_remover_mut().deactivate_current();
 
-                let group_active_after_removal = self.group_position_remover().is_group_active();
-                *self.pending_write_mut() = group_active_after_removal;
-                if !group_active_after_removal {
+                let bitmap_group = self.group_position_remover_mut().bitmap_group_mut();
+
+                let group_active = bitmap_group.is_group_active();
+                *self.pending_write_mut() = group_active;
+                if !group_active {
                     self.outer_index_remover_mut().remove();
                 }
             }
