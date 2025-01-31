@@ -61,7 +61,7 @@ impl IGroupPositionRemover for GroupPositionRemover {
             inner_index,
             resting_order_index: RestingOrderIndex::ZERO,
         };
-        let index = starting_position.index_inclusive(side);
+        let index = starting_position.bit_index(side);
 
         self.active_group_position_iterator =
             ActiveGroupPositionIterator::new(bitmap_group, side, index);
@@ -130,6 +130,7 @@ impl IGroupPositionLookupRemover for GroupPositionRemover {
         }
     }
 
+    // Same as current_position()
     fn looked_up_group_position(&self) -> Option<GroupPosition> {
         self.active_group_position_iterator
             .looked_up_group_position()

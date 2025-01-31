@@ -70,7 +70,7 @@ impl GroupPositionIterator {
         if self.exhausted {
             return None;
         }
-        Some(GroupPosition::from_index_inclusive(
+        Some(GroupPosition::from_bit_index(
             self.side,
             self.next_index,
         ))
@@ -82,7 +82,7 @@ impl GroupPositionIterator {
     /// Also acts as a getter for group position in lookup remover.
     pub fn current_position(&self) -> Option<GroupPosition> {
         self.current_index()
-            .map(|current_index| GroupPosition::from_index_inclusive(self.side, current_index))
+            .map(|current_index| GroupPosition::from_bit_index(self.side, current_index))
     }
 
     /// Paginate the iterator to a given group position, setting it as
@@ -98,7 +98,7 @@ impl GroupPositionIterator {
     ///
     /// * `group_position`
     pub fn set_current_position(&mut self, group_position: GroupPosition) {
-        let previous_index = group_position.index_inclusive(self.side);
+        let previous_index = group_position.bit_index(self.side);
         self.set_previous_index(previous_index);
     }
 }
@@ -140,7 +140,7 @@ mod tests {
                 assert_eq!(iterator.next_index, i);
                 assert_eq!(iterator.exhausted, false);
 
-                let expected_position = Some(GroupPosition::from_index_inclusive(side, i));
+                let expected_position = Some(GroupPosition::from_bit_index(side, i));
 
                 let peeked_position = iterator.peek();
                 let next_position = iterator.next();
@@ -156,7 +156,7 @@ mod tests {
             assert!(iterator.next().is_none());
             assert_eq!(
                 iterator.current_position(),
-                Some(GroupPosition::from_index_inclusive(side, 255))
+                Some(GroupPosition::from_bit_index(side, 255))
             );
         }
 
@@ -185,7 +185,7 @@ mod tests {
                 assert_eq!(iterator.next_index, i);
                 assert_eq!(iterator.exhausted, false);
 
-                let expected_position = Some(GroupPosition::from_index_inclusive(side, i));
+                let expected_position = Some(GroupPosition::from_bit_index(side, i));
 
                 let peeked_position = iterator.peek();
                 let next_position = iterator.next();
@@ -201,7 +201,7 @@ mod tests {
             assert!(iterator.next().is_none());
             assert_eq!(
                 iterator.current_position(),
-                Some(GroupPosition::from_index_inclusive(side, 255))
+                Some(GroupPosition::from_bit_index(side, 255))
             );
         }
 
@@ -217,7 +217,7 @@ mod tests {
                 assert_eq!(iterator.next_index, i);
                 assert_eq!(iterator.exhausted, false);
 
-                let expected_position = Some(GroupPosition::from_index_inclusive(side, i));
+                let expected_position = Some(GroupPosition::from_bit_index(side, i));
 
                 let peeked_position = iterator.peek();
                 let next_position = iterator.next();
@@ -233,7 +233,7 @@ mod tests {
             assert!(iterator.next().is_none());
             assert_eq!(
                 iterator.current_position(),
-                Some(GroupPosition::from_index_inclusive(side, 255))
+                Some(GroupPosition::from_bit_index(side, 255))
             );
         }
 
@@ -262,7 +262,7 @@ mod tests {
                 assert_eq!(iterator.next_index, i);
                 assert_eq!(iterator.exhausted, false);
 
-                let expected_position = Some(GroupPosition::from_index_inclusive(side, i));
+                let expected_position = Some(GroupPosition::from_bit_index(side, i));
 
                 let peeked_position = iterator.peek();
                 let next_position = iterator.next();
@@ -278,7 +278,7 @@ mod tests {
             assert!(iterator.next().is_none());
             assert_eq!(
                 iterator.current_position(),
-                Some(GroupPosition::from_index_inclusive(side, 255))
+                Some(GroupPosition::from_bit_index(side, 255))
             );
         }
     }

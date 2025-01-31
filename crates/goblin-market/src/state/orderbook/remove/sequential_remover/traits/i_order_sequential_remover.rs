@@ -12,54 +12,57 @@ pub trait IOrderSequentialRemover<'a>: IOrderSequentialRemoverInner<'a> {
     /// There is no need to clear garbage bits since we always begin from
     /// best market price
     fn next(&mut self, ctx: &mut ArbContext) -> Option<OrderId> {
-        let best_market_price = self.best_market_price_inner();
-
         loop {
-            let group_is_uninitialized_or_finished = self
-                .group_position_remover()
-                .is_uninitialized_or_exhausted();
+            // Do we really need this check?
+            // - outer index is already loaded on the first call
+            // - if we reach here again via iteration, the previous group has been exhausted
+            //
+            // problem- we can get uninitialized = true even though we have loaded the bitmap group.
+            // We don't want to load it again.
+            // let group_is_uninitialized_or_finished = self
+            //     .group_position_remover()
+            //     .is_uninitialized_or_exhausted();
 
-            if group_is_uninitialized_or_finished {
-                self.outer_index_remover_mut().load_next(ctx);
+            // if group_is_uninitialized_or_finished {
+            //     self.outer_index_remover_mut().load_next(ctx);
+            // }
+
+            if let Some(outer_index) = self.outer_index() {
+                if self.group_position_remover().is_exhausted() {
+                    self.group_position_remover_mut()
+                        .load_outer_index(ctx, outer_index);
+                }
+
+                if let Some(next_group_position) = self.group_position_remover_mut().next() {
+                    let next_order_id =
+                        OrderId::from_group_position(next_group_position, outer_index);
+                    let next_order_price = next_order_id.price_in_ticks;
+
+                    // Bitmap group is pending write if
+                    // - Removal doesn't change the price
+                    // - next() called the first time- Nothing was removed, i.e. price doesn't change and we remain
+                    // on resting order index
+                    *self.pending_write_mut() = next_order_price == self.best_market_price_inner()
+                        && next_group_position.resting_order_index != RestingOrderIndex::ZERO;
+
+                    // Update best market price
+                    *self.best_market_price_inner_mut() = next_order_price;
+
+                    return Some(next_order_id);
+                } else {
+                    // Bitmap group exhausted. Load the next outer index.
+                    self.outer_index_remover_mut().load_next(ctx);
+                }
+            } else {
+                // All active bits are exhausted
+                // Set pending write to false so that the group position is not written
+
+                // TODO remove? pending_write becomes false when best market price changes
+                // in an outer index transition
+                *self.pending_write_mut() = false;
+
+                return None;
             }
-
-            // Outer index is loaded. Load bitmap group if necessary now.
-            // Special case for f
-            match self.outer_index() {
-                Some(outer_index) => {
-                    if group_is_uninitialized_or_finished {
-                        self.group_position_remover_mut()
-                            .load_outer_index(ctx, outer_index);
-                    }
-
-                    let next_group_position = self.group_position_remover_mut().next();
-
-                    if let Some(next_group_position) = next_group_position {
-                        let next_order_id =
-                            OrderId::from_group_position(next_group_position, outer_index);
-                        let next_order_price = next_order_id.price_in_ticks;
-
-                        // Bitmap group is pending write if
-                        // - Removal doesn't change the price
-                        // - next() called the first time- Nothing was removed, i.e. price doesn't change and we remain
-                        // on resting order index
-                        *self.pending_write_mut() = next_order_price == best_market_price
-                            && next_group_position.resting_order_index != RestingOrderIndex::ZERO;
-
-                        // Update best market price
-                        *self.best_market_price_inner_mut() = next_order_price;
-
-                        return Some(next_order_id);
-                    }
-                }
-                None => {
-                    // All active bits are exhausted
-                    // Set pending write to false so that the group position is not written
-                    self.update_pending_write(false, false);
-
-                    return None;
-                }
-            };
         }
     }
 

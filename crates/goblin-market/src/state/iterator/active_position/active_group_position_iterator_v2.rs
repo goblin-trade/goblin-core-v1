@@ -42,7 +42,7 @@ impl ActiveGroupPositionIteratorV2 {
         side: Side,
         starting_position_inclusive: GroupPosition,
     ) -> Self {
-        let count = starting_position_inclusive.index_inclusive(side);
+        let count = starting_position_inclusive.bit_index(side);
         ActiveGroupPositionIteratorV2::new(bitmap_group, side, count)
     }
 

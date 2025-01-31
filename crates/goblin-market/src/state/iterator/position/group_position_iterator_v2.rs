@@ -20,11 +20,11 @@ impl GroupPositionIteratorV2 {
     }
 
     pub fn current_position(&self) -> GroupPosition {
-        GroupPosition::from_index_inclusive(self.side, self.current_index)
+        GroupPosition::from_bit_index(self.side, self.current_index)
     }
 
     pub fn set_position(&mut self, position: GroupPosition) {
-        let new_index = position.index_inclusive(self.side);
+        let new_index = position.bit_index(self.side);
         self.current_index = new_index;
     }
 }
