@@ -10,6 +10,9 @@ use crate::{
 pub trait IGroupPositionRemover {
     /// Load bitmap group for the given outer index
     ///
+    /// We don't replace the object because it is cheaper to replace values of an
+    /// existing struct
+    ///
     /// # Arguments
     ///
     /// * `ctx` - Context to read from slot

@@ -31,24 +31,11 @@ impl Iterator for ActiveGroupPositionIteratorV2 {
     }
 }
 
-// TODO move function in a trait. lookup_if_active() is only used by lookup remover.
-// Use the nested group_position_iterator to get current position
-// impl ActiveGroupPositionIteratorV2 {
-//     /// Visit the given position and check whether it holds an active order
-//     pub fn visit_and_check_if_active(&mut self, group_position: GroupPosition) -> bool {
-//         self.group_position_iterator
-//             .set_current_position(Some(group_position));
-
-//         self.bitmap_group.is_position_active(group_position)
-//     }
-// }
-
 impl IGroupPositionRemover for ActiveGroupPositionIteratorV2 {
     fn side(&self) -> crate::state::Side {
         self.group_position_iterator.side
     }
 
-    // TODO remove. Instead create a new ActiveGroupPosition instance
     fn load_outer_index(
         &mut self,
         ctx: &crate::state::ArbContext,

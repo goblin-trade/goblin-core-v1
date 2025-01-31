@@ -22,7 +22,7 @@ pub struct OrderLookupRemover<'a> {
     /// Reference to best market price for current side from market state
     pub best_market_price: &'a mut Ticks,
 
-    /// Whether the bitmap group is pending a write
+    /// Whether the bitmap group is pending a read
     pub pending_read: bool,
 
     /// Whether the bitmap group is pending a write
@@ -45,7 +45,11 @@ impl<'a> OrderLookupRemover<'a> {
     }
 }
 
-impl<'a> IOrderSequentialRemoverInner<'a> for OrderLookupRemover<'a> {
+// IOrderSequentialRemoverInner and IOrderLookupRemoverInner have redundant functions.
+// Can we get rid of them?
+// IOrderSequentialRemover and IOrderLookupRemover implementations are empty here.
+// They are completely based on the inner traits
+impl<'a> IOrderSequentialRemover<'a> for OrderLookupRemover<'a> {
     fn group_position_remover(&self) -> &impl IGroupPositionSequentialRemover {
         &self.group_position_remover
     }
@@ -79,7 +83,7 @@ impl<'a> IOrderSequentialRemoverInner<'a> for OrderLookupRemover<'a> {
     }
 }
 
-impl<'a> IOrderSequentialRemover<'a> for OrderLookupRemover<'a> {}
+// impl<'a> IOrderSequentialRemover<'a> for OrderLookupRemover<'a> {}
 
 impl<'a> IOrderLookupRemoverInner<'a> for OrderLookupRemover<'a> {
     fn group_position_remover(&self) -> &impl IGroupPositionLookupRemover {

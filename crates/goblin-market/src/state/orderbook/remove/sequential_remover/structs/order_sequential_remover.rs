@@ -61,9 +61,7 @@ impl<'a> OrderSequentialRemover<'a> {
     }
 }
 
-impl<'a> IOrderSequentialRemover<'a> for OrderSequentialRemover<'a> {}
-
-impl<'a> IOrderSequentialRemoverInner<'a> for OrderSequentialRemover<'a> {
+impl<'a> IOrderSequentialRemover<'a> for OrderSequentialRemover<'a> {
     fn group_position_remover(&self) -> &impl IGroupPositionSequentialRemover {
         &self.group_position_remover
     }
@@ -96,3 +94,5 @@ impl<'a> IOrderSequentialRemoverInner<'a> for OrderSequentialRemover<'a> {
         &mut self.pending_write
     }
 }
+
+// impl<'a> IOrderSequentialRemover<'a> for OrderSequentialRemover<'a> {}
