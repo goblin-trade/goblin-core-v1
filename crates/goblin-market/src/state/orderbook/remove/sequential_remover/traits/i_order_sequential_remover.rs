@@ -10,26 +10,14 @@ use crate::{
 use super::{IGroupPositionSequentialRemover, IOuterIndexSequentialRemover};
 
 pub trait IOrderSequentialRemover<'a> {
-    /// To lookup and remove outer indices
-    fn group_position_remover(&self) -> &impl IGroupPositionSequentialRemover;
-
     /// Mutable reference to group position remover, to lookup and remove outer indices
     fn group_position_remover_mut(&mut self) -> &mut impl IGroupPositionSequentialRemover;
-
-    /// To lookup and deactivate bits in bitmap groups
-    fn outer_index_remover(&self) -> &impl IOuterIndexSequentialRemover<'a>;
 
     /// Mutable reference to outer index remover
     fn outer_index_remover_mut(&mut self) -> &mut impl IOuterIndexSequentialRemover<'a>;
 
-    /// The market price for current side from market state
-    fn best_market_price_inner(&self) -> Ticks;
-
     /// Reference to best market price for current side from market state
     fn best_market_price_inner_mut(&mut self) -> &mut Ticks;
-
-    /// Whether the bitmap group is pending a write
-    fn pending_write(&self) -> bool;
 
     /// Mutable reference to pending write
     fn pending_write_mut(&mut self) -> &mut bool;
@@ -74,8 +62,8 @@ pub trait IOrderSequentialRemover<'a> {
             //     self.outer_index_remover_mut().load_next(ctx);
             // }
 
-            if let Some(outer_index) = self.outer_index_remover().current_outer_index() {
-                if self.group_position_remover().is_exhausted() {
+            if let Some(outer_index) = self.outer_index_remover_mut().current_outer_index() {
+                if self.group_position_remover_mut().is_exhausted() {
                     self.group_position_remover_mut()
                         .load_outer_index(ctx, outer_index);
                 }
@@ -89,7 +77,8 @@ pub trait IOrderSequentialRemover<'a> {
                     // - Removal doesn't change the price
                     // - next() called the first time- Nothing was removed, i.e. price doesn't change and we remain
                     // on resting order index
-                    *self.pending_write_mut() = next_order_price == self.best_market_price_inner()
+                    *self.pending_write_mut() = next_order_price
+                        == *self.best_market_price_inner_mut()
                         && next_group_position.resting_order_index != RestingOrderIndex::ZERO;
 
                     // Update best market price
@@ -131,8 +120,8 @@ pub trait IOrderSequentialRemover<'a> {
     /// * `ctx`
     ///
     fn commit(&mut self, ctx: &mut ArbContext) {
-        if let Some(outer_index) = self.outer_index_remover().current_outer_index() {
-            if self.pending_write() {
+        if let Some(outer_index) = self.outer_index_remover_mut().current_outer_index() {
+            if *self.pending_write_mut() {
                 self.group_position_remover_mut()
                     .bitmap_group_mut()
                     .write_to_slot(ctx, &outer_index);

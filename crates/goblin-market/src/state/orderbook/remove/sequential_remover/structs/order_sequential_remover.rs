@@ -59,35 +59,22 @@ impl<'a> OrderSequentialRemover<'a> {
             best_market_price_inner: &mut best_price_and_index_count.best_price_inner,
         }
     }
+
+    // TODO implement next() and commit() directly without interface
+    // Then find a way to call it from OrderLookupRemover
 }
 
 impl<'a> IOrderSequentialRemover<'a> for OrderSequentialRemover<'a> {
-    fn group_position_remover(&self) -> &impl IGroupPositionSequentialRemover {
-        &self.group_position_remover
-    }
-
     fn group_position_remover_mut(&mut self) -> &mut impl IGroupPositionSequentialRemover {
         &mut self.group_position_remover
-    }
-
-    fn outer_index_remover(&self) -> &impl IOuterIndexSequentialRemover<'a> {
-        &self.outer_index_remover
     }
 
     fn outer_index_remover_mut(&mut self) -> &mut impl IOuterIndexSequentialRemover<'a> {
         &mut self.outer_index_remover
     }
 
-    fn best_market_price_inner(&self) -> Ticks {
-        *self.best_market_price_inner
-    }
-
     fn best_market_price_inner_mut(&mut self) -> &mut Ticks {
         &mut self.best_market_price_inner
-    }
-
-    fn pending_write(&self) -> bool {
-        self.pending_write
     }
 
     fn pending_write_mut(&mut self) -> &mut bool {
