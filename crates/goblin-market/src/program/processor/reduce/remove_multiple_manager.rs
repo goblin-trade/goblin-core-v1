@@ -321,7 +321,6 @@ mod tests {
                 manager
                     .remover(Side::Bid)
                     .group_position_remover
-                    .active_group_position_iterator
                     .bitmap_group,
                 expected_bitmap_group_for_bid_remover
             );
@@ -333,7 +332,6 @@ mod tests {
                 manager
                     .remover(Side::Ask)
                     .group_position_remover
-                    .active_group_position_iterator
                     .bitmap_group,
                 expected_bitmap_group_for_ask_remover
             );
@@ -492,7 +490,6 @@ mod tests {
                 manager
                     .remover(Side::Bid)
                     .group_position_remover
-                    .active_group_position_iterator
                     .bitmap_group,
                 expected_bitmap_group_for_bid_remover
             );
@@ -504,7 +501,6 @@ mod tests {
                 manager
                     .remover(Side::Ask)
                     .group_position_remover
-                    .active_group_position_iterator
                     .bitmap_group,
                 expected_bitmap_group_for_ask_remover
             );
@@ -580,7 +576,6 @@ mod tests {
                 manager
                     .remover(Side::Bid)
                     .group_position_remover
-                    .active_group_position_iterator
                     .bitmap_group,
                 expected_bitmap_group_for_bid_remover
             );
@@ -594,7 +589,6 @@ mod tests {
                 manager
                     .remover(Side::Ask)
                     .group_position_remover
-                    .active_group_position_iterator
                     .bitmap_group,
                 expected_bitmap_group_for_ask_remover
             );
@@ -670,7 +664,6 @@ mod tests {
                 manager
                     .remover(Side::Ask)
                     .group_position_remover
-                    .active_group_position_iterator
                     .bitmap_group,
                 expected_bitmap_group_for_ask_remover
             );
@@ -684,7 +677,6 @@ mod tests {
                 manager
                     .remover(Side::Bid)
                     .group_position_remover
-                    .active_group_position_iterator
                     .bitmap_group,
                 expected_bitmap_group_for_bid_remover
             );
@@ -761,7 +753,6 @@ mod tests {
                 manager
                     .remover(Side::Bid)
                     .group_position_remover
-                    .active_group_position_iterator
                     .bitmap_group,
                 expected_bitmap_group_for_bid_remover
             );
@@ -774,7 +765,6 @@ mod tests {
                 manager
                     .remover(Side::Ask)
                     .group_position_remover
-                    .active_group_position_iterator
                     .bitmap_group,
                 expected_bitmap_group_for_ask_remover
             );

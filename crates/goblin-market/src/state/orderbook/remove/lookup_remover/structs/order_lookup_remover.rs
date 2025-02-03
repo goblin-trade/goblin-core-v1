@@ -2,11 +2,12 @@ use crate::{
     quantities::Ticks,
     state::{
         bitmap_group::BitmapGroup,
+        iterator::active_position::active_group_position_iterator_v2::ActiveGroupPositionIteratorV2,
         order::{group_position::GroupPosition, order_id::OrderId},
         remove::{
-            GroupPositionRemover, IGroupPositionLookupRemover, IGroupPositionRemover,
-            IGroupPositionSequentialRemover, IOuterIndexLookupRemover, IOuterIndexRemover,
-            IOuterIndexSequentialRemover, NextOrderIterator,
+            IGroupPositionLookupRemover, IGroupPositionRemover, IGroupPositionSequentialRemover,
+            IOuterIndexLookupRemover, IOuterIndexRemover, IOuterIndexSequentialRemover,
+            NextOrderIterator,
         },
         ArbContext, OuterIndex, Side,
     },
@@ -19,7 +20,7 @@ pub struct OrderLookupRemover<'a> {
     pub outer_index_remover: OuterIndexLookupRemover<'a>,
 
     /// To lookup and deactivate bits in bitmap groups
-    pub group_position_remover: GroupPositionRemover,
+    pub group_position_remover: ActiveGroupPositionIteratorV2,
 
     /// Reference to best market price for current side from market state
     pub best_market_price: &'a mut Ticks,
@@ -39,7 +40,7 @@ impl<'a> OrderLookupRemover<'a> {
     ) -> Self {
         OrderLookupRemover {
             outer_index_remover: OuterIndexLookupRemover::new(side, outer_index_count),
-            group_position_remover: GroupPositionRemover::new(side),
+            group_position_remover: ActiveGroupPositionIteratorV2::new_default_for_side(side),
             pending_read: false,
             pending_write: false,
             best_market_price,
