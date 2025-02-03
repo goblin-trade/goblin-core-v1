@@ -6,7 +6,7 @@ use crate::{
     },
 };
 
-use super::{IGroupPositionSequentialRemover, IOuterIndexSequentialRemover};
+use super::{GroupPositionSequentialRemover, IOuterIndexSequentialRemover};
 
 pub trait NextOrderIterator<'a> {
     /// Mutable reference to group position remover, to lookup and remove outer indices

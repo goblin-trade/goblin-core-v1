@@ -5,7 +5,7 @@ use crate::{
         iterator::active_position::active_group_position_iterator::ActiveGroupPositionIterator,
         order::{group_position::GroupPosition, order_id::OrderId},
         remove::{
-            IGroupPositionLookupRemover, IOuterIndexLookupRemover, IOuterIndexRemover,
+            GroupPositionLookupRemover, IOuterIndexLookupRemover, IOuterIndexRemover,
             IOuterIndexSequentialRemover, NextOrderIterator,
         },
         ArbContext, OuterIndex, Side,

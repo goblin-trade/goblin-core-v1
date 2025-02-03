@@ -3,7 +3,7 @@ use crate::{
     state::{order::group_position::GroupPosition, ArbContext},
 };
 
-pub trait IGroupPositionSequentialRemover {
+pub trait GroupPositionSequentialRemover {
     /// Get the next position and deactivate the previous one
     fn deactivate_previous_and_get_next(&mut self) -> Option<GroupPosition>;
 
@@ -34,7 +34,7 @@ mod tests {
         RestingOrderIndex, Side,
     };
 
-    use super::IGroupPositionSequentialRemover;
+    use super::GroupPositionSequentialRemover;
 
     #[test]
     fn test_for_asks() {

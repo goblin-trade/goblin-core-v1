@@ -1,6 +1,6 @@
 use crate::state::order::group_position::GroupPosition;
 
-pub trait IGroupPositionLookupRemover {
+pub trait GroupPositionLookupRemover {
     // Setters
 
     /// Paginates to the given position and check whether the bit is active
@@ -20,11 +20,11 @@ pub trait IGroupPositionLookupRemover {
 mod tests {
     use crate::state::{
         bitmap_group::BitmapGroup, order::group_position::GroupPosition,
-        remove::IGroupPositionSequentialRemover, ArbContext, ContextActions, InnerIndex,
-        OuterIndex, RestingOrderIndex, Side,
+        remove::GroupPositionSequentialRemover, ArbContext, ContextActions, InnerIndex, OuterIndex,
+        RestingOrderIndex, Side,
     };
 
-    use super::IGroupPositionLookupRemover;
+    use super::GroupPositionLookupRemover;
 
     mod test_find_and_remove {
         use crate::state::iterator::active_position::active_group_position_iterator::ActiveGroupPositionIterator;

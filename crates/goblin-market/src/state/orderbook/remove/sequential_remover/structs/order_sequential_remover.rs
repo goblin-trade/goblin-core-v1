@@ -3,7 +3,7 @@ use crate::{
     state::{
         iterator::active_position::active_group_position_iterator::ActiveGroupPositionIterator,
         remove::{
-            IGroupPositionSequentialRemover, IOuterIndexRemover, IOuterIndexSequentialRemover,
+            GroupPositionSequentialRemover, IOuterIndexRemover, IOuterIndexSequentialRemover,
             NextOrderIterator,
         },
         ArbContext, Side,
