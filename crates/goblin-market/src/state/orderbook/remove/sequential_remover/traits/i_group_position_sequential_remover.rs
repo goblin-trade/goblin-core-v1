@@ -1,9 +1,9 @@
 use crate::{
     quantities::Ticks,
-    state::{order::group_position::GroupPosition, remove::IGroupPositionRemover, ArbContext},
+    state::{order::group_position::GroupPosition, ArbContext},
 };
 
-pub trait IGroupPositionSequentialRemover: IGroupPositionRemover {
+pub trait IGroupPositionSequentialRemover {
     /// Get the next position and deactivate the previous one
     fn deactivate_previous_and_get_next(&mut self) -> Option<GroupPosition>;
 
@@ -30,8 +30,8 @@ mod tests {
     use crate::state::{
         bitmap_group::BitmapGroup,
         iterator::active_position::active_group_position_iterator_v2::ActiveGroupPositionIteratorV2,
-        order::group_position::GroupPosition, remove::IGroupPositionRemover, ArbContext,
-        ContextActions, InnerIndex, OuterIndex, RestingOrderIndex, Side,
+        order::group_position::GroupPosition, ArbContext, ContextActions, InnerIndex, OuterIndex,
+        RestingOrderIndex, Side,
     };
 
     use super::IGroupPositionSequentialRemover;

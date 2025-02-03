@@ -1,9 +1,8 @@
 use crate::{
     quantities::Ticks,
     state::{
-        order::order_id::OrderId,
-        remove::{IGroupPositionRemover, IOuterIndexRemover},
-        ArbContext, OuterIndex, RestingOrderIndex,
+        iterator::active_position::active_group_position_iterator_v2::ActiveGroupPositionIteratorV2,
+        order::order_id::OrderId, remove::IOuterIndexRemover, ArbContext, RestingOrderIndex,
     },
 };
 
@@ -11,7 +10,7 @@ use super::{IGroupPositionSequentialRemover, IOuterIndexSequentialRemover};
 
 pub trait NextOrderIterator<'a> {
     /// Mutable reference to group position remover, to lookup and remove outer indices
-    fn group_position_sequential_remover(&mut self) -> &mut impl IGroupPositionSequentialRemover;
+    fn group_position_sequential_remover(&mut self) -> &mut ActiveGroupPositionIteratorV2;
 
     /// Mutable reference to outer index remover
     fn outer_index_remover_mut(&mut self) -> &mut impl IOuterIndexSequentialRemover<'a>;

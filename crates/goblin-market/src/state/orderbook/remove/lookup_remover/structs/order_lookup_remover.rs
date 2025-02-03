@@ -5,9 +5,8 @@ use crate::{
         iterator::active_position::active_group_position_iterator_v2::ActiveGroupPositionIteratorV2,
         order::{group_position::GroupPosition, order_id::OrderId},
         remove::{
-            IGroupPositionLookupRemover, IGroupPositionRemover, IGroupPositionSequentialRemover,
-            IOuterIndexLookupRemover, IOuterIndexRemover, IOuterIndexSequentialRemover,
-            NextOrderIterator,
+            IGroupPositionLookupRemover, IOuterIndexLookupRemover, IOuterIndexRemover,
+            IOuterIndexSequentialRemover, NextOrderIterator,
         },
         ArbContext, OuterIndex, Side,
     },
@@ -233,7 +232,7 @@ impl<'a> OrderLookupRemover<'a> {
 }
 
 impl<'a> NextOrderIterator<'a> for OrderLookupRemover<'a> {
-    fn group_position_sequential_remover(&mut self) -> &mut impl IGroupPositionSequentialRemover {
+    fn group_position_sequential_remover(&mut self) -> &mut ActiveGroupPositionIteratorV2 {
         &mut self.group_position_remover
     }
 

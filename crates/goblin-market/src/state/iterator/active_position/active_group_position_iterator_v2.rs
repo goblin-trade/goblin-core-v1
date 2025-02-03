@@ -2,7 +2,7 @@ use crate::state::{
     bitmap_group::BitmapGroup,
     iterator::position::{BitIndexIterator, GroupPositionIteratorV2},
     order::group_position::GroupPosition,
-    remove::{IGroupPositionLookupRemover, IGroupPositionRemover, IGroupPositionSequentialRemover},
+    remove::{IGroupPositionLookupRemover, IGroupPositionSequentialRemover},
     RestingOrderIndex, Side, TickIndices,
 };
 
@@ -31,6 +31,33 @@ impl ActiveGroupPositionIteratorV2 {
             },
         }
     }
+
+    pub fn side(&self) -> crate::state::Side {
+        self.group_position_iterator.side
+    }
+
+    pub fn load_outer_index(
+        &mut self,
+        ctx: &crate::state::ArbContext,
+        outer_index: crate::state::OuterIndex,
+    ) {
+        self.bitmap_group = BitmapGroup::new_from_slot(ctx, outer_index);
+
+        // The current_index is set to 0. Calling next() will give 1 or a bigger bit index
+        // is_uninitialized is false
+        let bit_index = 0;
+        self.group_position_iterator
+            .bit_index_iterator
+            .set_current_index(Some(bit_index));
+    }
+
+    pub fn current_position(&self) -> Option<GroupPosition> {
+        self.group_position_iterator.current_position()
+    }
+
+    pub fn bitmap_group_mut(&mut self) -> &mut BitmapGroup {
+        &mut self.bitmap_group
+    }
 }
 
 impl Iterator for ActiveGroupPositionIteratorV2 {
@@ -46,34 +73,34 @@ impl Iterator for ActiveGroupPositionIteratorV2 {
     }
 }
 
-impl IGroupPositionRemover for ActiveGroupPositionIteratorV2 {
-    fn side(&self) -> crate::state::Side {
-        self.group_position_iterator.side
-    }
+// impl IGroupPositionRemover for ActiveGroupPositionIteratorV2 {
+//     fn side(&self) -> crate::state::Side {
+//         self.group_position_iterator.side
+//     }
 
-    fn load_outer_index(
-        &mut self,
-        ctx: &crate::state::ArbContext,
-        outer_index: crate::state::OuterIndex,
-    ) {
-        self.bitmap_group = BitmapGroup::new_from_slot(ctx, outer_index);
+//     fn load_outer_index(
+//         &mut self,
+//         ctx: &crate::state::ArbContext,
+//         outer_index: crate::state::OuterIndex,
+//     ) {
+//         self.bitmap_group = BitmapGroup::new_from_slot(ctx, outer_index);
 
-        // The current_index is set to 0. Calling next() will give 1 or a bigger bit index
-        // is_uninitialized is false
-        let bit_index = 0;
-        self.group_position_iterator
-            .bit_index_iterator
-            .set_current_index(Some(bit_index));
-    }
+//         // The current_index is set to 0. Calling next() will give 1 or a bigger bit index
+//         // is_uninitialized is false
+//         let bit_index = 0;
+//         self.group_position_iterator
+//             .bit_index_iterator
+//             .set_current_index(Some(bit_index));
+//     }
 
-    fn current_position(&self) -> Option<GroupPosition> {
-        self.group_position_iterator.current_position()
-    }
+//     fn current_position(&self) -> Option<GroupPosition> {
+//         self.group_position_iterator.current_position()
+//     }
 
-    fn bitmap_group_mut(&mut self) -> &mut BitmapGroup {
-        &mut self.bitmap_group
-    }
-}
+//     fn bitmap_group_mut(&mut self) -> &mut BitmapGroup {
+//         &mut self.bitmap_group
+//     }
+// }
 
 impl IGroupPositionSequentialRemover for ActiveGroupPositionIteratorV2 {
     fn deactivate_previous_and_get_next(&mut self) -> Option<GroupPosition> {

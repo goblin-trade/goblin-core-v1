@@ -3,8 +3,8 @@ use crate::{
     state::{
         iterator::active_position::active_group_position_iterator_v2::ActiveGroupPositionIteratorV2,
         remove::{
-            IGroupPositionRemover, IGroupPositionSequentialRemover, IOuterIndexRemover,
-            IOuterIndexSequentialRemover, NextOrderIterator,
+            IGroupPositionSequentialRemover, IOuterIndexRemover, IOuterIndexSequentialRemover,
+            NextOrderIterator,
         },
         ArbContext, Side,
     },
@@ -81,7 +81,7 @@ impl<'a> OrderSequentialRemover<'a> {
 }
 
 impl<'a> NextOrderIterator<'a> for OrderSequentialRemover<'a> {
-    fn group_position_sequential_remover(&mut self) -> &mut impl IGroupPositionSequentialRemover {
+    fn group_position_sequential_remover(&mut self) -> &mut ActiveGroupPositionIteratorV2 {
         &mut self.group_position_remover
     }
 
