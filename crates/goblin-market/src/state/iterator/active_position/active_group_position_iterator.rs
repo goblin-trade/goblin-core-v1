@@ -1,6 +1,6 @@
 use crate::state::{
     bitmap_group::BitmapGroup,
-    iterator::position::{BitIndexIterator, GroupPositionIteratorV2},
+    iterator::position::{BitIndexIterator, GroupPositionIterator},
     order::group_position::GroupPosition,
     remove::{GroupPositionLookupRemover, GroupPositionSequentialRemover},
     RestingOrderIndex, Side, TickIndices,
@@ -16,14 +16,14 @@ use crate::state::{
 /// TODO check where are we setting next()?
 pub struct ActiveGroupPositionIterator {
     pub bitmap_group: BitmapGroup,
-    pub group_position_iterator: GroupPositionIteratorV2,
+    pub group_position_iterator: GroupPositionIterator,
 }
 
 impl ActiveGroupPositionIterator {
     pub fn new(side: Side) -> Self {
         ActiveGroupPositionIterator {
             bitmap_group: BitmapGroup::default(),
-            group_position_iterator: GroupPositionIteratorV2 {
+            group_position_iterator: GroupPositionIterator {
                 side,
                 bit_index_iterator: BitIndexIterator {
                     current_index: None,
