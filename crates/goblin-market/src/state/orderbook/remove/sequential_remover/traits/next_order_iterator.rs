@@ -9,9 +9,6 @@ use crate::{
 
 use super::{IGroupPositionSequentialRemover, IOuterIndexSequentialRemover};
 
-// Compromise- aim for code simplicity. Rename this trait to OrderIterator with a single next()
-// function. Commit is implemented directly in OrderSequentialRemover. Lookup remover has no
-// separate trait.
 pub trait NextOrderIterator<'a> {
     /// Mutable reference to group position remover, to lookup and remove outer indices
     fn group_position_sequential_remover(&mut self) -> &mut impl IGroupPositionSequentialRemover;
