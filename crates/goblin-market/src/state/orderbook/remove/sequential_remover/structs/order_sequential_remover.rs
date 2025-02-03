@@ -3,10 +3,10 @@ use crate::{
     state::{
         iterator::active_position::active_group_position_iterator_v2::ActiveGroupPositionIteratorV2,
         remove::{
-            GroupPositionRemover, IGroupPositionRemover, IGroupPositionSequentialRemover,
-            IOuterIndexRemover, IOuterIndexSequentialRemover, NextOrderIterator,
+            IGroupPositionRemover, IGroupPositionSequentialRemover, IOuterIndexRemover,
+            IOuterIndexSequentialRemover, NextOrderIterator,
         },
-        ArbContext, BestPriceAndIndexCount, Side,
+        ArbContext, Side,
     },
 };
 
@@ -19,7 +19,7 @@ pub struct OrderSequentialRemover<'a> {
     pub outer_index_remover: OuterIndexSequentialRemover<'a>,
 
     /// To lookup and deactivate bits in bitmap groups
-    pub group_position_remover: GroupPositionRemover,
+    pub group_position_remover: ActiveGroupPositionIteratorV2,
 
     /// Reference to best market price for current side from market state
     pub best_market_price: &'a mut Ticks,
@@ -38,7 +38,7 @@ impl<'a> OrderSequentialRemover<'a> {
         let mut outer_index_remover = OuterIndexSequentialRemover::new(side, outer_index_count);
         outer_index_remover.load_next(ctx);
 
-        let mut group_position_remover = GroupPositionRemover::new(side);
+        let mut group_position_remover = ActiveGroupPositionIteratorV2::new_default_for_side(side);
         group_position_remover.load_outermost_group(ctx, *best_market_price);
 
         OrderSequentialRemover {

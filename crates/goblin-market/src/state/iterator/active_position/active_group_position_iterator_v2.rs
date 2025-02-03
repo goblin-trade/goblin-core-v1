@@ -1,9 +1,9 @@
 use crate::state::{
     bitmap_group::BitmapGroup,
-    iterator::position::GroupPositionIteratorV2,
+    iterator::position::{BitIndexIterator, GroupPositionIteratorV2},
     order::group_position::GroupPosition,
     remove::{IGroupPositionLookupRemover, IGroupPositionRemover, IGroupPositionSequentialRemover},
-    RestingOrderIndex, TickIndices,
+    RestingOrderIndex, Side, TickIndices,
 };
 
 /// Iterates through active positions in a bitmap group
@@ -17,6 +17,20 @@ use crate::state::{
 pub struct ActiveGroupPositionIteratorV2 {
     pub bitmap_group: BitmapGroup,
     pub group_position_iterator: GroupPositionIteratorV2,
+}
+
+impl ActiveGroupPositionIteratorV2 {
+    pub fn new_default_for_side(side: Side) -> Self {
+        ActiveGroupPositionIteratorV2 {
+            bitmap_group: BitmapGroup::default(),
+            group_position_iterator: GroupPositionIteratorV2 {
+                side,
+                bit_index_iterator: BitIndexIterator {
+                    current_index: None,
+                },
+            },
+        }
+    }
 }
 
 impl Iterator for ActiveGroupPositionIteratorV2 {
