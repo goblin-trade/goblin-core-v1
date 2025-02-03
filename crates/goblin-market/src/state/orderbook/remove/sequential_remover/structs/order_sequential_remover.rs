@@ -1,9 +1,10 @@
 use crate::{
     quantities::Ticks,
     state::{
+        iterator::active_position::active_group_position_iterator_v2::ActiveGroupPositionIteratorV2,
         remove::{
             GroupPositionRemover, IGroupPositionRemover, IGroupPositionSequentialRemover,
-            IOrderSequentialRemover, IOuterIndexRemover, IOuterIndexSequentialRemover,
+            IOuterIndexRemover, IOuterIndexSequentialRemover, NextOrderIterator,
         },
         ArbContext, BestPriceAndIndexCount, Side,
     },
@@ -48,18 +49,6 @@ impl<'a> OrderSequentialRemover<'a> {
         }
     }
 
-    pub fn new_v2(side: Side, best_price_and_index_count: &'a mut BestPriceAndIndexCount) -> Self {
-        OrderSequentialRemover {
-            outer_index_remover: OuterIndexSequentialRemover::new(
-                side,
-                &mut best_price_and_index_count.outer_index_count,
-            ),
-            group_position_remover: GroupPositionRemover::new(side),
-            pending_write: false,
-            best_market_price_inner: &mut best_price_and_index_count.best_price_inner,
-        }
-    }
-
     /// Concludes the removal. Writes the bitmap group if `pending_write` is true and
     /// updates the outer index count. There are no slot writes involved in the outer
     /// index list for the sequential remover.
@@ -86,12 +75,12 @@ impl<'a> OrderSequentialRemover<'a> {
             }
 
             // difference- ctx not passed to commit()
-            self.outer_index_remover.commit();
+            self.outer_index_remover.commit_sequential();
         }
     }
 }
 
-impl<'a> IOrderSequentialRemover<'a> for OrderSequentialRemover<'a> {
+impl<'a> NextOrderIterator<'a> for OrderSequentialRemover<'a> {
     fn group_position_sequential_remover(&mut self) -> &mut impl IGroupPositionSequentialRemover {
         &mut self.group_position_remover
     }
@@ -100,7 +89,7 @@ impl<'a> IOrderSequentialRemover<'a> for OrderSequentialRemover<'a> {
         &mut self.outer_index_remover
     }
 
-    fn best_market_price_inner_mut(&mut self) -> &mut Ticks {
+    fn best_market_price(&mut self) -> &mut Ticks {
         &mut self.best_market_price_inner
     }
 

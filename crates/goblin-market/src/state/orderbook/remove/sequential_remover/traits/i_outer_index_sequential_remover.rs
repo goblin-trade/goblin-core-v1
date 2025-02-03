@@ -14,7 +14,7 @@ pub trait IOuterIndexSequentialRemover<'a>: IOuterIndexRemover<'a> {
     /// Concludes removals by adding the cached value back to the list
     ///
     /// This simply involves incrementing the count if a value is cached
-    fn commit(&mut self) {
+    fn commit_sequential(&mut self) {
         *self
             .active_outer_index_iterator_mut()
             .inner
@@ -63,7 +63,7 @@ mod tests {
         );
 
         // No effect on commit since all values were cleared
-        remover.commit();
+        remover.commit_sequential();
         assert_eq!(outer_index_count, 0);
     }
 
@@ -99,7 +99,7 @@ mod tests {
         );
 
         // No effect on commit since all values were cleared
-        remover.commit();
+        remover.commit_sequential();
         assert_eq!(outer_index_count, 0);
     }
 
@@ -137,7 +137,7 @@ mod tests {
             15
         );
 
-        remover.commit();
+        remover.commit_sequential();
         assert_eq!(
             remover.active_outer_index_iterator.unread_outer_indices(),
             16

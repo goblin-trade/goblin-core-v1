@@ -3,7 +3,7 @@ use crate::{
     state::{
         get_best_market_price,
         order::order_id::OrderId,
-        remove::{IOrderLookupRemover, IOuterIndexLookupRemover, OrderLookupRemover},
+        remove::{IOuterIndexLookupRemover, OrderLookupRemover},
         ArbContext, MarketState, Side,
     },
 };
@@ -140,7 +140,7 @@ impl<'a> RemoveMultipleManager<'a> {
     fn get_best_price_for_side(&self, side: Side) -> Option<Ticks> {
         let remover = self.remover(side);
         let market_price_inner = *remover.best_market_price;
-        let outer_index_count = remover.outer_index_remover().total_outer_index_count();
+        let outer_index_count = remover.outer_index_remover.total_outer_index_count();
         let best_price = get_best_market_price(market_price_inner, outer_index_count);
 
         best_price

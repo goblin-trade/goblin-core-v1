@@ -5,7 +5,7 @@ use crate::{
     quantities::{AdjustedQuoteLots, BaseLots, QuoteLotsPerBaseUnit},
     state::{
         order::{order_id::OrderId, resting_order::SlotRestingOrder},
-        remove::{IOrderSequentialRemover, OrderSequentialRemover},
+        remove::{NextOrderIterator, OrderSequentialRemover},
         ArbContext, InflightOrder, MarketState, SelfTradeBehavior, Side, TraderState,
     },
 };
