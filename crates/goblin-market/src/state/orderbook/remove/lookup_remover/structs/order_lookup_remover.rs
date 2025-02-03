@@ -50,7 +50,7 @@ impl<'a> OrderLookupRemover<'a> {
 // IOrderSequentialRemover and IOrderLookupRemover implementations are empty here.
 // They are completely based on the inner traits
 impl<'a> IOrderSequentialRemover<'a> for OrderLookupRemover<'a> {
-    fn group_position_remover_mut(&mut self) -> &mut impl IGroupPositionSequentialRemover {
+    fn group_position_sequential_remover(&mut self) -> &mut impl IGroupPositionSequentialRemover {
         &mut self.group_position_remover
     }
 

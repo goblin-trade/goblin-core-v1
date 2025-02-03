@@ -2,8 +2,8 @@ use crate::{
     quantities::Ticks,
     state::{
         remove::{
-            GroupPositionRemover, IGroupPositionSequentialRemover, IOrderSequentialRemover,
-            IOuterIndexSequentialRemover,
+            GroupPositionRemover, IGroupPositionRemover, IGroupPositionSequentialRemover,
+            IOrderSequentialRemover, IOuterIndexRemover, IOuterIndexSequentialRemover,
         },
         ArbContext, BestPriceAndIndexCount, Side,
     },
@@ -60,12 +60,39 @@ impl<'a> OrderSequentialRemover<'a> {
         }
     }
 
-    // TODO implement next() and commit() directly without interface
-    // Then find a way to call it from OrderLookupRemover
+    /// Concludes the removal. Writes the bitmap group if `pending_write` is true and
+    /// updates the outer index count. There are no slot writes involved in the outer
+    /// index list for the sequential remover.
+    ///
+    /// This is the only place in sequential order remover where the bitmap group
+    /// can be written to slot.
+    ///
+    /// Slot writes- bitmap_group only. Market state is updated in memory, where the
+    /// best market price and outer index count is updated.
+    ///
+    /// IOrderLookupRemover::commit() has a similar looking function but it passes
+    /// ctx to outer_index_remover_mut.commit() while the sequential remover does not.
+    ///
+    /// # Arguments
+    ///
+    /// * `ctx`
+    ///
+    pub fn commit(&mut self, ctx: &mut ArbContext) {
+        if let Some(outer_index) = self.outer_index_remover.current_outer_index() {
+            if self.pending_write {
+                self.group_position_remover
+                    .bitmap_group_mut()
+                    .write_to_slot(ctx, &outer_index);
+            }
+
+            // difference- ctx not passed to commit()
+            self.outer_index_remover.commit();
+        }
+    }
 }
 
 impl<'a> IOrderSequentialRemover<'a> for OrderSequentialRemover<'a> {
-    fn group_position_remover_mut(&mut self) -> &mut impl IGroupPositionSequentialRemover {
+    fn group_position_sequential_remover(&mut self) -> &mut impl IGroupPositionSequentialRemover {
         &mut self.group_position_remover
     }
 

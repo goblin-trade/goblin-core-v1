@@ -9,9 +9,12 @@ use crate::{
 
 use super::{IGroupPositionSequentialRemover, IOuterIndexSequentialRemover};
 
+// Compromise- aim for code simplicity. Rename this trait to OrderIterator with a single next()
+// function. Commit is implemented directly in OrderSequentialRemover. Lookup remover has no
+// separate trait.
 pub trait IOrderSequentialRemover<'a> {
     /// Mutable reference to group position remover, to lookup and remove outer indices
-    fn group_position_remover_mut(&mut self) -> &mut impl IGroupPositionSequentialRemover;
+    fn group_position_sequential_remover(&mut self) -> &mut impl IGroupPositionSequentialRemover;
 
     /// Mutable reference to outer index remover
     fn outer_index_remover_mut(&mut self) -> &mut impl IOuterIndexSequentialRemover<'a>;
@@ -22,30 +25,14 @@ pub trait IOrderSequentialRemover<'a> {
     /// Mutable reference to pending write
     fn pending_write_mut(&mut self) -> &mut bool;
 
-    /// Upates pending write state for bitmap group. If pending write is true
-    /// when reads have concluded then we must write the bitmap group to slot.
-    ///
-    /// # Arguments
-    ///
-    /// * `is_first_read` - Nothing is removed on the first read since there is no
-    /// previous value.
-    /// * `best_price_unchanged` - If best market price did not update after closing
-    /// the current bit, we must write the group to slot.
-    fn update_pending_write(&mut self, is_first_read: bool, best_price_unchanged: bool) {
-        *self.pending_write_mut() = !is_first_read && best_price_unchanged;
-    }
-
-    // Getters
-
-    /// The current outer index
-    // fn outer_index(&self) -> Option<OuterIndex> {
-    //     self.outer_index_remover().current_outer_index()
-    // }
-
     /// Gets the next active order ID and clears the previously returned one.
     ///
     /// There is no need to clear garbage bits since we always begin from
     /// best market price
+    ///
+    /// TODO we are only sharing the next() function. Lookup remover has a different commit()
+    /// implementation that uses ctx. Use functional approach with a dedicated next() function.
+    /// This removes the need of traits completely. Though we still use traits for inner structs.
     fn next(&mut self, ctx: &mut ArbContext) -> Option<OrderId> {
         loop {
             // Do we really need this check?
@@ -63,12 +50,12 @@ pub trait IOrderSequentialRemover<'a> {
             // }
 
             if let Some(outer_index) = self.outer_index_remover_mut().current_outer_index() {
-                if self.group_position_remover_mut().is_exhausted() {
-                    self.group_position_remover_mut()
+                if self.group_position_sequential_remover().is_exhausted() {
+                    self.group_position_sequential_remover()
                         .load_outer_index(ctx, outer_index);
                 }
 
-                if let Some(next_group_position) = self.group_position_remover_mut().next() {
+                if let Some(next_group_position) = self.group_position_sequential_remover().next() {
                     let next_order_id =
                         OrderId::from_group_position(next_group_position, outer_index);
                     let next_order_price = next_order_id.price_in_ticks;
@@ -102,35 +89,35 @@ pub trait IOrderSequentialRemover<'a> {
         }
     }
 
-    /// Concludes the removal. Writes the bitmap group if `pending_write` is true and
-    /// updates the outer index count. There are no slot writes involved in the outer
-    /// index list for the sequential remover.
-    ///
-    /// This is the only place in sequential order remover where the bitmap group
-    /// can be written to slot.
-    ///
-    /// Slot writes- bitmap_group only. Market state is updated in memory, where the
-    /// best market price and outer index count is updated.
-    ///
-    /// IOrderLookupRemover::commit() has a similar looking function but it passes
-    /// ctx to outer_index_remover_mut.commit() while the sequential remover does not.
-    ///
-    /// # Arguments
-    ///
-    /// * `ctx`
-    ///
-    fn commit(&mut self, ctx: &mut ArbContext) {
-        if let Some(outer_index) = self.outer_index_remover_mut().current_outer_index() {
-            if *self.pending_write_mut() {
-                self.group_position_remover_mut()
-                    .bitmap_group_mut()
-                    .write_to_slot(ctx, &outer_index);
-            }
+    // /// Concludes the removal. Writes the bitmap group if `pending_write` is true and
+    // /// updates the outer index count. There are no slot writes involved in the outer
+    // /// index list for the sequential remover.
+    // ///
+    // /// This is the only place in sequential order remover where the bitmap group
+    // /// can be written to slot.
+    // ///
+    // /// Slot writes- bitmap_group only. Market state is updated in memory, where the
+    // /// best market price and outer index count is updated.
+    // ///
+    // /// IOrderLookupRemover::commit() has a similar looking function but it passes
+    // /// ctx to outer_index_remover_mut.commit() while the sequential remover does not.
+    // ///
+    // /// # Arguments
+    // ///
+    // /// * `ctx`
+    // ///
+    // fn commit(&mut self, ctx: &mut ArbContext) {
+    //     if let Some(outer_index) = self.outer_index_remover_mut().current_outer_index() {
+    //         if *self.pending_write_mut() {
+    //             self.group_position_sequential_remover()
+    //                 .bitmap_group_mut()
+    //                 .write_to_slot(ctx, &outer_index);
+    //         }
 
-            // difference- ctx not passed to commit()
-            self.outer_index_remover_mut().commit();
-        }
-    }
+    //         // difference- ctx not passed to commit()
+    //         self.outer_index_remover_mut().commit();
+    //     }
+    // }
 }
 
 // #[cfg(test)]
