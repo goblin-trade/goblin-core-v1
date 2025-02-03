@@ -27,7 +27,7 @@ mod tests {
     use super::IGroupPositionLookupRemover;
 
     mod test_find_and_remove {
-        use crate::state::iterator::active_position::active_group_position_iterator_v2::ActiveGroupPositionIteratorV2;
+        use crate::state::iterator::active_position::active_group_position_iterator::ActiveGroupPositionIterator;
 
         use super::*;
 
@@ -35,7 +35,7 @@ mod tests {
         fn test_find_positions_for_asks() {
             let ctx = &mut ArbContext::new();
             let side = Side::Ask;
-            let mut remover = ActiveGroupPositionIteratorV2::new(side);
+            let mut remover = ActiveGroupPositionIterator::new(side);
 
             let outer_index = OuterIndex::ONE;
             let mut bitmap_group = BitmapGroup::default();
@@ -125,7 +125,7 @@ mod tests {
         fn test_find_positions_for_bids() {
             let ctx = &mut ArbContext::new();
             let side = Side::Bid;
-            let mut remover = ActiveGroupPositionIteratorV2::new(side);
+            let mut remover = ActiveGroupPositionIterator::new(side);
 
             let outer_index = OuterIndex::ONE;
             let mut bitmap_group = BitmapGroup::default();
@@ -218,7 +218,7 @@ mod tests {
         fn test_remove_positions_for_asks() {
             let ctx = &mut ArbContext::new();
             let side = Side::Ask;
-            let mut remover = ActiveGroupPositionIteratorV2::new(side);
+            let mut remover = ActiveGroupPositionIterator::new(side);
 
             let outer_index = OuterIndex::ONE;
             let mut bitmap_group = BitmapGroup::default();
@@ -253,7 +253,7 @@ mod tests {
         fn test_remove_positions_for_bids() {
             let ctx = &mut ArbContext::new();
             let side = Side::Bid;
-            let mut remover = ActiveGroupPositionIteratorV2::new(side);
+            let mut remover = ActiveGroupPositionIterator::new(side);
 
             let outer_index = OuterIndex::ONE;
             let mut bitmap_group = BitmapGroup::default();
@@ -286,7 +286,7 @@ mod tests {
     }
 
     mod lookup_first_then_sequentially_remove {
-        use crate::state::iterator::active_position::active_group_position_iterator_v2::ActiveGroupPositionIteratorV2;
+        use crate::state::iterator::active_position::active_group_position_iterator::ActiveGroupPositionIterator;
 
         use super::*;
 
@@ -294,7 +294,7 @@ mod tests {
         fn test_lookup_ask_then_sequentially_remove() {
             let ctx = &mut ArbContext::new();
             let side = Side::Ask;
-            let mut remover = ActiveGroupPositionIteratorV2::new(side);
+            let mut remover = ActiveGroupPositionIterator::new(side);
 
             let outer_index = OuterIndex::ONE;
             let mut bitmap_group = BitmapGroup::default();
@@ -349,7 +349,7 @@ mod tests {
         fn test_lookup_bid_then_sequentially_remove() {
             let ctx = &mut ArbContext::new();
             let side = Side::Bid;
-            let mut remover = ActiveGroupPositionIteratorV2::new(side);
+            let mut remover = ActiveGroupPositionIterator::new(side);
 
             let outer_index = OuterIndex::ONE;
             let mut bitmap_group = BitmapGroup::default();
@@ -404,7 +404,7 @@ mod tests {
         fn test_lookup_ask_sequentially_remove_then_lookup_again() {
             let ctx = &mut ArbContext::new();
             let side = Side::Ask;
-            let mut remover = ActiveGroupPositionIteratorV2::new(side);
+            let mut remover = ActiveGroupPositionIterator::new(side);
 
             let outer_index = OuterIndex::ONE;
             let mut bitmap_group = BitmapGroup::default();
@@ -455,7 +455,7 @@ mod tests {
         fn test_lookup_bid_sequentially_remove_then_lookup_again() {
             let ctx = &mut ArbContext::new();
             let side = Side::Bid;
-            let mut remover = ActiveGroupPositionIteratorV2::new(side);
+            let mut remover = ActiveGroupPositionIterator::new(side);
 
             let outer_index = OuterIndex::ONE;
             let mut bitmap_group = BitmapGroup::default();

@@ -1,7 +1,7 @@
 use crate::{
     quantities::Ticks,
     state::{
-        iterator::active_position::active_group_position_iterator_v2::ActiveGroupPositionIteratorV2,
+        iterator::active_position::active_group_position_iterator::ActiveGroupPositionIterator,
         remove::{
             IGroupPositionSequentialRemover, IOuterIndexRemover, IOuterIndexSequentialRemover,
             NextOrderIterator,
@@ -19,7 +19,7 @@ pub struct OrderSequentialRemover<'a> {
     pub outer_index_remover: OuterIndexSequentialRemover<'a>,
 
     /// To lookup and deactivate bits in bitmap groups
-    pub group_position_remover: ActiveGroupPositionIteratorV2,
+    pub group_position_remover: ActiveGroupPositionIterator,
 
     /// Reference to best market price for current side from market state
     pub best_market_price: &'a mut Ticks,
@@ -38,7 +38,7 @@ impl<'a> OrderSequentialRemover<'a> {
         let mut outer_index_remover = OuterIndexSequentialRemover::new(side, outer_index_count);
         outer_index_remover.load_next(ctx);
 
-        let mut group_position_remover = ActiveGroupPositionIteratorV2::new(side);
+        let mut group_position_remover = ActiveGroupPositionIterator::new(side);
         group_position_remover.load_outermost_group(ctx, *best_market_price);
 
         OrderSequentialRemover {
@@ -81,7 +81,7 @@ impl<'a> OrderSequentialRemover<'a> {
 }
 
 impl<'a> NextOrderIterator<'a> for OrderSequentialRemover<'a> {
-    fn group_position_sequential_remover(&mut self) -> &mut ActiveGroupPositionIteratorV2 {
+    fn group_position_sequential_remover(&mut self) -> &mut ActiveGroupPositionIterator {
         &mut self.group_position_remover
     }
 

@@ -29,7 +29,7 @@ pub trait IGroupPositionSequentialRemover {
 mod tests {
     use crate::state::{
         bitmap_group::BitmapGroup,
-        iterator::active_position::active_group_position_iterator_v2::ActiveGroupPositionIteratorV2,
+        iterator::active_position::active_group_position_iterator::ActiveGroupPositionIterator,
         order::group_position::GroupPosition, ArbContext, ContextActions, InnerIndex, OuterIndex,
         RestingOrderIndex, Side,
     };
@@ -40,7 +40,7 @@ mod tests {
     fn test_for_asks() {
         let ctx = &mut ArbContext::new();
         let side = Side::Ask;
-        let mut remover = ActiveGroupPositionIteratorV2::new(side);
+        let mut remover = ActiveGroupPositionIterator::new(side);
         assert_eq!(remover.is_uninitialized(), true);
 
         let outer_index = OuterIndex::ONE;
@@ -97,7 +97,7 @@ mod tests {
     fn test_for_bids() {
         let ctx = &mut ArbContext::new();
         let side = Side::Bid;
-        let mut remover = ActiveGroupPositionIteratorV2::new(side);
+        let mut remover = ActiveGroupPositionIterator::new(side);
         assert_eq!(remover.is_uninitialized(), true);
 
         let outer_index = OuterIndex::ONE;

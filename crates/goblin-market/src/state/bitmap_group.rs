@@ -1,9 +1,6 @@
 use super::{
     iterator::{
-        active_position::{
-            active_group_position_iterator::ActiveGroupPositionIterator,
-            active_inner_index_iterator::ActiveInnerIndexIterator,
-        },
+        active_position::active_inner_index_iterator::ActiveInnerIndexIterator,
         position::inner_index_iterator::InnerIndexIterator,
     },
     order::group_position::GroupPosition,
@@ -101,31 +98,6 @@ impl BitmapGroup {
         starting_index_inclusive: Option<InnerIndex>,
     ) -> Option<InnerIndex> {
         let mut iterator = ActiveInnerIndexIterator::new(self, side, starting_index_inclusive);
-        iterator.next()
-    }
-
-    /// Get the best active group position in a bitmap group, beginning
-    /// from a starting position (inclusive)
-    ///
-    /// Returns None if there is no active group position. Externally ensure that this is called
-    /// on an active bitmap group.
-    ///
-    /// # Arguments
-    ///
-    /// * `side`
-    /// * `starting_index` - Search beginning from this index (inclusive)
-    ///
-    /// TODO remove. Replace with GroupPositionRemoverV2
-    pub fn best_active_group_position(
-        &self,
-        side: Side,
-        starting_position_inclusive: GroupPosition,
-    ) -> Option<GroupPosition> {
-        let mut iterator = ActiveGroupPositionIterator::new_with_starting_position(
-            *self,
-            side,
-            starting_position_inclusive,
-        );
         iterator.next()
     }
 
