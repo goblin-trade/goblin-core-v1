@@ -1,8 +1,9 @@
 use crate::state::{
     bitmap_group::BitmapGroup,
-    iterator::position::{BitIndexIterator, GroupPositionIteratorV2},
+    iterator::position::GroupPositionIteratorV2,
     order::group_position::GroupPosition,
-    remove::{IGroupPositionLookupRemover, IGroupPositionRemover},
+    remove::{IGroupPositionLookupRemover, IGroupPositionRemover, IGroupPositionSequentialRemover},
+    RestingOrderIndex, TickIndices,
 };
 
 /// Iterates through active positions in a bitmap group
@@ -57,6 +58,61 @@ impl IGroupPositionRemover for ActiveGroupPositionIteratorV2 {
 
     fn bitmap_group_mut(&mut self) -> &mut BitmapGroup {
         &mut self.bitmap_group
+    }
+}
+
+impl IGroupPositionSequentialRemover for ActiveGroupPositionIteratorV2 {
+    fn deactivate_previous_and_get_next(&mut self) -> Option<GroupPosition> {
+        if let Some(group_position) = self.current_position() {
+            self.bitmap_group.deactivate(group_position);
+        }
+
+        // If the group has no active positions, the inner iterator will traverse
+        // to the last position and mark itself as finished
+        self.next()
+    }
+
+    fn is_uninitialized(&self) -> bool {
+        self.group_position_iterator
+            .bit_index_iterator
+            .current_index
+            .is_none()
+    }
+
+    fn is_exhausted(&self) -> bool {
+        self.group_position_iterator
+            .bit_index_iterator
+            .current_index
+            == Some(255)
+    }
+
+    fn is_uninitialized_or_exhausted(&self) -> bool {
+        self.is_uninitialized() || self.is_exhausted()
+    }
+
+    fn load_outermost_group(
+        &mut self,
+        ctx: &crate::state::ArbContext,
+        best_market_price: crate::quantities::Ticks,
+    ) {
+        let TickIndices {
+            outer_index,
+            inner_index,
+        } = best_market_price.to_indices();
+
+        let bitmap_group = BitmapGroup::new_from_slot(ctx, outer_index);
+        let side = self.side();
+
+        let starting_position = GroupPosition {
+            inner_index,
+            resting_order_index: RestingOrderIndex::ZERO,
+        };
+        let index = starting_position.bit_index(side);
+
+        self.bitmap_group = bitmap_group;
+        self.group_position_iterator
+            .bit_index_iterator
+            .set_current_index(Some(index));
     }
 }
 

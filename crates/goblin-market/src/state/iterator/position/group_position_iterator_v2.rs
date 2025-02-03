@@ -17,7 +17,7 @@ pub struct GroupPositionIteratorV2 {
 
 impl GroupPositionIteratorV2 {
     pub fn current_position(&self) -> Option<GroupPosition> {
-        let bit_index = self.bit_index_iterator.current_index()?;
+        let bit_index = self.bit_index_iterator.current_index?;
         Some(GroupPosition::from_bit_index(self.side, bit_index))
     }
 

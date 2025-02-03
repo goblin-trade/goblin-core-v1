@@ -14,10 +14,6 @@ pub struct BitIndexIterator {
 }
 
 impl BitIndexIterator {
-    pub fn current_index(&self) -> Option<u8> {
-        self.current_index
-    }
-
     pub fn set_current_index(&mut self, index: Option<u8>) {
         self.current_index = index;
     }
@@ -55,45 +51,44 @@ mod tests {
             current_index: None,
         };
         assert_eq!(
-            iter.current_index(),
-            None,
+            iter.current_index, None,
             "Fresh iterator should have no current index"
         );
 
         // Test first value
         assert_eq!(iter.next(), Some(0));
-        assert_eq!(iter.current_index(), Some(0));
+        assert_eq!(iter.current_index, Some(0));
 
         // Test sequential values up to 253
         for i in 0..253 {
             assert_eq!(iter.next(), Some(i + 1));
-            assert_eq!(iter.current_index(), Some(i + 1));
+            assert_eq!(iter.current_index, Some(i + 1));
         }
 
         // Test boundary transition (254 -> 255 -> None)
         assert_eq!(iter.next(), Some(254));
-        assert_eq!(iter.current_index(), Some(254));
+        assert_eq!(iter.current_index, Some(254));
 
         assert_eq!(iter.next(), Some(255));
-        assert_eq!(iter.current_index(), Some(255));
+        assert_eq!(iter.current_index, Some(255));
 
         assert_eq!(iter.next(), None);
-        assert_eq!(iter.current_index(), Some(255));
+        assert_eq!(iter.current_index, Some(255));
 
         // Test set_current_index
         // Set to middle value
         iter.set_current_index(Some(100));
-        assert_eq!(iter.current_index(), Some(100));
+        assert_eq!(iter.current_index, Some(100));
         assert_eq!(iter.next(), Some(101));
 
         // Set to last value
         iter.set_current_index(Some(255));
-        assert_eq!(iter.current_index(), Some(255));
+        assert_eq!(iter.current_index, Some(255));
         assert_eq!(iter.next(), None);
 
         // Set back to start
         iter.set_current_index(Some(0));
-        assert_eq!(iter.current_index(), Some(0));
+        assert_eq!(iter.current_index, Some(0));
         assert_eq!(iter.next(), Some(1));
 
         // Create new iterator and collect all values

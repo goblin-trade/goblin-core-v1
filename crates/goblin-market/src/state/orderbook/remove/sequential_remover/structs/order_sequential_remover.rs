@@ -22,7 +22,7 @@ pub struct OrderSequentialRemover<'a> {
     pub group_position_remover: GroupPositionRemover,
 
     /// Reference to best market price for current side from market state
-    pub best_market_price_inner: &'a mut Ticks,
+    pub best_market_price: &'a mut Ticks,
 
     /// Whether the bitmap group is pending a write
     pub pending_write: bool,
@@ -45,7 +45,7 @@ impl<'a> OrderSequentialRemover<'a> {
             outer_index_remover,
             group_position_remover,
             pending_write: false,
-            best_market_price_inner: best_market_price,
+            best_market_price,
         }
     }
 
@@ -90,7 +90,7 @@ impl<'a> NextOrderIterator<'a> for OrderSequentialRemover<'a> {
     }
 
     fn best_market_price(&mut self) -> &mut Ticks {
-        &mut self.best_market_price_inner
+        &mut self.best_market_price
     }
 
     fn pending_write_mut(&mut self) -> &mut bool {

@@ -34,7 +34,10 @@ pub trait NextOrderIterator<'a> {
                         .load_outer_index(ctx, outer_index);
                 }
 
-                if let Some(next_group_position) = self.group_position_sequential_remover().next() {
+                if let Some(next_group_position) = self
+                    .group_position_sequential_remover()
+                    .deactivate_previous_and_get_next()
+                {
                     let next_order_id =
                         OrderId::from_group_position(next_group_position, outer_index);
                     let next_order_price = next_order_id.price_in_ticks;

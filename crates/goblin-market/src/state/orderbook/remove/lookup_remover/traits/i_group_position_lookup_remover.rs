@@ -341,25 +341,34 @@ mod tests {
 
             assert_eq!(remover.visit_and_check_if_active(position_0), true);
 
-            assert_eq!(remover.next().unwrap(), position_1);
+            assert_eq!(
+                remover.deactivate_previous_and_get_next().unwrap(),
+                position_1
+            );
             assert_eq!(
                 remover.active_group_position_iterator.bitmap_group.inner[0],
                 0b0000_0100
             );
 
-            assert_eq!(remover.next().unwrap(), position_2);
+            assert_eq!(
+                remover.deactivate_previous_and_get_next().unwrap(),
+                position_2
+            );
             assert_eq!(
                 remover.active_group_position_iterator.bitmap_group.inner[0],
                 0b0000_0000
             );
 
-            assert_eq!(remover.next().unwrap(), position_3);
+            assert_eq!(
+                remover.deactivate_previous_and_get_next().unwrap(),
+                position_3
+            );
             assert_eq!(
                 remover.active_group_position_iterator.bitmap_group.inner[1],
                 0b0000_0000
             );
 
-            assert_eq!(remover.next(), None);
+            assert_eq!(remover.deactivate_previous_and_get_next(), None);
             assert_eq!(
                 remover.active_group_position_iterator.bitmap_group.inner[31],
                 0b0000_0000
@@ -399,25 +408,34 @@ mod tests {
 
             assert_eq!(remover.visit_and_check_if_active(position_0), true);
 
-            assert_eq!(remover.next().unwrap(), position_1);
+            assert_eq!(
+                remover.deactivate_previous_and_get_next().unwrap(),
+                position_1
+            );
             assert_eq!(
                 remover.active_group_position_iterator.bitmap_group.inner[31],
                 0b0000_0100
             );
 
-            assert_eq!(remover.next().unwrap(), position_2);
+            assert_eq!(
+                remover.deactivate_previous_and_get_next().unwrap(),
+                position_2
+            );
             assert_eq!(
                 remover.active_group_position_iterator.bitmap_group.inner[31],
                 0b0000_0000
             );
 
-            assert_eq!(remover.next().unwrap(), position_3);
+            assert_eq!(
+                remover.deactivate_previous_and_get_next().unwrap(),
+                position_3
+            );
             assert_eq!(
                 remover.active_group_position_iterator.bitmap_group.inner[1],
                 0b0000_0000
             );
 
-            assert_eq!(remover.next(), None);
+            assert_eq!(remover.deactivate_previous_and_get_next(), None);
             assert_eq!(
                 remover.active_group_position_iterator.bitmap_group.inner[0],
                 0b0000_0000
@@ -457,13 +475,19 @@ mod tests {
 
             assert_eq!(remover.visit_and_check_if_active(position_0), true);
 
-            assert_eq!(remover.next().unwrap(), position_1);
+            assert_eq!(
+                remover.deactivate_previous_and_get_next().unwrap(),
+                position_1
+            );
             assert_eq!(
                 remover.active_group_position_iterator.bitmap_group.inner[0],
                 0b0000_0100
             );
 
-            assert_eq!(remover.next().unwrap(), position_2);
+            assert_eq!(
+                remover.deactivate_previous_and_get_next().unwrap(),
+                position_2
+            );
             assert_eq!(
                 remover.active_group_position_iterator.bitmap_group.inner[0],
                 0b0000_0000
@@ -514,13 +538,19 @@ mod tests {
 
             assert_eq!(remover.visit_and_check_if_active(position_0), true);
 
-            assert_eq!(remover.next().unwrap(), position_1);
+            assert_eq!(
+                remover.deactivate_previous_and_get_next().unwrap(),
+                position_1
+            );
             assert_eq!(
                 remover.active_group_position_iterator.bitmap_group.inner[31],
                 0b0000_0100
             );
 
-            assert_eq!(remover.next().unwrap(), position_2);
+            assert_eq!(
+                remover.deactivate_previous_and_get_next().unwrap(),
+                position_2
+            );
             assert_eq!(
                 remover.active_group_position_iterator.bitmap_group.inner[31],
                 0b0000_0000

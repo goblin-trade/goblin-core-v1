@@ -5,7 +5,7 @@ use crate::{
 
 pub trait IGroupPositionSequentialRemover: IGroupPositionRemover {
     /// Get the next position and deactivate the previous one
-    fn next(&mut self) -> Option<GroupPosition>;
+    fn deactivate_previous_and_get_next(&mut self) -> Option<GroupPosition>;
 
     /// Whether the remover is still uninitialized
     fn is_uninitialized(&self) -> bool;
@@ -52,7 +52,7 @@ mod tests {
         remover.load_outer_index(ctx, outer_index);
 
         assert_eq!(
-            remover.next().unwrap(),
+            remover.deactivate_previous_and_get_next().unwrap(),
             GroupPosition {
                 inner_index: InnerIndex::new(0),
                 resting_order_index: RestingOrderIndex::new(0)
@@ -65,7 +65,7 @@ mod tests {
         );
 
         assert_eq!(
-            remover.next().unwrap(),
+            remover.deactivate_previous_and_get_next().unwrap(),
             GroupPosition {
                 inner_index: InnerIndex::new(0),
                 resting_order_index: RestingOrderIndex::new(2)
@@ -77,7 +77,7 @@ mod tests {
         );
 
         assert_eq!(
-            remover.next().unwrap(),
+            remover.deactivate_previous_and_get_next().unwrap(),
             GroupPosition {
                 inner_index: InnerIndex::new(1),
                 resting_order_index: RestingOrderIndex::new(1)
@@ -89,7 +89,7 @@ mod tests {
         );
 
         assert_eq!(
-            remover.next().unwrap(),
+            remover.deactivate_previous_and_get_next().unwrap(),
             GroupPosition {
                 inner_index: InnerIndex::new(31),
                 resting_order_index: RestingOrderIndex::new(0)
@@ -100,7 +100,7 @@ mod tests {
             0b0000_0000
         );
 
-        assert_eq!(remover.next(), None);
+        assert_eq!(remover.deactivate_previous_and_get_next(), None);
         assert_eq!(
             remover.active_group_position_iterator.bitmap_group.inner[31],
             0b0000_0000
@@ -124,7 +124,7 @@ mod tests {
         remover.load_outer_index(ctx, outer_index);
 
         assert_eq!(
-            remover.next().unwrap(),
+            remover.deactivate_previous_and_get_next().unwrap(),
             GroupPosition {
                 inner_index: InnerIndex::new(31),
                 resting_order_index: RestingOrderIndex::new(0)
@@ -136,7 +136,7 @@ mod tests {
         );
 
         assert_eq!(
-            remover.next().unwrap(),
+            remover.deactivate_previous_and_get_next().unwrap(),
             GroupPosition {
                 inner_index: InnerIndex::new(1),
                 resting_order_index: RestingOrderIndex::new(1)
@@ -149,7 +149,7 @@ mod tests {
 
         // Resting order indices are looked up from 0, be it bid or ask
         assert_eq!(
-            remover.next().unwrap(),
+            remover.deactivate_previous_and_get_next().unwrap(),
             GroupPosition {
                 inner_index: InnerIndex::new(0),
                 resting_order_index: RestingOrderIndex::new(0)
@@ -165,7 +165,7 @@ mod tests {
         );
 
         assert_eq!(
-            remover.next().unwrap(),
+            remover.deactivate_previous_and_get_next().unwrap(),
             GroupPosition {
                 inner_index: InnerIndex::new(0),
                 resting_order_index: RestingOrderIndex::new(2)
@@ -176,7 +176,7 @@ mod tests {
             0b0000_0100
         );
 
-        assert_eq!(remover.next(), None);
+        assert_eq!(remover.deactivate_previous_and_get_next(), None);
         assert_eq!(
             remover.active_group_position_iterator.bitmap_group.inner[0],
             0b0000_0000

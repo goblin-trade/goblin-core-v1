@@ -58,7 +58,7 @@ impl IGroupPositionRemover for GroupPositionRemover {
 }
 
 impl IGroupPositionSequentialRemover for GroupPositionRemover {
-    fn next(&mut self) -> Option<GroupPosition> {
+    fn deactivate_previous_and_get_next(&mut self) -> Option<GroupPosition> {
         if let Some(group_position) = self.current_position() {
             self.active_group_position_iterator
                 .bitmap_group
