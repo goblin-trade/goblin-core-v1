@@ -21,20 +21,22 @@ mod tests {
     use crate::state::{
         bitmap_group::BitmapGroup,
         order::group_position::GroupPosition,
-        remove::{GroupPositionRemover, IGroupPositionRemover, IGroupPositionSequentialRemover},
+        remove::{IGroupPositionRemover, IGroupPositionSequentialRemover},
         ArbContext, ContextActions, InnerIndex, OuterIndex, RestingOrderIndex, Side,
     };
 
     use super::IGroupPositionLookupRemover;
 
     mod test_find_and_remove {
+        use crate::state::iterator::active_position::active_group_position_iterator_v2::ActiveGroupPositionIteratorV2;
+
         use super::*;
 
         #[test]
         fn test_find_positions_for_asks() {
             let ctx = &mut ArbContext::new();
             let side = Side::Ask;
-            let mut remover = GroupPositionRemover::new(side);
+            let mut remover = ActiveGroupPositionIteratorV2::new(side);
 
             let outer_index = OuterIndex::ONE;
             let mut bitmap_group = BitmapGroup::default();
@@ -53,11 +55,8 @@ mod tests {
             assert_eq!(remover.current_position().unwrap(), position_0);
 
             assert_eq!(
-                remover
-                    .active_group_position_iterator
-                    .group_position_iterator
-                    .next_index,
-                1
+                remover.group_position_iterator.bit_index_iterator.peek(),
+                Some(1)
             );
 
             // Position is not active
@@ -69,9 +68,10 @@ mod tests {
             assert_eq!(remover.current_position().unwrap(), position_1);
             assert_eq!(
                 remover
-                    .active_group_position_iterator
                     .group_position_iterator
-                    .next_index,
+                    .bit_index_iterator
+                    .peek()
+                    .unwrap(),
                 2
             );
 
@@ -79,9 +79,10 @@ mod tests {
             assert_eq!(remover.visit_and_check_if_active(position_0), true);
             assert_eq!(
                 remover
-                    .active_group_position_iterator
                     .group_position_iterator
-                    .next_index,
+                    .bit_index_iterator
+                    .peek()
+                    .unwrap(),
                 1
             );
 
@@ -94,9 +95,10 @@ mod tests {
             assert_eq!(remover.current_position().unwrap(), position_2);
             assert_eq!(
                 remover
-                    .active_group_position_iterator
                     .group_position_iterator
-                    .next_index,
+                    .bit_index_iterator
+                    .peek()
+                    .unwrap(),
                 3
             );
 
@@ -111,17 +113,11 @@ mod tests {
             // Exhausted as we navigated to the last item
             assert_eq!(
                 remover
-                    .active_group_position_iterator
                     .group_position_iterator
-                    .next_index,
+                    .bit_index_iterator
+                    .current_index
+                    .unwrap(),
                 255
-            );
-            assert_eq!(
-                remover
-                    .active_group_position_iterator
-                    .group_position_iterator
-                    .exhausted,
-                true
             );
             assert_eq!(remover.is_exhausted(), true);
         }
@@ -130,7 +126,7 @@ mod tests {
         fn test_find_positions_for_bids() {
             let ctx = &mut ArbContext::new();
             let side = Side::Bid;
-            let mut remover = GroupPositionRemover::new(side);
+            let mut remover = ActiveGroupPositionIteratorV2::new(side);
 
             let outer_index = OuterIndex::ONE;
             let mut bitmap_group = BitmapGroup::default();
@@ -150,9 +146,10 @@ mod tests {
 
             assert_eq!(
                 remover
-                    .active_group_position_iterator
                     .group_position_iterator
-                    .next_index,
+                    .bit_index_iterator
+                    .peek()
+                    .unwrap(),
                 1
             );
 
@@ -165,9 +162,10 @@ mod tests {
             assert_eq!(remover.current_position().unwrap(), position_1);
             assert_eq!(
                 remover
-                    .active_group_position_iterator
                     .group_position_iterator
-                    .next_index,
+                    .bit_index_iterator
+                    .peek()
+                    .unwrap(),
                 2
             );
 
@@ -175,9 +173,10 @@ mod tests {
             assert_eq!(remover.visit_and_check_if_active(position_0), true);
             assert_eq!(
                 remover
-                    .active_group_position_iterator
                     .group_position_iterator
-                    .next_index,
+                    .bit_index_iterator
+                    .peek()
+                    .unwrap(),
                 1
             );
 
@@ -190,9 +189,10 @@ mod tests {
             assert_eq!(remover.current_position().unwrap(), position_2);
             assert_eq!(
                 remover
-                    .active_group_position_iterator
                     .group_position_iterator
-                    .next_index,
+                    .bit_index_iterator
+                    .peek()
+                    .unwrap(),
                 3
             );
 
@@ -207,17 +207,10 @@ mod tests {
             // Exhausted as we navigated to the last item
             assert_eq!(
                 remover
-                    .active_group_position_iterator
                     .group_position_iterator
-                    .next_index,
-                255
-            );
-            assert_eq!(
-                remover
-                    .active_group_position_iterator
-                    .group_position_iterator
-                    .exhausted,
-                true
+                    .bit_index_iterator
+                    .current_index,
+                Some(255)
             );
             assert_eq!(remover.is_exhausted(), true);
         }
@@ -226,7 +219,7 @@ mod tests {
         fn test_remove_positions_for_asks() {
             let ctx = &mut ArbContext::new();
             let side = Side::Ask;
-            let mut remover = GroupPositionRemover::new(side);
+            let mut remover = ActiveGroupPositionIteratorV2::new(side);
 
             let outer_index = OuterIndex::ONE;
             let mut bitmap_group = BitmapGroup::default();
@@ -241,10 +234,7 @@ mod tests {
             };
             assert_eq!(remover.visit_and_check_if_active(position_0), true);
             remover.deactivate_current();
-            assert_eq!(
-                remover.active_group_position_iterator.bitmap_group.inner[0],
-                0b0000_0100
-            );
+            assert_eq!(remover.bitmap_group.inner[0], 0b0000_0100);
 
             // Removal does not change group_position()
             assert_eq!(remover.current_position().unwrap(), position_0);
@@ -256,10 +246,7 @@ mod tests {
             };
             assert_eq!(remover.visit_and_check_if_active(position_1), true);
             remover.deactivate_current();
-            assert_eq!(
-                remover.active_group_position_iterator.bitmap_group.inner[31],
-                0b0000_0000
-            );
+            assert_eq!(remover.bitmap_group.inner[31], 0b0000_0000);
             assert_eq!(remover.current_position().unwrap(), position_1);
         }
 
@@ -267,7 +254,7 @@ mod tests {
         fn test_remove_positions_for_bids() {
             let ctx = &mut ArbContext::new();
             let side = Side::Bid;
-            let mut remover = GroupPositionRemover::new(side);
+            let mut remover = ActiveGroupPositionIteratorV2::new(side);
 
             let outer_index = OuterIndex::ONE;
             let mut bitmap_group = BitmapGroup::default();
@@ -282,10 +269,7 @@ mod tests {
             };
             assert_eq!(remover.visit_and_check_if_active(position_0), true);
             remover.deactivate_current();
-            assert_eq!(
-                remover.active_group_position_iterator.bitmap_group.inner[31],
-                0b0000_0100
-            );
+            assert_eq!(remover.bitmap_group.inner[31], 0b0000_0100);
 
             // Removal does not change group_position()
             assert_eq!(remover.current_position().unwrap(), position_0);
@@ -297,22 +281,21 @@ mod tests {
             };
             assert_eq!(remover.visit_and_check_if_active(position_1), true);
             remover.deactivate_current();
-            assert_eq!(
-                remover.active_group_position_iterator.bitmap_group.inner[0],
-                0b0000_0000
-            );
+            assert_eq!(remover.bitmap_group.inner[0], 0b0000_0000);
             assert_eq!(remover.current_position().unwrap(), position_1);
         }
     }
 
     mod lookup_first_then_sequentially_remove {
+        use crate::state::iterator::active_position::active_group_position_iterator_v2::ActiveGroupPositionIteratorV2;
+
         use super::*;
 
         #[test]
         fn test_lookup_ask_then_sequentially_remove() {
             let ctx = &mut ArbContext::new();
             let side = Side::Ask;
-            let mut remover = GroupPositionRemover::new(side);
+            let mut remover = ActiveGroupPositionIteratorV2::new(side);
 
             let outer_index = OuterIndex::ONE;
             let mut bitmap_group = BitmapGroup::default();
@@ -345,41 +328,29 @@ mod tests {
                 remover.deactivate_previous_and_get_next().unwrap(),
                 position_1
             );
-            assert_eq!(
-                remover.active_group_position_iterator.bitmap_group.inner[0],
-                0b0000_0100
-            );
+            assert_eq!(remover.bitmap_group.inner[0], 0b0000_0100);
 
             assert_eq!(
                 remover.deactivate_previous_and_get_next().unwrap(),
                 position_2
             );
-            assert_eq!(
-                remover.active_group_position_iterator.bitmap_group.inner[0],
-                0b0000_0000
-            );
+            assert_eq!(remover.bitmap_group.inner[0], 0b0000_0000);
 
             assert_eq!(
                 remover.deactivate_previous_and_get_next().unwrap(),
                 position_3
             );
-            assert_eq!(
-                remover.active_group_position_iterator.bitmap_group.inner[1],
-                0b0000_0000
-            );
+            assert_eq!(remover.bitmap_group.inner[1], 0b0000_0000);
 
             assert_eq!(remover.deactivate_previous_and_get_next(), None);
-            assert_eq!(
-                remover.active_group_position_iterator.bitmap_group.inner[31],
-                0b0000_0000
-            );
+            assert_eq!(remover.bitmap_group.inner[31], 0b0000_0000);
         }
 
         #[test]
         fn test_lookup_bid_then_sequentially_remove() {
             let ctx = &mut ArbContext::new();
             let side = Side::Bid;
-            let mut remover = GroupPositionRemover::new(side);
+            let mut remover = ActiveGroupPositionIteratorV2::new(side);
 
             let outer_index = OuterIndex::ONE;
             let mut bitmap_group = BitmapGroup::default();
@@ -412,41 +383,29 @@ mod tests {
                 remover.deactivate_previous_and_get_next().unwrap(),
                 position_1
             );
-            assert_eq!(
-                remover.active_group_position_iterator.bitmap_group.inner[31],
-                0b0000_0100
-            );
+            assert_eq!(remover.bitmap_group.inner[31], 0b0000_0100);
 
             assert_eq!(
                 remover.deactivate_previous_and_get_next().unwrap(),
                 position_2
             );
-            assert_eq!(
-                remover.active_group_position_iterator.bitmap_group.inner[31],
-                0b0000_0000
-            );
+            assert_eq!(remover.bitmap_group.inner[31], 0b0000_0000);
 
             assert_eq!(
                 remover.deactivate_previous_and_get_next().unwrap(),
                 position_3
             );
-            assert_eq!(
-                remover.active_group_position_iterator.bitmap_group.inner[1],
-                0b0000_0000
-            );
+            assert_eq!(remover.bitmap_group.inner[1], 0b0000_0000);
 
             assert_eq!(remover.deactivate_previous_and_get_next(), None);
-            assert_eq!(
-                remover.active_group_position_iterator.bitmap_group.inner[0],
-                0b0000_0000
-            );
+            assert_eq!(remover.bitmap_group.inner[0], 0b0000_0000);
         }
 
         #[test]
         fn test_lookup_ask_sequentially_remove_then_lookup_again() {
             let ctx = &mut ArbContext::new();
             let side = Side::Ask;
-            let mut remover = GroupPositionRemover::new(side);
+            let mut remover = ActiveGroupPositionIteratorV2::new(side);
 
             let outer_index = OuterIndex::ONE;
             let mut bitmap_group = BitmapGroup::default();
@@ -479,37 +438,25 @@ mod tests {
                 remover.deactivate_previous_and_get_next().unwrap(),
                 position_1
             );
-            assert_eq!(
-                remover.active_group_position_iterator.bitmap_group.inner[0],
-                0b0000_0100
-            );
+            assert_eq!(remover.bitmap_group.inner[0], 0b0000_0100);
 
             assert_eq!(
                 remover.deactivate_previous_and_get_next().unwrap(),
                 position_2
             );
-            assert_eq!(
-                remover.active_group_position_iterator.bitmap_group.inner[0],
-                0b0000_0000
-            );
+            assert_eq!(remover.bitmap_group.inner[0], 0b0000_0000);
 
             // skip removing position_2, lookup position 3
             assert_eq!(remover.visit_and_check_if_active(position_3), true);
-            assert_eq!(
-                remover.active_group_position_iterator.bitmap_group.inner[1],
-                0b0000_0010
-            );
-            assert_eq!(
-                remover.active_group_position_iterator.bitmap_group.inner[31],
-                0b1000_0000
-            );
+            assert_eq!(remover.bitmap_group.inner[1], 0b0000_0010);
+            assert_eq!(remover.bitmap_group.inner[31], 0b1000_0000);
         }
 
         #[test]
         fn test_lookup_bid_sequentially_remove_then_lookup_again() {
             let ctx = &mut ArbContext::new();
             let side = Side::Bid;
-            let mut remover = GroupPositionRemover::new(side);
+            let mut remover = ActiveGroupPositionIteratorV2::new(side);
 
             let outer_index = OuterIndex::ONE;
             let mut bitmap_group = BitmapGroup::default();
@@ -542,30 +489,18 @@ mod tests {
                 remover.deactivate_previous_and_get_next().unwrap(),
                 position_1
             );
-            assert_eq!(
-                remover.active_group_position_iterator.bitmap_group.inner[31],
-                0b0000_0100
-            );
+            assert_eq!(remover.bitmap_group.inner[31], 0b0000_0100);
 
             assert_eq!(
                 remover.deactivate_previous_and_get_next().unwrap(),
                 position_2
             );
-            assert_eq!(
-                remover.active_group_position_iterator.bitmap_group.inner[31],
-                0b0000_0000
-            );
+            assert_eq!(remover.bitmap_group.inner[31], 0b0000_0000);
 
             // skip removing position_2, lookup position 3
             assert_eq!(remover.visit_and_check_if_active(position_3), true);
-            assert_eq!(
-                remover.active_group_position_iterator.bitmap_group.inner[1],
-                0b0000_0010
-            );
-            assert_eq!(
-                remover.active_group_position_iterator.bitmap_group.inner[0],
-                0b1000_0000
-            );
+            assert_eq!(remover.bitmap_group.inner[1], 0b0000_0010);
+            assert_eq!(remover.bitmap_group.inner[0], 0b1000_0000);
         }
     }
 }

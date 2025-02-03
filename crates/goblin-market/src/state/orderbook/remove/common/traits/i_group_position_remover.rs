@@ -7,6 +7,7 @@ use crate::{
 };
 
 /// Common trait shared by both IGroupPositionSequentialRemover and IGroupPositionLookupRemover
+/// TODO remove trait, implement functions directly
 pub trait IGroupPositionRemover {
     /// Load bitmap group for the given outer index
     ///

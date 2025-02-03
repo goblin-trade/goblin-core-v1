@@ -38,7 +38,7 @@ impl<'a> OrderSequentialRemover<'a> {
         let mut outer_index_remover = OuterIndexSequentialRemover::new(side, outer_index_count);
         outer_index_remover.load_next(ctx);
 
-        let mut group_position_remover = ActiveGroupPositionIteratorV2::new_default_for_side(side);
+        let mut group_position_remover = ActiveGroupPositionIteratorV2::new(side);
         group_position_remover.load_outermost_group(ctx, *best_market_price);
 
         OrderSequentialRemover {

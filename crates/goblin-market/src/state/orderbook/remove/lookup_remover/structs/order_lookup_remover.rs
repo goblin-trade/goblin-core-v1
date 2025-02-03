@@ -40,7 +40,7 @@ impl<'a> OrderLookupRemover<'a> {
     ) -> Self {
         OrderLookupRemover {
             outer_index_remover: OuterIndexLookupRemover::new(side, outer_index_count),
-            group_position_remover: ActiveGroupPositionIteratorV2::new_default_for_side(side),
+            group_position_remover: ActiveGroupPositionIteratorV2::new(side),
             pending_read: false,
             pending_write: false,
             best_market_price,

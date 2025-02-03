@@ -20,7 +20,7 @@ pub struct ActiveGroupPositionIteratorV2 {
 }
 
 impl ActiveGroupPositionIteratorV2 {
-    pub fn new_default_for_side(side: Side) -> Self {
+    pub fn new(side: Side) -> Self {
         ActiveGroupPositionIteratorV2 {
             bitmap_group: BitmapGroup::default(),
             group_position_iterator: GroupPositionIteratorV2 {
