@@ -9,6 +9,10 @@
 ///
 /// * This iterator tracks the **current** bit index, not next.
 ///
+/// * It has 256 + 1 states. State None means that the iterator is uninitialized.
+/// States Some(n) represent current values from 0 to 255.
+///
+#[derive(Default)]
 pub struct BitIndexIterator {
     pub current_index: Option<u8>,
 }
@@ -47,9 +51,7 @@ mod tests {
     #[test]
     fn test_bit_index_iterator() {
         // Test initial state
-        let mut iter = BitIndexIterator {
-            current_index: None,
-        };
+        let mut iter = BitIndexIterator::default();
         assert_eq!(
             iter.current_index, None,
             "Fresh iterator should have no current index"
@@ -92,9 +94,7 @@ mod tests {
         assert_eq!(iter.next(), Some(1));
 
         // Create new iterator and collect all values
-        let mut iter = BitIndexIterator {
-            current_index: None,
-        };
+        let iter = BitIndexIterator::default();
         let values: Vec<u8> = iter.collect();
         assert_eq!(values.len(), 256, "Should yield exactly 256 values");
         for i in 0..256 {

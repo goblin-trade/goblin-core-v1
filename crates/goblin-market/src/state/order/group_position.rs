@@ -95,48 +95,6 @@ impl GroupPosition {
             resting_order_index,
         }
     }
-
-    // TODO clear. from_index_inclusive() is being used instead
-    //
-    // /// Calculate the starting position for GroupPositionIterator
-    // /// u8::MAX equals 255. A bitmap group has 256 bits
-    // ///
-    // /// (0, 0) yields count 1. (31, 6) yields count 254. The last position (32, 7)
-    // /// causes count to overflow.
-    // ///
-    // /// Solution 1- use u16
-    // /// Solution 2- externally ensure that 'last' values are not passed
-    // ///
-    // /// What is count?
-    // /// - If count is 0, start from index 0. Index 0 is generated when count is None.
-    // /// - If count is 1, start from index 1. Index 0 is skipped.
-    // /// - If count is 255, start from index (31, 7), i.e. the last position. (31, 6) is skipped.
-    // ///
-    // /// The last group position (31, 7) should not be used to calculate count, since
-    // /// in this case we must begin lookup in the next bitmap group with count 0.
-    // pub fn count_exclusive(&self, side: Side) -> u8 {
-    //     debug_assert!(
-    //         side == Side::Bid && *self != GroupPosition::MIN
-    //             || side == Side::Ask && *self != GroupPosition::MAX,
-    //         "GroupPosition::MIN count is invalid for bids and GroupPosition::MAX count is invalid for asks"
-    //     );
-
-    //     self.count_inclusive(side) + 1
-
-    //     // let GroupPosition {
-    //     //     inner_index,
-    //     //     resting_order_index,
-    //     // } = self;
-
-    //     // // Resting orders always begin from left to right so the latter part is the same
-    //     // match side {
-    //     //     Side::Bid => {
-    //     //         (31 - inner_index.as_usize() as u8) * 8 + (resting_order_index.as_u8() + 1)
-    //     //     }
-
-    //     //     Side::Ask => (inner_index.as_usize() as u8) * 8 + (resting_order_index.as_u8() + 1),
-    //     // }
-    // }
 }
 
 impl From<&OrderId> for GroupPosition {
