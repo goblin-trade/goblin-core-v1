@@ -28,6 +28,14 @@ impl<'a> OuterIndexSequentialRemover<'a> {
             current_outer_index: None,
         }
     }
+
+    /// Concludes removals by adding the cached value back to the list
+    ///
+    /// This simply involves incrementing the count if a value is cached
+    pub fn commit_sequential(&mut self) {
+        *self.active_outer_index_iterator.inner.unread_outer_indices +=
+            u16::from(self.current_outer_index.is_some());
+    }
 }
 
 impl<'a> IOuterIndexRemover<'a> for OuterIndexSequentialRemover<'a> {

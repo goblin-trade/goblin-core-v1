@@ -10,16 +10,6 @@ pub trait IOuterIndexSequentialRemover<'a>: IOuterIndexRemover<'a> {
     fn load_next(&mut self, ctx: &ArbContext) {
         *self.current_outer_index_mut() = self.active_outer_index_iterator_mut().next(ctx);
     }
-
-    /// Concludes removals by adding the cached value back to the list
-    ///
-    /// This simply involves incrementing the count if a value is cached
-    fn commit_sequential(&mut self) {
-        *self
-            .active_outer_index_iterator_mut()
-            .inner
-            .unread_outer_indices += u16::from(self.current_outer_index_mut().is_some());
-    }
 }
 
 #[cfg(test)]
