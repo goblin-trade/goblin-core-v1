@@ -2,9 +2,9 @@ use crate::state::{InnerIndex, RestingOrderIndex, Side};
 
 use super::order_id::OrderId;
 
-/// Position of a bit within a bitmap group denoted as (inner_index, resting_order_index)
+/// Position of a bit within a bitmap group denoted as the tuple (inner_index, resting_order_index)
 ///
-/// Group position has an alternate  form (side, bit_index), found by bit_index() function
+/// Group position has an alternate form (side, bit_index), found by bit_index() function
 ///
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct GroupPosition {
@@ -13,16 +13,8 @@ pub struct GroupPosition {
 }
 
 impl GroupPosition {
-    pub const MIN: GroupPosition = GroupPosition {
-        inner_index: InnerIndex::MIN,
-        resting_order_index: RestingOrderIndex::MIN,
-    };
-
-    pub const MAX: GroupPosition = GroupPosition {
-        inner_index: InnerIndex::MAX,
-        resting_order_index: RestingOrderIndex::MAX,
-    };
-
+    /// The first group position for the given side.
+    /// It always starts with resting order index 0 irrespective of side.
     pub fn initial_for_side(side: Side) -> Self {
         GroupPosition {
             inner_index: match side {
@@ -34,8 +26,7 @@ impl GroupPosition {
         }
     }
 
-    /// Convert a group position from (inner_index, resting_order_index) to its bit position
-    /// in the range [0, 255] for the given side
+    /// Convert a group position to bit index for the given side
     ///
     /// # Examples
     ///
@@ -65,16 +56,13 @@ impl GroupPosition {
             + resting_order_index.as_u8()
     }
 
-    /// Convert the group index to group position for the given side
+    /// Convert bit index and side to group position
     ///
     /// # Arguments
     ///
     /// * `side`
-    /// * `index_inclusive` - The index of the current position
+    /// * `bit_index`
     ///
-    /// # Example
-    ///
-    /// * (Ask, index = 0) =>
     pub fn from_bit_index(side: Side, bit_index: u8) -> Self {
         let bit_index = match side {
             Side::Bid => 255 - bit_index, // Top to bottom for bids
@@ -97,6 +85,7 @@ impl GroupPosition {
     }
 }
 
+// Convert OrderID to group position
 impl From<&OrderId> for GroupPosition {
     fn from(value: &OrderId) -> Self {
         GroupPosition {
@@ -108,90 +97,34 @@ impl From<&OrderId> for GroupPosition {
 
 #[cfg(test)]
 mod tests {
-    use crate::state::{InnerIndex, RestingOrderIndex, Side};
-
-    use super::GroupPosition;
+    use super::*;
 
     #[test]
-    fn test_index_inclusive() {
-        let position_0 = GroupPosition::MIN;
-        assert_eq!(position_0.bit_index(Side::Ask), 0);
-        assert_eq!(position_0.bit_index(Side::Bid), 248);
-
-        let position_1 = GroupPosition {
-            inner_index: InnerIndex::ZERO,
-            resting_order_index: RestingOrderIndex::MAX,
-        };
-        assert_eq!(position_1.bit_index(Side::Ask), 7);
-        assert_eq!(position_1.bit_index(Side::Bid), 255);
-
-        let position_2 = GroupPosition {
-            inner_index: InnerIndex::MAX,
-            resting_order_index: RestingOrderIndex::ZERO,
-        };
-        assert_eq!(position_2.bit_index(Side::Ask), 248);
-        assert_eq!(position_2.bit_index(Side::Bid), 0);
-
-        let position_3 = GroupPosition::MAX;
-        assert_eq!(position_3.bit_index(Side::Ask), 255);
-        assert_eq!(position_3.bit_index(Side::Bid), 7);
+    fn test_group_positions_match_bit_indices() {
+        group_positions_match_bit_indices(Side::Ask, 0..32);
+        group_positions_match_bit_indices(Side::Bid, (0..32).rev());
     }
 
-    #[test]
-    fn get_for_zero_index() {
-        let index_inclusive = 255;
-        let position_bid = GroupPosition::from_bit_index(Side::Bid, index_inclusive);
-        let position_ask = GroupPosition::from_bit_index(Side::Ask, index_inclusive);
+    fn group_positions_match_bit_indices(
+        side: Side,
+        inner_index_range: impl Iterator<Item = usize>,
+    ) {
+        let mut expected_bit_index = 0;
+        for inner_index in inner_index_range {
+            for resting_order_index in 0..8 {
+                let position = GroupPosition {
+                    inner_index: InnerIndex::new(inner_index),
+                    resting_order_index: RestingOrderIndex::new(resting_order_index),
+                };
+                let bit_index = position.bit_index(side);
+                assert_eq!(bit_index, expected_bit_index);
+                let position_from_bit_index = GroupPosition::from_bit_index(side, bit_index);
+                assert_eq!(position, position_from_bit_index);
 
-        println!(
-            "position_bid {:?}, position_ask {:?}",
-            position_bid, position_ask
-        );
-    }
-
-    #[test]
-    fn test_range_for_bids() {
-        let side = Side::Bid;
-        for bit_index in 0..255 {
-            let position = GroupPosition::from_bit_index(side, bit_index);
-            println!("{:?}", position);
+                if expected_bit_index != 255 {
+                    expected_bit_index += 1;
+                }
+            }
         }
     }
-
-    // #[test]
-    // fn test_count_for_asks() {
-    //     let side = Side::Ask;
-
-    //     let position_0 = GroupPosition::MIN;
-    //     assert_eq!(position_0.count_exclusive(side), 1);
-
-    //     let position_1 = GroupPosition {
-    //         inner_index: InnerIndex::MAX,
-    //         resting_order_index: RestingOrderIndex::new(6),
-    //     };
-    //     assert_eq!(position_1.count_exclusive(side), 255);
-    // }
-
-    // #[test]
-    // fn test_count_for_bids() {
-    //     let side = Side::Bid;
-
-    //     let position_0 = GroupPosition {
-    //         inner_index: InnerIndex::MAX,
-    //         resting_order_index: RestingOrderIndex::ZERO,
-    //     };
-    //     assert_eq!(position_0.count_exclusive(side), 1);
-
-    //     let position_1 = GroupPosition {
-    //         inner_index: InnerIndex::MAX,
-    //         resting_order_index: RestingOrderIndex::MAX,
-    //     };
-    //     assert_eq!(position_1.count_exclusive(side), 8);
-
-    //     let position_2 = GroupPosition {
-    //         inner_index: InnerIndex::MIN,
-    //         resting_order_index: RestingOrderIndex::new(6),
-    //     };
-    //     assert_eq!(position_2.count_exclusive(side), 255);
-    // }
 }
