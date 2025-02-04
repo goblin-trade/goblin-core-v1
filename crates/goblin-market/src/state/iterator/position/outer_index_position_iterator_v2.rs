@@ -5,15 +5,14 @@
 /// The position of a stored outer index can be given as coordinates
 /// (slot_index, relative_index)
 ///
-// #[derive(PartialEq, Eq, Debug, Clone, Copy)]
-// pub struct OuterIndexPosition {
-//     /// Index of the slot
-//     pub slot_index: u16,
+#[derive(PartialEq, Eq, Debug, Clone, Copy)]
+pub struct OuterIndexPosition {
+    /// Index of the slot
+    pub slot_index: u16,
 
-//     /// Relative index (0 to 15) within the slot
-//     pub relative_index: u8,
-// }
-use super::outer_index_position_iterator::OuterIndexPosition;
+    /// Relative index (0 to 15) within the slot
+    pub relative_index: u8,
+}
 
 /// Iterator to get coordinates of stored outer indices from the
 /// end of the list to the start.

@@ -1,6 +1,6 @@
 use crate::state::{
     iterator::position::{
-        outer_index_position_iterator::OuterIndexPosition,
+        outer_index_position_iterator_v2::OuterIndexPosition,
         outer_index_position_iterator_v2::OuterIndexPositionIteratorV2,
     },
     ArbContext, ListKey, ListSlot, OuterIndex, Side,
