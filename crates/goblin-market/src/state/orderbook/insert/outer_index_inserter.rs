@@ -1,7 +1,7 @@
 use alloc::vec::Vec;
 
 use crate::state::{
-    iterator::active_position::active_outer_index_iterator_v2::ActiveOuterIndexIteratorV2,
+    iterator::active_position::active_outer_index_iterator::ActiveOuterIndexIterator,
     write_index_list::write_index_list, ArbContext, OuterIndex, Side,
 };
 
@@ -11,9 +11,9 @@ use crate::state::{
 /// - insert bids in descending order
 /// - insert asks in ascending order
 ///
-pub struct OuterIndexInserterV2<'a> {
+pub struct OuterIndexInserter<'a> {
     /// Iterator to read active outer indices from index list
-    pub active_outer_index_iterator: ActiveOuterIndexIteratorV2<'a>,
+    pub active_outer_index_iterator: ActiveOuterIndexIterator<'a>,
 
     /// Cached active outer indices which will be written back to slots.
     pub cached_outer_indices: Vec<OuterIndex>,
@@ -23,7 +23,7 @@ pub struct OuterIndexInserterV2<'a> {
     pub current_outer_index: Option<OuterIndex>,
 }
 
-impl<'a> OuterIndexInserterV2<'a> {
+impl<'a> OuterIndexInserter<'a> {
     /// Constructs a new OuterIndexInserter
     ///
     /// # Arguments
@@ -33,7 +33,7 @@ impl<'a> OuterIndexInserterV2<'a> {
     /// side in MarketState
     pub fn new(side: Side, outer_index_count: &'a mut u16) -> Self {
         Self {
-            active_outer_index_iterator: ActiveOuterIndexIteratorV2::new(side, outer_index_count),
+            active_outer_index_iterator: ActiveOuterIndexIterator::new(side, outer_index_count),
             current_outer_index: None,
             cached_outer_indices: Vec::new(),
         }
@@ -172,7 +172,7 @@ mod tests {
         let side = Side::Bid;
 
         let mut outer_index_count = 0;
-        let mut inserter = OuterIndexInserterV2::new(side, &mut outer_index_count);
+        let mut inserter = OuterIndexInserter::new(side, &mut outer_index_count);
 
         let outer_index_0 = OuterIndex::new(3);
         let outer_index_1 = OuterIndex::new(2);
@@ -237,7 +237,7 @@ mod tests {
         list_slot_0.set(0, outer_index_0);
         list_slot_0.write_to_slot(ctx, &list_key_0);
 
-        let mut inserter = OuterIndexInserterV2::new(side, &mut outer_index_count);
+        let mut inserter = OuterIndexInserter::new(side, &mut outer_index_count);
 
         let outer_index_to_insert = OuterIndex::new(3);
         assert_eq!(inserter.insert_if_absent(ctx, outer_index_to_insert), true);
@@ -277,7 +277,7 @@ mod tests {
         list_slot_0.set(0, outer_index_0);
         list_slot_0.write_to_slot(ctx, &list_key_0);
 
-        let mut inserter = OuterIndexInserterV2::new(side, &mut outer_index_count);
+        let mut inserter = OuterIndexInserter::new(side, &mut outer_index_count);
 
         // Try to insert duplicate
         assert_eq!(inserter.insert_if_absent(ctx, outer_index_0), false);
@@ -312,7 +312,7 @@ mod tests {
         list_slot_0.set(0, outer_index_0);
         list_slot_0.write_to_slot(ctx, &list_key_0);
 
-        let mut inserter = OuterIndexInserterV2::new(side, &mut outer_index_count);
+        let mut inserter = OuterIndexInserter::new(side, &mut outer_index_count);
 
         let outer_index_to_insert = OuterIndex::new(1);
         assert_eq!(inserter.insert_if_absent(ctx, outer_index_to_insert), true);
@@ -355,7 +355,7 @@ mod tests {
         };
         list_slot_0.write_to_slot(ctx, &list_key_0);
 
-        let mut inserter = OuterIndexInserterV2::new(side, &mut outer_index_count);
+        let mut inserter = OuterIndexInserter::new(side, &mut outer_index_count);
 
         let outer_index_to_insert = OuterIndex::new(16);
         assert_eq!(inserter.insert_if_absent(ctx, outer_index_to_insert), true);

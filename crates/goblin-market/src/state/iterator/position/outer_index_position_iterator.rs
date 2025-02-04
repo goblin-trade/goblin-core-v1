@@ -19,12 +19,12 @@ pub struct OuterIndexPosition {
 ///
 /// Used to read active outer indices in active_position/outer_index
 ///
-pub struct OuterIndexPositionIteratorV2<'a> {
+pub struct OuterIndexPositionIterator<'a> {
     /// Number of indices yet to be read
     pub unread_outer_indices: &'a mut u16,
 }
 
-impl<'a> OuterIndexPositionIteratorV2<'a> {
+impl<'a> OuterIndexPositionIterator<'a> {
     pub fn slot_index(&self) -> u16 {
         (*self.unread_outer_indices - 1) / 16
     }
@@ -41,7 +41,7 @@ impl<'a> OuterIndexPositionIteratorV2<'a> {
     }
 }
 
-impl<'a> Iterator for OuterIndexPositionIteratorV2<'a> {
+impl<'a> Iterator for OuterIndexPositionIterator<'a> {
     type Item = OuterIndexPosition;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -63,7 +63,7 @@ mod tests {
     fn test_indices_across_two_slots() {
         let mut outer_index_count = 17;
 
-        let mut iterator = OuterIndexPositionIteratorV2 {
+        let mut iterator = OuterIndexPositionIterator {
             unread_outer_indices: &mut outer_index_count,
         };
 

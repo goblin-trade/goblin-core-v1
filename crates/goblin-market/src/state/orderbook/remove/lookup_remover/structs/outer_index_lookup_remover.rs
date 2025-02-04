@@ -1,5 +1,5 @@
 use crate::state::{
-    iterator::active_position::active_outer_index_iterator_v2::ActiveOuterIndexIteratorV2,
+    iterator::active_position::active_outer_index_iterator::ActiveOuterIndexIterator,
     remove::NextOuterIndexLoader, write_index_list::write_index_list, ArbContext, OuterIndex, Side,
 };
 use alloc::vec::Vec;
@@ -8,7 +8,7 @@ use alloc::vec::Vec;
 /// indices must be sorted in a direction moving away from centre of the book
 pub struct OuterIndexLookupRemover<'a> {
     /// Iterator to read active outer indices from index list
-    pub active_outer_index_iterator: ActiveOuterIndexIteratorV2<'a>,
+    pub active_outer_index_iterator: ActiveOuterIndexIterator<'a>,
 
     /// The currently read outer index
     pub current_outer_index: Option<OuterIndex>,
@@ -27,7 +27,7 @@ impl<'a> OuterIndexLookupRemover<'a> {
     /// side in MarketState
     pub fn new(side: Side, outer_index_count: &'a mut u16) -> Self {
         Self {
-            active_outer_index_iterator: ActiveOuterIndexIteratorV2::new(side, outer_index_count),
+            active_outer_index_iterator: ActiveOuterIndexIterator::new(side, outer_index_count),
             current_outer_index: None,
             cached_outer_indices: Vec::new(),
         }

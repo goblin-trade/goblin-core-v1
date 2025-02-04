@@ -9,7 +9,7 @@ use crate::{
 };
 
 use super::{
-    group_position_inserter::GroupPositionInserter, outer_index_inserter_v2::OuterIndexInserterV2,
+    group_position_inserter::GroupPositionInserter, outer_index_inserter::OuterIndexInserter,
 };
 
 /// Inserts resting orders and activates order IDs in bulk
@@ -23,7 +23,7 @@ use super::{
 ///
 pub struct OrderIdInserter<'a> {
     /// Index list inserter- to insert outer indices in index lists and for writing them to slot
-    pub index_list_inserter: OuterIndexInserterV2<'a>,
+    pub index_list_inserter: OuterIndexInserter<'a>,
 
     /// Bitmap inserter- to activate bits in bitmap groups and writing them to slot
     pub bitmap_inserter: GroupPositionInserter,
@@ -32,7 +32,7 @@ pub struct OrderIdInserter<'a> {
 impl<'a> OrderIdInserter<'a> {
     pub fn new(side: Side, outer_index_count: &'a mut u16) -> Self {
         OrderIdInserter {
-            index_list_inserter: OuterIndexInserterV2::new(side, outer_index_count),
+            index_list_inserter: OuterIndexInserter::new(side, outer_index_count),
             bitmap_inserter: GroupPositionInserter::new(),
         }
     }
