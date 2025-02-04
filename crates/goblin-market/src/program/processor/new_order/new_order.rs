@@ -80,9 +80,9 @@ pub fn place_multiple_new_orders(
         (&bids, Side::Bid, market_state.bids_outer_indices),
         (&asks, Side::Ask, market_state.asks_outer_indices),
     ]
-    .iter()
+    .iter_mut()
     {
-        let mut resting_order_inserter = OrderIdInserter::new(*side, *outer_index_count);
+        let mut resting_order_inserter = OrderIdInserter::new(*side, outer_index_count);
 
         for order_bytes in *book_orders {
             let condensed_order = CondensedOrder::from(order_bytes);
@@ -210,7 +210,7 @@ pub fn place_multiple_new_orders(
         }
 
         // Write cached outer indices to slot
-        resting_order_inserter.write_prepared_indices(ctx, &mut market_state);
+        resting_order_inserter.write_prepared_indices(ctx);
     }
 
     // Write state
@@ -304,15 +304,16 @@ pub fn process_new_order(
             resting_order,
         }) = order_to_insert
         {
-            let mut resting_order_inserter =
-                OrderIdInserter::new(side, market_state.outer_index_count(side));
+            let outer_index_count = &mut market_state.outer_index_count(side);
+
+            let mut resting_order_inserter = OrderIdInserter::new(side, outer_index_count);
             resting_order_inserter.insert_resting_order(
                 ctx,
                 &mut market_state,
                 &resting_order,
                 &order_id,
             )?;
-            resting_order_inserter.write_prepared_indices(ctx, &mut market_state);
+            resting_order_inserter.write_prepared_indices(ctx);
         }
 
         (
