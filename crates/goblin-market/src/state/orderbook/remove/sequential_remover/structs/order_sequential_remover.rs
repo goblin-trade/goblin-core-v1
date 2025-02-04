@@ -2,11 +2,8 @@ use crate::{
     quantities::Ticks,
     state::{
         iterator::active_position::active_group_position_iterator::ActiveGroupPositionIterator,
-        remove::{
-            GroupPositionSequentialRemover, IOuterIndexRemover, IOuterIndexSequentialRemover,
-            NextOrderIterator,
-        },
-        ArbContext, Side,
+        remove::{GroupPositionSequentialRemover, NextOrderIterator, NextOuterIndexLoader},
+        ArbContext, OuterIndex, Side,
     },
 };
 
@@ -67,7 +64,7 @@ impl<'a> OrderSequentialRemover<'a> {
     /// * `ctx`
     ///
     pub fn commit(&mut self, ctx: &mut ArbContext) {
-        if let Some(outer_index) = self.outer_index_remover.current_outer_index() {
+        if let Some(outer_index) = self.outer_index_remover.current_outer_index {
             if self.pending_write {
                 self.group_position_remover
                     .bitmap_group_mut()
@@ -85,7 +82,11 @@ impl<'a> NextOrderIterator<'a> for OrderSequentialRemover<'a> {
         &mut self.group_position_remover
     }
 
-    fn outer_index_remover_mut(&mut self) -> &mut impl IOuterIndexSequentialRemover<'a> {
+    fn current_outer_index(&self) -> Option<OuterIndex> {
+        self.outer_index_remover.current_outer_index
+    }
+
+    fn next_outer_index_loader(&mut self) -> &mut impl NextOuterIndexLoader {
         &mut self.outer_index_remover
     }
 

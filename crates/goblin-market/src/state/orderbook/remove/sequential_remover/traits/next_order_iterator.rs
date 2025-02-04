@@ -2,18 +2,20 @@ use crate::{
     quantities::Ticks,
     state::{
         iterator::active_position::active_group_position_iterator::ActiveGroupPositionIterator,
-        order::order_id::OrderId, remove::IOuterIndexRemover, ArbContext, RestingOrderIndex,
+        order::order_id::OrderId, ArbContext, OuterIndex, RestingOrderIndex,
     },
 };
 
-use super::{GroupPositionSequentialRemover, IOuterIndexSequentialRemover};
+use super::{GroupPositionSequentialRemover, NextOuterIndexLoader};
 
 pub trait NextOrderIterator<'a> {
     /// Mutable reference to group position remover, to lookup and remove outer indices
     fn group_position_sequential_remover(&mut self) -> &mut ActiveGroupPositionIterator;
 
-    /// Mutable reference to outer index remover
-    fn outer_index_remover_mut(&mut self) -> &mut impl IOuterIndexSequentialRemover<'a>;
+    fn current_outer_index(&self) -> Option<OuterIndex>;
+
+    /// Mutable reference to next outer index loader
+    fn next_outer_index_loader(&mut self) -> &mut impl NextOuterIndexLoader;
 
     /// Reference to best market price for current side from market state
     fn best_market_price(&mut self) -> &mut Ticks;
@@ -27,7 +29,7 @@ pub trait NextOrderIterator<'a> {
     /// best market price
     fn next(&mut self, ctx: &mut ArbContext) -> Option<OrderId> {
         loop {
-            if let Some(outer_index) = self.outer_index_remover_mut().current_outer_index() {
+            if let Some(outer_index) = self.current_outer_index() {
                 if self.group_position_sequential_remover().is_exhausted() {
                     self.group_position_sequential_remover()
                         .load_outer_index(ctx, outer_index);
@@ -54,7 +56,7 @@ pub trait NextOrderIterator<'a> {
                     return Some(next_order_id);
                 } else {
                     // Bitmap group exhausted. Load the next outer index.
-                    self.outer_index_remover_mut().load_next(ctx);
+                    self.next_outer_index_loader().load_next(ctx);
                 }
             } else {
                 // All active bits are exhausted

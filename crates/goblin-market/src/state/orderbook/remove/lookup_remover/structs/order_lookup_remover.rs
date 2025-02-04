@@ -4,10 +4,7 @@ use crate::{
         bitmap_group::BitmapGroup,
         iterator::active_position::active_group_position_iterator::ActiveGroupPositionIterator,
         order::{group_position::GroupPosition, order_id::OrderId},
-        remove::{
-            GroupPositionLookupRemover, IOuterIndexLookupRemover, IOuterIndexRemover,
-            IOuterIndexSequentialRemover, NextOrderIterator,
-        },
+        remove::{GroupPositionLookupRemover, NextOrderIterator, NextOuterIndexLoader},
         ArbContext, OuterIndex, Side,
     },
 };
@@ -48,16 +45,6 @@ impl<'a> OrderLookupRemover<'a> {
 
     // Getters
 
-    /// The current outer index. If the bitmap group becomes empty on removal
-    /// then outer index is removed and this function returns None.
-    ///
-    /// Incoming order ids should be sorted by outer index, moving away from
-    /// the centre. If the cached outer index is None due to its group closing,
-    /// the next outer index is read from the bitmap list for comparison.
-    pub fn outer_index(&self) -> Option<OuterIndex> {
-        self.outer_index_remover.current_outer_index()
-    }
-
     /// Group position of the looked up order.
     ///
     /// This value can have 3 scenarios
@@ -73,7 +60,7 @@ impl<'a> OrderLookupRemover<'a> {
     }
 
     fn order_id_to_remove(&self) -> Option<OrderId> {
-        let outer_index = self.outer_index()?;
+        let outer_index = self.current_outer_index()?;
         let group_position = self.group_position()?;
 
         Some(OrderId::from_group_position(group_position, outer_index))
@@ -105,7 +92,7 @@ impl<'a> OrderLookupRemover<'a> {
     pub fn find(&mut self, ctx: &mut ArbContext, order_id: OrderId) -> bool {
         let price = order_id.price_in_ticks;
         let outer_index = price.outer_index();
-        let previous_outer_index = self.outer_index();
+        let previous_outer_index = self.current_outer_index();
 
         if previous_outer_index != Some(outer_index) {
             // Write group if outer index changed and pending write is true.
@@ -120,7 +107,7 @@ impl<'a> OrderLookupRemover<'a> {
 
             let outer_index_found = self.outer_index_remover.find_and_load(ctx, outer_index);
             // pending_write() is always set to false before setting pending_read to true.
-            self.pending_read = self.outer_index().is_some();
+            self.pending_read = self.current_outer_index().is_some();
 
             if !outer_index_found {
                 return false;
@@ -197,7 +184,7 @@ impl<'a> OrderLookupRemover<'a> {
     ///
     /// * `ctx`
     pub fn commit(&mut self, ctx: &mut ArbContext) {
-        if let Some(outer_index) = self.outer_index() {
+        if let Some(outer_index) = self.current_outer_index() {
             if self.pending_write {
                 self.write_bitmap_group(ctx, outer_index);
             }
@@ -209,8 +196,8 @@ impl<'a> OrderLookupRemover<'a> {
 
     /// Get the current bitmap group for sharing with the opposite side remover
     pub fn get_shared_bitmap_group(&mut self) -> BitmapGroup {
-        debug_assert!(self.outer_index().is_some());
-        debug_assert!(self.outer_index().unwrap() == self.best_market_price.outer_index());
+        debug_assert!(self.current_outer_index().is_some());
+        debug_assert!(self.current_outer_index().unwrap() == self.best_market_price.outer_index());
 
         *self.group_position_remover.bitmap_group_mut()
     }
@@ -236,7 +223,17 @@ impl<'a> NextOrderIterator<'a> for OrderLookupRemover<'a> {
         &mut self.group_position_remover
     }
 
-    fn outer_index_remover_mut(&mut self) -> &mut impl IOuterIndexSequentialRemover<'a> {
+    /// The current outer index. If the bitmap group becomes empty on removal
+    /// then outer index is removed and this function returns None.
+    ///
+    /// Incoming order ids should be sorted by outer index, moving away from
+    /// the centre. If the cached outer index is None due to its group closing,
+    /// the next outer index is read from the bitmap list for comparison.
+    fn current_outer_index(&self) -> Option<OuterIndex> {
+        self.outer_index_remover.current_outer_index
+    }
+
+    fn next_outer_index_loader(&mut self) -> &mut impl NextOuterIndexLoader {
         &mut self.outer_index_remover
     }
 

@@ -1,15 +1,8 @@
-use crate::state::{remove::IOuterIndexRemover, ArbContext};
+use crate::state::ArbContext;
 
-/// Removes outer indices one by one from the index list beginning from the
-/// end of the list. Outer indices closer to the centre are removed first.
-///
-/// Sequential removal simply involves decrementing outer index count from
-/// the market state. There is no need to cache values or perform slot writes.
-pub trait IOuterIndexSequentialRemover<'a>: IOuterIndexRemover<'a> {
+pub trait NextOuterIndexLoader {
     /// Read the next outer index from index list and set it as current
-    fn load_next(&mut self, ctx: &ArbContext) {
-        *self.current_outer_index_mut() = self.active_outer_index_iterator_mut().next(ctx);
-    }
+    fn load_next(&mut self, ctx: &ArbContext);
 }
 
 #[cfg(test)]

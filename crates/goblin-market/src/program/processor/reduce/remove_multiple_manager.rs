@@ -3,7 +3,7 @@ use crate::{
     state::{
         get_best_market_price,
         order::order_id::OrderId,
-        remove::{IOuterIndexLookupRemover, OrderLookupRemover},
+        remove::{NextOrderIterator, OrderLookupRemover},
         ArbContext, MarketState, Side,
     },
 };
@@ -72,7 +72,9 @@ impl<'a> RemoveMultipleManager<'a> {
                 //
                 // By not sharing the group, the group actually becomes consistent with the
                 // state that was supposed to written to slot by the old remover.
-                if old_remover.pending_write && old_remover.outer_index() == Some(outer_index) {
+                if old_remover.pending_write
+                    && old_remover.current_outer_index() == Some(outer_index)
+                {
                     old_remover.write_bitmap_group(ctx, outer_index);
                     let shared_bitmap_group = old_remover.get_shared_bitmap_group();
 

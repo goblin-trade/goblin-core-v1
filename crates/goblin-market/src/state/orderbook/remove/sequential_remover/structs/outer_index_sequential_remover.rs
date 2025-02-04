@@ -1,7 +1,6 @@
 use crate::state::{
     iterator::active_position::active_outer_index_iterator_v2::ActiveOuterIndexIteratorV2,
-    remove::{IOuterIndexRemover, IOuterIndexSequentialRemover},
-    OuterIndex, Side,
+    remove::NextOuterIndexLoader, ArbContext, OuterIndex, Side,
 };
 
 /// Helper to sequentially read and remove outer indices from the index list
@@ -38,22 +37,8 @@ impl<'a> OuterIndexSequentialRemover<'a> {
     }
 }
 
-impl<'a> IOuterIndexRemover<'a> for OuterIndexSequentialRemover<'a> {
-    fn active_outer_index_iterator(&self) -> &ActiveOuterIndexIteratorV2<'a> {
-        &self.active_outer_index_iterator
-    }
-
-    fn active_outer_index_iterator_mut(&mut self) -> &mut ActiveOuterIndexIteratorV2<'a> {
-        &mut self.active_outer_index_iterator
-    }
-
-    fn current_outer_index(&self) -> Option<OuterIndex> {
-        self.current_outer_index
-    }
-
-    fn current_outer_index_mut(&mut self) -> &mut Option<OuterIndex> {
-        &mut self.current_outer_index
+impl<'a> NextOuterIndexLoader for OuterIndexSequentialRemover<'a> {
+    fn load_next(&mut self, ctx: &ArbContext) {
+        self.current_outer_index = self.active_outer_index_iterator.next(ctx);
     }
 }
-
-impl<'a> IOuterIndexSequentialRemover<'a> for OuterIndexSequentialRemover<'a> {}
