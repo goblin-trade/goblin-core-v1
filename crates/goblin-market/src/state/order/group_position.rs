@@ -25,64 +25,6 @@ impl GroupPosition {
             resting_order_index: RestingOrderIndex::MIN,
         }
     }
-
-    /// Convert a group position to bit index for the given side
-    ///
-    /// # Examples
-    ///
-    /// * (Ask, inner_index = 0, resting_order_index = 0): bit index 0, i.e.
-    /// first item to be traversed
-    ///
-    /// * (Bid, inner_index = 0, resting_order_index = 0): bit index 248, i.e. first item
-    /// on the last row. We traverse from top to bottom for bids.
-    ///
-    /// * (Ask, inner_index = 0, resting_order_index = 7): bit index 7, i.e.
-    /// last item on the first row
-    ///
-    /// * (Bid, inner_index = 0, resting_order_index = 7): bit index 255, i.e. the last item
-    ///
-    pub fn bit_index(&self, side: Side) -> u8 {
-        let GroupPosition {
-            inner_index,
-            resting_order_index,
-        } = self;
-
-        (match side {
-            Side::Ask => *inner_index,
-            Side::Bid => InnerIndex::MAX - *inner_index,
-        })
-        .as_usize() as u8
-            * 8
-            + resting_order_index.as_u8()
-    }
-
-    /// Convert bit index and side to group position
-    ///
-    /// # Arguments
-    ///
-    /// * `side`
-    /// * `bit_index`
-    ///
-    pub fn from_bit_index(side: Side, bit_index: u8) -> Self {
-        let bit_index = match side {
-            Side::Bid => 255 - bit_index, // Top to bottom for bids
-            Side::Ask => bit_index,
-        };
-
-        let inner_index = InnerIndex::new(bit_index as usize / 8);
-
-        let resting_order_index = RestingOrderIndex::new(match side {
-            // We always move row-wise, so adjust resting_order_index to move from
-            // left to right for bids
-            Side::Bid => 7 - (bit_index % 8),
-            Side::Ask => bit_index % 8,
-        });
-
-        GroupPosition {
-            inner_index,
-            resting_order_index,
-        }
-    }
 }
 
 // Convert OrderID to group position
@@ -125,7 +67,7 @@ impl From<(Side, BitIndex)> for GroupPosition {
     }
 }
 
-/// Convert a group position to bit index for the given side
+/// Convert group position and side to bit index
 ///
 /// # Examples
 ///
@@ -173,20 +115,20 @@ mod tests {
         side: Side,
         inner_index_range: impl Iterator<Item = usize>,
     ) {
-        let mut expected_bit_index = 0;
+        let mut expected_bit_index = BitIndex::ZERO;
         for inner_index in inner_index_range {
             for resting_order_index in 0..8 {
                 let position = GroupPosition {
                     inner_index: InnerIndex::new(inner_index),
                     resting_order_index: RestingOrderIndex::new(resting_order_index),
                 };
-                let bit_index = position.bit_index(side);
+                let bit_index = BitIndex::from((side, position));
                 assert_eq!(bit_index, expected_bit_index);
-                let position_from_bit_index = GroupPosition::from_bit_index(side, bit_index);
+                let position_from_bit_index = GroupPosition::from((side, bit_index));
                 assert_eq!(position, position_from_bit_index);
 
-                if expected_bit_index != 255 {
-                    expected_bit_index += 1;
+                if expected_bit_index != BitIndex::MAX {
+                    expected_bit_index = expected_bit_index + BitIndex::ONE;
                 }
             }
         }

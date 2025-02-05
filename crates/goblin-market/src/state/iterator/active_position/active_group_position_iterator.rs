@@ -3,7 +3,7 @@ use crate::state::{
     iterator::position::{BitIndexIterator, GroupPositionIterator},
     order::group_position::GroupPosition,
     remove::{GroupPositionLookupRemover, GroupPositionSequentialRemover},
-    RestingOrderIndex, Side, TickIndices,
+    BitIndex, RestingOrderIndex, Side, TickIndices,
 };
 
 /// Iterates through active positions in a bitmap group
@@ -45,7 +45,7 @@ impl ActiveGroupPositionIterator {
 
         // The current_index is set to 0. Calling next() will give 1 or a bigger bit index
         // is_uninitialized is false
-        let bit_index = 0;
+        let bit_index = BitIndex::new(0);
         self.group_position_iterator
             .bit_index_iterator
             .set_current_index(Some(bit_index));
@@ -95,7 +95,7 @@ impl GroupPositionSequentialRemover for ActiveGroupPositionIterator {
         self.group_position_iterator
             .bit_index_iterator
             .current_index
-            == Some(255)
+            == Some(BitIndex::MAX)
     }
 
     fn is_uninitialized_or_exhausted(&self) -> bool {
@@ -119,12 +119,12 @@ impl GroupPositionSequentialRemover for ActiveGroupPositionIterator {
             inner_index,
             resting_order_index: RestingOrderIndex::ZERO,
         };
-        let index = starting_position.bit_index(side);
+        let bit_index = BitIndex::from((side, starting_position));
 
         self.bitmap_group = bitmap_group;
         self.group_position_iterator
             .bit_index_iterator
-            .set_current_index(Some(index));
+            .set_current_index(Some(bit_index));
     }
 }
 

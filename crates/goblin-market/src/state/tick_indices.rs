@@ -264,6 +264,8 @@ impl AddAssign for RestingOrderIndex {
 
 /// Index of a bit within a bitmap group. Together with size,
 /// this is equivalent to GroupPosition
+#[derive(Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
+#[repr(transparent)]
 pub struct BitIndex {
     inner: u8,
 }
@@ -280,5 +282,15 @@ impl BitIndex {
 
     pub fn as_u8(&self) -> u8 {
         self.inner
+    }
+}
+
+impl Add for BitIndex {
+    type Output = Self;
+
+    fn add(self, other: Self) -> Self {
+        BitIndex {
+            inner: self.inner.wrapping_add(other.inner),
+        }
     }
 }

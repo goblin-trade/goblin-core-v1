@@ -1,3 +1,5 @@
+use crate::state::BitIndex;
+
 /// Iterate through bit indices in a bitmap group
 ///
 /// * This is agnostic to side. The direction of traversing across
@@ -15,25 +17,25 @@
 /// TODO custom BitIndex type. Conversions inside group_position are dicey
 #[derive(Default)]
 pub struct BitIndexIterator {
-    pub current_index: Option<u8>,
+    pub current_index: Option<BitIndex>,
 }
 
 impl BitIndexIterator {
-    pub fn set_current_index(&mut self, index: Option<u8>) {
+    pub fn set_current_index(&mut self, index: Option<BitIndex>) {
         self.current_index = index;
     }
 
-    pub fn peek(&self) -> Option<u8> {
+    pub fn peek(&self) -> Option<BitIndex> {
         match self.current_index {
-            None => Some(0),        // Will start at 0
-            Some(255) => None,      // Already at end
-            Some(i) => Some(i + 1), // Next value will be current + 1
+            None => Some(BitIndex::ZERO),       // Will start at 0
+            Some(BitIndex::MAX) => None,        // Already at end
+            Some(i) => Some(i + BitIndex::ONE), // Next value will be current + 1
         }
     }
 }
 
 impl Iterator for BitIndexIterator {
-    type Item = u8;
+    type Item = BitIndex;
 
     fn next(&mut self) -> Option<Self::Item> {
         // Get next value using peek
@@ -59,47 +61,53 @@ mod tests {
         );
 
         // Test first value
-        assert_eq!(iter.next(), Some(0));
-        assert_eq!(iter.current_index, Some(0));
+        assert_eq!(iter.next().unwrap().as_u8(), 0);
+        assert_eq!(iter.current_index.unwrap().as_u8(), 0);
 
         // Test sequential values up to 253
         for i in 0..253 {
-            assert_eq!(iter.next(), Some(i + 1));
-            assert_eq!(iter.current_index, Some(i + 1));
+            assert_eq!(iter.next().unwrap().as_u8(), i + 1);
+            assert_eq!(iter.current_index.unwrap().as_u8(), i + 1);
         }
 
-        // Test boundary transition (254 -> 255 -> None)
-        assert_eq!(iter.next(), Some(254));
-        assert_eq!(iter.current_index, Some(254));
+        // TODO fix rest of tests. Use unwrap().as_u8() and remove Some()
 
-        assert_eq!(iter.next(), Some(255));
-        assert_eq!(iter.current_index, Some(255));
+        // Test boundary transition (254 -> 255 -> None)
+        assert_eq!(iter.next().unwrap().as_u8(), 254);
+        assert_eq!(iter.current_index.unwrap().as_u8(), 254);
+
+        assert_eq!(iter.next().unwrap().as_u8(), 255);
+        assert_eq!(iter.current_index.unwrap().as_u8(), 255);
 
         assert_eq!(iter.next(), None);
-        assert_eq!(iter.current_index, Some(255));
+        assert_eq!(iter.current_index.unwrap().as_u8(), 255);
 
         // Test set_current_index
         // Set to middle value
-        iter.set_current_index(Some(100));
-        assert_eq!(iter.current_index, Some(100));
-        assert_eq!(iter.next(), Some(101));
+        iter.set_current_index(Some(BitIndex::new(100)));
+        assert_eq!(iter.current_index.unwrap().as_u8(), 100);
+        assert_eq!(iter.next().unwrap().as_u8(), 101);
 
         // Set to last value
-        iter.set_current_index(Some(255));
-        assert_eq!(iter.current_index, Some(255));
+        iter.set_current_index(Some(BitIndex::new(255)));
+        assert_eq!(iter.current_index.unwrap().as_u8(), 255);
         assert_eq!(iter.next(), None);
 
         // Set back to start
-        iter.set_current_index(Some(0));
-        assert_eq!(iter.current_index, Some(0));
-        assert_eq!(iter.next(), Some(1));
+        iter.set_current_index(Some(BitIndex::new(0)));
+        assert_eq!(iter.current_index.unwrap().as_u8(), 0);
+        assert_eq!(iter.next().unwrap().as_u8(), 1);
 
         // Create new iterator and collect all values
         let iter = BitIndexIterator::default();
-        let values: Vec<u8> = iter.collect();
+        let values: Vec<BitIndex> = iter.collect();
         assert_eq!(values.len(), 256, "Should yield exactly 256 values");
-        for i in 0..256 {
-            assert_eq!(values[i], i as u8, "Values should be sequential");
+        for i in 0..=255 {
+            assert_eq!(
+                values[i],
+                BitIndex::new(i as u8),
+                "Values should be sequential"
+            );
         }
     }
 }

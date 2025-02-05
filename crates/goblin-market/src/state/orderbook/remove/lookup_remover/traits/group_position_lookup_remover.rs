@@ -54,8 +54,13 @@ mod tests {
             assert_eq!(remover.current_position().unwrap(), position_0);
 
             assert_eq!(
-                remover.group_position_iterator.bit_index_iterator.peek(),
-                Some(1)
+                remover
+                    .group_position_iterator
+                    .bit_index_iterator
+                    .peek()
+                    .unwrap()
+                    .as_u8(),
+                1
             );
 
             // Position is not active
@@ -70,7 +75,8 @@ mod tests {
                     .group_position_iterator
                     .bit_index_iterator
                     .peek()
-                    .unwrap(),
+                    .unwrap()
+                    .as_u8(),
                 2
             );
 
@@ -81,7 +87,8 @@ mod tests {
                     .group_position_iterator
                     .bit_index_iterator
                     .peek()
-                    .unwrap(),
+                    .unwrap()
+                    .as_u8(),
                 1
             );
 
@@ -97,7 +104,8 @@ mod tests {
                     .group_position_iterator
                     .bit_index_iterator
                     .peek()
-                    .unwrap(),
+                    .unwrap()
+                    .as_u8(),
                 3
             );
 
@@ -115,7 +123,8 @@ mod tests {
                     .group_position_iterator
                     .bit_index_iterator
                     .current_index
-                    .unwrap(),
+                    .unwrap()
+                    .as_u8(),
                 255
             );
             assert_eq!(remover.is_exhausted(), true);
@@ -148,7 +157,8 @@ mod tests {
                     .group_position_iterator
                     .bit_index_iterator
                     .peek()
-                    .unwrap(),
+                    .unwrap()
+                    .as_u8(),
                 1
             );
 
@@ -164,7 +174,8 @@ mod tests {
                     .group_position_iterator
                     .bit_index_iterator
                     .peek()
-                    .unwrap(),
+                    .unwrap()
+                    .as_u8(),
                 2
             );
 
@@ -175,7 +186,8 @@ mod tests {
                     .group_position_iterator
                     .bit_index_iterator
                     .peek()
-                    .unwrap(),
+                    .unwrap()
+                    .as_u8(),
                 1
             );
 
@@ -191,7 +203,8 @@ mod tests {
                     .group_position_iterator
                     .bit_index_iterator
                     .peek()
-                    .unwrap(),
+                    .unwrap()
+                    .as_u8(),
                 3
             );
 
@@ -208,8 +221,10 @@ mod tests {
                 remover
                     .group_position_iterator
                     .bit_index_iterator
-                    .current_index,
-                Some(255)
+                    .current_index
+                    .unwrap()
+                    .as_u8(),
+                255
             );
             assert_eq!(remover.is_exhausted(), true);
         }

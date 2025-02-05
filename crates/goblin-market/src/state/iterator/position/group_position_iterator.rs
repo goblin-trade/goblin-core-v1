@@ -1,4 +1,4 @@
-use crate::state::{order::group_position::GroupPosition, Side};
+use crate::state::{order::group_position::GroupPosition, BitIndex, Side};
 
 use super::bit_index_iterator::BitIndexIterator;
 
@@ -26,18 +26,18 @@ impl GroupPositionIterator {
     pub fn current_position(&self) -> Option<GroupPosition> {
         self.bit_index_iterator
             .current_index
-            .map(|bit_index| GroupPosition::from_bit_index(self.side, bit_index))
+            .map(|bit_index| GroupPosition::from((self.side, bit_index)))
     }
 
     pub fn set_current_position(&mut self, position: Option<GroupPosition>) {
-        let bit_index = position.map(|position| position.bit_index(self.side));
+        let bit_index = position.map(|position| BitIndex::from((self.side, position)));
         self.bit_index_iterator.set_current_index(bit_index);
     }
 
     pub fn peek(&self) -> Option<GroupPosition> {
         self.bit_index_iterator
             .peek()
-            .map(|bit_index| GroupPosition::from_bit_index(self.side, bit_index))
+            .map(|bit_index| GroupPosition::from((self.side, bit_index)))
     }
 }
 
@@ -47,7 +47,7 @@ impl Iterator for GroupPositionIterator {
     fn next(&mut self) -> Option<Self::Item> {
         self.bit_index_iterator
             .next()
-            .map(|bit_index| GroupPosition::from_bit_index(self.side, bit_index))
+            .map(|bit_index| GroupPosition::from((self.side, bit_index)))
     }
 }
 
@@ -74,8 +74,9 @@ pub mod tests {
 
         assert_eq!(iterator.current_position(), None);
 
-        for bit_index in 0..=255 {
-            let expected_group_position = Some(GroupPosition::from_bit_index(side, bit_index));
+        for bit_index_inner in 0..=255 {
+            let bit_index = BitIndex::new(bit_index_inner);
+            let expected_group_position = Some(GroupPosition::from((side, bit_index)));
             assert_eq!(iterator.peek(), expected_group_position);
             assert_eq!(iterator.next(), expected_group_position);
             assert_eq!(iterator.current_position(), expected_group_position);
@@ -85,7 +86,7 @@ pub mod tests {
         assert_eq!(iterator.next(), None);
         assert_eq!(
             iterator.current_position(),
-            Some(GroupPosition::from_bit_index(side, 255))
+            Some(GroupPosition::from((side, BitIndex::MAX)))
         );
     }
 
