@@ -6,6 +6,9 @@ edition = "2021"
 [lib]
 crate-type = ["cdylib"]
 
+[dependencies]
+mini-alloc = "0.7.0"
+
 [profile.release]
 opt-level = "s"
 strip = true
