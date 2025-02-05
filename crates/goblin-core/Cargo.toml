@@ -1,0 +1,11 @@
+[package]
+name = "goblin-core"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+
+[features]
+
+[lib]
+crate-type = ["lib", "cdylib"]
