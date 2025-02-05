@@ -11,7 +11,7 @@ use crate::{
 
 use super::OuterIndexLookupRemover;
 
-pub struct OrderLookupRemover<'a> {
+pub struct LookupRemover<'a> {
     /// To lookup and remove outer indices
     pub outer_index_remover: OuterIndexLookupRemover<'a>,
 
@@ -28,13 +28,13 @@ pub struct OrderLookupRemover<'a> {
     pub pending_write: bool,
 }
 
-impl<'a> OrderLookupRemover<'a> {
+impl<'a> LookupRemover<'a> {
     pub fn new(
         side: Side,
         best_market_price: &'a mut Ticks,
         outer_index_count: &'a mut u16,
     ) -> Self {
-        OrderLookupRemover {
+        LookupRemover {
             outer_index_remover: OuterIndexLookupRemover::new(side, outer_index_count),
             group_position_remover: ActiveGroupPositionIterator::new(side),
             pending_read: false,
@@ -218,7 +218,7 @@ impl<'a> OrderLookupRemover<'a> {
     }
 }
 
-impl<'a> NextOrderIterator<'a> for OrderLookupRemover<'a> {
+impl<'a> NextOrderIterator<'a> for LookupRemover<'a> {
     fn group_position_sequential_remover(&mut self) -> &mut ActiveGroupPositionIterator {
         &mut self.group_position_remover
     }

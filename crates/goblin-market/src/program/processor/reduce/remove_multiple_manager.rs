@@ -3,7 +3,7 @@ use crate::{
     state::{
         get_best_market_price,
         order::order_id::OrderId,
-        remove::{NextOrderIterator, OrderLookupRemover},
+        remove::{LookupRemover, NextOrderIterator},
         ArbContext, MarketState, Side,
     },
 };
@@ -11,7 +11,7 @@ use crate::{
 /// Manager to remove multiple orders in bulk for both sides
 pub struct RemoveMultipleManager<'a> {
     pub side: Side,
-    removers: [OrderLookupRemover<'a>; 2],
+    removers: [LookupRemover<'a>; 2],
 }
 
 impl<'a> RemoveMultipleManager<'a> {
@@ -24,8 +24,8 @@ impl<'a> RemoveMultipleManager<'a> {
         RemoveMultipleManager {
             side: Side::Bid,
             removers: [
-                OrderLookupRemover::new(Side::Bid, best_bid_price, bids_outer_indices),
-                OrderLookupRemover::new(Side::Ask, best_ask_price, asks_outer_indices),
+                LookupRemover::new(Side::Bid, best_bid_price, bids_outer_indices),
+                LookupRemover::new(Side::Ask, best_ask_price, asks_outer_indices),
             ],
         }
     }
@@ -107,15 +107,15 @@ impl<'a> RemoveMultipleManager<'a> {
 
     // Getters
 
-    fn remover(&self, side: Side) -> &OrderLookupRemover<'a> {
+    fn remover(&self, side: Side) -> &LookupRemover<'a> {
         &self.removers[side as usize]
     }
 
-    fn remover_mut(&mut self, side: Side) -> &mut OrderLookupRemover<'a> {
+    fn remover_mut(&mut self, side: Side) -> &mut LookupRemover<'a> {
         &mut self.removers[side as usize]
     }
 
-    fn current_remover_mut(&mut self) -> &mut OrderLookupRemover<'a> {
+    fn current_remover_mut(&mut self) -> &mut LookupRemover<'a> {
         self.remover_mut(self.side)
     }
 

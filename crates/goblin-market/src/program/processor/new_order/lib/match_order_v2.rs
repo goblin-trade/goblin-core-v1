@@ -5,7 +5,7 @@ use crate::{
     quantities::{AdjustedQuoteLots, BaseLots, QuoteLotsPerBaseUnit},
     state::{
         order::{order_id::OrderId, resting_order::SlotRestingOrder},
-        remove::{NextOrderIterator, OrderSequentialRemover},
+        remove::{NextOrderIterator, SequentialRemover},
         ArbContext, InflightOrder, MarketState, SelfTradeBehavior, Side, TraderState,
     },
 };
@@ -17,7 +17,7 @@ use super::{compute_fee, round_adjusted_quote_lots_up, ExpiryChecker};
 ///
 /// This is a wrapper around OrderSequentialRemover which also reads slot resting orders.
 struct SlabReader<'a> {
-    inner: OrderSequentialRemover<'a>,
+    inner: SequentialRemover<'a>,
 }
 
 impl<'a> SlabReader<'a> {
@@ -27,12 +27,7 @@ impl<'a> SlabReader<'a> {
             market_state.best_market_price_and_outer_index_count(opposite_side);
 
         SlabReader {
-            inner: OrderSequentialRemover::new(
-                ctx,
-                opposite_side,
-                best_market_price,
-                outer_index_count,
-            ),
+            inner: SequentialRemover::new(ctx, opposite_side, best_market_price, outer_index_count),
         }
     }
 

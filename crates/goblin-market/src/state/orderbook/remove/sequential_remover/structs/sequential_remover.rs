@@ -11,7 +11,7 @@ use super::OuterIndexSequentialRemover;
 
 /// Manager to sequentially read and remove orders, moving away from centre
 /// of the book
-pub struct OrderSequentialRemover<'a> {
+pub struct SequentialRemover<'a> {
     /// To lookup and remove outer indices
     pub outer_index_remover: OuterIndexSequentialRemover<'a>,
 
@@ -25,7 +25,7 @@ pub struct OrderSequentialRemover<'a> {
     pub pending_write: bool,
 }
 
-impl<'a> OrderSequentialRemover<'a> {
+impl<'a> SequentialRemover<'a> {
     pub fn new(
         ctx: &ArbContext,
         side: Side,
@@ -38,7 +38,7 @@ impl<'a> OrderSequentialRemover<'a> {
         let mut group_position_remover = ActiveGroupPositionIterator::new(side);
         group_position_remover.load_outermost_group(ctx, *best_market_price);
 
-        OrderSequentialRemover {
+        SequentialRemover {
             outer_index_remover,
             group_position_remover,
             pending_write: false,
@@ -77,7 +77,7 @@ impl<'a> OrderSequentialRemover<'a> {
     }
 }
 
-impl<'a> NextOrderIterator<'a> for OrderSequentialRemover<'a> {
+impl<'a> NextOrderIterator<'a> for SequentialRemover<'a> {
     fn group_position_sequential_remover(&mut self) -> &mut ActiveGroupPositionIterator {
         &mut self.group_position_remover
     }
