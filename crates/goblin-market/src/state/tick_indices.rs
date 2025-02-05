@@ -2,6 +2,7 @@ use core::ops::Add;
 use core::ops::AddAssign;
 use core::ops::Sub;
 use core::ops::SubAssign;
+use core::u8;
 
 use crate::state::Side;
 use crate::{
@@ -258,5 +259,26 @@ impl Add for RestingOrderIndex {
 impl AddAssign for RestingOrderIndex {
     fn add_assign(&mut self, other: RestingOrderIndex) {
         self.inner += other.inner;
+    }
+}
+
+/// Index of a bit within a bitmap group. Together with size,
+/// this is equivalent to GroupPosition
+pub struct BitIndex {
+    inner: u8,
+}
+
+impl BitIndex {
+    pub const ZERO: BitIndex = BitIndex { inner: 0 };
+    pub const MIN: BitIndex = BitIndex::ZERO;
+    pub const ONE: BitIndex = BitIndex { inner: 1 };
+    pub const MAX: BitIndex = BitIndex { inner: u8::MAX };
+
+    pub fn new(inner: u8) -> Self {
+        BitIndex { inner }
+    }
+
+    pub fn as_u8(&self) -> u8 {
+        self.inner
     }
 }

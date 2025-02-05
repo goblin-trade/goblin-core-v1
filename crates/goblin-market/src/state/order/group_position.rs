@@ -1,4 +1,4 @@
-use crate::state::{InnerIndex, RestingOrderIndex, Side};
+use crate::state::{BitIndex, InnerIndex, RestingOrderIndex, Side};
 
 use super::order_id::OrderId;
 
@@ -92,6 +92,70 @@ impl From<&OrderId> for GroupPosition {
             inner_index: value.price_in_ticks.inner_index(),
             resting_order_index: value.resting_order_index,
         }
+    }
+}
+
+/// Convert bit index and side to group position
+///
+/// # Arguments
+///
+/// * `side`
+/// * `bit_index`
+///
+impl From<(Side, BitIndex)> for GroupPosition {
+    fn from((side, bit_index): (Side, BitIndex)) -> Self {
+        let directional_bit_index = match side {
+            Side::Bid => 255 - bit_index.as_u8(), // Top to bottom for bids
+            Side::Ask => bit_index.as_u8(),
+        };
+
+        let inner_index = InnerIndex::new(directional_bit_index as usize / 8);
+
+        let resting_order_index = RestingOrderIndex::new(match side {
+            // We always move row-wise, so adjust resting_order_index to move from
+            // left to right for bids
+            Side::Bid => 7 - (directional_bit_index % 8),
+            Side::Ask => directional_bit_index % 8,
+        });
+
+        GroupPosition {
+            inner_index,
+            resting_order_index,
+        }
+    }
+}
+
+/// Convert a group position to bit index for the given side
+///
+/// # Examples
+///
+/// * (Ask, inner_index = 0, resting_order_index = 0): bit index 0, i.e.
+/// first item to be traversed
+///
+/// * (Bid, inner_index = 0, resting_order_index = 0): bit index 248, i.e. first item
+/// on the last row. We traverse from top to bottom for bids.
+///
+/// * (Ask, inner_index = 0, resting_order_index = 7): bit index 7, i.e.
+/// last item on the first row
+///
+/// * (Bid, inner_index = 0, resting_order_index = 7): bit index 255, i.e. the last item
+///
+impl From<(Side, GroupPosition)> for BitIndex {
+    fn from((side, group_position): (Side, GroupPosition)) -> Self {
+        let GroupPosition {
+            inner_index,
+            resting_order_index,
+        } = group_position;
+
+        let bit_index_inner = (match side {
+            Side::Ask => inner_index,
+            Side::Bid => InnerIndex::MAX - inner_index,
+        })
+        .as_usize() as u8
+            * 8
+            + resting_order_index.as_u8();
+
+        BitIndex::new(bit_index_inner)
     }
 }
 

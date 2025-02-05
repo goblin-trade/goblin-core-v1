@@ -12,6 +12,7 @@
 /// * It has 256 + 1 states. State None means that the iterator is uninitialized.
 /// States Some(n) represent current values from 0 to 255.
 ///
+/// TODO custom BitIndex type. Conversions inside group_position are dicey
 #[derive(Default)]
 pub struct BitIndexIterator {
     pub current_index: Option<u8>,
