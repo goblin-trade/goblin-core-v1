@@ -14,7 +14,7 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
 #[global_allocator]
 static ALLOC: mini_alloc::MiniAlloc = mini_alloc::MiniAlloc::INIT;
 
-// We need to add vm_hooks otherwise verification will fail
+// VM hooks
 #[link(wasm_import_module = "vm_hooks")]
 extern "C" {
     fn read_args(dest: *mut u8);
@@ -30,6 +30,52 @@ extern "C" {
     fn log_txt(text: *const u8, len: usize);
 }
 
+// Constants for function selectors
+const SET_COUNT_SELECTOR: [u8; 4] = [0x60, 0xfe, 0x47, 0xb1]; // keccak256("setCount(uint256)")[:4]
+const GET_COUNT_SELECTOR: [u8; 4] = [0x6d, 0x4c, 0xe6, 0x3c]; // keccak256("getCount()")[:4]
+
+// Storage key for the counter value
+const COUNTER_KEY: [u8; 32] = [0; 32];
+
+// Helper function to read counter value from storage
+fn read_counter() -> u64 {
+    let mut value = [0u8; 32];
+    unsafe {
+        storage_load_bytes32(COUNTER_KEY.as_ptr(), value.as_mut_ptr());
+    }
+    u64::from_be_bytes(value[24..32].try_into().unwrap())
+}
+
+// Helper function to write counter value to storage
+fn write_counter(value: u64) {
+    let mut bytes = [0u8; 32];
+    bytes[24..32].copy_from_slice(&value.to_be_bytes());
+    unsafe {
+        storage_cache_bytes32(COUNTER_KEY.as_ptr(), bytes.as_ptr());
+        storage_flush_cache(true);
+    }
+}
+
+// Function to handle setCount(uint256)
+fn handle_set_count(input: &[u8]) {
+    if input.len() != 32 {
+        return;
+    }
+
+    // Read the uint256 parameter (we'll only use the last 8 bytes for u64)
+    let value = u64::from_be_bytes(input[24..32].try_into().unwrap());
+    write_counter(value);
+}
+
+// Function to handle getCount()
+fn handle_get_count() -> Vec<u8> {
+    let value = read_counter();
+    let mut result = Vec::with_capacity(32);
+    result.extend_from_slice(&[0u8; 24]); // Pad with zeros
+    result.extend_from_slice(&value.to_be_bytes()); // Append the u64 value
+    result
+}
+
 #[no_mangle]
 pub unsafe extern "C" fn mark_used() {
     pay_for_memory_grow(0);
@@ -41,23 +87,32 @@ pub extern "C" fn user_entrypoint(len: usize) -> i32 {
     let mut input = Vec::<u8>::with_capacity(len);
 
     unsafe {
-        // Read the input data
+        input.set_len(len);
         read_args(input.as_mut_ptr());
     }
 
-    let log_message = "Hello world";
-    unsafe {
-        log_txt(log_message.as_ptr(), log_message.len());
+    // Check for minimum length for selector
+    if input.len() < 4 {
+        return 1;
     }
 
-    // Call this at the end to persist values written by storage_cache_bytes32
-    unsafe {
-        storage_flush_cache(true);
-    }
+    // Extract function selector
+    let selector = &input[0..4];
+    let payload = &input[4..];
 
-    let result = 2u8.to_le_bytes();
+    // Route to appropriate handler based on selector
+    let result = match selector {
+        sel if sel == SET_COUNT_SELECTOR => {
+            handle_set_count(payload);
+            Vec::new() // No return value for setCount
+        }
+        sel if sel == GET_COUNT_SELECTOR => handle_get_count(),
+        _ => {
+            return 1; // Unknown selector
+        }
+    };
+
     unsafe {
-        // Write the length back as result
         write_result(result.as_ptr(), result.len());
     }
 
