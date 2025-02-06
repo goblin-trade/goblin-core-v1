@@ -37,8 +37,7 @@ pub extern "C" fn user_entrypoint(len: usize) -> i32 {
         read_args(input.as_mut_ptr());
     }
 
-    // Convert the length to bytes
-    let result = len.to_le_bytes();
+    let result = 2u8.to_le_bytes();
 
     unsafe {
         // Write the length back as result

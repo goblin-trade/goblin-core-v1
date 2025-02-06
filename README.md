@@ -94,12 +94,24 @@ Order removal is designed to minimize slot writes.
     2. The group becomes empty- handle by removing outer index from list
 - If a `ListSlot` in the index list is closed, don't write the cleared value to slot. Instead just update other list slots and decrement count in `MarketState`
 
+# Testnode credentials
+
+- Pvt key: 0xb6b15c8cb491557369f3c7d2c287b053eb229daa9c22138887752191c9520659
+- Address: 0x3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E
+
 # goblin-core crate
+
+
 
 ```sh
 nix -p pkg-config openssl
 cargo install --force cargo-stylus
 
 cargo build -p goblin-core --release --target wasm32-unknown-unknown
-cargo stylus check --wasm-file ./target/wasm32-unknown-unknown/release/goblin_core.wasm --endpoint https://sepolia-rollup.arbitrum.io/rpc
+cargo stylus check --wasm-file ./target/wasm32-unknown-unknown/release/goblin_core.wasm --endpoint http://127.0.0.1:8547
+cargo stylus deploy --wasm-file ./target/wasm32-unknown-unknown/release/goblin_core.wasm --no-verify --private-key 0xb6b15c8cb491557369f3c7d2c287b053eb229daa9c22138887752191c9520659 --endpoint http://127.0.0.1:8547
+
+cast call f5ffd11a55afd39377411ab9856474d2a7cb697e 0x01 --private-key 0xb6b15c8cb491557369f3c7d2c287b053eb229daa9c22138887752191c9520659 --rpc-url http://127.0.0.1:8547
+
+cast tx 0xa9dc574bbed633cd6241c0baabd5792f3a0ec871ffc3f7195db8df43b521f057 --rpc-url http://127.0.0.1:8547
 ```
