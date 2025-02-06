@@ -20,6 +20,9 @@ extern "C" {
     fn read_args(dest: *mut u8);
     fn write_result(data: *const u8, len: usize);
     fn pay_for_memory_grow(pages: u16);
+    fn storage_load_bytes32(key: *const u8, dest: *mut u8);
+    fn storage_cache_bytes32(key: *const u8, value: *const u8);
+    fn storage_flush_cache(clear: bool);
 }
 
 #[link(wasm_import_module = "console")]
@@ -42,13 +45,17 @@ pub extern "C" fn user_entrypoint(len: usize) -> i32 {
         read_args(input.as_mut_ptr());
     }
 
-    let result = 2u8.to_le_bytes();
-
     let log_message = "Hello world";
     unsafe {
         log_txt(log_message.as_ptr(), log_message.len());
     }
 
+    // Call this at the end to persist values written by storage_cache_bytes32
+    unsafe {
+        storage_flush_cache(true);
+    }
+
+    let result = 2u8.to_le_bytes();
     unsafe {
         // Write the length back as result
         write_result(result.as_ptr(), result.len());
