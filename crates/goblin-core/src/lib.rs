@@ -14,9 +14,18 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
 #[global_allocator]
 static ALLOC: mini_alloc::MiniAlloc = mini_alloc::MiniAlloc::INIT;
 
+// We need to add vm_hooks otherwise verification will fail
+#[link(wasm_import_module = "vm_hooks")]
 extern "C" {
     fn read_args(dest: *mut u8);
     fn write_result(data: *const u8, len: usize);
+    fn pay_for_memory_grow(pages: u16);
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn mark_used() {
+    pay_for_memory_grow(0);
+    panic!();
 }
 
 #[no_mangle]

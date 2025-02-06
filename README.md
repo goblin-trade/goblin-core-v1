@@ -93,3 +93,13 @@ Order removal is designed to minimize slot writes.
     1. The best price on the outermost group changes- handle by updating best market price
     2. The group becomes empty- handle by removing outer index from list
 - If a `ListSlot` in the index list is closed, don't write the cleared value to slot. Instead just update other list slots and decrement count in `MarketState`
+
+# goblin-core crate
+
+```sh
+nix -p pkg-config openssl
+cargo install --force cargo-stylus
+
+cargo build -p goblin-core --release --target wasm32-unknown-unknown
+cargo stylus check --wasm-file ./target/wasm32-unknown-unknown/release/goblin_core.wasm --endpoint https://sepolia-rollup.arbitrum.io/rpc
+```
