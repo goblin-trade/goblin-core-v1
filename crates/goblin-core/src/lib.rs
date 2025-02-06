@@ -31,8 +31,9 @@ extern "C" {
 }
 
 // Constants for function selectors
-const SET_COUNT_SELECTOR: [u8; 4] = [0x60, 0xfe, 0x47, 0xb1]; // keccak256("setCount(uint256)")[:4]
-const GET_COUNT_SELECTOR: [u8; 4] = [0x6d, 0x4c, 0xe6, 0x3c]; // keccak256("getCount()")[:4]
+// Find hash from https://emn178.github.io/online-tools/keccak_256.html
+const SET_COUNT_SELECTOR: [u8; 4] = [0xd1, 0x4e, 0x62, 0xb8]; // keccak256("setCount(uint256)")[:4] = d14e62b8
+const GET_COUNT_SELECTOR: [u8; 4] = [0xa8, 0x7d, 0x94, 0x2c]; // keccak256("getCount()")[:4] = a87d942c
 
 // Storage key for the counter value
 const COUNTER_KEY: [u8; 32] = [0; 32];
