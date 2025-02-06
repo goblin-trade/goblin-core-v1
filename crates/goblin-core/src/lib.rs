@@ -22,6 +22,11 @@ extern "C" {
     fn pay_for_memory_grow(pages: u16);
 }
 
+#[link(wasm_import_module = "console")]
+extern "C" {
+    fn log_txt(text: *const u8, len: usize);
+}
+
 #[no_mangle]
 pub unsafe extern "C" fn mark_used() {
     pay_for_memory_grow(0);
@@ -38,6 +43,11 @@ pub extern "C" fn user_entrypoint(len: usize) -> i32 {
     }
 
     let result = 2u8.to_le_bytes();
+
+    let log_message = "Hello world";
+    unsafe {
+        log_txt(log_message.as_ptr(), log_message.len());
+    }
 
     unsafe {
         // Write the length back as result
