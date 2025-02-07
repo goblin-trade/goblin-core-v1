@@ -3,11 +3,13 @@
 
 pub mod handler;
 pub mod hostio;
+pub mod market_params;
 pub mod selector;
 extern crate alloc;
 use alloc::vec::Vec;
 use handler::{handle_get_count, handle_set_count};
 use hostio::*;
+use market_params::MarketParams;
 use selector::{GET_COUNT_SELECTOR, SET_COUNT_SELECTOR};
 
 #[cfg(not(test))]
@@ -49,16 +51,11 @@ pub extern "C" fn user_entrypoint(len: usize) -> i32 {
 
     // Route to appropriate handler based on selector
     return match selector {
-        sel if sel == SET_COUNT_SELECTOR => {
-            handle_set_count(payload);
-
-            0
-        }
-        sel if sel == GET_COUNT_SELECTOR => {
-            let count = handle_get_count();
-            unsafe {
-                write_result(count.as_ptr(), count.len());
+        sel if sel == selector::DEPOSIT_FUNDS_SELECTOR => {
+            if payload.len() < core::mem::size_of::<MarketParams>() {
+                return 1;
             }
+            let market_params = unsafe { &*(payload.as_ptr() as *const MarketParams) };
 
             0
         }
