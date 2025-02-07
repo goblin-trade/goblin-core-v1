@@ -7,10 +7,8 @@ pub mod market_params;
 pub mod selector;
 extern crate alloc;
 use alloc::vec::Vec;
-use handler::{handle_get_count, handle_set_count};
 use hostio::*;
 use market_params::MarketParams;
-use selector::{GET_COUNT_SELECTOR, SET_COUNT_SELECTOR};
 
 #[cfg(not(test))]
 #[panic_handler]
@@ -33,34 +31,42 @@ pub unsafe extern "C" fn mark_used() {
 
 #[no_mangle]
 pub extern "C" fn user_entrypoint(len: usize) -> i32 {
+    if len == 0 {
+        return 1;
+    }
+
+    // The input length is known from `len`
+    // read_args will read the input at the pointer location
     let mut input = Vec::<u8>::with_capacity(len);
 
     unsafe {
+        // set_len() is necessary
         input.set_len(len);
         read_args(input.as_mut_ptr());
     }
 
-    // Check for minimum length for selector
-    if input.len() < 4 {
-        return 1;
-    }
-
     // Extract function selector
-    let selector = &input[0..4];
-    let payload = &input[4..];
+    let selector = input[0];
+    let payload = &input[1..];
 
     // Route to appropriate handler based on selector
     return match selector {
-        sel if sel == selector::DEPOSIT_FUNDS_SELECTOR => {
+        selector::DEPOSIT_FUNDS_SELECTOR => {
+            let deposit_msg = "Depositing funds";
+            unsafe {
+                log_txt(deposit_msg.as_ptr(), deposit_msg.len());
+            }
+
             if payload.len() < core::mem::size_of::<MarketParams>() {
                 return 1;
             }
             let market_params = unsafe { &*(payload.as_ptr() as *const MarketParams) };
 
+            unsafe {
+                log_i64(market_params.base_lot_size as i64);
+            }
             0
         }
-        _ => {
-            return 1; // Unknown selector
-        }
+        _ => 1,
     };
 }
