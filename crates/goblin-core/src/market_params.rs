@@ -1,5 +1,5 @@
 #[repr(C, packed)]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub struct MarketParams {
     pub base_token: [u8; 20],
     pub quote_token: [u8; 20],
