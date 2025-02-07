@@ -1391,7 +1391,9 @@ dependencies = [
 name = "goblin-core"
 version = "0.1.0"
 dependencies = [
+ "hex-literal",
  "mini-alloc 0.7.0",
+ "tiny-keccak",
 ]
 
 [[package]]

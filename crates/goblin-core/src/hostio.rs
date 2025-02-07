@@ -8,6 +8,7 @@ extern "C" {
     pub fn storage_load_bytes32(key: *const u8, dest: *mut u8);
     pub fn storage_cache_bytes32(key: *const u8, value: *const u8);
     pub fn storage_flush_cache(clear: bool);
+    pub fn native_keccak256(bytes: *const u8, len: usize, output: *mut u8);
 }
 
 #[cfg(not(test))]
@@ -24,6 +25,7 @@ mod test_hooks {
     use alloc::vec::Vec;
     use core::cell::RefCell;
     use std::collections::HashMap;
+    use tiny_keccak::{Hasher, Keccak};
 
     thread_local! {
         // Store the input args that will be read by read_args
@@ -134,7 +136,45 @@ mod test_hooks {
             });
         }
     }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn native_keccak256(bytes: *const u8, len: usize, output: *mut u8) {
+        let input_slice = core::slice::from_raw_parts(bytes, len);
+        let mut hasher = Keccak::v256();
+        hasher.update(input_slice);
+        let mut result = [0u8; 32];
+        hasher.finalize(&mut result);
+        let output_slice = core::slice::from_raw_parts_mut(output, 32);
+        output_slice.copy_from_slice(&result);
+    }
 }
 
 #[cfg(test)]
 pub use test_hooks::*;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use hex_literal::hex;
+
+    #[test]
+    fn test_keccak() {
+        // Input data
+        let input = b"hello world";
+
+        // Expected Keccak-256 hash of "hello world"
+        let expected_hash =
+            hex!("47173285a8d7341e5e972fc677286384f802f8ef42a5ec5f03bbfa254cb01fad");
+
+        // Output buffer
+        let mut output = [0u8; 32];
+
+        // Call the native_keccak256 function
+        unsafe {
+            native_keccak256(input.as_ptr(), input.len(), output.as_mut_ptr());
+        }
+
+        // Verify the output matches the expected hash
+        assert_eq!(output, expected_hash);
+    }
+}
