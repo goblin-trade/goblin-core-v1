@@ -62,6 +62,9 @@ pub extern "C" fn user_entrypoint(len: usize) -> i32 {
             }
             let market_params = unsafe { &*(payload.as_ptr() as *const MarketParams) };
 
+            #[cfg(test)]
+            println!("got market params {:?}", *market_params);
+
             unsafe {
                 log_i64(market_params.base_lot_size as i64);
             }

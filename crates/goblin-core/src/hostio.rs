@@ -23,6 +23,7 @@ extern "C" {
 mod test_hooks {
     use alloc::vec::Vec;
     use core::cell::RefCell;
+    use std::collections::HashMap;
 
     thread_local! {
         // Store the input args that will be read by read_args
@@ -32,7 +33,7 @@ mod test_hooks {
         static TEST_RESULT: RefCell<Vec<u8>> = RefCell::new(Vec::new());
 
         // Store key-value pairs for storage simulation
-        static STORAGE: RefCell<Vec<(Vec<u8>, Vec<u8>)>> = RefCell::new(Vec::new());
+        static STORAGE: RefCell<HashMap<[u8; 32], [u8; 32]>> = RefCell::new(HashMap::new());
 
         // Store logs for verification
         static LOGS: RefCell<Vec<String>> = RefCell::new(Vec::new());
@@ -48,14 +49,8 @@ mod test_hooks {
         TEST_RESULT.with(|test_result| test_result.borrow().clone())
     }
 
-    pub fn get_storage_value(key: &[u8]) -> Option<Vec<u8>> {
-        STORAGE.with(|storage| {
-            storage
-                .borrow()
-                .iter()
-                .find(|(k, _)| k == key)
-                .map(|(_, v)| v.clone())
-        })
+    pub fn get_storage_value(key: &[u8; 32]) -> Option<[u8; 32]> {
+        STORAGE.with(|storage| storage.borrow().get(key).cloned())
     }
 
     pub fn get_logs() -> Vec<String> {
@@ -94,8 +89,10 @@ mod test_hooks {
     #[no_mangle]
     pub unsafe extern "C" fn storage_load_bytes32(key: *const u8, dest: *mut u8) {
         let key_slice = core::slice::from_raw_parts(key, 32);
+        let mut key_array = [0u8; 32];
+        key_array.copy_from_slice(key_slice);
 
-        if let Some(value) = get_storage_value(key_slice) {
+        if let Some(value) = get_storage_value(&key_array) {
             let dest_slice = core::slice::from_raw_parts_mut(dest, 32);
             dest_slice.copy_from_slice(&value);
         }
@@ -105,14 +102,14 @@ mod test_hooks {
     pub unsafe extern "C" fn storage_cache_bytes32(key: *const u8, value: *const u8) {
         STORAGE.with(|storage| {
             let key_slice = core::slice::from_raw_parts(key, 32);
-            let value_slice = core::slice::from_raw_parts(value, 32);
+            let mut key_array = [0u8; 32];
+            key_array.copy_from_slice(key_slice);
 
-            let mut storage = storage.borrow_mut();
-            if let Some(entry) = storage.iter_mut().find(|(k, _)| k == key_slice) {
-                entry.1 = value_slice.to_vec();
-            } else {
-                storage.push((key_slice.to_vec(), value_slice.to_vec()));
-            }
+            let value_slice = core::slice::from_raw_parts(value, 32);
+            let mut value_array = [0u8; 32];
+            value_array.copy_from_slice(value_slice);
+
+            storage.borrow_mut().insert(key_array, value_array);
         });
     }
 
