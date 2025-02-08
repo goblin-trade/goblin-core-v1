@@ -183,6 +183,7 @@ pub fn match_order(
                 matched_adjusted_quote_lots / BASE_LOTS_PER_BASE_UNIT,
             ),
             Side::Ask => maker_state.process_limit_buy(
+                // TODO bugged? Should we divide with QUOTE??
                 matched_adjusted_quote_lots / BASE_LOTS_PER_BASE_UNIT,
                 matched_base_lots,
             ),
