@@ -5,6 +5,11 @@ pub struct MarketParams {
     pub quote_token: [u8; 20],
     pub base_lot_size: u64,
     pub quote_lot_size: u64,
+    pub tick_size: u64,
+    pub taker_fee_bps: u16,
+    pub fee_collector: [u8; 20],
+    pub base_decimals_to_ignore: u8,
+    pub quote_decimals_to_ignore: u8,
 }
 
 #[cfg(test)]
@@ -18,6 +23,11 @@ mod tests {
             quote_token: [1u8; 20],
             base_lot_size: 1,
             quote_lot_size: 2,
+            tick_size: 1,
+            taker_fee_bps: 2,
+            fee_collector: [3u8; 20],
+            base_decimals_to_ignore: 6,
+            quote_decimals_to_ignore: 6,
         };
 
         // Serialize the struct into bytes

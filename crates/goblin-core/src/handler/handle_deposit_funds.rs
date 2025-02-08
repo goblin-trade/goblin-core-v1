@@ -33,6 +33,11 @@ mod tests {
             quote_token: [1u8; 20],
             base_lot_size: 1,
             quote_lot_size: 2,
+            tick_size: 0,
+            taker_fee_bps: 0,
+            fee_collector: [3u8; 20],
+            base_decimals_to_ignore: 1,
+            quote_decimals_to_ignore: 1,
         };
 
         let mut input = vec![selector::DEPOSIT_FUNDS_SELECTOR];
