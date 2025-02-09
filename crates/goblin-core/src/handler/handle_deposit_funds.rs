@@ -20,6 +20,7 @@ pub fn handle_deposit_funds(input: &[u8]) {
 mod tests {
     use super::*;
     use crate::market_params::MarketParams;
+    use crate::quantities::{BaseLots, QuoteLots, Ticks};
     use crate::{clear_state, hostio::*, selector, user_entrypoint};
 
     #[test]
@@ -31,9 +32,9 @@ mod tests {
         let market_params = MarketParams {
             base_token: [0u8; 20],
             quote_token: [1u8; 20],
-            base_lot_size: 1,
-            quote_lot_size: 2,
-            tick_size: 0,
+            base_lot_size: BaseLots(1),
+            quote_lot_size: QuoteLots(2),
+            tick_size: Ticks(1),
             taker_fee_bps: 0,
             fee_collector: [3u8; 20],
             base_decimals_to_ignore: 1,

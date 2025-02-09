@@ -1,11 +1,13 @@
+use crate::quantities::{BaseLots, QuoteLots, Ticks};
+
 #[repr(C, packed)]
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub struct MarketParams {
     pub base_token: [u8; 20],
     pub quote_token: [u8; 20],
-    pub base_lot_size: u64,
-    pub quote_lot_size: u64,
-    pub tick_size: u64,
+    pub base_lot_size: BaseLots,
+    pub quote_lot_size: QuoteLots,
+    pub tick_size: Ticks,
     pub taker_fee_bps: u16,
     pub fee_collector: [u8; 20],
     pub base_decimals_to_ignore: u8,
@@ -21,9 +23,9 @@ mod tests {
         let market_params = MarketParams {
             base_token: [0u8; 20],
             quote_token: [1u8; 20],
-            base_lot_size: 1,
-            quote_lot_size: 2,
-            tick_size: 1,
+            base_lot_size: BaseLots(5),
+            quote_lot_size: QuoteLots(2),
+            tick_size: Ticks(1),
             taker_fee_bps: 2,
             fee_collector: [3u8; 20],
             base_decimals_to_ignore: 6,
