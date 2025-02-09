@@ -1392,7 +1392,6 @@ name = "goblin-core"
 version = "0.1.0"
 dependencies = [
  "hex-literal",
- "mini-alloc 0.7.0",
  "tiny-keccak",
 ]
 
@@ -1407,7 +1406,7 @@ dependencies = [
  "ethers",
  "eyre",
  "hex",
- "mini-alloc 0.4.2",
+ "mini-alloc",
  "stylus-sdk",
  "tokio",
 ]
@@ -1419,7 +1418,7 @@ dependencies = [
  "alloy-sol-types",
  "borsh",
  "bytemuck",
- "mini-alloc 0.4.2",
+ "mini-alloc",
  "stylus-sdk",
 ]
 
@@ -1868,15 +1867,6 @@ checksum = "bd9993556d3850cdbd0da06a3dc81297edcfa050048952d84d75e8b944e8f5af"
 dependencies = [
  "cfg-if 1.0.0",
  "wee_alloc",
-]
-
-[[package]]
-name = "mini-alloc"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e3d986fb074078dcc9a560cc3afe9edf2dcf1f577b854fb65e366c331d8c7753"
-dependencies = [
- "cfg-if 1.0.0",
 ]
 
 [[package]]

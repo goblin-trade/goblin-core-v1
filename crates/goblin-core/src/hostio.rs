@@ -22,6 +22,7 @@ extern "C" {
 
 #[cfg(test)]
 mod test_hooks {
+    extern crate alloc;
     use alloc::vec::Vec;
     use core::cell::RefCell;
     use std::collections::HashMap;
