@@ -468,13 +468,13 @@ basic_u64_struct!(QuoteAtomsPerQuoteLot);
 basic_u64_struct!(BaseAtomsPerBaseLot);
 
 basic_u64_struct!(BaseLotsPerBaseUnit);
-basic_u64_struct!(QuoteLotsPerQuoteUnit);
+// basic_u64_struct!(QuoteLotsPerQuoteUnit);
 
-basic_u64_struct!(QuoteAtomsPerQuoteUnit);
-basic_u64_struct!(BaseAtomsPerBaseUnit);
+// basic_u64_struct!(QuoteAtomsPerQuoteUnit);
+// basic_u64_struct!(BaseAtomsPerBaseUnit);
 
 // Dimensionless tick sizes
-basic_u64_struct!(QuoteAtomsPerBaseUnitPerTick);
+// basic_u64_struct!(QuoteAtomsPerBaseUnitPerTick);
 basic_u64_struct!(QuoteLotsPerBaseUnitPerTick);
 
 basic_u64_struct!(AdjustedQuoteLots);

@@ -17,6 +17,7 @@ use super::order_id::OrderId;
 const NULL_ADDRESS: Address = address!("0000000000000000000000000000000000000001");
 
 /// Resting order on a 32 byte slot
+/// TODO use packed. Currently it is taking 40 bytes instead of 32
 #[repr(C)]
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct SlotRestingOrder {
