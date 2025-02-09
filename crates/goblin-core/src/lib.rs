@@ -8,8 +8,8 @@ pub mod quantities;
 pub mod selector;
 extern crate alloc;
 use alloc::vec::Vec;
+use handler::handle_deposit_funds;
 use hostio::*;
-use market_params::MarketParams;
 
 #[cfg(not(test))]
 #[panic_handler]
@@ -20,9 +20,6 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
 #[cfg(target_arch = "wasm32")]
 #[global_allocator]
 static ALLOC: mini_alloc::MiniAlloc = mini_alloc::MiniAlloc::INIT;
-
-// Storage key for the counter value
-pub const COUNTER_KEY: [u8; 32] = [0; 32];
 
 #[no_mangle]
 pub unsafe extern "C" fn mark_used() {
@@ -52,25 +49,7 @@ pub extern "C" fn user_entrypoint(len: usize) -> i32 {
 
     // Route to appropriate handler based on selector
     return match selector {
-        selector::DEPOSIT_FUNDS_SELECTOR => {
-            let deposit_msg = "Depositing funds";
-            unsafe {
-                log_txt(deposit_msg.as_ptr(), deposit_msg.len());
-            }
-
-            if payload.len() < core::mem::size_of::<MarketParams>() {
-                return 1;
-            }
-            let market_params = unsafe { &*(payload.as_ptr() as *const MarketParams) };
-
-            #[cfg(test)]
-            println!("got market params {:?}", *market_params);
-
-            unsafe {
-                log_i64(market_params.base_lot_size.0 as i64);
-            }
-            0
-        }
+        selector::DEPOSIT_FUNDS_SELECTOR => handle_deposit_funds(payload),
         _ => 1,
     };
 }

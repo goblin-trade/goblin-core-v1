@@ -1,19 +1,12 @@
-use core::mem;
-
 use crate::market_params::MarketParams;
 
-pub fn handle_deposit_funds(input: &[u8]) {
-    if input.len() < mem::size_of::<MarketParams>() {
-        return;
+pub fn handle_deposit_funds(payload: &[u8]) -> i32 {
+    if payload.len() < core::mem::size_of::<MarketParams>() {
+        return 1;
     }
-    let market_params = unsafe { &*(input.as_ptr() as *const MarketParams) };
+    let _market_params = unsafe { &*(payload.as_ptr() as *const MarketParams) };
 
-    // Now you can use market_params directly
-    // Example: process the market parameters
-    let _ = market_params.base_token;
-    let _ = market_params.quote_token;
-    let _ = market_params.base_lot_size;
-    let _ = market_params.quote_lot_size;
+    0
 }
 
 #[cfg(test)]
