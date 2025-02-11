@@ -2,14 +2,13 @@
 #![cfg_attr(not(test), no_main)]
 
 use core::mem::MaybeUninit;
-use handler::handle_deposit_funds;
+use handler::{handle_0_credit_eth, HANDLE_0_CREDIT_ETH};
 use hostio::*;
 
 pub mod handler;
 pub mod hostio;
 pub mod market_params;
 pub mod quantities;
-pub mod selector;
 
 #[cfg(not(test))]
 #[panic_handler]
@@ -40,7 +39,7 @@ pub extern "C" fn user_entrypoint(len: usize) -> i32 {
     };
 
     match selector {
-        selector::DEPOSIT_FUNDS_SELECTOR => handle_deposit_funds(payload),
+        HANDLE_0_CREDIT_ETH => handle_0_credit_eth(payload),
         _ => 1,
     }
 }

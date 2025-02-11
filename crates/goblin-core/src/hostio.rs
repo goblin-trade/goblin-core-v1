@@ -9,6 +9,7 @@ extern "C" {
     pub fn storage_cache_bytes32(key: *const u8, value: *const u8);
     pub fn storage_flush_cache(clear: bool);
     pub fn native_keccak256(bytes: *const u8, len: usize, output: *mut u8);
+    pub fn msg_value(value: *mut u8);
 }
 
 #[cfg(not(test))]
@@ -40,6 +41,9 @@ mod test_hooks {
 
         // Store logs for verification
         static LOGS: RefCell<Vec<String>> = RefCell::new(Vec::new());
+
+        // Store the message value
+        static MSG_VALUE: RefCell<[u8; 32]> = RefCell::new([0u8; 32]);
     }
 
     pub fn set_test_args(args: Vec<u8>) {
@@ -60,11 +64,22 @@ mod test_hooks {
         LOGS.with(|logs| logs.borrow().clone())
     }
 
+    pub fn set_msg_value(value: [u8; 32]) {
+        MSG_VALUE.with(|msg_value| {
+            *msg_value.borrow_mut() = value;
+        });
+    }
+
+    pub fn get_msg_value() -> [u8; 32] {
+        MSG_VALUE.with(|msg_value| *msg_value.borrow())
+    }
+
     pub fn clear_state() {
         TEST_ARGS.with(|args| args.borrow_mut().clear());
         TEST_RESULT.with(|result| result.borrow_mut().clear());
         STORAGE.with(|storage| storage.borrow_mut().clear());
         LOGS.with(|logs| logs.borrow_mut().clear());
+        MSG_VALUE.with(|msg_value| *msg_value.borrow_mut() = [0u8; 32]);
     }
 
     #[no_mangle]
@@ -148,6 +163,14 @@ mod test_hooks {
         let output_slice = core::slice::from_raw_parts_mut(output, 32);
         output_slice.copy_from_slice(&result);
     }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn msg_value(value: *mut u8) {
+        MSG_VALUE.with(|msg_value| {
+            let slice = core::slice::from_raw_parts_mut(value, 32);
+            slice.copy_from_slice(&*msg_value.borrow());
+        });
+    }
 }
 
 #[cfg(test)]
@@ -157,6 +180,21 @@ pub use test_hooks::*;
 mod tests {
     use super::*;
     use hex_literal::hex;
+
+    #[test]
+    fn test_msg_value() {
+        let mut value = [0u8; 32];
+        unsafe {
+            msg_value(value.as_mut_ptr());
+        }
+        assert_eq!(value, [0u8; 32]);
+
+        set_msg_value([1u8; 32]);
+        unsafe {
+            msg_value(value.as_mut_ptr());
+        }
+        assert_eq!(value, [1u8; 32]);
+    }
 
     #[test]
     fn test_keccak() {
