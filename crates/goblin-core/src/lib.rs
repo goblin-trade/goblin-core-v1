@@ -23,9 +23,6 @@ pub unsafe extern "C" fn mark_used() {
     panic!();
 }
 
-// Static buffer for input
-static mut INPUT_BUFFER: [u8; 512] = [0; 512];
-
 #[no_mangle]
 pub extern "C" fn user_entrypoint(len: usize) -> i32 {
     if len == 0 {
@@ -33,11 +30,12 @@ pub extern "C" fn user_entrypoint(len: usize) -> i32 {
     }
 
     let (selector, payload) = unsafe {
-        read_args(INPUT_BUFFER.as_mut_ptr());
+        let mut input: [MaybeUninit<u8>; 512] = MaybeUninit::uninit().assume_init();
+        read_args(input.as_mut_ptr() as *mut u8);
 
         (
-            INPUT_BUFFER[0],
-            core::slice::from_raw_parts(INPUT_BUFFER.as_ptr().add(1), len.saturating_sub(1)),
+            input[0].assume_init(),
+            core::slice::from_raw_parts(input.as_ptr().add(1) as *const u8, len.saturating_sub(1)),
         )
     };
 
