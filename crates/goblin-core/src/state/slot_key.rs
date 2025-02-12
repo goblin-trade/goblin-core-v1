@@ -8,4 +8,6 @@ pub trait SlotKey {
 
 pub trait SlotState<K: SlotKey, S> {
     fn load(key: &K) -> &mut S;
+
+    fn store(&self, key: &K);
 }

@@ -2,7 +2,7 @@ use crate::{
     native_keccak256,
     quantities::{BaseLots, QuoteLots},
     state::{slot_key::SlotKey, SlotState},
-    storage_load_bytes32,
+    storage_cache_bytes32, storage_load_bytes32,
     types::Address,
 };
 
@@ -58,5 +58,14 @@ impl SlotState<TraderTokenKey, TraderTokenState> for TraderTokenState {
 
         let trader_token_state = unsafe { &mut *(slot.as_mut_ptr() as *mut TraderTokenState) };
         trader_token_state
+    }
+
+    fn store(&self, key: &TraderTokenKey) {
+        unsafe {
+            storage_cache_bytes32(
+                key.to_keccak256().as_ptr(),
+                self as *const TraderTokenState as *const u8,
+            );
+        }
     }
 }

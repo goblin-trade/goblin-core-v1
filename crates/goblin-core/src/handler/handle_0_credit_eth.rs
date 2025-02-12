@@ -1,7 +1,7 @@
 use crate::{
     log_i64, log_txt, msg_value,
     state::{SlotState, TraderTokenKey, TraderTokenState},
-    storage_load_bytes32,
+    storage_flush_cache, storage_load_bytes32,
     types::{Address, NATIVE_TOKEN},
 };
 pub const HANDLE_0_CREDIT_ETH: u8 = 0;
@@ -37,11 +37,30 @@ pub fn handle_0_credit_eth(payload: &[u8]) -> i32 {
     let low_lots = low / 1_000_000;
 
     let lots = high_lots + low_lots;
-
     unsafe {
         let msg = b"lots";
         log_txt(msg.as_ptr(), msg.len());
         log_i64(lots as i64);
+    }
+
+    let key = &TraderTokenKey {
+        trader: *recipient,
+        token: NATIVE_TOKEN,
+    };
+
+    let state = TraderTokenState::load(key);
+    unsafe {
+        let msg = b"Locked and free lots read";
+        log_txt(msg.as_ptr(), msg.len());
+        log_i64(state.lots_locked as i64);
+        log_i64(state.lots_free as i64);
+    }
+
+    state.lots_free += lots;
+    state.store(key);
+
+    unsafe {
+        storage_flush_cache(true);
     }
 
     0
