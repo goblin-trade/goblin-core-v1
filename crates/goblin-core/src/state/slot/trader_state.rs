@@ -45,13 +45,12 @@ impl SlotKey for TraderTokenKey {
 pub struct TraderTokenState {
     pub lots_locked: u64,
     pub lots_free: u64,
+    _padding: [u8; 16],
 }
 
 impl SlotState<TraderTokenKey, TraderTokenState> for TraderTokenState {
     fn load(key: &TraderTokenKey) -> &mut TraderTokenState {
-        // We pass 16 and not 32 byte slot because we only need the first 16 bytes
-        // The function's name is storage_load_bytes32(). Need to check if using 16 bytes works.
-        let mut slot = [0u8; 16];
+        let mut slot = [0u8; 32];
         unsafe {
             storage_load_bytes32(key.to_keccak256().as_ptr(), slot.as_mut_ptr());
         }
