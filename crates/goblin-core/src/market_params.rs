@@ -1,18 +1,19 @@
 use crate::{
     native_keccak256,
     quantities::{BaseLots, QuoteLots, Ticks},
+    types::Address,
 };
 
 #[repr(C, packed)]
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub struct MarketParams {
-    pub base_token: [u8; 20],
-    pub quote_token: [u8; 20],
+    pub base_token: Address,
+    pub quote_token: Address,
     pub base_lot_size: BaseLots,
     pub quote_lot_size: QuoteLots,
     pub tick_size: Ticks,
     pub taker_fee_bps: u16,
-    pub fee_collector: [u8; 20],
+    pub fee_collector: Address,
     pub base_decimals_to_ignore: u8,
     pub quote_decimals_to_ignore: u8,
 }

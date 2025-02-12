@@ -1,11 +1,13 @@
+use crate::types::Address;
+
 pub const HANDLE_1_CREDIT_ERC20: u8 = 1;
 
 struct CreditERC20Params {
     /// The token to credit
-    pub token: [u8; 20],
+    pub token: Address,
 
     /// The recipient of the funds. Funds can be credited to any address
-    pub recipient: [u8; 20],
+    pub recipient: Address,
 
     /// The amount to credit
     pub amount: [u8; 32],

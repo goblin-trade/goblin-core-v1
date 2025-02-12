@@ -9,6 +9,8 @@ pub mod handler;
 pub mod hostio;
 pub mod market_params;
 pub mod quantities;
+pub mod state;
+pub mod types;
 
 #[cfg(not(test))]
 #[panic_handler]
