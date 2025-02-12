@@ -1,7 +1,7 @@
 use crate::{
     log_i64, log_txt, msg_value,
     state::{SlotState, TraderTokenKey, TraderTokenState},
-    storage_flush_cache, storage_load_bytes32,
+    storage_flush_cache,
     types::{Address, NATIVE_TOKEN},
 };
 pub const HANDLE_0_CREDIT_ETH: u8 = 0;

@@ -1,6 +1,7 @@
+use core::mem::MaybeUninit;
+
 use crate::{
     native_keccak256,
-    quantities::{BaseLots, QuoteLots},
     state::{slot_key::SlotKey, SlotState},
     storage_cache_bytes32, storage_load_bytes32,
     types::Address,
@@ -50,13 +51,12 @@ pub struct TraderTokenState {
 
 impl SlotState<TraderTokenKey, TraderTokenState> for TraderTokenState {
     fn load(key: &TraderTokenKey) -> &mut TraderTokenState {
-        let mut slot = [0u8; 32];
         unsafe {
-            storage_load_bytes32(key.to_keccak256().as_ptr(), slot.as_mut_ptr());
-        }
+            let mut slot: [MaybeUninit<u8>; 32] = MaybeUninit::uninit().assume_init();
+            storage_load_bytes32(key.to_keccak256().as_ptr(), slot.as_mut_ptr() as *mut u8);
 
-        let trader_token_state = unsafe { &mut *(slot.as_mut_ptr() as *mut TraderTokenState) };
-        trader_token_state
+            &mut *(slot.as_mut_ptr() as *mut TraderTokenState)
+        }
     }
 
     fn store(&self, key: &TraderTokenKey) {
