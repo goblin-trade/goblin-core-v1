@@ -1,3 +1,5 @@
+use core::mem::MaybeUninit;
+
 use crate::{
     log_i64, log_txt, msg_value,
     state::{SlotState, TraderTokenKey, TraderTokenState},
@@ -14,21 +16,23 @@ pub fn handle_0_credit_eth(payload: &[u8]) -> i32 {
     let recipient = unsafe { &*(payload.as_ptr() as *const Address) };
 
     // Amount of ETH in, in 64-bit chunks
-    let mut amount_in = [0u64; 4];
-    unsafe {
-        msg_value(amount_in.as_mut_ptr() as *mut u8);
-    }
-    // The bytes are in big endian format. However when we view it as u64, it is little endian.
-    // We need to reverse the bytes to get the correct value.
-    let high = amount_in[2].swap_bytes();
-    let low = amount_in[3].swap_bytes();
 
-    unsafe {
+    let (high, low) = unsafe {
+        let mut amount_in = MaybeUninit::<[u64; 4]>::uninit();
+        msg_value(amount_in.as_mut_ptr() as *mut u8);
+
+        // The bytes are in big endian format. However when we view it as u64, it is little endian.
+        // We need to reverse the bytes to get the correct value.
+        let high = amount_in.assume_init_ref()[2].swap_bytes();
+        let low = amount_in.assume_init_ref()[3].swap_bytes();
+
         let msg = b"High and low";
         log_txt(msg.as_ptr(), msg.len());
         log_i64(high as i64);
         log_i64(low as i64);
-    }
+
+        (high, low)
+    };
 
     const SCALE: u64 = 18446744073709; // (2^64 / 10^6)
     let high_lots = high.wrapping_mul(SCALE);

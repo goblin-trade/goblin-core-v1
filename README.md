@@ -201,4 +201,12 @@ cast send 0x75e0e92a79880bd81a69f72983d03c75e2b33dc8 \
     --rpc-url http://127.0.0.1:8547 \
     --private-key 0xb6b15c8cb491557369f3c7d2c287b053eb229daa9c22138887752191c9520659 \
     --value 1000000wei
+
+# Optimized ETH balance check
+# Size 636, gas 1164006
+cast send 0x408da76e87511429485c32e4ad647dd14823fdc4 \
+    0x00dac17f958d2ee523a2206206994597c13d831ec7 \
+    --rpc-url http://127.0.0.1:8547 \
+    --private-key 0xb6b15c8cb491557369f3c7d2c287b053eb229daa9c22138887752191c9520659 \
+    --value 1000000wei
 ```
