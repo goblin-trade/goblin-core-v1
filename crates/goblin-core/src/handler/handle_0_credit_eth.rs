@@ -16,23 +16,16 @@ pub fn handle_0_credit_eth(payload: &[u8]) -> i32 {
     let recipient = unsafe { &*(payload.as_ptr() as *const Address) };
 
     // Amount of ETH in, in 64-bit chunks
-
-    let (high, low) = unsafe {
-        let mut amount_in = MaybeUninit::<[u64; 4]>::uninit();
-        msg_value(amount_in.as_mut_ptr() as *mut u8);
-
-        // The bytes are in big endian format. However when we view it as u64, it is little endian.
-        // We need to reverse the bytes to get the correct value.
-        let high = amount_in.assume_init_ref()[2].swap_bytes();
-        let low = amount_in.assume_init_ref()[3].swap_bytes();
-
-        let msg = b"High and low";
-        log_txt(msg.as_ptr(), msg.len());
-        log_i64(high as i64);
-        log_i64(low as i64);
-
-        (high, low)
+    let mut amount_in_maybe = MaybeUninit::<[u64; 4]>::uninit();
+    let amount_in = unsafe {
+        msg_value(amount_in_maybe.as_mut_ptr() as *mut u8);
+        amount_in_maybe.assume_init_ref()
     };
+
+    // The bytes are in big endian format. However when we view it as u64, it is little endian.
+    // We need to reverse the bytes to get the correct value.
+    let high = amount_in[2].swap_bytes();
+    let low = amount_in[3].swap_bytes();
 
     const SCALE: u64 = 18446744073709; // (2^64 / 10^6)
     let high_lots = high.wrapping_mul(SCALE);
@@ -42,7 +35,7 @@ pub fn handle_0_credit_eth(payload: &[u8]) -> i32 {
 
     let lots = high_lots + low_lots;
     unsafe {
-        let msg = b"lots";
+        let msg = b"added ETH lots";
         log_txt(msg.as_ptr(), msg.len());
         log_i64(lots as i64);
     }
@@ -52,18 +45,16 @@ pub fn handle_0_credit_eth(payload: &[u8]) -> i32 {
         token: NATIVE_TOKEN,
     };
 
-    let state = TraderTokenState::load(key);
+    let mut trader_token_state_maybe = MaybeUninit::<TraderTokenState>::uninit();
+    let trader_token_state = unsafe { TraderTokenState::load(key, &mut trader_token_state_maybe) };
+    trader_token_state.lots_free += lots;
+
     unsafe {
-        let msg = b"Locked and free lots read";
+        let msg = b"New free lots";
         log_txt(msg.as_ptr(), msg.len());
-        log_i64(state.lots_locked as i64);
-        log_i64(state.lots_free as i64);
-    }
+        log_i64(trader_token_state.lots_free as i64);
 
-    state.lots_free += lots;
-    state.store(key);
-
-    unsafe {
+        trader_token_state.store(key);
         storage_flush_cache(true);
     }
 

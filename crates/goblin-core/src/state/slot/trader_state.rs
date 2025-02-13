@@ -50,21 +50,18 @@ pub struct TraderTokenState {
 }
 
 impl SlotState<TraderTokenKey, TraderTokenState> for TraderTokenState {
-    fn load(key: &TraderTokenKey) -> &mut TraderTokenState {
-        unsafe {
-            let mut slot: [MaybeUninit<u8>; 32] = MaybeUninit::uninit().assume_init();
-            storage_load_bytes32(key.to_keccak256().as_ptr(), slot.as_mut_ptr() as *mut u8);
-
-            &mut *(slot.as_mut_ptr() as *mut TraderTokenState)
-        }
+    unsafe fn load<'a>(
+        key: &TraderTokenKey,
+        slot: &'a mut MaybeUninit<TraderTokenState>,
+    ) -> &'a mut TraderTokenState {
+        storage_load_bytes32(key.to_keccak256().as_ptr(), slot.as_mut_ptr() as *mut u8);
+        slot.assume_init_mut()
     }
 
-    fn store(&self, key: &TraderTokenKey) {
-        unsafe {
-            storage_cache_bytes32(
-                key.to_keccak256().as_ptr(),
-                self as *const TraderTokenState as *const u8,
-            );
-        }
+    unsafe fn store(&self, key: &TraderTokenKey) {
+        storage_cache_bytes32(
+            key.to_keccak256().as_ptr(),
+            self as *const TraderTokenState as *const u8,
+        );
     }
 }

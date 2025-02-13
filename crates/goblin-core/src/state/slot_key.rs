@@ -1,3 +1,5 @@
+use core::mem::MaybeUninit;
+
 pub trait SlotKey {
     /// Unique 1 byte discriminator for the slot. We need different discriminators for
     /// different slots sharing the same namespace- eg. FreeAtomState and LockedAtomState
@@ -7,7 +9,7 @@ pub trait SlotKey {
 }
 
 pub trait SlotState<K: SlotKey, S> {
-    fn load(key: &K) -> &mut S;
+    unsafe fn load<'a>(key: &K, slot: &'a mut MaybeUninit<S>) -> &'a mut S;
 
-    fn store(&self, key: &K);
+    unsafe fn store(&self, key: &K);
 }
