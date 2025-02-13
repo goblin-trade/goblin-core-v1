@@ -14,11 +14,23 @@ macro_rules! define_custom_types {
                 }
             }
 
+            impl core::ops::AddAssign for $type {
+                fn add_assign(&mut self, rhs: Self) {
+                    self.0 += rhs.0;
+                }
+            }
+
             impl core::ops::Sub for $type {
                 type Output = Self;
 
                 fn sub(self, rhs: Self) -> Self::Output {
                     $type(self.0 - rhs.0)
+                }
+            }
+
+            impl core::ops::SubAssign for $type {
+                fn sub_assign(&mut self, rhs: Self) {
+                    self.0 -= rhs.0;
                 }
             }
 

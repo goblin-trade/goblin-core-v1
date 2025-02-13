@@ -2,6 +2,7 @@ use core::mem::MaybeUninit;
 
 use crate::{
     log_i64, log_txt, msg_value,
+    quantities::Lots,
     state::{SlotState, TraderTokenKey, TraderTokenState},
     storage_flush_cache,
     types::{Address, NATIVE_TOKEN},
@@ -22,23 +23,7 @@ pub fn handle_0_credit_eth(payload: &[u8]) -> i32 {
         amount_in_maybe.assume_init_ref()
     };
 
-    // The bytes are in big endian format. However when we view it as u64, it is little endian.
-    // We need to reverse the bytes to get the correct value.
-    let high = amount_in[2].swap_bytes();
-    let low = amount_in[3].swap_bytes();
-
-    const SCALE: u64 = 18446744073709; // (2^64 / 10^6)
-    let high_lots = high.wrapping_mul(SCALE);
-
-    // For low bits, direct division is fine
-    let low_lots = low / 1_000_000;
-
-    let lots = high_lots + low_lots;
-    unsafe {
-        let msg = b"added ETH lots";
-        log_txt(msg.as_ptr(), msg.len());
-        log_i64(lots as i64);
-    }
+    let lots = Lots::from_atoms(amount_in);
 
     let key = &TraderTokenKey {
         trader: *recipient,
@@ -52,7 +37,7 @@ pub fn handle_0_credit_eth(payload: &[u8]) -> i32 {
     unsafe {
         let msg = b"New free lots";
         log_txt(msg.as_ptr(), msg.len());
-        log_i64(trader_token_state.lots_free as i64);
+        log_i64(trader_token_state.lots_free.0 as i64);
 
         trader_token_state.store(key);
         storage_flush_cache(true);

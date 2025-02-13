@@ -2,12 +2,13 @@ use core::mem::MaybeUninit;
 
 use crate::{
     native_keccak256,
+    quantities::Lots,
     state::{slot_key::SlotKey, SlotState},
     storage_cache_bytes32, storage_load_bytes32,
     types::Address,
 };
 
-#[repr(C, packed)]
+#[repr(C)]
 pub struct TraderTokenKey {
     pub trader: Address,
     pub token: Address,
@@ -41,11 +42,11 @@ impl SlotKey for TraderTokenKey {
     }
 }
 
-#[repr(C, packed)]
+#[repr(C)]
 #[derive(Clone, Copy)]
 pub struct TraderTokenState {
-    pub lots_locked: u64,
-    pub lots_free: u64,
+    pub lots_locked: Lots,
+    pub lots_free: Lots,
     _padding: [u8; 16],
 }
 
