@@ -185,4 +185,20 @@ cast send 0x11673b5ef84c5e30898246fbf5499a6080ce50ca \
     --rpc-url http://127.0.0.1:8547 \
     --private-key 0xb6b15c8cb491557369f3c7d2c287b053eb229daa9c22138887752191c9520659 \
     --value 1000000wei
+
+# With [u8; 512]
+# Size 650, gas 1164013
+cast send 0xa6e41ffd769491a42a6e5ce453259b93983a22ef \
+    0x00dac17f958d2ee523a2206206994597c13d831ec7 \
+    --rpc-url http://127.0.0.1:8547 \
+    --private-key 0xb6b15c8cb491557369f3c7d2c287b053eb229daa9c22138887752191c9520659 \
+    --value 1000000wei
+
+# With [MaybeUninit<u8>; 512]
+# Size 651, gas 1164013
+cast send 0x75e0e92a79880bd81a69f72983d03c75e2b33dc8 \
+    0x00dac17f958d2ee523a2206206994597c13d831ec7 \
+    --rpc-url http://127.0.0.1:8547 \
+    --private-key 0xb6b15c8cb491557369f3c7d2c287b053eb229daa9c22138887752191c9520659 \
+    --value 1000000wei
 ```

@@ -31,12 +31,13 @@ pub extern "C" fn user_entrypoint(len: usize) -> i32 {
     }
 
     let (selector, payload) = unsafe {
-        let mut input: [MaybeUninit<u8>; 512] = MaybeUninit::uninit().assume_init();
+        let mut input = MaybeUninit::<[u8; 512]>::uninit();
         read_args(input.as_mut_ptr() as *mut u8);
+        let input = input.assume_init_ref();
 
         (
-            input[0].assume_init(),
-            core::slice::from_raw_parts(input.as_ptr().add(1) as *const u8, len.saturating_sub(1)),
+            input[0],
+            core::slice::from_raw_parts(&input[1], len.saturating_sub(1)),
         )
     };
 
