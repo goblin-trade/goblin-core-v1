@@ -2,7 +2,7 @@
 macro_rules! define_custom_types {
     ($($type:ident<$t:ty>),*) => {
         $(
-            #[repr(C, packed)]
+            #[repr(C)]
             #[derive(Debug, Clone, Copy, PartialEq)]
             pub struct $type(pub $t);
 
