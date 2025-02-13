@@ -217,4 +217,22 @@ cast send 0xdb3f4ecb0298238a19ec5afd087c6d9df8041919 \
     --rpc-url http://127.0.0.1:8547 \
     --private-key 0xb6b15c8cb491557369f3c7d2c287b053eb229daa9c22138887752191c9520659 \
     --value 1000000wei
+
+# [u64; 4] for msg.value
+# Size 607, gas 1163974 - 0x10b940 = 67974
+cast send 0x841118047f42754332d0ad4db8a2893761dd7f5d \
+    0x00dac17f958d2ee523a2206206994597c13d831ec7 \
+    --rpc-url http://127.0.0.1:8547 \
+    --private-key 0xb6b15c8cb491557369f3c7d2c287b053eb229daa9c22138887752191c9520659 \
+    --value 1000000wei
+
+# [u8; 32] for msg.value
+# Size 608, gas 1155974 - 0x109a00 = 67974
+# Size increased, no gas improvement. u64 is better because it maps directly to WASM values
+# and results in smaller bytecode
+cast send 0xce5303b8e8bfca9d1857976f300fb29928522c6f \
+    0x00dac17f958d2ee523a2206206994597c13d831ec7 \
+    --rpc-url http://127.0.0.1:8547 \
+    --private-key 0xb6b15c8cb491557369f3c7d2c287b053eb229daa9c22138887752191c9520659 \
+    --value 1000000wei
 ```
