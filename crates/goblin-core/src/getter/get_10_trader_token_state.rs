@@ -1,11 +1,7 @@
 use core::mem::MaybeUninit;
 
 use crate::{
-    msg_value,
-    quantities::Lots,
     state::{SlotState, TraderTokenKey, TraderTokenState},
-    storage_flush_cache,
-    types::{Address, NATIVE_TOKEN},
     write_result,
 };
 pub const GET_10_TRADER_TOKEN_STATE: u8 = 10;

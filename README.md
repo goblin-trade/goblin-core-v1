@@ -230,16 +230,42 @@ cast send 0x841118047f42754332d0ad4db8a2893761dd7f5d \
 # Size 608, gas 1155974 - 0x109a00 = 67974
 # Size increased, no gas improvement. u64 is better because it maps directly to WASM values
 # and results in smaller bytecode
-cast send 0xa6e41ffd769491a42a6e5ce453259b93983a22ef \
+cast send 0x4a2ba922052ba54e29c5417bc979daaf7d5fe4f4 \
     0x00dac17f958d2ee523a2206206994597c13d831ec7 \
     --rpc-url http://127.0.0.1:8547 \
     --private-key 0xb6b15c8cb491557369f3c7d2c287b053eb229daa9c22138887752191c9520659 \
     --value 1000000wei
 
 # Read TraderTokenState
-# size 727, gas 1279057 - 0x12cc80 = 47057
-cast send 0xa6e41ffd769491a42a6e5ce453259b93983a22ef \
-    0x0Adac17f958d2ee523a2206206994597c13d831ec70000000000000000000000000000000000000000 \
+# size 727, gas 1279061 - 0x12cc80 = 47061
+# We're saving gas because trailing bits are zeroes. If a different token address is used
+# gas 1279301 - 0x12cc80 = 47301
+# This costs more than sending the hash directly
+cast send 0x85d9a8a4bd77b9b5559c1b7fcb8ec9635922ed49 \
+    0x0Adac17f958d2ee523a2206206994597c13d831ec7dac17f958d2ee523a2206206994597c13d831ec7 \
     --rpc-url http://127.0.0.1:8547 \
     --private-key 0xb6b15c8cb491557369f3c7d2c287b053eb229daa9c22138887752191c9520659
+
+cast call 0x4a2ba922052ba54e29c5417bc979daaf7d5fe4f4 \
+    0x0Adac17f958d2ee523a2206206994597c13d831ec70000000000000000000000000000000000000000 \
+    --rpc-url http://127.0.0.1:8547
+
+# size 736, gas 1215157 - 0x11d280 = 47157
+cast send 0xdb3f4ecb0298238a19ec5afd087c6d9df8041919 \
+    0x0bd080abc540324e382bd156e0390950a53f8680ff9605f35d9e96b48dd71ec3ea \
+    --rpc-url http://127.0.0.1:8547 \
+    --private-key 0xb6b15c8cb491557369f3c7d2c287b053eb229daa9c22138887752191c9520659
+
+cast call 0x4a2ba922052ba54e29c5417bc979daaf7d5fe4f4 \
+    0x0bd080abc540324e382bd156e0390950a53f8680ff9605f35d9e96b48dd71ec3ea \
+    --rpc-url http://127.0.0.1:8547
 ```
+
+# Optimization decisions
+
+These have been benchmarked
+
+- Avoid heap allocations. This costs less gas and allows us to get rid of the allocator. We need to use fixed size arrays, eg. `[u8; 512]` when dealing with arguments.
+- Avoid zero filled arrays like `[0u8; 32]`. Zero filling increases size and gas cost. Instead use `Maybeuninit`.
+- Prefer `[u64; 4]` over `[u8; 32]`. `u64` has an equivalent WASM opcode so we get a smaller binary.
+- For getter functions, it is cheaper to accept arguments and hash inside the contract, rather than exposing a getter function for SLOAD where the hash must be found by the caller. This is because Solidity's memory cost grows exponentially while it grows linearly in stylus.
