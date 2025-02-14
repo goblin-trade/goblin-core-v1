@@ -43,7 +43,7 @@ impl SlotKey for TraderTokenKey {
 }
 
 #[repr(C)]
-#[derive(Clone, Copy)]
+#[derive(Debug)]
 pub struct TraderTokenState {
     pub lots_locked: Lots,
     pub lots_free: Lots,

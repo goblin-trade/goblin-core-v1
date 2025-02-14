@@ -39,9 +39,6 @@ mod test_hooks {
         // Store key-value pairs for storage simulation
         static STORAGE: RefCell<HashMap<[u8; 32], [u8; 32]>> = RefCell::new(HashMap::new());
 
-        // Store logs for verification
-        static LOGS: RefCell<Vec<String>> = RefCell::new(Vec::new());
-
         // Store the message value
         static MSG_VALUE: RefCell<[u8; 32]> = RefCell::new([0u8; 32]);
     }
@@ -60,10 +57,6 @@ mod test_hooks {
         STORAGE.with(|storage| storage.borrow().get(key).cloned())
     }
 
-    pub fn get_logs() -> Vec<String> {
-        LOGS.with(|logs| logs.borrow().clone())
-    }
-
     pub fn set_msg_value(value: [u8; 32]) {
         MSG_VALUE.with(|msg_value| {
             *msg_value.borrow_mut() = value;
@@ -78,7 +71,6 @@ mod test_hooks {
         TEST_ARGS.with(|args| args.borrow_mut().clear());
         TEST_RESULT.with(|result| result.borrow_mut().clear());
         STORAGE.with(|storage| storage.borrow_mut().clear());
-        LOGS.with(|logs| logs.borrow_mut().clear());
         MSG_VALUE.with(|msg_value| *msg_value.borrow_mut() = [0u8; 32]);
     }
 
@@ -110,9 +102,14 @@ mod test_hooks {
         let mut key_array = [0u8; 32];
         key_array.copy_from_slice(key_slice);
 
+        // Create a mutable slice for the destination
+        let dest_slice = core::slice::from_raw_parts_mut(dest, 32);
+
         if let Some(value) = get_storage_value(&key_array) {
-            let dest_slice = core::slice::from_raw_parts_mut(dest, 32);
             dest_slice.copy_from_slice(&value);
+        } else {
+            // Zero-fill the destination if no value is found
+            dest_slice.fill(0);
         }
     }
 
@@ -138,18 +135,14 @@ mod test_hooks {
 
     #[no_mangle]
     pub unsafe extern "C" fn log_i64(value: i64) {
-        LOGS.with(|logs| {
-            logs.borrow_mut().push(value.to_string());
-        });
+        println!("i64({})", value);
     }
 
     #[no_mangle]
     pub unsafe extern "C" fn log_txt(text: *const u8, len: usize) {
         let slice = core::slice::from_raw_parts(text, len);
         if let Ok(text) = core::str::from_utf8(slice) {
-            LOGS.with(|logs| {
-                logs.borrow_mut().push(text.to_string());
-            });
+            println!("Stylus says: {}", text);
         }
     }
 
