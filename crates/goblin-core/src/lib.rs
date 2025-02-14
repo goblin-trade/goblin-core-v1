@@ -2,9 +2,11 @@
 #![cfg_attr(not(test), no_main)]
 
 use core::mem::MaybeUninit;
+use getter::{get_10_trader_token_state, GET_10_TRADER_TOKEN_STATE};
 use handler::{handle_0_credit_eth, HANDLE_0_CREDIT_ETH};
 use hostio::*;
 
+pub mod getter;
 pub mod handler;
 pub mod hostio;
 pub mod market_params;
@@ -43,6 +45,10 @@ pub extern "C" fn user_entrypoint(len: usize) -> i32 {
 
     match selector {
         HANDLE_0_CREDIT_ETH => handle_0_credit_eth(payload),
+
+        // Getters
+        GET_10_TRADER_TOKEN_STATE => get_10_trader_token_state(payload),
+
         _ => 1,
     }
 }

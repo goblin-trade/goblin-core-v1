@@ -230,9 +230,16 @@ cast send 0x841118047f42754332d0ad4db8a2893761dd7f5d \
 # Size 608, gas 1155974 - 0x109a00 = 67974
 # Size increased, no gas improvement. u64 is better because it maps directly to WASM values
 # and results in smaller bytecode
-cast send 0xce5303b8e8bfca9d1857976f300fb29928522c6f \
+cast send 0xa6e41ffd769491a42a6e5ce453259b93983a22ef \
     0x00dac17f958d2ee523a2206206994597c13d831ec7 \
     --rpc-url http://127.0.0.1:8547 \
     --private-key 0xb6b15c8cb491557369f3c7d2c287b053eb229daa9c22138887752191c9520659 \
     --value 1000000wei
+
+# Read TraderTokenState
+# size 727, gas 1279057 - 0x12cc80 = 47057
+cast send 0xa6e41ffd769491a42a6e5ce453259b93983a22ef \
+    0x0Adac17f958d2ee523a2206206994597c13d831ec70000000000000000000000000000000000000000 \
+    --rpc-url http://127.0.0.1:8547 \
+    --private-key 0xb6b15c8cb491557369f3c7d2c287b053eb229daa9c22138887752191c9520659
 ```
