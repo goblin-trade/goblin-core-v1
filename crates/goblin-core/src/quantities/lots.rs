@@ -22,8 +22,7 @@ impl Lots {
         let high_lots = high.wrapping_mul(SCALE);
         let low_lots = low / 1_000_000;
 
-        // Saturating add prevents wrapping around to 0 by clamping value to u64::MAX
-        Lots(high_lots.saturating_add(low_lots))
+        Lots(high_lots.wrapping_add(low_lots))
     }
 }
 
@@ -60,7 +59,7 @@ mod tests {
     fn test_overflow() {
         assert_eq!(
             Lots::from_atoms(&[0, 0, u64::MAX.swap_bytes(), u64::MAX.swap_bytes()]).0,
-            u64::MAX
+            0
         );
     }
 }
