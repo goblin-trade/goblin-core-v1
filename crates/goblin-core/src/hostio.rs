@@ -10,6 +10,14 @@ extern "C" {
     pub fn storage_flush_cache(clear: bool);
     pub fn native_keccak256(bytes: *const u8, len: usize, output: *mut u8);
     pub fn msg_value(value: *mut u8);
+    pub fn call_contract(
+        contract: *const u8,
+        calldata: *const u8,
+        calldata_len: usize,
+        value: *const u8,
+        gas: u64,
+        return_data_len: *mut usize,
+    ) -> u8;
 }
 
 #[cfg(not(test))]
@@ -163,6 +171,18 @@ mod test_hooks {
             let slice = core::slice::from_raw_parts_mut(value, 32);
             slice.copy_from_slice(&*msg_value.borrow());
         });
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn call_contract(
+        contract: *const u8,
+        calldata: *const u8,
+        calldata_len: usize,
+        value: *const u8,
+        gas: u64,
+        return_data_len: *mut usize,
+    ) -> u8 {
+        0
     }
 }
 

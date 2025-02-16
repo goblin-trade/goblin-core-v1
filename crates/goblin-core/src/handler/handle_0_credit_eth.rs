@@ -15,7 +15,7 @@ pub fn handle_0_credit_eth(payload: &[u8]) -> i32 {
         return 1;
     }
 
-    let recipient = unsafe { &*(payload.as_ptr() as *const Address) };
+    let recipient: &Address = unsafe { &*(payload.as_ptr() as *const Address) };
 
     // Amount of ETH in, in 64-bit chunks
     let mut amount_in_maybe = MaybeUninit::<[u64; 4]>::uninit();

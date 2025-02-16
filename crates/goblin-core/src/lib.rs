@@ -3,9 +3,12 @@
 
 use core::mem::MaybeUninit;
 use getter::{get_10_trader_token_state, GET_10_TRADER_TOKEN_STATE};
-use handler::{handle_0_credit_eth, HANDLE_0_CREDIT_ETH};
+use handler::{
+    handle_0_credit_eth, handle_1_credit_erc20, HANDLE_0_CREDIT_ETH, HANDLE_1_CREDIT_ERC20,
+};
 use hostio::*;
 
+pub mod erc20;
 pub mod getter;
 pub mod handler;
 pub mod hostio;
@@ -45,6 +48,7 @@ pub extern "C" fn user_entrypoint(len: usize) -> i32 {
 
     match selector {
         HANDLE_0_CREDIT_ETH => handle_0_credit_eth(payload),
+        HANDLE_1_CREDIT_ERC20 => handle_1_credit_erc20(payload),
 
         // Getters
         GET_10_TRADER_TOKEN_STATE => get_10_trader_token_state(payload),
