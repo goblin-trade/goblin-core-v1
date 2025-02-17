@@ -2,7 +2,7 @@ use core::mem::MaybeUninit;
 
 use crate::{
     msg_value,
-    quantities::Lots,
+    quantities::{Atoms, Lots},
     state::{SlotState, TraderTokenKey, TraderTokenState},
     storage_flush_cache,
     types::{Address, NATIVE_TOKEN},
@@ -30,7 +30,6 @@ pub const HANDLE_0_CREDIT_ETH: u8 = 0;
 /// * This payload is decoded as [0x3f, 0x1E, ..., 0E]
 /// * The address is already in big endian
 ///
-
 pub fn handle_0_credit_eth(payload: &[u8]) -> i32 {
     if payload.len() != 20 {
         return 1;
@@ -38,13 +37,13 @@ pub fn handle_0_credit_eth(payload: &[u8]) -> i32 {
 
     let recipient: &Address = unsafe { &*(payload.as_ptr() as *const Address) };
 
-    // Amount of ETH in, in 64-bit chunks
-    let mut amount_in_maybe = MaybeUninit::<[u64; 4]>::uninit();
+    // Amount of ETH in, in 64-bit chunks, in big endian encoding
+    let mut amount_in_maybe = MaybeUninit::<Atoms>::uninit();
     let amount_in = unsafe {
         msg_value(amount_in_maybe.as_mut_ptr() as *mut u8);
         amount_in_maybe.assume_init_ref()
     };
-    let lots = Lots::from_atoms(amount_in);
+    let lots = Lots::from(amount_in);
 
     let key = &TraderTokenKey {
         trader: *recipient,
@@ -74,7 +73,7 @@ mod tests {
 
     #[test]
     pub fn test_deposit() {
-        // Set msg.value to 10^6
+        // Set msg.value to 10^6 in big endian
         let msg_value = hex!("00000000000000000000000000000000000000000000000000000000000F4240");
         set_msg_value(msg_value);
 

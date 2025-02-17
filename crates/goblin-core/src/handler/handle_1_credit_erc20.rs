@@ -1,4 +1,4 @@
-use crate::types::Address;
+use crate::{quantities::Lots, types::Address};
 
 pub const HANDLE_1_CREDIT_ERC20: u8 = 1;
 
@@ -17,7 +17,7 @@ struct CreditERC20Params {
     /// For 1 lot
     /// - Correct (little endian, non ABI): 0x0100000000000000 = [0x01, 0x00, ...]
     /// - Wrong (big endian, ABI style): 0x0000000000000001 = [0x00, 0x00, ..., 0x01]
-    pub lots: u64,
+    pub lots: Lots,
 }
 
 /// Credit an ERC20 token to a recipient
