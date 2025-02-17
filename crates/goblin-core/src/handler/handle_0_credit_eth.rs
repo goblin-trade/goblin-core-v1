@@ -10,6 +10,27 @@ use crate::{
 pub const HANDLE_0_CREDIT_ETH: u8 = 0;
 
 /// Credit ETH to a recipient
+///
+/// * Wei is passed using `--value` and read with `msg_value`. It is big endian encoded.
+///
+/// * The address is encoded in `payload`. The client call encodes the data such that we obtain
+/// the big endian result in a slice without need of any processing.
+///
+/// # Example
+///
+/// ```
+/// cast send 0xa6e41ffd769491a42a6e5ce453259b93983a22ef \
+///   0x003f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E \
+///   --value 1000000wei \
+///   --rpc-url http://127.0.0.1:8547 \
+///   --private-key 0xb6b15c8cb491557369f3c7d2c287b053eb229daa9c22138887752191c9520
+/// ```
+///
+/// * After removing selector `00` we're left with payload `3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E`
+/// * This payload is decoded as [0x3f, 0x1E, ..., 0E]
+/// * The address is already in big endian
+///
+
 pub fn handle_0_credit_eth(payload: &[u8]) -> i32 {
     if payload.len() != 20 {
         return 1;

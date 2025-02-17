@@ -18,6 +18,7 @@ extern "C" {
         gas: u64,
         return_data_len: *mut usize,
     ) -> u8;
+    pub fn msg_sender(sender: *mut u8);
 }
 
 #[cfg(not(test))]
@@ -49,6 +50,9 @@ mod test_hooks {
 
         // Store the message value
         static MSG_VALUE: RefCell<[u8; 32]> = RefCell::new([0u8; 32]);
+
+        // Add storage for sender address
+        static MSG_SENDER: RefCell<[u8; 32]> = RefCell::new([0u8; 32]);
     }
 
     pub fn set_test_args(args: Vec<u8>) {
@@ -80,6 +84,14 @@ mod test_hooks {
         TEST_RESULT.with(|result| result.borrow_mut().clear());
         STORAGE.with(|storage| storage.borrow_mut().clear());
         MSG_VALUE.with(|msg_value| *msg_value.borrow_mut() = [0u8; 32]);
+        MSG_SENDER.with(|sender| *sender.borrow_mut() = [0u8; 32]);
+    }
+
+    // Function to set the test sender address
+    pub fn set_msg_sender(sender: [u8; 32]) {
+        MSG_SENDER.with(|addr| {
+            *addr.borrow_mut() = sender;
+        });
     }
 
     #[no_mangle]
@@ -183,6 +195,14 @@ mod test_hooks {
         return_data_len: *mut usize,
     ) -> u8 {
         0
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn msg_sender(sender: *mut u8) {
+        MSG_SENDER.with(|addr| {
+            let slice = core::slice::from_raw_parts_mut(sender, 32);
+            slice.copy_from_slice(&*addr.borrow());
+        });
     }
 }
 

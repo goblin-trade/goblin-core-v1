@@ -28,7 +28,23 @@ impl Lots {
 
 #[cfg(test)]
 mod tests {
+    use hex_literal::hex;
+
     use super::*;
+
+    #[test]
+    fn test_with_hex_literals() {
+        let msg_value_bytes =
+            hex!("0000000000000000000000000000000000000000000000000000000000000000");
+        let msg_value: &[u64; 4] = unsafe { &*(msg_value_bytes.as_ptr() as *const [u64; 4]) };
+        assert_eq!(Lots::from_atoms(&msg_value).0, 0);
+
+        // 10^6 = 0xF4240
+        let msg_value_bytes =
+            hex!("00000000000000000000000000000000000000000000000000000000000F4240");
+        let msg_value: &[u64; 4] = unsafe { &*(msg_value_bytes.as_ptr() as *const [u64; 4]) };
+        assert_eq!(Lots::from_atoms(&msg_value).0, 1);
+    }
 
     #[test]
     fn test_basic_conversion() {
