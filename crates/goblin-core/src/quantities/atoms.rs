@@ -10,7 +10,17 @@ use super::{Lots, HIGH_LOTS_SCALE};
 ///
 /// * Using [u64; 4] instead of [u8; 32] produces smaller bytecode.
 ///
+/// * Call `unsafe { &*(amount.0.as_ptr() as *const [u8; 32]) }` to convert it to `[u8; 32]`.
+/// We don't provide a getter function for bytes because it can produce a dangling reference.
+///
 pub struct Atoms(pub [u64; 4]);
+
+impl Atoms {
+    /// Converts the `Atoms` struct to a `[u8; 32]` array in big-endian format.
+    pub fn to_be_bytes(&self) -> &[u8; 32] {
+        unsafe { &*(self.0.as_ptr() as *const [u8; 32]) }
+    }
+}
 
 impl From<&Lots> for Atoms {
     /// Convert lots to atoms
@@ -51,45 +61,59 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_basic_conversion() {
-        let zero_lots = Lots(0);
-        let atoms = Atoms::from(&zero_lots);
-        assert_eq!(atoms.0, [0, 0, 0, 0]);
+    fn test_conversion_to_bytes() {
+        let atoms = Atoms([0, 0, 0, 1u64.swap_bytes()]);
+        let bytes: &[u8; 32] = unsafe { &*(atoms.0.as_ptr() as *const [u8; 32]) };
 
-        let one_lot = Lots(1);
-        let atoms = Atoms::from(&one_lot);
-        assert_eq!(atoms.0[3].swap_bytes(), 1_000_000);
-        assert_eq!(atoms.0[0], 0);
-        assert_eq!(atoms.0[1], 0);
-        assert_eq!(atoms.0[2], 0);
-
-        // 2 lots = 2_500_000 atoms
-        let two_lots = Lots(2);
-        let atoms = Atoms::from(&two_lots);
-        assert_eq!(atoms.0[3].swap_bytes(), 2_000_000);
+        let mut expected_bytes = [0u8; 32];
+        expected_bytes[31] = 1;
+        assert_eq!(*bytes, expected_bytes);
     }
 
-    #[test]
-    fn test_large_values() {
-        // Test with SCALE value
-        let scale_lots = Lots(HIGH_LOTS_SCALE);
-        let atoms = Atoms::from(&scale_lots);
-        assert_eq!(atoms.0[2].swap_bytes(), 1);
-        assert_eq!(atoms.0[3], 0);
+    mod test_atom_to_lot_conversions {
+        use super::*;
 
-        // Test with SCALE + 1
-        let scale_plus_one = Lots(HIGH_LOTS_SCALE + 1);
-        let atoms = Atoms::from(&scale_plus_one);
-        assert_eq!(atoms.0[2].swap_bytes(), 1);
-        assert_eq!(atoms.0[3].swap_bytes(), 1_000_000);
-    }
+        #[test]
+        fn test_basic_conversion() {
+            let zero_lots = Lots(0);
+            let atoms = Atoms::from(&zero_lots);
+            assert_eq!(atoms.0, [0, 0, 0, 0]);
 
-    #[test]
-    fn test_roundtrip() {
-        // Test that converting from lots to atoms and back preserves the value
-        let original_lots = Lots(123456);
-        let atoms = Atoms::from(&original_lots);
-        let roundtrip_lots = Lots::from(&atoms);
-        assert_eq!(original_lots.0, roundtrip_lots.0);
+            let one_lot = Lots(1);
+            let atoms = Atoms::from(&one_lot);
+            assert_eq!(atoms.0[3].swap_bytes(), 1_000_000);
+            assert_eq!(atoms.0[0], 0);
+            assert_eq!(atoms.0[1], 0);
+            assert_eq!(atoms.0[2], 0);
+
+            // 2 lots = 2_500_000 atoms
+            let two_lots = Lots(2);
+            let atoms = Atoms::from(&two_lots);
+            assert_eq!(atoms.0[3].swap_bytes(), 2_000_000);
+        }
+
+        #[test]
+        fn test_large_values() {
+            // Test with SCALE value
+            let scale_lots = Lots(HIGH_LOTS_SCALE);
+            let atoms = Atoms::from(&scale_lots);
+            assert_eq!(atoms.0[2].swap_bytes(), 1);
+            assert_eq!(atoms.0[3], 0);
+
+            // Test with SCALE + 1
+            let scale_plus_one = Lots(HIGH_LOTS_SCALE + 1);
+            let atoms = Atoms::from(&scale_plus_one);
+            assert_eq!(atoms.0[2].swap_bytes(), 1);
+            assert_eq!(atoms.0[3].swap_bytes(), 1_000_000);
+        }
+
+        #[test]
+        fn test_roundtrip() {
+            // Test that converting from lots to atoms and back preserves the value
+            let original_lots = Lots(123456);
+            let atoms = Atoms::from(&original_lots);
+            let roundtrip_lots = Lots::from(&atoms);
+            assert_eq!(original_lots.0, roundtrip_lots.0);
+        }
     }
 }
