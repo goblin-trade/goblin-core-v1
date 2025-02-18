@@ -17,7 +17,7 @@ use crate::define_custom_types;
 
 use super::Atoms;
 
-const SCALE: u64 = 18446744073709; // (2^64 / 10^6)
+pub const HIGH_LOTS_SCALE: u64 = 18446744073709; // (2^64 / 10^6)
 
 define_custom_types!(Lots<u64>);
 
@@ -47,7 +47,7 @@ impl From<&Atoms> for Lots {
         let high = atoms.0[2].swap_bytes();
         let low = atoms.0[3].swap_bytes();
 
-        let high_lots = high.wrapping_mul(SCALE);
+        let high_lots = high.wrapping_mul(HIGH_LOTS_SCALE);
         let low_lots = low / 1_000_000;
 
         Lots(high_lots.wrapping_add(low_lots))
@@ -97,11 +97,14 @@ mod tests {
     #[test]
     fn test_large_values() {
         // 1 in position 2 (big-endian)
-        assert_eq!(Lots::from(&Atoms([0, 0, 1u64.swap_bytes(), 0])).0, SCALE);
+        assert_eq!(
+            Lots::from(&Atoms([0, 0, 1u64.swap_bytes(), 0])).0,
+            HIGH_LOTS_SCALE
+        );
 
         assert_eq!(
             Lots::from(&Atoms([0, 0, 1u64.swap_bytes(), 1_000_000u64.swap_bytes()])).0,
-            SCALE + 1
+            HIGH_LOTS_SCALE + 1
         );
     }
 
