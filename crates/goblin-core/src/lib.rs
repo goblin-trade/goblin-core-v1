@@ -46,6 +46,18 @@ pub extern "C" fn user_entrypoint(len: usize) -> i32 {
         )
     };
 
+    // Equals [166, ..., 239]. This is correct.
+    // Unsafe cast in handle_1_credit_erc20() breaks the address
+    unsafe {
+        let msg = b"Payload byte 0";
+        log_txt(msg.as_ptr(), msg.len());
+        log_i64(payload[0] as i64);
+
+        let msg = b"Payload byte 19";
+        log_txt(msg.as_ptr(), msg.len());
+        log_i64(payload[19] as i64);
+    }
+
     match selector {
         HANDLE_0_CREDIT_ETH => handle_0_credit_eth(payload),
         HANDLE_1_CREDIT_ERC20 => handle_1_credit_erc20(payload),

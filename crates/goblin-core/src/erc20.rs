@@ -1,4 +1,4 @@
-use crate::{call_contract, quantities::Atoms, types::Address};
+use crate::{call_contract, log_i64, log_txt, quantities::Atoms, types::Address};
 
 // keccak256('transferFrom(address,address,uint256)') = 0x23b872dd
 const TRANSFER_FROM_SELECTOR: [u8; 4] = [0x23, 0xb8, 0x72, 0xdd];
@@ -39,6 +39,21 @@ pub fn transfer_from(
 
     let return_data_len: &mut usize = &mut 32;
 
+    // Bug- token address is decoded wrong
+    // We're getting [184, ..., 70]
+    // The token 0xA6E41fFD769491a42A6e5Ce453259b93983a22EF is [166, ..., 239]
+    unsafe {
+        let msg = "Token byte 0";
+        log_txt(msg.as_ptr(), msg.len());
+
+        log_i64(contract[0] as i64);
+
+        let msg = "Token byte 19";
+        log_txt(msg.as_ptr(), msg.len());
+
+        log_i64(contract[19] as i64);
+    }
+
     // Fixed. There was an issue with address
     // 0xA6E41fFD769491a42A6e5Ce453259b93983a22EF
     let token: &[u8; 20] = &[
@@ -51,7 +66,7 @@ pub fn transfer_from(
             calldata.as_ptr(),
             calldata.len(),
             value.0.as_ptr() as *const u8, // Zero value
-            200_000,                       // 200k gas
+            200_000, // 200k gas. We need to explicitly specify gas else, tx fails
             return_data_len as *mut usize,
         )
     }
