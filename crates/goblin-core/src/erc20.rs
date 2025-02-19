@@ -39,30 +39,39 @@ pub fn transfer_from(
 
     let return_data_len: &mut usize = &mut 32;
 
-    // Bug- token address is decoded wrong
-    // We're getting [184, ..., 70]
-    // The token 0xA6E41fFD769491a42A6e5Ce453259b93983a22EF is [166, ..., 239]
+    // Matches correct result [74, ..., 112], still error
+    // Perhaps we need to copy the address?
+    //
+    // INFO [02-19|11:17:04.791] Submitted transaction                    hash=0xc7d8f98cc2725aad446b5e25ad05fe01f8bf0a4bf86427c27c0f330570da49b8 from=0x3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E nonce=8 recipient=0x7E32b54800705876d3b5cFbc7d9c226a211F7C1a value=0
+    // WARN [02-19|11:18:54.461] feedOneMsg failed to send message to execEngine err="createBlock mutex held"        pos=10
+
     unsafe {
-        let msg = "Token byte 0";
+        let msg = "Token byte 0 in erc20.rs";
         log_txt(msg.as_ptr(), msg.len());
 
         log_i64(contract[0] as i64);
 
-        let msg = "Token byte 19";
+        let msg = "Token byte 19 in erc20.rs";
         log_txt(msg.as_ptr(), msg.len());
 
         log_i64(contract[19] as i64);
     }
 
+    // Using `contract` or even cloning the value gives problem.
+    // But why does a hardcoded token address work?
+    // let token = contract.clone();
+
     // Fixed. There was an issue with address
-    // 0xA6E41fFD769491a42A6e5Ce453259b93983a22EF
+    // 0x4Af567288e68caD4aA93A272fe6139Ca53859C70
     let token: &[u8; 20] = &[
-        166, 228, 31, 253, 118, 148, 145, 164, 42, 110, 92, 228, 83, 37, 155, 147, 152, 58, 34, 239,
+        74, 245, 103, 40, 142, 104, 202, 212, 170, 147, 162, 114, 254, 97, 57, 202, 83, 133, 156,
+        112,
     ];
 
     unsafe {
         call_contract(
             token.as_ptr(),
+            // contract.as_ptr(),
             calldata.as_ptr(),
             calldata.len(),
             value.0.as_ptr() as *const u8, // Zero value
@@ -92,7 +101,7 @@ mod tests {
 
     #[test]
     fn test_get_token_as_arr() {
-        let token = hex!("A6E41fFD769491a42A6e5Ce453259b93983a22EF");
+        let token = hex!("4Af567288e68caD4aA93A272fe6139Ca53859C70");
         println!("token {:?}", token);
     }
 }

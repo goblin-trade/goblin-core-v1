@@ -35,22 +35,23 @@ pub fn handle_1_credit_erc20(payload: &[u8]) -> i32 {
 
     let params = unsafe { &*(payload.as_ptr() as *const CreditERC20Params) };
 
+    unsafe {
+        let msg = "Token byte 0";
+        log_txt(msg.as_ptr(), msg.len());
+
+        log_i64(params.token[0] as i64);
+
+        let msg = "Token byte 19";
+        log_txt(msg.as_ptr(), msg.len());
+
+        log_i64(params.token[19] as i64);
+    }
+
     let mut sender_maybe = MaybeUninit::<Address>::uninit();
     let sender = unsafe {
         msg_sender(sender_maybe.as_mut_ptr() as *mut u8);
         sender_maybe.assume_init_ref()
     };
-
-    // Sender address is read correctly
-    unsafe {
-        let msg = b"Sender byte 0";
-        log_txt(msg.as_ptr(), msg.len());
-        log_i64(sender[0] as i64);
-
-        let msg = b"Sender byte 19";
-        log_txt(msg.as_ptr(), msg.len());
-        log_i64(sender[19] as i64);
-    }
 
     let atoms = Atoms::from(&params.lots);
     let result = transfer_from(&params.token, sender, &params.recipient, &atoms);
