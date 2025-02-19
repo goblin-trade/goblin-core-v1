@@ -37,11 +37,17 @@ pub fn transfer_from(
     ];
     let value = Atoms::default();
 
-    let return_data_len: &mut usize = &mut 0;
+    let return_data_len: &mut usize = &mut 32;
+
+    // Fixed. There was an issue with address
+    // 0xA6E41fFD769491a42A6e5Ce453259b93983a22EF
+    let token: &[u8; 20] = &[
+        166, 228, 31, 253, 118, 148, 145, 164, 42, 110, 92, 228, 83, 37, 155, 147, 152, 58, 34, 239,
+    ];
 
     unsafe {
         call_contract(
-            contract.as_ptr(),
+            token.as_ptr(),
             calldata.as_ptr(),
             calldata.len(),
             value.0.as_ptr() as *const u8, // Zero value
@@ -67,5 +73,11 @@ mod tests {
         let calldata = hex!("23b872dd0000000000000000000000003f1eae7d46d88f08fc2f8ed27fcb2ab183eb2d0e00000000000000000000000084401cd7abbebb22acb7af2becfd9be56c30bcf10000000000000000000000000000000000000000000000000000000000000001");
 
         println!("calldata {:?}", calldata);
+    }
+
+    #[test]
+    fn test_get_token_as_arr() {
+        let token = hex!("A6E41fFD769491a42A6e5Ce453259b93983a22EF");
+        println!("token {:?}", token);
     }
 }
