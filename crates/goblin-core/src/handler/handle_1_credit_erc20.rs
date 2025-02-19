@@ -2,7 +2,7 @@ use core::mem::MaybeUninit;
 
 use crate::{
     erc20::transfer_from,
-    msg_sender,
+    log_i64, log_txt, msg_sender,
     quantities::{Atoms, Lots},
     types::Address,
 };
@@ -41,8 +41,25 @@ pub fn handle_1_credit_erc20(payload: &[u8]) -> i32 {
         sender_maybe.assume_init_ref()
     };
 
+    // Sender address is read correctly
+    unsafe {
+        let msg = b"Sender byte 0";
+        log_txt(msg.as_ptr(), msg.len());
+        log_i64(sender[0] as i64);
+
+        let msg = b"Sender byte 19";
+        log_txt(msg.as_ptr(), msg.len());
+        log_i64(sender[19] as i64);
+    }
+
     let atoms = Atoms::from(&params.lots);
     let result = transfer_from(&params.token, sender, &params.recipient, &atoms);
+
+    unsafe {
+        let msg = b"Call result";
+        log_txt(msg.as_ptr(), msg.len());
+        log_i64(result as i64);
+    }
 
     if result != 0 {
         return 1;
