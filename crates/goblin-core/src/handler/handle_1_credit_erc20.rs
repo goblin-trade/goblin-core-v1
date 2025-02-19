@@ -1,4 +1,8 @@
+use core::mem::MaybeUninit;
+
 use crate::{
+    erc20::transfer_from,
+    msg_sender,
     quantities::{Atoms, Lots},
     types::Address,
 };
@@ -31,8 +35,19 @@ pub fn handle_1_credit_erc20(payload: &[u8]) -> i32 {
 
     let params = unsafe { &*(payload.as_ptr() as *const CreditERC20Params) };
 
-    let atoms = Atoms::from(&params.lots);
-    // transfer_from(&params.recipient, &params.recipient, &[0u8; 32]);
+    let mut sender_maybe = MaybeUninit::<Address>::uninit();
+    let sender = unsafe {
+        msg_sender(sender_maybe.as_mut_ptr() as *mut u8);
+        sender_maybe.assume_init_ref()
+    };
 
+    let atoms = Atoms::from(&params.lots);
+    let result = transfer_from(&params.token, sender, &params.recipient, &atoms);
+
+    if result != 0 {
+        return 1;
+    }
+
+    // TODO test
     0
 }

@@ -13,6 +13,7 @@ use super::{Lots, HIGH_LOTS_SCALE};
 /// * Call `unsafe { &*(amount.0.as_ptr() as *const [u8; 32]) }` to convert it to `[u8; 32]`.
 /// We don't provide a getter function for bytes because it can produce a dangling reference.
 ///
+#[derive(Default)]
 pub struct Atoms(pub [u64; 4]);
 
 impl Atoms {
