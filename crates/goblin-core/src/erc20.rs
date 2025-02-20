@@ -2,7 +2,6 @@ use crate::{call_contract, quantities::Atoms, types::Address};
 
 // keccak256('transferFrom(address,address,uint256)') = 0x23b872dd
 const TRANSFER_FROM_SELECTOR: [u8; 4] = [0x23, 0xb8, 0x72, 0xdd];
-// const TRANSFER_FROM_SELECTOR: [u8; 4] = [0, 0, 0, 0];
 
 pub fn transfer_from(
     contract: &Address,

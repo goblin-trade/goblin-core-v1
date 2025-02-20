@@ -30,7 +30,7 @@ struct CreditERC20Params {
 
 /// Credit an ERC20 token to a recipient
 pub fn handle_1_credit_erc20(payload: &[u8]) -> i32 {
-    if payload.len() < core::mem::size_of::<CreditERC20Params>() {
+    if payload.len() != core::mem::size_of::<CreditERC20Params>() {
         return 1;
     }
 
