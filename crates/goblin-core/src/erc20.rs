@@ -1,4 +1,4 @@
-use crate::{call_contract, log_i64, log_txt, quantities::Atoms, types::Address};
+use crate::{call_contract, quantities::Atoms, types::Address};
 
 // keccak256('transferFrom(address,address,uint256)') = 0x23b872dd
 const TRANSFER_FROM_SELECTOR: [u8; 4] = [0x23, 0xb8, 0x72, 0xdd];
@@ -6,20 +6,40 @@ const TRANSFER_FROM_SELECTOR: [u8; 4] = [0x23, 0xb8, 0x72, 0xdd];
 
 pub fn transfer_from(
     contract: &Address,
-    // sender: &Address,
-    // recipient: &Address,
-    // amount: &Atoms,
+    sender: &Address,
+    recipient: &Address,
+    amount: &Atoms,
 ) -> u8 {
-    unsafe {
-        let msg = "Looping in erc20.rs";
-        log_txt(msg.as_ptr(), msg.len());
+    let mut calldata = [0u8; 4 + 32 * 3];
 
-        for i in 0..20 {
-            let byte = contract[i];
-            log_i64(byte as i64);
-        }
+    calldata[0..4].copy_from_slice(&TRANSFER_FROM_SELECTOR);
+
+    // 4..36: sender address
+    // 4..16 are zeroes, 16..36 holds 20 byte address
+    calldata[16..36].copy_from_slice(sender);
+
+    // 36..68: recipient address
+    // 36..48 are zeroes, 48..68 holds 20 byte address
+    calldata[48..68].copy_from_slice(recipient);
+
+    // 68..100: amount to transfer
+    // This is a 32 byte value
+    let amount_as_be_bytes: &[u8; 32] = unsafe { &*(amount.0.as_ptr() as *const [u8; 32]) };
+    calldata[68..100].copy_from_slice(amount_as_be_bytes);
+
+    let value = Atoms::default();
+    let return_data_len: &mut usize = &mut 32;
+
+    unsafe {
+        call_contract(
+            contract.as_ptr(),
+            calldata.as_ptr(),
+            calldata.len(),
+            value.0.as_ptr() as *const u8, // Zero value
+            200_000, // 200k gas. We need to explicitly specify gas else, tx fails
+            return_data_len as *mut usize,
+        )
     }
-    0
 }
 
 #[cfg(test)]
@@ -42,13 +62,13 @@ mod tests {
 
     #[test]
     fn test_get_token_as_arr() {
-        let token = hex!("A6E41fFD769491a42A6e5Ce453259b93983a22EF");
+        let token = hex!("F5FfD11A55AFD39377411Ab9856474D2a7Cb697e");
         println!("token {:?}", token);
     }
 
     #[test]
-    fn test_get_sender_as_arr() {
-        let token = hex!("3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E");
+    fn test_get_contract_as_arr() {
+        let token = hex!("a6e41ffd769491a42a6e5ce453259b93983a22ef");
         println!("token {:?}", token);
     }
 }

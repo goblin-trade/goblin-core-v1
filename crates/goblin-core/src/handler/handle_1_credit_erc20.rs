@@ -5,16 +5,17 @@ use crate::{
     log_i64, log_txt, msg_sender,
     quantities::{Atoms, Lots},
     types::Address,
+    ADDRESS,
 };
 
 pub const HANDLE_1_CREDIT_ERC20: u8 = 1;
 
-#[repr(C, packed)]
+#[repr(C)]
 struct CreditERC20Params {
     /// The token to credit
     pub token: Address,
 
-    /// The recipient of the funds. Funds can be credited to any address
+    /// Credit input lots to `recipient`. This allows a wallet to fund another wallet
     pub recipient: Address,
 
     /// The lots to credit. Atom to lot conversions should happen on client side.
@@ -33,44 +34,27 @@ pub fn handle_1_credit_erc20(payload: &[u8]) -> i32 {
         return 1;
     }
 
-    // let params = unsafe { &*(payload.as_ptr() as *const CreditERC20Params) };
+    let params = unsafe { &*(payload.as_ptr() as *const CreditERC20Params) };
 
-    unsafe {
-        let msg = "Looping in handler";
-        log_txt(msg.as_ptr(), msg.len());
-
-        for i in 0..20 {
-            let byte = payload[i];
-            log_i64(byte as i64);
-        }
-    }
-
-    // problem here- params.token is corrupted after msg_sender hostio
     let mut sender_maybe = MaybeUninit::<Address>::uninit();
-    unsafe {
+    let sender = unsafe {
         msg_sender(sender_maybe.as_mut_ptr() as *mut u8);
-    }
-    // let sender = unsafe {
-    //     msg_sender(sender_maybe.as_mut_ptr() as *mut u8);
-    //     sender_maybe.assume_init_ref()
-    // };
+        sender_maybe.assume_init_ref()
+    };
 
-    // This gives
-    // [30, 174, 125, 70, 216, 143, 8, 252, 47, 142, 210, 127, 203, 42, 177, 131, 235, 45, 14, 239]
-    //
-    // The sender address equals to bytes
-    // [63, 30, 174, 125, 70, 216, 143, 8, 252, 47, 142, 210, 127, 203, 42, 177, 131, 235, 45, 14]
-    //
-    // Address bytes are replacing the bytes used in payload!
+    let atoms = Atoms::from(&params.lots);
+
+    // Transfer tokens to smart contract, not params.recipient
+    let result = transfer_from(&params.token, sender, &ADDRESS, &atoms);
+
     unsafe {
-        let msg = "Looping after reading sender";
+        let msg = b"Call result";
         log_txt(msg.as_ptr(), msg.len());
-
-        for i in 0..20 {
-            let byte = payload[i];
-            log_i64(byte as i64);
-        }
+        log_i64(result as i64);
     }
 
+    if result != 0 {
+        return 1;
+    }
     0
 }

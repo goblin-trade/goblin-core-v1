@@ -17,6 +17,13 @@ pub mod quantities;
 pub mod state;
 pub mod types;
 
+// Address 0xa6e41ffd769491a42a6e5ce453259b93983a22ef
+// Deployer 0x3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E, nonce 0
+// The contract should be deployed in the first transaction on testnet to get nonce 0
+pub const ADDRESS: [u8; 20] = [
+    166, 228, 31, 253, 118, 148, 145, 164, 42, 110, 92, 228, 83, 37, 155, 147, 152, 58, 34, 239,
+];
+
 #[cfg(not(test))]
 #[panic_handler]
 fn panic(_info: &core::panic::PanicInfo) -> ! {
@@ -45,18 +52,6 @@ pub extern "C" fn user_entrypoint(len: usize) -> i32 {
             core::slice::from_raw_parts(&input[1], len.saturating_sub(1)),
         )
     };
-
-    // Equals [166, ..., 239]. This is correct.
-    // Unsafe cast in handle_1_credit_erc20() breaks the address
-    unsafe {
-        let msg = b"Payload byte 0";
-        log_txt(msg.as_ptr(), msg.len());
-        log_i64(payload[0] as i64);
-
-        let msg = b"Payload byte 19";
-        log_txt(msg.as_ptr(), msg.len());
-        log_i64(payload[19] as i64);
-    }
 
     match selector {
         HANDLE_0_CREDIT_ETH => handle_0_credit_eth(payload),
