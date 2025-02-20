@@ -9,7 +9,7 @@ use crate::{
 
 pub const HANDLE_1_CREDIT_ERC20: u8 = 1;
 
-#[repr(C)]
+#[repr(C, packed)]
 struct CreditERC20Params {
     /// The token to credit
     pub token: Address,
@@ -36,16 +36,16 @@ pub fn handle_1_credit_erc20(payload: &[u8]) -> i32 {
     let params = unsafe { &*(payload.as_ptr() as *const CreditERC20Params) };
 
     unsafe {
-        let msg = "Token byte 0";
+        let msg = "Looping in handler";
         log_txt(msg.as_ptr(), msg.len());
 
-        log_i64(params.token[0] as i64);
-
-        let msg = "Token byte 19";
-        log_txt(msg.as_ptr(), msg.len());
-
-        log_i64(params.token[19] as i64);
+        for i in 0..20 {
+            let byte = params.token[i];
+            log_i64(byte as i64);
+        }
     }
+
+    // problem here- Values change after reading sender
 
     let mut sender_maybe = MaybeUninit::<Address>::uninit();
     let sender = unsafe {
@@ -53,18 +53,31 @@ pub fn handle_1_credit_erc20(payload: &[u8]) -> i32 {
         sender_maybe.assume_init_ref()
     };
 
-    let atoms = Atoms::from(&params.lots);
-    let result = transfer_from(&params.token, sender, &params.recipient, &atoms);
-
     unsafe {
-        let msg = b"Call result";
+        let msg = "Looping after reading sender";
         log_txt(msg.as_ptr(), msg.len());
-        log_i64(result as i64);
+
+        for i in 0..20 {
+            let byte = params.token[i];
+            log_i64(byte as i64);
+        }
     }
 
-    if result != 0 {
-        return 1;
-    }
+    // let lots = params.lots;
+    // let atoms = Atoms::from(&lots);
+
+    // let result = transfer_from(&params.token);
+    // let result = transfer_from(&params.token, sender, &params.recipient, &atoms);
+
+    // unsafe {
+    //     let msg = b"Call result";
+    //     log_txt(msg.as_ptr(), msg.len());
+    //     log_i64(result as i64);
+    // }
+
+    // if result != 0 {
+    //     return 1;
+    // }
 
     // TODO test
     0
