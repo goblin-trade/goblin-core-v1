@@ -35,8 +35,8 @@ pub extern "C" fn user_entrypoint(len: usize) -> i32 {
         return 1;
     }
 
+    let mut input = MaybeUninit::<[u8; 512]>::uninit();
     let (selector, payload) = unsafe {
-        let mut input = MaybeUninit::<[u8; 512]>::uninit();
         read_args(input.as_mut_ptr() as *mut u8);
         let input = input.assume_init_ref();
 

@@ -33,14 +33,14 @@ pub fn handle_1_credit_erc20(payload: &[u8]) -> i32 {
         return 1;
     }
 
-    let params = unsafe { &*(payload.as_ptr() as *const CreditERC20Params) };
+    // let params = unsafe { &*(payload.as_ptr() as *const CreditERC20Params) };
 
     unsafe {
         let msg = "Looping in handler";
         log_txt(msg.as_ptr(), msg.len());
 
         for i in 0..20 {
-            let byte = params.token[i];
+            let byte = payload[i];
             log_i64(byte as i64);
         }
     }
@@ -67,7 +67,7 @@ pub fn handle_1_credit_erc20(payload: &[u8]) -> i32 {
         log_txt(msg.as_ptr(), msg.len());
 
         for i in 0..20 {
-            let byte = params.token[i];
+            let byte = payload[i];
             log_i64(byte as i64);
         }
     }
