@@ -45,14 +45,23 @@ pub fn handle_1_credit_erc20(payload: &[u8]) -> i32 {
         }
     }
 
-    // problem here- Values change after reading sender
-
+    // problem here- params.token is corrupted after msg_sender hostio
     let mut sender_maybe = MaybeUninit::<Address>::uninit();
-    let sender = unsafe {
+    unsafe {
         msg_sender(sender_maybe.as_mut_ptr() as *mut u8);
-        sender_maybe.assume_init_ref()
-    };
+    }
+    // let sender = unsafe {
+    //     msg_sender(sender_maybe.as_mut_ptr() as *mut u8);
+    //     sender_maybe.assume_init_ref()
+    // };
 
+    // This gives
+    // [30, 174, 125, 70, 216, 143, 8, 252, 47, 142, 210, 127, 203, 42, 177, 131, 235, 45, 14, 239]
+    //
+    // The sender address equals to bytes
+    // [63, 30, 174, 125, 70, 216, 143, 8, 252, 47, 142, 210, 127, 203, 42, 177, 131, 235, 45, 14]
+    //
+    // Address bytes are replacing the bytes used in payload!
     unsafe {
         let msg = "Looping after reading sender";
         log_txt(msg.as_ptr(), msg.len());
@@ -63,22 +72,5 @@ pub fn handle_1_credit_erc20(payload: &[u8]) -> i32 {
         }
     }
 
-    // let lots = params.lots;
-    // let atoms = Atoms::from(&lots);
-
-    // let result = transfer_from(&params.token);
-    // let result = transfer_from(&params.token, sender, &params.recipient, &atoms);
-
-    // unsafe {
-    //     let msg = b"Call result";
-    //     log_txt(msg.as_ptr(), msg.len());
-    //     log_i64(result as i64);
-    // }
-
-    // if result != 0 {
-    //     return 1;
-    // }
-
-    // TODO test
     0
 }

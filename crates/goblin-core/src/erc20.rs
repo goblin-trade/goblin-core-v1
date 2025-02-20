@@ -45,4 +45,10 @@ mod tests {
         let token = hex!("A6E41fFD769491a42A6e5Ce453259b93983a22EF");
         println!("token {:?}", token);
     }
+
+    #[test]
+    fn test_get_sender_as_arr() {
+        let token = hex!("3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E");
+        println!("token {:?}", token);
+    }
 }
