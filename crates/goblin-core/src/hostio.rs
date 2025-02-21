@@ -10,6 +10,7 @@ extern "C" {
     pub fn storage_flush_cache(clear: bool);
     pub fn native_keccak256(bytes: *const u8, len: usize, output: *mut u8);
     pub fn msg_value(value: *mut u8);
+    pub fn msg_sender(sender: *mut u8);
     pub fn call_contract(
         contract: *const u8,
         calldata: *const u8,
@@ -18,7 +19,7 @@ extern "C" {
         gas: u64,
         return_data_len: *mut usize,
     ) -> u8;
-    pub fn msg_sender(sender: *mut u8);
+    pub fn read_return_data(dest: *mut u8, offset: usize, size: usize) -> usize;
 }
 
 #[cfg(not(test))]
@@ -186,6 +187,15 @@ mod test_hooks {
     }
 
     #[no_mangle]
+    pub unsafe extern "C" fn msg_sender(sender: *mut u8) {
+        MSG_SENDER.with(|addr| {
+            let slice = core::slice::from_raw_parts_mut(sender, 32);
+            slice.copy_from_slice(&*addr.borrow());
+        });
+    }
+
+    // TODO test implementations for call_contract() and read_return_data()
+    #[no_mangle]
     pub unsafe extern "C" fn call_contract(
         contract: *const u8,
         calldata: *const u8,
@@ -198,11 +208,8 @@ mod test_hooks {
     }
 
     #[no_mangle]
-    pub unsafe extern "C" fn msg_sender(sender: *mut u8) {
-        MSG_SENDER.with(|addr| {
-            let slice = core::slice::from_raw_parts_mut(sender, 32);
-            slice.copy_from_slice(&*addr.borrow());
-        });
+    pub unsafe fn read_return_data(dest: *mut u8, offset: usize, size: usize) -> usize {
+        0
     }
 }
 

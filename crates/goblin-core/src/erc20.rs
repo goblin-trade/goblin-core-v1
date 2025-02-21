@@ -1,4 +1,6 @@
-use crate::{call_contract, log_i64, log_txt, quantities::Atoms, types::Address};
+use core::mem::MaybeUninit;
+
+use crate::{call_contract, log_i64, log_txt, quantities::Atoms, read_return_data, types::Address};
 
 // keccak256('transferFrom(address,address,uint256)') = 0x23b872dd
 const TRANSFER_FROM_SELECTOR: [u8; 4] = [0x23, 0xb8, 0x72, 0xdd];
@@ -29,7 +31,7 @@ pub fn transfer_from(
     let value = Atoms::default();
     let return_data_len: &mut usize = &mut 0;
 
-    unsafe {
+    let call_result = unsafe {
         call_contract(
             contract.as_ptr(),
             calldata.as_ptr(),
@@ -40,13 +42,37 @@ pub fn transfer_from(
         )
     };
 
+    // The original ERC20 spec transferFrom() returns false if the transfer fails. However
+    // Openzepplin and modern ERC20 token implementations will revert instead of returning false.
+    // We need to handle both cases.
+    if call_result != 0 {
+        return 1;
+    }
+
     unsafe {
         let msg = b"return_data_len";
         log_txt(msg.as_ptr(), msg.len());
         log_i64(*return_data_len as i64);
     }
 
-    0
+    let mut result_byte_maybe = MaybeUninit::<u8>::uninit();
+    let result_byte = unsafe {
+        read_return_data(result_byte_maybe.as_mut_ptr(), 31, 1);
+        result_byte_maybe.assume_init_ref()
+    };
+
+    unsafe {
+        let msg = b"result_byte";
+        log_txt(msg.as_ptr(), msg.len());
+        log_i64(*result_byte as i64);
+    }
+
+    // Return 0 (success) if the result is true (1). This bitwise operation
+    // is more optimized than using if-else for return.
+    //
+    // If false: (0 ^ 1) & 1 = 1 (error)
+    // If true: (1 ^ 1) & 0 = 0 (success)
+    (*result_byte ^ 1) & 1
 }
 
 #[cfg(test)]
