@@ -54,6 +54,9 @@ mod test_hooks {
 
         // Add storage for sender address
         static MSG_SENDER: RefCell<[u8; 32]> = RefCell::new([0u8; 32]);
+
+        // Simulate contract call return data
+        static RETURN_DATA: RefCell<Vec<u8>> = RefCell::new(Vec::new());
     }
 
     pub fn set_test_args(args: Vec<u8>) {
@@ -92,6 +95,12 @@ mod test_hooks {
     pub fn set_msg_sender(sender: [u8; 32]) {
         MSG_SENDER.with(|addr| {
             *addr.borrow_mut() = sender;
+        });
+    }
+
+    pub fn set_return_data(data: Vec<u8>) {
+        RETURN_DATA.with(|return_data| {
+            *return_data.borrow_mut() = data;
         });
     }
 
@@ -194,22 +203,35 @@ mod test_hooks {
         });
     }
 
-    // TODO test implementations for call_contract() and read_return_data()
     #[no_mangle]
     pub unsafe extern "C" fn call_contract(
-        contract: *const u8,
-        calldata: *const u8,
-        calldata_len: usize,
-        value: *const u8,
-        gas: u64,
+        _contract: *const u8,
+        _calldata: *const u8,
+        _calldata_len: usize,
+        _value: *const u8,
+        _gas: u64,
         return_data_len: *mut usize,
     ) -> u8 {
-        0
+        RETURN_DATA.with(|return_data| {
+            let data = return_data.borrow();
+            *return_data_len = data.len();
+        });
+        0 // Indicate success
     }
 
     #[no_mangle]
-    pub unsafe fn read_return_data(dest: *mut u8, offset: usize, size: usize) -> usize {
-        0
+    pub unsafe extern "C" fn read_return_data(dest: *mut u8, offset: usize, size: usize) -> usize {
+        RETURN_DATA.with(|return_data| {
+            let data = return_data.borrow();
+            if offset >= data.len() {
+                return 0; // Out of bounds
+            }
+            let end = (offset + size).min(data.len());
+            let slice = &data[offset..end];
+            let dest_slice = core::slice::from_raw_parts_mut(dest, slice.len());
+            dest_slice.copy_from_slice(slice);
+            slice.len()
+        })
     }
 }
 
@@ -255,5 +277,36 @@ mod tests {
 
         // Verify the output matches the expected hash
         assert_eq!(output, expected_hash);
+    }
+
+    #[test]
+    fn test_call_contract() {
+        set_return_data(vec![1]); // Simulate successful return (true)
+
+        let mut return_data_len = 0;
+        let call_result = unsafe {
+            call_contract(
+                core::ptr::null(),
+                core::ptr::null(),
+                0,
+                core::ptr::null(),
+                0,
+                &mut return_data_len,
+            )
+        };
+
+        assert_eq!(call_result, 0);
+        assert_eq!(return_data_len, 1);
+    }
+
+    #[test]
+    fn test_read_return_data() {
+        set_return_data(vec![0x12, 0x34, 0x56]);
+
+        let mut buffer = [0u8; 2];
+        let bytes_read = unsafe { read_return_data(buffer.as_mut_ptr(), 1, 2) };
+
+        assert_eq!(bytes_read, 2);
+        assert_eq!(buffer, [0x34, 0x56]);
     }
 }
