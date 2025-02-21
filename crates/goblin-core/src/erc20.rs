@@ -1,4 +1,4 @@
-use crate::{call_contract, quantities::Atoms, types::Address};
+use crate::{call_contract, log_i64, log_txt, quantities::Atoms, types::Address};
 
 // keccak256('transferFrom(address,address,uint256)') = 0x23b872dd
 const TRANSFER_FROM_SELECTOR: [u8; 4] = [0x23, 0xb8, 0x72, 0xdd];
@@ -27,7 +27,7 @@ pub fn transfer_from(
     calldata[68..100].copy_from_slice(amount_as_be_bytes);
 
     let value = Atoms::default();
-    let return_data_len: &mut usize = &mut 32;
+    let return_data_len: &mut usize = &mut 0;
 
     unsafe {
         call_contract(
@@ -36,9 +36,17 @@ pub fn transfer_from(
             calldata.len(),
             value.0.as_ptr() as *const u8, // Zero value
             200_000, // 200k gas. We need to explicitly specify gas else, tx fails
-            return_data_len as *mut usize,
+            return_data_len,
         )
+    };
+
+    unsafe {
+        let msg = b"return_data_len";
+        log_txt(msg.as_ptr(), msg.len());
+        log_i64(*return_data_len as i64);
     }
+
+    0
 }
 
 #[cfg(test)]
