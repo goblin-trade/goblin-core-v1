@@ -43,23 +43,44 @@ pub extern "C" fn user_entrypoint(len: usize) -> i32 {
     }
 
     let mut input = MaybeUninit::<[u8; 512]>::uninit();
-    let (selector, payload) = unsafe {
+    let input = unsafe {
         read_args(input.as_mut_ptr() as *mut u8);
-        let input = input.assume_init_ref();
-
-        (
-            input[0],
-            core::slice::from_raw_parts(&input[1], len.saturating_sub(1)),
-        )
+        input.assume_init_ref()
     };
 
-    match selector {
-        HANDLE_0_CREDIT_ETH => handle_0_credit_eth(payload),
-        HANDLE_1_CREDIT_ERC20 => handle_1_credit_erc20(payload),
+    let num_calls = input[0] as usize;
+    let mut offset = 1;
 
-        // Getters
-        GET_10_TRADER_TOKEN_STATE => get_10_trader_token_state(payload),
+    for _ in 0..num_calls {
+        // Invalid input: not enough bytes for selector + length
+        if offset + 2 > len {
+            return 1;
+        }
 
-        _ => 1,
+        let selector = input[offset];
+        let payload_len = input[offset + 1] as usize;
+        offset += 2;
+
+        if offset + payload_len > len {
+            // Invalid input: payload out of bounds
+            return 1;
+        }
+
+        let payload = &input[offset..offset + payload_len];
+        offset += payload_len;
+
+        let result = match selector {
+            HANDLE_0_CREDIT_ETH => handle_0_credit_eth(payload),
+            HANDLE_1_CREDIT_ERC20 => handle_1_credit_erc20(payload),
+            GET_10_TRADER_TOKEN_STATE => get_10_trader_token_state(payload),
+            _ => return 1, // Unknown selector
+        };
+
+        // If any handler fails (returns nonzero), propagate the error
+        if result != 0 {
+            return result;
+        }
     }
+
+    0
 }
