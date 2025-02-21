@@ -10,6 +10,11 @@ readonly RECIPIENT=3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E
 # 1u64 lot = 0x0100000000000000
 readonly LOTS=0100000000000000
 
+cast send "0x$TOKEN" \
+    "approve(address,uint256)" $CONTRACT 10000000 \
+    --rpc-url $RPC \
+    --private-key $PRIVATE_KEY
+
 cast send $CONTRACT \
     "0x01$TOKEN$RECIPIENT$LOTS" \
     --rpc-url $RPC \
