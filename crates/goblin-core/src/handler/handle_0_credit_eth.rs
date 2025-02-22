@@ -79,7 +79,13 @@ mod tests {
 
         // Set args
         let mut test_args: Vec<u8> = vec![];
+        let num_calls: u8 = 1;
+        test_args.push(num_calls);
         test_args.push(HANDLE_0_CREDIT_ETH);
+
+        let payload_len = 20; // 20 byte address
+        test_args.push(payload_len);
+
         let recipient = hex!("3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E");
         test_args.extend_from_slice(&recipient);
         set_test_args(test_args.clone());
