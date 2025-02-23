@@ -35,9 +35,6 @@ pub fn read_trader_token_state(trader_token_key: &TraderTokenKey) -> Vec<u8> {
     test_args.push(num_calls);
     test_args.push(GET_10_TRADER_TOKEN_STATE);
 
-    let payload_len = core::mem::size_of::<TraderTokenKey>();
-    test_args.push(payload_len as u8);
-
     let payload_bytes: &[u8] = unsafe {
         core::slice::from_raw_parts(
             trader_token_key as *const TraderTokenKey as *const u8,

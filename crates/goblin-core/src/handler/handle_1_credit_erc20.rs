@@ -107,9 +107,6 @@ mod test {
         test_args.push(num_calls);
         test_args.push(HANDLE_1_CREDIT_ERC20);
 
-        let payload_len = core::mem::size_of::<CreditERC20Params>();
-        test_args.push(payload_len as u8);
-
         let payload = CreditERC20Params {
             token: hex!("7E32b54800705876d3b5cFbc7d9c226a211F7C1a"),
             recipient: hex!("3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E"),
