@@ -67,7 +67,7 @@ mod tests {
     use super::*;
     use hex_literal::hex;
 
-    use crate::{set_msg_value, set_test_args, user_entrypoint};
+    use crate::{getter::read_trader_token_state, set_msg_value, set_test_args, user_entrypoint};
 
     use super::HANDLE_0_CREDIT_ETH;
 
@@ -102,6 +102,14 @@ mod tests {
         let mut trader_token_state_maybe = MaybeUninit::<TraderTokenState>::uninit();
         let trader_token_state =
             unsafe { TraderTokenState::load(key, &mut trader_token_state_maybe) };
+
+        assert_eq!(trader_token_state.lots_free.0, 1);
+        assert_eq!(trader_token_state.lots_locked.0, 0);
+
+        // Validate result from getter
+        let trader_token_state_bytes = read_trader_token_state(key);
+        let trader_token_state: &TraderTokenState =
+            unsafe { &*(trader_token_state_bytes.as_ptr() as *const TraderTokenState) };
 
         assert_eq!(trader_token_state.lots_free.0, 1);
         assert_eq!(trader_token_state.lots_locked.0, 0);
