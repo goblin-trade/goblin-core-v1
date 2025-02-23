@@ -7,7 +7,9 @@ use crate::{
     storage_flush_cache,
     types::{Address, NATIVE_TOKEN},
 };
+
 pub const HANDLE_0_CREDIT_ETH: u8 = 0;
+pub const HANDLE_0_PAYLOAD_LEN: usize = core::mem::size_of::<Address>();
 
 /// Credit ETH to a recipient
 ///
@@ -31,10 +33,6 @@ pub const HANDLE_0_CREDIT_ETH: u8 = 0;
 /// * The address is already in big endian
 ///
 pub fn handle_0_credit_eth(payload: &[u8]) -> i32 {
-    if payload.len() != 20 {
-        return 1;
-    }
-
     let recipient: &Address = unsafe { &*(payload.as_ptr() as *const Address) };
 
     // Amount of ETH in, in 64-bit chunks, in big endian encoding

@@ -11,6 +11,7 @@ use crate::{
 };
 
 pub const HANDLE_1_CREDIT_ERC20: u8 = 1;
+pub const HANDLE_1_PAYLOAD_LEN: usize = core::mem::size_of::<CreditERC20Params>();
 
 #[repr(C)]
 struct CreditERC20Params {
@@ -32,10 +33,6 @@ struct CreditERC20Params {
 
 /// Credit an ERC20 token to a recipient
 pub fn handle_1_credit_erc20(payload: &[u8]) -> i32 {
-    if payload.len() != core::mem::size_of::<CreditERC20Params>() {
-        return 1;
-    }
-
     let params = unsafe { &*(payload.as_ptr() as *const CreditERC20Params) };
 
     let mut sender_maybe = MaybeUninit::<Address>::uninit();
