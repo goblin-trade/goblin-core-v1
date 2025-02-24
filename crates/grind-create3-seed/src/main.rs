@@ -16,6 +16,7 @@ fn namespace_salt(deployer: Address, salt: B256) -> B256 {
 }
 
 /// Generate a CREATE3 address given the factory, deployer, salt, and proxy bytecode hash.
+/// Generate a CREATE3 address given the factory, deployer, salt, and proxy bytecode hash.
 fn get_create3_address(
     factory: Address,
     deployer: Address,
@@ -24,20 +25,29 @@ fn get_create3_address(
 ) -> Address {
     let namespaced_salt = namespace_salt(deployer, salt);
 
+    // Correct the proxy address calculation
     let proxy_address = Address::from_slice(
         &keccak256(
             [
-                &[0xff],
-                factory.as_slice(),
-                namespaced_salt.as_slice(),
-                proxy_bytecode_hash.as_slice(),
+                &[0xff],                        // Prefix
+                factory.as_slice(),             // Factory address
+                namespaced_salt.as_slice(),     // Salt
+                proxy_bytecode_hash.as_slice(), // Proxy bytecode hash
             ]
             .concat(),
-        )[..20],
+        )[12..32], // Take the last 20 bytes
     );
 
+    // Correct the deployed contract address calculation
     Address::from_slice(
-        &keccak256([&[0xd6, 0x94], proxy_address.as_slice(), &[0x01]].concat())[..20],
+        &keccak256(
+            [
+                &[0xd6, 0x94],            // RLP prefix for contract creation
+                proxy_address.as_slice(), // Proxy address
+                &[0x01],                  // Nonce = 1
+            ]
+            .concat(),
+        )[12..32], // Take the last 20 bytes
     )
 }
 
@@ -91,33 +101,9 @@ mod test {
     use super::*;
 
     #[test]
-    fn test_proxy_bytecode_hash() {
-        let proxy_bytecode_hash = keccak256(PROXY_BYTECODE);
-
-        // This is valid
-        // smart contract logs 15271506168544636618683946165347184908672584999956201311530805028234774281247
-        // too
-        let hash_num = U256::try_from(proxy_bytecode_hash).unwrap();
-        println!("hash num {:?}", hash_num);
-    }
-
-    // This is also correct
-    #[test]
-    fn test_salt_with_deployer() {
-        let salt = B256::new(hex!(
-            "0000000000000000000000000000000000000000000000004000000000005443"
-        ));
-        let salt_with_deployer = namespace_salt(DEPLOYER, salt);
-        println!(
-            "salt_with_deployer {:?}",
-            U256::try_from(salt_with_deployer).unwrap()
-        );
-    }
-
-    #[test]
     fn test_address_for_salt() {
         let salt = B256::new(hex!(
-            "0000000000000000000000000000000000000000000000004000000000005443"
+            "0x0000000000000000000000000000000000000000000000006000000000001aca"
         ));
         let proxy_bytecode_hash = keccak256(PROXY_BYTECODE);
 
