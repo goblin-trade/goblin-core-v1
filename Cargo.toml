@@ -5,7 +5,7 @@ resolver = "2"
 members = [
     "crates/goblin-market",
     "crates/goblin-factory",
-    "crates/goblin-core", "crates/grind-create3-seed",
+    "crates/goblin-core", "crates/grind-create3-seed", "crates/compile-contract",
 ]
 
 # This must be at the root level otherwise binaries will bloat
