@@ -1,3 +1,6 @@
 [submodule "goblin-localnet-scripts"]
 	path = goblin-localnet-scripts
 	url = https://github.com/goblin-trade/goblin-localnet-scripts
+[submodule "nitro-devnode"]
+	path = nitro-devnode
+	url = https://github.com/OffchainLabs/nitro-devnode
