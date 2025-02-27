@@ -1,9 +1,46 @@
+///! Obtain init code from a .wasm file
+///!
+///! # Steps
+///!
+///! 1. Convert the wasm to WAT, then back to WASM to remove dangling references.
+///! 2. Bortli compress the bytes
+///! 3. Call contract_deployment_calldata to obtain deployment data from init_code.
+///!
+///! # Theory
+///!
+///! - The contract bytecode begins with prefix EFF00000. This prefix differentiates WASM
+///! contracts from EVM contracts that use the prefix 6080604052
+///! - The bytecode must be prepended with EVM opcodes so that the code is actually interpreted
+///! as a contract. This is done by calling contract_deployment_calldata(). The init code
+///! will begin with `7f00000000000000000000000000000000000000000000000000000000000004e58060`
+///!
+///! This script will take path to a file 'gobin_core.wasm' and output 'goblin_core.contract'
+///! in the same folder. To deploy this file call
+///!
+///! ```sh
+///! # Run script to generate goblin_core.contract
+///! cargo run -p compile-contract --bin compile-contract
+///!
+///! cast send \
+///!    --rpc-url http://127.0.0.1:8547 \
+///!    --private-key 0xb6b15c8cb491557369f3c7d2c287b053eb229daa9c22138887752191c9520659 \
+///!    --create 0x$(xxd -p goblin_core.contract | tr -d '\n')
+///!
+///! # Activate
+///! cast send 0x0000000000000000000000000000000000000071 \
+///!     "activateProgram(address)" 0xA6E41fFD769491a42A6e5Ce453259b93983a22EF \
+///!     --rpc-url http://127.0.0.1:8547 \
+///!     --private-key 0xb6b15c8cb491557369f3c7d2c287b053eb229daa9c22138887752191c9520659 \
+///!     --value 0.0001ether
+///! ```
+///!
+use alloy_primitives::U256;
 use brotli2::read::BrotliEncoder;
-use eyre::{bail, eyre, Result, WrapErr};
+use eyre::{eyre, Result, WrapErr};
 use std::fs;
 use std::io::Read;
 use std::ops::Range;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use wasm_encoder::{Module, RawSection};
 use wasmparser::{Parser, Payload};
 
@@ -25,20 +62,13 @@ fn main() -> Result<()> {
     println!("Processing WASM file: {}", wasm_path.display());
 
     // Compress the WASM file
-    let (wasm, contract_code) = compress_wasm(&wasm_path, project_hash)?;
+    let (wasm, init_code) = compress_wasm(&wasm_path, project_hash)?;
 
-    // TODO we should
-    // - Add init bytecode
-    // - Store as hex, `xxd -p goblin_core.contract | tr -d '\n' > goblin_core_hex`
-
-    // Write the processed WASM to a file
-    let wasm_output_path = wasm_path.with_extension("processed.wasm");
-    fs::write(&wasm_output_path, &wasm)?;
-    println!("Processed WASM written to: {}", wasm_output_path.display());
+    let deployment_data = contract_deployment_calldata(&init_code);
 
     // Write the contract code to a file
     let contract_output_path = wasm_path.with_extension("contract");
-    fs::write(&contract_output_path, &contract_code)?;
+    fs::write(&contract_output_path, &deployment_data)?;
     println!(
         "Contract code written to: {}",
         contract_output_path.display()
@@ -50,7 +80,7 @@ fn main() -> Result<()> {
         fs::metadata(&wasm_path)?.len()
     );
     println!("Processed WASM size: {} bytes", wasm.len());
-    println!("Contract code size: {} bytes", contract_code.len());
+    println!("Contract code size: {} bytes", init_code.len());
 
     Ok(())
 }
@@ -188,4 +218,24 @@ fn strip_user_metadata(wasm_file_bytes: &[u8]) -> Result<Vec<u8>> {
     }
     // Return the stripped WASM binary
     Ok(module.finish())
+}
+
+/// Prepares an EVM bytecode prelude for contract creation.
+pub fn contract_deployment_calldata(code: &[u8]) -> Vec<u8> {
+    let code_len: [u8; 32] = U256::from(code.len()).to_be_bytes();
+    let mut deploy: Vec<u8> = vec![];
+    deploy.push(0x7f); // PUSH32
+    deploy.extend(code_len);
+    deploy.push(0x80); // DUP1
+    deploy.push(0x60); // PUSH1
+    deploy.push(42 + 1); // prelude + version
+    deploy.push(0x60); // PUSH1
+    deploy.push(0x00);
+    deploy.push(0x39); // CODECOPY
+    deploy.push(0x60); // PUSH1
+    deploy.push(0x00);
+    deploy.push(0xf3); // RETURN
+    deploy.push(0x00); // version
+    deploy.extend(code);
+    deploy
 }
