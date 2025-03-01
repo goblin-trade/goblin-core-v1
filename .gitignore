@@ -2,3 +2,4 @@
 
 .mainnet.key
 .localnet.key
+.env

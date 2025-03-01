@@ -18,11 +18,10 @@ pub mod quantities;
 pub mod state;
 pub mod types;
 
-// Address 0xa6e41ffd769491a42a6e5ce453259b93983a22ef
-// Deployer 0x3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E, nonce 0
-// The contract should be deployed in the first transaction on testnet to get nonce 0
+// Address 0x8888415db80eabcf580283a3d65249887d3161b0
 pub const ADDRESS: [u8; 20] = [
-    166, 228, 31, 253, 118, 148, 145, 164, 42, 110, 92, 228, 83, 37, 155, 147, 152, 58, 34, 239,
+    0x88, 0x88, 0x41, 0x5d, 0xb8, 0x0e, 0xab, 0xcf, 0x58, 0x02, 0x83, 0xa3, 0xd6, 0x52, 0x49, 0x88,
+    0x7d, 0x31, 0x61, 0xb0,
 ];
 
 #[no_mangle]
