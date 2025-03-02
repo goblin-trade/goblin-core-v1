@@ -3,3 +3,4 @@
 .mainnet.key
 .localnet.key
 .env
+db.sqlite3
