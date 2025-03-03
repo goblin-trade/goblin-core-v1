@@ -1,0 +1,64 @@
+// curl -X POST $ETH_RPC_URL \
+//   -H "Content-Type: application/json" \
+//   --data '{"method":"debug_traceBlockByNumber","params":["0xb", {"tracer": "callTracer"}],"id":1,"jsonrpc":"2.0"}'
+//
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": [
+    {
+      "txHash": "0x74e878510f917014b27c0343330575c4dee5827b969d4e26e108f40f7871c6c8",
+      "result": {
+        "beforeEVMTransfers": [],
+        "afterEVMTransfers": [],
+        "from": "0x00000000000000000000000000000000000a4b05",
+        "gas": "0x0",
+        "gasUsed": "0x0",
+        "to": "0x00000000000000000000000000000000000a4b05",
+        "input": "0x6bf6a42d00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000b000000000000000000000000000000000000000000000000000000000000045f",
+        "value": "0x0",
+        "type": "CALL",
+      },
+    },
+    {
+      "txHash": "0x5cb9a845e2523e6ca52e3a34a0871cac4db85f230a4af4f9ae5ff741662173ec",
+      "result": {
+        "beforeEVMTransfers": [
+          {
+            "purpose": "feePayment",
+            "from": "0x3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E",
+            "to": null,
+            "value": "0x90a74580b100",
+          },
+        ],
+        "afterEVMTransfers": [
+          {
+            "purpose": "gasRefund",
+            "from": null,
+            "to": "0x3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E",
+            "value": "0x2435bba4b400",
+          },
+          {
+            "purpose": "feeCollection",
+            "from": null,
+            "to": "0x0000000000000000000000000000000000000000",
+            "value": "0x465b67f3d00",
+          },
+          {
+            "purpose": "feeCollection",
+            "from": null,
+            "to": "0xa4B00000000000000000000000000000000000F6",
+            "value": "0x680bd35cc000",
+          },
+        ],
+        "from": "0x3f1eae7d46d88f08fc2f8ed27fcb2ab183eb2d0e",
+        "gas": "0x1844d1",
+        "gasUsed": "0x12319d",
+        "to": "0x8888415db80eabcf580283a3d65249887d3161b0",
+        "input": "0x01003f1eae7d46d88f08fc2f8ed27fcb2ab183eb2d0e0100000000000000",
+        "value": "0x0",
+        "type": "CALL",
+      },
+    },
+  ],
+}

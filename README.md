@@ -136,6 +136,93 @@ cast call 0x525c2aba45f66987217323e8a05ea400c65d06dc \
     --rpc-url http://127.0.0.1:8547
 ```
 
+# Tracing calls
+
+## debug_traceTransaction
+```sh
+curl -X POST $ETH_RPC_URL \
+  -H "Content-Type: application/json" \
+  --data '{"jsonrpc":"2.0","method":"debug_traceTransaction","params":["0x2d00227e53ffb6b7fbb165b1b5c1945c6a18db9dd4a669edc4fba6ac959ec9e6",{"tracer":"stylusTracer"}],"id":1}'
+```
+
+`stylusTracer` will return data in below format.
+
+```sh
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": [
+    {
+      "name": "user_entrypoint",
+      "args": "0x00000032",
+      "outs": "0x",
+      "startInk": 4781120000,
+      "endInk": 4781120000
+    },
+    {
+      "name": "read_args",
+      "args": "0x",
+      "outs": "0x0101e1080224b632a93951a7cfa33eeea9fd81558b5e3f1eae7d46d88f08fc2f8ed27fcb2ab183eb2d0e0100000000000000",
+      "startInk": 4781109267,
+      "endInk": 4781095287
+    },
+    {
+      "name": "msg_sender",
+      "args": "0x",
+      "outs": "0x3f1eae7d46d88f08fc2f8ed27fcb2ab183eb2d0e",
+      "startInk": 4781058849,
+      "endInk": 4781045409
+    },
+    {
+      "name": "call_contract",
+      "args": "0xe1080224b632a93951a7cfa33eeea9fd81558b5e0000000000030d40000000000000000000000000000000000000000000000000000000000000000023b872dd0000000000000000000000003f1eae7d46d88f08fc2f8ed27fcb2ab183eb2d0e0000000000000000000000008888415db80eabcf580283a3d65249887d3161b000000000000000000000000000000000000000000000000000000000000f4240",
+      "outs": "0x0000002000",
+      "startInk": 4780924782,
+      "endInk": 4398231347,
+      "address": "0xe1080224b632a93951a7cfa33eeea9fd81558b5e",
+      "steps": []
+    },
+```
+
+A successful call will return
+
+```sh
+    {
+      "name": "user_returned",
+      "args": "0x",
+      "outs": "0x00000000",
+      "startInk": 4781120000,
+      "endInk": 4781120000
+    }
+```
+
+## debug_traceBlockByNumber
+
+```sh
+curl -X POST $ETH_RPC_URL \
+  -H "Content-Type: application/json" \
+  --data '{"method":"debug_traceBlockByNumber","params":["0xa", {"tracer": "stylusTracer"}],"id":1,"jsonrpc":"2.0"}'
+```
+
+This returns trace for each transaction in the block but doesn't contain contract address 0x8888...
+
+## arbtrace endpoints
+
+```sh
+curl -X POST $ETH_RPC_URL \
+  -H "Content-Type: application/json" \
+  --data '{"method":"arbtrace_block","params":["0xc"],"id":1,"jsonrpc":"2.0"}'
+```
+
+## Using eth_getBlockByNumber instead of debug endpoints
+
+```bash
+curl -X POST $ETH_RPC_URL \
+    -H "Content-Type: application/json" \
+    --data '{"method":"eth_getBlockByNumber","params":["0xa",true],"id":1,"jsonrpc":"2.0"}'
+
+```
+
 # Optimization decisions
 
 These have been benchmarked

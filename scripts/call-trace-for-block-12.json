@@ -1,0 +1,72 @@
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": [
+    {
+      "txHash": "0x91cc685533f77793ec51d506b6ee9adf5490fd628786617c70554439902d2035",
+      "result": {
+        "beforeEVMTransfers": [],
+        "afterEVMTransfers": [],
+        "from": "0x00000000000000000000000000000000000a4b05",
+        "gas": "0x0",
+        "gasUsed": "0x0",
+        "to": "0x00000000000000000000000000000000000a4b05",
+        "input": "0x6bf6a42d00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c0000000000000000000000000000000000000000000000000000000000000000",
+        "value": "0x0",
+        "type": "CALL"
+      }
+    },
+    {
+      "txHash": "0x292475d9a7aa90d4663c137d60e3c4461b2d22775f5962489ebd1d4be49b9d1a",
+      "result": {
+        "beforeEVMTransfers": [
+          {
+            "purpose": "feePayment",
+            "from": "0x3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E",
+            "to": null,
+            "value": "0xa32d84fc8f00"
+          }
+        ],
+        "afterEVMTransfers": [
+          {
+            "purpose": "gasRefund",
+            "from": null,
+            "to": "0x3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E",
+            "value": "0x25f600774900"
+          },
+          {
+            "purpose": "feeCollection",
+            "from": null,
+            "to": "0x0000000000000000000000000000000000000000",
+            "value": "0x69e66d78600"
+          },
+          {
+            "purpose": "feeCollection",
+            "from": null,
+            "to": "0xa4B00000000000000000000000000000000000F6",
+            "value": "0x76991dadc000"
+          }
+        ],
+        "from": "0x3f1eae7d46d88f08fc2f8ed27fcb2ab183eb2d0e",
+        "gas": "0x1b606f",
+        "gasUsed": "0x150206",
+        "to": "0x8888415db80eabcf580283a3d65249887d3161b0",
+        "input": "0x0101e1080224b632a93951a7cfa33eeea9fd81558b5e3f1eae7d46d88f08fc2f8ed27fcb2ab183eb2d0e0100000000000000",
+        "calls": [
+          {
+            "from": "0x8888415db80eabcf580283a3d65249887d3161b0",
+            "gas": "0x30d40",
+            "gasUsed": "0x487d",
+            "to": "0xe1080224b632a93951a7cfa33eeea9fd81558b5e",
+            "input": "0x23b872dd0000000000000000000000003f1eae7d46d88f08fc2f8ed27fcb2ab183eb2d0e0000000000000000000000008888415db80eabcf580283a3d65249887d3161b000000000000000000000000000000000000000000000000000000000000f4240",
+            "output": "0x0000000000000000000000000000000000000000000000000000000000000001",
+            "value": "0x0",
+            "type": "CALL"
+          }
+        ],
+        "value": "0x0",
+        "type": "CALL"
+      }
+    }
+  ]
+}

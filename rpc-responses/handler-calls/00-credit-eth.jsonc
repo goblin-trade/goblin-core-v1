@@ -1,0 +1,70 @@
+// curl -X POST $ETH_RPC_URL \
+//   -H "Content-Type: application/json" \
+//   --data '{"method":"debug_traceBlockByNumber","params":["0xc", {"tracer": "callTracer"}],"id":1,"jsonrpc":"2.0"}'
+//
+// Questions
+// - How to find 'value' sent
+//   > A 'value' field is present only if we explicitly send ether with 'value'. Otherwise
+//   the field is absent. Do not look at beforeEVMTransfers or afterEVMTransfers
+//
+// - How are internal transactions tracked
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": [
+    {
+      "txHash": "0x3e2c7ce19d2de3ee5af549f62524995052cad31951899abd3fdf81f4e1578fa4",
+      "result": {
+        "beforeEVMTransfers": [],
+        "afterEVMTransfers": [],
+        "from": "0x00000000000000000000000000000000000a4b05",
+        "gas": "0x0",
+        "gasUsed": "0x0",
+        "to": "0x00000000000000000000000000000000000a4b05",
+        "input": "0x6bf6a42d00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c00000000000000000000000000000000000000000000000000000000000000b3",
+        "value": "0x0",
+        "type": "CALL",
+      },
+    },
+    {
+      "txHash": "0xe68be8b5044378f985b48f34457b05aea4d895c076581ec6d78c62d55e72949f",
+      "result": {
+        "beforeEVMTransfers": [
+          {
+            "purpose": "feePayment",
+            "from": "0x3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E",
+            "to": null,
+            "value": "0x91ad10f71d00",
+          },
+        ],
+        "afterEVMTransfers": [
+          {
+            "purpose": "gasRefund",
+            "from": null,
+            "to": "0x3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E",
+            "value": "0x242527caec00",
+          },
+          {
+            "purpose": "feeCollection",
+            "from": null,
+            "to": "0x0000000000000000000000000000000000000000",
+            "value": "0x6365986b100",
+          },
+          {
+            "purpose": "feeCollection",
+            "from": null,
+            "to": "0xa4B00000000000000000000000000000000000F6",
+            "value": "0x67518fa58000",
+          },
+        ],
+        "from": "0x3f1eae7d46d88f08fc2f8ed27fcb2ab183eb2d0e",
+        "gas": "0x1870bd",
+        "gasUsed": "0x126051",
+        "to": "0x8888415db80eabcf580283a3d65249887d3161b0",
+        "input": "0x01003f1eae7d46d88f08fc2f8ed27fcb2ab183eb2d0e",
+        "value": "0x38d7ea4c68000",
+        "type": "CALL",
+      },
+    },
+  ],
+}
