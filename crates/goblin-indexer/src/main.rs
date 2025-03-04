@@ -2,10 +2,16 @@ use std::time::Duration;
 
 use alloy::{
     eips::BlockNumberOrTag,
-    providers::{Provider, ProviderBuilder},
-    rpc::types::BlockTransactionsKind,
+    providers::{ext::DebugApi, Provider, ProviderBuilder},
+    rpc::types::{
+        trace::geth::{
+            CallConfig, FlatCallConfig, GethDebugBuiltInTracerType, GethDebugTracerType,
+            GethDebugTracingOptions,
+        },
+        BlockTransactionsKind,
+    },
 };
-use constants::rpc_url;
+use constants::{contract_address, rpc_url};
 use tokio::{self, time::sleep};
 
 pub mod constants;
@@ -17,28 +23,35 @@ async fn main() -> anyhow::Result<()> {
 
     let mut block_number = 10;
 
-    loop {
-        if let Some(block_data) = provider
-            .get_block_by_number(
-                BlockNumberOrTag::Number(block_number),
-                BlockTransactionsKind::Full,
-            )
-            .await?
-        {
-            println!("Block {} data {:#?}", block_number, block_data);
-        }
+    let tracing_options = GethDebugTracingOptions::flat_call_tracer(FlatCallConfig::default());
 
-        // match provider
-        //     .get_block_by_number(
-        //         BlockNumberOrTag::Number(block_number),
-        //         BlockTransactionsKind::Full,
-        //     )
-        //     .await
-        // {
-        //     Ok(Some(block_data)) => println!("{:#?}", block_data),
-        //     Ok(None) => println!("Block {} not found", block_number),
-        //     Err(e) => println!("Error fetching block {}: {:?}", block_number, e),
-        // }
+    loop {
+        let block_trace = provider
+            .debug_trace_block_by_number(
+                BlockNumberOrTag::Number(block_number),
+                tracing_options.clone(),
+            )
+            .await?;
+
+        for tx in block_trace {
+            if let Some(success_tx) = tx.success() {
+                if let Ok(localized_traces) = success_tx.clone().try_into_flat_call_frame() {
+                    for localized_trace in localized_traces {
+                        if let Some(call_action) = localized_trace.trace.action.as_call() {
+                            if call_action.to == contract_address() {
+                                println!(
+                                    "block {:?}, tx index {:?}",
+                                    localized_trace.block_number,
+                                    localized_trace.transaction_position
+                                );
+                                println!("tx hash {:?}", localized_trace.transaction_hash);
+                                println!("Action {:?}", call_action);
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
         block_number += 1;
         sleep(Duration::from_secs(10)).await;

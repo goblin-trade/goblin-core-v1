@@ -202,6 +202,10 @@ A successful call will return
 curl -X POST $ETH_RPC_URL \
   -H "Content-Type: application/json" \
   --data '{"method":"debug_traceBlockByNumber","params":["0xa", {"tracer": "stylusTracer"}],"id":1,"jsonrpc":"2.0"}'
+
+curl -X POST $ETH_RPC_URL \
+  -H "Content-Type: application/json" \
+  --data '{"method":"debug_traceBlockByNumber","params":["0xa", {"tracer": "callTracer"}],"id":1,"jsonrpc":"2.0"}'
 ```
 
 This returns trace for each transaction in the block but doesn't contain contract address 0x8888...
