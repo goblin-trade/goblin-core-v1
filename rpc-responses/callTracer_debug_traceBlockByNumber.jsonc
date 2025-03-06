@@ -1,7 +1,7 @@
 // curl -X POST $ETH_RPC_URL \
 //   -H "Content-Type: application/json" \
 //   --data '{"method":"debug_traceBlockByNumber","params":["0xc", {"tracer": "callTracer"}],"id":1,"jsonrpc":"2.0"}'
-//
+
 // Questions
 // - How to find 'value' sent
 //   > A 'value' field is always present. Do not look at beforeEVMTransfers or afterEVMTransfers

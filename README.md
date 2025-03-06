@@ -220,11 +220,116 @@ curl -X POST $ETH_RPC_URL \
 
 ## Using eth_getBlockByNumber instead of debug endpoints
 
+Doen't provide information on internal calls.
+
 ```bash
 curl -X POST $ETH_RPC_URL \
     -H "Content-Type: application/json" \
     --data '{"method":"eth_getBlockByNumber","params":["0xa",true],"id":1,"jsonrpc":"2.0"}'
+```
 
+## Batching multiple calls
+
+This works. TODO call in alloy-rs in type safe way.
+
+```bash
+curl -X POST $ETH_RPC_URL \
+  -H "Content-Type: application/json" \
+  --data '[
+    {"method":"debug_traceBlockByNumber","params":["0x9", {"tracer": "flatCallTracer"}],"id":1,"jsonrpc":"2.0"},
+    {"method":"debug_traceBlockByNumber","params":["0xa", {"tracer": "flatCallTracer"}],"id":1,"jsonrpc":"2.0"}
+  ]'
+```
+
+## Custom JS tracer
+
+```js
+{
+  data: [],
+  fault: function(log) {},
+  step: function(log) { if(log.op.toString() == "CALL") this.data.push(log.stack.peek(0)); },
+  result: function() { return this.data; }
+}
+```
+
+```sh
+curl -X POST $ETH_RPC_URL \
+  -H "Content-Type: application/json" \
+  --data '{
+    "method": "debug_traceBlockByNumber",
+    "params": [
+      "0xa",
+      {
+        "tracer": "{data: [], fault: function(log) {}, step: function(log) { if(log.op.toString() == \"CALL\") this.data.push(log.stack.peek(0)); }, result: function() { return this.data; }}"
+      }
+    ],
+    "id": 1,
+    "jsonrpc": "2.0"
+  }'
+
+TRACER='{
+    data: [],
+    fault: function(log) {},
+    step: function(log) {
+        if(log.op.toString() == "CALL") {
+            this.data.push(log.stack.peek(0));
+        }
+    },
+    result: function() { return this.data; }
+}'
+
+curl -X POST "$ETH_RPC_URL" \
+  -H "Content-Type: application/json" \
+  --data "$(jq -n '{
+    method: "debug_traceBlockByNumber",
+    params: ["0xa", { tracer: $tracer }],
+    id: 1,
+    jsonrpc: "2.0"
+  }' --arg tracer "$TRACER")"
+```
+
+### Filter to get traces to 0x8888415db80eabcf580283a3d65249887d3161b0
+
+```sh
+TRACER='{
+    data: [],
+    fault: function(log) {},
+    step: function (log) {
+        if (log.op.toString() === "CALL" || log.op.toString() === "CALLCODE") {
+            let to = log.contract.getAddress(); // Use getTo() for the recipient
+             this.data.push(log.stack.peek(0));
+        }
+    },
+    result: function () {
+        return this.data;
+    }
+}'
+
+curl -X POST "$ETH_RPC_URL" \
+  -H "Content-Type: application/json" \
+  --data "$(jq -n '{
+    method: "debug_traceBlockByNumber",
+    params: ["0xa", { tracer: $tracer }],
+    id: 1,
+    jsonrpc: "2.0"
+  }' --arg tracer "$TRACER")"
+```
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": [
+    {
+      "txHash": "0x4984f2c62714e25fdb8c4b47393f4545afcd00dca86f3cd05ab34d2db9687718",
+      "result": [],
+    },
+    {
+      "txHash": "0x2d00227e53ffb6b7fbb165b1b5c1945c6a18db9dd4a669edc4fba6ac959ec9e6",
+      "result": [],
+    },
+  ],
+}
 ```
 
 # Optimization decisions

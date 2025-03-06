@@ -2,14 +2,8 @@ use std::time::Duration;
 
 use alloy::{
     eips::BlockNumberOrTag,
-    providers::{ext::DebugApi, Provider, ProviderBuilder},
-    rpc::types::{
-        trace::geth::{
-            CallConfig, FlatCallConfig, GethDebugBuiltInTracerType, GethDebugTracerType,
-            GethDebugTracingOptions,
-        },
-        BlockTransactionsKind,
-    },
+    providers::{ext::DebugApi, ProviderBuilder},
+    rpc::types::trace::geth::{FlatCallConfig, GethDebugTracingOptions},
 };
 use constants::{contract_address, rpc_url};
 use tokio::{self, time::sleep};
@@ -22,7 +16,6 @@ async fn main() -> anyhow::Result<()> {
     let provider = ProviderBuilder::new().on_http(rpc_url());
 
     let mut block_number = 10;
-
     let tracing_options = GethDebugTracingOptions::flat_call_tracer(FlatCallConfig::default());
 
     loop {
