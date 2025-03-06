@@ -2,7 +2,8 @@
 ///!
 ///! # Steps
 ///!
-///! 1. Convert the wasm to WAT, then back to WASM to remove dangling references.
+///! 1. ~~Convert the wasm to WAT, then back to WASM to remove dangling references.~~ Code
+///! works even if this step is removed.
 ///! 2. Bortli compress the bytes
 ///! 3. Call contract_deployment_calldata to obtain deployment data from init_code.
 ///!
@@ -59,8 +60,6 @@ fn main() -> Result<()> {
     // Create a dummy project hash (all zeros in this example)
     let project_hash = [0u8; 32];
 
-    println!("Processing WASM file: {}", wasm_path.display());
-
     // Compress the WASM file
     let (wasm, init_code) = compress_wasm(&wasm_path, project_hash)?;
 
@@ -87,27 +86,9 @@ fn main() -> Result<()> {
 
 /// Reads a WASM file at a specified path and returns its brotli compressed bytes.
 fn compress_wasm(wasm: &PathBuf, project_hash: [u8; 32]) -> Result<(Vec<u8>, Vec<u8>)> {
-    let wasm =
-        fs::read(wasm).wrap_err_with(|| eyre!("failed to read Wasm {}", wasm.to_string_lossy()))?;
-
-    // Convert the WASM from binary to text and back to binary
-    // This removes any dangling mentions of reference types
-    let wat_str =
-        wasmprinter::print_bytes(&wasm).map_err(|e| eyre!("failed to convert Wasm to Wat: {e}"))?;
-
-    let wasm =
-        wat2wasm(wat_str.as_bytes()).map_err(|e| eyre!("failed to convert Wat to Wasm: {e}"))?;
-
-    // Add the project's hash as a custom section
-    let wasm = add_project_hash_to_wasm_file(&wasm, project_hash)
-        .wrap_err("failed to add project hash to wasm file as custom section")?;
-
-    // Strip user metadata
-    let wasm =
-        strip_user_metadata(&wasm).wrap_err("failed to strip user metadata from wasm file")?;
-
-    // Parse the WASM again to ensure it's valid
-    let wasm = wat2wasm(&wasm).wrap_err("failed to parse Wasm")?;
+    let wasm = fs::read(wasm)?;
+    let wasm = add_project_hash_to_wasm_file(&wasm, project_hash)?;
+    let wasm = strip_user_metadata(&wasm)?;
 
     // Compress the WASM using Brotli
     let mut compressor = BrotliEncoder::new(&*wasm, BROTLI_COMPRESSION_LEVEL);
@@ -121,13 +102,6 @@ fn compress_wasm(wasm: &PathBuf, project_hash: [u8; 32]) -> Result<(Vec<u8>, Vec
     contract_code.extend(compressed_bytes);
 
     Ok((wasm.to_vec(), contract_code))
-}
-
-// Simple wrapper around the wat2wasm functionality
-fn wat2wasm(wat: &[u8]) -> Result<Vec<u8>> {
-    wat::parse_bytes(wat)
-        .map(|cow| cow.into_owned())
-        .map_err(|e| eyre!("Failed to parse WAT: {}", e))
 }
 
 // Adds the hash of the project's source files to the wasm as a custom section

@@ -1,0 +1,27 @@
+// curl -X POST $ETH_RPC_URL \
+//   -H "Content-Type: application/json" \
+//   --data '{
+//     "method": "debug_traceBlockByNumber",
+//     "params": [
+//       "0xa",
+//       {
+//         "tracer": "{data: [], fault: function(log) {}, step: function(log) { if(log.op.toString() == \"CALL\") this.data.push(log.stack.peek(0)); }, result: function() { return this.data; }}"
+//       }
+//     ],
+//     "id": 1,
+//     "jsonrpc": "2.0"
+//   }'
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": [
+    {
+      "txHash": "0x4984f2c62714e25fdb8c4b47393f4545afcd00dca86f3cd05ab34d2db9687718",
+      "result": [],
+    },
+    {
+      "txHash": "0x2d00227e53ffb6b7fbb165b1b5c1945c6a18db9dd4a669edc4fba6ac959ec9e6",
+      "result": ["200000"],
+    },
+  ],
+}

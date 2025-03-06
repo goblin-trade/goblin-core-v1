@@ -1,0 +1,196 @@
+// curl -X POST $ETH_RPC_URL \
+//   -H "Content-Type: application/json" \
+//   --data '[
+//     {"method":"debug_traceBlockByNumber","params":["0x9", {"tracer": "flatCallTracer"}],"id":1,"jsonrpc":"2.0"},
+//     {"method":"debug_traceBlockByNumber","params":["0xa", {"tracer": "flatCallTracer"}],"id":1,"jsonrpc":"2.0"}
+//   ]'
+[
+  {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "result": [
+      {
+        "txHash": "0x67c58605bac67319b59f3f7c8c9669e33b15b596dce7d2411c38945d850bbbfb",
+        "result": [
+          {
+            "beforeEVMTransfers": [],
+            "afterEVMTransfers": [],
+            "action": {
+              "callType": "call",
+              "from": "0x00000000000000000000000000000000000a4b05",
+              "gas": "0x0",
+              "input": "0x6bf6a42d000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000009000000000000000000000000000000000000000000000000000000000000000a",
+              "to": "0x00000000000000000000000000000000000a4b05",
+              "value": "0x0",
+            },
+            "blockHash": "0xda770e956b9b015501382ed707a1cc1ba48f78e0f9685f7f74b8fd5fa67341a7",
+            "blockNumber": 9,
+            "result": { "gasUsed": "0x0", "output": "0x" },
+            "subtraces": 0,
+            "traceAddress": [],
+            "transactionHash": "0x67c58605bac67319b59f3f7c8c9669e33b15b596dce7d2411c38945d850bbbfb",
+            "transactionPosition": 0,
+            "type": "call",
+          },
+        ],
+      },
+      {
+        "txHash": "0x2030f1dcb91d3b289964f74406f4899d4a855da565bc2e40bf6ccc7ae3ee6fef",
+        "result": [
+          {
+            "beforeEVMTransfers": [
+              {
+                "purpose": "feePayment",
+                "from": "0x3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E",
+                "to": null,
+                "value": "0xb03b802d2000",
+              },
+            ],
+            "afterEVMTransfers": [
+              {
+                "purpose": "gasRefund",
+                "from": null,
+                "to": "0x3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E",
+                "value": "0x2798a793e600",
+              },
+              {
+                "purpose": "feeCollection",
+                "from": null,
+                "to": "0x0000000000000000000000000000000000000000",
+                "value": "0x436b451ba00",
+              },
+              {
+                "purpose": "feeCollection",
+                "from": null,
+                "to": "0xa4B00000000000000000000000000000000000F6",
+                "value": "0x846c24478000",
+              },
+            ],
+            "action": {
+              "callType": "call",
+              "from": "0x3f1eae7d46d88f08fc2f8ed27fcb2ab183eb2d0e",
+              "gas": "0x1d9120",
+              "input": "0x095ea7b30000000000000000000000008888415db80eabcf580283a3d65249887d3161b00000000000000000000000000000000000000000000000000000000000989680",
+              "to": "0xe1080224b632a93951a7cfa33eeea9fd81558b5e",
+              "value": "0x0",
+            },
+            "blockHash": "0xda770e956b9b015501382ed707a1cc1ba48f78e0f9685f7f74b8fd5fa67341a7",
+            "blockNumber": 9,
+            "result": {
+              "gasUsed": "0x16ec7a",
+              "output": "0x0000000000000000000000000000000000000000000000000000000000000001",
+            },
+            "subtraces": 0,
+            "traceAddress": [],
+            "transactionHash": "0x2030f1dcb91d3b289964f74406f4899d4a855da565bc2e40bf6ccc7ae3ee6fef",
+            "transactionPosition": 1,
+            "type": "call",
+          },
+        ],
+      },
+    ],
+  },
+  {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "result": [
+      {
+        "txHash": "0x4984f2c62714e25fdb8c4b47393f4545afcd00dca86f3cd05ab34d2db9687718",
+        "result": [
+          {
+            "beforeEVMTransfers": [],
+            "afterEVMTransfers": [],
+            "action": {
+              "callType": "call",
+              "from": "0x00000000000000000000000000000000000a4b05",
+              "gas": "0x0",
+              "input": "0x6bf6a42d00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000",
+              "to": "0x00000000000000000000000000000000000a4b05",
+              "value": "0x0",
+            },
+            "blockHash": "0x98acf5d470be700892b706db19cb331841475938cea0d8e225eca59f9b7223f2",
+            "blockNumber": 10,
+            "result": { "gasUsed": "0x0", "output": "0x" },
+            "subtraces": 0,
+            "traceAddress": [],
+            "transactionHash": "0x4984f2c62714e25fdb8c4b47393f4545afcd00dca86f3cd05ab34d2db9687718",
+            "transactionPosition": 0,
+            "type": "call",
+          },
+        ],
+      },
+      {
+        "txHash": "0x2d00227e53ffb6b7fbb165b1b5c1945c6a18db9dd4a669edc4fba6ac959ec9e6",
+        "result": [
+          {
+            "beforeEVMTransfers": [
+              {
+                "purpose": "feePayment",
+                "from": "0x3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E",
+                "to": null,
+                "value": "0xa650221e3700",
+              },
+            ],
+            "afterEVMTransfers": [
+              {
+                "purpose": "gasRefund",
+                "from": null,
+                "to": "0x3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E",
+                "value": "0x25fc55b65900",
+              },
+              {
+                "purpose": "feeCollection",
+                "from": null,
+                "to": "0x0000000000000000000000000000000000000000",
+                "value": "0x9baaeba1e00",
+              },
+              {
+                "purpose": "feeCollection",
+                "from": null,
+                "to": "0xa4B00000000000000000000000000000000000F6",
+                "value": "0x76991dadc000",
+              },
+            ],
+            "action": {
+              "callType": "call",
+              "from": "0x3f1eae7d46d88f08fc2f8ed27fcb2ab183eb2d0e",
+              "gas": "0x1be717",
+              "input": "0x0101e1080224b632a93951a7cfa33eeea9fd81558b5e3f1eae7d46d88f08fc2f8ed27fcb2ab183eb2d0e0100000000000000",
+              "to": "0x8888415db80eabcf580283a3d65249887d3161b0",
+              "value": "0x0",
+            },
+            "blockHash": "0x98acf5d470be700892b706db19cb331841475938cea0d8e225eca59f9b7223f2",
+            "blockNumber": 10,
+            "result": { "gasUsed": "0x15879e", "output": "0x" },
+            "subtraces": 1,
+            "traceAddress": [],
+            "transactionHash": "0x2d00227e53ffb6b7fbb165b1b5c1945c6a18db9dd4a669edc4fba6ac959ec9e6",
+            "transactionPosition": 1,
+            "type": "call",
+          },
+          {
+            "action": {
+              "callType": "call",
+              "from": "0x8888415db80eabcf580283a3d65249887d3161b0",
+              "gas": "0x30d40",
+              "input": "0x23b872dd0000000000000000000000003f1eae7d46d88f08fc2f8ed27fcb2ab183eb2d0e0000000000000000000000008888415db80eabcf580283a3d65249887d3161b000000000000000000000000000000000000000000000000000000000000f4240",
+              "to": "0xe1080224b632a93951a7cfa33eeea9fd81558b5e",
+              "value": "0x0",
+            },
+            "blockHash": "0x98acf5d470be700892b706db19cb331841475938cea0d8e225eca59f9b7223f2",
+            "blockNumber": 10,
+            "result": {
+              "gasUsed": "0x8b49",
+              "output": "0x0000000000000000000000000000000000000000000000000000000000000001",
+            },
+            "subtraces": 0,
+            "traceAddress": [0],
+            "transactionHash": "0x2d00227e53ffb6b7fbb165b1b5c1945c6a18db9dd4a669edc4fba6ac959ec9e6",
+            "transactionPosition": 1,
+            "type": "call",
+          },
+        ],
+      },
+    ],
+  },
+]
