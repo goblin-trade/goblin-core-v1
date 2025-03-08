@@ -1,17 +1,23 @@
-[workspace]
+[package]
+name = "goblin-core"
+version = "0.1.0"
+edition = "2021"
 
-resolver = "2"
+[lib]
+crate-type = ["cdylib"]
 
-members = [
-    "crates/goblin-market",
-    "crates/goblin-factory",
-    "crates/goblin-core", "crates/grind-create3-seed", "crates/compile-contract",
-]
+[dependencies]
+# mini-alloc = "0.7.0"
 
-# This must be at the root level otherwise binaries will bloat
+[dev-dependencies]
+tiny-keccak = { version = "2.0.2", features = ["keccak"] }
+hex-literal = "0.4.1"
+
 [profile.release]
-codegen-units = 1
+opt-level = "s"
 strip = true
 lto = true
 panic = "abort"
-opt-level = "s"
+
+[features]
+default = []
