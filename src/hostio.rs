@@ -22,14 +22,14 @@ extern "C" {
     pub fn read_return_data(dest: *mut u8, offset: usize, size: usize) -> usize;
 }
 
-#[cfg(not(test))]
-#[link(wasm_import_module = "console")]
-extern "C" {
-    pub fn log_i64(value: i64);
+// #[cfg(not(test))]
+// #[link(wasm_import_module = "console")]
+// extern "C" {
+//     pub fn log_i64(value: i64);
 
-    /// Prints a UTF-8 encoded string to the console. Only available in debug mode.
-    pub fn log_txt(text: *const u8, len: usize);
-}
+//     /// Prints a UTF-8 encoded string to the console. Only available in debug mode.
+//     pub fn log_txt(text: *const u8, len: usize);
+// }
 
 #[cfg(test)]
 mod test_hooks {

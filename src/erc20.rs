@@ -1,6 +1,6 @@
 use core::mem::MaybeUninit;
 
-use crate::{call_contract, log_i64, log_txt, quantities::Atoms, read_return_data, types::Address};
+use crate::{call_contract, quantities::Atoms, read_return_data, types::Address};
 
 // keccak256('transferFrom(address,address,uint256)') = 0x23b872dd
 const TRANSFER_FROM_SELECTOR: [u8; 4] = [0x23, 0xb8, 0x72, 0xdd];
@@ -49,11 +49,11 @@ pub fn transfer_from(
         return 1;
     }
 
-    unsafe {
-        let msg = b"return_data_len";
-        log_txt(msg.as_ptr(), msg.len());
-        log_i64(*return_data_len as i64);
-    }
+    // unsafe {
+    //     let msg = b"return_data_len";
+    //     log_txt(msg.as_ptr(), msg.len());
+    //     log_i64(*return_data_len as i64);
+    // }
 
     let mut result_byte_maybe = MaybeUninit::<u8>::uninit();
     let result_byte = unsafe {
@@ -61,11 +61,11 @@ pub fn transfer_from(
         result_byte_maybe.assume_init_ref()
     };
 
-    unsafe {
-        let msg = b"result_byte";
-        log_txt(msg.as_ptr(), msg.len());
-        log_i64(*result_byte as i64);
-    }
+    // unsafe {
+    //     let msg = b"result_byte";
+    //     log_txt(msg.as_ptr(), msg.len());
+    //     log_i64(*result_byte as i64);
+    // }
 
     // Return 0 (success) if the result is true (1). This bitwise operation
     // is more optimized than using if-else for return.

@@ -2,7 +2,7 @@ use core::mem::MaybeUninit;
 
 use crate::{
     erc20::transfer_from,
-    log_i64, log_txt, msg_sender,
+    msg_sender,
     quantities::{Atoms, Lots},
     state::{SlotState, TraderTokenKey, TraderTokenState},
     storage_flush_cache,
@@ -46,11 +46,11 @@ pub fn handle_1_credit_erc20(payload: &[u8]) -> i32 {
     // Transfer tokens to smart contract, not params.recipient
     let result = transfer_from(&params.token, sender, &ADDRESS, &atoms);
 
-    unsafe {
-        let msg = b"Call result";
-        log_txt(msg.as_ptr(), msg.len());
-        log_i64(result as i64);
-    }
+    // unsafe {
+    //     let msg = b"Call result";
+    //     log_txt(msg.as_ptr(), msg.len());
+    //     log_i64(result as i64);
+    // }
 
     if result != 0 {
         return 1;

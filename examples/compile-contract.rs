@@ -37,7 +37,7 @@
 ///!
 use alloy_primitives::U256;
 use brotli2::read::BrotliEncoder;
-use eyre::{eyre, Result, WrapErr};
+use eyre::{Result, WrapErr};
 use std::fs;
 use std::io::Read;
 use std::ops::Range;
