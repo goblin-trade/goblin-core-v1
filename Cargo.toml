@@ -1,5 +1,5 @@
 [package]
-name = "goblin-core"
+name = "goblin-core-v1"
 version = "0.1.0"
 edition = "2021"
 
@@ -12,6 +12,19 @@ crate-type = ["cdylib"]
 [dev-dependencies]
 tiny-keccak = { version = "2.0.2", features = ["keccak"] }
 hex-literal = "0.4.1"
+alloy-primitives = "0.6"
+alloy-rlp = "0.3.11"
+alloy-sol-types = "0.6"
+rayon = "1.7"
+
+# compile-contract
+eyre = "0.6"
+wasmprinter = "0.2"
+brotli2 = "0.3"
+wasm-encoder = "0.30"
+wasmparser = "0.110"
+hex = "0.4"
+leb128 = "0.2"
 
 [profile.release]
 opt-level = "s"
