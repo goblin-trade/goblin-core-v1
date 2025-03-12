@@ -1,5 +1,2 @@
 [toolchain]
 channel = "1.84.1"
-
-[build]
-rustflags = ["-C", "target-feature=-reference-types"]

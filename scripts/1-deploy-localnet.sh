@@ -23,19 +23,21 @@ forge create \
 cd ..
 
 # Deploy goblin core
-cargo build -p goblin-core --release --target wasm32-unknown-unknown
-cargo stylus check --wasm-file ./target/wasm32-unknown-unknown/release/goblin_core.wasm --endpoint http://127.0.0.1:8547
+cargo build --release --target wasm32-unknown-unknown
+cargo stylus check --wasm-file ./target/wasm32-unknown-unknown/release/goblin_core_v1.wasm --endpoint $ETH_RPC_URL
 
 # Compile init code
-cargo run -p compile-contract --bin compile-contract
+cargo run --example compile-contract
 
-# Deploy goblin_core with CREATE3
+# Deploy goblin_core_v1 with CREATE3
+readonly INIT_CODE=0x$(xxd -p target/wasm32-unknown-unknown/release/goblin_core_v1.contract | tr -d '\n')
+
 cast send $CREATE3_FACTORY \
-    "deploy(bytes32,bytes)" $GOBLIN_SALT 0x$(xxd -p target/wasm32-unknown-unknown/release/goblin_core.contract | tr -d '\n') \
+    "deploy(bytes32,bytes)" $GOBLIN_SALT $INIT_CODE \
     --private-key $PRIVATE_KEY
 
 # Activate contract
-cast send 0x0000000000000000000000000000000000000071 \
+cast send $ARB_WASM_CONTRACT \
     "activateProgram(address)" $CONTRACT \
     --private-key $PRIVATE_KEY \
     --value 0.0001ether
