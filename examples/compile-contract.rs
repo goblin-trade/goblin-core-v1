@@ -37,15 +37,18 @@
 ///!
 use alloy_primitives::U256;
 use brotli2::read::BrotliEncoder;
-use eyre::{Result, WrapErr};
-use std::fs;
+use eyre::{bail, eyre, Result, WrapErr};
+use glob::glob;
 use std::io::Read;
 use std::ops::Range;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use std::{fs, process::Command};
+use tiny_keccak::{Hasher, Keccak};
 use wasm_encoder::{Module, RawSection};
 use wasmparser::{Parser, Payload};
 
 const PROJECT_HASH_SECTION_NAME: &str = "project_hash";
+pub const TOOLCHAIN_FILE_NAME: &str = "rust-toolchain.toml";
 const BROTLI_COMPRESSION_LEVEL: u32 = 11;
 const EOF_PREFIX_NO_DICT: &str = "EFF00000";
 
@@ -57,8 +60,8 @@ fn main() -> Result<()> {
     // Hardcoded path to WASM file - replace with your actual path
     let wasm_path = PathBuf::from("./target/wasm32-unknown-unknown/release/goblin_core_v1.wasm");
 
-    // Create a dummy project hash (all zeros in this example)
-    let project_hash = [0u8; 32];
+    // Leave files vector empty to include all files in the project
+    let project_hash = hash_files(vec![], OptLevel::S)?;
 
     // Compress the WASM file
     let (wasm, init_code) = compress_wasm(&wasm_path, project_hash)?;
@@ -192,4 +195,131 @@ pub fn contract_deployment_calldata(code: &[u8]) -> Vec<u8> {
     deploy.push(0x00); // version
     deploy.extend(code);
     deploy
+}
+
+#[derive(Default, Clone, PartialEq)]
+pub enum OptLevel {
+    #[default]
+    S,
+    Z,
+}
+
+pub fn hash_files(source_file_patterns: Vec<String>, opt_level: OptLevel) -> Result<[u8; 32]> {
+    let mut keccak = Keccak::v256();
+    let mut cmd = Command::new("cargo");
+    cmd.arg("--version");
+    let output = cmd
+        .output()
+        .map_err(|e| eyre!("failed to execute cargo command: {e}"))?;
+    if !output.status.success() {
+        bail!("cargo version command failed");
+    }
+    keccak.update(&output.stdout);
+    if opt_level == OptLevel::Z {
+        keccak.update(&[0]);
+    } else {
+        keccak.update(&[1]);
+    }
+
+    let mut buf = vec![0u8; 0x100000];
+
+    let mut hash_file = |filename: &Path| -> Result<()> {
+        keccak.update(&(filename.as_os_str().len() as u64).to_be_bytes());
+        keccak.update(filename.as_os_str().as_encoded_bytes());
+        let mut file = std::fs::File::open(filename)
+            .map_err(|e| eyre!("failed to open file {}: {e}", filename.display()))?;
+        keccak.update(&file.metadata().unwrap().len().to_be_bytes());
+        loop {
+            let bytes_read = file
+                .read(&mut buf)
+                .map_err(|e| eyre!("Unable to read file {}: {e}", filename.display()))?;
+            if bytes_read == 0 {
+                break;
+            }
+            keccak.update(&buf[..bytes_read]);
+        }
+        Ok(())
+    };
+
+    // Fetch the Rust toolchain toml file from the project root. Assert that it exists and add it to the
+    // files in the directory to hash.
+    let toolchain_file_path = PathBuf::from(".").as_path().join(TOOLCHAIN_FILE_NAME);
+    let _ = std::fs::metadata(&toolchain_file_path).wrap_err(
+        "expected to find a rust-toolchain.toml file in project directory \
+         to specify your Rust toolchain for reproducible verification",
+    )?;
+
+    let mut paths = all_paths(PathBuf::from(".").as_path(), source_file_patterns)?;
+    paths.push(toolchain_file_path);
+    paths.sort();
+
+    for filename in paths.iter() {
+        println!(
+            "File used for deployment hash: {}",
+            filename.as_os_str().to_string_lossy()
+        );
+        hash_file(filename)?;
+    }
+
+    let mut hash = [0u8; 32];
+    keccak.finalize(&mut hash);
+    println!(
+        "project metadata hash computed on deployment: {:?}",
+        hex::encode(hash)
+    );
+    Ok(hash)
+}
+
+fn all_paths(root_dir: &Path, source_file_patterns: Vec<String>) -> Result<Vec<PathBuf>> {
+    let mut files = Vec::<PathBuf>::new();
+    let mut directories = Vec::<PathBuf>::new();
+    directories.push(root_dir.to_path_buf()); // Using `from` directly
+
+    let glob_paths = expand_glob_patterns(source_file_patterns)?;
+
+    while let Some(dir) = directories.pop() {
+        for entry in fs::read_dir(&dir)
+            .map_err(|e| eyre!("Unable to read directory {}: {e}", dir.display()))?
+        {
+            let entry = entry.map_err(|e| eyre!("Error finding file in {}: {e}", dir.display()))?;
+            let path = entry.path();
+
+            if path.is_dir() {
+                if path.ends_with("target") || path.ends_with(".git") {
+                    continue; // Skip "target" and ".git" directories
+                }
+                directories.push(path);
+            } else if path.file_name().map_or(false, |f| {
+                // If the user has has specified a list of source file patterns, check if the file
+                // matches the pattern.
+                if !glob_paths.is_empty() {
+                    for glob_path in glob_paths.iter() {
+                        if glob_path == &path {
+                            return true;
+                        }
+                    }
+                    false
+                } else {
+                    // Otherwise, by default include all rust files, Cargo.toml and Cargo.lock files.
+                    f == "Cargo.toml" || f == "Cargo.lock" || f.to_string_lossy().ends_with(".rs")
+                }
+            }) {
+                files.push(path);
+            }
+        }
+    }
+    Ok(files)
+}
+
+fn expand_glob_patterns(patterns: Vec<String>) -> Result<Vec<PathBuf>> {
+    let mut files_to_include = Vec::new();
+    for pattern in patterns {
+        let paths = glob(&pattern)
+            .map_err(|e| eyre!("Failed to read glob pattern '{}': {}", pattern, e))?;
+        for path_result in paths {
+            let path = path_result.map_err(|e| eyre!("Error processing path: {}", e))?;
+            files_to_include.push(path);
+        }
+    }
+    Ok(files_to_include)
 }
