@@ -15,7 +15,7 @@ fn namespace_salt(deployer: Address, salt: B256) -> B256 {
 }
 
 /// Generate a CREATE3 address given the factory, deployer, salt, and proxy bytecode hash.
-fn get_create3_address(
+pub fn get_create3_address(
     factory: Address,
     deployer: Address,
     salt: B256,
@@ -96,9 +96,5 @@ mod test {
 
         let address = get_create3_address(FACTORY_ADDRESS, DEPLOYER, salt, proxy_bytecode_hash);
         println!("address {:?}", address);
-        // assert_eq!(
-        //     address,
-        //     address!("8888415db80eabcf580283a3d65249887d3161b0")
-        // );
     }
 }

@@ -101,8 +101,6 @@ Order removal is designed to minimize slot writes.
 
 # goblin-core crate
 
-
-
 ```sh
 nix -p pkg-config openssl
 cargo install --force cargo-stylus
@@ -134,6 +132,25 @@ cast send 0xd92773693917f0ff664f85c3cb698c33420947ff \
 cast call 0x525c2aba45f66987217323e8a05ea400c65d06dc \
     0x0A3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E0000000000000000000000000000000000000000 \
     --rpc-url http://127.0.0.1:8547
+```
+
+# Verify CREATE3 deployment on testnet
+
+```sh
+# Load .env
+export $(grep -v '^#' .env | xargs)
+
+cd goblin-localnet-scripts
+forge script script/DeployCREATE3Factory.s.sol:DeployCREATE3Factory \
+    --private-key $PRIVATE_KEY \
+    --rpc-url $ETH_RPC_URL \
+    --broadcast \
+    --skip-simulation
+
+cd ..
+
+# CREATE3 deployer at 0x249d2e1980D06085Bfc59AD49a1cd690BCbdAd52
+CREATE3_FACTORY=0x249d2e1980D06085Bfc59AD49a1cd690BCbdAd52
 ```
 
 # Optimization decisions
