@@ -134,30 +134,10 @@ fn has_project_hash_section(wasm_file_bytes: &[u8]) -> Result<bool> {
     Ok(false)
 }
 
-// Adds a custom section to the WASM
 fn add_custom_section(wasm_file_bytes: &[u8], project_hash: [u8; 32]) -> Vec<u8> {
-    // Helper for adding a custom section
-    fn write_custom_section(output: &mut Vec<u8>, name: &str, data: &[u8]) {
-        // Custom section ID
-        output.push(0);
-
-        // Section size (name length + 1 for null terminator + data length)
-        let section_size = name.len() + 1 + data.len();
-        leb128::write::unsigned(output, section_size as u64).unwrap();
-
-        // Name length as LEB128
-        leb128::write::unsigned(output, name.len() as u64).unwrap();
-
-        // Name bytes
-        output.extend_from_slice(name.as_bytes());
-
-        // Data
-        output.extend_from_slice(data);
-    }
-
     let mut bytes = vec![];
     bytes.extend_from_slice(wasm_file_bytes);
-    write_custom_section(&mut bytes, PROJECT_HASH_SECTION_NAME, &project_hash);
+    wasm_gen::write_custom_section(&mut bytes, PROJECT_HASH_SECTION_NAME, &project_hash);
     bytes
 }
 

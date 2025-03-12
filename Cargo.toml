@@ -19,12 +19,11 @@ rayon = "1.7"
 
 # compile-contract
 eyre = "0.6"
-wasmprinter = "0.2"
+wasm-gen = "0.1.4"
 brotli2 = "0.3"
 wasm-encoder = "0.30"
 wasmparser = "0.110"
 hex = "0.4"
-leb128 = "0.2"
 
 [profile.release]
 opt-level = "s"

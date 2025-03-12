@@ -65,12 +65,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "anyhow"
-version = "1.0.97"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dcfed56ad506cb2c684a14971b8861fdc3baaaae314b9e5f9bb532cbe3ba7a4f"
-
-[[package]]
 name = "ark-ff"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -296,6 +290,12 @@ name = "byte-slice-cast"
 version = "1.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7575182f7272186991736b70173b0ea045398f984bf5ebbb3804736ce1330c9d"
+
+[[package]]
+name = "byteorder"
+version = "0.5.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0fc10e8cc6b2580fda3f36eb6dc5316657f812a3df879a44a66fc9f0fdbc4855"
 
 [[package]]
 name = "byteorder"
@@ -601,7 +601,7 @@ version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "835c052cb0c08c1acf6ffd71c022172e18723949c8282f2b9f27efbc51e64534"
 dependencies = [
- "byteorder",
+ "byteorder 1.5.0",
  "rand",
  "rustc-hex",
  "static_assertions",
@@ -664,12 +664,11 @@ dependencies = [
  "eyre",
  "hex",
  "hex-literal",
- "leb128",
  "rayon",
  "tiny-keccak",
  "wasm-encoder",
- "wasmparser 0.110.0",
- "wasmprinter",
+ "wasm-gen",
+ "wasmparser",
 ]
 
 [[package]]
@@ -1427,7 +1426,7 @@ version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "76f64bba2c53b04fcab63c01a7d7427eadc821e3bc48c34dc9ba29c501164b52"
 dependencies = [
- "byteorder",
+ "byteorder 1.5.0",
  "crunchy",
  "hex",
  "static_assertions",
@@ -1497,6 +1496,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "wasm-gen"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b854b1461005a7b3365742310f7faa3cac3add809d66928c64a40c7e9e842ebb"
+dependencies = [
+ "byteorder 0.5.3",
+ "leb128",
+]
+
+[[package]]
 name = "wasmparser"
 version = "0.110.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1504,27 +1513,6 @@ checksum = "1dfcdb72d96f01e6c85b6bf20102e7423bdbaad5c337301bab2bbf253d26413c"
 dependencies = [
  "indexmap",
  "semver 1.0.26",
-]
-
-[[package]]
-name = "wasmparser"
-version = "0.121.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9dbe55c8f9d0dbd25d9447a5a889ff90c0cc3feaa7395310d3d826b2c703eaab"
-dependencies = [
- "bitflags",
- "indexmap",
- "semver 1.0.26",
-]
-
-[[package]]
-name = "wasmprinter"
-version = "0.2.80"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "60e73986a6b7fdfedb7c5bf9e7eb71135486507c8fbc4c0c42cffcb6532988b7"
-dependencies = [
- "anyhow",
- "wasmparser 0.121.2",
 ]
 
 [[package]]
@@ -1633,7 +1621,7 @@ version = "0.7.35"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1b9b4fd18abc82b8136838da5d50bae7bdea537c574d8dc1a34ed098d6c166f0"
 dependencies = [
- "byteorder",
+ "byteorder 1.5.0",
  "zerocopy-derive",
 ]
 
