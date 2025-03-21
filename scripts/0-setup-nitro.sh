@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Set $ADDRESS as admin with initial balance
+# Problem- this changes the nonces
 
 # Make the caller a chain owner
 echo "Setting chain owner to pre-funded dev account..."

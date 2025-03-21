@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 readonly NUM_CALLS=01
 readonly DEPOSIT_ERC20_SELECTOR=01

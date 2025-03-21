@@ -2,4 +2,6 @@
 
 # bash ./nitro-devnode/run-dev-node.sh --stylus
 
-bash ../nitro/target/bin/nitro --dev
+rm -rf /tmp/dev-test/
+
+../nitro/target/bin/nitro --dev --chain.dev-wallet.private-key ${PRIVATE_KEY#0x}

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 echo "balance"
 cast call $BASE_TOKEN "balanceOf(address)(uint256)" $ADDRESS

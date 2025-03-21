@@ -1,4 +1,6 @@
-# Deploy create3 factory at nonce 1
+#!/usr/bin/env bash
+
+# Deploy create3 factory at nonce 3
 cd goblin-localnet-scripts
 forge script script/DeployCREATE3Factory.s.sol:DeployCREATE3Factory \
     --private-key $PRIVATE_KEY \
