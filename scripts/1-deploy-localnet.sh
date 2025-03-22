@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# ./0-setup-nitro.sh
+
 # Deploy create3 factory at nonce 3
 cd goblin-localnet-scripts
 forge script script/DeployCREATE3Factory.s.sol:DeployCREATE3Factory \
@@ -8,14 +10,14 @@ forge script script/DeployCREATE3Factory.s.sol:DeployCREATE3Factory \
     --broadcast \
     --skip-simulation
 
-# Base token at nonce 2
+# Base token at nonce 4
 readonly BASE_TOKENS_TO_MINT=100000000000000000000
 forge create \
     --private-key $PRIVATE_KEY \
     --broadcast \
     TestERC20 --constructor-args "Base" "BASE" $BASE_TOKENS_TO_MINT
 
-# Quote token at nonce 3
+# Quote token at nonce 5
 readonly QUOTE_TOKENS_TO_MINT=100000000000000000000
 forge create \
     --private-key $PRIVATE_KEY \

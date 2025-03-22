@@ -254,10 +254,10 @@ pub fn hash_files(source_file_patterns: Vec<String>, opt_level: OptLevel) -> Res
     paths.sort();
 
     for filename in paths.iter() {
-        println!(
-            "File used for deployment hash: {}",
-            filename.as_os_str().to_string_lossy()
-        );
+        // println!(
+        //     "File used for deployment hash: {}",
+        //     filename.as_os_str().to_string_lossy()
+        // );
         hash_file(filename)?;
     }
 
