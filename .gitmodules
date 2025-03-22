@@ -4,3 +4,7 @@
 [submodule "nitro-devnode"]
 	path = nitro-devnode
 	url = https://github.com/OffchainLabs/nitro-devnode
+[submodule "nitro"]
+	path = nitro
+	url = https://github.com/goblin-trade/nitro.git
+	branch = goblin-indexer
