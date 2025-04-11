@@ -1,6 +1,28 @@
 // VM hooks
-#[cfg(not(test))]
+#[cfg(all(not(test), target_arch = "wasm32"))]
 #[link(wasm_import_module = "vm_hooks")]
+extern "C" {
+    pub fn read_args(dest: *mut u8);
+    pub fn write_result(data: *const u8, len: usize);
+    pub fn pay_for_memory_grow(pages: u16);
+    pub fn storage_load_bytes32(key: *const u8, dest: *mut u8);
+    pub fn storage_cache_bytes32(key: *const u8, value: *const u8);
+    pub fn storage_flush_cache(clear: bool);
+    pub fn native_keccak256(bytes: *const u8, len: usize, output: *mut u8);
+    pub fn msg_value(value: *mut u8);
+    pub fn msg_sender(sender: *mut u8);
+    pub fn call_contract(
+        contract: *const u8,
+        calldata: *const u8,
+        calldata_len: usize,
+        value: *const u8,
+        gas: u64,
+        return_data_len: *mut usize,
+    ) -> u8;
+    pub fn read_return_data(dest: *mut u8, offset: usize, size: usize) -> usize;
+}
+
+#[cfg(all(not(test), not(target_arch = "wasm32")))]
 extern "C" {
     pub fn read_args(dest: *mut u8);
     pub fn write_result(data: *const u8, len: usize);

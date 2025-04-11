@@ -8,3 +8,6 @@
 	path = nitro
 	url = https://github.com/goblin-trade/nitro.git
 	branch = goblin-indexer
+[submodule "ffi-test"]
+	path = ffi-test
+	url = https://github.com/goblin-trade/ffi-test
