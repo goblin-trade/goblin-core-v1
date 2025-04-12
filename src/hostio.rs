@@ -11,6 +11,8 @@ extern "C" {
     pub fn native_keccak256(bytes: *const u8, len: usize, output: *mut u8);
     pub fn msg_value(value: *mut u8);
     pub fn msg_sender(sender: *mut u8);
+    pub fn block_number() -> u64;
+    pub fn block_timestamp() -> u64;
     pub fn call_contract(
         contract: *const u8,
         calldata: *const u8,
@@ -22,6 +24,7 @@ extern "C" {
     pub fn read_return_data(dest: *mut u8, offset: usize, size: usize) -> usize;
 }
 
+// Native hooks
 #[cfg(all(not(test), not(target_arch = "wasm32")))]
 extern "C" {
     pub fn read_args(dest: *mut u8);
@@ -33,6 +36,8 @@ extern "C" {
     pub fn native_keccak256(bytes: *const u8, len: usize, output: *mut u8);
     pub fn msg_value(value: *mut u8);
     pub fn msg_sender(sender: *mut u8);
+    pub fn block_number() -> u64;
+    pub fn block_timestamp() -> u64;
     pub fn call_contract(
         contract: *const u8,
         calldata: *const u8,
@@ -77,8 +82,23 @@ mod test_hooks {
         // Add storage for sender address
         static MSG_SENDER: RefCell<[u8; 32]> = RefCell::new([0u8; 32]);
 
+        static BLOCK_NUMBER: RefCell<u64> = RefCell::new(0);
+
+        static BLOCK_TIMESTAMP: RefCell<u64> = RefCell::new(0);
+
         // Simulate contract call return data
         static RETURN_DATA: RefCell<Vec<u8>> = RefCell::new(Vec::new());
+    }
+
+    pub fn clear_state() {
+        TEST_ARGS.with(|args| args.borrow_mut().clear());
+        TEST_RESULT.with(|result| result.borrow_mut().clear());
+        STORAGE.with(|storage| storage.borrow_mut().clear());
+        MSG_VALUE.with(|msg_value| *msg_value.borrow_mut() = [0u8; 32]);
+        MSG_SENDER.with(|sender| *sender.borrow_mut() = [0u8; 32]);
+        BLOCK_NUMBER.with(|b| *b.borrow_mut() = 0);
+        BLOCK_TIMESTAMP.with(|t| *t.borrow_mut() = 0);
+        RETURN_DATA.with(|result| result.borrow_mut().clear());
     }
 
     pub fn set_test_args(args: Vec<u8>) {
@@ -103,14 +123,6 @@ mod test_hooks {
 
     pub fn get_msg_value() -> [u8; 32] {
         MSG_VALUE.with(|msg_value| *msg_value.borrow())
-    }
-
-    pub fn clear_state() {
-        TEST_ARGS.with(|args| args.borrow_mut().clear());
-        TEST_RESULT.with(|result| result.borrow_mut().clear());
-        STORAGE.with(|storage| storage.borrow_mut().clear());
-        MSG_VALUE.with(|msg_value| *msg_value.borrow_mut() = [0u8; 32]);
-        MSG_SENDER.with(|sender| *sender.borrow_mut() = [0u8; 32]);
     }
 
     // Function to set the test sender address
@@ -223,6 +235,24 @@ mod test_hooks {
             let slice = core::slice::from_raw_parts_mut(sender, 32);
             slice.copy_from_slice(&*addr.borrow());
         });
+    }
+
+    pub fn set_block_number(value: u64) {
+        BLOCK_NUMBER.with(|b| *b.borrow_mut() = value);
+    }
+
+    pub fn set_block_timestamp(value: u64) {
+        BLOCK_TIMESTAMP.with(|t| *t.borrow_mut() = value);
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn block_number() -> u64 {
+        BLOCK_NUMBER.with(|b| *b.borrow())
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn block_timestamp() -> u64 {
+        BLOCK_TIMESTAMP.with(|t| *t.borrow())
     }
 
     #[no_mangle]

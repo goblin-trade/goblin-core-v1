@@ -49,8 +49,8 @@ pub extern "C" fn user_entrypoint(len: usize) -> i32 {
 
         let payload_len = match selector {
             HANDLE_0_CREDIT_ETH => HANDLE_0_PAYLOAD_LEN,
-            HANDLE_1_CREDIT_ERC20 => HANDLE_1_PAYLOAD_LEN,
-            GET_10_TRADER_TOKEN_STATE => GET_10_PAYLOAD_LEN,
+            // HANDLE_1_CREDIT_ERC20 => HANDLE_1_PAYLOAD_LEN,
+            // GET_10_TRADER_TOKEN_STATE => GET_10_PAYLOAD_LEN,
             _ => return 1, // Unknown selector
         };
 
@@ -84,6 +84,7 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
     loop {}
 }
 
+#[cfg(all(not(test), target_arch = "wasm32"))]
 #[no_mangle]
 pub unsafe extern "C" fn mark_used() {
     pay_for_memory_grow(0);
