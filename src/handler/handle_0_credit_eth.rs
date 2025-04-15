@@ -48,14 +48,14 @@ pub fn handle_0_credit_eth(payload: &[u8]) -> i32 {
         token: NATIVE_TOKEN,
     };
 
-    // let mut trader_token_state_maybe = MaybeUninit::<TraderTokenState>::uninit();
-    // let trader_token_state = unsafe { TraderTokenState::load(key, &mut trader_token_state_maybe) };
-    // trader_token_state.lots_free += lots;
+    let mut trader_token_state_maybe = MaybeUninit::<TraderTokenState>::uninit();
+    let trader_token_state = unsafe { TraderTokenState::load(key, &mut trader_token_state_maybe) };
+    trader_token_state.lots_free += lots;
 
-    // unsafe {
-    //     trader_token_state.store(key);
-    //     storage_flush_cache(true);
-    // }
+    unsafe {
+        trader_token_state.store(key);
+        storage_flush_cache(true);
+    }
 
     0
 }

@@ -8,6 +8,7 @@ use handler::{
     HANDLE_1_CREDIT_ERC20, HANDLE_1_PAYLOAD_LEN,
 };
 use hostio::*;
+use state::{SlotKey, TraderTokenKey};
 
 pub mod erc20;
 pub mod getter;

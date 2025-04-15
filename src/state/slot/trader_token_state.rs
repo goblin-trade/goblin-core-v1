@@ -66,3 +66,21 @@ impl SlotState<TraderTokenKey, TraderTokenState> for TraderTokenState {
         );
     }
 }
+
+#[cfg(test)]
+mod test {
+    use crate::{state::SlotKey, types::Address};
+
+    use super::TraderTokenKey;
+
+    #[test]
+    fn get_keccak() {
+        let key = TraderTokenKey {
+            trader: [0u8; 20],
+            token: [0u8; 20],
+        };
+
+        let hash = key.to_keccak256();
+        println!("{:?}", hash);
+    }
+}
