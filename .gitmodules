@@ -11,3 +11,6 @@
 [submodule "ffi-test"]
 	path = ffi-test
 	url = https://github.com/goblin-trade/ffi-test
+[submodule "goblin-indexer"]
+	path = goblin-indexer
+	url = https://github.com/goblin-trade/goblin-indexer
