@@ -1,11 +1,9 @@
 use core::mem::MaybeUninit;
 
 use crate::{
-    erc20::transfer_from,
-    events, msg_sender,
+    erc20, events, msg_sender,
     quantities::{Atoms, Lots},
-    state::{SlotState, TraderTokenKey, TraderTokenState},
-    storage_flush_cache,
+    state::TraderTokenKey,
     types::Address,
     ADDRESS,
 };
@@ -32,6 +30,11 @@ struct CreditERC20Params {
 }
 
 /// Credit an ERC20 token to a recipient
+///
+/// If ERC20 balance is insufficient then the call frame reverts.
+/// Since the indexer filters for successful call frames, the requested amount
+/// is guaranteed to be credited.
+///
 pub fn handle_1_credit_erc20(payload: &[u8]) -> Result<(), ()> {
     let params = unsafe { &*(payload.as_ptr() as *const CreditERC20Params) };
 
@@ -43,20 +46,10 @@ pub fn handle_1_credit_erc20(payload: &[u8]) -> Result<(), ()> {
 
     let atoms = Atoms::from(&params.lots);
 
-    // Transfer tokens to smart contract, not params.recipient
-    let result = transfer_from(&params.token, sender, &ADDRESS, &atoms);
+    // Transfer tokens to smart contract ADDRESS, not params.recipient
+    erc20::transfer_from(&params.token, sender, &ADDRESS, &atoms)?;
 
-    // unsafe {
-    //     let msg = b"Call result";
-    //     log_txt(msg.as_ptr(), msg.len());
-    //     log_i64(result as i64);
-    // }
-
-    if result != 0 {
-        return Err(());
-    }
-
-    // Credit lots
+    // Credit lots to params.recipient
     events::deposit(
         &TraderTokenKey {
             trader: params.recipient,
@@ -78,7 +71,7 @@ mod test {
         getter::read_trader_token_state,
         hostio::*,
         quantities::Lots,
-        state::{TraderTokenKey, TraderTokenState},
+        state::{SlotState, TraderTokenKey, TraderTokenState},
         user_entrypoint,
     };
 

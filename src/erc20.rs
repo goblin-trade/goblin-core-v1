@@ -10,21 +10,18 @@ pub fn transfer_from(
     sender: &Address,
     recipient: &Address,
     amount: &Atoms,
-) -> u8 {
+) -> Result<(), ()> {
     let mut calldata = [0u8; 4 + 32 * 3];
 
     calldata[0..4].copy_from_slice(&TRANSFER_FROM_SELECTOR);
 
     // 4..36: sender address
-    // 4..16 are zeroes, 16..36 holds 20 byte address
     calldata[16..36].copy_from_slice(sender);
 
     // 36..68: recipient address
-    // 36..48 are zeroes, 48..68 holds 20 byte address
     calldata[48..68].copy_from_slice(recipient);
 
-    // 68..100: amount to transfer
-    // This is a 32 byte value
+    // 68..100: amount
     let amount_as_be_bytes: &[u8; 32] = unsafe { &*(amount.0.as_ptr() as *const [u8; 32]) };
     calldata[68..100].copy_from_slice(amount_as_be_bytes);
 
@@ -36,43 +33,29 @@ pub fn transfer_from(
             contract.as_ptr(),
             calldata.as_ptr(),
             calldata.len(),
-            value.0.as_ptr() as *const u8, // Zero value
-            200_000, // 200k gas. We need to explicitly specify gas else, tx fails
+            value.0.as_ptr() as *const u8,
+            200_000, // 200k gas. We need to explicitly set gas otherwise TX fails
             return_data_len,
         )
     };
 
-    // The original ERC20 spec transferFrom() returns false if the transfer fails. However
-    // Openzepplin and modern ERC20 token implementations will revert instead of returning false.
-    // We need to handle both cases.
+    // If the call itself failed, treat as error.
     if call_result != 0 {
-        return 1;
+        return Err(());
     }
 
-    // unsafe {
-    //     let msg = b"return_data_len";
-    //     log_txt(msg.as_ptr(), msg.len());
-    //     log_i64(*return_data_len as i64);
-    // }
-
+    // If the contract returned `false`, treat as error.
     let mut result_byte_maybe = MaybeUninit::<u8>::uninit();
     let result_byte = unsafe {
         read_return_data(result_byte_maybe.as_mut_ptr(), 31, 1);
         result_byte_maybe.assume_init_ref()
     };
 
-    // unsafe {
-    //     let msg = b"result_byte";
-    //     log_txt(msg.as_ptr(), msg.len());
-    //     log_i64(*result_byte as i64);
-    // }
+    if *result_byte == 0 {
+        return Err(());
+    }
 
-    // Return 0 (success) if the result is true (1). This bitwise operation
-    // is more optimized than using if-else for return.
-    //
-    // If false: (0 ^ 1) & 1 = 1 (error)
-    // If true: (1 ^ 1) & 0 = 0 (success)
-    (*result_byte ^ 1) & 1
+    Ok(())
 }
 
 #[cfg(test)]
