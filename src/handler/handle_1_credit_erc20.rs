@@ -2,7 +2,7 @@ use core::mem::MaybeUninit;
 
 use crate::{
     erc20::transfer_from,
-    msg_sender,
+    events, msg_sender,
     quantities::{Atoms, Lots},
     state::{SlotState, TraderTokenKey, TraderTokenState},
     storage_flush_cache,
@@ -57,18 +57,13 @@ pub fn handle_1_credit_erc20(payload: &[u8]) -> i32 {
     }
 
     // Credit lots
-    let key = &TraderTokenKey {
-        trader: params.recipient,
-        token: params.token,
-    };
-
-    let mut trader_token_state_maybe = MaybeUninit::<TraderTokenState>::uninit();
-    let trader_token_state = unsafe { TraderTokenState::load(key, &mut trader_token_state_maybe) };
-    trader_token_state.lots_free += params.lots;
-
-    unsafe {
-        trader_token_state.store(key);
-    }
+    events::deposit(
+        &TraderTokenKey {
+            trader: params.recipient,
+            token: params.token,
+        },
+        params.lots,
+    );
 
     0
 }

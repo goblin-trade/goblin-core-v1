@@ -1,14 +1,11 @@
 use core::mem::MaybeUninit;
 
 use crate::{
-    msg_value,
+    events, msg_value,
     quantities::{Atoms, Lots},
-    state::{SlotState, TraderTokenKey, TraderTokenState},
+    state::TraderTokenKey,
     types::{Address, NATIVE_TOKEN},
 };
-
-#[cfg(all(not(test), not(target_arch = "wasm32")))]
-use crate::indexer_hostio;
 
 pub const HANDLE_0_CREDIT_ETH: u8 = 0;
 pub const HANDLE_0_PAYLOAD_LEN: usize = core::mem::size_of::<Address>();
@@ -45,21 +42,13 @@ pub fn handle_0_credit_eth(payload: &[u8]) -> i32 {
     };
     let lots = Lots::from(amount_in);
 
-    let key = &TraderTokenKey {
-        trader: *recipient,
-        token: NATIVE_TOKEN,
-    };
-
-    let mut trader_token_state_maybe = MaybeUninit::<TraderTokenState>::uninit();
-    let trader_token_state = unsafe { TraderTokenState::load(key, &mut trader_token_state_maybe) };
-    trader_token_state.lots_free += lots;
-
-    unsafe {
-        trader_token_state.store(key);
-
-        #[cfg(all(not(test), not(target_arch = "wasm32")))]
-        indexer_hostio::index_deposit(key.trader.as_ptr(), key.token.as_ptr(), lots.0);
-    }
+    events::deposit(
+        &TraderTokenKey {
+            trader: *recipient,
+            token: NATIVE_TOKEN,
+        },
+        lots,
+    );
 
     0
 }
@@ -69,7 +58,12 @@ mod tests {
     use super::*;
     use hex_literal::hex;
 
-    use crate::{getter::read_trader_token_state, set_msg_value, set_test_args, user_entrypoint};
+    use crate::{
+        getter::read_trader_token_state,
+        set_msg_value, set_test_args,
+        state::{SlotState, TraderTokenState},
+        user_entrypoint,
+    };
 
     use super::HANDLE_0_CREDIT_ETH;
 

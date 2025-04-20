@@ -11,6 +11,7 @@ use hostio::*;
 use state::{SlotKey, TraderTokenKey};
 
 pub mod erc20;
+pub mod events;
 pub mod getter;
 pub mod handler;
 pub mod hostio;
@@ -53,7 +54,7 @@ pub extern "C" fn user_entrypoint(len: usize) -> i32 {
 
         let payload_len = match selector {
             HANDLE_0_CREDIT_ETH => HANDLE_0_PAYLOAD_LEN,
-            // HANDLE_1_CREDIT_ERC20 => HANDLE_1_PAYLOAD_LEN,
+            HANDLE_1_CREDIT_ERC20 => HANDLE_1_PAYLOAD_LEN,
             // GET_10_TRADER_TOKEN_STATE => GET_10_PAYLOAD_LEN,
             _ => return 1, // Unknown selector
         };
@@ -68,7 +69,7 @@ pub extern "C" fn user_entrypoint(len: usize) -> i32 {
 
         let result = match selector {
             HANDLE_0_CREDIT_ETH => handle_0_credit_eth(payload),
-            // HANDLE_1_CREDIT_ERC20 => handle_1_credit_erc20(payload),
+            HANDLE_1_CREDIT_ERC20 => handle_1_credit_erc20(payload),
             // GET_10_TRADER_TOKEN_STATE => get_10_trader_token_state(payload),
             _ => return 1,
         };
