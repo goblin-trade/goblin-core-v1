@@ -20,10 +20,12 @@
     in {
       devShells.${system}.default = pkgs.mkShell {
         # Inherit all packages from Nitro shell
-        buildInputs = nitroShell.buildInputs or [];
+        # buildInputs = nitroShell.buildInputs or [];
 
         # Optional: include any other tools specific to Goblin, if needed
-        # buildInputs = buildInputs ++ [];
+        buildInputs = nitroShell.buildInputs ++ [
+          pkgs.sqlx-cli
+        ];
 
         shellHook = ''
           # Run Nitro's shellHook first, if it exists

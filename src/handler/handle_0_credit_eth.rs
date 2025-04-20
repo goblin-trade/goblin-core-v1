@@ -4,9 +4,11 @@ use crate::{
     msg_value,
     quantities::{Atoms, Lots},
     state::{SlotState, TraderTokenKey, TraderTokenState},
-    storage_flush_cache,
     types::{Address, NATIVE_TOKEN},
 };
+
+#[cfg(all(not(test), not(target_arch = "wasm32")))]
+use crate::indexer_hostio;
 
 pub const HANDLE_0_CREDIT_ETH: u8 = 0;
 pub const HANDLE_0_PAYLOAD_LEN: usize = core::mem::size_of::<Address>();
@@ -54,7 +56,9 @@ pub fn handle_0_credit_eth(payload: &[u8]) -> i32 {
 
     unsafe {
         trader_token_state.store(key);
-        storage_flush_cache(true);
+
+        #[cfg(all(not(test), not(target_arch = "wasm32")))]
+        indexer_hostio::index_deposit(key.trader.as_ptr(), key.token.as_ptr(), lots.0);
     }
 
     0

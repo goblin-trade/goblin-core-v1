@@ -68,7 +68,6 @@ pub fn handle_1_credit_erc20(payload: &[u8]) -> i32 {
 
     unsafe {
         trader_token_state.store(key);
-        storage_flush_cache(true);
     }
 
     0

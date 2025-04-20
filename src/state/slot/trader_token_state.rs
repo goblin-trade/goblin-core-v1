@@ -60,6 +60,7 @@ impl SlotState<TraderTokenKey, TraderTokenState> for TraderTokenState {
     }
 
     unsafe fn store(&self, key: &TraderTokenKey) {
+        // TODO deposit event (sender, recipient, token, deposited lots)
         storage_cache_bytes32(
             key.to_keccak256().as_ptr(),
             self as *const TraderTokenState as *const u8,

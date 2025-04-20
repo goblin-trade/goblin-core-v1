@@ -19,6 +19,9 @@ pub mod quantities;
 pub mod state;
 pub mod types;
 
+#[cfg(all(not(test), not(target_arch = "wasm32")))]
+pub mod indexer_hostio;
+
 pub const ADDRESS: [u8; 20] = [
     0x88, 0x88, 0x41, 0x5d, 0xb8, 0x0e, 0xab, 0xcf, 0x58, 0x02, 0x83, 0xa3, 0xd6, 0x52, 0x49, 0x88,
     0x7d, 0x31, 0x61, 0xb0,
@@ -74,6 +77,10 @@ pub extern "C" fn user_entrypoint(len: usize) -> i32 {
         if result != 0 {
             return result;
         }
+    }
+
+    unsafe {
+        storage_flush_cache(true);
     }
 
     0
