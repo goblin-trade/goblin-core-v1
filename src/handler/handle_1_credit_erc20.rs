@@ -32,7 +32,7 @@ struct CreditERC20Params {
 }
 
 /// Credit an ERC20 token to a recipient
-pub fn handle_1_credit_erc20(payload: &[u8]) -> i32 {
+pub fn handle_1_credit_erc20(payload: &[u8]) -> Result<(), ()> {
     let params = unsafe { &*(payload.as_ptr() as *const CreditERC20Params) };
 
     let mut sender_maybe = MaybeUninit::<Address>::uninit();
@@ -53,7 +53,7 @@ pub fn handle_1_credit_erc20(payload: &[u8]) -> i32 {
     // }
 
     if result != 0 {
-        return 1;
+        return Err(());
     }
 
     // Credit lots
@@ -65,7 +65,7 @@ pub fn handle_1_credit_erc20(payload: &[u8]) -> i32 {
         params.lots,
     );
 
-    0
+    Ok(())
 }
 
 #[cfg(test)]

@@ -31,7 +31,7 @@ pub const HANDLE_0_PAYLOAD_LEN: usize = core::mem::size_of::<Address>();
 /// * This payload is decoded as [0x3f, 0x1E, ..., 0E]
 /// * The address is already in big endian
 ///
-pub fn handle_0_credit_eth(payload: &[u8]) -> i32 {
+pub fn handle_0_credit_eth(payload: &[u8]) -> Result<(), ()> {
     let recipient: &Address = unsafe { &*(payload.as_ptr() as *const Address) };
 
     // Amount of ETH in, in 64-bit chunks, in big endian encoding
@@ -50,7 +50,7 @@ pub fn handle_0_credit_eth(payload: &[u8]) -> i32 {
         lots,
     );
 
-    0
+    Ok(())
 }
 
 #[cfg(test)]

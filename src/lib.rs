@@ -8,7 +8,6 @@ use handler::{
     HANDLE_1_CREDIT_ERC20, HANDLE_1_PAYLOAD_LEN,
 };
 use hostio::*;
-use state::{SlotKey, TraderTokenKey};
 
 pub mod erc20;
 pub mod events;
@@ -71,12 +70,12 @@ pub extern "C" fn user_entrypoint(len: usize) -> i32 {
             HANDLE_0_CREDIT_ETH => handle_0_credit_eth(payload),
             HANDLE_1_CREDIT_ERC20 => handle_1_credit_erc20(payload),
             GET_10_TRADER_TOKEN_STATE => get_10_trader_token_state(payload),
-            _ => return 1,
+            _ => Err(()), // instead of `return 1`
         };
 
-        // If any handler fails (returns nonzero), propagate the error
-        if result != 0 {
-            return result;
+        // If any handler fails propagate the error
+        if result.is_err() {
+            return 1;
         }
     }
 

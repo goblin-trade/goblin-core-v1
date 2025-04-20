@@ -8,7 +8,7 @@ use crate::{
 pub const GET_10_TRADER_TOKEN_STATE: u8 = 10;
 pub const GET_10_PAYLOAD_LEN: usize = core::mem::size_of::<TraderTokenKey>();
 
-pub fn get_10_trader_token_state(payload: &[u8]) -> i32 {
+pub fn get_10_trader_token_state(payload: &[u8]) -> Result<(), ()> {
     let trader_token_key = unsafe { &*(payload.as_ptr() as *const TraderTokenKey) };
 
     let mut trader_token_state_maybe = MaybeUninit::<TraderTokenState>::uninit();
@@ -23,7 +23,7 @@ pub fn get_10_trader_token_state(payload: &[u8]) -> i32 {
         );
     }
 
-    0
+    Ok(())
 }
 
 #[cfg(test)]
