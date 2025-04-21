@@ -11,7 +11,7 @@ use crate::{
 pub const HANDLE_1_CREDIT_ERC20: u8 = 1;
 pub const HANDLE_1_PAYLOAD_LEN: usize = core::mem::size_of::<CreditERC20Params>();
 
-#[repr(C)]
+#[repr(C, packed)]
 struct CreditERC20Params {
     /// The token to credit
     pub token: Address,
@@ -44,7 +44,7 @@ pub fn handle_1_credit_erc20(payload: &[u8]) -> Result<(), ()> {
         sender_maybe.assume_init_ref()
     };
 
-    let atoms = Atoms::from(&params.lots);
+    let atoms = Atoms::from(params.lots);
 
     // Transfer tokens to smart contract ADDRESS, not params.recipient
     erc20::transfer_from(&params.token, sender, &ADDRESS, &atoms)?;

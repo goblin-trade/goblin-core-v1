@@ -48,7 +48,7 @@ pub fn handle_2_withdraw_eth(payload: &[u8]) -> Result<(), ()> {
         params.lots,
     );
     // TODO we must flush cache before cross contract call?
-    let atoms_withdrawn = Atoms::from(&lots_withdrawn);
+    let atoms_withdrawn = Atoms::from(lots_withdrawn);
     eth::transfer_out(&params.recipient, &atoms_withdrawn)?;
 
     Ok(())

@@ -23,7 +23,7 @@ impl Atoms {
     }
 }
 
-impl From<&Lots> for Atoms {
+impl From<Lots> for Atoms {
     /// Convert lots to atoms
     ///
     /// * Lots are stored in little endian format while Atoms are in big endian
@@ -37,7 +37,7 @@ impl From<&Lots> for Atoms {
     /// * For the low word: (lots % HIGH_LOTS_SCALE) * 10^6
     /// * Convert both to big endian by swapping bytes
     /// * Store in [u64; 4] array
-    fn from(lots: &Lots) -> Self {
+    fn from(lots: Lots) -> Self {
         let lots_value = lots.0;
 
         // Split into high and low components using HIGH_LOTS_SCALE
@@ -77,11 +77,11 @@ mod tests {
         #[test]
         fn test_basic_conversion() {
             let zero_lots = Lots(0);
-            let atoms = Atoms::from(&zero_lots);
+            let atoms = Atoms::from(zero_lots);
             assert_eq!(atoms.0, [0, 0, 0, 0]);
 
             let one_lot = Lots(1);
-            let atoms = Atoms::from(&one_lot);
+            let atoms = Atoms::from(one_lot);
             assert_eq!(atoms.0[3].swap_bytes(), 1_000_000);
             assert_eq!(atoms.0[0], 0);
             assert_eq!(atoms.0[1], 0);
@@ -89,7 +89,7 @@ mod tests {
 
             // 2 lots = 2_500_000 atoms
             let two_lots = Lots(2);
-            let atoms = Atoms::from(&two_lots);
+            let atoms = Atoms::from(two_lots);
             assert_eq!(atoms.0[3].swap_bytes(), 2_000_000);
         }
 
@@ -97,13 +97,13 @@ mod tests {
         fn test_large_values() {
             // Test with SCALE value
             let scale_lots = Lots(HIGH_LOTS_SCALE);
-            let atoms = Atoms::from(&scale_lots);
+            let atoms = Atoms::from(scale_lots);
             assert_eq!(atoms.0[2].swap_bytes(), 1);
             assert_eq!(atoms.0[3], 0);
 
             // Test with SCALE + 1
             let scale_plus_one = Lots(HIGH_LOTS_SCALE + 1);
-            let atoms = Atoms::from(&scale_plus_one);
+            let atoms = Atoms::from(scale_plus_one);
             assert_eq!(atoms.0[2].swap_bytes(), 1);
             assert_eq!(atoms.0[3].swap_bytes(), 1_000_000);
         }
@@ -112,7 +112,7 @@ mod tests {
         fn test_roundtrip() {
             // Test that converting from lots to atoms and back preserves the value
             let original_lots = Lots(123456);
-            let atoms = Atoms::from(&original_lots);
+            let atoms = Atoms::from(original_lots);
             let roundtrip_lots = Lots::from(&atoms);
             assert_eq!(original_lots.0, roundtrip_lots.0);
         }

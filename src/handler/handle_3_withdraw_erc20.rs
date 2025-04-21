@@ -10,7 +10,7 @@ use crate::{
 pub const HANDLE_3_WITHDRAW_ERC20: u8 = 3;
 pub const HANDLE_3_PAYLOAD_LEN: usize = core::mem::size_of::<WithdrawERC20Params>();
 
-#[repr(C)]
+#[repr(C, packed)]
 struct WithdrawERC20Params {
     /// The token to withdraw
     pub token: Address,
@@ -47,7 +47,7 @@ pub fn handle_3_withdraw_erc20(payload: &[u8]) -> Result<(), ()> {
         },
         params.lots,
     );
-    let atoms_withdrawn = Atoms::from(&lots_withdrawn);
+    let atoms_withdrawn = Atoms::from(lots_withdrawn);
 
     erc20::transfer(&params.token, &params.recipient, &atoms_withdrawn)?;
 
