@@ -49,6 +49,16 @@ macro_rules! define_custom_types {
                     $type(self.0 / rhs.0)
                 }
             }
+
+            impl $type {
+                pub fn min(self, other: Self) -> Self {
+                    if self.0 < other.0 {
+                        self
+                    } else {
+                        other
+                    }
+                }
+            }
         )*
     };
 }

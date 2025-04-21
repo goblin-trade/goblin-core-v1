@@ -2,14 +2,12 @@
 #![cfg_attr(not(test), no_main)]
 
 use core::mem::MaybeUninit;
-use getter::{get_10_trader_token_state, GET_10_PAYLOAD_LEN, GET_10_TRADER_TOKEN_STATE};
-use handler::{
-    handle_0_credit_eth, handle_1_credit_erc20, HANDLE_0_CREDIT_ETH, HANDLE_0_PAYLOAD_LEN,
-    HANDLE_1_CREDIT_ERC20, HANDLE_1_PAYLOAD_LEN,
-};
+use getter::*;
+use handler::*;
 use hostio::*;
 
 pub mod erc20;
+pub mod eth;
 pub mod events;
 pub mod getter;
 pub mod handler;
@@ -54,6 +52,7 @@ pub extern "C" fn user_entrypoint(len: usize) -> i32 {
         let payload_len = match selector {
             HANDLE_0_CREDIT_ETH => HANDLE_0_PAYLOAD_LEN,
             HANDLE_1_CREDIT_ERC20 => HANDLE_1_PAYLOAD_LEN,
+            HANDLE_2_WITHDRAW_ETH => HANDLE_2_PAYLOAD_LEN,
             GET_10_TRADER_TOKEN_STATE => GET_10_PAYLOAD_LEN,
             _ => return 1, // Unknown selector
         };
@@ -69,6 +68,7 @@ pub extern "C" fn user_entrypoint(len: usize) -> i32 {
         let result = match selector {
             HANDLE_0_CREDIT_ETH => handle_0_credit_eth(payload),
             HANDLE_1_CREDIT_ERC20 => handle_1_credit_erc20(payload),
+            HANDLE_2_WITHDRAW_ETH => handle_2_withdraw_eth(payload),
             GET_10_TRADER_TOKEN_STATE => get_10_trader_token_state(payload),
             _ => Err(()), // instead of `return 1`
         };
