@@ -13,7 +13,7 @@ pub fn withdraw(key: &TraderTokenKey, lots: Lots) -> Lots {
     let trader_token_state = unsafe { TraderTokenState::load(key, &mut trader_token_state_maybe) };
 
     let lots_to_withdraw = lots.min(trader_token_state.lots_free);
-    trader_token_state.lots_free = lots_to_withdraw;
+    trader_token_state.lots_free -= lots_to_withdraw;
 
     unsafe {
         trader_token_state.store(key);

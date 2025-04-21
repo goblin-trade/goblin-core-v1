@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+readonly NUM_CALLS=01
+readonly DEPOSIT_ETH_SELECTOR=00
+readonly LOTS=0100000000000000
+readonly NATIVE_TOKEN=0x0000000000000000000000000000000000000000
+readonly VALUE=1000000
+
+cast send $CONTRACT \
+    "0x$NUM_CALLS$DEPOSIT_ETH_SELECTOR${ADDRESS#0x}" \
+    --value $VALUE \
+    --private-key $PRIVATE_KEY
+
+readonly GET_TRADER_STATE_SELECTOR=0A
+
+# Check trader state
+echo "Trader state-"
+cast call $CONTRACT \
+    "0x$NUM_CALLS$GET_TRADER_STATE_SELECTOR${ADDRESS#0x}${NATIVE_TOKEN#0x}"
