@@ -1,8 +1,8 @@
 use core::mem::MaybeUninit;
 
 use crate::{
-    events, msg_sender,
-    quantities::Lots,
+    eth, events, msg_sender,
+    quantities::{Atoms, Lots},
     state::TraderTokenKey,
     types::{Address, NATIVE_TOKEN},
 };
@@ -47,8 +47,9 @@ pub fn handle_2_withdraw_eth(payload: &[u8]) -> Result<(), ()> {
         },
         params.lots,
     );
-
-    // TODO convert to atoms and withdraw ETH
+    // TODO we must flush cache before cross contract call?
+    let atoms_withdrawn = Atoms::from(&lots_withdrawn);
+    eth::transfer_out(&params.recipient, &atoms_withdrawn)?;
 
     Ok(())
 }

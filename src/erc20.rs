@@ -1,6 +1,6 @@
 use core::mem::MaybeUninit;
 
-use crate::{call_contract, quantities::Atoms, read_return_data, types::Address};
+use crate::{hostio, quantities::Atoms, read_return_data, types::Address};
 
 // keccak256('transferFrom(address,address,uint256)') = 0x23b872dd
 const TRANSFER_FROM_SELECTOR: [u8; 4] = [0x23, 0xb8, 0x72, 0xdd];
@@ -29,12 +29,13 @@ pub fn transfer_from(
     let return_data_len: &mut usize = &mut 0;
 
     let call_result = unsafe {
-        call_contract(
+        hostio::call_contract(
             contract.as_ptr(),
             calldata.as_ptr(),
             calldata.len(),
             value.0.as_ptr() as *const u8,
-            200_000, // 200k gas. We need to explicitly set gas otherwise TX fails
+            // Use max gas to follow EVM's CALL 63/64 rule. The VM will decide how much gas to use
+            u64::MAX,
             return_data_len,
         )
     };
