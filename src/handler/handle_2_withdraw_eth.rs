@@ -10,7 +10,10 @@ use crate::{
 pub const HANDLE_2_WITHDRAW_ETH: u8 = 2;
 pub const HANDLE_2_PAYLOAD_LEN: usize = core::mem::size_of::<WithdrawETHParams>();
 
-#[repr(C)]
+// We need packed otherwise the struct will be of size 32 not 28
+// handle_1_credit_erc20 case is an exception. It worked without packed because 2 addresses
+// equal to 40 bytes, a multiple of 8
+#[repr(C, packed)]
 struct WithdrawETHParams {
     /// Withdraw lots to `recipient`. This allows a wallet to withdraw to another wallet
     pub recipient: Address,
