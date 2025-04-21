@@ -15,20 +15,46 @@
         inherit system;
       };
 
-      # Nitro's devShell to inherit from
+      rustPlatform = pkgs.rustPlatform;
+
+      cargoStylus = rustPlatform.buildRustPackage rec {
+        pname = "cargo-stylus";
+        version = "0.5.3";
+
+        src = pkgs.fetchFromGitHub {
+          owner = "OffchainLabs";
+          repo = "cargo-stylus";
+          rev = "v${version}";
+          hash = "sha256-2KkiwX2CYt155YxY9CQ3uGwZRIl5lsnyIoYcPGaTneI=";
+        };
+
+        cargoHash = "sha256-7Ez0ZRi7n94dvNqXVrVW1oU8raDDiispCaOxTzU4hpc=";
+
+        nativeBuildInputs = [
+          pkgs.pkg-config
+        ];
+
+        buildInputs = [
+          pkgs.openssl
+        ];
+
+        meta = {
+          description = "Stylus development CLI for Arbitrum";
+          homepage = "https://github.com/OffchainLabs/cargo-stylus";
+          license = pkgs.lib.licenses.mit;
+        };
+      };
+
+
       nitroShell = nitro.devShells.${system}.default;
     in {
       devShells.${system}.default = pkgs.mkShell {
-        # Inherit all packages from Nitro shell
-        # buildInputs = nitroShell.buildInputs or [];
-
-        # Optional: include any other tools specific to Goblin, if needed
         buildInputs = nitroShell.buildInputs ++ [
           pkgs.sqlx-cli
+          cargoStylus
         ];
 
         shellHook = ''
-          # Run Nitro's shellHook first, if it exists
           ${nitroShell.shellHook or ""}
 
           # Goblin-specific environment setup
