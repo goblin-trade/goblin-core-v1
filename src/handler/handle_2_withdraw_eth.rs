@@ -53,3 +53,115 @@ pub fn handle_2_withdraw_eth(payload: &[u8]) -> Result<(), ()> {
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        hostio::*,
+        state::{SlotState, TraderTokenState},
+        user_entrypoint,
+    };
+    use hex_literal::hex;
+
+    use super::*;
+
+    #[test]
+    fn test_withdraw_sufficient_funds() {
+        // Set hostios
+        let mut msg_sender = hex!("3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E");
+        set_msg_sender(msg_sender);
+
+        let lots = Lots(1);
+
+        let payload = WithdrawETHParams {
+            recipient: msg_sender,
+            lots,
+        };
+        let payload_bytes: &[u8] = unsafe {
+            core::slice::from_raw_parts(
+                &payload as *const WithdrawETHParams as *const u8,
+                core::mem::size_of::<WithdrawETHParams>(),
+            )
+        };
+
+        let mut test_args: Vec<u8> = vec![];
+        let num_calls: u8 = 1;
+        test_args.push(num_calls);
+        test_args.push(HANDLE_2_WITHDRAW_ETH);
+        test_args.extend_from_slice(payload_bytes);
+        set_test_args(test_args.clone());
+
+        // Set slot
+        let key = &TraderTokenKey {
+            trader: payload.recipient,
+            token: NATIVE_TOKEN,
+        };
+        let slot = TraderTokenState::new(Lots(0), lots);
+        unsafe {
+            slot.store(key);
+        }
+
+        // Set call result to true (balance is present)
+        set_return_data(vec![1]);
+
+        let result = user_entrypoint(test_args.len());
+        assert_eq!(result, 0);
+
+        let mut trader_token_state_maybe = MaybeUninit::<TraderTokenState>::uninit();
+        let trader_token_state =
+            unsafe { TraderTokenState::load(key, &mut trader_token_state_maybe) };
+
+        assert_eq!(trader_token_state.lots_free.0, 0);
+        assert_eq!(trader_token_state.lots_locked.0, 0);
+    }
+
+    #[test]
+    fn test_withdraw_insufficient_funds() {
+        // Set hostios
+        let mut msg_sender = hex!("3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E");
+        set_msg_sender(msg_sender);
+
+        let lots = Lots(1);
+
+        let payload = WithdrawETHParams {
+            recipient: msg_sender,
+            lots,
+        };
+        let payload_bytes: &[u8] = unsafe {
+            core::slice::from_raw_parts(
+                &payload as *const WithdrawETHParams as *const u8,
+                core::mem::size_of::<WithdrawETHParams>(),
+            )
+        };
+
+        let mut test_args: Vec<u8> = vec![];
+        let num_calls: u8 = 1;
+        test_args.push(num_calls);
+        test_args.push(HANDLE_2_WITHDRAW_ETH);
+        test_args.extend_from_slice(payload_bytes);
+        set_test_args(test_args.clone());
+
+        // Set slot
+        let key = &TraderTokenKey {
+            trader: payload.recipient,
+            token: NATIVE_TOKEN,
+        };
+        let slot = TraderTokenState::new(Lots(0), Lots(0));
+        unsafe {
+            slot.store(key);
+        }
+
+        // Set call result to true- transfer works but the amount is 0
+        set_return_data(vec![1]);
+
+        let result = user_entrypoint(test_args.len());
+        assert_eq!(result, 0);
+
+        let mut trader_token_state_maybe = MaybeUninit::<TraderTokenState>::uninit();
+        let trader_token_state =
+            unsafe { TraderTokenState::load(key, &mut trader_token_state_maybe) };
+
+        assert_eq!(trader_token_state.lots_free.0, 0);
+        assert_eq!(trader_token_state.lots_locked.0, 0);
+    }
+}

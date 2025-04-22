@@ -50,6 +50,16 @@ pub struct TraderTokenState {
     _padding: [u8; 16],
 }
 
+impl TraderTokenState {
+    pub fn new(lots_locked: Lots, lots_free: Lots) -> Self {
+        TraderTokenState {
+            lots_locked,
+            lots_free,
+            _padding: [0u8; 16],
+        }
+    }
+}
+
 impl SlotState<TraderTokenKey, TraderTokenState> for TraderTokenState {
     unsafe fn load<'a>(
         key: &TraderTokenKey,

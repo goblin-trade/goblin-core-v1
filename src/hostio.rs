@@ -66,6 +66,8 @@ mod test_hooks {
     use std::collections::HashMap;
     use tiny_keccak::{Hasher, Keccak};
 
+    use crate::types::Address;
+
     thread_local! {
         // Store the input args that will be read by read_args
         static TEST_ARGS: RefCell<Vec<u8>> = RefCell::new(Vec::new());
@@ -80,7 +82,7 @@ mod test_hooks {
         static MSG_VALUE: RefCell<[u8; 32]> = RefCell::new([0u8; 32]);
 
         // Add storage for sender address
-        static MSG_SENDER: RefCell<[u8; 32]> = RefCell::new([0u8; 32]);
+        static MSG_SENDER: RefCell<Address> = RefCell::new([0u8; 20]);
 
         static BLOCK_NUMBER: RefCell<u64> = RefCell::new(0);
 
@@ -95,7 +97,7 @@ mod test_hooks {
         TEST_RESULT.with(|result| result.borrow_mut().clear());
         STORAGE.with(|storage| storage.borrow_mut().clear());
         MSG_VALUE.with(|msg_value| *msg_value.borrow_mut() = [0u8; 32]);
-        MSG_SENDER.with(|sender| *sender.borrow_mut() = [0u8; 32]);
+        MSG_SENDER.with(|sender| *sender.borrow_mut() = [0u8; 20]);
         BLOCK_NUMBER.with(|b| *b.borrow_mut() = 0);
         BLOCK_TIMESTAMP.with(|t| *t.borrow_mut() = 0);
         RETURN_DATA.with(|result| result.borrow_mut().clear());
@@ -126,7 +128,7 @@ mod test_hooks {
     }
 
     // Function to set the test sender address
-    pub fn set_msg_sender(sender: [u8; 32]) {
+    pub fn set_msg_sender(sender: Address) {
         MSG_SENDER.with(|addr| {
             *addr.borrow_mut() = sender;
         });
@@ -232,7 +234,7 @@ mod test_hooks {
     #[no_mangle]
     pub unsafe extern "C" fn msg_sender(sender: *mut u8) {
         MSG_SENDER.with(|addr| {
-            let slice = core::slice::from_raw_parts_mut(sender, 32);
+            let slice = core::slice::from_raw_parts_mut(sender, 20);
             slice.copy_from_slice(&*addr.borrow());
         });
     }

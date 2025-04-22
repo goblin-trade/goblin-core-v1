@@ -80,8 +80,7 @@ mod test {
     #[test]
     pub fn test_deposit_erc20() {
         // Set hostios
-        let mut msg_sender = [0u8; 32];
-        msg_sender[12..].copy_from_slice(&hex!("3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E"));
+        let mut msg_sender = hex!("3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E");
         set_msg_sender(msg_sender);
 
         let mut return_data = vec![0u8; 32];
