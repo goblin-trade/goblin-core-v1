@@ -44,11 +44,6 @@ pub fn handle_1_credit_erc20(payload: &[u8]) -> Result<(), ()> {
         sender_maybe.assume_init_ref()
     };
 
-    let atoms = Atoms::from(params.lots);
-
-    // Transfer tokens to smart contract ADDRESS, not params.recipient
-    erc20::transfer_from(&params.token, sender, &ADDRESS, &atoms)?;
-
     // Credit lots to params.recipient
     events::deposit(
         &TraderTokenKey {
@@ -57,6 +52,11 @@ pub fn handle_1_credit_erc20(payload: &[u8]) -> Result<(), ()> {
         },
         params.lots,
     );
+
+    // Cross contract call should be performed last to remove the need to flush cache twice
+    // Transfer tokens to smart contract ADDRESS, not params.recipient
+    let atoms = Atoms::from(params.lots);
+    erc20::transfer_from(&params.token, sender, &ADDRESS, &atoms)?;
 
     Ok(())
 }
@@ -80,7 +80,7 @@ mod test {
     #[test]
     pub fn test_deposit_erc20() {
         // Set hostios
-        let mut msg_sender = hex!("3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E");
+        let msg_sender = hex!("3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E");
         set_msg_sender(msg_sender);
 
         let mut return_data = vec![0u8; 32];

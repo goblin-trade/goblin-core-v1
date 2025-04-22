@@ -1,6 +1,6 @@
 use core::mem::MaybeUninit;
 
-use crate::{hostio, quantities::Atoms, read_return_data, types::Address};
+use crate::{clear_cache_and_call, hostio, quantities::Atoms, types::Address};
 
 // keccak256('transfer(address,uint256)') = 0xa9059cbb
 const TRANSFER_SELECTOR: [u8; 4] = [0xa9, 0x05, 0x9c, 0xbb];
@@ -25,7 +25,7 @@ pub fn transfer(contract: &Address, recipient: &Address, amount: &Atoms) -> Resu
     let return_data_len: &mut usize = &mut 0;
 
     let call_result = unsafe {
-        hostio::call_contract(
+        clear_cache_and_call(
             contract.as_ptr(),
             calldata.as_ptr(),
             calldata.len(),
@@ -35,26 +35,18 @@ pub fn transfer(contract: &Address, recipient: &Address, amount: &Atoms) -> Resu
         )
     };
 
-    #[cfg(test)]
-    println!("checking call_result");
-
     if call_result != 0 {
         return Err(());
     }
 
-    #[cfg(test)]
-    println!("checking result byte");
-
     // Check if the return value is false
     let mut result_byte_maybe = MaybeUninit::<u8>::uninit();
     let result_byte = unsafe {
-        read_return_data(result_byte_maybe.as_mut_ptr(), 31, 1);
+        hostio::read_return_data(result_byte_maybe.as_mut_ptr(), 31, 1);
         result_byte_maybe.assume_init_ref()
     };
 
     if *result_byte == 0 {
-        #[cfg(test)]
-        println!("result_byte is 0");
         return Err(());
     }
 
@@ -85,7 +77,7 @@ pub fn transfer_from(
     let return_data_len: &mut usize = &mut 0;
 
     let call_result = unsafe {
-        hostio::call_contract(
+        clear_cache_and_call(
             contract.as_ptr(),
             calldata.as_ptr(),
             calldata.len(),
@@ -104,7 +96,7 @@ pub fn transfer_from(
     // If the contract returned `false`, treat as error.
     let mut result_byte_maybe = MaybeUninit::<u8>::uninit();
     let result_byte = unsafe {
-        read_return_data(result_byte_maybe.as_mut_ptr(), 31, 1);
+        hostio::read_return_data(result_byte_maybe.as_mut_ptr(), 31, 1);
         result_byte_maybe.assume_init_ref()
     };
 

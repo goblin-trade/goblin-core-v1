@@ -80,7 +80,7 @@ impl SlotState<TraderTokenKey, TraderTokenState> for TraderTokenState {
 
 #[cfg(test)]
 mod test {
-    use crate::{state::SlotKey, types::Address};
+    use crate::state::SlotKey;
 
     use super::TraderTokenKey;
 

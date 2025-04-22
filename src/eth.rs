@@ -1,4 +1,4 @@
-use crate::{hostio, quantities::Atoms, types::Address};
+use crate::{clear_cache_and_call, quantities::Atoms, types::Address};
 
 /// Transfer out native ETH to a recipient
 pub fn transfer_out(recipient: &Address, amount: &Atoms) -> Result<(), ()> {
@@ -6,7 +6,7 @@ pub fn transfer_out(recipient: &Address, amount: &Atoms) -> Result<(), ()> {
     let return_data_len: &mut usize = &mut 0;
 
     let call_result = unsafe {
-        hostio::call_contract(
+        clear_cache_and_call(
             recipient.as_ptr(),
             calldata.as_ptr(),
             calldata.len(),

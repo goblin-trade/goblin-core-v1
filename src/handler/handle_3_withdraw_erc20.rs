@@ -49,9 +49,6 @@ pub fn handle_3_withdraw_erc20(payload: &[u8]) -> Result<(), ()> {
     );
     let atoms_withdrawn = Atoms::from(lots_withdrawn);
 
-    #[cfg(test)]
-    println!("transferring erc20");
-
     erc20::transfer(&params.token, &params.recipient, &atoms_withdrawn)?;
 
     Ok(())
@@ -71,7 +68,7 @@ mod tests {
     #[test]
     fn test_withdraw_sufficient_funds() {
         // Set hostios
-        let mut msg_sender = hex!("3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E");
+        let msg_sender = hex!("3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E");
         set_msg_sender(msg_sender);
 
         let lots = Lots(1);
@@ -126,7 +123,7 @@ mod tests {
     #[test]
     fn test_withdraw_insufficient_funds() {
         // Set hostios
-        let mut msg_sender = hex!("3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E");
+        let msg_sender = hex!("3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E");
         set_msg_sender(msg_sender);
 
         let lots = Lots(1);

@@ -1,11 +1,13 @@
 #![cfg_attr(not(test), no_std)]
 #![cfg_attr(not(test), no_main)]
 
+use clear_cache_and_call::*;
 use core::mem::MaybeUninit;
 use getter::*;
 use handler::*;
 use hostio::*;
 
+pub mod clear_cache_and_call;
 pub mod erc20;
 pub mod eth;
 pub mod events;
@@ -79,10 +81,6 @@ pub extern "C" fn user_entrypoint(len: usize) -> i32 {
         if result.is_err() {
             return 1;
         }
-    }
-
-    unsafe {
-        storage_flush_cache(true);
     }
 
     0
