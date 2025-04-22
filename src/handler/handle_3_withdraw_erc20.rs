@@ -49,7 +49,131 @@ pub fn handle_3_withdraw_erc20(payload: &[u8]) -> Result<(), ()> {
     );
     let atoms_withdrawn = Atoms::from(lots_withdrawn);
 
+    #[cfg(test)]
+    println!("transferring erc20");
+
     erc20::transfer(&params.token, &params.recipient, &atoms_withdrawn)?;
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        hostio::*,
+        state::{SlotState, TraderTokenState},
+        user_entrypoint,
+    };
+    use hex_literal::hex;
+
+    use super::*;
+
+    #[test]
+    fn test_withdraw_sufficient_funds() {
+        // Set hostios
+        let mut msg_sender = hex!("3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E");
+        set_msg_sender(msg_sender);
+
+        let lots = Lots(1);
+
+        let token = hex!("7E32b54800705876d3b5cFbc7d9c226a211F7C1a");
+
+        let payload = WithdrawERC20Params {
+            token,
+            recipient: msg_sender,
+            lots,
+        };
+        let payload_bytes: &[u8] = unsafe {
+            core::slice::from_raw_parts(
+                &payload as *const WithdrawERC20Params as *const u8,
+                core::mem::size_of::<WithdrawERC20Params>(),
+            )
+        };
+
+        let mut test_args: Vec<u8> = vec![];
+        let num_calls: u8 = 1;
+        test_args.push(num_calls);
+        test_args.push(HANDLE_3_WITHDRAW_ERC20);
+        test_args.extend_from_slice(payload_bytes);
+        set_test_args(test_args.clone());
+
+        // Set slot
+        let key = &TraderTokenKey {
+            trader: payload.recipient,
+            token,
+        };
+        let slot = TraderTokenState::new(Lots(0), lots);
+        unsafe {
+            slot.store(key);
+        }
+
+        // Set return data to true
+        let mut return_data = vec![0u8; 32];
+        return_data[31] = 1;
+        set_return_data(return_data);
+
+        let result = user_entrypoint(test_args.len());
+        assert_eq!(result, 0);
+
+        let mut trader_token_state_maybe = MaybeUninit::<TraderTokenState>::uninit();
+        let trader_token_state =
+            unsafe { TraderTokenState::load(key, &mut trader_token_state_maybe) };
+
+        assert_eq!(trader_token_state.lots_free.0, 0);
+        assert_eq!(trader_token_state.lots_locked.0, 0);
+    }
+
+    #[test]
+    fn test_withdraw_insufficient_funds() {
+        // Set hostios
+        let mut msg_sender = hex!("3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E");
+        set_msg_sender(msg_sender);
+
+        let lots = Lots(1);
+
+        let token = hex!("7E32b54800705876d3b5cFbc7d9c226a211F7C1a");
+
+        let payload = WithdrawERC20Params {
+            token,
+            recipient: msg_sender,
+            lots,
+        };
+        let payload_bytes: &[u8] = unsafe {
+            core::slice::from_raw_parts(
+                &payload as *const WithdrawERC20Params as *const u8,
+                core::mem::size_of::<WithdrawERC20Params>(),
+            )
+        };
+
+        let mut test_args: Vec<u8> = vec![];
+        let num_calls: u8 = 1;
+        test_args.push(num_calls);
+        test_args.push(HANDLE_3_WITHDRAW_ERC20);
+        test_args.extend_from_slice(payload_bytes);
+        set_test_args(test_args.clone());
+
+        // Set slot
+        let key = &TraderTokenKey {
+            trader: payload.recipient,
+            token,
+        };
+        let slot = TraderTokenState::new(Lots(0), Lots(0));
+        unsafe {
+            slot.store(key);
+        }
+
+        // Set return data to false
+        let return_data = vec![0u8; 32];
+        set_return_data(return_data);
+
+        let result = user_entrypoint(test_args.len());
+        assert_eq!(result, 1);
+
+        let mut trader_token_state_maybe = MaybeUninit::<TraderTokenState>::uninit();
+        let trader_token_state =
+            unsafe { TraderTokenState::load(key, &mut trader_token_state_maybe) };
+
+        assert_eq!(trader_token_state.lots_free.0, 0);
+        assert_eq!(trader_token_state.lots_locked.0, 0);
+    }
 }

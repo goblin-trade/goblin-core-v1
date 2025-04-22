@@ -101,8 +101,7 @@ mod tests {
             slot.store(key);
         }
 
-        // Set call result to true (balance is present)
-        set_return_data(vec![1]);
+        // No need to set return data. Call result is success by default
 
         let result = user_entrypoint(test_args.len());
         assert_eq!(result, 0);
@@ -151,8 +150,7 @@ mod tests {
             slot.store(key);
         }
 
-        // Set call result to true- transfer works but the amount is 0
-        set_return_data(vec![1]);
+        // No need to set return data. Call result is success by default
 
         let result = user_entrypoint(test_args.len());
         assert_eq!(result, 0);

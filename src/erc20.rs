@@ -35,9 +35,15 @@ pub fn transfer(contract: &Address, recipient: &Address, amount: &Atoms) -> Resu
         )
     };
 
+    #[cfg(test)]
+    println!("checking call_result");
+
     if call_result != 0 {
         return Err(());
     }
+
+    #[cfg(test)]
+    println!("checking result byte");
 
     // Check if the return value is false
     let mut result_byte_maybe = MaybeUninit::<u8>::uninit();
@@ -47,6 +53,8 @@ pub fn transfer(contract: &Address, recipient: &Address, amount: &Atoms) -> Resu
     };
 
     if *result_byte == 0 {
+        #[cfg(test)]
+        println!("result_byte is 0");
         return Err(());
     }
 
