@@ -5,6 +5,7 @@ use crate::{
 
 pub const HANDLE_4_PLACE_MULTIPLE_ORDERS: u8 = 4;
 pub const HANDLE_4_HEADER_LEN: usize = core::mem::size_of::<PlaceMultipleOrdersHeader>();
+pub const POST_ONLY_ORDER_LEN: usize = core::mem::size_of::<PostOnlyOrder>();
 
 #[repr(C, packed)]
 pub struct PlaceMultipleOrdersHeader {
@@ -76,5 +77,12 @@ pub fn handle_4_place_multiple_orders_inner(
     header: &PlaceMultipleOrdersHeader,
     order_bytes: &[u8],
 ) -> Result<(), ()> {
+    // No heap, can't deserialize as dynamic array
+    for i in 0..header.bids_count {
+        let offset = i as usize * POST_ONLY_ORDER_LEN;
+        let order = unsafe { &*(order_bytes.as_ptr().add(offset) as *const PostOnlyOrder) };
+
+        // TODO insert into book
+    }
     Ok(())
 }
