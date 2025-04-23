@@ -53,9 +53,28 @@ pub enum ExpiryType {
     Block = 2,
 }
 
-pub fn handle_4_place_multiple_orders(
+pub fn handle_4_place_multiple_orders(payload: &[u8]) -> Result<usize, ()> {
+    if payload.len() < HANDLE_4_HEADER_LEN {
+        return Err(());
+    }
+
+    let header = unsafe { &*(payload.as_ptr() as *const PlaceMultipleOrdersHeader) };
+    let total_orders = header.bids_count as usize + header.asks_count as usize;
+    let orders_len = total_orders * core::mem::size_of::<PostOnlyOrder>();
+
+    let bytes_used = HANDLE_4_HEADER_LEN + orders_len;
+    if payload.len() < HANDLE_4_HEADER_LEN {
+        return Err(());
+    }
+
+    let order_bytes = &payload[HANDLE_4_HEADER_LEN..bytes_used];
+
+    handle_4_place_multiple_orders_inner(header, order_bytes).map(|_| bytes_used)
+}
+
+pub fn handle_4_place_multiple_orders_inner(
     header: &PlaceMultipleOrdersHeader,
-    order_payload: &[u8],
+    order_bytes: &[u8],
 ) -> Result<(), ()> {
     Ok(())
 }

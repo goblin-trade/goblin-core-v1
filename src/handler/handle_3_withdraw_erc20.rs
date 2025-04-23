@@ -31,7 +31,11 @@ struct WithdrawERC20Params {
     pub lots: Lots,
 }
 
-pub fn handle_3_withdraw_erc20(payload: &[u8]) -> Result<(), ()> {
+pub fn handle_3_withdraw_erc20(payload: &[u8]) -> Result<usize, ()> {
+    if payload.len() < HANDLE_3_PAYLOAD_LEN {
+        return Err(());
+    }
+
     let params = unsafe { &*(payload.as_ptr() as *const WithdrawERC20Params) };
 
     let mut sender_maybe = MaybeUninit::<Address>::uninit();
@@ -51,7 +55,7 @@ pub fn handle_3_withdraw_erc20(payload: &[u8]) -> Result<(), ()> {
 
     erc20::transfer(&params.token, &params.recipient, &atoms_withdrawn)?;
 
-    Ok(())
+    Ok(HANDLE_3_PAYLOAD_LEN)
 }
 
 #[cfg(test)]

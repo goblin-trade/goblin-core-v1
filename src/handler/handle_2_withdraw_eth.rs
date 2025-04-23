@@ -31,7 +31,11 @@ struct WithdrawETHParams {
     pub lots: Lots,
 }
 
-pub fn handle_2_withdraw_eth(payload: &[u8]) -> Result<(), ()> {
+pub fn handle_2_withdraw_eth(payload: &[u8]) -> Result<usize, ()> {
+    if payload.len() < HANDLE_2_PAYLOAD_LEN {
+        return Err(());
+    }
+
     let params = unsafe { &*(payload.as_ptr() as *const WithdrawETHParams) };
 
     let mut sender_maybe = MaybeUninit::<Address>::uninit();
@@ -49,7 +53,7 @@ pub fn handle_2_withdraw_eth(payload: &[u8]) -> Result<(), ()> {
     );
     eth::transfer_out(&params.recipient, &Atoms::from(lots_withdrawn))?;
 
-    Ok(())
+    Ok(HANDLE_2_PAYLOAD_LEN)
 }
 
 #[cfg(test)]

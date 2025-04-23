@@ -51,53 +51,23 @@ pub extern "C" fn user_entrypoint(len: usize) -> i32 {
         let selector = input[offset];
         offset += 1;
 
-        let payload_len = match selector {
-            HANDLE_0_CREDIT_ETH => HANDLE_0_PAYLOAD_LEN,
-            HANDLE_1_CREDIT_ERC20 => HANDLE_1_PAYLOAD_LEN,
-            HANDLE_2_WITHDRAW_ETH => HANDLE_2_PAYLOAD_LEN,
-            HANDLE_3_WITHDRAW_ERC20 => HANDLE_3_PAYLOAD_LEN,
-            HANDLE_4_PLACE_MULTIPLE_ORDERS => HANDLE_4_HEADER_LEN,
-
-            // Getters
-            GET_10_TRADER_TOKEN_STATE => GET_10_PAYLOAD_LEN,
-            _ => return 1, // Unknown selector
-        };
-
-        if offset + payload_len > len {
-            // Invalid input: payload out of bounds
-            return 1;
-        }
-
-        let payload = &input[offset..offset + payload_len];
-        offset += payload_len;
-
+        let payload = &input[offset..len];
         let result = match selector {
             HANDLE_0_CREDIT_ETH => handle_0_credit_eth(payload),
             HANDLE_1_CREDIT_ERC20 => handle_1_credit_erc20(payload),
             HANDLE_2_WITHDRAW_ETH => handle_2_withdraw_eth(payload),
             HANDLE_3_WITHDRAW_ERC20 => handle_3_withdraw_erc20(payload),
-            HANDLE_4_PLACE_MULTIPLE_ORDERS => {
-                let header = unsafe { &*(payload.as_ptr() as *const PlaceMultipleOrdersHeader) };
-                let total_orders = header.bids_count as usize + header.asks_count as usize;
-                let orders_len = total_orders * core::mem::size_of::<PostOnlyOrder>();
+            HANDLE_4_PLACE_MULTIPLE_ORDERS => handle_4_place_multiple_orders(payload),
 
-                let expected_len = offset + orders_len;
-                if expected_len > len {
-                    return 1;
-                }
-
-                let orders_payload = &input[offset..expected_len];
-                offset = expected_len;
-
-                handle_4_place_multiple_orders(header, orders_payload)
-            }
-
+            // Getters
             GET_10_TRADER_TOKEN_STATE => get_10_trader_token_state(payload),
-            _ => Err(()), // instead of `return 1`
+            _ => Err(()),
         };
 
-        // If any handler fails propagate the error
-        if result.is_err() {
+        if let Ok(bytes_used) = result {
+            offset += bytes_used;
+        } else {
+            // If any handler fails then exit
             return 1;
         }
     }

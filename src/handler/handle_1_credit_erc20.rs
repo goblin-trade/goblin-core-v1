@@ -35,7 +35,11 @@ struct CreditERC20Params {
 /// Since the indexer filters for successful call frames, the requested amount
 /// is guaranteed to be credited.
 ///
-pub fn handle_1_credit_erc20(payload: &[u8]) -> Result<(), ()> {
+pub fn handle_1_credit_erc20(payload: &[u8]) -> Result<usize, ()> {
+    if payload.len() < HANDLE_1_PAYLOAD_LEN {
+        return Err(());
+    }
+
     let params = unsafe { &*(payload.as_ptr() as *const CreditERC20Params) };
 
     let mut sender_maybe = MaybeUninit::<Address>::uninit();
@@ -58,7 +62,7 @@ pub fn handle_1_credit_erc20(payload: &[u8]) -> Result<(), ()> {
     let atoms = Atoms::from(params.lots);
     erc20::transfer_from(&params.token, sender, &ADDRESS, &atoms)?;
 
-    Ok(())
+    Ok(HANDLE_1_PAYLOAD_LEN)
 }
 
 #[cfg(test)]

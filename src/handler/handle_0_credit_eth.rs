@@ -17,6 +17,10 @@ pub const HANDLE_0_PAYLOAD_LEN: usize = core::mem::size_of::<Address>();
 /// * The address is encoded in `payload`. The client call encodes the data such that we obtain
 /// the big endian result in a slice without need of any processing.
 ///
+/// # Returns
+///
+/// The number of bytes consumed. Add these bytes to the offset.
+///
 /// # Example
 ///
 /// ```
@@ -31,7 +35,11 @@ pub const HANDLE_0_PAYLOAD_LEN: usize = core::mem::size_of::<Address>();
 /// * This payload is decoded as [0x3f, 0x1E, ..., 0E]
 /// * The address is already in big endian
 ///
-pub fn handle_0_credit_eth(payload: &[u8]) -> Result<(), ()> {
+pub fn handle_0_credit_eth(payload: &[u8]) -> Result<usize, ()> {
+    if payload.len() < HANDLE_0_PAYLOAD_LEN {
+        return Err(());
+    }
+
     let recipient: &Address = unsafe { &*(payload.as_ptr() as *const Address) };
 
     // Amount of ETH in, in 64-bit chunks, in big endian encoding
@@ -50,7 +58,7 @@ pub fn handle_0_credit_eth(payload: &[u8]) -> Result<(), ()> {
         lots,
     );
 
-    Ok(())
+    Ok(HANDLE_0_PAYLOAD_LEN)
 }
 
 #[cfg(test)]
