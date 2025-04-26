@@ -73,6 +73,7 @@ pub fn handle_4_place_multiple_orders(payload: &[u8]) -> Result<usize, ()> {
     handle_4_place_multiple_orders_inner(header, order_bytes).map(|_| bytes_used)
 }
 
+/// Externally ensure that order_bytes are of exact length
 pub fn handle_4_place_multiple_orders_inner(
     header: &PlaceMultipleOrdersHeader,
     order_bytes: &[u8],

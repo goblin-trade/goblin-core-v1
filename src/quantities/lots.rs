@@ -1,6 +1,6 @@
 ///! A lot is the smallest unit that the matching engine can process
 ///!
-///! * 1 lot equals 10^6 globally for all tokens. 1 lot = 10^ atoms.
+///! * 1 lot equals 10^6 globally for all tokens. 1 lot = 10^6 atoms.
 ///!
 ///! * Lots are u64 numbers using **little endian** encoding. This allows zero copy
 ///! serialization and deserialization when reading to or writing from args and slots.
@@ -12,6 +12,8 @@
 ///! * Max value: u64::MAX * 10^6 atoms (capped to u64::MAX lots)
 ///! * Min value: Dust < 10^6 atoms is truncated
 ///! * Only supports fungible tokens
+///! * But since USDC has 6 decimals, 1 lot = 1 unit of USDC
+///! This is too big. We can't express 0.1, 0.001 ticks
 ///!
 use crate::define_custom_types;
 
