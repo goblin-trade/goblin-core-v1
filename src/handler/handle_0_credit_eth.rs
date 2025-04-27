@@ -2,7 +2,7 @@ use core::mem::MaybeUninit;
 
 use crate::{
     events, msg_value,
-    quantities::{Atoms, Lots},
+    quantities::{Lots, RawAtoms},
     state::TraderTokenKey,
     types::{Address, NATIVE_TOKEN},
 };
@@ -43,11 +43,14 @@ pub fn handle_0_credit_eth(payload: &[u8]) -> Result<usize, ()> {
     let recipient: &Address = unsafe { &*(payload.as_ptr() as *const Address) };
 
     // Amount of ETH in, in 64-bit chunks, in big endian encoding
-    let mut amount_in_maybe = MaybeUninit::<Atoms>::uninit();
+    let mut amount_in_maybe = MaybeUninit::<RawAtoms>::uninit();
     let amount_in = unsafe {
         msg_value(amount_in_maybe.as_mut_ptr() as *mut u8);
         amount_in_maybe.assume_init_ref()
     };
+
+    // Convert raw atoms to atoms
+
     let lots = Lots::from(amount_in);
 
     events::deposit(

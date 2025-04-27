@@ -2,7 +2,7 @@ use core::mem::MaybeUninit;
 
 use crate::{
     eth, events, msg_sender,
-    quantities::{Atoms, Lots},
+    quantities::{Lots, RawAtoms},
     state::TraderTokenKey,
     types::{Address, NATIVE_TOKEN},
 };
@@ -51,7 +51,7 @@ pub fn handle_2_withdraw_eth(payload: &[u8]) -> Result<usize, ()> {
         },
         params.lots,
     );
-    eth::transfer_out(&params.recipient, &Atoms::from(lots_withdrawn))?;
+    eth::transfer_out(&params.recipient, &RawAtoms::from(lots_withdrawn))?;
 
     Ok(HANDLE_2_PAYLOAD_LEN)
 }

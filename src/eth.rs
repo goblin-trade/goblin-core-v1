@@ -1,7 +1,7 @@
-use crate::{clear_cache_and_call, quantities::Atoms, types::Address};
+use crate::{clear_cache_and_call, quantities::RawAtoms, types::Address};
 
 /// Transfer out native ETH to a recipient
-pub fn transfer_out(recipient: &Address, amount: &Atoms) -> Result<(), ()> {
+pub fn transfer_out(recipient: &Address, amount: &RawAtoms) -> Result<(), ()> {
     let calldata: [u8; 0] = [];
     let return_data_len: &mut usize = &mut 0;
 

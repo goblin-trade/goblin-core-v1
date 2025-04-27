@@ -1,6 +1,6 @@
 use core::mem::MaybeUninit;
 
-use crate::{clear_cache_and_call, hostio, quantities::Atoms, types::Address};
+use crate::{clear_cache_and_call, hostio, quantities::RawAtoms, types::Address};
 
 // keccak256('transfer(address,uint256)') = 0xa9059cbb
 const TRANSFER_SELECTOR: [u8; 4] = [0xa9, 0x05, 0x9c, 0xbb];
@@ -8,7 +8,7 @@ const TRANSFER_SELECTOR: [u8; 4] = [0xa9, 0x05, 0x9c, 0xbb];
 // keccak256('transferFrom(address,address,uint256)') = 0x23b872dd
 const TRANSFER_FROM_SELECTOR: [u8; 4] = [0x23, 0xb8, 0x72, 0xdd];
 
-pub fn transfer(contract: &Address, recipient: &Address, amount: &Atoms) -> Result<(), ()> {
+pub fn transfer(contract: &Address, recipient: &Address, amount: &RawAtoms) -> Result<(), ()> {
     let mut calldata = [0u8; 4 + 32 * 2];
 
     // Function selector
@@ -21,7 +21,7 @@ pub fn transfer(contract: &Address, recipient: &Address, amount: &Atoms) -> Resu
     let amount_as_be_bytes: &[u8; 32] = unsafe { &*(amount.0.as_ptr() as *const [u8; 32]) };
     calldata[36..68].copy_from_slice(amount_as_be_bytes);
 
-    let zero_value = Atoms::default(); // Sending tokens, not ETH
+    let zero_value = RawAtoms::default(); // Sending tokens, not ETH
     let return_data_len: &mut usize = &mut 0;
 
     let call_result = unsafe {
@@ -57,7 +57,7 @@ pub fn transfer_from(
     contract: &Address,
     sender: &Address,
     recipient: &Address,
-    amount: &Atoms,
+    amount: &RawAtoms,
 ) -> Result<(), ()> {
     let mut calldata = [0u8; 4 + 32 * 3];
 
@@ -73,7 +73,7 @@ pub fn transfer_from(
     let amount_as_be_bytes: &[u8; 32] = unsafe { &*(amount.0.as_ptr() as *const [u8; 32]) };
     calldata[68..100].copy_from_slice(amount_as_be_bytes);
 
-    let zero_value = Atoms::default();
+    let zero_value = RawAtoms::default();
     let return_data_len: &mut usize = &mut 0;
 
     let call_result = unsafe {

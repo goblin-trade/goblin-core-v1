@@ -47,7 +47,10 @@ impl SlotKey for TraderTokenKey {
 pub struct TraderTokenState {
     pub lots_locked: Lots,
     pub lots_free: Lots,
-    _padding: [u8; 16],
+
+    /// Number of decimal places in the token
+    pub token_decimals: u8,
+    _padding: [u8; 15],
 }
 
 impl TraderTokenState {
@@ -55,7 +58,8 @@ impl TraderTokenState {
         TraderTokenState {
             lots_locked,
             lots_free,
-            _padding: [0u8; 16],
+            token_decimals: 6,
+            _padding: [0u8; 15],
         }
     }
 }

@@ -1,59 +1,57 @@
-use super::{Lots, HIGH_LOTS_SCALE};
+use core::u64;
 
-/// The number of atoms as `U256` in **big endian**. It represents the amount of wei or
-/// the amount of ERC20 tokens.
-///
-/// * This type is used for hostio calls, e.g. when reading wei from `msg_value()` or
-/// when making ERC20 transfers.
-///
-/// * It holds numbers in big endian which is EVM's wire format.
-///
-/// * Using [u64; 4] instead of [u8; 32] produces smaller bytecode.
-///
-/// * Call `unsafe { &*(amount.0.as_ptr() as *const [u8; 32]) }` to convert it to `[u8; 32]`.
-/// We don't provide a getter function for bytes because it can produce a dangling reference.
-///
-#[derive(Default)]
-pub struct Atoms(pub [u64; 4]);
+///! The number of atoms of a token, obtained by normalizing raw atoms.
+///!
+///! Every token is normalized from K decimal places to 6 decimal places.
+///! * USDC (6 decimal places): no change
+///! * ETH (18 decimal places): Normalized from 18 -> 6 decimal places
+///!
+///! This allows us to use u64 instead of U256 to represent atoms.
+///! These atoms are grouped into lots.
+///!
+///! Important- tokens with less than 6 decimal places are unsupported.
+///!
+///! # Math
+///!
+///! atoms = |raw atoms / 10^(K - 6)|
+///! - For USDC = raw atoms / 10^0 = raw atoms
+///! - For eth = raw atoms / 10^(18 - 6) = raw atoms / 10^12
+use crate::define_custom_types;
+
+use super::RawAtoms;
+
+define_custom_types!(Atoms<u64>);
+
+const MIN_DECIMALS: u8 = 6;
+const MAX_DECIMALS: u8 = 19;
 
 impl Atoms {
-    /// Converts the `Atoms` struct to a `[u8; 32]` array in big-endian format.
-    pub fn to_be_bytes(&self) -> &[u8; 32] {
-        unsafe { &*(self.0.as_ptr() as *const [u8; 32]) }
-    }
-}
+    pub fn from_raw_atoms(raw: &RawAtoms, decimals: u8) -> Result<Self, ()> {
+        // log base 10 ((2^(128) - 1) / ((2^64) - 1)) = 19.26
+        // That is if decimal places exceed 19 then u64 atoms can overflow
+        // 128 bits of raw atoms. Then our optimization of skipping upper 16 bytes won't work.
+        if decimals < MIN_DECIMALS || decimals > MAX_DECIMALS {
+            return Err(());
+        }
 
-impl From<Lots> for Atoms {
-    /// Convert lots to atoms
-    ///
-    /// * Lots are stored in little endian format while Atoms are in big endian
-    /// * 1 lot = 10^6 atoms
-    /// * The conversion preserves the relationship: from_lots(to_lots(atoms)) == atoms
-    ///   for values within the supported range
-    ///
-    /// # Formula
-    /// * Input: lots in little endian
-    /// * For the high word: lots / HIGH_LOTS_SCALE (where HIGH_LOTS_SCALE = 2^64 / 10^6)
-    /// * For the low word: (lots % HIGH_LOTS_SCALE) * 10^6
-    /// * Convert both to big endian by swapping bytes
-    /// * Store in [u64; 4] array
-    fn from(lots: Lots) -> Self {
-        let lots_value = lots.0;
+        // If high bits are active, the value will overflow despite of division.
+        // Cap to u64::MAX
+        if raw.0[0] > 0 || raw.0[1] > 0 {
+            return Ok(Atoms(u64::MAX));
+        }
 
-        // Split into high and low components using HIGH_LOTS_SCALE
-        // lots = high * HIGH_LOTS_SCALE + low / 10^6
-        // - high = lots / HIGH_LOTS_SCALE
-        // - lot = remainder of above division * 10^6
-        let high = lots_value / HIGH_LOTS_SCALE;
-        let low = (lots_value % HIGH_LOTS_SCALE) * 1_000_000;
+        let lower_16_bytes = &raw.to_be_bytes()[16..32];
+        let raw_atoms_u128: u128 = u128::from_be_bytes(lower_16_bytes.try_into().unwrap());
 
-        // Convert to big endian format
-        Atoms([
-            0,                 // Most significant word is always 0
-            0,                 // Second word is always 0
-            high.swap_bytes(), // Third word contains high bits
-            low.swap_bytes(),  // Least significant word contains low bits
-        ])
+        let divisor = 10u64.pow(decimals as u32 - 6);
+        let atoms_u128 = raw_atoms_u128 / divisor as u128;
+
+        let atoms = if atoms_u128 > u64::MAX as u128 {
+            Atoms(u64::MAX)
+        } else {
+            Atoms(atoms_u128 as u64)
+        };
+        Ok(atoms)
     }
 }
 
@@ -62,59 +60,56 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_conversion_to_bytes() {
-        let atoms = Atoms([0, 0, 0, 1u64.swap_bytes()]);
-        let bytes: &[u8; 32] = unsafe { &*(atoms.0.as_ptr() as *const [u8; 32]) };
+    fn test_raw_atoms_to_atoms() {
+        // Less than 6 decimals
+        let raw = RawAtoms([0, 0, 0, 1000000u64.swap_bytes()]);
+        let atoms_result = Atoms::from_raw_atoms(&raw, 5);
+        assert!(atoms_result.is_err());
 
-        let mut expected_bytes = [0u8; 32];
-        expected_bytes[31] = 1;
-        assert_eq!(*bytes, expected_bytes);
+        // USDC (6 decimals)
+        let raw = RawAtoms([0, 0, 0, 1000000u64.swap_bytes()]);
+        let atoms = Atoms::from_raw_atoms(&raw, 6).unwrap();
+        assert_eq!(atoms.0, 1000000);
+
+        // ETH (18 decimals)
+        let raw = RawAtoms([0, 0, 0, 10u64.pow(18).swap_bytes()]);
+        let atoms = Atoms::from_raw_atoms(&raw, 18).unwrap();
+        assert_eq!(atoms.0, 1000000);
     }
 
-    mod test_atom_to_lot_conversions {
-        use super::*;
+    #[test]
+    fn test_max_value() {
+        let raw = RawAtoms([1u64.swap_bytes(), 0, 0, 0]);
+        let atoms = Atoms::from_raw_atoms(&raw, 6).unwrap();
+        assert_eq!(atoms.0, u64::MAX);
 
-        #[test]
-        fn test_basic_conversion() {
-            let zero_lots = Lots(0);
-            let atoms = Atoms::from(zero_lots);
-            assert_eq!(atoms.0, [0, 0, 0, 0]);
+        let raw = RawAtoms([0, 1u64.swap_bytes(), 0, 0]);
+        let atoms = Atoms::from_raw_atoms(&raw, 6).unwrap();
+        assert_eq!(atoms.0, u64::MAX);
 
-            let one_lot = Lots(1);
-            let atoms = Atoms::from(one_lot);
-            assert_eq!(atoms.0[3].swap_bytes(), 1_000_000);
-            assert_eq!(atoms.0[0], 0);
-            assert_eq!(atoms.0[1], 0);
-            assert_eq!(atoms.0[2], 0);
+        let raw = RawAtoms([0, 0, 1u64.swap_bytes(), 0]);
+        let atoms = Atoms::from_raw_atoms(&raw, 6).unwrap();
+        assert_eq!(atoms.0, u64::MAX);
 
-            // 2 lots = 2_500_000 atoms
-            let two_lots = Lots(2);
-            let atoms = Atoms::from(two_lots);
-            assert_eq!(atoms.0[3].swap_bytes(), 2_000_000);
-        }
+        // Just below max value
+        let raw = RawAtoms([0, 0, 0, (u64::MAX - 1).swap_bytes()]);
+        let atoms = Atoms::from_raw_atoms(&raw, 6).unwrap();
+        assert_eq!(atoms.0, u64::MAX - 1);
 
-        #[test]
-        fn test_large_values() {
-            // Test with SCALE value
-            let scale_lots = Lots(HIGH_LOTS_SCALE);
-            let atoms = Atoms::from(scale_lots);
-            assert_eq!(atoms.0[2].swap_bytes(), 1);
-            assert_eq!(atoms.0[3], 0);
+        // Just below max value for ETH (18 decimals)
+        // Calculate raw_atoms = (u64::MAX - 1) * 10^12
+        let eth_raw_atoms = (u64::MAX as u128 - 1) * 10u128.pow(12);
 
-            // Test with SCALE + 1
-            let scale_plus_one = Lots(HIGH_LOTS_SCALE + 1);
-            let atoms = Atoms::from(scale_plus_one);
-            assert_eq!(atoms.0[2].swap_bytes(), 1);
-            assert_eq!(atoms.0[3].swap_bytes(), 1_000_000);
-        }
+        // Create a properly formatted raw atoms array
+        let mut raw_atoms_arr = [0u64; 4];
 
-        #[test]
-        fn test_roundtrip() {
-            // Test that converting from lots to atoms and back preserves the value
-            let original_lots = Lots(123456);
-            let atoms = Atoms::from(original_lots);
-            let roundtrip_lots = Lots::from(&atoms);
-            assert_eq!(original_lots.0, roundtrip_lots.0);
-        }
+        // The u128 value will occupy the lower 16 bytes (bytes 16-31)
+        // Split the u128 into two u64 values (for the last two positions in the array)
+        raw_atoms_arr[2] = (((eth_raw_atoms >> 64) & u64::MAX as u128) as u64).swap_bytes();
+        raw_atoms_arr[3] = ((eth_raw_atoms & u64::MAX as u128) as u64).swap_bytes();
+
+        let raw = RawAtoms(raw_atoms_arr);
+        let atoms = Atoms::from_raw_atoms(&raw, 18).unwrap();
+        assert_eq!(atoms.0, u64::MAX - 1);
     }
 }

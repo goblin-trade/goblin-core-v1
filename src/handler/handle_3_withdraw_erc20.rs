@@ -2,7 +2,7 @@ use core::mem::MaybeUninit;
 
 use crate::{
     erc20, events, hostio,
-    quantities::{Atoms, Lots},
+    quantities::{Lots, RawAtoms},
     state::TraderTokenKey,
     types::Address,
 };
@@ -51,7 +51,7 @@ pub fn handle_3_withdraw_erc20(payload: &[u8]) -> Result<usize, ()> {
         },
         params.lots,
     );
-    let atoms_withdrawn = Atoms::from(lots_withdrawn);
+    let atoms_withdrawn = RawAtoms::from(lots_withdrawn);
 
     erc20::transfer(&params.token, &params.recipient, &atoms_withdrawn)?;
 

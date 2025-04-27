@@ -2,7 +2,7 @@ use core::mem::MaybeUninit;
 
 use crate::{
     erc20, events, msg_sender,
-    quantities::{Atoms, Lots},
+    quantities::{Lots, RawAtoms},
     state::TraderTokenKey,
     types::Address,
     ADDRESS,
@@ -59,7 +59,7 @@ pub fn handle_1_credit_erc20(payload: &[u8]) -> Result<usize, ()> {
 
     // Cross contract call should be performed last to remove the need to flush cache twice
     // Transfer tokens to smart contract ADDRESS, not params.recipient
-    let atoms = Atoms::from(params.lots);
+    let atoms = RawAtoms::from(params.lots);
     erc20::transfer_from(&params.token, sender, &ADDRESS, &atoms)?;
 
     Ok(HANDLE_1_PAYLOAD_LEN)
