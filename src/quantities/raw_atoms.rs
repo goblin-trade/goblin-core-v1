@@ -21,6 +21,11 @@ impl RawAtoms {
     pub fn to_be_bytes(&self) -> &[u8; 32] {
         unsafe { &*(self.0.as_ptr() as *const [u8; 32]) }
     }
+
+    pub fn from_be_bytes(bytes: &[u8; 32]) -> Self {
+        let limbs = unsafe { &*(bytes.as_ptr() as *const [u64; 4]) };
+        RawAtoms(*limbs)
+    }
 }
 
 impl From<Lots> for RawAtoms {
