@@ -112,8 +112,8 @@ mod tests {
         let trader_token_state =
             unsafe { TraderTokenState::load(key, &mut trader_token_state_maybe) };
 
-        assert_eq!(trader_token_state.lots_free.0, 0);
-        assert_eq!(trader_token_state.lots_locked.0, 0);
+        assert_eq!(trader_token_state.atoms_free.0, 0);
+        assert_eq!(trader_token_state.atoms_locked.0, 0);
     }
 
     #[test]
@@ -161,7 +161,7 @@ mod tests {
         let trader_token_state =
             unsafe { TraderTokenState::load(key, &mut trader_token_state_maybe) };
 
-        assert_eq!(trader_token_state.lots_free.0, 0);
-        assert_eq!(trader_token_state.lots_locked.0, 0);
+        assert_eq!(trader_token_state.atoms_free.0, 0);
+        assert_eq!(trader_token_state.atoms_locked.0, 0);
     }
 }

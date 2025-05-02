@@ -2,7 +2,7 @@ use core::mem::MaybeUninit;
 
 use crate::{
     native_keccak256,
-    quantities::Lots,
+    quantities::Atoms,
     state::{slot_key::SlotKey, SlotState},
     storage_cache_bytes32, storage_load_bytes32,
     types::Address,
@@ -45,20 +45,20 @@ impl SlotKey for TraderTokenKey {
 #[repr(C)]
 #[derive(Debug)]
 pub struct TraderTokenState {
-    pub lots_locked: Lots,
-    pub lots_free: Lots,
+    pub atoms_locked: Atoms,
+    pub atoms_free: Atoms,
 
     /// Number of decimal places in the token
-    pub token_decimals: u8,
+    pub decimals: u8,
     _padding: [u8; 15],
 }
 
 impl TraderTokenState {
-    pub fn new(lots_locked: Lots, lots_free: Lots) -> Self {
+    pub fn new(atoms_locked: Atoms, atoms_free: Atoms, decimals: u8) -> Self {
         TraderTokenState {
-            lots_locked,
-            lots_free,
-            token_decimals: 6,
+            atoms_locked,
+            atoms_free,
+            decimals,
             _padding: [0u8; 15],
         }
     }

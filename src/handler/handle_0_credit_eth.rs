@@ -2,13 +2,14 @@ use core::mem::MaybeUninit;
 
 use crate::{
     events, msg_value,
-    quantities::{Lots, RawAtoms},
+    quantities::{Atoms, RawAtoms},
     state::TraderTokenKey,
     types::{Address, NATIVE_TOKEN},
 };
 
 pub const HANDLE_0_CREDIT_ETH: u8 = 0;
 pub const HANDLE_0_PAYLOAD_LEN: usize = core::mem::size_of::<Address>();
+pub const NATIVE_TOKEN_DECIMALS: u8 = 18;
 
 /// Credit ETH to a recipient
 ///
@@ -50,15 +51,15 @@ pub fn handle_0_credit_eth(payload: &[u8]) -> Result<usize, ()> {
     };
 
     // Convert raw atoms to atoms
-
-    let lots = Lots::from(amount_in);
+    let atoms = Atoms::from_raw_atoms(amount_in, NATIVE_TOKEN_DECIMALS)?;
 
     events::deposit(
         &TraderTokenKey {
             trader: *recipient,
             token: NATIVE_TOKEN,
         },
-        lots,
+        atoms,
+        NATIVE_TOKEN_DECIMALS,
     );
 
     Ok(HANDLE_0_PAYLOAD_LEN)
@@ -80,9 +81,14 @@ mod tests {
 
     #[test]
     pub fn test_deposit() {
-        // Set msg.value to 10^6 in big endian
-        let msg_value = hex!("00000000000000000000000000000000000000000000000000000000000F4240");
-        set_msg_value(msg_value);
+        // Set msg.value to 10^12 in big endian
+
+        // TODO obtain 256 bit
+        let raw_atoms = 10u128.pow(18 - 6);
+        let mut raw_atoms_u256 = [0u128, raw_atoms.swap_bytes()];
+        let msg_value = unsafe { &*(raw_atoms_u256.as_ptr() as *const [u8; 32]) };
+
+        set_msg_value(*msg_value);
 
         // Set args
         let mut test_args: Vec<u8> = vec![];
@@ -107,15 +113,15 @@ mod tests {
         let trader_token_state =
             unsafe { TraderTokenState::load(key, &mut trader_token_state_maybe) };
 
-        assert_eq!(trader_token_state.lots_free.0, 1);
-        assert_eq!(trader_token_state.lots_locked.0, 0);
+        assert_eq!(trader_token_state.atoms_free.0, 1);
+        assert_eq!(trader_token_state.atoms_locked.0, 0);
 
         // Validate result from getter
         let trader_token_state_bytes = read_trader_token_state(key);
         let trader_token_state: &TraderTokenState =
             unsafe { &*(trader_token_state_bytes.as_ptr() as *const TraderTokenState) };
 
-        assert_eq!(trader_token_state.lots_free.0, 1);
-        assert_eq!(trader_token_state.lots_locked.0, 0);
+        assert_eq!(trader_token_state.atoms_free.0, 1);
+        assert_eq!(trader_token_state.atoms_locked.0, 0);
     }
 }

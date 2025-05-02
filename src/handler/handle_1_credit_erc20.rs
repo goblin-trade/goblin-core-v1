@@ -1,11 +1,7 @@
 use core::mem::MaybeUninit;
 
 use crate::{
-    erc20, events, msg_sender,
-    quantities::{Lots, RawAtoms},
-    state::TraderTokenKey,
-    types::Address,
-    ADDRESS,
+    erc20, events, msg_sender, quantities::RawAtoms, state::TraderTokenKey, types::Address, ADDRESS,
 };
 
 pub const HANDLE_1_CREDIT_ERC20: u8 = 1;
@@ -125,15 +121,15 @@ mod test {
         let trader_token_state =
             unsafe { TraderTokenState::load(key, &mut trader_token_state_maybe) };
 
-        assert_eq!(trader_token_state.lots_free.0, 1);
-        assert_eq!(trader_token_state.lots_locked.0, 0);
+        assert_eq!(trader_token_state.atoms_free.0, 1);
+        assert_eq!(trader_token_state.atoms_locked.0, 0);
 
         // Validate result from getter
         let trader_token_state_bytes = read_trader_token_state(key);
         let trader_token_state: &TraderTokenState =
             unsafe { &*(trader_token_state_bytes.as_ptr() as *const TraderTokenState) };
 
-        assert_eq!(trader_token_state.lots_free.0, 1);
-        assert_eq!(trader_token_state.lots_locked.0, 0);
+        assert_eq!(trader_token_state.atoms_free.0, 1);
+        assert_eq!(trader_token_state.atoms_locked.0, 0);
     }
 }
