@@ -51,6 +51,8 @@ macro_rules! define_custom_types {
             }
 
             impl $type {
+                pub const ZERO: Self = $type(0 as $t);
+
                 pub fn min(self, other: Self) -> Self {
                     if self.0 < other.0 {
                         self

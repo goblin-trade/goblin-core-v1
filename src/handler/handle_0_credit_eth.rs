@@ -1,15 +1,18 @@
 use core::mem::MaybeUninit;
 
 use crate::{
-    events, msg_value,
+    msg_value,
     quantities::{Atoms, RawAtoms},
-    state::TraderTokenKey,
+    state::{SlotState, TraderTokenKey, TraderTokenState},
     types::{Address, NATIVE_TOKEN},
 };
 
 pub const HANDLE_0_CREDIT_ETH: u8 = 0;
 pub const HANDLE_0_PAYLOAD_LEN: usize = core::mem::size_of::<Address>();
 pub const NATIVE_TOKEN_DECIMALS: u8 = 18;
+
+#[cfg(all(not(test), not(target_arch = "wasm32")))]
+use crate::indexer_hostio;
 
 /// Credit ETH to a recipient
 ///
@@ -53,14 +56,27 @@ pub fn handle_0_credit_eth(payload: &[u8]) -> Result<usize, ()> {
     // Convert raw atoms to atoms
     let atoms = Atoms::from_raw_atoms(amount_in, NATIVE_TOKEN_DECIMALS)?;
 
-    events::deposit(
-        &TraderTokenKey {
-            trader: *recipient,
-            token: NATIVE_TOKEN,
-        },
-        atoms,
-        NATIVE_TOKEN_DECIMALS,
-    );
+    let trader_token_key = &TraderTokenKey {
+        trader: *recipient,
+        token: NATIVE_TOKEN,
+    };
+    let mut trader_token_state_maybe = MaybeUninit::<TraderTokenState>::uninit();
+    let trader_token_state =
+        unsafe { TraderTokenState::load(trader_token_key, &mut trader_token_state_maybe) };
+
+    trader_token_state.decimals = NATIVE_TOKEN_DECIMALS;
+    trader_token_state.atoms_free += atoms;
+
+    unsafe {
+        trader_token_state.store(trader_token_key);
+
+        #[cfg(all(not(test), not(target_arch = "wasm32")))]
+        indexer_hostio::index_deposit(
+            trader_token_key.trader.as_ptr(),
+            trader_token_key.token.as_ptr(),
+            atoms.0,
+        );
+    }
 
     Ok(HANDLE_0_PAYLOAD_LEN)
 }
@@ -85,7 +101,7 @@ mod tests {
 
         // TODO obtain 256 bit
         let raw_atoms = 10u128.pow(18 - 6);
-        let mut raw_atoms_u256 = [0u128, raw_atoms.swap_bytes()];
+        let raw_atoms_u256 = [0u128, raw_atoms.swap_bytes()];
         let msg_value = unsafe { &*(raw_atoms_u256.as_ptr() as *const [u8; 32]) };
 
         set_msg_value(*msg_value);

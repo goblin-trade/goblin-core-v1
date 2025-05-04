@@ -7,6 +7,7 @@ use getter::*;
 use handler::*;
 use hostio::*;
 
+pub mod call;
 pub mod clear_cache_and_call;
 pub mod erc20;
 pub mod eth;

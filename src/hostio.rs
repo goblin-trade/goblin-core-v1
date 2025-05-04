@@ -21,6 +21,13 @@ extern "C" {
         gas: u64,
         return_data_len: *mut usize,
     ) -> u8;
+    pub fn static_call_contract(
+        contract: *const u8,
+        calldata: *const u8,
+        calldata_len: usize,
+        gas: u64,
+        return_data_len: *mut usize,
+    ) -> u8;
     pub fn read_return_data(dest: *mut u8, offset: usize, size: usize) -> usize;
 }
 
@@ -43,6 +50,13 @@ extern "C" {
         calldata: *const u8,
         calldata_len: usize,
         value: *const u8,
+        gas: u64,
+        return_data_len: *mut usize,
+    ) -> u8;
+    pub fn static_call_contract(
+        contract: *const u8,
+        calldata: *const u8,
+        calldata_len: usize,
         gas: u64,
         return_data_len: *mut usize,
     ) -> u8;
@@ -89,7 +103,9 @@ mod test_hooks {
         static BLOCK_TIMESTAMP: RefCell<u64> = RefCell::new(0);
 
         // Simulate contract call return data
-        static RETURN_DATA: RefCell<Vec<u8>> = RefCell::new(Vec::new());
+        static RETURN_DATA: RefCell<Vec<Vec<u8>>> = RefCell::new(Vec::new());
+        static RETURN_DATA_INDEX: RefCell<usize> = RefCell::new(0);
+
     }
 
     pub fn clear_state() {
@@ -100,7 +116,8 @@ mod test_hooks {
         MSG_SENDER.with(|sender| *sender.borrow_mut() = [0u8; 20]);
         BLOCK_NUMBER.with(|b| *b.borrow_mut() = 0);
         BLOCK_TIMESTAMP.with(|t| *t.borrow_mut() = 0);
-        RETURN_DATA.with(|result| result.borrow_mut().clear());
+        RETURN_DATA.with(|data| data.borrow_mut().clear());
+        RETURN_DATA_INDEX.with(|i| *i.borrow_mut() = 0);
     }
 
     pub fn set_test_args(args: Vec<u8>) {
@@ -134,10 +151,11 @@ mod test_hooks {
         });
     }
 
-    pub fn set_return_data(data: Vec<u8>) {
+    pub fn set_return_data(data: Vec<Vec<u8>>) {
         RETURN_DATA.with(|return_data| {
             *return_data.borrow_mut() = data;
         });
+        RETURN_DATA_INDEX.with(|i| *i.borrow_mut() = 0);
     }
 
     #[no_mangle]
@@ -267,24 +285,61 @@ mod test_hooks {
         return_data_len: *mut usize,
     ) -> u8 {
         RETURN_DATA.with(|return_data| {
-            let data = return_data.borrow();
-            *return_data_len = data.len();
+            RETURN_DATA_INDEX.with(|idx| {
+                let mut index = idx.borrow_mut();
+                if *index >= return_data.borrow().len() {
+                    *return_data_len = 0;
+                } else {
+                    let data = &return_data.borrow()[*index];
+                    *return_data_len = data.len();
+                    *index += 1;
+                }
+            });
         });
-        0 // Indicate success
+        0
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn static_call_contract(
+        _contract: *const u8,
+        _calldata: *const u8,
+        _calldata_len: usize,
+        _gas: u64,
+        return_data_len: *mut usize,
+    ) -> u8 {
+        RETURN_DATA.with(|return_data| {
+            RETURN_DATA_INDEX.with(|idx| {
+                let mut index = idx.borrow_mut();
+                if *index >= return_data.borrow().len() {
+                    *return_data_len = 0;
+                } else {
+                    let data = &return_data.borrow()[*index];
+                    *return_data_len = data.len();
+                    *index += 1;
+                }
+            });
+        });
+        0
     }
 
     #[no_mangle]
     pub unsafe extern "C" fn read_return_data(dest: *mut u8, offset: usize, size: usize) -> usize {
         RETURN_DATA.with(|return_data| {
-            let data = return_data.borrow();
-            if offset >= data.len() {
-                return 0; // Out of bounds
-            }
-            let end = (offset + size).min(data.len());
-            let slice = &data[offset..end];
-            let dest_slice = core::slice::from_raw_parts_mut(dest, slice.len());
-            dest_slice.copy_from_slice(slice);
-            slice.len()
+            RETURN_DATA_INDEX.with(|idx| {
+                let index = *idx.borrow();
+                if index == 0 || index > return_data.borrow().len() {
+                    return 0;
+                }
+                let data = &return_data.borrow()[index - 1];
+                if offset >= data.len() {
+                    return 0;
+                }
+                let end = (offset + size).min(data.len());
+                let slice = &data[offset..end];
+                let dest_slice = core::slice::from_raw_parts_mut(dest, slice.len());
+                dest_slice.copy_from_slice(slice);
+                slice.len()
+            })
         })
     }
 }
@@ -335,7 +390,9 @@ mod tests {
 
     #[test]
     fn test_call_contract() {
-        set_return_data(vec![1]); // Simulate successful return (true)
+        set_return_data(vec![
+            vec![1], // Simulate successful return (true)
+        ]);
 
         let mut return_data_len = 0;
         let call_result = unsafe {
@@ -355,7 +412,7 @@ mod tests {
 
     #[test]
     fn test_read_return_data() {
-        set_return_data(vec![0x12, 0x34, 0x56]);
+        set_return_data(vec![vec![0x12, 0x34, 0x56]]);
 
         let mut buffer = [0u8; 2];
         let bytes_read = unsafe { read_return_data(buffer.as_mut_ptr(), 1, 2) };

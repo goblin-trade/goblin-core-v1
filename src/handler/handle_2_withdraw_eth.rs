@@ -2,7 +2,7 @@ use core::mem::MaybeUninit;
 
 use crate::{
     eth, events, msg_sender,
-    quantities::{Lots, RawAtoms},
+    quantities::RawAtoms,
     state::TraderTokenKey,
     types::{Address, NATIVE_TOKEN},
 };

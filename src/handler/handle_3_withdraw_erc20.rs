@@ -111,7 +111,7 @@ mod tests {
         // Set return data to true
         let mut return_data = vec![0u8; 32];
         return_data[31] = 1;
-        set_return_data(return_data);
+        set_return_data(vec![return_data]);
 
         let result = user_entrypoint(test_args.len());
         assert_eq!(result, 0);
@@ -165,7 +165,7 @@ mod tests {
 
         // Set return data to false
         let return_data = vec![0u8; 32];
-        set_return_data(return_data);
+        set_return_data(vec![return_data]);
 
         let result = user_entrypoint(test_args.len());
         assert_eq!(result, 1);

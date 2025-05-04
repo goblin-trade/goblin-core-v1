@@ -1,12 +1,42 @@
 use core::mem::MaybeUninit;
 
-use crate::{clear_cache_and_call, hostio, quantities::RawAtoms, types::Address};
+use crate::{call, hostio, quantities::RawAtoms, types::Address};
+
+// keccak256('decimals()') = 0x313ce567
+const DECIMALS_SELECTOR: [u8; 4] = [0x31, 0x3c, 0xe5, 0x67];
 
 // keccak256('transfer(address,uint256)') = 0xa9059cbb
 const TRANSFER_SELECTOR: [u8; 4] = [0xa9, 0x05, 0x9c, 0xbb];
 
 // keccak256('transferFrom(address,address,uint256)') = 0x23b872dd
 const TRANSFER_FROM_SELECTOR: [u8; 4] = [0x23, 0xb8, 0x72, 0xdd];
+
+pub fn decimals(contract: &Address) -> Result<u8, ()> {
+    let calldata = DECIMALS_SELECTOR;
+    let return_data_len: &mut usize = &mut 0;
+
+    let call_result = unsafe {
+        call::static_call(
+            contract.as_ptr(),
+            calldata.as_ptr(),
+            calldata.len(),
+            u64::MAX,
+            return_data_len,
+        )
+    };
+
+    if call_result != 0 {
+        return Err(());
+    }
+
+    let mut decimals_maybe = MaybeUninit::<u8>::uninit();
+    let decimals = unsafe {
+        hostio::read_return_data(decimals_maybe.as_mut_ptr(), 31, 1);
+        decimals_maybe.assume_init_ref()
+    };
+
+    Ok(*decimals)
+}
 
 pub fn transfer(contract: &Address, recipient: &Address, amount: &RawAtoms) -> Result<(), ()> {
     let mut calldata = [0u8; 4 + 32 * 2];
@@ -25,7 +55,7 @@ pub fn transfer(contract: &Address, recipient: &Address, amount: &RawAtoms) -> R
     let return_data_len: &mut usize = &mut 0;
 
     let call_result = unsafe {
-        clear_cache_and_call(
+        call::clear_cache_and_call(
             contract.as_ptr(),
             calldata.as_ptr(),
             calldata.len(),
@@ -77,7 +107,7 @@ pub fn transfer_from(
     let return_data_len: &mut usize = &mut 0;
 
     let call_result = unsafe {
-        clear_cache_and_call(
+        call::clear_cache_and_call(
             contract.as_ptr(),
             calldata.as_ptr(),
             calldata.len(),

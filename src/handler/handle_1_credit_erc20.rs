@@ -1,8 +1,15 @@
 use core::mem::MaybeUninit;
 
 use crate::{
-    erc20, events, msg_sender, quantities::RawAtoms, state::TraderTokenKey, types::Address, ADDRESS,
+    erc20, msg_sender,
+    quantities::Atoms,
+    state::{SlotState, TraderTokenKey, TraderTokenState},
+    types::Address,
+    ADDRESS,
 };
+
+#[cfg(all(not(test), not(target_arch = "wasm32")))]
+use crate::indexer_hostio;
 
 pub const HANDLE_1_CREDIT_ERC20: u8 = 1;
 pub const HANDLE_1_PAYLOAD_LEN: usize = core::mem::size_of::<CreditERC20Params>();
@@ -12,17 +19,17 @@ struct CreditERC20Params {
     /// The token to credit
     pub token: Address,
 
-    /// Credit input lots to `recipient`. This allows a wallet to fund another wallet
+    /// Credit input atoms to `recipient`. This allows a wallet to fund another wallet
     pub recipient: Address,
 
-    /// The lots to credit. Atom to lot conversions should happen on client side.
+    /// The atoms to credit. Raw atom to atom conversions should happen on client side.
     ///
-    /// The lots bytes should be encoded in **little endian** for zero copy deserialization.
+    /// The atom bytes should be encoded in **little endian** for zero copy deserialization.
     ///
-    /// For 1 lot
+    /// For 1 atom
     /// - Correct (little endian, non ABI): 0x0100000000000000 = [0x01, 0x00, ...]
     /// - Wrong (big endian, ABI style): 0x0000000000000001 = [0x00, 0x00, ..., 0x01]
-    pub lots: Lots,
+    pub atoms: Atoms,
 }
 
 /// Credit an ERC20 token to a recipient
@@ -37,6 +44,7 @@ pub fn handle_1_credit_erc20(payload: &[u8]) -> Result<usize, ()> {
     }
 
     let params = unsafe { &*(payload.as_ptr() as *const CreditERC20Params) };
+    let atoms = params.atoms;
 
     let mut sender_maybe = MaybeUninit::<Address>::uninit();
     let sender = unsafe {
@@ -44,19 +52,37 @@ pub fn handle_1_credit_erc20(payload: &[u8]) -> Result<usize, ()> {
         sender_maybe.assume_init_ref()
     };
 
-    // Credit lots to params.recipient
-    events::deposit(
-        &TraderTokenKey {
-            trader: params.recipient,
-            token: params.token,
-        },
-        params.lots,
-    );
+    // Read trader token state, see if decimals are stored
+    // If not stored then read from token contract
+
+    let trader_token_key = &TraderTokenKey {
+        trader: params.recipient,
+        token: params.token,
+    };
+    let mut trader_token_state_maybe = MaybeUninit::<TraderTokenState>::uninit();
+    let trader_token_state =
+        unsafe { TraderTokenState::load(trader_token_key, &mut trader_token_state_maybe) };
+
+    if trader_token_state.is_empty() {
+        trader_token_state.decimals = erc20::decimals(&params.token)?;
+    }
+    trader_token_state.atoms_free += atoms;
+
+    unsafe {
+        trader_token_state.store(trader_token_key);
+
+        #[cfg(all(not(test), not(target_arch = "wasm32")))]
+        indexer_hostio::index_deposit(
+            trader_token_key.trader.as_ptr(),
+            trader_token_key.token.as_ptr(),
+            atoms.0,
+        );
+    }
 
     // Cross contract call should be performed last to remove the need to flush cache twice
     // Transfer tokens to smart contract ADDRESS, not params.recipient
-    let atoms = RawAtoms::from(params.lots);
-    erc20::transfer_from(&params.token, sender, &ADDRESS, &atoms)?;
+    let raw_atoms = atoms.to_raw_atoms(trader_token_state.decimals)?;
+    erc20::transfer_from(&params.token, sender, &ADDRESS, &raw_atoms)?;
 
     Ok(HANDLE_1_PAYLOAD_LEN)
 }
@@ -70,7 +96,6 @@ mod test {
     use crate::{
         getter::read_trader_token_state,
         hostio::*,
-        quantities::Lots,
         state::{SlotState, TraderTokenKey, TraderTokenState},
         user_entrypoint,
     };
@@ -85,7 +110,7 @@ mod test {
 
         let mut return_data = vec![0u8; 32];
         return_data[31] = 1;
-        set_return_data(return_data);
+        set_return_data(vec![return_data]);
 
         // Set args
         let mut test_args: Vec<u8> = vec![];
@@ -96,7 +121,7 @@ mod test {
         let payload = CreditERC20Params {
             token: hex!("7E32b54800705876d3b5cFbc7d9c226a211F7C1a"),
             recipient: hex!("3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E"),
-            lots: Lots(1),
+            atoms: Atoms(1),
         };
 
         // Serialize into bytes array
