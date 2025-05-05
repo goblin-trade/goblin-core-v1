@@ -1,4 +1,4 @@
-use crate::{clear_cache_and_call, quantities::RawAtoms, types::Address};
+use crate::{call, quantities::RawAtoms, types::Address};
 
 /// Transfer out native ETH to a recipient
 pub fn transfer_out(recipient: &Address, amount: &RawAtoms) -> Result<(), ()> {
@@ -6,7 +6,7 @@ pub fn transfer_out(recipient: &Address, amount: &RawAtoms) -> Result<(), ()> {
     let return_data_len: &mut usize = &mut 0;
 
     let call_result = unsafe {
-        clear_cache_and_call(
+        call::clear_cache_and_call(
             recipient.as_ptr(),
             calldata.as_ptr(),
             calldata.len(),

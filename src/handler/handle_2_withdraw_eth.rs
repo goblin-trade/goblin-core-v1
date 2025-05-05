@@ -2,7 +2,7 @@ use core::mem::MaybeUninit;
 
 use crate::{
     eth, events, msg_sender,
-    quantities::RawAtoms,
+    quantities::Atoms,
     state::TraderTokenKey,
     types::{Address, NATIVE_TOKEN},
 };
@@ -15,20 +15,20 @@ pub const HANDLE_2_PAYLOAD_LEN: usize = core::mem::size_of::<WithdrawETHParams>(
 // equal to 40 bytes, a multiple of 8
 #[repr(C, packed)]
 struct WithdrawETHParams {
-    /// Withdraw lots to `recipient`. This allows a wallet to withdraw to another wallet
+    /// Withdraw atoms to `recipient`. This allows a wallet to withdraw to another wallet
     pub recipient: Address,
 
-    /// The lots to withdraw. Atom to lot conversions should happen on client side.
+    /// The atoms to withdraw. Raw atom to atom conversions should happen on client side.
     ///
     /// If the value is greater than than the deposited amount, entire deposit
     /// is withdrawn.
     ///
-    /// The lots bytes should be encoded in **little endian** for zero copy deserialization.
+    /// The atom bytes should be encoded in **little endian** for zero copy deserialization.
     ///
-    /// For 1 lot
+    /// For 1 atom
     /// - Correct (little endian, non ABI): 0x0100000000000000 = [0x01, 0x00, ...]
     /// - Wrong (big endian, ABI style): 0x0000000000000001 = [0x00, 0x00, ..., 0x01]
-    pub lots: Lots,
+    pub atoms: Atoms,
 }
 
 pub fn handle_2_withdraw_eth(payload: &[u8]) -> Result<usize, ()> {
@@ -44,14 +44,15 @@ pub fn handle_2_withdraw_eth(payload: &[u8]) -> Result<usize, ()> {
         sender_maybe.assume_init_ref()
     };
 
-    let lots_withdrawn = events::withdraw(
+    let raw_atoms_withdrawn = events::withdraw(
         &TraderTokenKey {
             trader: *sender,
             token: NATIVE_TOKEN,
         },
-        params.lots,
-    );
-    eth::transfer_out(&params.recipient, &RawAtoms::from(lots_withdrawn))?;
+        params.atoms,
+    )?;
+
+    eth::transfer_out(&params.recipient, &raw_atoms_withdrawn)?;
 
     Ok(HANDLE_2_PAYLOAD_LEN)
 }
@@ -73,11 +74,12 @@ mod tests {
         let msg_sender = hex!("3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E");
         set_msg_sender(msg_sender);
 
-        let lots = Lots(1);
+        let decimals = 6;
+        let atoms = Atoms(1);
 
         let payload = WithdrawETHParams {
             recipient: msg_sender,
-            lots,
+            atoms,
         };
         let payload_bytes: &[u8] = unsafe {
             core::slice::from_raw_parts(
@@ -98,7 +100,7 @@ mod tests {
             trader: payload.recipient,
             token: NATIVE_TOKEN,
         };
-        let slot = TraderTokenState::new(Lots(0), lots);
+        let slot = TraderTokenState::new(Atoms(0), atoms, decimals);
         unsafe {
             slot.store(key);
         }
@@ -122,11 +124,11 @@ mod tests {
         let msg_sender = hex!("3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E");
         set_msg_sender(msg_sender);
 
-        let lots = Lots(1);
+        let atoms = Atoms(1);
 
         let payload = WithdrawETHParams {
             recipient: msg_sender,
-            lots,
+            atoms,
         };
         let payload_bytes: &[u8] = unsafe {
             core::slice::from_raw_parts(
@@ -147,7 +149,7 @@ mod tests {
             trader: payload.recipient,
             token: NATIVE_TOKEN,
         };
-        let slot = TraderTokenState::new(Lots(0), Lots(0));
+        let slot = TraderTokenState::new(Atoms::ZERO, Atoms::ZERO, 6);
         unsafe {
             slot.store(key);
         }

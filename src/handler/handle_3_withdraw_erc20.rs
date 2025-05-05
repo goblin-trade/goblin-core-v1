@@ -1,11 +1,6 @@
 use core::mem::MaybeUninit;
 
-use crate::{
-    erc20, events, hostio,
-    quantities::{Lots, RawAtoms},
-    state::TraderTokenKey,
-    types::Address,
-};
+use crate::{erc20, events, hostio, quantities::Atoms, state::TraderTokenKey, types::Address};
 
 pub const HANDLE_3_WITHDRAW_ERC20: u8 = 3;
 pub const HANDLE_3_PAYLOAD_LEN: usize = core::mem::size_of::<WithdrawERC20Params>();
@@ -15,20 +10,20 @@ struct WithdrawERC20Params {
     /// The token to withdraw
     pub token: Address,
 
-    /// Withdraw lots to `recipient`. This allows a wallet to withdraw to another wallet.
+    /// Withdraw raw atoms to `recipient`. This allows a wallet to withdraw to another wallet.
     pub recipient: Address,
 
-    /// The lots to withdraw. Atom to lot conversions should happen on client side.
+    /// The raw to withdraw. Raw atom to atom conversions should happen on client side.
     ///
     /// If the value is greater than than the deposited amount, entire deposit
     /// is withdrawn.
     ///
-    /// The lots bytes should be encoded in **little endian** for zero copy deserialization.
+    /// The atom bytes should be encoded in **little endian** for zero copy deserialization.
     ///
-    /// For 1 lot
+    /// For 1 atom
     /// - Correct (little endian, non ABI): 0x0100000000000000 = [0x01, 0x00, ...]
     /// - Wrong (big endian, ABI style): 0x0000000000000001 = [0x00, 0x00, ..., 0x01]
-    pub lots: Lots,
+    pub atoms: Atoms,
 }
 
 pub fn handle_3_withdraw_erc20(payload: &[u8]) -> Result<usize, ()> {
@@ -44,16 +39,15 @@ pub fn handle_3_withdraw_erc20(payload: &[u8]) -> Result<usize, ()> {
         sender_maybe.assume_init_ref()
     };
 
-    let lots_withdrawn = events::withdraw(
+    let raw_atoms_withdrawn = events::withdraw(
         &TraderTokenKey {
             trader: *sender,
             token: params.token,
         },
-        params.lots,
-    );
-    let atoms_withdrawn = RawAtoms::from(lots_withdrawn);
+        params.atoms,
+    )?;
 
-    erc20::transfer(&params.token, &params.recipient, &atoms_withdrawn)?;
+    erc20::transfer(&params.token, &params.recipient, &raw_atoms_withdrawn)?;
 
     Ok(HANDLE_3_PAYLOAD_LEN)
 }
@@ -75,14 +69,15 @@ mod tests {
         let msg_sender = hex!("3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E");
         set_msg_sender(msg_sender);
 
-        let lots = Lots(1);
+        let decimals = 6;
+        let atoms = Atoms(1);
 
         let token = hex!("7E32b54800705876d3b5cFbc7d9c226a211F7C1a");
 
         let payload = WithdrawERC20Params {
             token,
             recipient: msg_sender,
-            lots,
+            atoms,
         };
         let payload_bytes: &[u8] = unsafe {
             core::slice::from_raw_parts(
@@ -103,7 +98,7 @@ mod tests {
             trader: payload.recipient,
             token,
         };
-        let slot = TraderTokenState::new(Lots(0), lots);
+        let slot = TraderTokenState::new(Atoms::ZERO, atoms, decimals);
         unsafe {
             slot.store(key);
         }
@@ -130,14 +125,15 @@ mod tests {
         let msg_sender = hex!("3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E");
         set_msg_sender(msg_sender);
 
-        let lots = Lots(1);
+        let decimals = 6;
+        let atoms = Atoms(1);
 
         let token = hex!("7E32b54800705876d3b5cFbc7d9c226a211F7C1a");
 
         let payload = WithdrawERC20Params {
             token,
             recipient: msg_sender,
-            lots,
+            atoms,
         };
         let payload_bytes: &[u8] = unsafe {
             core::slice::from_raw_parts(
@@ -158,7 +154,7 @@ mod tests {
             trader: payload.recipient,
             token,
         };
-        let slot = TraderTokenState::new(Lots(0), Lots(0));
+        let slot = TraderTokenState::new(Atoms::ZERO, Atoms::ZERO, decimals);
         unsafe {
             slot.store(key);
         }

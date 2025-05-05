@@ -29,6 +29,7 @@ pub fn decimals(contract: &Address) -> Result<u8, ()> {
         return Err(());
     }
 
+    // Result is padded to 32 bytes in big endian. We need to extract a single byte.
     let mut decimals_maybe = MaybeUninit::<u8>::uninit();
     let decimals = unsafe {
         hostio::read_return_data(decimals_maybe.as_mut_ptr(), 31, 1);

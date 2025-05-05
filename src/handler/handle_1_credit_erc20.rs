@@ -66,6 +66,7 @@ pub fn handle_1_credit_erc20(payload: &[u8]) -> Result<usize, ()> {
     if trader_token_state.is_empty() {
         trader_token_state.decimals = erc20::decimals(&params.token)?;
     }
+
     trader_token_state.atoms_free += atoms;
 
     unsafe {
@@ -133,6 +134,11 @@ mod test {
         };
         test_args.extend_from_slice(payload_bytes);
         set_test_args(test_args.clone());
+
+        let decimals: u8 = 6;
+        let mut return_data = [0u8; 32];
+        return_data[31] = decimals;
+        set_return_data(vec![return_data.to_vec()]);
 
         let result = user_entrypoint(test_args.len());
         assert_eq!(result, 0);

@@ -1,14 +1,12 @@
 #![cfg_attr(not(test), no_std)]
 #![cfg_attr(not(test), no_main)]
 
-use clear_cache_and_call::*;
 use core::mem::MaybeUninit;
 use getter::*;
 use handler::*;
 use hostio::*;
 
 pub mod call;
-pub mod clear_cache_and_call;
 pub mod erc20;
 pub mod eth;
 pub mod events;
