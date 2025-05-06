@@ -71,6 +71,12 @@ pub extern "C" fn user_entrypoint(len: usize) -> i32 {
         }
     }
 
+    // TODO study re-entrancy. The SDK flushes before cross contract calls only
+    // in re-entrant mode. If we disable re-entrancy, we could reduce the number of calls.
+    unsafe {
+        hostio::storage_flush_cache(true);
+    }
+
     0
 }
 

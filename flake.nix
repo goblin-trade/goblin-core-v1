@@ -69,6 +69,8 @@
 
           export BASE_TOKEN="0xe1080224B632A93951A7CFA33EeEa9Fd81558b5e"
           export QUOTE_TOKEN="0x3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E"
+
+          export FOUNDRY_DISABLE_NIGHTLY_WARNING="true"
         '';
       };
     };

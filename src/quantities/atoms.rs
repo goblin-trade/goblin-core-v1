@@ -103,6 +103,14 @@ mod tests {
         }
 
         #[test]
+        fn test_dust() {
+            // ETH (18 decimals)
+            let raw = RawAtoms([0, 0, 0, 1_000_000u64.swap_bytes()]);
+            let atoms = Atoms::from_raw_atoms(&raw, 18).unwrap();
+            assert_eq!(atoms.0, 0);
+        }
+
+        #[test]
         fn test_max_value() {
             let raw = RawAtoms([1u64.swap_bytes(), 0, 0, 0]);
             let atoms = Atoms::from_raw_atoms(&raw, 6).unwrap();

@@ -6,5 +6,5 @@
 rm -rf /tmp/dev-test/
 ./nitro/target/bin/nitro --dev \
     --chain.dev-wallet.private-key ${PRIVATE_KEY#0x} \
-    --node.vmtrace.tracername goblin \
+    --execution.vmtrace.tracer-name goblin \
     --log-level DEBUG
