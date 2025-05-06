@@ -5,7 +5,7 @@
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
 
     # Nitro development environment
-    nitro.url = "github:EspressoSystems/nitro-espresso-integration/35a8d009681d544512e18ea973f6cf816b6c0952";
+    nitro.url = "github:EspressoSystems/nitro-espresso-integration/def1a60f975b8a726186c97c93c2c6e808527b93";
   };
 
   outputs = { self, nixpkgs, nitro, ... }:
@@ -28,7 +28,7 @@
           hash = "sha256-2KkiwX2CYt155YxY9CQ3uGwZRIl5lsnyIoYcPGaTneI=";
         };
 
-        cargoHash = "sha256-7Ez0ZRi7n94dvNqXVrVW1oU8raDDiispCaOxTzU4hpc=";
+        cargoHash = "sha256-fmsMAarWdedbY856NWdwElQQLaJCUFJ5Eb9o1vgArcE=";
 
         nativeBuildInputs = [
           pkgs.pkg-config
