@@ -3,6 +3,7 @@
 
 use core::mem::MaybeUninit;
 use getter::*;
+use goblin_error::*;
 use handler::*;
 use hostio::*;
 
@@ -11,6 +12,7 @@ pub mod erc20;
 pub mod eth;
 pub mod events;
 pub mod getter;
+pub mod goblin_error;
 pub mod handler;
 pub mod hostio;
 pub mod market_params;
@@ -26,11 +28,8 @@ pub const ADDRESS: [u8; 20] = [
     0x7d, 0x31, 0x61, 0xb0,
 ];
 
-#[no_mangle]
-pub extern "C" fn user_entrypoint(len: usize) -> i32 {
-    if len == 0 {
-        return 1;
-    }
+fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
+    require!(len > 0, GoblinError::InvalidPayload);
 
     let mut input = MaybeUninit::<[u8; 512]>::uninit();
     let input = unsafe {
@@ -43,32 +42,25 @@ pub extern "C" fn user_entrypoint(len: usize) -> i32 {
 
     for _ in 0..num_calls {
         // Invalid input: not enough bytes for selector
-        if offset >= len {
-            return 1;
-        }
+        require!(offset < len, GoblinError::InvalidPayload);
 
         let selector = input[offset];
         offset += 1;
 
+        // This is the entire payload from offset to end length. We need
+        // to shorten the payload
         let payload = &input[offset..len];
-        let result = match selector {
+        let bytes_used = match selector {
             HANDLE_0_CREDIT_ETH => handle_0_credit_eth(payload),
             HANDLE_1_CREDIT_ERC20 => handle_1_credit_erc20(payload),
             HANDLE_2_WITHDRAW_ETH => handle_2_withdraw_eth(payload),
             HANDLE_3_WITHDRAW_ERC20 => handle_3_withdraw_erc20(payload),
             HANDLE_4_PLACE_MULTIPLE_ORDERS => handle_4_place_multiple_orders(payload),
-
             // Getters
             GET_10_TRADER_TOKEN_STATE => get_10_trader_token_state(payload),
-            _ => Err(()),
-        };
-
-        if let Ok(bytes_used) = result {
-            offset += bytes_used;
-        } else {
-            // If any handler fails then exit
-            return 1;
-        }
+            _ => Err(GoblinError::InvalidSelector),
+        }?;
+        offset += bytes_used;
     }
 
     // TODO study re-entrancy. The SDK flushes before cross contract calls only
@@ -77,7 +69,15 @@ pub extern "C" fn user_entrypoint(len: usize) -> i32 {
         hostio::storage_flush_cache(true);
     }
 
-    0
+    Ok(())
+}
+
+#[no_mangle]
+pub extern "C" fn user_entrypoint(len: usize) -> i32 {
+    match user_entrypoint_inner(len) {
+        Ok(_) => 0,
+        Err(err) => err.code(),
+    }
 }
 
 #[cfg(not(test))]

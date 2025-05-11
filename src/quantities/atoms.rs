@@ -19,7 +19,7 @@ use core::u64;
 ///! atoms = |raw atoms / 10^(K - 6)|
 ///! - For USDC = raw atoms / 10^0 = raw atoms
 ///! - For eth = raw atoms / 10^(18 - 6) = raw atoms / 10^12
-use crate::define_custom_types;
+use crate::{define_custom_types, goblin_error::GoblinError, require};
 
 use super::RawAtoms;
 
@@ -29,13 +29,20 @@ const MIN_DECIMALS: u8 = 6;
 const MAX_DECIMALS: u8 = 19;
 
 impl Atoms {
-    pub fn from_raw_atoms(raw: &RawAtoms, decimals: u8) -> Result<Self, ()> {
+    fn check_decimals(decimals: u8) -> Result<(), GoblinError> {
         // log base 10 ((2^(128) - 1) / ((2^64) - 1)) = 19.26
         // That is if decimal places exceed 19 then u64 atoms can overflow
         // 128 bits of raw atoms. Then our optimization of skipping upper 16 bytes won't work.
-        if decimals < MIN_DECIMALS || decimals > MAX_DECIMALS {
-            return Err(());
-        }
+        require!(
+            decimals >= MIN_DECIMALS && decimals <= MAX_DECIMALS,
+            GoblinError::UnsupportedDecimals
+        );
+
+        Ok(())
+    }
+
+    pub fn from_raw_atoms(raw: &RawAtoms, decimals: u8) -> Result<Self, GoblinError> {
+        Self::check_decimals(decimals)?;
 
         // If high bits are active, the value will overflow despite of division.
         // Cap to u64::MAX
@@ -57,10 +64,8 @@ impl Atoms {
         Ok(atoms)
     }
 
-    pub fn to_raw_atoms(&self, decimals: u8) -> Result<RawAtoms, ()> {
-        if decimals < MIN_DECIMALS || decimals > MAX_DECIMALS {
-            return Err(());
-        }
+    pub fn to_raw_atoms(&self, decimals: u8) -> Result<RawAtoms, GoblinError> {
+        Self::check_decimals(decimals)?;
 
         let divisor = 10u64.pow((decimals - MIN_DECIMALS) as u32) as u128;
         let raw_atoms_u128 = self.0 as u128 * divisor;

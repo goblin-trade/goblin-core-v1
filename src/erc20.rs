@@ -1,6 +1,8 @@
 use core::mem::MaybeUninit;
 
-use crate::{call, hostio, quantities::RawAtoms, types::Address};
+use crate::{
+    call, goblin_error::GoblinError, hostio, quantities::RawAtoms, require, types::Address,
+};
 
 // keccak256('decimals()') = 0x313ce567
 const DECIMALS_SELECTOR: [u8; 4] = [0x31, 0x3c, 0xe5, 0x67];
@@ -11,7 +13,7 @@ const TRANSFER_SELECTOR: [u8; 4] = [0xa9, 0x05, 0x9c, 0xbb];
 // keccak256('transferFrom(address,address,uint256)') = 0x23b872dd
 const TRANSFER_FROM_SELECTOR: [u8; 4] = [0x23, 0xb8, 0x72, 0xdd];
 
-pub fn decimals(contract: &Address) -> Result<u8, ()> {
+pub fn decimals(contract: &Address) -> Result<u8, GoblinError> {
     let calldata = DECIMALS_SELECTOR;
     let return_data_len: &mut usize = &mut 0;
 
@@ -25,9 +27,7 @@ pub fn decimals(contract: &Address) -> Result<u8, ()> {
         )
     };
 
-    if call_result != 0 {
-        return Err(());
-    }
+    require!(call_result == 0, GoblinError::DecimalReadFail);
 
     // Result is padded to 32 bytes in big endian. We need to extract a single byte.
     let mut decimals_maybe = MaybeUninit::<u8>::uninit();
@@ -39,7 +39,11 @@ pub fn decimals(contract: &Address) -> Result<u8, ()> {
     Ok(*decimals)
 }
 
-pub fn transfer(contract: &Address, recipient: &Address, amount: &RawAtoms) -> Result<(), ()> {
+pub fn transfer(
+    contract: &Address,
+    recipient: &Address,
+    amount: &RawAtoms,
+) -> Result<(), GoblinError> {
     let mut calldata = [0u8; 4 + 32 * 2];
 
     // Function selector
@@ -65,10 +69,7 @@ pub fn transfer(contract: &Address, recipient: &Address, amount: &RawAtoms) -> R
             return_data_len,
         )
     };
-
-    if call_result != 0 {
-        return Err(());
-    }
+    require!(call_result == 0, GoblinError::CallFail);
 
     // Check if the return value is false
     let mut result_byte_maybe = MaybeUninit::<u8>::uninit();
@@ -77,9 +78,7 @@ pub fn transfer(contract: &Address, recipient: &Address, amount: &RawAtoms) -> R
         result_byte_maybe.assume_init_ref()
     };
 
-    if *result_byte == 0 {
-        return Err(());
-    }
+    require!(*result_byte == true.into(), GoblinError::CallResultInvalid);
 
     Ok(())
 }
@@ -89,7 +88,7 @@ pub fn transfer_from(
     sender: &Address,
     recipient: &Address,
     amount: &RawAtoms,
-) -> Result<(), ()> {
+) -> Result<(), GoblinError> {
     let mut calldata = [0u8; 4 + 32 * 3];
 
     calldata[0..4].copy_from_slice(&TRANSFER_FROM_SELECTOR);
@@ -120,9 +119,7 @@ pub fn transfer_from(
     };
 
     // If the call itself failed, treat as error.
-    if call_result != 0 {
-        return Err(());
-    }
+    require!(call_result == 0, GoblinError::CallFail);
 
     // If the contract returned `false`, treat as error.
     let mut result_byte_maybe = MaybeUninit::<u8>::uninit();
@@ -131,9 +128,7 @@ pub fn transfer_from(
         result_byte_maybe.assume_init_ref()
     };
 
-    if *result_byte == 0 {
-        return Err(());
-    }
+    require!(*result_byte == true.into(), GoblinError::CallResultInvalid);
 
     Ok(())
 }

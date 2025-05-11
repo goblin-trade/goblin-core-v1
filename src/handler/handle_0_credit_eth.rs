@@ -1,8 +1,10 @@
 use core::mem::MaybeUninit;
 
 use crate::{
+    goblin_error::GoblinError,
     msg_value,
     quantities::{Atoms, RawAtoms},
+    require,
     state::{SlotState, TraderTokenKey, TraderTokenState},
     types::{Address, NATIVE_TOKEN},
 };
@@ -39,11 +41,13 @@ use crate::indexer_hostio;
 /// * This payload is decoded as [0x3f, 0x1E, ..., 0E]
 /// * The address is already in big endian
 ///
-pub fn handle_0_credit_eth(payload: &[u8]) -> Result<usize, ()> {
-    if payload.len() < HANDLE_0_PAYLOAD_LEN {
-        return Err(());
-    }
+pub fn handle_0_credit_eth(payload: &[u8]) -> Result<usize, GoblinError> {
+    require!(
+        payload.len() >= HANDLE_0_PAYLOAD_LEN,
+        GoblinError::InvalidPayload
+    );
 
+    // Extra bytes in `payload` are ignored. They remain usable outside this function
     let recipient: &Address = unsafe { &*(payload.as_ptr() as *const Address) };
 
     // Amount of ETH in, in 64-bit chunks, in big endian encoding

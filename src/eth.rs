@@ -1,7 +1,7 @@
-use crate::{call, quantities::RawAtoms, types::Address};
+use crate::{call, goblin_error::GoblinError, quantities::RawAtoms, require, types::Address};
 
 /// Transfer out native ETH to a recipient
-pub fn transfer_out(recipient: &Address, amount: &RawAtoms) -> Result<(), ()> {
+pub fn transfer_out(recipient: &Address, amount: &RawAtoms) -> Result<(), GoblinError> {
     let calldata: [u8; 0] = [];
     let return_data_len: &mut usize = &mut 0;
 
@@ -17,9 +17,7 @@ pub fn transfer_out(recipient: &Address, amount: &RawAtoms) -> Result<(), ()> {
         )
     };
 
-    if call_result != 0 {
-        return Err(());
-    }
+    require!(call_result == 1, GoblinError::CallFail);
 
     Ok(())
 }

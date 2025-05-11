@@ -1,6 +1,9 @@
 use core::mem::MaybeUninit;
 
-use crate::{erc20, events, hostio, quantities::Atoms, state::TraderTokenKey, types::Address};
+use crate::{
+    erc20, events, goblin_error::GoblinError, hostio, quantities::Atoms, require,
+    state::TraderTokenKey, types::Address,
+};
 
 pub const HANDLE_3_WITHDRAW_ERC20: u8 = 3;
 pub const HANDLE_3_PAYLOAD_LEN: usize = core::mem::size_of::<WithdrawERC20Params>();
@@ -26,10 +29,11 @@ struct WithdrawERC20Params {
     pub atoms: Atoms,
 }
 
-pub fn handle_3_withdraw_erc20(payload: &[u8]) -> Result<usize, ()> {
-    if payload.len() < HANDLE_3_PAYLOAD_LEN {
-        return Err(());
-    }
+pub fn handle_3_withdraw_erc20(payload: &[u8]) -> Result<usize, GoblinError> {
+    require!(
+        payload.len() >= HANDLE_3_PAYLOAD_LEN,
+        GoblinError::InvalidPayload
+    );
 
     let params = unsafe { &*(payload.as_ptr() as *const WithdrawERC20Params) };
 

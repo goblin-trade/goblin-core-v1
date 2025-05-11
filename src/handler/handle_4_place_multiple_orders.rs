@@ -1,5 +1,7 @@
 use crate::{
+    goblin_error::GoblinError,
     quantities::{BaseLots, Ticks},
+    require,
     types::Address,
 };
 
@@ -54,19 +56,18 @@ pub enum ExpiryType {
     Block = 2,
 }
 
-pub fn handle_4_place_multiple_orders(payload: &[u8]) -> Result<usize, ()> {
-    if payload.len() < HANDLE_4_HEADER_LEN {
-        return Err(());
-    }
+pub fn handle_4_place_multiple_orders(payload: &[u8]) -> Result<usize, GoblinError> {
+    require!(
+        payload.len() >= HANDLE_4_HEADER_LEN,
+        GoblinError::InvalidPayload
+    );
 
     let header = unsafe { &*(payload.as_ptr() as *const PlaceMultipleOrdersHeader) };
     let total_orders = header.bids_count as usize + header.asks_count as usize;
     let orders_len = total_orders * core::mem::size_of::<PostOnlyOrder>();
 
     let bytes_used = HANDLE_4_HEADER_LEN + orders_len;
-    if payload.len() < HANDLE_4_HEADER_LEN {
-        return Err(());
-    }
+    require!(payload.len() >= bytes_used, GoblinError::InvalidPayload);
 
     let order_bytes = &payload[HANDLE_4_HEADER_LEN..bytes_used];
 
@@ -77,11 +78,11 @@ pub fn handle_4_place_multiple_orders(payload: &[u8]) -> Result<usize, ()> {
 pub fn handle_4_place_multiple_orders_inner(
     header: &PlaceMultipleOrdersHeader,
     order_bytes: &[u8],
-) -> Result<(), ()> {
+) -> Result<(), GoblinError> {
     // No heap, can't deserialize as dynamic array
     for i in 0..header.bids_count {
         let offset = i as usize * POST_ONLY_ORDER_LEN;
-        let order = unsafe { &*(order_bytes.as_ptr().add(offset) as *const PostOnlyOrder) };
+        let _order = unsafe { &*(order_bytes.as_ptr().add(offset) as *const PostOnlyOrder) };
 
         // TODO insert into book
     }

@@ -1,8 +1,11 @@
 use core::mem::MaybeUninit;
 
 use crate::{
-    eth, events, msg_sender,
+    eth, events,
+    goblin_error::GoblinError,
+    msg_sender,
     quantities::Atoms,
+    require,
     state::TraderTokenKey,
     types::{Address, NATIVE_TOKEN},
 };
@@ -31,10 +34,11 @@ struct WithdrawETHParams {
     pub atoms: Atoms,
 }
 
-pub fn handle_2_withdraw_eth(payload: &[u8]) -> Result<usize, ()> {
-    if payload.len() < HANDLE_2_PAYLOAD_LEN {
-        return Err(());
-    }
+pub fn handle_2_withdraw_eth(payload: &[u8]) -> Result<usize, GoblinError> {
+    require!(
+        payload.len() >= HANDLE_2_PAYLOAD_LEN,
+        GoblinError::InvalidPayload
+    );
 
     let params = unsafe { &*(payload.as_ptr() as *const WithdrawETHParams) };
 

@@ -1,8 +1,11 @@
 use core::mem::MaybeUninit;
 
 use crate::{
-    erc20, msg_sender,
+    erc20,
+    goblin_error::GoblinError,
+    msg_sender,
     quantities::Atoms,
+    require,
     state::{SlotState, TraderTokenKey, TraderTokenState},
     types::Address,
     ADDRESS,
@@ -38,10 +41,11 @@ struct CreditERC20Params {
 /// Since the indexer filters for successful call frames, the requested amount
 /// is guaranteed to be credited.
 ///
-pub fn handle_1_credit_erc20(payload: &[u8]) -> Result<usize, ()> {
-    if payload.len() < HANDLE_1_PAYLOAD_LEN {
-        return Err(());
-    }
+pub fn handle_1_credit_erc20(payload: &[u8]) -> Result<usize, GoblinError> {
+    require!(
+        payload.len() >= HANDLE_1_PAYLOAD_LEN,
+        GoblinError::InvalidPayload
+    );
 
     let params = unsafe { &*(payload.as_ptr() as *const CreditERC20Params) };
     let atoms = params.atoms;
@@ -63,6 +67,10 @@ pub fn handle_1_credit_erc20(payload: &[u8]) -> Result<usize, ()> {
     let trader_token_state =
         unsafe { TraderTokenState::load(trader_token_key, &mut trader_token_state_maybe) };
 
+    // This is not a simple success / failure transaction. We need to know the decimal value returned
+    // - The slot write is determined using inputs. We can't use it.
+    // - The value requested in erc20::transfer_from() is also determinted using inputs.
+    // Therefore decimal places have to be found.
     if trader_token_state.is_empty() {
         trader_token_state.decimals = erc20::decimals(&params.token)?;
     }

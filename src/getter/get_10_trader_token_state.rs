@@ -1,6 +1,8 @@
 use core::mem::MaybeUninit;
 
 use crate::{
+    goblin_error::GoblinError,
+    require,
     state::{SlotState, TraderTokenKey, TraderTokenState},
     write_result,
 };
@@ -8,10 +10,11 @@ use crate::{
 pub const GET_10_TRADER_TOKEN_STATE: u8 = 10;
 pub const GET_10_PAYLOAD_LEN: usize = core::mem::size_of::<TraderTokenKey>();
 
-pub fn get_10_trader_token_state(payload: &[u8]) -> Result<usize, ()> {
-    if payload.len() < GET_10_PAYLOAD_LEN {
-        return Err(());
-    }
+pub fn get_10_trader_token_state(payload: &[u8]) -> Result<usize, GoblinError> {
+    require!(
+        payload.len() >= GET_10_PAYLOAD_LEN,
+        GoblinError::InvalidPayload
+    );
 
     let trader_token_key = unsafe { &*(payload.as_ptr() as *const TraderTokenKey) };
 
