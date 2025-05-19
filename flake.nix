@@ -71,6 +71,9 @@
           export QUOTE_TOKEN="0x3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E"
 
           export FOUNDRY_DISABLE_NIGHTLY_WARNING="true"
+
+          # Sqlite database
+          export DATABASE_URL=sqlite://$XDG_DATA_HOME/goblin/goblin.db
         '';
       };
     };

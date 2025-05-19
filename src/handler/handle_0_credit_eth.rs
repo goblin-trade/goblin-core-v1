@@ -6,6 +6,7 @@ use crate::{
     quantities::{Atoms, RawAtoms},
     require,
     state::{SlotState, TraderTokenKey, TraderTokenState},
+    token_delta::TokenDeltaList,
     types::{Address, NATIVE_TOKEN},
 };
 
@@ -41,7 +42,10 @@ use crate::indexer_hostio;
 /// * This payload is decoded as [0x3f, 0x1E, ..., 0E]
 /// * The address is already in big endian
 ///
-pub fn handle_0_credit_eth(payload: &[u8]) -> Result<usize, GoblinError> {
+pub fn handle_0_credit_eth(
+    payload: &[u8],
+    delta_list: &mut TokenDeltaList,
+) -> Result<usize, GoblinError> {
     require!(
         payload.len() >= HANDLE_0_PAYLOAD_LEN,
         GoblinError::InvalidPayload
@@ -59,6 +63,18 @@ pub fn handle_0_credit_eth(payload: &[u8]) -> Result<usize, GoblinError> {
 
     // Convert raw atoms to atoms
     let atoms = Atoms::from_raw_atoms(amount_in, NATIVE_TOKEN_DECIMALS)?;
+
+    let token_delta = delta_list.get(NATIVE_TOKEN)?;
+
+    // ETH transfer is a special case. It gets sent with the call in the beginning
+    // itself instead of being settled in the end.
+    // Calling this handler twice should be illegal because msg.value will hold
+    // total ETH for both cases.
+    // When depositing- just subtract from inner_delta. Don't change outer_delta
+    // because ETH has already been supplied, there are no pending transfers
+    // in the settlement phase.
+    // However when we withdraw ETH, the withdrawal does happen during settlement.
+    // We should have a separate struct native_delta, independent of TokenDeltaList
 
     let trader_token_key = &TraderTokenKey {
         trader: *recipient,

@@ -6,6 +6,7 @@ use getter::*;
 use goblin_error::*;
 use handler::*;
 use hostio::*;
+use token_delta::TokenDeltaList;
 
 pub mod call;
 pub mod erc20;
@@ -18,6 +19,7 @@ pub mod hostio;
 pub mod market_params;
 pub mod quantities;
 pub mod state;
+pub mod token_delta;
 pub mod types;
 
 #[cfg(all(not(test), not(target_arch = "wasm32")))]
@@ -31,11 +33,15 @@ pub const ADDRESS: [u8; 20] = [
 fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
     require!(len > 0, GoblinError::InvalidPayload);
 
+    // TODO exit if re-entrant
+
     let mut input = MaybeUninit::<[u8; 512]>::uninit();
     let input = unsafe {
         read_args(input.as_mut_ptr() as *mut u8);
         input.assume_init_ref()
     };
+
+    let delta_list = &mut TokenDeltaList::default();
 
     let num_calls = input[0] as usize;
     let mut offset = 1;
@@ -51,13 +57,13 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
         // to shorten the payload
         let payload = &input[offset..len];
         let bytes_used = match selector {
-            HANDLE_0_CREDIT_ETH => handle_0_credit_eth(payload),
-            HANDLE_1_CREDIT_ERC20 => handle_1_credit_erc20(payload),
-            HANDLE_2_WITHDRAW_ETH => handle_2_withdraw_eth(payload),
-            HANDLE_3_WITHDRAW_ERC20 => handle_3_withdraw_erc20(payload),
-            HANDLE_4_PLACE_MULTIPLE_ORDERS => handle_4_place_multiple_orders(payload),
-            // Getters
-            GET_10_TRADER_TOKEN_STATE => get_10_trader_token_state(payload),
+            HANDLE_0_CREDIT_ETH => handle_0_credit_eth(payload, delta_list),
+            // HANDLE_1_CREDIT_ERC20 => handle_1_credit_erc20(payload),
+            // HANDLE_2_WITHDRAW_ETH => handle_2_withdraw_eth(payload),
+            // HANDLE_3_WITHDRAW_ERC20 => handle_3_withdraw_erc20(payload),
+            // HANDLE_4_PLACE_MULTIPLE_ORDERS => handle_4_place_multiple_orders(payload),
+            // // Getters
+            // GET_10_TRADER_TOKEN_STATE => get_10_trader_token_state(payload),
             _ => Err(GoblinError::InvalidSelector),
         }?;
         offset += bytes_used;

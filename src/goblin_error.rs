@@ -7,6 +7,7 @@ pub enum GoblinError {
     CallFail = 5,
     CallResultInvalid = 6,
     TraderTokenStateEmpty = 7,
+    DeltaListFull = 8,
 }
 
 impl GoblinError {
