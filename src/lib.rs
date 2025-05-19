@@ -6,7 +6,7 @@ use getter::*;
 use goblin_error::*;
 use handler::*;
 use hostio::*;
-use token_delta::TokenDeltaList;
+use settlement::TokenDeltaList;
 
 pub mod call;
 pub mod erc20;
@@ -18,8 +18,8 @@ pub mod handler;
 pub mod hostio;
 pub mod market_params;
 pub mod quantities;
+pub mod settlement;
 pub mod state;
-pub mod token_delta;
 pub mod types;
 
 #[cfg(all(not(test), not(target_arch = "wasm32")))]
@@ -57,7 +57,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
         // to shorten the payload
         let payload = &input[offset..len];
         let bytes_used = match selector {
-            HANDLE_0_CREDIT_ETH => handle_0_credit_eth(payload, delta_list),
+            HANDLE_0_CREDIT_ETH => handle_0_credit_eth(payload),
             // HANDLE_1_CREDIT_ERC20 => handle_1_credit_erc20(payload),
             // HANDLE_2_WITHDRAW_ETH => handle_2_withdraw_eth(payload),
             // HANDLE_3_WITHDRAW_ERC20 => handle_3_withdraw_erc20(payload),
