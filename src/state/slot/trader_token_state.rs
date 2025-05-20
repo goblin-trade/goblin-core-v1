@@ -5,13 +5,22 @@ use crate::{
     quantities::Atoms,
     state::{slot_key::SlotKey, SlotState},
     storage_cache_bytes32, storage_load_bytes32,
-    types::Address,
+    types::{Address, NATIVE_TOKEN},
 };
 
 #[repr(C)]
 pub struct TraderTokenKey {
     pub trader: Address,
     pub token: Address,
+}
+
+impl TraderTokenKey {
+    pub fn native_key(trader: &Address) -> Self {
+        TraderTokenKey {
+            trader: *trader,
+            token: NATIVE_TOKEN,
+        }
+    }
 }
 
 impl SlotKey for TraderTokenKey {

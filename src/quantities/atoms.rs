@@ -21,7 +21,7 @@ use core::u64;
 ///! - For eth = raw atoms / 10^(18 - 6) = raw atoms / 10^12
 use crate::{define_custom_types, goblin_error::GoblinError, require};
 
-use super::RawAtoms;
+use super::{Delta, RawAtoms};
 
 define_custom_types!(Atoms<u64>);
 
@@ -79,6 +79,14 @@ impl Atoms {
 
         // Convert the byte array to RawAtoms
         Ok(RawAtoms::from_be_bytes(&bytes))
+    }
+
+    pub fn to_delta(self) -> Result<Delta, GoblinError> {
+        if self.0 <= i64::MAX as u64 {
+            Ok(Delta(self.0 as i64))
+        } else {
+            Err(GoblinError::AtomOverflow)
+        }
     }
 }
 

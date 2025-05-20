@@ -8,6 +8,10 @@ pub enum GoblinError {
     CallResultInvalid = 6,
     TraderTokenStateEmpty = 7,
     DeltaListFull = 8,
+    AtomOverflow = 9,
+    AtomUndeflow = 10,
+    DeltaOverflow = 11,
+    DeltaUnderflow = 12,
 }
 
 impl GoblinError {

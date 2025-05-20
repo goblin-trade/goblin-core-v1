@@ -3,7 +3,7 @@ macro_rules! define_custom_types {
     ($($type:ident<$t:ty>),*) => {
         $(
             #[repr(C)]
-            #[derive(Debug, Clone, Copy, PartialEq)]
+            #[derive(Debug, Default, Clone, Copy, PartialEq, PartialOrd)]
             pub struct $type(pub $t);
 
             impl core::ops::Add for $type {

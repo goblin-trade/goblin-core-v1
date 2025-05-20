@@ -39,9 +39,8 @@ struct CreditERC20Params {
 ///
 /// If ERC20 balance is insufficient then the call frame reverts.
 /// Since the indexer filters for successful call frames, the requested amount
-/// is guaranteed to be credited.
 ///
-pub fn handle_1_credit_erc20(payload: &[u8]) -> Result<usize, GoblinError> {
+pub fn ix_1_credit_erc20(payload: &[u8]) -> Result<usize, GoblinError> {
     require!(
         payload.len() >= HANDLE_1_PAYLOAD_LEN,
         GoblinError::InvalidPayload
