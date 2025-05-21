@@ -42,8 +42,8 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
         input.assume_init_ref()
     };
 
-    let native_token_delta = &mut EthDelta::default();
-    let delta_list = &mut TokenDeltaList::default();
+    let eth_delta = &mut EthDelta::default();
+    let erc20_deltas = &mut TokenDeltaList::default();
 
     // input[0] is the header byte
     //
@@ -58,7 +58,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
     let num_calls = (header_byte >> 1) as usize;
 
     if deposit_native_token {
-        ix_deposit_eth(native_token_delta)?;
+        ix_deposit_eth(eth_delta)?;
     }
 
     let mut offset = 1;
@@ -90,7 +90,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
         hostio::msg_sender(msg_sender_maybe.as_mut_ptr() as *mut u8);
         msg_sender_maybe.assume_init_ref()
     };
-    native_token_delta.settle(&msg_sender)?;
+    eth_delta.settle(&msg_sender)?;
     // TODO settle token_delta_list
 
     // TODO study re-entrancy. The SDK flushes before cross contract calls only

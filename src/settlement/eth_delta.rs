@@ -36,21 +36,23 @@ pub struct EthDelta {
     pub slot_deduction_due: Delta,
 
     /// atoms due to be transferred out to trader's ETH balance on settlement
-    pub eth_withdrawal_due: Delta,
+    pub withdrawal_due: Delta,
 }
 
 impl EthDelta {
     pub fn execute_deposit(&mut self, amount: Atoms) -> Result<(), GoblinError> {
         self.slot_deduction_due = self.slot_deduction_due.sub(amount)?;
+        // Do not subtract from withdrawal_due. ETH was already transferred via msg.value
         Ok(())
     }
 
     pub fn execute_withdraw(&mut self, amount: Atoms) -> Result<(), GoblinError> {
         self.slot_deduction_due = self.slot_deduction_due.add(amount)?;
-        self.eth_withdrawal_due = self.eth_withdrawal_due.add(amount)?;
+        self.withdrawal_due = self.withdrawal_due.add(amount)?;
         Ok(())
     }
 
+    /// Settle, i.e. update the trader's token state and transfer ETH out
     pub fn settle(&mut self, msg_sender: &Address) -> Result<(), GoblinError> {
         let trader_token_key = &TraderTokenKey::native_key(msg_sender);
         let mut trader_token_state_maybe = MaybeUninit::<TraderTokenState>::uninit();
@@ -71,10 +73,10 @@ impl EthDelta {
 
         // 2. Transfer ETH out
         // native_withdrawal_due cannot be negative
-        debug_assert!(self.eth_withdrawal_due >= Delta::ZERO);
+        debug_assert!(self.withdrawal_due >= Delta::ZERO);
 
-        if self.eth_withdrawal_due > Delta::ZERO {
-            let atoms_out = self.eth_withdrawal_due.abs();
+        if self.withdrawal_due > Delta::ZERO {
+            let atoms_out = self.withdrawal_due.abs();
             let raw_atoms_out = atoms_out.to_raw_atoms(NATIVE_TOKEN_DECIMALS)?;
             eth::transfer_out(msg_sender, &raw_atoms_out)?;
         }
