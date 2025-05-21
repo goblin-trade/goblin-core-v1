@@ -5,8 +5,8 @@ use crate::{
     types::Address,
 };
 
-pub const HANDLE_4_PLACE_MULTIPLE_ORDERS: u8 = 4;
-pub const HANDLE_4_HEADER_LEN: usize = core::mem::size_of::<PlaceMultipleOrdersHeader>();
+pub const IX_3_PLACE_MULTIPLE_ORDERS: u8 = 3;
+pub const IX_3_HEADER_LEN: usize = core::mem::size_of::<PlaceMultipleOrdersHeader>();
 pub const POST_ONLY_ORDER_LEN: usize = core::mem::size_of::<PostOnlyOrder>();
 
 #[repr(C, packed)]
@@ -56,9 +56,9 @@ pub enum ExpiryType {
     Block = 2,
 }
 
-pub fn handle_4_place_multiple_orders(payload: &[u8]) -> Result<usize, GoblinError> {
+pub fn ix_3_place_multiple_orders(payload: &[u8]) -> Result<usize, GoblinError> {
     require!(
-        payload.len() >= HANDLE_4_HEADER_LEN,
+        payload.len() >= IX_3_HEADER_LEN,
         GoblinError::InvalidPayload
     );
 
@@ -66,10 +66,10 @@ pub fn handle_4_place_multiple_orders(payload: &[u8]) -> Result<usize, GoblinErr
     let total_orders = header.bids_count as usize + header.asks_count as usize;
     let orders_len = total_orders * core::mem::size_of::<PostOnlyOrder>();
 
-    let bytes_used = HANDLE_4_HEADER_LEN + orders_len;
+    let bytes_used = IX_3_HEADER_LEN + orders_len;
     require!(payload.len() >= bytes_used, GoblinError::InvalidPayload);
 
-    let order_bytes = &payload[HANDLE_4_HEADER_LEN..bytes_used];
+    let order_bytes = &payload[IX_3_HEADER_LEN..bytes_used];
 
     handle_4_place_multiple_orders_inner(header, order_bytes).map(|_| bytes_used)
 }

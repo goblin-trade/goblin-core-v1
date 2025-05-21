@@ -46,6 +46,16 @@ impl EthDelta {
         Ok(())
     }
 
+    /// Prepare the given amount for withdrawal
+    /// Max legal value is i64::MAX. Pass this value to withdraw all available
+    /// tokens.
+    pub fn prepare_withdrawal(&mut self, amount: Atoms) -> Result<(), GoblinError> {
+        self.slot_deduction_due = self.slot_deduction_due.add(amount)?;
+        self.withdrawal_due = self.withdrawal_due.add(amount)?;
+        Ok(())
+    }
+
+    /// Execute the withdrawal
     pub fn execute_withdraw(&mut self, amount: Atoms) -> Result<(), GoblinError> {
         self.slot_deduction_due = self.slot_deduction_due.add(amount)?;
         self.withdrawal_due = self.withdrawal_due.add(amount)?;
@@ -63,7 +73,14 @@ impl EthDelta {
         trader_token_state.decimals = NATIVE_TOKEN_DECIMALS;
 
         // 1. Update TraderTokenState
-        // If slot funds are insufficient then the TX will revert with AtomUnderflow error
+        // Clamp to 0 and reduce output amount if delta exceeds available funds in TraderTokenState
+        let available = trader_token_state.atoms_free;
+        if self.slot_deduction_due > Delta::ZERO && self.slot_deduction_due.abs() > available {
+            let shortfall = self.slot_deduction_due.sub(available)?;
+            self.slot_deduction_due = available.to_delta()?;
+            self.withdrawal_due -= shortfall;
+        }
+
         trader_token_state.atoms_free =
             trader_token_state.atoms_free.sub(self.slot_deduction_due)?;
 
@@ -72,7 +89,7 @@ impl EthDelta {
         }
 
         // 2. Transfer ETH out
-        // native_withdrawal_due cannot be negative
+        // There is no transfer in case for ETH, i.e. native_withdrawal_due cannot be negative
         debug_assert!(self.withdrawal_due >= Delta::ZERO);
 
         if self.withdrawal_due > Delta::ZERO {

@@ -14,8 +14,8 @@ use crate::{
 #[cfg(all(not(test), not(target_arch = "wasm32")))]
 use crate::indexer_hostio;
 
-pub const HANDLE_1_CREDIT_ERC20: u8 = 1;
-pub const HANDLE_1_PAYLOAD_LEN: usize = core::mem::size_of::<CreditERC20Params>();
+pub const IX_1_DEPOSIT_ERC20: u8 = 1;
+pub const IX_1_PAYLOAD_LEN: usize = core::mem::size_of::<CreditERC20Params>();
 
 #[repr(C, packed)]
 struct CreditERC20Params {
@@ -42,7 +42,7 @@ struct CreditERC20Params {
 ///
 pub fn ix_1_credit_erc20(payload: &[u8]) -> Result<usize, GoblinError> {
     require!(
-        payload.len() >= HANDLE_1_PAYLOAD_LEN,
+        payload.len() >= IX_1_PAYLOAD_LEN,
         GoblinError::InvalidPayload
     );
 
@@ -92,7 +92,7 @@ pub fn ix_1_credit_erc20(payload: &[u8]) -> Result<usize, GoblinError> {
     let raw_atoms = atoms.to_raw_atoms(trader_token_state.decimals)?;
     erc20::transfer_from(&params.token, sender, &ADDRESS, &raw_atoms)?;
 
-    Ok(HANDLE_1_PAYLOAD_LEN)
+    Ok(IX_1_PAYLOAD_LEN)
 }
 
 #[cfg(test)]
@@ -108,7 +108,7 @@ mod test {
         user_entrypoint,
     };
 
-    use super::{CreditERC20Params, HANDLE_1_CREDIT_ERC20};
+    use super::{CreditERC20Params, IX_1_DEPOSIT_ERC20};
 
     #[test]
     pub fn test_deposit_erc20() {
@@ -124,7 +124,7 @@ mod test {
         let mut test_args: Vec<u8> = vec![];
         let num_calls: u8 = 1;
         test_args.push(num_calls);
-        test_args.push(HANDLE_1_CREDIT_ERC20);
+        test_args.push(IX_1_DEPOSIT_ERC20);
 
         let payload = CreditERC20Params {
             token: hex!("7E32b54800705876d3b5cFbc7d9c226a211F7C1a"),

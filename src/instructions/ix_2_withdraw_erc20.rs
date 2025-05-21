@@ -5,8 +5,8 @@ use crate::{
     state::TraderTokenKey, types::Address,
 };
 
-pub const HANDLE_3_WITHDRAW_ERC20: u8 = 3;
-pub const HANDLE_3_PAYLOAD_LEN: usize = core::mem::size_of::<WithdrawERC20Params>();
+pub const IX_2_WITHDRAW_ERC20: u8 = 2;
+pub const IX_2_PAYLOAD_LEN: usize = core::mem::size_of::<WithdrawERC20Params>();
 
 #[repr(C, packed)]
 struct WithdrawERC20Params {
@@ -29,9 +29,9 @@ struct WithdrawERC20Params {
     pub atoms: Atoms,
 }
 
-pub fn handle_3_withdraw_erc20(payload: &[u8]) -> Result<usize, GoblinError> {
+pub fn ix_2_withdraw_erc20(payload: &[u8]) -> Result<usize, GoblinError> {
     require!(
-        payload.len() >= HANDLE_3_PAYLOAD_LEN,
+        payload.len() >= IX_2_PAYLOAD_LEN,
         GoblinError::InvalidPayload
     );
 
@@ -53,7 +53,7 @@ pub fn handle_3_withdraw_erc20(payload: &[u8]) -> Result<usize, GoblinError> {
 
     erc20::transfer(&params.token, &params.recipient, &raw_atoms_withdrawn)?;
 
-    Ok(HANDLE_3_PAYLOAD_LEN)
+    Ok(IX_2_PAYLOAD_LEN)
 }
 
 #[cfg(test)]
@@ -93,7 +93,7 @@ mod tests {
         let mut test_args: Vec<u8> = vec![];
         let num_calls: u8 = 1;
         test_args.push(num_calls);
-        test_args.push(HANDLE_3_WITHDRAW_ERC20);
+        test_args.push(IX_2_WITHDRAW_ERC20);
         test_args.extend_from_slice(payload_bytes);
         set_test_args(test_args.clone());
 
@@ -149,7 +149,7 @@ mod tests {
         let mut test_args: Vec<u8> = vec![];
         let num_calls: u8 = 1;
         test_args.push(num_calls);
-        test_args.push(HANDLE_3_WITHDRAW_ERC20);
+        test_args.push(IX_2_WITHDRAW_ERC20);
         test_args.extend_from_slice(payload_bytes);
         set_test_args(test_args.clone());
 

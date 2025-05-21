@@ -74,12 +74,12 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
         // to shorten the payload
         let payload = &input[offset..len];
         let bytes_used = match selector {
-            HANDLE_1_CREDIT_ERC20 => ix_1_credit_erc20(payload),
-            HANDLE_2_WITHDRAW_ETH => handle_2_withdraw_eth(payload),
-            HANDLE_3_WITHDRAW_ERC20 => handle_3_withdraw_erc20(payload),
-            HANDLE_4_PLACE_MULTIPLE_ORDERS => handle_4_place_multiple_orders(payload),
+            IX_0_WITHDRAW_ETH => ix_0_withdraw_eth(payload, eth_delta),
+            // IX_1_DEPOSIT_ERC20 => ix_1_credit_erc20(payload),
+            // IX_2_WITHDRAW_ERC20 => ix_2_withdraw_erc20(payload),
+            // IX_3_PLACE_MULTIPLE_ORDERS => ix_3_place_multiple_orders(payload),
             // Getters
-            GET_10_TRADER_TOKEN_STATE => get_10_trader_token_state(payload),
+            // GET_10_TRADER_TOKEN_STATE => get_10_trader_token_state(payload),
             _ => Err(GoblinError::InvalidSelector),
         }?;
         offset += bytes_used;
