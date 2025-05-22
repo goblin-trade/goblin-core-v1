@@ -1,61 +1,17 @@
-use core::mem::MaybeUninit;
-
-use crate::{
-    eth, events,
-    goblin_error::GoblinError,
-    hostio, msg_sender,
-    quantities::Atoms,
-    require,
-    settlement::EthDelta,
-    state::TraderTokenKey,
-    types::{Address, NATIVE_TOKEN},
-};
+use crate::{goblin_error::GoblinError, quantities::Atoms, require, settlement::EthDelta};
 
 pub const IX_0_WITHDRAW_ETH: u8 = 0;
-pub const IX_0_PAYLOAD_LEN: usize = core::mem::size_of::<WithdrawETHParams>();
+pub const IX_0_PAYLOAD_LEN: usize = core::mem::size_of::<Atoms>();
 
-#[repr(C, packed)]
-struct WithdrawETHParams {
-    // /// Withdraw atoms to `recipient`. This allows a wallet to withdraw to another wallet
-    // pub recipient: Address,
-    /// The atoms to withdraw. Raw atom to atom conversions should happen on client side.
-    ///
-    /// If the value is greater than than the deposited amount, entire deposit
-    /// is withdrawn.
-    ///
-    /// The atom bytes should be encoded in **little endian** for zero copy deserialization.
-    ///
-    /// For 1 atom
-    /// - Correct (little endian, non ABI): 0x0100000000000000 = [0x01, 0x00, ...]
-    /// - Wrong (big endian, ABI style): 0x0000000000000001 = [0x00, 0x00, ..., 0x01]
-    pub atoms: Atoms,
-}
-
+/// Credit atoms to withdraw to delta
 pub fn ix_0_withdraw_eth(payload: &[u8], eth_delta: &mut EthDelta) -> Result<usize, GoblinError> {
     require!(
         payload.len() >= IX_0_PAYLOAD_LEN,
         GoblinError::InvalidPayload
     );
 
-    let params = unsafe { &*(payload.as_ptr() as *const WithdrawETHParams) };
-
-    eth_delta.execute_withdraw(params.atoms)?;
-
-    // let mut sender_maybe = MaybeUninit::<Address>::uninit();
-    // let sender = unsafe {
-    //     hostio::msg_sender(sender_maybe.as_mut_ptr() as *mut u8);
-    //     sender_maybe.assume_init_ref()
-    // };
-
-    // let raw_atoms_withdrawn = events::withdraw(
-    //     &TraderTokenKey {
-    //         trader: *sender,
-    //         token: NATIVE_TOKEN,
-    //     },
-    //     params.atoms,
-    // )?;
-
-    // eth::transfer_out(&params.recipient, &raw_atoms_withdrawn)?;
+    let atoms = unsafe { &*(payload.as_ptr() as *const Atoms) };
+    eth_delta.execute_withdraw(*atoms)?;
 
     Ok(IX_0_PAYLOAD_LEN)
 }

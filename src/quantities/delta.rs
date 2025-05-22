@@ -8,6 +8,10 @@ impl Delta {
     pub fn abs(&self) -> Atoms {
         Atoms(self.0.abs() as u64)
     }
+
+    pub fn rev(&self) -> Self {
+        Delta(-self.0)
+    }
 }
 
 impl core::ops::Add<Atoms> for Delta {

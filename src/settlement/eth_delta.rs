@@ -1,13 +1,10 @@
-use core::{
-    mem::MaybeUninit,
-    ops::{Add, Sub},
-};
+use core::ops::{Add, Sub};
 
 use crate::{
     eth,
     goblin_error::GoblinError,
     quantities::{Atoms, Delta},
-    state::{SlotState, TraderTokenKey, TraderTokenState},
+    state::{TraderTokenKey, TraderTokenState},
     types::{Address, NATIVE_TOKEN_DECIMALS},
 };
 
@@ -63,39 +60,44 @@ impl EthDelta {
     }
 
     /// Settle, i.e. update the trader's token state and transfer ETH out
-    pub fn settle(&mut self, msg_sender: &Address) -> Result<(), GoblinError> {
-        let trader_token_key = &TraderTokenKey::native_key(msg_sender);
-        let mut trader_token_state_maybe = MaybeUninit::<TraderTokenState>::uninit();
-        let trader_token_state =
-            unsafe { TraderTokenState::load(trader_token_key, &mut trader_token_state_maybe) };
-
-        // TODO don't store NATIVE_TOKEN_DECIMALS for ETH?
-        trader_token_state.decimals = NATIVE_TOKEN_DECIMALS;
-
-        // 1. Update TraderTokenState
-        // Clamp to 0 and reduce output amount if delta exceeds available funds in TraderTokenState
-        let available = trader_token_state.atoms_free;
-        if self.slot_deduction_due > Delta::ZERO && self.slot_deduction_due.abs() > available {
-            let shortfall = self.slot_deduction_due.sub(available)?;
-            self.slot_deduction_due = available.to_delta()?;
-            self.withdrawal_due -= shortfall;
-        }
-
-        trader_token_state.atoms_free =
-            trader_token_state.atoms_free.sub(self.slot_deduction_due)?;
-
-        unsafe {
-            trader_token_state.store(trader_token_key);
-        }
+    ///
+    /// * `slot_deduction_due` is applied on TraderTokenState(msg_sender)
+    /// * Shortfall is deducted from `withdrawal_due`, i.e. less tokens are transferrred
+    /// out if slot balance is insufficient.
+    /// * `withdrawal_due` is transferred to `recipient`.
+    /// * `transfer_to_recipient_internally` allows funds to be credited internally
+    /// to TraderTokenState(recipient)
+    ///
+    pub fn settle(
+        &mut self,
+        msg_sender: &Address,
+        recipient: &Address,
+        transfer_to_recipient_internally: bool,
+    ) -> Result<(), GoblinError> {
+        let shortfall = TraderTokenState::update_free_atoms_and_store(
+            &TraderTokenKey::native_key(msg_sender),
+            NATIVE_TOKEN_DECIMALS,
+            self.slot_deduction_due,
+        )?;
+        self.withdrawal_due -= shortfall;
 
         // 2. Transfer ETH out
         // There is no transfer in case for ETH, i.e. native_withdrawal_due cannot be negative
         debug_assert!(self.withdrawal_due >= Delta::ZERO);
 
         if self.withdrawal_due > Delta::ZERO {
-            let atoms_out = self.withdrawal_due.abs();
-            let raw_atoms_out = atoms_out.to_raw_atoms(NATIVE_TOKEN_DECIMALS)?;
-            eth::transfer_out(msg_sender, &raw_atoms_out)?;
+            if transfer_to_recipient_internally {
+                // No shortfall case because balance is added
+                TraderTokenState::update_free_atoms_and_store(
+                    &TraderTokenKey::native_key(recipient),
+                    NATIVE_TOKEN_DECIMALS,
+                    self.withdrawal_due.rev(),
+                )?;
+            } else {
+                let atoms_out = self.withdrawal_due.abs();
+                let raw_atoms_out = atoms_out.to_raw_atoms(NATIVE_TOKEN_DECIMALS)?;
+                eth::transfer_out(recipient, &raw_atoms_out)?;
+            }
         }
 
         Ok(())

@@ -36,10 +36,10 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
 
     // TODO exit if re-entrant
 
-    let mut input = MaybeUninit::<[u8; 512]>::uninit();
+    let mut input_maybe = MaybeUninit::<[u8; 512]>::uninit();
     let input = unsafe {
-        read_args(input.as_mut_ptr() as *mut u8);
-        input.assume_init_ref()
+        read_args(input_maybe.as_mut_ptr() as *mut u8);
+        input_maybe.assume_init_ref()
     };
 
     let eth_delta = &mut EthDelta::default();
@@ -48,30 +48,49 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
     // input[0] is the header byte
     //
     // * Pos 0 bit tells whether to deposit ETH
-    // * Remaining MSB 7 bits give the number of calls. The max value
-    // is 2^7 - 1 = 127
-    // * This could be used to store more metadata without increasing
-    // payload size
+    // * Pos 1 tells whether a recipient is provided, otherwise the recipient is msg.sender
+    // * Pos 2 tells whether to transfer to recipient internally
+    //   - Value is ignored if recipient is not provided
+    //   - If true, then `withdrawal_due` is credited internally to recipient's TraderTokenState
+    //   - If false, the amount is withdrawn to the recipient
+    //
+    // * Remaining MSB 5 bits give the number of calls. The max value
+    // is 2^5 - 1 = 31
     //
     let header_byte = input[0];
     let deposit_native_token = (header_byte & 0b0000_0001) != 0;
-    let num_calls = (header_byte >> 1) as usize;
+    let recipient_provided = (header_byte & 0b0000_0010) != 0;
+    let transfer_to_recipient_internally = (header_byte & 0b0000_0100) != 0;
+
+    let num_calls = (header_byte >> 3) as usize;
 
     if deposit_native_token {
         ix_deposit_eth(eth_delta)?;
     }
 
+    let mut msg_sender_maybe = MaybeUninit::<Address>::uninit();
+    let msg_sender = unsafe {
+        hostio::msg_sender(msg_sender_maybe.as_mut_ptr() as *mut u8);
+        msg_sender_maybe.assume_init_ref()
+    };
+
     let mut offset = 1;
+
+    let recipient = if recipient_provided {
+        offset += 20;
+        require!(len > offset, GoblinError::InvalidPayload);
+        unsafe { &*(input[1..offset].as_ptr() as *const Address) }
+    } else {
+        msg_sender
+    };
 
     for _ in 0..num_calls {
         // Invalid input: not enough bytes for selector
-        require!(offset < len, GoblinError::InvalidPayload);
+        require!(len > offset, GoblinError::InvalidPayload);
 
         let selector = input[offset];
         offset += 1;
 
-        // This is the entire payload from offset to end length. We need
-        // to shorten the payload
         let payload = &input[offset..len];
         let bytes_used = match selector {
             IX_0_WITHDRAW_ETH => ix_0_withdraw_eth(payload, eth_delta),
@@ -85,12 +104,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
         offset += bytes_used;
     }
 
-    let mut msg_sender_maybe = MaybeUninit::<Address>::uninit();
-    let msg_sender = unsafe {
-        hostio::msg_sender(msg_sender_maybe.as_mut_ptr() as *mut u8);
-        msg_sender_maybe.assume_init_ref()
-    };
-    eth_delta.settle(&msg_sender)?;
+    eth_delta.settle(&msg_sender, recipient, transfer_to_recipient_internally)?;
     // TODO settle token_delta_list
 
     // TODO study re-entrancy. The SDK flushes before cross contract calls only
