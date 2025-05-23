@@ -3,7 +3,7 @@
 /// 50 addresses consume 50 * 20 bytes = 1kb
 
 #[cfg(feature = "mainnet")]
-pub const TOKEN_ADDRESSES: [[u8; 20]; 50] = [
+pub const HARDCODED_TOKENS: [[u8; 20]; 50] = [
     // USD₮0 - https://www.arbiscan.io/token/0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9
     [
         0xfd, 0x08, 0x6b, 0xc7, 0xcd, 0x5c, 0x48, 0x1d, 0xcc, 0x9c, 0x85, 0xeb, 0xe4, 0x78, 0xa1,
@@ -257,7 +257,7 @@ pub const TOKEN_ADDRESSES: [[u8; 20]; 50] = [
 ];
 
 #[cfg(feature = "localnet")]
-pub const TOKEN_ADDRESSES: [[u8; 20]; 2] = [
+pub const HARDCODED_TOKENS: [[u8; 20]; 2] = [
     // Base token: 0xe1080224B632A93951A7CFA33EeEa9Fd81558b5e
     [
         0xe1, 0x08, 0x02, 0x24, 0xb6, 0x32, 0xa9, 0x39, 0x51, 0xa7, 0xcf, 0xa3, 0x3e, 0xee, 0xa9,
@@ -271,7 +271,7 @@ pub const TOKEN_ADDRESSES: [[u8; 20]; 2] = [
 ];
 
 #[cfg(feature = "testnet")]
-pub const TOKEN_ADDRESSES: [[u8; 20]; 2] = [
+pub const HARDCODED_TOKENS: [[u8; 20]; 2] = [
     // Example tokens for testnet
     [0x11; 20], [0x12; 20],
 ];

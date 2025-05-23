@@ -8,6 +8,7 @@ use goblin_error::*;
 use hostio::*;
 use instructions::*;
 use settlement::{EthDelta, TokenDeltaList};
+use tokens::read_custom_tokens;
 use types::Address;
 
 pub mod call_header;
@@ -22,7 +23,7 @@ pub mod market_params;
 pub mod quantities;
 pub mod settlement;
 pub mod state;
-pub mod token_addresses;
+pub mod tokens;
 pub mod types;
 
 #[cfg(all(not(test), not(target_arch = "wasm32")))]
@@ -59,18 +60,13 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
         ix_deposit_eth(eth_delta)?;
     }
 
-    if len >= 2 {
-        let custom_token_count = input[1];
-        // Each token address occupies 20 bytes
-    }
-
     let mut msg_sender_maybe = MaybeUninit::<Address>::uninit();
     let msg_sender = unsafe {
         hostio::msg_sender(msg_sender_maybe.as_mut_ptr() as *mut u8);
         msg_sender_maybe.assume_init_ref()
     };
 
-    let mut offset = 1;
+    let mut offset: usize = 1;
 
     let recipient = if recipient_provided {
         offset += 20;
@@ -80,24 +76,27 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
         msg_sender
     };
 
-    for _ in 0..num_calls {
-        // Invalid input: not enough bytes for selector
-        require!(len > offset, GoblinError::InvalidPayload);
+    if num_calls > 0 {
+        let custom_tokens = read_custom_tokens(input, len, &mut offset);
 
-        let selector = input[offset];
-        offset += 1;
+        for _ in 0..num_calls {
+            require!(len > offset, GoblinError::InvalidPayload);
 
-        let payload = &input[offset..len];
-        let bytes_used = match selector {
-            IX_0_WITHDRAW_ETH => ix_0_withdraw_eth(payload, eth_delta),
-            // IX_1_DEPOSIT_ERC20 => ix_1_credit_erc20(payload),
-            // IX_2_WITHDRAW_ERC20 => ix_2_withdraw_erc20(payload),
-            // IX_3_PLACE_MULTIPLE_ORDERS => ix_3_place_multiple_orders(payload),
-            // Getters
-            // GET_10_TRADER_TOKEN_STATE => get_10_trader_token_state(payload),
-            _ => Err(GoblinError::InvalidSelector),
-        }?;
-        offset += bytes_used;
+            let selector = input[offset];
+            offset += 1;
+
+            let payload = &input[offset..len];
+            let bytes_used = match selector {
+                IX_0_WITHDRAW_ETH => ix_0_withdraw_eth(payload, eth_delta),
+                // IX_1_DEPOSIT_ERC20 => ix_1_credit_erc20(payload),
+                // IX_2_WITHDRAW_ERC20 => ix_2_withdraw_erc20(payload),
+                // IX_3_PLACE_MULTIPLE_ORDERS => ix_3_place_multiple_orders(payload),
+                // Getters
+                // GET_10_TRADER_TOKEN_STATE => get_10_trader_token_state(payload),
+                _ => Err(GoblinError::InvalidSelector),
+            }?;
+            offset += bytes_used;
+        }
     }
 
     eth_delta.settle(&msg_sender, recipient, transfer_to_recipient_internally)?;
