@@ -20,6 +20,7 @@ pub mod market_params;
 pub mod quantities;
 pub mod settlement;
 pub mod state;
+pub mod token_addresses;
 pub mod types;
 
 #[cfg(all(not(test), not(target_arch = "wasm32")))]

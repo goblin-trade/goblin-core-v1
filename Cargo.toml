@@ -33,4 +33,7 @@ lto = true
 panic = "abort"
 
 [features]
-default = []
+default = ["localnet"]
+localnet = []
+testnet = []
+mainnet = []
