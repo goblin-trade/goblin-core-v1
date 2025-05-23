@@ -125,6 +125,10 @@ mod tests {
 
         #[test]
         fn test_max_value() {
+            let raw = RawAtoms([u64::MAX, u64::MAX, u64::MAX, u64::MAX]);
+            let atoms = Atoms::from_raw_atoms(&raw, 6).unwrap();
+            assert_eq!(atoms.0, u64::MAX);
+
             let raw = RawAtoms([1u64.swap_bytes(), 0, 0, 0]);
             let atoms = Atoms::from_raw_atoms(&raw, 6).unwrap();
             assert_eq!(atoms.0, u64::MAX);
