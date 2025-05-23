@@ -1,4 +1,4 @@
-use crate::{call, goblin_error::GoblinError, quantities::RawAtoms, require, types::Address};
+use crate::{goblin_error::GoblinError, hostio, quantities::RawAtoms, require, types::Address};
 
 /// Transfer out native ETH to a recipient
 pub fn transfer_out(recipient: &Address, amount: &RawAtoms) -> Result<(), GoblinError> {
@@ -6,7 +6,7 @@ pub fn transfer_out(recipient: &Address, amount: &RawAtoms) -> Result<(), Goblin
     let return_data_len: &mut usize = &mut 0;
 
     let call_result = unsafe {
-        call::clear_cache_and_call(
+        hostio::call_contract(
             recipient.as_ptr(),
             calldata.as_ptr(),
             calldata.len(),

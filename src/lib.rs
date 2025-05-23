@@ -9,7 +9,6 @@ use instructions::*;
 use settlement::{EthDelta, TokenDeltaList};
 use types::Address;
 
-pub mod call;
 pub mod erc20;
 pub mod eth;
 pub mod events;
@@ -32,9 +31,10 @@ pub const ADDRESS: [u8; 20] = [
 ];
 
 fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
-    require!(len > 0, GoblinError::InvalidPayload);
+    let msg_reentrant = unsafe { hostio::msg_reentrant() };
+    require!(!msg_reentrant, GoblinError::Reentrant);
 
-    // TODO exit if re-entrant
+    require!(len > 0, GoblinError::InvalidPayload);
 
     let mut input_maybe = MaybeUninit::<[u8; 512]>::uninit();
     let input = unsafe {
@@ -107,10 +107,10 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
     eth_delta.settle(&msg_sender, recipient, transfer_to_recipient_internally)?;
     // TODO settle token_delta_list
 
-    // TODO study re-entrancy. The SDK flushes before cross contract calls only
-    // in re-entrant mode. If we disable re-entrancy, we could reduce the number of calls.
+    // Write cache to trie
+    // https://github.com/OffchainLabs/stylus-sdk-rs/blob/2c709a5a1a620ed7585c7d8af64fefabe3a0fc9a/stylus-sdk/src/storage/mod.rs#L81
     unsafe {
-        hostio::storage_flush_cache(true);
+        hostio::storage_flush_cache(false);
     }
 
     Ok(())

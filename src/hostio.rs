@@ -7,6 +7,16 @@ extern "C" {
     pub fn pay_for_memory_grow(pages: u16);
     pub fn storage_load_bytes32(key: *const u8, dest: *mut u8);
     pub fn storage_cache_bytes32(key: *const u8, value: *const u8);
+
+    // Since re-entrancy is is disabled, we only need to flush once before exiting.
+    // https://github.com/OffchainLabs/stylus-sdk-rs/blob/2c709a5a1a620ed7585c7d8af64fefabe3a0fc9a/stylus-sdk/src/storage/mod.rs#L81
+    //
+    // If re-entrancy is enabled
+    // * Execute storage_flush_cache(false) before making call().
+    // Ref- https://github.com/OffchainLabs/stylus-sdk-rs/blob/2c709a5a1a620ed7585c7d8af64fefabe3a0fc9a/stylus-sdk/src/call/mod.rs#L73
+    //
+    // * Execute storage_flush_cache(true) before making static_call() and delegate_call().
+    // Ref- https://github.com/OffchainLabs/stylus-sdk-rs/blob/2c709a5a1a620ed7585c7d8af64fefabe3a0fc9a/stylus-sdk/src/call/mod.rs#L36
     pub fn storage_flush_cache(clear: bool);
     pub fn native_keccak256(bytes: *const u8, len: usize, output: *mut u8);
     pub fn msg_value(value: *mut u8);
@@ -29,6 +39,7 @@ extern "C" {
         return_data_len: *mut usize,
     ) -> u8;
     pub fn read_return_data(dest: *mut u8, offset: usize, size: usize) -> usize;
+    pub fn msg_reentrant() -> bool;
 }
 
 // Native hooks
@@ -61,6 +72,7 @@ extern "C" {
         return_data_len: *mut usize,
     ) -> u8;
     pub fn read_return_data(dest: *mut u8, offset: usize, size: usize) -> usize;
+    pub fn msg_reentrant() -> bool;
 }
 
 // #[cfg(not(test))]
@@ -110,6 +122,7 @@ mod test_hooks {
         // Calling read_return_data() without calling call_contract() first gives 0
         static RETURN_DATA_INDEX: RefCell<usize> = RefCell::new(0);
 
+        static MSG_REENTRANT: RefCell<bool> = RefCell::new(false);
     }
 
     pub fn clear_state() {
@@ -160,6 +173,10 @@ mod test_hooks {
             *return_data.borrow_mut() = data;
         });
         RETURN_DATA_INDEX.with(|i| *i.borrow_mut() = 0);
+    }
+
+    pub fn set_msg_reentrant(value: bool) {
+        MSG_REENTRANT.with(|flag| *flag.borrow_mut() = value);
     }
 
     #[no_mangle]
@@ -349,6 +366,11 @@ mod test_hooks {
                 slice.len()
             })
         })
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn msg_reentrant() -> bool {
+        MSG_REENTRANT.with(|flag| *flag.borrow())
     }
 }
 

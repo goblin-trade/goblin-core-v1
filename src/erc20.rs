@@ -1,8 +1,6 @@
 use core::mem::MaybeUninit;
 
-use crate::{
-    call, goblin_error::GoblinError, hostio, quantities::RawAtoms, require, types::Address,
-};
+use crate::{goblin_error::GoblinError, hostio, quantities::RawAtoms, require, types::Address};
 
 // keccak256('decimals()') = 0x313ce567
 const DECIMALS_SELECTOR: [u8; 4] = [0x31, 0x3c, 0xe5, 0x67];
@@ -18,7 +16,7 @@ pub fn decimals(contract: &Address) -> Result<u8, GoblinError> {
     let return_data_len: &mut usize = &mut 0;
 
     let call_result = unsafe {
-        call::static_call(
+        hostio::static_call_contract(
             contract.as_ptr(),
             calldata.as_ptr(),
             calldata.len(),
@@ -60,7 +58,7 @@ pub fn transfer(
     let return_data_len: &mut usize = &mut 0;
 
     let call_result = unsafe {
-        call::clear_cache_and_call(
+        hostio::call_contract(
             contract.as_ptr(),
             calldata.as_ptr(),
             calldata.len(),
@@ -107,7 +105,7 @@ pub fn transfer_from(
     let return_data_len: &mut usize = &mut 0;
 
     let call_result = unsafe {
-        call::clear_cache_and_call(
+        hostio::call_contract(
             contract.as_ptr(),
             calldata.as_ptr(),
             calldata.len(),

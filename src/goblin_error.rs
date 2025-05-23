@@ -1,5 +1,6 @@
 #[derive(Debug)]
 pub enum GoblinError {
+    Reentrant = 0,
     InvalidPayload = 1,
     InvalidSelector = 2,
     UnsupportedDecimals = 3,
