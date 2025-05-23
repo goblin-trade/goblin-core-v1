@@ -1,6 +1,7 @@
 #![cfg_attr(not(test), no_std)]
 #![cfg_attr(not(test), no_main)]
 
+use call_header::CallHeader;
 use core::mem::MaybeUninit;
 use getter::*;
 use goblin_error::*;
@@ -9,6 +10,7 @@ use instructions::*;
 use settlement::{EthDelta, TokenDeltaList};
 use types::Address;
 
+pub mod call_header;
 pub mod erc20;
 pub mod eth;
 pub mod events;
@@ -46,27 +48,20 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
     let eth_delta = &mut EthDelta::default();
     let erc20_deltas = &mut TokenDeltaList::default();
 
-    // input[0] is the header byte
-    //
-    // * Pos 0 bit tells whether to deposit ETH
-    // * Pos 1 tells whether a recipient is provided, otherwise the recipient is msg.sender
-    // * Pos 2 tells whether to transfer to recipient internally
-    //   - Value is ignored if recipient is not provided
-    //   - If true, then `withdrawal_due` is credited internally to recipient's TraderTokenState
-    //   - If false, the amount is withdrawn to the recipient
-    //
-    // * Remaining MSB 5 bits give the number of calls. The max value
-    // is 2^5 - 1 = 31
-    //
-    let header_byte = input[0];
-    let deposit_native_token = (header_byte & 0b0000_0001) != 0;
-    let recipient_provided = (header_byte & 0b0000_0010) != 0;
-    let transfer_to_recipient_internally = (header_byte & 0b0000_0100) != 0;
-
-    let num_calls = (header_byte >> 3) as usize;
+    let CallHeader {
+        deposit_native_token,
+        recipient_provided,
+        transfer_to_recipient_internally,
+        num_calls,
+    } = CallHeader::decode(input[0]);
 
     if deposit_native_token {
         ix_deposit_eth(eth_delta)?;
+    }
+
+    if len >= 2 {
+        let custom_token_count = input[1];
+        // Each token address occupies 20 bytes
     }
 
     let mut msg_sender_maybe = MaybeUninit::<Address>::uninit();
