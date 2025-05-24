@@ -10,7 +10,7 @@
 /// * Remaining MSB 5 bits give the number of calls. The max value
 /// is 2^5 - 1 = 31
 pub struct CallHeader {
-    pub deposit_native_token: bool,
+    pub deposit_eth: bool,
     pub recipient_provided: bool,
     pub transfer_to_recipient_internally: bool,
     pub num_calls: u8,
@@ -19,7 +19,7 @@ pub struct CallHeader {
 impl CallHeader {
     pub fn decode(header_byte: u8) -> Self {
         CallHeader {
-            deposit_native_token: (header_byte & 0b0000_0001) != 0,
+            deposit_eth: (header_byte & 0b0000_0001) != 0,
             recipient_provided: (header_byte & 0b0000_0010) != 0,
             transfer_to_recipient_internally: (header_byte & 0b0000_0100) != 0,
             num_calls: header_byte >> 3,
