@@ -1,29 +1,22 @@
-use crate::{goblin_error::GoblinError, require};
+use crate::{goblin_error::GoblinError, require, types::Address};
+
+const START_INDEX: usize = 4;
 
 pub fn read_custom_tokens<'a>(
+    custom_token_count: u8,
     input: &'a [u8; 512],
     len: usize,
 ) -> Result<&'a [[u8; 20]], GoblinError> {
-    let custom_tokens = if len > 21 {
-        let custom_token_count = input[21];
+    let list_len = custom_token_count as usize * core::mem::size_of::<Address>();
+    let total_len = START_INDEX + list_len; // 24
+    require!(len >= total_len, GoblinError::InvalidPayload);
 
-        // Reduce limit to 16, that way size occupied is 16 * 20 = 320 bytes
-        require!(
-            custom_token_count < 16,
-            GoblinError::CustomTokenLimitExceeded
-        );
-
-        let token_list_size = custom_token_count as usize * 20;
-        require!(len >= 22 + token_list_size, GoblinError::InvalidPayload);
-
-        unsafe {
-            core::slice::from_raw_parts(
-                input[22..(22 + token_list_size)].as_ptr() as *const [u8; 20],
-                custom_token_count as usize,
-            )
-        }
-    } else {
-        &[]
+    // end index exclusive = len
+    let custom_tokens = unsafe {
+        core::slice::from_raw_parts(
+            input[START_INDEX..total_len].as_ptr() as *const [u8; 20],
+            custom_token_count as usize,
+        )
     };
 
     Ok(custom_tokens)

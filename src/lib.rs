@@ -64,7 +64,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
         msg_sender
     };
 
-    let custom_tokens = read_custom_tokens(input, len)?;
+    let custom_tokens = read_custom_tokens(header.custom_token_count, input, len)?;
 
     if header.track_eth_delta {
         ix_deposit_eth(eth_delta)?;
