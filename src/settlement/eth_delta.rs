@@ -56,20 +56,22 @@ impl EthDelta {
     /// * Shortfall is deducted from `withdrawal_due`, i.e. less tokens are transferrred
     /// out if slot balance is insufficient.
     /// * `withdrawal_due` is transferred to `recipient`.
-    /// * `transfer_to_recipient_internally` allows funds to be credited internally
+    /// * `withdraw_internally` allows funds to be credited internally
     /// to TraderTokenState(recipient)
     ///
     pub fn settle(
         &mut self,
         msg_sender: &Address,
         recipient: &Address,
-        transfer_to_recipient_internally: bool,
+        withdraw_internally: bool,
     ) -> Result<(), GoblinError> {
         let shortfall = TraderTokenState::update_free_atoms_and_store(
             &TraderTokenKey::native_key(msg_sender),
             NATIVE_TOKEN_DECIMALS,
             self.slot_deduction_due,
         )?;
+
+        // ETH shortfall cannot be a-posteriori deposited, therefore deduct
         self.withdrawal_due -= shortfall;
 
         // 2. Transfer ETH out
@@ -77,7 +79,7 @@ impl EthDelta {
         debug_assert!(self.withdrawal_due >= Delta::ZERO);
 
         if self.withdrawal_due > Delta::ZERO {
-            if transfer_to_recipient_internally {
+            if withdraw_internally {
                 // No shortfall case because balance is added
                 TraderTokenState::update_free_atoms_and_store(
                     &TraderTokenKey::native_key(recipient),

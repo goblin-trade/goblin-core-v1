@@ -38,7 +38,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
     let msg_reentrant = unsafe { hostio::msg_reentrant() };
     require!(!msg_reentrant, GoblinError::Reentrant);
 
-    require!(len >= 2, GoblinError::InvalidPayload);
+    require!(len >= 4, GoblinError::InvalidPayload);
 
     let mut input_maybe = MaybeUninit::<[u8; 512]>::uninit();
     let input = unsafe {
@@ -49,14 +49,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
     let eth_delta = &mut EthDelta::default();
     let erc20_deltas = &mut TokenDeltaList::default();
 
-    let CallHeader {
-        deposit_eth,
-        recipient_provided,
-        transfer_to_recipient_internally,
-        num_calls,
-        custom_token_count,
-        token_delta_count,
-    } = CallHeader::decode([input[0], input[1]]);
+    let header = CallHeader::decode([input[0], input[1], input[2], input[3]]);
 
     let mut msg_sender_maybe = MaybeUninit::<Address>::uninit();
     let msg_sender = unsafe {
@@ -64,7 +57,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
         msg_sender_maybe.assume_init_ref()
     };
 
-    let recipient = if recipient_provided {
+    let recipient = if header.recipient_provided {
         require!(len >= 21, GoblinError::InvalidPayload);
         unsafe { &*(input[1..21].as_ptr() as *const Address) }
     } else {
@@ -73,30 +66,10 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
 
     let custom_tokens = read_custom_tokens(input, len)?;
 
-    let mut offset: usize = 22 + custom_tokens.len();
-    for _ in 0..num_calls {
-        require!(len > offset, GoblinError::InvalidPayload);
-
-        let selector = input[offset];
-        offset += 1;
-
-        let payload = &input[offset..len];
-        let bytes_used = match selector {
-            IX_0_WITHDRAW_ETH => ix_0_withdraw_eth(payload, eth_delta),
-            // IX_1_DEPOSIT_ERC20 => ix_1_credit_erc20(payload),
-            // IX_2_WITHDRAW_ERC20 => ix_2_withdraw_erc20(payload),
-            // IX_3_PLACE_MULTIPLE_ORDERS => ix_3_place_multiple_orders(payload),
-            // Getters
-            // GET_10_TRADER_TOKEN_STATE => get_10_trader_token_state(payload),
-            _ => Err(GoblinError::InvalidSelector),
-        }?;
-        offset += bytes_used;
-    }
-
-    if deposit_eth {
+    if header.track_eth_delta {
         ix_deposit_eth(eth_delta)?;
     }
-    eth_delta.settle(&msg_sender, recipient, transfer_to_recipient_internally)?;
+    eth_delta.settle(&msg_sender, recipient, header.withdraw_internally)?;
     // TODO settle token_delta_list
 
     // Write cache to trie
