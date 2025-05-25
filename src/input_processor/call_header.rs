@@ -1,10 +1,10 @@
 pub struct CallHeader {
     /// Number of custom token addresses provided, maximum 15
-    pub custom_token_count: u8,
+    pub custom_token_count: usize,
 
     /// Number of token deltas to update, i.e. perform deposit or withdraw
     /// operations for these many tokens
-    pub token_delta_count: u8,
+    pub token_delta_count: usize,
 
     /// Whether to deposit or withdraw ETH
     pub track_eth_delta: bool,
@@ -34,8 +34,8 @@ pub struct CallHeader {
 impl CallHeader {
     pub fn decode(header_bytes: [u8; 4]) -> Self {
         CallHeader {
-            custom_token_count: header_bytes[0] & 0b0000_1111,
-            token_delta_count: header_bytes[0] >> 4,
+            custom_token_count: (header_bytes[0] & 0b0000_1111) as usize,
+            token_delta_count: (header_bytes[0] >> 4) as usize,
 
             track_eth_delta: (header_bytes[1] & 0b0000_0001) != 0,
             deposit_shortfall: (header_bytes[1] & 0b0000_0010) != 0,
