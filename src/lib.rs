@@ -38,7 +38,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
     let msg_reentrant = unsafe { hostio::msg_reentrant() };
     require!(!msg_reentrant, GoblinError::Reentrant);
 
-    require!(len > 0, GoblinError::InvalidPayload);
+    require!(len >= 2, GoblinError::InvalidPayload);
 
     let mut input_maybe = MaybeUninit::<[u8; 512]>::uninit();
     let input = unsafe {
@@ -54,11 +54,9 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
         recipient_provided,
         transfer_to_recipient_internally,
         num_calls,
-    } = CallHeader::decode(input[0]);
-
-    if deposit_eth {
-        ix_deposit_eth(eth_delta)?;
-    }
+        custom_token_count,
+        token_delta_count,
+    } = CallHeader::decode([input[0], input[1]]);
 
     let mut msg_sender_maybe = MaybeUninit::<Address>::uninit();
     let msg_sender = unsafe {
@@ -95,6 +93,9 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
         offset += bytes_used;
     }
 
+    if deposit_eth {
+        ix_deposit_eth(eth_delta)?;
+    }
     eth_delta.settle(&msg_sender, recipient, transfer_to_recipient_internally)?;
     // TODO settle token_delta_list
 

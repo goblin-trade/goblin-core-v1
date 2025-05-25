@@ -43,15 +43,6 @@ impl EthDelta {
         Ok(())
     }
 
-    /// Prepare the given amount for withdrawal
-    /// Max legal value is i64::MAX. Pass this value to withdraw all available
-    /// tokens.
-    pub fn prepare_withdrawal(&mut self, amount: Atoms) -> Result<(), GoblinError> {
-        self.slot_deduction_due = self.slot_deduction_due.add(amount)?;
-        self.withdrawal_due = self.withdrawal_due.add(amount)?;
-        Ok(())
-    }
-
     /// Execute the withdrawal
     pub fn execute_withdraw(&mut self, amount: Atoms) -> Result<(), GoblinError> {
         self.slot_deduction_due = self.slot_deduction_due.add(amount)?;
