@@ -6,7 +6,7 @@ pub fn read_custom_tokens<'a>(
     custom_token_count: u8,
     input: &'a [u8; 512],
     len: usize,
-) -> Result<&'a [[u8; 20]], GoblinError> {
+) -> Result<(&'a [[u8; 20]], usize), GoblinError> {
     let list_len = custom_token_count as usize * core::mem::size_of::<Address>();
     let total_len = START_INDEX + list_len; // 24
     require!(len >= total_len, GoblinError::InvalidPayload);
@@ -19,5 +19,5 @@ pub fn read_custom_tokens<'a>(
         )
     };
 
-    Ok(custom_tokens)
+    Ok((custom_tokens, total_len))
 }

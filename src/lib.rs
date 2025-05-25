@@ -64,11 +64,12 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
         msg_sender
     };
 
-    let custom_tokens = read_custom_tokens(header.custom_token_count, input, len)?;
+    let (custom_tokens, len_covered) = read_custom_tokens(header.custom_token_count, input, len)?;
 
-    if header.track_eth_delta {
-        ix_deposit_eth(eth_delta)?;
-    }
+    eth_delta.update_eth_delta(header.track_eth_delta, len_covered, input, len)?;
+
+    // TODO process instructions
+
     eth_delta.settle(&msg_sender, recipient, header.withdraw_internally)?;
     // TODO settle token_delta_list
 
