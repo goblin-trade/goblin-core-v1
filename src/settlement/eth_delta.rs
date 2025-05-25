@@ -50,20 +50,21 @@ impl EthDelta {
     pub fn update_eth_delta(
         &mut self,
         track_eth_delta: bool,
-        start_index: usize,
         input: &[u8; 512],
         len: usize,
+        offset: &mut usize,
     ) -> Result<(), GoblinError> {
         if !track_eth_delta {
             return Ok(());
         }
 
-        let total_len = start_index + 8;
-        require!(len >= total_len, GoblinError::InvalidPayload);
+        let start_index = *offset;
+        *offset += 8;
+        require!(len >= *offset, GoblinError::InvalidPayload);
 
         // Add positive delta
         // Negative or zero delta is no-op
-        let delta = unsafe { &*(input[start_index..(start_index + 8)].as_ptr() as *const Delta) };
+        let delta = unsafe { &*(input[start_index..*offset].as_ptr() as *const Delta) };
         if *delta > Delta::ZERO {
             self.slot_deduction_due = self.slot_deduction_due.checked_add(*delta)?;
             self.withdrawal_due = self.withdrawal_due.checked_add(*delta)?;

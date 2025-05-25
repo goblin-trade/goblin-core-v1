@@ -7,6 +7,7 @@ use getter::*;
 use goblin_error::*;
 use hostio::*;
 use instructions::*;
+use read_recipient::read_recipient;
 use settlement::{EthDelta, TokenDeltaList};
 use tokens::read_custom_tokens;
 use types::Address;
@@ -21,6 +22,7 @@ pub mod hostio;
 pub mod instructions;
 pub mod market_params;
 pub mod quantities;
+pub mod read_recipient;
 pub mod settlement;
 pub mod state;
 pub mod tokens;
@@ -38,16 +40,14 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
     let msg_reentrant = unsafe { hostio::msg_reentrant() };
     require!(!msg_reentrant, GoblinError::Reentrant);
 
-    require!(len >= 4, GoblinError::InvalidPayload);
+    let offset = &mut 4usize;
+    require!(len >= *offset, GoblinError::InvalidPayload);
 
     let mut input_maybe = MaybeUninit::<[u8; 512]>::uninit();
     let input = unsafe {
         read_args(input_maybe.as_mut_ptr() as *mut u8);
         input_maybe.assume_init_ref()
     };
-
-    let eth_delta = &mut EthDelta::default();
-    let erc20_deltas = &mut TokenDeltaList::default();
 
     let header = CallHeader::decode([input[0], input[1], input[2], input[3]]);
 
@@ -56,17 +56,15 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
         hostio::msg_sender(msg_sender_maybe.as_mut_ptr() as *mut u8);
         msg_sender_maybe.assume_init_ref()
     };
+    let recipient = read_recipient(header.recipient_provided, input, len, offset, msg_sender)?;
 
-    let recipient = if header.recipient_provided {
-        require!(len >= 21, GoblinError::InvalidPayload);
-        unsafe { &*(input[1..21].as_ptr() as *const Address) }
-    } else {
-        msg_sender
-    };
+    let custom_tokens = read_custom_tokens(header.custom_token_count, input, len, offset)?;
 
-    let (custom_tokens, len_covered) = read_custom_tokens(header.custom_token_count, input, len)?;
+    let eth_delta = &mut EthDelta::default();
+    eth_delta.update_eth_delta(header.track_eth_delta, input, len, offset)?;
 
-    eth_delta.update_eth_delta(header.track_eth_delta, len_covered, input, len)?;
+    let erc20_deltas = &mut TokenDeltaList::default();
+    // TODO decode and update token list delta
 
     // TODO process instructions
 

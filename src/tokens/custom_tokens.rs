@@ -1,23 +1,24 @@
 use crate::{goblin_error::GoblinError, require, types::Address};
 
-const START_INDEX: usize = 4;
-
 pub fn read_custom_tokens<'a>(
     custom_token_count: u8,
     input: &'a [u8; 512],
     len: usize,
-) -> Result<(&'a [[u8; 20]], usize), GoblinError> {
-    let list_len = custom_token_count as usize * core::mem::size_of::<Address>();
-    let total_len = START_INDEX + list_len; // 24
-    require!(len >= total_len, GoblinError::InvalidPayload);
+    offset: &mut usize,
+) -> Result<&'a [Address], GoblinError> {
+    let start_index = *offset;
 
-    // end index exclusive = len
+    let list_len = custom_token_count as usize * 20;
+    *offset += list_len;
+
+    require!(len >= *offset, GoblinError::InvalidPayload);
+
     let custom_tokens = unsafe {
         core::slice::from_raw_parts(
-            input[START_INDEX..total_len].as_ptr() as *const [u8; 20],
+            input[start_index..*offset].as_ptr() as *const [u8; 20],
             custom_token_count as usize,
         )
     };
 
-    Ok((custom_tokens, total_len))
+    Ok(custom_tokens)
 }
