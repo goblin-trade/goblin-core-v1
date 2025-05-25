@@ -7,6 +7,7 @@ use goblin_error::*;
 use hostio::*;
 use input_processor::read_token_deltas;
 use instructions::*;
+use quantities::Delta;
 use settlement::{EthDelta, IndexedTokenDelta, TokenDeltaList};
 use types::Address;
 
@@ -62,14 +63,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
     let eth_delta = &mut EthDelta::default();
     eth_delta.update_eth_delta(header.track_eth_delta, input, len, offset)?;
 
-    let erc20_deltas = &mut TokenDeltaList::default();
-
-    // Holds deltas for deposits and withdrawals
-    // Market operations can introduce new elements from the hardcoded list.
-    // We should be able to insert more elements
-    let token_deltas = read_token_deltas(header.token_delta_count, input, len, offset);
-
-    // TODO process instructions
+    let token_delta_list = read_token_deltas(header.token_delta_count, input, len, offset)?;
 
     eth_delta.settle(&msg_sender, recipient, header.withdraw_internally)?;
     // TODO settle token_delta_list
