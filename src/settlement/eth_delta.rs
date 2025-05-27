@@ -1,7 +1,4 @@
-use core::{
-    mem::MaybeUninit,
-    ops::{Add, Sub},
-};
+use core::mem::MaybeUninit;
 
 use crate::{
     eth,
@@ -14,83 +11,57 @@ use crate::{
 };
 
 /// Eth atoms due to be deducted from slot and to be transferred out on settlement
-///
-/// EthDelta is tracked separately from TokenDeltaList because
-/// * There is no address to track
-/// * `native_withdrawal_due` can only have positive sign. ETH deposits
-/// happen a-priori via msg.value, not during settlement.
-///
-/// Arithmetic on delta should be safe. Revert if any transaction overflows or underflows.
-///
 #[derive(Default)]
 pub struct EthDelta {
-    /// atoms due to be deducted from TraderTokenState (slot) on settlement
-    ///
-    /// * Positive: Deduct from TraderTokenState on settlement
-    /// * Negative: add to TraderTokenState on settlement
-    ///
-    /// When tokens are used up to place orders, increase the delta. This delta
-    /// must be squared off from TraderTokenState. Conversely if delta is negative,
-    /// square off by crediting atoms to TraderTokenState
-    ///
-    /// TraderTokenState should have sufficient balance to cover slot_deduction_due
-    /// on settlement, else the TX will revert due to insufficient funds.
-    pub slot_deduction_due: Delta,
+    /// atoms due to be withdrawn. Read from payload.
+    pub withdrawal_due: Atoms,
 
-    /// atoms due to be transferred out to trader's ETH balance on settlement
-    pub withdrawal_due: Delta,
+    /// Atoms credited by msg.value
+    pub msg_value_atoms: Atoms,
+
+    /// Delta consumed by matching engine. If value is negative then tokens were emitted
+    /// instead of consumed.
+    pub consumed_by_engine: Delta,
 }
 
 impl EthDelta {
-    /// Update ETH delta if `track_eth_delta` is true
-    ///
-    /// - Credit msg.value
-    /// - Read `delta` from input bytes and subtract. Since credit happens only with
-    /// msg.value, negative values of `delta` are a no-op
-    pub fn update_eth_delta(
-        &mut self,
+    pub fn init(
         track_eth_delta: bool,
         input: &[u8; 512],
         len: usize,
         offset: &mut usize,
-    ) -> Result<(), GoblinError> {
+    ) -> Result<Self, GoblinError> {
         if !track_eth_delta {
-            return Ok(());
+            return Ok(EthDelta::default());
         }
 
         let start_index = *offset;
         *offset += 8;
         require!(len >= *offset, GoblinError::InvalidPayload);
+        let withdrawal_due = *unsafe { &*(input[start_index..*offset].as_ptr() as *const Atoms) };
 
-        // Add positive delta
-        // Negative or zero delta is no-op
-        let delta = unsafe { &*(input[start_index..*offset].as_ptr() as *const Delta) };
-        if *delta > Delta::ZERO {
-            self.slot_deduction_due = self.slot_deduction_due.checked_add(*delta)?;
-            self.withdrawal_due = self.withdrawal_due.checked_add(*delta)?;
-        }
-
-        // Read msg.value and subtract from delta
         let mut msg_value_maybe = MaybeUninit::<RawAtoms>::uninit();
         let msg_value = unsafe {
             hostio::msg_value(msg_value_maybe.as_mut_ptr() as *mut u8);
             msg_value_maybe.assume_init_ref()
         };
+        let msg_value_atoms = Atoms::from_raw_atoms(msg_value, NATIVE_TOKEN_DECIMALS)?;
 
-        let atoms_in = Atoms::from_raw_atoms(msg_value, NATIVE_TOKEN_DECIMALS)?;
-        self.slot_deduction_due = self.slot_deduction_due.sub(atoms_in)?;
-
-        Ok(())
+        Ok(EthDelta {
+            withdrawal_due,
+            msg_value_atoms,
+            consumed_by_engine: Delta::ZERO,
+        })
     }
 
     /// Settle, i.e. update the trader's token state and transfer ETH out
     ///
-    /// * `slot_deduction_due` is applied on TraderTokenState(msg_sender)
-    /// * Shortfall is deducted from `withdrawal_due`, i.e. less tokens are transferrred
-    /// out if slot balance is insufficient.
-    /// * `withdrawal_due` is transferred to `recipient`.
-    /// * `withdraw_internally` allows funds to be credited internally
-    /// to TraderTokenState(recipient)
+    /// # Arguments
+    ///
+    /// * `msg_sender` - Earns msg_value_atoms and pays for the delta due
+    /// * `recipient` - Receives `withdrawal_due`
+    /// * `withdraw_internally` - Whether to credit ETH to the recipient's TraderTokenState
+    /// or to transfer it out
     ///
     pub fn settle(
         &mut self,
@@ -98,30 +69,23 @@ impl EthDelta {
         recipient: &Address,
         withdraw_internally: bool,
     ) -> Result<(), GoblinError> {
-        let shortfall = TraderTokenState::update_free_atoms_and_store(
+        // Update trader state for msg.sender
+        TraderTokenState::credit_eth_delta(
+            self,
             &TraderTokenKey::native_key(msg_sender),
             NATIVE_TOKEN_DECIMALS,
-            self.slot_deduction_due,
         )?;
 
-        // ETH shortfall cannot be a-posteriori deposited, therefore deduct
-        self.withdrawal_due -= shortfall;
-
-        // 2. Transfer ETH out
-        // There is no transfer in case for ETH, i.e. native_withdrawal_due cannot be negative
-        debug_assert!(self.withdrawal_due >= Delta::ZERO);
-
-        if self.withdrawal_due > Delta::ZERO {
+        // Transfer ETH out to recipient
+        if self.withdrawal_due > Atoms::ZERO {
             if withdraw_internally {
-                // No shortfall case because balance is added
-                TraderTokenState::update_free_atoms_and_store(
+                TraderTokenState::add_free_atoms_and_store(
                     &TraderTokenKey::native_key(recipient),
                     NATIVE_TOKEN_DECIMALS,
-                    self.withdrawal_due.rev(),
-                )?;
+                    self.withdrawal_due,
+                );
             } else {
-                let atoms_out = self.withdrawal_due.abs();
-                let raw_atoms_out = atoms_out.to_raw_atoms(NATIVE_TOKEN_DECIMALS)?;
+                let raw_atoms_out = self.withdrawal_due.to_raw_atoms(NATIVE_TOKEN_DECIMALS)?;
                 eth::transfer_out(recipient, &raw_atoms_out)?;
             }
         }

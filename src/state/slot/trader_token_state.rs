@@ -1,9 +1,14 @@
-use core::{mem::MaybeUninit, ops::Sub};
+use core::{
+    mem::MaybeUninit,
+    ops::{Add, Sub},
+};
 
 use crate::{
     goblin_error::GoblinError,
     native_keccak256,
     quantities::{Atoms, Delta},
+    require,
+    settlement::EthDelta,
     state::{slot_key::SlotKey, SlotState},
     storage_cache_bytes32, storage_load_bytes32,
     types::{Address, NATIVE_TOKEN},
@@ -77,36 +82,44 @@ impl TraderTokenState {
         self.atoms_locked == Atoms::ZERO && self.atoms_free == Atoms::ZERO && self.decimals == 0
     }
 
-    /// Apply delta on free atoms, store to slot and return the shortfall
-    ///
-    /// If shortfall is present, it must be subtracted from `withdrawal_due`
-    pub fn update_free_atoms_and_store(
+    pub fn credit_eth_delta(
+        eth_delta: &mut EthDelta,
         key: &TraderTokenKey,
         decimals: u8,
-        delta: Delta,
-    ) -> Result<Delta, GoblinError> {
+    ) -> Result<(), GoblinError> {
         let mut trader_token_state_maybe = MaybeUninit::<TraderTokenState>::uninit();
         let trader_token_state =
             unsafe { TraderTokenState::load(key, &mut trader_token_state_maybe) };
 
+        let atoms_free = (trader_token_state.atoms_free + eth_delta.msg_value_atoms).to_delta()?;
+        let atoms_due_delta = eth_delta.consumed_by_engine.add(eth_delta.withdrawal_due)?;
+
+        require!(
+            atoms_free >= atoms_due_delta,
+            GoblinError::CannotDepositEthOnSettlement
+        );
+        trader_token_state.atoms_free = atoms_free.checked_sub(atoms_due_delta)?.abs();
+
         trader_token_state.decimals = decimals;
-
-        let available = trader_token_state.atoms_free;
-        let mut shortfall = Delta::ZERO;
-
-        // Delta is positive and exceeds available free atoms
-        // Set available free atoms to 0 and calculate the shortfall
-        if delta > available.to_delta()? {
-            trader_token_state.atoms_free = Atoms::ZERO;
-            shortfall = delta.sub(available)?;
-        } else {
-            trader_token_state.atoms_free = available.sub(delta)?;
-        }
-
         unsafe {
             trader_token_state.store(key);
         }
-        Ok(shortfall)
+        Ok(())
+    }
+
+    /// Apply delta on free atoms, store to slot and return the shortfall
+    ///
+    /// If shortfall is present, it must be subtracted from `withdrawal_due`
+    pub fn add_free_atoms_and_store(key: &TraderTokenKey, decimals: u8, atoms: Atoms) {
+        let mut trader_token_state_maybe = MaybeUninit::<TraderTokenState>::uninit();
+        let trader_token_state =
+            unsafe { TraderTokenState::load(key, &mut trader_token_state_maybe) };
+
+        trader_token_state.atoms_free += atoms;
+        trader_token_state.decimals = decimals;
+        unsafe {
+            trader_token_state.store(key);
+        }
     }
 }
 

@@ -60,8 +60,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
     let custom_tokens =
         input_processor::read_custom_tokens(header.custom_token_count, input, len, offset)?;
 
-    let eth_delta = &mut EthDelta::default();
-    eth_delta.update_eth_delta(header.track_eth_delta, input, len, offset)?;
+    let mut eth_delta = EthDelta::init(header.track_eth_delta, input, len, offset)?;
 
     let token_delta_list = read_token_deltas(header.token_delta_count, input, len, offset)?;
 

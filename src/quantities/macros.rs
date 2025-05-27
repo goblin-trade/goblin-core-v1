@@ -60,6 +60,14 @@ macro_rules! define_custom_types {
                         other
                     }
                 }
+
+                pub fn max(self, other: Self) -> Self {
+                    if self.0 > other.0 {
+                        self
+                    } else {
+                        other
+                    }
+                }
             }
         )*
     };
