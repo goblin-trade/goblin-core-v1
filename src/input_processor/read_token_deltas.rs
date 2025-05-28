@@ -4,19 +4,19 @@ use crate::{
     settlement::{IndexedTokenDelta, TokenDeltaList, MAX_DELTAS},
 };
 
+use super::CallPayload;
+
 pub fn read_token_deltas<'a>(
     token_delta_count: usize,
-    input: &'a [u8; 512],
-    len: usize,
-    offset: &mut usize,
+    payload: &'a mut CallPayload,
 ) -> Result<TokenDeltaList<'a>, GoblinError> {
-    let start_index = *offset;
+    let start_index = payload.offset;
 
     let byte_count = token_delta_count * 9;
-    *offset += byte_count;
-    require!(len >= *offset, GoblinError::InvalidPayload);
+    payload.offset += byte_count;
+    require!(payload.len >= payload.offset, GoblinError::InvalidPayload);
 
-    let needed_bytes = &input[start_index..*offset];
+    let needed_bytes = &payload.input[start_index..payload.offset];
 
     let mut delta_bytes = [0u8; MAX_DELTAS * core::mem::size_of::<IndexedTokenDelta>()];
     delta_bytes[..byte_count].copy_from_slice(needed_bytes);

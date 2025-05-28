@@ -5,7 +5,7 @@ use core::mem::MaybeUninit;
 use getter::*;
 use goblin_error::*;
 use hostio::*;
-use input_processor::read_token_deltas;
+use input_processor::{read_token_deltas, CallPayload};
 use instructions::*;
 use quantities::Delta;
 use settlement::{EthDelta, IndexedTokenDelta, TokenDeltaList};
@@ -38,16 +38,15 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
     let msg_reentrant = unsafe { hostio::msg_reentrant() };
     require!(!msg_reentrant, GoblinError::Reentrant);
 
-    let offset = &mut 4usize;
-    require!(len >= *offset, GoblinError::InvalidPayload);
-
     let mut input_maybe = MaybeUninit::<[u8; 512]>::uninit();
-    let input = unsafe {
-        read_args(input_maybe.as_mut_ptr() as *mut u8);
-        input_maybe.assume_init_ref()
-    };
+    let payload = &mut CallPayload::new(len, &mut input_maybe)?;
 
-    let header = input_processor::CallHeader::decode([input[0], input[1], input[2], input[3]]);
+    let header = input_processor::CallHeader::decode([
+        payload.input[0],
+        payload.input[1],
+        payload.input[2],
+        payload.input[3],
+    ]);
 
     let mut msg_sender_maybe = MaybeUninit::<Address>::uninit();
     let msg_sender = unsafe {
@@ -55,16 +54,15 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
         msg_sender_maybe.assume_init_ref()
     };
     let recipient =
-        input_processor::read_recipient(header.recipient_provided, input, len, offset, msg_sender)?;
+        input_processor::read_recipient(header.recipient_provided, payload, msg_sender)?;
 
-    let custom_tokens =
-        input_processor::read_custom_tokens(header.custom_token_count, input, len, offset)?;
+    let mut eth_delta = EthDelta::init(header.track_eth_delta, payload)?;
 
-    let mut eth_delta = EthDelta::init(header.track_eth_delta, input, len, offset)?;
+    let custom_tokens = input_processor::read_custom_tokens(header.custom_token_count, payload)?;
+    let token_delta_list = input_processor::read_token_deltas(header.token_delta_count, payload)?;
 
-    let token_delta_list = read_token_deltas(header.token_delta_count, input, len, offset)?;
+    eth_delta.settle(&msg_sender, &recipient, header.withdraw_internally)?;
 
-    eth_delta.settle(&msg_sender, recipient, header.withdraw_internally)?;
     // TODO settle token_delta_list
 
     // Write cache to trie

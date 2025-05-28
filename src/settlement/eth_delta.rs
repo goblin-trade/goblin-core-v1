@@ -4,6 +4,7 @@ use crate::{
     eth,
     goblin_error::GoblinError,
     hostio,
+    input_processor::CallPayload,
     quantities::{Atoms, Delta, RawAtoms},
     require,
     state::{TraderTokenKey, TraderTokenState},
@@ -25,20 +26,16 @@ pub struct EthDelta {
 }
 
 impl EthDelta {
-    pub fn init(
-        track_eth_delta: bool,
-        input: &[u8; 512],
-        len: usize,
-        offset: &mut usize,
-    ) -> Result<Self, GoblinError> {
+    pub fn init(track_eth_delta: bool, payload: &mut CallPayload) -> Result<Self, GoblinError> {
         if !track_eth_delta {
             return Ok(EthDelta::default());
         }
 
-        let start_index = *offset;
-        *offset += 8;
-        require!(len >= *offset, GoblinError::InvalidPayload);
-        let withdrawal_due = *unsafe { &*(input[start_index..*offset].as_ptr() as *const Atoms) };
+        let start_index = payload.offset;
+        payload.offset += 8;
+        require!(payload.len >= payload.offset, GoblinError::InvalidPayload);
+        let withdrawal_due =
+            *unsafe { &*(payload.input[start_index..payload.offset].as_ptr() as *const Atoms) };
 
         let mut msg_value_maybe = MaybeUninit::<RawAtoms>::uninit();
         let msg_value = unsafe {
