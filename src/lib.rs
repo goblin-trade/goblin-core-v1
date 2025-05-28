@@ -53,6 +53,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
         hostio::msg_sender(msg_sender_maybe.as_mut_ptr() as *mut u8);
         msg_sender_maybe.assume_init_ref()
     };
+
     let recipient =
         input_processor::read_recipient(header.recipient_provided, payload, msg_sender)?;
 
@@ -61,7 +62,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
     let custom_tokens = input_processor::read_custom_tokens(header.custom_token_count, payload)?;
     let token_delta_list = input_processor::read_token_deltas(header.token_delta_count, payload)?;
 
-    eth_delta.settle(&msg_sender, &recipient, header.withdraw_internally)?;
+    // eth_delta.settle(&msg_sender, recipient, header.withdraw_internally)?;
 
     // TODO settle token_delta_list
 

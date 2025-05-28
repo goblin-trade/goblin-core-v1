@@ -37,4 +37,19 @@ impl<'a> CallPayload<'a> {
         let result_ref = self.decode_ref::<T>()?;
         Ok(result_ref.clone())
     }
+
+    pub fn decode_slice<T>(&mut self, len: usize) -> Result<&[T], GoblinError> {
+        let start_index = self.offset;
+        self.offset += core::mem::size_of::<T>() * len;
+        require!(self.len >= self.offset, GoblinError::InvalidPayload);
+
+        let result = unsafe {
+            core::slice::from_raw_parts(
+                self.input[start_index..self.offset].as_ptr() as *const T,
+                len,
+            )
+        };
+
+        Ok(result)
+    }
 }

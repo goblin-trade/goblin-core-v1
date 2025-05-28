@@ -31,11 +31,7 @@ impl EthDelta {
             return Ok(EthDelta::default());
         }
 
-        let start_index = payload.offset;
-        payload.offset += 8;
-        require!(payload.len >= payload.offset, GoblinError::InvalidPayload);
-        let withdrawal_due =
-            *unsafe { &*(payload.input[start_index..payload.offset].as_ptr() as *const Atoms) };
+        let withdrawal_due = payload.decode::<Atoms>()?;
 
         let mut msg_value_maybe = MaybeUninit::<RawAtoms>::uninit();
         let msg_value = unsafe {
