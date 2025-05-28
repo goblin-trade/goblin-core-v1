@@ -5,7 +5,7 @@ use core::mem::MaybeUninit;
 use getter::*;
 use goblin_error::*;
 use hostio::*;
-use input_processor::{read_token_deltas, CallPayload};
+use input_processor::{read_token_deltas, CallHeader, CallPayload};
 use instructions::*;
 use quantities::Delta;
 use settlement::{EthDelta, IndexedTokenDelta, TokenDeltaList};
@@ -38,15 +38,8 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
     let msg_reentrant = unsafe { hostio::msg_reentrant() };
     require!(!msg_reentrant, GoblinError::Reentrant);
 
-    let mut input_maybe = MaybeUninit::<[u8; 512]>::uninit();
-    let payload = &mut CallPayload::new(len, &mut input_maybe)?;
-
-    let header = input_processor::CallHeader::decode([
-        payload.input[0],
-        payload.input[1],
-        payload.input[2],
-        payload.input[3],
-    ]);
+    let payload = &mut CallPayload::new(len);
+    let header = CallHeader::init(payload)?;
 
     let mut msg_sender_maybe = MaybeUninit::<Address>::uninit();
     let msg_sender = unsafe {

@@ -1,3 +1,7 @@
+use crate::goblin_error::GoblinError;
+
+use super::CallPayload;
+
 pub struct CallHeader {
     /// Number of custom token addresses provided, maximum 15
     pub custom_token_count: usize,
@@ -32,21 +36,25 @@ pub struct CallHeader {
 }
 
 impl CallHeader {
-    pub fn decode(header_bytes: [u8; 4]) -> Self {
-        CallHeader {
-            custom_token_count: (header_bytes[0] & 0b0000_1111) as usize,
-            token_delta_count: (header_bytes[0] >> 4) as usize,
+    pub fn init(payload: &mut CallPayload) -> Result<Self, GoblinError> {
+        payload.advance_offset::<[u8; 4]>()?;
 
-            track_eth_delta: (header_bytes[1] & 0b0000_0001) != 0,
-            deposit_shortfall: (header_bytes[1] & 0b0000_0010) != 0,
-            recipient_provided: (header_bytes[1] & 0b0000_0100) != 0,
-            withdraw_internally: (header_bytes[1] & 0b0000_1000) != 0,
-            ix_collect_fee_count: header_bytes[1] >> 4,
+        let input = unsafe { payload.input_ref() };
 
-            ix_post_only_count: header_bytes[2],
+        Ok(CallHeader {
+            custom_token_count: (input[0] & 0b0000_1111) as usize,
+            token_delta_count: (input[0] >> 4) as usize,
 
-            ix_take_only_count: header_bytes[3] & 0b0000_1111,
-            ix_limit_order_count: header_bytes[3] >> 4,
-        }
+            track_eth_delta: (input[1] & 0b0000_0001) != 0,
+            deposit_shortfall: (input[1] & 0b0000_0010) != 0,
+            recipient_provided: (input[1] & 0b0000_0100) != 0,
+            withdraw_internally: (input[1] & 0b0000_1000) != 0,
+            ix_collect_fee_count: input[1] >> 4,
+
+            ix_post_only_count: input[2],
+
+            ix_take_only_count: input[3] & 0b0000_1111,
+            ix_limit_order_count: input[3] >> 4,
+        })
     }
 }
