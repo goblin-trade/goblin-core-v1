@@ -1,21 +1,19 @@
-use core::mem::MaybeUninit;
-
-use crate::{goblin_error::GoblinError, hostio, require};
+use crate::{
+    goblin_error::GoblinError, hostio::hostio_read_args, hostio_buffer::HostioBuffer, require,
+};
 
 pub const INPUT_SIZE: usize = 512;
+pub type PayloadBuffer = [u8; INPUT_SIZE];
 
 pub struct CallPayload {
     pub len: usize,
     pub offset: usize,
-    pub input: MaybeUninit<[u8; INPUT_SIZE]>,
+    pub input: HostioBuffer<PayloadBuffer>,
 }
 
 impl CallPayload {
     pub fn new(len: usize) -> Self {
-        let mut input = MaybeUninit::<[u8; INPUT_SIZE]>::uninit();
-        unsafe {
-            hostio::read_args(input.as_mut_ptr() as *mut u8);
-        };
+        let input = unsafe { hostio_read_args() };
 
         Self {
             len,
@@ -24,8 +22,8 @@ impl CallPayload {
         }
     }
 
-    pub unsafe fn input_ref(&self) -> &[u8; INPUT_SIZE] {
-        self.input.assume_init_ref()
+    pub unsafe fn input_ref(&self) -> &PayloadBuffer {
+        self.input.as_ref()
     }
 
     pub fn advance_offset<T>(&mut self) -> Result<(), GoblinError> {

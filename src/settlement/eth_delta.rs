@@ -1,12 +1,10 @@
-use core::mem::MaybeUninit;
-
 use crate::{
     eth,
     goblin_error::GoblinError,
-    hostio,
+    hostio::{self, hostio_msg_value},
+    hostio_buffer::HostioBuffer,
     input_processor::CallPayload,
     quantities::{Atoms, Delta, RawAtoms},
-    require,
     state::{TraderTokenKey, TraderTokenState},
     types::{Address, NATIVE_TOKEN_DECIMALS},
 };
@@ -33,12 +31,8 @@ impl EthDelta {
 
         let withdrawal_due = payload.decode::<Atoms>()?;
 
-        let mut msg_value_maybe = MaybeUninit::<RawAtoms>::uninit();
-        let msg_value = unsafe {
-            hostio::msg_value(msg_value_maybe.as_mut_ptr() as *mut u8);
-            msg_value_maybe.assume_init_ref()
-        };
-        let msg_value_atoms = Atoms::from_raw_atoms(msg_value, NATIVE_TOKEN_DECIMALS)?;
+        let msg_value = unsafe { hostio_msg_value() };
+        let msg_value_atoms = Atoms::from_raw_atoms(msg_value.as_ref(), NATIVE_TOKEN_DECIMALS)?;
 
         Ok(EthDelta {
             withdrawal_due,

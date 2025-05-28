@@ -12,7 +12,7 @@ use crate::{
 };
 
 #[cfg(all(not(test), not(target_arch = "wasm32")))]
-use crate::indexer_hostio;
+use crate::hostio::indexer_hostio;
 
 pub const IX_1_DEPOSIT_ERC20: u8 = 1;
 pub const IX_1_PAYLOAD_LEN: usize = core::mem::size_of::<CreditERC20Params>();

@@ -5,6 +5,7 @@ use core::mem::MaybeUninit;
 use getter::*;
 use goblin_error::*;
 use hostio::*;
+use hostio_buffer::HostioBuffer;
 use input_processor::{read_token_deltas, CallHeader, CallPayload};
 use instructions::*;
 use quantities::Delta;
@@ -26,9 +27,6 @@ pub mod state;
 pub mod tokens;
 pub mod types;
 
-#[cfg(all(not(test), not(target_arch = "wasm32")))]
-pub mod indexer_hostio;
-
 pub const ADDRESS: [u8; 20] = [
     0x88, 0x88, 0x41, 0x5d, 0xb8, 0x0e, 0xab, 0xcf, 0x58, 0x02, 0x83, 0xa3, 0xd6, 0x52, 0x49, 0x88,
     0x7d, 0x31, 0x61, 0xb0,
@@ -41,11 +39,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
     let payload = &mut CallPayload::new(len);
     let header = CallHeader::init(payload)?;
 
-    let mut msg_sender_maybe = MaybeUninit::<Address>::uninit();
-    let msg_sender = unsafe {
-        hostio::msg_sender(msg_sender_maybe.as_mut_ptr() as *mut u8);
-        msg_sender_maybe.assume_init_ref()
-    };
+    let msg_sender = unsafe { &hostio_msg_sender() };
 
     let recipient =
         input_processor::read_recipient(header.recipient_provided, payload, msg_sender)?;
@@ -53,7 +47,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
     let mut eth_delta = EthDelta::init(header.track_eth_delta, payload)?;
 
     let custom_tokens = input_processor::read_custom_tokens(header.custom_token_count, payload)?;
-    let token_delta_list = input_processor::read_token_deltas(header.token_delta_count, payload)?;
+    // let token_delta_list = input_processor::read_token_deltas(header.token_delta_count, payload)?;
 
     // eth_delta.settle(&msg_sender, recipient, header.withdraw_internally)?;
 
