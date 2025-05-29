@@ -24,7 +24,7 @@ pub struct EthDelta {
 }
 
 impl EthDelta {
-    pub fn init(track_eth_delta: bool, payload: &mut CallPayload) -> Result<Self, GoblinError> {
+    pub fn init(payload: &mut CallPayload, track_eth_delta: bool) -> Result<Self, GoblinError> {
         if !track_eth_delta {
             return Ok(EthDelta::default());
         }

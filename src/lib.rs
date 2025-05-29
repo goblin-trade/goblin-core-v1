@@ -42,12 +42,10 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
     let msg_sender = unsafe { &hostio_msg_sender() };
 
     let recipient =
-        input_processor::read_recipient(header.recipient_provided, payload, msg_sender)?;
-
-    let mut eth_delta = EthDelta::init(header.track_eth_delta, payload)?;
-
-    let custom_tokens = input_processor::read_custom_tokens(header.custom_token_count, payload)?;
-    // let token_delta_list = input_processor::read_token_deltas(header.token_delta_count, payload)?;
+        input_processor::read_recipient(payload, header.recipient_provided, msg_sender)?;
+    let mut eth_delta = EthDelta::init(payload, header.track_eth_delta)?;
+    let custom_tokens = input_processor::read_custom_tokens(payload, header.custom_token_count)?;
+    let token_delta_list = input_processor::read_token_deltas(payload, header.token_delta_count)?;
 
     // eth_delta.settle(&msg_sender, recipient, header.withdraw_internally)?;
 

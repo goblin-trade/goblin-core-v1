@@ -3,8 +3,8 @@ use crate::{goblin_error::GoblinError, hostio_buffer::HostioBuffer, types::Addre
 use super::CallPayload;
 
 pub fn read_recipient(
-    recipient_provided: bool,
     payload: &mut CallPayload,
+    recipient_provided: bool,
     msg_sender: &HostioBuffer<Address>,
 ) -> Result<Address, GoblinError> {
     if recipient_provided {
