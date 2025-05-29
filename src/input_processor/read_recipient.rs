@@ -5,11 +5,11 @@ use super::CallPayload;
 pub fn read_recipient(
     payload: &mut CallPayload,
     recipient_provided: bool,
-    msg_sender: &HostioBuffer<Address>,
+    msg_sender: &Address,
 ) -> Result<Address, GoblinError> {
     if recipient_provided {
         payload.decode::<Address>()
     } else {
-        Ok(*msg_sender.as_ref())
+        Ok(*msg_sender)
     }
 }

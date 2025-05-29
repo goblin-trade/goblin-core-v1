@@ -39,15 +39,15 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
     let payload = &mut CallPayload::new(len);
     let header = CallHeader::init(payload)?;
 
-    let msg_sender = unsafe { &hostio_msg_sender() };
+    let msg_sender = unsafe { hostio_msg_sender() };
 
     let recipient =
-        input_processor::read_recipient(payload, header.recipient_provided, msg_sender)?;
+        input_processor::read_recipient(payload, header.recipient_provided, msg_sender.as_ref())?;
     let mut eth_delta = EthDelta::init(payload, header.track_eth_delta)?;
     let custom_tokens = input_processor::read_custom_tokens(payload, header.custom_token_count)?;
     let token_delta_list = input_processor::read_token_deltas(payload, header.token_delta_count)?;
 
-    // eth_delta.settle(&msg_sender, recipient, header.withdraw_internally)?;
+    eth_delta.settle(msg_sender.as_ref(), &recipient, header.withdraw_internally)?;
 
     // TODO settle token_delta_list
 
