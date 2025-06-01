@@ -1,3 +1,5 @@
+use core::{mem::MaybeUninit, ops::Add};
+
 use crate::{
     eth,
     goblin_error::GoblinError,
@@ -5,7 +7,8 @@ use crate::{
     hostio_buffer::HostioBuffer,
     input_processor::CallPayload,
     quantities::{Atoms, Delta, RawAtoms},
-    state::{TraderTokenKey, TraderTokenState},
+    require,
+    state::{SlotState, TraderTokenKey, TraderTokenState},
     types::{Address, NATIVE_TOKEN_DECIMALS},
 };
 
@@ -56,20 +59,15 @@ impl EthDelta {
         recipient: &Address,
         withdraw_internally: bool,
     ) -> Result<(), GoblinError> {
-        // Update trader state for msg.sender
-        TraderTokenState::credit_eth_delta(
-            self,
-            &TraderTokenKey::native_key(msg_sender),
-            NATIVE_TOKEN_DECIMALS,
-        )?;
+        self.settle_for_sender(msg_sender)?;
 
-        // Transfer ETH out to recipient
+        // Settle pending withdrawal for recipient
         if self.withdrawal_due > Atoms::ZERO {
             if withdraw_internally {
                 TraderTokenState::add_free_atoms_and_store(
                     &TraderTokenKey::native_key(recipient),
-                    NATIVE_TOKEN_DECIMALS,
                     self.withdrawal_due,
+                    NATIVE_TOKEN_DECIMALS,
                 );
             } else {
                 let raw_atoms_out = self.withdrawal_due.to_raw_atoms(NATIVE_TOKEN_DECIMALS)?;
@@ -77,6 +75,28 @@ impl EthDelta {
             }
         }
 
+        Ok(())
+    }
+
+    fn settle_for_sender(&self, msg_sender: &Address) -> Result<(), GoblinError> {
+        let key = &TraderTokenKey::native_key(msg_sender);
+        let mut trader_token_state_maybe = MaybeUninit::<TraderTokenState>::uninit();
+        let trader_token_state =
+            unsafe { TraderTokenState::load(key, &mut trader_token_state_maybe) };
+
+        let atoms_free = (trader_token_state.atoms_free + self.msg_value_atoms).to_delta()?;
+        let atoms_due_delta = self.consumed_by_engine.add(self.withdrawal_due)?;
+
+        require!(
+            atoms_free >= atoms_due_delta,
+            GoblinError::CannotDepositEthOnSettlement
+        );
+        trader_token_state.atoms_free = atoms_free.checked_sub(atoms_due_delta)?.abs();
+
+        trader_token_state.decimals = NATIVE_TOKEN_DECIMALS;
+        unsafe {
+            trader_token_state.store(key);
+        }
         Ok(())
     }
 }

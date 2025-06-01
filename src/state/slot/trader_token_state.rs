@@ -82,35 +82,7 @@ impl TraderTokenState {
         self.atoms_locked == Atoms::ZERO && self.atoms_free == Atoms::ZERO && self.decimals == 0
     }
 
-    pub fn credit_eth_delta(
-        eth_delta: &mut EthDelta,
-        key: &TraderTokenKey,
-        decimals: u8,
-    ) -> Result<(), GoblinError> {
-        let mut trader_token_state_maybe = MaybeUninit::<TraderTokenState>::uninit();
-        let trader_token_state =
-            unsafe { TraderTokenState::load(key, &mut trader_token_state_maybe) };
-
-        let atoms_free = (trader_token_state.atoms_free + eth_delta.msg_value_atoms).to_delta()?;
-        let atoms_due_delta = eth_delta.consumed_by_engine.add(eth_delta.withdrawal_due)?;
-
-        require!(
-            atoms_free >= atoms_due_delta,
-            GoblinError::CannotDepositEthOnSettlement
-        );
-        trader_token_state.atoms_free = atoms_free.checked_sub(atoms_due_delta)?.abs();
-
-        trader_token_state.decimals = decimals;
-        unsafe {
-            trader_token_state.store(key);
-        }
-        Ok(())
-    }
-
-    /// Apply delta on free atoms, store to slot and return the shortfall
-    ///
-    /// If shortfall is present, it must be subtracted from `withdrawal_due`
-    pub fn add_free_atoms_and_store(key: &TraderTokenKey, decimals: u8, atoms: Atoms) {
+    pub fn add_free_atoms_and_store(key: &TraderTokenKey, atoms: Atoms, decimals: u8) {
         let mut trader_token_state_maybe = MaybeUninit::<TraderTokenState>::uninit();
         let trader_token_state =
             unsafe { TraderTokenState::load(key, &mut trader_token_state_maybe) };

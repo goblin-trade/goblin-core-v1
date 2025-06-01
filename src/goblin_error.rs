@@ -15,6 +15,7 @@ pub enum GoblinError {
     DeltaOverflow = 12,
     DeltaUnderflow = 13,
     CannotDepositEthOnSettlement = 14,
+    NoTokenAtIndex = 15,
 }
 
 impl GoblinError {

@@ -1,19 +1,29 @@
 use crate::{goblin_error::GoblinError, types::Address};
 
-use super::{IndexedTokenDelta, TokenDelta};
+use super::{TokenWithdrawalDue, TokensConsumedByEngine};
 
 pub const MAX_DELTAS: usize = 16;
 
-/// The list of token deltas being tracked.
-/// We cannot use hashmap in no_std, no allocator environment. Using linear looping
-/// is performant enough for small number of items.
-// #[derive(Default)]
-pub struct TokenDeltaList<'a> {
+/// Token deltas consumed during matching. Subtract these deltas from TraderTokenState during settlement.
+///
+/// If deposit_shortfall is true and TraderTokenState cannot cover the delta
+/// - If token is present in TokenWithdrawalDue[], add shortfall there.
+/// - Otherwise transfer in the shortfall directly
+pub struct TokensConsumedList {
     /// The list of token deltas
-    pub deltas: &'a mut [IndexedTokenDelta; MAX_DELTAS],
+    pub deltas: [TokensConsumedByEngine; MAX_DELTAS],
 
     /// Gives the number of tokens being tracked. Rest of the elements hold default values.
     pub len: usize,
+}
+
+impl TokensConsumedList {
+    pub fn new() -> Self {
+        TokensConsumedList {
+            deltas: [TokensConsumedByEngine::default(); MAX_DELTAS],
+            len: 0,
+        }
+    }
 }
 
 // impl TokenDeltaList {

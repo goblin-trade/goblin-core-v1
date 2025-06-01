@@ -9,7 +9,7 @@ use hostio_buffer::HostioBuffer;
 use input_processor::{read_token_deltas, CallHeader, CallPayload};
 use instructions::*;
 use quantities::Delta;
-use settlement::{EthDelta, IndexedTokenDelta, TokenDeltaList};
+use settlement::{EthDelta, TokenWithdrawalDue, TokensConsumedList};
 use types::Address;
 
 pub mod erc20;
@@ -44,12 +44,22 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
     let recipient =
         input_processor::read_recipient(payload, header.recipient_provided, msg_sender.as_ref())?;
     let mut eth_delta = EthDelta::init(payload, header.track_eth_delta)?;
-    let custom_tokens = input_processor::read_custom_tokens(payload, header.custom_token_count)?;
+
+    let custom_token_list =
+        input_processor::read_custom_tokens(payload, header.custom_token_count)?;
+
     let token_delta_list = input_processor::read_token_deltas(payload, header.token_delta_count)?;
 
     eth_delta.settle(msg_sender.as_ref(), &recipient, header.withdraw_internally)?;
 
-    // TODO settle token_delta_list
+    // token_delta_list
+    //     .get(0)
+    //     .unwrap()
+    //     .settle(custom_token_list, msg_sender.as_ref(), &recipient)?;
+
+    // for delta in token_delta_list {
+    //     delta.settle(custom_token_list, msg_sender.as_ref(), &recipient)?;
+    // }
 
     // Write cache to trie
     // https://github.com/OffchainLabs/stylus-sdk-rs/blob/2c709a5a1a620ed7585c7d8af64fefabe3a0fc9a/stylus-sdk/src/storage/mod.rs#L81
