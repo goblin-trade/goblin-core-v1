@@ -37,20 +37,25 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
     require!(!msg_reentrant, GoblinError::Reentrant);
 
     let payload = &mut CallPayload::new(len);
-    let header = CallHeader::init(payload)?;
+    // let header = CallHeader::init(payload)?;
 
-    let msg_sender = unsafe { hostio_msg_sender() };
+    // let msg_sender = unsafe { hostio_msg_sender() };
 
-    let recipient =
-        input_processor::read_recipient(payload, header.recipient_provided, msg_sender.as_ref())?;
-    let mut eth_delta = EthDelta::init(payload, header.track_eth_delta)?;
+    // // Order of reads
+    // // 1. Recipient (optional- recipient_provided)
+    // // 2. Eth withdrawal due (optional- track_eth_delta)
+    // // 3. custom token list (custom_token_count)
+    // // 4. token_delta_list (token_delta_count)
+    // let recipient =
+    //     input_processor::read_recipient(payload, header.recipient_provided, msg_sender.as_ref())?;
+    // let mut eth_delta = EthDelta::init(payload, header.track_eth_delta)?;
 
-    let custom_token_list =
-        input_processor::read_custom_tokens(payload, header.custom_token_count)?;
+    // let custom_token_list =
+    //     input_processor::read_custom_tokens(payload, header.custom_token_count)?;
 
-    let token_delta_list = input_processor::read_token_deltas(payload, header.token_delta_count)?;
+    // let token_delta_list = input_processor::read_token_deltas(payload, header.token_delta_count)?;
 
-    eth_delta.settle(msg_sender.as_ref(), &recipient, header.withdraw_internally)?;
+    // eth_delta.settle(msg_sender.as_ref(), &recipient, header.withdraw_internally)?;
 
     // token_delta_list
     //     .get(0)

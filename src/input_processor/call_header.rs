@@ -1,4 +1,6 @@
-use crate::goblin_error::GoblinError;
+use crate::{
+    goblin_error::GoblinError, quantities::Atoms, settlement::TokenWithdrawalDue, types::Address,
+};
 
 use super::CallPayload;
 
@@ -36,25 +38,43 @@ pub struct CallHeader {
 }
 
 impl CallHeader {
-    pub fn init(payload: &mut CallPayload) -> Result<Self, GoblinError> {
-        payload.advance_offset::<[u8; 4]>()?;
+    pub const HEADER_BYTE_SIZE: usize = 4;
 
-        let input = unsafe { payload.input_ref() };
-
-        Ok(CallHeader {
+    pub fn init(input: &[u8; 512]) -> Self {
+        CallHeader {
+            // Lists
             custom_token_count: (input[0] & 0b0000_1111) as usize,
             token_delta_count: (input[0] >> 4) as usize,
 
-            track_eth_delta: (input[1] & 0b0000_0001) != 0,
-            deposit_shortfall: (input[1] & 0b0000_0010) != 0,
-            recipient_provided: (input[1] & 0b0000_0100) != 0,
+            // Optional variables
+            recipient_provided: (input[1] & 0b0000_0001) != 0,
+            track_eth_delta: (input[1] & 0b0000_0010) != 0,
+
+            // Settlement flags
+            deposit_shortfall: (input[1] & 0b0000_0100) != 0,
             withdraw_internally: (input[1] & 0b0000_1000) != 0,
+
+            // Instructions
             ix_collect_fee_count: input[1] >> 4,
 
             ix_post_only_count: input[2],
 
             ix_take_only_count: input[3] & 0b0000_1111,
             ix_limit_order_count: input[3] >> 4,
-        })
+        }
+    }
+
+    pub fn payload_size(&self) -> usize {
+        let size = Self::HEADER_BYTE_SIZE
+            + self.recipient_provided as usize * core::mem::size_of::<Address>()
+            + self.track_eth_delta as usize * core::mem::size_of::<Atoms>()
+            // Lists
+            + self.custom_token_count * core::mem::size_of::<Address>()
+            + self.token_delta_count * core::mem::size_of::<TokenWithdrawalDue>();
+
+        // TODO add instruction sizes once finalized
+        // PlaceMultiplePostOnly() has variable size- variable number of orders can be posted
+
+        size
     }
 }
