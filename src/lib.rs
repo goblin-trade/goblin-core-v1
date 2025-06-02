@@ -12,6 +12,8 @@ use quantities::Delta;
 use settlement::{EthDelta, TokenWithdrawalDue, TokensConsumedList};
 use types::Address;
 
+use crate::input_processor::DecodedPayload;
+
 pub mod erc20;
 pub mod eth;
 pub mod events;
@@ -36,10 +38,10 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
     let msg_reentrant = unsafe { hostio::msg_reentrant() };
     require!(!msg_reentrant, GoblinError::Reentrant);
 
-    let payload = &mut CallPayload::new(len);
-    // let header = CallHeader::init(payload)?;
+    let payload = CallPayload::new(len);
+    let decoded_payload = DecodedPayload::new(&payload)?;
 
-    // let msg_sender = unsafe { hostio_msg_sender() };
+    let msg_sender = unsafe { hostio_msg_sender() };
 
     // // Order of reads
     // // 1. Recipient (optional- recipient_provided)

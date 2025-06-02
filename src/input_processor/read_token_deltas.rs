@@ -6,9 +6,9 @@ use crate::{
 
 use super::CallPayload;
 
-pub fn read_token_deltas<'a>(
-    payload: &'a mut CallPayload,
-    token_delta_count: usize,
-) -> Result<&'a [TokenWithdrawalDue], GoblinError> {
-    payload.decode_slice::<TokenWithdrawalDue>(token_delta_count)
-}
+// pub fn read_token_deltas<'a>(
+//     payload: &'a mut CallPayload,
+//     token_delta_count: usize,
+// ) -> Result<&'a [TokenWithdrawalDue], GoblinError> {
+//     payload.decode_slice::<TokenWithdrawalDue>(token_delta_count)
+// }

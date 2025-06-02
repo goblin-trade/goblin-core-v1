@@ -27,22 +27,22 @@ pub struct EthDelta {
 }
 
 impl EthDelta {
-    pub fn init(payload: &mut CallPayload, track_eth_delta: bool) -> Result<Self, GoblinError> {
-        if !track_eth_delta {
-            return Ok(EthDelta::default());
-        }
+    // pub fn init(payload: &mut CallPayload, track_eth_delta: bool) -> Result<Self, GoblinError> {
+    //     if !track_eth_delta {
+    //         return Ok(EthDelta::default());
+    //     }
 
-        let withdrawal_due = payload.decode::<Atoms>()?;
+    //     let withdrawal_due = payload.decode::<Atoms>()?;
 
-        let msg_value = unsafe { hostio_msg_value() };
-        let msg_value_atoms = Atoms::from_raw_atoms(msg_value.as_ref(), NATIVE_TOKEN_DECIMALS)?;
+    //     let msg_value = unsafe { hostio_msg_value() };
+    //     let msg_value_atoms = Atoms::from_raw_atoms(msg_value.as_ref(), NATIVE_TOKEN_DECIMALS)?;
 
-        Ok(EthDelta {
-            withdrawal_due,
-            msg_value_atoms,
-            consumed_by_engine: Delta::ZERO,
-        })
-    }
+    //     Ok(EthDelta {
+    //         withdrawal_due,
+    //         msg_value_atoms,
+    //         consumed_by_engine: Delta::ZERO,
+    //     })
+    // }
 
     /// Settle, i.e. update the trader's token state and transfer ETH out
     ///
