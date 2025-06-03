@@ -20,7 +20,7 @@ impl<T> HostioBuffer<T> {
     ///
     /// # Safety
     /// Caller must ensure the buffer is fully initialized (as guaranteed by the hostio call).
-    pub unsafe fn as_ref(&self) -> &T {
-        self.inner.assume_init_ref()
+    pub fn as_ref(&self) -> &T {
+        unsafe { self.inner.assume_init_ref() }
     }
 }

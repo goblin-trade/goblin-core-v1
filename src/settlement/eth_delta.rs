@@ -3,10 +3,8 @@ use core::{mem::MaybeUninit, ops::Add};
 use crate::{
     eth,
     goblin_error::GoblinError,
-    hostio::{self, hostio_msg_value},
-    hostio_buffer::HostioBuffer,
-    input_processor::CallPayload,
-    quantities::{Atoms, Delta, RawAtoms},
+    hostio::hostio_msg_value,
+    quantities::{Atoms, Delta},
     require,
     state::{SlotState, TraderTokenKey, TraderTokenState},
     types::{Address, NATIVE_TOKEN_DECIMALS},
@@ -15,11 +13,11 @@ use crate::{
 /// Eth atoms due to be deducted from slot and to be transferred out on settlement
 #[derive(Default)]
 pub struct EthDelta {
-    /// atoms due to be withdrawn. Read from payload.
-    pub withdrawal_due: Atoms,
-
     /// Atoms credited by msg.value
     pub msg_value_atoms: Atoms,
+
+    /// atoms due to be withdrawn. Read from payload.
+    pub withdrawal_due: Atoms,
 
     /// Delta consumed by matching engine. If value is negative then tokens were emitted
     /// instead of consumed.
@@ -27,22 +25,30 @@ pub struct EthDelta {
 }
 
 impl EthDelta {
-    // pub fn init(payload: &mut CallPayload, track_eth_delta: bool) -> Result<Self, GoblinError> {
-    //     if !track_eth_delta {
-    //         return Ok(EthDelta::default());
-    //     }
+    pub fn init(
+        track_msg_value: bool,
+        eth_withdrawal_due: Option<&Atoms>,
+    ) -> Result<Self, GoblinError> {
+        let msg_value_atoms = if track_msg_value {
+            unsafe {
+                let msg_value = hostio_msg_value();
+                Atoms::from_raw_atoms(msg_value.as_ref(), NATIVE_TOKEN_DECIMALS)?
+            }
+        } else {
+            Atoms::ZERO
+        };
 
-    //     let withdrawal_due = payload.decode::<Atoms>()?;
+        let withdrawal_due = match eth_withdrawal_due {
+            Some(eth_withdrawal_due) => *eth_withdrawal_due,
+            None => Atoms::ZERO,
+        };
 
-    //     let msg_value = unsafe { hostio_msg_value() };
-    //     let msg_value_atoms = Atoms::from_raw_atoms(msg_value.as_ref(), NATIVE_TOKEN_DECIMALS)?;
-
-    //     Ok(EthDelta {
-    //         withdrawal_due,
-    //         msg_value_atoms,
-    //         consumed_by_engine: Delta::ZERO,
-    //     })
-    // }
+        Ok(Self {
+            msg_value_atoms,
+            withdrawal_due,
+            consumed_by_engine: Delta::ZERO,
+        })
+    }
 
     /// Settle, i.e. update the trader's token state and transfer ETH out
     ///
@@ -54,30 +60,18 @@ impl EthDelta {
     /// or to transfer it out
     ///
     pub fn settle(
-        &mut self,
+        &self,
         msg_sender: &Address,
         recipient: &Address,
         withdraw_internally: bool,
     ) -> Result<(), GoblinError> {
         self.settle_for_sender(msg_sender)?;
-
-        // Settle pending withdrawal for recipient
-        if self.withdrawal_due > Atoms::ZERO {
-            if withdraw_internally {
-                TraderTokenState::add_free_atoms_and_store(
-                    &TraderTokenKey::native_key(recipient),
-                    self.withdrawal_due,
-                    NATIVE_TOKEN_DECIMALS,
-                );
-            } else {
-                let raw_atoms_out = self.withdrawal_due.to_raw_atoms(NATIVE_TOKEN_DECIMALS)?;
-                eth::transfer_out(recipient, &raw_atoms_out)?;
-            }
-        }
+        self.settle_for_recipient(recipient, withdraw_internally)?;
 
         Ok(())
     }
 
+    /// Add or deduct delta from TraderTokenState for msg.sender
     fn settle_for_sender(&self, msg_sender: &Address) -> Result<(), GoblinError> {
         let key = &TraderTokenKey::native_key(msg_sender);
         let mut trader_token_state_maybe = MaybeUninit::<TraderTokenState>::uninit();
@@ -97,6 +91,33 @@ impl EthDelta {
         unsafe {
             trader_token_state.store(key);
         }
+        Ok(())
+    }
+
+    /// Transfer withdrawal_due ETH atoms to the recipient
+    ///
+    /// # Arguments
+    ///
+    /// * `recipient`- Recipient address
+    /// * `withdraw_internally` - Whether to credit to TraderTokenState or to transfer out ETH
+    fn settle_for_recipient(
+        &self,
+        recipient: &Address,
+        withdraw_internally: bool,
+    ) -> Result<(), GoblinError> {
+        if self.withdrawal_due > Atoms::ZERO {
+            if withdraw_internally {
+                TraderTokenState::add_free_atoms_and_store(
+                    &TraderTokenKey::native_key(recipient),
+                    self.withdrawal_due,
+                    NATIVE_TOKEN_DECIMALS,
+                );
+            } else {
+                let raw_atoms_out = self.withdrawal_due.to_raw_atoms(NATIVE_TOKEN_DECIMALS)?;
+                eth::transfer_out(recipient, &raw_atoms_out)?;
+            }
+        }
+
         Ok(())
     }
 }

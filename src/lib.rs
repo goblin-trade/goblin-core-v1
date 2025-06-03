@@ -12,7 +12,7 @@ use quantities::Delta;
 use settlement::{EthDelta, TokenWithdrawalDue, TokensConsumedList};
 use types::Address;
 
-use crate::input_processor::DecodedPayload;
+use crate::{input_processor::DecodedPayload, settlement::eth_delta};
 
 pub mod erc20;
 pub mod eth;
@@ -43,21 +43,21 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
 
     let msg_sender = unsafe { hostio_msg_sender() };
 
-    // // Order of reads
-    // // 1. Recipient (optional- recipient_provided)
-    // // 2. Eth withdrawal due (optional- track_eth_delta)
-    // // 3. custom token list (custom_token_count)
-    // // 4. token_delta_list (token_delta_count)
-    // let recipient =
-    //     input_processor::read_recipient(payload, header.recipient_provided, msg_sender.as_ref())?;
-    // let mut eth_delta = EthDelta::init(payload, header.track_eth_delta)?;
+    let eth_delta = EthDelta::init(
+        decoded_payload.header.track_msg_value,
+        decoded_payload.eth_withdrawal_due,
+    )?;
 
-    // let custom_token_list =
-    //     input_processor::read_custom_tokens(payload, header.custom_token_count)?;
+    let recipient = match decoded_payload.provided_recipient {
+        Some(provided_recipient) => provided_recipient,
+        None => msg_sender.as_ref(),
+    };
 
-    // let token_delta_list = input_processor::read_token_deltas(payload, header.token_delta_count)?;
-
-    // eth_delta.settle(msg_sender.as_ref(), &recipient, header.withdraw_internally)?;
+    eth_delta.settle(
+        msg_sender.as_ref(),
+        recipient,
+        decoded_payload.header.withdraw_internally,
+    )?;
 
     // token_delta_list
     //     .get(0)

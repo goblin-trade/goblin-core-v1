@@ -36,7 +36,7 @@ impl<'a> DecodedPayload<'a> {
             None
         };
 
-        let eth_withdrawal_due = if header.track_eth_delta {
+        let eth_withdrawal_due = if header.track_eth_withdrawal_due {
             let value = payload.decode_ref::<Atoms>(offset);
             offset += core::mem::size_of::<Atoms>();
             Some(value)

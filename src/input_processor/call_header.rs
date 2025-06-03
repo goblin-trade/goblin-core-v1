@@ -12,19 +12,22 @@ pub struct CallHeader {
     /// operations for these many tokens
     pub token_delta_count: usize,
 
-    /// Whether to deposit or withdraw ETH
-    pub track_eth_delta: bool,
+    /// Whether to read recipient address from payload. If false, use msg.sender as recipient.
+    pub recipient_provided: bool,
+
+    /// Whether to read msg.value from hostio
+    pub track_msg_value: bool,
+
+    /// Whether to read eth_withdrawal_due from payload
+    pub track_eth_withdrawal_due: bool,
 
     /// Whether to deposit shortfall amount during settlement
     pub deposit_shortfall: bool,
 
-    /// Whether to read recipient address from payload. If false, use msg.sender
-    pub recipient_provided: bool,
-
     /// Whether to update TraderTokenState for recipient, or to actually transfer out tokens
     pub withdraw_internally: bool,
 
-    /// The number of collect fee instructions. Occupies 4 bits, max 2^4 - 1 = 15
+    /// The number of collect fee instructions. Occupies 4 bits, max 2^3 - 1 = 7
     pub ix_collect_fee_count: u8,
 
     /// The number of post-only order instructions. Occupies entire byte. Max 2^8 - 1 = 255
@@ -48,14 +51,15 @@ impl CallHeader {
 
             // Optional variables
             recipient_provided: (input[1] & 0b0000_0001) != 0,
-            track_eth_delta: (input[1] & 0b0000_0010) != 0,
+            track_msg_value: (input[1] & 0b0000_0010) != 0,
+            track_eth_withdrawal_due: (input[1] & 0b0000_0100) != 0,
 
             // Settlement flags
-            deposit_shortfall: (input[1] & 0b0000_0100) != 0,
-            withdraw_internally: (input[1] & 0b0000_1000) != 0,
+            deposit_shortfall: (input[1] & 0b0000_1000) != 0,
+            withdraw_internally: (input[1] & 0b0001_0000) != 0,
 
             // Instructions
-            ix_collect_fee_count: input[1] >> 4,
+            ix_collect_fee_count: input[1] >> 5,
 
             ix_post_only_count: input[2],
 
@@ -67,7 +71,7 @@ impl CallHeader {
     pub fn payload_size(&self) -> usize {
         let size = Self::HEADER_BYTE_SIZE
             + self.recipient_provided as usize * core::mem::size_of::<Address>()
-            + self.track_eth_delta as usize * core::mem::size_of::<Atoms>()
+            + self.track_msg_value as usize * core::mem::size_of::<Atoms>()
             // Lists
             + self.custom_token_count * core::mem::size_of::<Address>()
             + self.token_delta_count * core::mem::size_of::<TokenWithdrawalDue>();
