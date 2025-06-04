@@ -1,32 +1,33 @@
 use crate::{
     hostio::{hostio_native_keccak256, HostioBuffer},
     quantities::Atoms,
-    state::SlotKeyV2,
+    state::{SlotKeyV2, SlotStateV2},
     types::Address,
 };
 
 pub struct EthStoreKey {
-    pub trader: Address,
+    hash: HostioBuffer<[u8; 32]>,
 }
 
-impl SlotKeyV2<EthStore> for EthStoreKey {
+impl SlotKeyV2 for EthStoreKey {
     const DISCRIMINATOR: u8 = 1;
 
-    fn to_keccak256(&self) -> HostioBuffer<[u8; 32]> {
+    fn hash(&self) -> &[u8; 32] {
+        self.hash.as_ref()
+    }
+}
+
+impl EthStoreKey {
+    pub fn new(trader: &Address) -> Self {
         const BYTE_SIZE: usize = core::mem::size_of::<EthStoreKey>();
 
-        let bytes = {
-            let mut b = [0u8; (1 + BYTE_SIZE)];
-            b[0] = Self::DISCRIMINATOR;
+        let mut bytes = [0u8; (1 + BYTE_SIZE)];
+        bytes[0] = Self::DISCRIMINATOR;
+        bytes[1..].copy_from_slice(trader.as_slice());
 
-            let self_slice =
-                unsafe { core::slice::from_raw_parts(self as *const Self as *const u8, BYTE_SIZE) };
-            b[1..].copy_from_slice(self_slice);
+        let hash = unsafe { hostio_native_keccak256(bytes.as_slice()) };
 
-            b
-        };
-
-        unsafe { hostio_native_keccak256(bytes.as_slice()) }
+        Self { hash }
     }
 }
 
@@ -37,9 +38,4 @@ pub struct EthStore {
     _padding: [u8; 16],
 }
 
-// impl HostioBuffer<EthStore> {
-//     pub fn init(key: &EthStoreKey) -> Self {
-//         let hashed_key = key.to_keccak256();
-//         unsafe { hostio_storage_load_bytes32::<EthStore>(hashed_key.as_ref()) }
-//     }
-// }
+impl SlotStateV2<EthStoreKey> for EthStore {}

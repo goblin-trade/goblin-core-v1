@@ -23,4 +23,8 @@ impl<T> HostioBuffer<T> {
     pub fn as_ref(&self) -> &T {
         unsafe { self.inner.assume_init_ref() }
     }
+
+    pub fn as_mut(&mut self) -> &mut T {
+        unsafe { self.inner.assume_init_mut() }
+    }
 }

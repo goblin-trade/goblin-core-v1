@@ -6,7 +6,7 @@ use crate::{
     hostio::hostio_msg_value,
     quantities::{Atoms, Delta},
     require,
-    state::{EthStore, EthStoreKey, SlotKeyV2, SlotState, TraderTokenKey, TraderTokenState},
+    state::{EthStore, EthStoreKey, SlotStateV2},
     types::{Address, NATIVE_TOKEN_DECIMALS},
 };
 
@@ -65,44 +65,28 @@ impl EthDelta {
         recipient: &Address,
         withdraw_internally: bool,
     ) -> Result<(), GoblinError> {
-        self.settle_for_sender(msg_sender)?;
-        self.settle_for_recipient(recipient, withdraw_internally)?;
+        self.settle_for_sender_v2(msg_sender)?;
+        self.settle_for_recipient_v2(recipient, withdraw_internally)?;
 
         Ok(())
     }
 
+    /// Settle EthStore for msg.sender and write to state
     fn settle_for_sender_v2(&self, msg_sender: &Address) -> Result<(), GoblinError> {
-        let key = &EthStoreKey {
-            trader: *msg_sender,
-        };
+        let key = EthStoreKey::new(msg_sender);
+        let mut eth_store = EthStore::load(&key);
 
-        // Looks cleaner but keccak is run twice
-        let eth_store = key.read_slot();
-        key.write_slot(eth_store.as_ref());
-
-        Ok(())
-    }
-
-    /// Add or deduct delta from TraderTokenState for msg.sender
-    fn settle_for_sender(&self, msg_sender: &Address) -> Result<(), GoblinError> {
-        let key = &TraderTokenKey::native_key(msg_sender);
-        let mut trader_token_state_maybe = MaybeUninit::<TraderTokenState>::uninit();
-        let trader_token_state =
-            unsafe { TraderTokenState::load(key, &mut trader_token_state_maybe) };
-
-        let atoms_free = (trader_token_state.atoms_free + self.msg_value_atoms).to_delta()?;
-        let atoms_due_delta = self.consumed_by_engine.add(self.withdrawal_due)?;
+        let atoms_balance = (eth_store.as_ref().atoms_free + self.msg_value_atoms).to_delta()?;
+        let atoms_debit = self.consumed_by_engine.add(self.withdrawal_due)?;
 
         require!(
-            atoms_free >= atoms_due_delta,
+            atoms_balance >= atoms_debit,
             GoblinError::CannotDepositEthOnSettlement
         );
-        trader_token_state.atoms_free = atoms_free.checked_sub(atoms_due_delta)?.abs();
+        eth_store.as_mut().atoms_free = atoms_balance.checked_sub(atoms_debit)?.abs();
 
-        trader_token_state.decimals = NATIVE_TOKEN_DECIMALS;
-        unsafe {
-            trader_token_state.store(key);
-        }
+        eth_store.as_ref().store(&key);
+
         Ok(())
     }
 
@@ -112,22 +96,22 @@ impl EthDelta {
     ///
     /// * `recipient`- Recipient address
     /// * `withdraw_internally` - Whether to credit to TraderTokenState or to transfer out ETH
-    fn settle_for_recipient(
+    fn settle_for_recipient_v2(
         &self,
         recipient: &Address,
         withdraw_internally: bool,
     ) -> Result<(), GoblinError> {
-        if self.withdrawal_due > Atoms::ZERO {
-            if withdraw_internally {
-                TraderTokenState::add_free_atoms_and_store(
-                    &TraderTokenKey::native_key(recipient),
-                    self.withdrawal_due,
-                    NATIVE_TOKEN_DECIMALS,
-                );
-            } else {
-                let raw_atoms_out = self.withdrawal_due.to_raw_atoms(NATIVE_TOKEN_DECIMALS)?;
-                eth::transfer_out(recipient, &raw_atoms_out)?;
-            }
+        if self.withdrawal_due == Atoms::ZERO {
+            return Ok(());
+        } else if withdraw_internally {
+            let key = EthStoreKey::new(recipient);
+            let mut eth_store = EthStore::load(&key);
+
+            eth_store.as_mut().atoms_free += self.withdrawal_due;
+            eth_store.as_ref().store(&key);
+        } else {
+            let raw_atoms_out = self.withdrawal_due.to_raw_atoms(NATIVE_TOKEN_DECIMALS)?;
+            eth::transfer_out(recipient, &raw_atoms_out)?;
         }
 
         Ok(())

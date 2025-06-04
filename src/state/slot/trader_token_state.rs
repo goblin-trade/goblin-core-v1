@@ -1,14 +1,8 @@
-use core::{
-    mem::MaybeUninit,
-    ops::{Add, Sub},
-};
+use core::mem::MaybeUninit;
 
 use crate::{
-    goblin_error::GoblinError,
     native_keccak256,
-    quantities::{Atoms, Delta},
-    require,
-    settlement::EthDelta,
+    quantities::Atoms,
     state::{slot_key::SlotKey, SlotState},
     storage_cache_bytes32, storage_load_bytes32,
     types::{Address, NATIVE_TOKEN},
@@ -80,18 +74,6 @@ impl TraderTokenState {
 
     pub fn is_empty(&self) -> bool {
         self.atoms_locked == Atoms::ZERO && self.atoms_free == Atoms::ZERO && self.decimals == 0
-    }
-
-    pub fn add_free_atoms_and_store(key: &TraderTokenKey, atoms: Atoms, decimals: u8) {
-        let mut trader_token_state_maybe = MaybeUninit::<TraderTokenState>::uninit();
-        let trader_token_state =
-            unsafe { TraderTokenState::load(key, &mut trader_token_state_maybe) };
-
-        trader_token_state.atoms_free += atoms;
-        trader_token_state.decimals = decimals;
-        unsafe {
-            trader_token_state.store(key);
-        }
     }
 }
 
