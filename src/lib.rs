@@ -1,18 +1,11 @@
 #![cfg_attr(not(test), no_std)]
 #![cfg_attr(not(test), no_main)]
 
-use core::mem::MaybeUninit;
-use getter::*;
+use crate::input_processor::DecodedPayload;
 use goblin_error::*;
 use hostio::*;
-use hostio_buffer::HostioBuffer;
-use input_processor::{read_token_deltas, CallHeader, CallPayload};
-use instructions::*;
-use quantities::Delta;
-use settlement::{EthDelta, TokenWithdrawalDue, TokensConsumedList};
-use types::Address;
-
-use crate::{input_processor::DecodedPayload, settlement::eth_delta};
+use input_processor::CallPayload;
+use settlement::EthDelta;
 
 pub mod erc20;
 pub mod eth;
@@ -58,6 +51,18 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
         recipient,
         decoded_payload.header.withdraw_internally,
     )?;
+
+    for token_delta in decoded_payload.token_delta_list {
+        token_delta.settle(
+            decoded_payload.custom_token_list,
+            msg_sender.as_ref(),
+            recipient,
+            decoded_payload.header.deposit_shortfall,
+            decoded_payload.header.withdraw_internally,
+        )?;
+    }
+
+    // decoded_payload.
 
     // token_delta_list
     //     .get(0)
