@@ -9,7 +9,7 @@ pub struct EthStoreKey {
     pub trader: Address,
 }
 
-impl SlotKeyV2 for EthStoreKey {
+impl SlotKeyV2<EthStore> for EthStoreKey {
     const DISCRIMINATOR: u8 = 1;
 
     fn to_keccak256(&self) -> HostioBuffer<[u8; 32]> {

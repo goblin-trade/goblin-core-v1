@@ -6,7 +6,7 @@ use crate::{
     hostio::hostio_msg_value,
     quantities::{Atoms, Delta},
     require,
-    state::{SlotState, TraderTokenKey, TraderTokenState},
+    state::{EthStore, EthStoreKey, SlotKeyV2, SlotState, TraderTokenKey, TraderTokenState},
     types::{Address, NATIVE_TOKEN_DECIMALS},
 };
 
@@ -67,6 +67,18 @@ impl EthDelta {
     ) -> Result<(), GoblinError> {
         self.settle_for_sender(msg_sender)?;
         self.settle_for_recipient(recipient, withdraw_internally)?;
+
+        Ok(())
+    }
+
+    fn settle_for_sender_v2(&self, msg_sender: &Address) -> Result<(), GoblinError> {
+        let key = &EthStoreKey {
+            trader: *msg_sender,
+        };
+
+        // Looks cleaner but keccak is run twice
+        let eth_store = key.read_slot();
+        key.write_slot(eth_store.as_ref());
 
         Ok(())
     }

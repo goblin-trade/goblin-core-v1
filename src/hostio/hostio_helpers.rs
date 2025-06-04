@@ -24,6 +24,6 @@ pub unsafe fn hostio_storage_load_bytes32<T>(key: &[u8; 32]) -> HostioBuffer<T> 
     HostioBuffer::<T>::new(|f| hostio::storage_load_bytes32(key.as_ptr(), f))
 }
 
-pub unsafe fn hostio_storage_cache_bytes32<T>(key: &[u8; 32], value: &[u8; 32]) {
-    hostio::storage_cache_bytes32(key.as_ptr(), value.as_ptr())
+pub unsafe fn hostio_storage_cache_bytes32<T>(key: &[u8; 32], value: &T) {
+    hostio::storage_cache_bytes32(key.as_ptr(), value as *const T as *const u8)
 }
