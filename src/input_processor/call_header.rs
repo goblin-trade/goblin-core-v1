@@ -1,4 +1,4 @@
-use crate::{quantities::Atoms, settlement::ERC20WithdrawalDue, types::Address};
+use crate::{quantities::Atoms, settlement::ERC20_WITHDRAWAL_ITEM_SIZE, types::Address};
 
 pub struct CallHeader {
     /// Number of custom token addresses provided, maximum 2^4 - 1 = 15
@@ -70,7 +70,7 @@ impl CallHeader {
             + self.track_msg_value as usize * core::mem::size_of::<Atoms>()
             // Lists
             + self.custom_token_count * core::mem::size_of::<Address>()
-            + self.token_delta_count * core::mem::size_of::<ERC20WithdrawalDue>();
+            + self.token_delta_count * ERC20_WITHDRAWAL_ITEM_SIZE;
 
         // TODO add instruction sizes once finalized
         // PlaceMultiplePostOnly() has variable size- variable number of orders can be posted

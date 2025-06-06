@@ -1,7 +1,7 @@
 #![cfg_attr(not(test), no_std)]
 #![cfg_attr(not(test), no_main)]
 
-use crate::input_processor::DecodedPayload;
+use crate::{input_processor::DecodedPayload, settlement::ERC20DeltaList};
 use goblin_error::*;
 use hostio::*;
 use input_processor::CallPayload;
@@ -41,6 +41,11 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
         decoded_payload.eth_withdrawal_due,
     )?;
 
+    let erc20_delta_list = ERC20DeltaList::init(
+        decoded_payload.erc20_withdrawals_bytes,
+        decoded_payload.custom_token_list,
+    )?;
+
     let recipient = match decoded_payload.provided_recipient {
         Some(provided_recipient) => provided_recipient,
         None => msg_sender.as_ref(),
@@ -51,16 +56,6 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
         recipient,
         decoded_payload.header.withdraw_internally,
     )?;
-
-    for token_delta in decoded_payload.token_delta_list {
-        // token_delta.settle(
-        //     decoded_payload.custom_token_list,
-        //     msg_sender.as_ref(),
-        //     recipient,
-        //     decoded_payload.header.deposit_shortfall,
-        //     decoded_payload.header.withdraw_internally,
-        // )?;
-    }
 
     // decoded_payload.
 

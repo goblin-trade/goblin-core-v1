@@ -3,16 +3,27 @@ use crate::{
     input_processor::{CallHeader, CallPayload},
     quantities::Atoms,
     require,
-    settlement::ERC20WithdrawalDue,
+    settlement::ERC20_WITHDRAWAL_ITEM_SIZE,
     types::Address,
 };
 
 pub struct DecodedPayload<'a> {
+    /// Flags and counts
     pub header: CallHeader,
+
+    /// Custom provided recipient. Use msg.sender if none provided
     pub provided_recipient: Option<&'a Address>,
+
+    /// Amount of ETH to withdraw
     pub eth_withdrawal_due: Option<&'a Atoms>,
+
+    /// Addresses of custom tokens to use, max 15
     pub custom_token_list: &'a [Address],
-    pub token_delta_list: &'a [ERC20WithdrawalDue],
+
+    /// 9 bytes for (token index, withdrawal_due_delta) for each token pending
+    /// withdrawal or deposit.
+    /// Max 15 withdrawals, i.e. 9 * 15 = 135 bytes
+    pub erc20_withdrawals_bytes: &'a [u8],
 }
 
 impl<'a> DecodedPayload<'a> {
@@ -50,19 +61,16 @@ impl<'a> DecodedPayload<'a> {
             value
         };
 
-        let token_delta_list = {
-            let count = header.token_delta_count;
-            let value = payload.decode_slice::<ERC20WithdrawalDue>(offset, count);
-            offset += count * core::mem::size_of::<ERC20WithdrawalDue>();
-            value
-        };
+        let start = offset;
+        offset += header.custom_token_count * ERC20_WITHDRAWAL_ITEM_SIZE;
+        let erc20_withdrawals_bytes = &payload.input.as_ref()[start..offset];
 
         Ok(DecodedPayload {
             header,
             provided_recipient,
             eth_withdrawal_due,
             custom_token_list,
-            token_delta_list,
+            erc20_withdrawals_bytes,
         })
     }
 }
