@@ -8,7 +8,7 @@ use crate::{
     require,
     state::{SlotState, TraderTokenKey, TraderTokenState},
     types::Address,
-    ADDRESS,
+    CONTRACT_ADDRESS,
 };
 
 #[cfg(all(not(test), not(target_arch = "wasm32")))]
@@ -90,7 +90,7 @@ pub fn ix_1_credit_erc20(payload: &[u8]) -> Result<usize, GoblinError> {
     // Cross contract call should be performed last to remove the need to flush cache twice
     // Transfer tokens to smart contract ADDRESS, not params.recipient
     let raw_atoms = atoms.to_raw_atoms(trader_token_state.decimals)?;
-    erc20::transfer_from(&params.token, sender, &ADDRESS, &raw_atoms)?;
+    erc20::transfer_from(&params.token, sender, &CONTRACT_ADDRESS, &raw_atoms)?;
 
     Ok(IX_1_PAYLOAD_LEN)
 }

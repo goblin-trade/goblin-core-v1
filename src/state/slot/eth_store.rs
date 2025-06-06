@@ -19,11 +19,9 @@ impl SlotKeyV2 for EthStoreKey {
 
 impl EthStoreKey {
     pub fn new(trader: &Address) -> Self {
-        const BYTE_SIZE: usize = core::mem::size_of::<EthStoreKey>();
-
-        let mut bytes = [0u8; (1 + BYTE_SIZE)];
+        let mut bytes = [0u8; (1 + 20)];
         bytes[0] = Self::DISCRIMINATOR;
-        bytes[1..].copy_from_slice(trader.as_slice());
+        bytes[1..21].copy_from_slice(trader.as_slice());
 
         let hash = unsafe { hostio_native_keccak256(bytes.as_slice()) };
 

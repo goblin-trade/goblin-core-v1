@@ -22,7 +22,7 @@ pub mod state;
 pub mod tokens;
 pub mod types;
 
-pub const ADDRESS: [u8; 20] = [
+pub const CONTRACT_ADDRESS: [u8; 20] = [
     0x88, 0x88, 0x41, 0x5d, 0xb8, 0x0e, 0xab, 0xcf, 0x58, 0x02, 0x83, 0xa3, 0xd6, 0x52, 0x49, 0x88,
     0x7d, 0x31, 0x61, 0xb0,
 ];
@@ -53,13 +53,13 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
     )?;
 
     for token_delta in decoded_payload.token_delta_list {
-        token_delta.settle(
-            decoded_payload.custom_token_list,
-            msg_sender.as_ref(),
-            recipient,
-            decoded_payload.header.deposit_shortfall,
-            decoded_payload.header.withdraw_internally,
-        )?;
+        // token_delta.settle(
+        //     decoded_payload.custom_token_list,
+        //     msg_sender.as_ref(),
+        //     recipient,
+        //     decoded_payload.header.deposit_shortfall,
+        //     decoded_payload.header.withdraw_internally,
+        // )?;
     }
 
     // decoded_payload.

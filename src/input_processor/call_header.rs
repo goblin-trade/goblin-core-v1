@@ -1,15 +1,11 @@
-use crate::{
-    goblin_error::GoblinError, quantities::Atoms, settlement::TokenWithdrawalDue, types::Address,
-};
-
-use super::CallPayload;
+use crate::{quantities::Atoms, settlement::ERC20WithdrawalDue, types::Address};
 
 pub struct CallHeader {
-    /// Number of custom token addresses provided, maximum 15
+    /// Number of custom token addresses provided, maximum 2^4 - 1 = 15
     pub custom_token_count: usize,
 
     /// Number of token deltas to update, i.e. perform deposit or withdraw
-    /// operations for these many tokens
+    /// operations for these many tokens. Maximum 2^4 - 1 = 15
     pub token_delta_count: usize,
 
     /// Whether to read recipient address from payload. If false, use msg.sender as recipient.
@@ -74,7 +70,7 @@ impl CallHeader {
             + self.track_msg_value as usize * core::mem::size_of::<Atoms>()
             // Lists
             + self.custom_token_count * core::mem::size_of::<Address>()
-            + self.token_delta_count * core::mem::size_of::<TokenWithdrawalDue>();
+            + self.token_delta_count * core::mem::size_of::<ERC20WithdrawalDue>();
 
         // TODO add instruction sizes once finalized
         // PlaceMultiplePostOnly() has variable size- variable number of orders can be posted

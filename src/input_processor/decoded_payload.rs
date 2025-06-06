@@ -3,7 +3,7 @@ use crate::{
     input_processor::{CallHeader, CallPayload},
     quantities::Atoms,
     require,
-    settlement::TokenWithdrawalDue,
+    settlement::ERC20WithdrawalDue,
     types::Address,
 };
 
@@ -12,7 +12,7 @@ pub struct DecodedPayload<'a> {
     pub provided_recipient: Option<&'a Address>,
     pub eth_withdrawal_due: Option<&'a Atoms>,
     pub custom_token_list: &'a [Address],
-    pub token_delta_list: &'a [TokenWithdrawalDue],
+    pub token_delta_list: &'a [ERC20WithdrawalDue],
 }
 
 impl<'a> DecodedPayload<'a> {
@@ -20,8 +20,7 @@ impl<'a> DecodedPayload<'a> {
         let mut offset = CallHeader::HEADER_BYTE_SIZE;
 
         require!(payload.len >= offset, GoblinError::InvalidPayload);
-        let input = unsafe { payload.input.as_ref() };
-        let header = CallHeader::init(input);
+        let header = CallHeader::init(payload.input.as_ref());
 
         require!(
             payload.len >= header.payload_size(),
@@ -53,8 +52,8 @@ impl<'a> DecodedPayload<'a> {
 
         let token_delta_list = {
             let count = header.token_delta_count;
-            let value = payload.decode_slice::<TokenWithdrawalDue>(offset, count);
-            offset += count * core::mem::size_of::<TokenWithdrawalDue>();
+            let value = payload.decode_slice::<ERC20WithdrawalDue>(offset, count);
+            offset += count * core::mem::size_of::<ERC20WithdrawalDue>();
             value
         };
 
