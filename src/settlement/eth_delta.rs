@@ -19,9 +19,12 @@ pub struct EthDelta {
     /// atoms due to be withdrawn. Read from payload.
     pub withdrawal_due: Atoms,
 
-    /// Delta consumed by matching engine. If value is negative then tokens were emitted
-    /// instead of consumed.
-    pub consumed_by_engine: Delta,
+    /// Delta consumed by taker orders, due for subtraction from EthStore
+    consumed_by_engine: Delta,
+
+    /// Delta locked in maker orders
+    /// Positive if tokens are locked in maker orders, negative if unlocked in cancelled orders
+    locked_by_engine: Delta,
 }
 
 impl EthDelta {
@@ -47,7 +50,18 @@ impl EthDelta {
             msg_value_atoms,
             withdrawal_due,
             consumed_by_engine: Delta::ZERO,
+            locked_by_engine: Delta::ZERO,
         })
+    }
+
+    pub fn add_consumed_amount(&mut self, consumed: Delta) -> Result<(), GoblinError> {
+        self.consumed_by_engine = self.consumed_by_engine.checked_add(consumed)?;
+        Ok(())
+    }
+
+    pub fn add_locked_amount(&mut self, locked: Delta) -> Result<(), GoblinError> {
+        self.locked_by_engine = self.locked_by_engine.checked_add(locked)?;
+        Ok(())
     }
 
     /// Settle, i.e. update the trader's token state and transfer ETH out

@@ -42,14 +42,8 @@ impl ERC20DeltaList {
         for (i, chunk) in bytes.chunks_exact(ERC20_WITHDRAWAL_ITEM_SIZE).enumerate() {
             let index = chunk[0];
             let address = get_token_by_index(custom_token_list, index as usize)?;
-
             let withdrawal_due = Delta(unsafe { *(chunk.as_ptr().add(1) as *const i64) });
-            delta_list.deltas[i].write(ERC20Delta {
-                index,
-                address,
-                withdrawal_due,
-                consumed_by_engine: Delta::ZERO,
-            });
+            delta_list.deltas[i].write(ERC20Delta::new(index, address, withdrawal_due));
         }
 
         Ok(delta_list)
