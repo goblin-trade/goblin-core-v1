@@ -15,15 +15,14 @@ pub struct EthDelta {
     /// Atoms credited by msg.value
     pub msg_value_atoms: Atoms,
 
-    /// atoms due to be withdrawn. Read from payload.
+    /// Amount of atoms pending withdrawal, as read from input payload
     pub withdrawal_due: Atoms,
 
     /// Delta consumed by taker orders, due for subtraction from EthStore
     consumed_by_engine: Delta,
 
-    /// Delta locked in maker orders
-    /// Positive if tokens are locked in maker orders,negative if unlocked
-    /// in cancelled orders
+    /// Delta locked in maker orders. Positive if tokens are locked in maker orders,
+    /// negative if unlocked by cancelled orders
     locked_by_engine: Delta,
 }
 
@@ -96,14 +95,14 @@ impl EthDelta {
         let key = EthStoreKey::new(msg_sender);
         let mut store = EthStore::load(&key);
 
+        let initial_locked = store.as_ref().atoms_locked;
+        store.as_mut().atoms_locked = initial_locked.add(self.locked_by_engine)?;
+
         let initial_free = store
             .as_ref()
             .atoms_free
             .checked_add(self.msg_value_atoms)?;
-        let initial_locked = store.as_ref().atoms_locked;
-
         store.as_mut().atoms_free = initial_free.sub(self.debit_due()?)?;
-        store.as_mut().atoms_locked = initial_locked.add(self.locked_by_engine)?;
 
         store.as_ref().store(&key);
 
@@ -125,10 +124,11 @@ impl EthDelta {
             return Ok(());
         } else if withdraw_internally {
             let key = EthStoreKey::new(recipient);
-            let mut eth_store = EthStore::load(&key);
+            let mut store = EthStore::load(&key);
 
-            eth_store.as_mut().atoms_free += self.withdrawal_due;
-            eth_store.as_ref().store(&key);
+            let initial_balance = store.as_ref().atoms_free;
+            store.as_mut().atoms_free = initial_balance.checked_add(self.withdrawal_due)?;
+            store.as_ref().store(&key);
         } else {
             let raw_atoms_out = self.withdrawal_due.to_raw_atoms(NATIVE_TOKEN_DECIMALS)?;
             eth::transfer_out(recipient, &raw_atoms_out)?;

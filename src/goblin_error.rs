@@ -16,6 +16,7 @@ pub enum GoblinError {
     DeltaUnderflow = 13,
     NoTokenAtIndex = 14,
     InsufficientFreeBalance = 15,
+    ShortfallDepositNotAllowed = 16,
 }
 
 impl GoblinError {
