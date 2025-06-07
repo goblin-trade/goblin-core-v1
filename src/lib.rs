@@ -57,8 +57,6 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
         decoded_payload.header.withdraw_internally,
     )?;
 
-    // decoded_payload.
-
     // token_delta_list
     //     .get(0)
     //     .unwrap()

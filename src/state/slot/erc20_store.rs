@@ -39,3 +39,12 @@ pub struct ERC20Store {
 }
 
 impl SlotStateV2<ERC20StoreKey> for ERC20Store {}
+
+impl ERC20Store {
+    pub fn is_empty(&self) -> bool {
+        unsafe {
+            let words = &*(self as *const ERC20Store as *const [u64; 4]);
+            (words[0] | words[1] | words[2] | words[3]) == 0
+        }
+    }
+}

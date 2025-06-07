@@ -94,17 +94,15 @@ impl EthDelta {
     fn settle_for_sender(&self, msg_sender: &Address) -> Result<(), GoblinError> {
         let key = EthStoreKey::new(msg_sender);
         let mut store = EthStore::load(&key);
+        let store_mut = store.as_mut();
 
-        let initial_locked = store.as_ref().atoms_locked;
-        store.as_mut().atoms_locked = initial_locked.add(self.locked_by_engine)?;
+        let initial_locked = store_mut.atoms_locked;
+        store_mut.atoms_locked = initial_locked.add(self.locked_by_engine)?;
 
-        let initial_free = store
-            .as_ref()
-            .atoms_free
-            .checked_add(self.msg_value_atoms)?;
-        store.as_mut().atoms_free = initial_free.sub(self.debit_due()?)?;
+        let initial_free = store_mut.atoms_free.checked_add(self.msg_value_atoms)?;
+        store_mut.atoms_free = initial_free.sub(self.debit_due()?)?;
 
-        store.as_ref().store(&key);
+        store_mut.store(&key);
 
         Ok(())
     }
@@ -125,10 +123,11 @@ impl EthDelta {
         } else if withdraw_internally {
             let key = EthStoreKey::new(recipient);
             let mut store = EthStore::load(&key);
+            let store_mut = store.as_mut();
 
-            let initial_balance = store.as_ref().atoms_free;
-            store.as_mut().atoms_free = initial_balance.checked_add(self.withdrawal_due)?;
-            store.as_ref().store(&key);
+            let initial_balance = store_mut.atoms_free;
+            store_mut.atoms_free = initial_balance.checked_add(self.withdrawal_due)?;
+            store_mut.store(&key);
         } else {
             let raw_atoms_out = self.withdrawal_due.to_raw_atoms(NATIVE_TOKEN_DECIMALS)?;
             eth::transfer_out(recipient, &raw_atoms_out)?;

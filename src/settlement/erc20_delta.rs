@@ -60,7 +60,32 @@ impl ERC20Delta {
             .checked_add(self.withdrawal_due)
     }
 
-    pub fn settle(&self) -> Result<(), GoblinError> {
+    pub fn settle(
+        &mut self,
+        msg_sender: &Address,
+        recipient: &Address,
+        deposit_shortfall: bool,
+        withdraw_internally: bool,
+    ) -> Result<(), GoblinError> {
+        let key = ERC20StoreKey::new(msg_sender, &self.address);
+        let mut store = ERC20Store::load(&key);
+        let store_mut = store.as_mut();
+
+        // If ERC20 store was read for the first time, fetch and store token decimals
+        if store_mut.is_empty() {
+            store_mut.decimals = erc20::decimals(&self.address)?;
+        }
+
+        self.settle_for_sender(store_mut, deposit_shortfall)?;
+        store_mut.store(&key);
+
+        self.settle_for_recipient(
+            msg_sender,
+            recipient,
+            withdraw_internally,
+            store_mut.decimals,
+        )?;
+
         Ok(())
     }
 
@@ -75,35 +100,33 @@ impl ERC20Delta {
     /// the shortfall is subtracted from withdrawal_due
     pub fn settle_for_sender(
         &mut self,
-        msg_sender: &Address,
+        store_mut: &mut ERC20Store,
         deposit_shortfall: bool,
     ) -> Result<(), GoblinError> {
-        let key = ERC20StoreKey::new(msg_sender, &self.address);
-        let mut store = ERC20Store::load(&key);
+        if store_mut.is_empty() {
+            store_mut.decimals = erc20::decimals(&self.address)?;
+        }
 
         // Update locked atoms
-        let initial_locked = store.as_ref().atoms_locked;
-        store.as_mut().atoms_locked = initial_locked.add(self.locked_by_engine)?;
+        let initial_locked = store_mut.atoms_locked;
+        store_mut.atoms_locked = initial_locked.add(self.locked_by_engine)?;
 
         // Update free atoms
-        let initial_free = store.as_ref().atoms_free;
+        let initial_free = store_mut.atoms_free;
         let initial_free_delta = initial_free.to_delta()?;
         let free_after_debit_delta = initial_free_delta.checked_sub(self.debit_due()?)?;
 
         if free_after_debit_delta >= Delta::ZERO {
-            store.as_mut().atoms_free = free_after_debit_delta.abs();
+            store_mut.atoms_free = free_after_debit_delta.abs();
         } else {
             require!(deposit_shortfall, GoblinError::ShortfallDepositNotAllowed);
 
             // Subtract shortfall from withdrawal_due
             // If withdrawal_due becomes negative, msg.sender will transfer in tokens to
             // cover the shortfall
-            store.as_mut().atoms_free = Atoms::ZERO;
+            store_mut.atoms_free = Atoms::ZERO;
             self.withdrawal_due = self.withdrawal_due.checked_sub(free_after_debit_delta)?;
         }
-
-        // Store to slot
-        store.as_ref().store(&key);
 
         Ok(())
     }
@@ -113,34 +136,25 @@ impl ERC20Delta {
         msg_sender: &Address,
         recipient: &Address,
         withdraw_internally: bool,
+        decimals: u8,
     ) -> Result<(), GoblinError> {
         if self.withdrawal_due == Delta::ZERO {
             return Ok(());
         }
 
-        // Decimals are needed in all 3 cases
-        // - To transfer in negative withdrawal_due
-        // - To trasfer out withdrawal_due externally
-        // - If transfer out to internal recipient. Since new recipient addresses
-        // can be used we need to store decimal places in there
-        //
-        // We should read decimals in settle_for_sender() because decimal places
-        // must be stored in ERC20Store of msg.sender in case we're accessing it for
-        // the first time
-        let decimals = 18;
         let amount = self.withdrawal_due.abs().to_raw_atoms(decimals)?;
 
         if self.withdrawal_due > Delta::ZERO {
             if withdraw_internally {
                 let key = ERC20StoreKey::new(msg_sender, &self.address);
                 let mut store = ERC20Store::load(&key);
+                let store_mut = store.as_mut();
 
-                let initial_balance = store.as_ref().atoms_free;
-                store.as_mut().atoms_free =
-                    initial_balance.checked_add(self.withdrawal_due.abs())?;
-                store.as_mut().decimals = decimals;
+                let initial_balance = store_mut.atoms_free;
+                store_mut.atoms_free = initial_balance.checked_add(self.withdrawal_due.abs())?;
+                store_mut.decimals = decimals;
 
-                store.as_ref().store(&key);
+                store_mut.store(&key);
 
                 Ok(())
             } else {
