@@ -48,4 +48,18 @@ impl ERC20DeltaList {
 
         Ok(delta_list)
     }
+
+    /// Returns an iterator over the initialized ERC20Delta elements
+    pub fn iter(&self) -> impl Iterator<Item = &ERC20Delta> {
+        self.deltas[..self.len]
+            .iter()
+            .map(|maybe_uninit| unsafe { maybe_uninit.assume_init_ref() })
+    }
+
+    /// Returns a mutable iterator over the initialized ERC20Delta elements
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut ERC20Delta> {
+        self.deltas[..self.len]
+            .iter_mut()
+            .map(|maybe_uninit| unsafe { maybe_uninit.assume_init_mut() })
+    }
 }

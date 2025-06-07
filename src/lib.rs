@@ -41,11 +41,14 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
         decoded_payload.eth_withdrawal_due,
     )?;
 
-    let erc20_delta_list = ERC20DeltaList::init(
+    let mut erc20_delta_list = ERC20DeltaList::init(
         decoded_payload.erc20_withdrawals_bytes,
         decoded_payload.custom_token_list,
     )?;
 
+    // TODO execution
+
+    // Settlement
     let recipient = match decoded_payload.provided_recipient {
         Some(provided_recipient) => provided_recipient,
         None => msg_sender.as_ref(),
@@ -57,14 +60,14 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
         decoded_payload.header.withdraw_internally,
     )?;
 
-    // token_delta_list
-    //     .get(0)
-    //     .unwrap()
-    //     .settle(custom_token_list, msg_sender.as_ref(), &recipient)?;
-
-    // for delta in token_delta_list {
-    //     delta.settle(custom_token_list, msg_sender.as_ref(), &recipient)?;
-    // }
+    for erc20_delta in erc20_delta_list.iter_mut() {
+        erc20_delta.settle(
+            msg_sender.as_ref(),
+            recipient,
+            decoded_payload.header.deposit_shortfall,
+            decoded_payload.header.withdraw_internally,
+        )?;
+    }
 
     // Write cache to trie
     // https://github.com/OffchainLabs/stylus-sdk-rs/blob/2c709a5a1a620ed7585c7d8af64fefabe3a0fc9a/stylus-sdk/src/storage/mod.rs#L81
