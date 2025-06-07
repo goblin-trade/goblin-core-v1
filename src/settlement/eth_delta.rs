@@ -1,16 +1,15 @@
-use core::ops::Add;
+use core::ops::{Add, Sub};
 
 use crate::{
     eth,
     goblin_error::GoblinError,
     hostio::hostio_msg_value,
     quantities::{Atoms, Delta},
-    require,
     state::{EthStore, EthStoreKey, SlotStateV2},
     types::{Address, NATIVE_TOKEN_DECIMALS},
 };
 
-/// Eth atoms due to be deducted from slot and to be transferred out on settlement
+/// ETH atoms due to be deducted, locked or transferred out on settlement
 #[derive(Default)]
 pub struct EthDelta {
     /// Atoms credited by msg.value
@@ -23,7 +22,8 @@ pub struct EthDelta {
     consumed_by_engine: Delta,
 
     /// Delta locked in maker orders
-    /// Positive if tokens are locked in maker orders, negative if unlocked in cancelled orders
+    /// Positive if tokens are locked in maker orders,negative if unlocked
+    /// in cancelled orders
     locked_by_engine: Delta,
 }
 
@@ -64,6 +64,12 @@ impl EthDelta {
         Ok(())
     }
 
+    fn debit_due(&self) -> Result<Delta, GoblinError> {
+        self.consumed_by_engine
+            .checked_add(self.locked_by_engine)?
+            .add(self.withdrawal_due)
+    }
+
     /// Settle, i.e. update the trader's token state and transfer ETH out
     ///
     /// # Arguments
@@ -90,14 +96,14 @@ impl EthDelta {
         let key = EthStoreKey::new(msg_sender);
         let mut store = EthStore::load(&key);
 
-        let atoms_balance = (store.as_ref().atoms_free + self.msg_value_atoms).to_delta()?;
-        let atoms_debit = self.consumed_by_engine.add(self.withdrawal_due)?;
+        let initial_free = store
+            .as_ref()
+            .atoms_free
+            .checked_add(self.msg_value_atoms)?;
+        let initial_locked = store.as_ref().atoms_locked;
 
-        require!(
-            atoms_balance >= atoms_debit,
-            GoblinError::CannotDepositEthOnSettlement
-        );
-        store.as_mut().atoms_free = atoms_balance.checked_sub(atoms_debit)?.abs();
+        store.as_mut().atoms_free = initial_free.sub(self.debit_due()?)?;
+        store.as_mut().atoms_locked = initial_locked.add(self.locked_by_engine)?;
 
         store.as_ref().store(&key);
 

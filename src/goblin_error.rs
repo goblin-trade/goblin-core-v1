@@ -10,13 +10,12 @@ pub enum GoblinError {
     CallResultInvalid = 7,
     TraderTokenStateEmpty = 8,
     DeltaListFull = 9,
-    AtomOverflow = 10,
-    AtomUndeflow = 11,
+    Overflow = 10,
+    Underflow = 11,
     DeltaOverflow = 12,
     DeltaUnderflow = 13,
-    CannotDepositEthOnSettlement = 14,
-    NoTokenAtIndex = 15,
-    InsufficientFreeBalance = 16,
+    NoTokenAtIndex = 14,
+    InsufficientFreeBalance = 15,
 }
 
 impl GoblinError {

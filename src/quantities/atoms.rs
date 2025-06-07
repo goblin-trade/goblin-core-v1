@@ -85,7 +85,7 @@ impl Atoms {
         if self.0 <= i64::MAX as u64 {
             Ok(Delta(self.0 as i64))
         } else {
-            Err(GoblinError::AtomOverflow)
+            Err(GoblinError::Overflow)
         }
     }
 }

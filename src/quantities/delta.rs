@@ -13,19 +13,19 @@ impl Delta {
         Delta(-self.0)
     }
 
-    pub fn checked_add(self, rhs: Delta) -> Result<Delta, GoblinError> {
-        self.0
-            .checked_add(rhs.0)
-            .map(Delta)
-            .ok_or(GoblinError::DeltaOverflow)
-    }
+    // pub fn checked_add(self, rhs: Delta) -> Result<Delta, GoblinError> {
+    //     self.0
+    //         .checked_add(rhs.0)
+    //         .map(Delta)
+    //         .ok_or(GoblinError::DeltaOverflow)
+    // }
 
-    pub fn checked_sub(self, rhs: Delta) -> Result<Delta, GoblinError> {
-        self.0
-            .checked_sub(rhs.0)
-            .map(Delta)
-            .ok_or(GoblinError::DeltaUnderflow)
-    }
+    // pub fn checked_sub(self, rhs: Delta) -> Result<Delta, GoblinError> {
+    //     self.0
+    //         .checked_sub(rhs.0)
+    //         .map(Delta)
+    //         .ok_or(GoblinError::DeltaUnderflow)
+    // }
 }
 
 impl core::ops::Add<Atoms> for Delta {
@@ -67,12 +67,12 @@ impl core::ops::Add<Delta> for Atoms {
             self.0
                 .checked_add(delta.0 as u64)
                 .map(Atoms)
-                .ok_or(GoblinError::AtomOverflow)
+                .ok_or(GoblinError::Overflow)
         } else {
             self.0
                 .checked_sub(delta.0.unsigned_abs())
                 .map(Atoms)
-                .ok_or(GoblinError::AtomUndeflow)
+                .ok_or(GoblinError::Underflow)
         }
     }
 }
@@ -85,12 +85,12 @@ impl core::ops::Sub<Delta> for Atoms {
             self.0
                 .checked_sub(delta.0 as u64)
                 .map(Atoms)
-                .ok_or(GoblinError::AtomUndeflow)
+                .ok_or(GoblinError::Underflow)
         } else {
             self.0
                 .checked_add(delta.0.unsigned_abs())
                 .map(Atoms)
-                .ok_or(GoblinError::AtomOverflow)
+                .ok_or(GoblinError::Overflow)
         }
     }
 }
