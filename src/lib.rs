@@ -49,21 +49,17 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
     // TODO execution
 
     // Settlement
-    let recipient = match decoded_payload.provided_recipient {
-        Some(provided_recipient) => provided_recipient,
-        None => msg_sender.as_ref(),
-    };
 
     eth_delta.settle(
         msg_sender.as_ref(),
-        recipient,
+        decoded_payload.recipient,
         decoded_payload.header.withdraw_internally,
     )?;
 
     for erc20_delta in erc20_delta_list.iter_mut() {
         erc20_delta.settle(
             msg_sender.as_ref(),
-            recipient,
+            decoded_payload.recipient,
             decoded_payload.header.deposit_shortfall,
             decoded_payload.header.withdraw_internally,
         )?;

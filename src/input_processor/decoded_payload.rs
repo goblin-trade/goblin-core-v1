@@ -11,8 +11,8 @@ pub struct DecodedPayload<'a> {
     /// Flags and counts
     pub header: CallHeader,
 
-    /// Custom provided recipient. Use msg.sender if none provided
-    pub provided_recipient: Option<&'a Address>,
+    /// Optional custom recipient
+    pub recipient: Option<&'a Address>,
 
     /// Amount of ETH to withdraw
     pub eth_withdrawal_due: Option<&'a Atoms>,
@@ -67,7 +67,7 @@ impl<'a> DecodedPayload<'a> {
 
         Ok(DecodedPayload {
             header,
-            provided_recipient,
+            recipient: provided_recipient,
             eth_withdrawal_due,
             custom_token_list,
             erc20_withdrawals_bytes,

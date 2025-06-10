@@ -81,56 +81,84 @@ impl EthDelta {
     pub fn settle(
         &self,
         msg_sender: &Address,
-        recipient: &Address,
+        recipient: Option<&Address>,
         withdraw_internally: bool,
     ) -> Result<(), GoblinError> {
-        self.settle_for_sender(msg_sender)?;
-        self.settle_for_recipient(recipient, withdraw_internally)?;
-
-        Ok(())
-    }
-
-    /// Settle EthStore for msg.sender and write to state
-    fn settle_for_sender(&self, msg_sender: &Address) -> Result<(), GoblinError> {
         let key = EthStoreKey::new(msg_sender);
         let mut store = EthStore::load(&key);
         let store_mut = store.as_mut();
 
-        let initial_locked = store_mut.atoms_locked;
-        store_mut.atoms_locked = initial_locked.add(self.locked_by_engine)?;
-
-        let initial_free = store_mut.atoms_free.checked_add(self.msg_value_atoms)?;
-        store_mut.atoms_free = initial_free.sub(self.debit_due()?)?;
+        self.settle_for_sender(store_mut)?;
+        self.settle_for_recipient(msg_sender, store_mut, recipient, withdraw_internally)?;
 
         store_mut.store(&key);
 
         Ok(())
     }
 
-    /// Transfer withdrawal_due ETH atoms to the recipient
+    /// Settle EthStore for msg.sender and write to state
+    fn settle_for_sender(&self, store_mut: &mut EthStore) -> Result<(), GoblinError> {
+        let initial_locked = store_mut.atoms_locked;
+        store_mut.atoms_locked = initial_locked.add(self.locked_by_engine)?;
+
+        let initial_free = store_mut.atoms_free.checked_add(self.msg_value_atoms)?;
+        store_mut.atoms_free = initial_free.sub(self.debit_due()?)?;
+
+        Ok(())
+    }
+
+    /// Credit withdrawal_due to recipient
+    ///
+    /// Crediting is overflow unsafe
     ///
     /// # Arguments
     ///
+    /// * `msg_sender`
+    /// * `store_mut`
     /// * `recipient`- Recipient address
     /// * `withdraw_internally` - Whether to credit to TraderTokenState or to transfer out ETH
     fn settle_for_recipient(
         &self,
-        recipient: &Address,
+        msg_sender: &Address,
+        msg_sender_store: &mut EthStore,
+        recipient: Option<&Address>,
         withdraw_internally: bool,
     ) -> Result<(), GoblinError> {
         if self.withdrawal_due == Atoms::ZERO {
             return Ok(());
-        } else if withdraw_internally {
-            let key = EthStoreKey::new(recipient);
-            let mut store = EthStore::load(&key);
-            let store_mut = store.as_mut();
+        }
 
-            let initial_balance = store_mut.atoms_free;
-            store_mut.atoms_free = initial_balance.checked_add(self.withdrawal_due)?;
-            store_mut.store(&key);
+        let credit = self.withdrawal_due;
+
+        if withdraw_internally {
+            match recipient {
+                None => {
+                    // Credit to msg_sender
+                    msg_sender_store.atoms_free += credit;
+                }
+                Some(recipient_addr) if *recipient_addr == *msg_sender => {
+                    // Credit to msg_sender (recipient is same as sender)
+                    msg_sender_store.atoms_free += credit;
+                }
+                Some(recipient_addr) => {
+                    // Credit to different recipient
+                    let key = EthStoreKey::new(recipient_addr);
+                    let mut recipient_store = EthStore::load(&key);
+                    let recipient_store_mut = recipient_store.as_mut();
+
+                    recipient_store_mut.atoms_free += credit;
+                    recipient_store_mut.store(&key);
+                }
+            }
         } else {
-            let raw_atoms_out = self.withdrawal_due.to_raw_atoms(NATIVE_TOKEN_DECIMALS)?;
-            eth::transfer_out(recipient, &raw_atoms_out)?;
+            let raw_atoms_out = credit.to_raw_atoms(NATIVE_TOKEN_DECIMALS)?;
+
+            let to = match recipient {
+                Some(recipient) => recipient,
+                None => msg_sender,
+            };
+
+            eth::transfer_out(to, &raw_atoms_out)?;
         }
 
         Ok(())

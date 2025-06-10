@@ -17,7 +17,7 @@ pub struct ERC20Delta {
     pub index: u8,
 
     /// The token address as read from hardcoded and custom lists
-    pub address: Address,
+    pub token: Address,
 
     /// Amount of atoms pending withdrawal, as read from input payload.
     ///
@@ -34,10 +34,10 @@ pub struct ERC20Delta {
 }
 
 impl ERC20Delta {
-    pub fn new(index: u8, address: Address, withdrawal_due: Delta) -> Self {
+    pub fn new(index: u8, token: Address, withdrawal_due: Delta) -> Self {
         Self {
             index,
-            address,
+            token,
             withdrawal_due,
             consumed_by_engine: Delta::ZERO,
             locked_by_engine: Delta::ZERO,
@@ -63,28 +63,23 @@ impl ERC20Delta {
     pub fn settle(
         &mut self,
         msg_sender: &Address,
-        recipient: &Address,
+        recipient: Option<&Address>,
         deposit_shortfall: bool,
         withdraw_internally: bool,
     ) -> Result<(), GoblinError> {
-        let key = ERC20StoreKey::new(msg_sender, &self.address);
+        let key = ERC20StoreKey::new(msg_sender, &self.token);
         let mut store = ERC20Store::load(&key);
         let store_mut = store.as_mut();
 
         // If ERC20 store was read for the first time, fetch and store token decimals
         if store_mut.is_empty() {
-            store_mut.decimals = erc20::decimals(&self.address)?;
+            store_mut.decimals = erc20::decimals(&self.token)?;
         }
 
-        self.settle_for_sender(store_mut, deposit_shortfall)?;
-        store_mut.store(&key);
+        self.settle_for_sender(msg_sender, store_mut, deposit_shortfall)?;
+        self.settle_for_recipient(msg_sender, store_mut, recipient, withdraw_internally)?;
 
-        self.settle_for_recipient(
-            msg_sender,
-            recipient,
-            withdraw_internally,
-            store_mut.decimals,
-        )?;
+        store_mut.store(&key);
 
         Ok(())
     }
@@ -97,71 +92,95 @@ impl ERC20Delta {
     /// is negative
     ///
     /// * If deposit_shortfall is true and ERC20Store cannot cover the debit due,
-    /// the shortfall is subtracted from withdrawal_due
+    /// the shortfall is added to withdrawal_due
     pub fn settle_for_sender(
         &mut self,
-        store_mut: &mut ERC20Store,
+        msg_sender: &Address,
+        msg_sender_store: &mut ERC20Store,
         deposit_shortfall: bool,
     ) -> Result<(), GoblinError> {
-        if store_mut.is_empty() {
-            store_mut.decimals = erc20::decimals(&self.address)?;
+        if msg_sender_store.is_empty() {
+            msg_sender_store.decimals = erc20::decimals(&self.token)?;
         }
 
         // Update locked atoms
-        let initial_locked = store_mut.atoms_locked;
-        store_mut.atoms_locked = initial_locked.add(self.locked_by_engine)?;
+        let initial_locked = msg_sender_store.atoms_locked;
+        msg_sender_store.atoms_locked = initial_locked.add(self.locked_by_engine)?;
 
-        // Update free atoms
-        let initial_free = store_mut.atoms_free;
-        let initial_free_delta = initial_free.to_delta()?;
-        let free_after_debit_delta = initial_free_delta.checked_sub(self.debit_due()?)?;
+        let initial_free = msg_sender_store.atoms_free.to_delta()?;
+        let free_after_debit = initial_free.checked_sub(self.debit_due()?)?;
 
-        if free_after_debit_delta >= Delta::ZERO {
-            store_mut.atoms_free = free_after_debit_delta.abs();
+        if free_after_debit >= Delta::ZERO {
+            msg_sender_store.atoms_free = free_after_debit.abs();
         } else {
             require!(deposit_shortfall, GoblinError::ShortfallDepositNotAllowed);
 
             // Subtract shortfall from withdrawal_due
-            // If withdrawal_due becomes negative, msg.sender will transfer in tokens to
-            // cover the shortfall
-            store_mut.atoms_free = Atoms::ZERO;
-            self.withdrawal_due = self.withdrawal_due.checked_sub(free_after_debit_delta)?;
+            msg_sender_store.atoms_free = Atoms::ZERO;
+            self.withdrawal_due = self.withdrawal_due.checked_sub(free_after_debit)?;
+        }
+
+        // Transfer in tokens if withdrawal_due is negative
+        if self.withdrawal_due < Delta::ZERO {
+            let debit = self.withdrawal_due.abs();
+            let debit_raw_atoms = debit.to_raw_atoms(msg_sender_store.decimals)?;
+            erc20::transfer_from(&self.token, msg_sender, &CONTRACT_ADDRESS, &debit_raw_atoms)?;
+            self.withdrawal_due = Delta::ZERO;
         }
 
         Ok(())
     }
 
+    /// Settle delta for recipient
+    ///
+    /// * Transfer out tokens to recipient if withdrawal_due is greater than 0.
+    /// * Negative withdrawal_due is illegal. It is already handled in settle_for_sender()
     fn settle_for_recipient(
         &self,
         msg_sender: &Address,
-        recipient: &Address,
+        msg_sender_store: &mut ERC20Store,
+        recipient: Option<&Address>,
         withdraw_internally: bool,
-        decimals: u8,
     ) -> Result<(), GoblinError> {
+        debug_assert!(self.withdrawal_due >= Delta::ZERO);
+
         if self.withdrawal_due == Delta::ZERO {
             return Ok(());
         }
 
-        let amount = self.withdrawal_due.abs().to_raw_atoms(decimals)?;
+        let credit = self.withdrawal_due.abs();
 
-        if self.withdrawal_due > Delta::ZERO {
-            if withdraw_internally {
-                let key = ERC20StoreKey::new(msg_sender, &self.address);
-                let mut store = ERC20Store::load(&key);
-                let store_mut = store.as_mut();
+        if withdraw_internally {
+            match recipient {
+                None => {
+                    // Credit to msg_sender
+                    msg_sender_store.atoms_free += credit;
+                }
+                Some(recipient_addr) if *recipient_addr == *msg_sender => {
+                    // Credit to msg_sender (recipient is same as sender)
+                    msg_sender_store.atoms_free += credit;
+                }
+                Some(recipient_addr) => {
+                    // Credit to different recipient
+                    let recipient_key = ERC20StoreKey::new(recipient_addr, &self.token);
+                    let mut recipient_store = ERC20Store::load(&recipient_key);
+                    let recipient_store_mut = recipient_store.as_mut();
 
-                let initial_balance = store_mut.atoms_free;
-                store_mut.atoms_free = initial_balance.checked_add(self.withdrawal_due.abs())?;
-                store_mut.decimals = decimals;
-
-                store_mut.store(&key);
-
-                Ok(())
-            } else {
-                erc20::transfer(&self.address, recipient, &amount)
+                    recipient_store_mut.atoms_free += credit;
+                    recipient_store_mut.decimals = msg_sender_store.decimals;
+                    recipient_store_mut.store(&recipient_key);
+                }
             }
+
+            Ok(())
         } else {
-            erc20::transfer_from(&self.address, msg_sender, &CONTRACT_ADDRESS, &amount)
+            let to = match recipient {
+                Some(recipient) => recipient,
+                None => msg_sender,
+            };
+
+            let credit_raw_atoms = credit.to_raw_atoms(msg_sender_store.decimals)?;
+            erc20::transfer(&self.token, to, &credit_raw_atoms)
         }
     }
 }
