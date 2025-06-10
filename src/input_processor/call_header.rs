@@ -26,8 +26,11 @@ pub struct CallHeader {
     /// The number of collect fee instructions. Occupies 4 bits, max 2^3 - 1 = 7
     pub ix_collect_fee_count: u8,
 
-    /// The number of post-only order instructions. Occupies entire byte. Max 2^8 - 1 = 255
+    /// The number of post-only order instructions. Occupies 4 bits, max 2^4 - 1 = 15
     pub ix_post_only_count: u8,
+
+    /// The number of cancel order instructions. Occupies 4 bits, max 2^4 - 1 = 15
+    pub ix_cancel_count: u8,
 
     /// The number of take-only order instructions. Occupies 4 bits, max 2^4 - 1 = 15
     pub ix_take_only_count: u8,
@@ -57,7 +60,8 @@ impl CallHeader {
             // Instructions
             ix_collect_fee_count: input[1] >> 5,
 
-            ix_post_only_count: input[2],
+            ix_post_only_count: input[2] & 0b0000_1111,
+            ix_cancel_count: input[2] >> 4,
 
             ix_take_only_count: input[3] & 0b0000_1111,
             ix_limit_order_count: input[3] >> 4,
@@ -73,7 +77,8 @@ impl CallHeader {
             + self.token_delta_count * ERC20_WITHDRAWAL_ITEM_SIZE;
 
         // TODO add instruction sizes once finalized
-        // PlaceMultiplePostOnly() has variable size- variable number of orders can be posted
+        // PlaceMultiplePostOnly() and CancelMultipleOrders() have variable size-
+        // variable number of orders can be posted or canceled
 
         size
     }
