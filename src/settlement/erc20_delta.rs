@@ -5,7 +5,7 @@ use crate::{
     goblin_error::GoblinError,
     quantities::{Atoms, Delta},
     require,
-    state::{ERC20Store, ERC20StoreKey, SlotStateV2},
+    state::{ERC20Store, ERC20StoreKey, SlotState},
     types::Address,
     CONTRACT_ADDRESS,
 };

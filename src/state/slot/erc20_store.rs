@@ -1,7 +1,7 @@
 use crate::{
     hostio::{hostio_native_keccak256, HostioBuffer},
     quantities::Atoms,
-    state::{SlotKeyV2, SlotStateV2},
+    state::{SlotKey, SlotState},
     types::Address,
 };
 
@@ -9,7 +9,7 @@ pub struct ERC20StoreKey {
     hash: HostioBuffer<[u8; 32]>,
 }
 
-impl SlotKeyV2 for ERC20StoreKey {
+impl SlotKey for ERC20StoreKey {
     const DISCRIMINATOR: u8 = 2;
 
     fn hash(&self) -> &[u8; 32] {
@@ -38,7 +38,7 @@ pub struct ERC20Store {
     _padding: [u8; 15],
 }
 
-impl SlotStateV2<ERC20StoreKey> for ERC20Store {}
+impl SlotState<ERC20StoreKey> for ERC20Store {}
 
 impl ERC20Store {
     pub fn is_empty(&self) -> bool {

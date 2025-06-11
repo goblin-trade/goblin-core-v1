@@ -1,7 +1,7 @@
 use crate::{
     hostio::{hostio_native_keccak256, HostioBuffer},
     quantities::Atoms,
-    state::{SlotKeyV2, SlotStateV2},
+    state::{SlotKey, SlotState},
     types::Address,
 };
 
@@ -9,7 +9,7 @@ pub struct EthStoreKey {
     hash: HostioBuffer<[u8; 32]>,
 }
 
-impl SlotKeyV2 for EthStoreKey {
+impl SlotKey for EthStoreKey {
     const DISCRIMINATOR: u8 = 1;
 
     fn hash(&self) -> &[u8; 32] {
@@ -36,4 +36,4 @@ pub struct EthStore {
     _padding: [u8; 16],
 }
 
-impl SlotStateV2<EthStoreKey> for EthStore {}
+impl SlotState<EthStoreKey> for EthStore {}

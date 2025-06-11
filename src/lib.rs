@@ -9,8 +9,6 @@ use settlement::EthDelta;
 
 pub mod erc20;
 pub mod eth;
-pub mod events;
-pub mod getter;
 pub mod goblin_error;
 pub mod hostio;
 pub mod input_processor;

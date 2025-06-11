@@ -5,7 +5,7 @@ use crate::{
     goblin_error::GoblinError,
     hostio::hostio_msg_value,
     quantities::{Atoms, Delta},
-    state::{EthStore, EthStoreKey, SlotStateV2},
+    state::{EthStore, EthStoreKey, SlotState},
     types::{Address, NATIVE_TOKEN_DECIMALS},
 };
 

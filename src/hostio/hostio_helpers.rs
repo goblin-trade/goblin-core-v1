@@ -1,6 +1,4 @@
-use crate::{
-    input_processor::PayloadBuffer, quantities::RawAtoms, state::SlotKeyV2, types::Address,
-};
+use crate::{input_processor::PayloadBuffer, quantities::RawAtoms, types::Address};
 
 use super::{hostio, HostioBuffer};
 
