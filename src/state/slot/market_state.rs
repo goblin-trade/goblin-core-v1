@@ -38,10 +38,10 @@ use crate::{
 #[repr(C)]
 pub struct MarketStateKey {
     /// The base token
-    pub base_token: Address,
+    pub base_token_index: u8,
 
     /// The quote token
-    pub quote_token: Address,
+    pub quote_token_index: u8,
 
     /// Base atoms per lot
     pub base_lot_size: BaseAtomsPerBaseLot,
@@ -58,16 +58,10 @@ pub struct MarketStateKey {
     /// * tick_size % base_lots_per_base_unit = 0
     /// * In the above example 10 % 10 = 0 which is valid
     pub tick_size: QuoteLotsPerBaseUnitPerTick,
-
-    pub fee_bps: u16,
 }
 
 impl MarketStateKey {
     fn is_valid(&self) -> bool {
-        if self.fee_bps > 10_000 {
-            return false;
-        }
-
         // 2. base_atoms_per_base_unit % num_base_lots_per_base_unit == 0
         // 10^6 % (10^6 / x) == 0
         // This can be valid only if the denominator (10^6 / x) is an integer
@@ -77,6 +71,18 @@ impl MarketStateKey {
         if base_atoms_per_base_unit % num_base_lots_per_base_unit != 0 {
             return false;
         }
+
+        // Every token has the same unit size- 10^6 atoms per unit
+        // We can have variable lot sizes, i.e. different atoms per 'lot'
+        // For example we could have 10 ETH atoms per lot or 100 atoms per lot
+        //
+        // Legal values are 2, 5, 10, 25 etc. Multiples of 5 and 2.
+        // In practice it will be 10^n where n <= 6
+        //
+        if 1_000_000 % self.base_lot_size.0 != 0 {
+            return false;
+        }
+
         // Similarly for quote atoms
 
         // 3. tick size in quote lots % num_base_lots_per_base_unit == 0
