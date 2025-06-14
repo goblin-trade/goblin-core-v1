@@ -13,11 +13,11 @@ use super::ERC20Delta;
 pub const MAX_DELTAS: usize = 15;
 
 // Number of bytes per token in erc20_withdrawals_bytes
-pub const ERC20_WITHDRAWAL_ITEM_SIZE: usize = 9;
+pub const ERC20_WITHDRAWAL_ITEM_SIZE: usize = 1 + 8;
 
 pub struct ERC20DeltaList {
     /// The list of token deltas
-    pub deltas: [MaybeUninit<ERC20Delta>; MAX_DELTAS],
+    inner: [MaybeUninit<ERC20Delta>; MAX_DELTAS],
 
     /// Gives the number of tokens being tracked. Rest of the elements hold default values.
     pub len: usize,
@@ -26,7 +26,7 @@ pub struct ERC20DeltaList {
 impl ERC20DeltaList {
     fn default() -> Self {
         ERC20DeltaList {
-            deltas: [MaybeUninit::<ERC20Delta>::uninit(); MAX_DELTAS],
+            inner: [MaybeUninit::<ERC20Delta>::uninit(); MAX_DELTAS],
             len: 0,
         }
     }
@@ -43,7 +43,7 @@ impl ERC20DeltaList {
             let index = chunk[0];
             let address = get_token_by_index(custom_token_list, index as usize)?;
             let withdrawal_due = Delta(unsafe { *(chunk.as_ptr().add(1) as *const i64) });
-            delta_list.deltas[i].write(ERC20Delta::new(index, address, withdrawal_due));
+            delta_list.inner[i].write(ERC20Delta::new(index, address, withdrawal_due));
         }
 
         Ok(delta_list)
@@ -51,14 +51,14 @@ impl ERC20DeltaList {
 
     /// Returns an iterator over the initialized ERC20Delta elements
     pub fn iter(&self) -> impl Iterator<Item = &ERC20Delta> {
-        self.deltas[..self.len]
+        self.inner[..self.len]
             .iter()
             .map(|maybe_uninit| unsafe { maybe_uninit.assume_init_ref() })
     }
 
     /// Returns a mutable iterator over the initialized ERC20Delta elements
     pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut ERC20Delta> {
-        self.deltas[..self.len]
+        self.inner[..self.len]
             .iter_mut()
             .map(|maybe_uninit| unsafe { maybe_uninit.assume_init_mut() })
     }

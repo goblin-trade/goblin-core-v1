@@ -1,4 +1,7 @@
-use crate::{quantities::Atoms, settlement::ERC20_WITHDRAWAL_ITEM_SIZE, types::Address};
+use crate::{
+    markets::MARKET_ITEM_SIZE, quantities::Atoms, settlement::ERC20_WITHDRAWAL_ITEM_SIZE,
+    types::Address,
+};
 
 pub struct CallHeader {
     /// Number of custom token addresses provided, maximum 2^4 - 1 = 15
@@ -8,6 +11,8 @@ pub struct CallHeader {
     /// operations for these many tokens. Maximum 2^4 - 1 = 15
     pub token_delta_count: usize,
 
+    // TODO use first 3 bits for new variable `custom_market_count: usize`
+    // Read flags from the 4th bit and onward
     /// Whether to read recipient address from payload. If false, use msg.sender as recipient.
     pub recipient_provided: bool,
 
@@ -73,6 +78,9 @@ impl CallHeader {
             // Lists
             + self.custom_token_count * core::mem::size_of::<Address>()
             + self.token_delta_count * ERC20_WITHDRAWAL_ITEM_SIZE;
+
+        // TODO add self.custom_market_count * MARKET_ITEM_SIZE;
+        MARKET_ITEM_SIZE;
 
         // TODO add instruction sizes once finalized
         // PlaceMultiplePostOnly() and CancelMultipleOrders() have variable size-
