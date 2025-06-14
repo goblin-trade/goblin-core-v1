@@ -1,8 +1,5 @@
 use crate::{
-    quantities::{
-        BaseAtomsPerBaseLot, BaseLots, BaseLotsPerBaseUnit, QuoteAtomsPerQuoteLot, QuoteLots,
-        QuoteLotsPerBaseUnitPerTick,
-    },
+    quantities::{BaseLots, BaseLotsPerBaseUnit, QuoteLots, QuoteLotsPerBaseUnitPerTick},
     types::Address,
 };
 
@@ -44,10 +41,10 @@ pub struct MarketStateKey {
     pub quote_token_index: u8,
 
     /// Base atoms per lot
-    pub base_lot_size: BaseAtomsPerBaseLot,
+    // pub base_lot_size: BaseAtomsPerBaseLot,
 
     /// Quote atoms per lot
-    pub quote_lot_size: QuoteAtomsPerQuoteLot,
+    // pub quote_lot_size: QuoteAtomsPerQuoteLot,
 
     /// Ticks increment by these many quote lots
     /// Eg. say quote lot size is 0.01 USDC, i.e. 100 quote lots per unit
@@ -61,35 +58,35 @@ pub struct MarketStateKey {
 }
 
 impl MarketStateKey {
-    fn is_valid(&self) -> bool {
-        // 2. base_atoms_per_base_unit % num_base_lots_per_base_unit == 0
-        // 10^6 % (10^6 / x) == 0
-        // This can be valid only if the denominator (10^6 / x) is an integer
-        // That is 10^6 % x == 0
-        let base_atoms_per_base_unit = 1_000_000;
-        let num_base_lots_per_base_unit = 1_000_000 / self.base_lot_size.0;
-        if base_atoms_per_base_unit % num_base_lots_per_base_unit != 0 {
-            return false;
-        }
+    // fn is_valid(&self) -> bool {
+    //     // 2. base_atoms_per_base_unit % num_base_lots_per_base_unit == 0
+    //     // 10^6 % (10^6 / x) == 0
+    //     // This can be valid only if the denominator (10^6 / x) is an integer
+    //     // That is 10^6 % x == 0
+    //     let base_atoms_per_base_unit = 1_000_000;
+    //     let num_base_lots_per_base_unit = 1_000_000 / self.base_lot_size.0;
+    //     if base_atoms_per_base_unit % num_base_lots_per_base_unit != 0 {
+    //         return false;
+    //     }
 
-        // Every token has the same unit size- 10^6 atoms per unit
-        // We can have variable lot sizes, i.e. different atoms per 'lot'
-        // For example we could have 10 ETH atoms per lot or 100 atoms per lot
-        //
-        // Legal values are 2, 5, 10, 25 etc. Multiples of 5 and 2.
-        // In practice it will be 10^n where n <= 6
-        //
-        if 1_000_000 % self.base_lot_size.0 != 0 {
-            return false;
-        }
+    //     // Every token has the same unit size- 10^6 atoms per unit
+    //     // We can have variable lot sizes, i.e. different atoms per 'lot'
+    //     // For example we could have 10 ETH atoms per lot or 100 atoms per lot
+    //     //
+    //     // Legal values are 2, 5, 10, 25 etc. Multiples of 5 and 2.
+    //     // In practice it will be 10^n where n <= 6
+    //     //
+    //     if 1_000_000 % self.base_lot_size.0 != 0 {
+    //         return false;
+    //     }
 
-        // Similarly for quote atoms
+    //     // Similarly for quote atoms
 
-        // 3. tick size in quote lots % num_base_lots_per_base_unit == 0
-        // Equivalent to tick size in quote atoms % num_base_lots_per_base_unit == 0
+    //     // 3. tick size in quote lots % num_base_lots_per_base_unit == 0
+    //     // Equivalent to tick size in quote atoms % num_base_lots_per_base_unit == 0
 
-        true
-    }
+    //     true
+    // }
 
     // fn try_new(
     //     base_token: Address,

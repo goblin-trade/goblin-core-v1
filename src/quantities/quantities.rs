@@ -8,6 +8,17 @@
 ///! 4. QuoteLots * BaseLotsPerBaseUnit = AdjustedQuoteLots
 ///! 5. QuoteLotsPerBaseUnit * BaseLots = AdjustedQuoteLots
 ///!
+///! # Direct and intermediate units
+///!
+///! * 'lots per unit' is used for calculations. 'atoms per lot' is an intermediate
+///! unit that can be avoided.
+///!
+///! * Since every token is adjusted to 6 decimal places,  atoms_per_unit = 10^6
+///! Therefore lots_per_unit = atoms_per_unit / atoms_per_lot = 10^6 / atoms_per_lot
+///!
+///! * Direct units- BaseLotsPerBaseUnit, QuoteLotsPerQuoteUnit, QuoteLotsPerBaseUnitPerTick
+///! * Indirect units- BaseAtomsPerBaseLot, QuoteAtomsPerQuoteLot, QuoteAtomsPerBaseUnitPerTick
+///
 ///! # A note on Ticks
 ///!
 ///! * Ticks use u32 while other units use u64.
@@ -15,14 +26,17 @@
 ///! to represent a tick, but we use u32 for simplicity.
 ///! * 16 bits are contributed by the outer index and 5 bits by the inner index.
 ///! * The outer index ranges from 0 to u16::MAX while the inner index ranges from 0 to 31.
+
 ///!
 use crate::{define_custom_types, define_inter_type_operations};
 
-define_custom_types!(QuoteLots<u64>, QuoteAtomsPerQuoteLot<u64>, QuoteAtoms<u64>);
-define_inter_type_operations!(QuoteLots<u64>, QuoteAtomsPerQuoteLot<u64>, QuoteAtoms<u64>);
+define_custom_types!(QuoteLots<u64>, QuoteAtoms<u64>);
+// define_custom_types!(QuoteLots<u64>, QuoteAtomsPerQuoteLot<u64>, QuoteAtoms<u64>);
+// define_inter_type_operations!(QuoteLots<u64>, QuoteAtomsPerQuoteLot<u64>, QuoteAtoms<u64>);
 
-define_custom_types!(BaseLots<u64>, BaseAtomsPerBaseLot<u64>, BaseAtoms<u64>);
-define_inter_type_operations!(BaseLots<u64>, BaseAtomsPerBaseLot<u64>, BaseAtoms<u64>);
+define_custom_types!(BaseLots<u64>, BaseAtoms<u64>);
+// define_custom_types!(BaseLots<u64>, BaseAtomsPerBaseLot<u64>, BaseAtoms<u64>);
+// define_inter_type_operations!(BaseLots<u64>, BaseAtomsPerBaseLot<u64>, BaseAtoms<u64>);
 
 define_custom_types!(
     QuoteLotsPerBaseUnitPerTick<u64>,
@@ -55,21 +69,6 @@ define_inter_type_operations!(
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_quote_operations() {
-        let lots = QuoteLots(5);
-        let atoms_per_lot = QuoteAtomsPerQuoteLot(10);
-
-        // Test multiplication
-        assert_eq!(lots * atoms_per_lot, QuoteAtoms(50));
-        assert_eq!(atoms_per_lot * lots, QuoteAtoms(50));
-
-        // Test division
-        let atoms = QuoteAtoms(50);
-        assert_eq!(atoms / lots, QuoteAtomsPerQuoteLot(10));
-        assert_eq!(atoms / atoms_per_lot, QuoteLots(5));
-    }
 
     #[test]
     fn test_mixed_type_operations() {
