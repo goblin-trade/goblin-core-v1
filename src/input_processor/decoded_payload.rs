@@ -1,6 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::{CallHeader, CallPayload},
+    markets::MarketItem,
     quantities::Atoms,
     require,
     settlement::ERC20_WITHDRAWAL_ITEM_SIZE,
@@ -24,6 +25,8 @@ pub struct DecodedPayload<'a> {
     /// withdrawal or deposit.
     /// Max 15 withdrawals, i.e. 9 * 15 = 135 bytes
     pub erc20_withdrawals_bytes: &'a [u8],
+
+    pub custom_market_list: &'a [MarketItem],
 }
 
 impl<'a> DecodedPayload<'a> {
@@ -61,9 +64,18 @@ impl<'a> DecodedPayload<'a> {
             value
         };
 
-        let start = offset;
-        offset += header.custom_token_count * ERC20_WITHDRAWAL_ITEM_SIZE;
-        let erc20_withdrawals_bytes = &payload.input.as_ref()[start..offset];
+        let erc20_withdrawals_bytes = {
+            let start = offset;
+            offset += header.custom_token_count * ERC20_WITHDRAWAL_ITEM_SIZE;
+            &payload.input.as_ref()[start..offset]
+        };
+
+        let custom_market_list = {
+            let count = header.custom_market_count;
+            let value = payload.decode_slice::<MarketItem>(offset, count);
+            offset += count * core::mem::size_of::<MarketItem>();
+            value
+        };
 
         Ok(DecodedPayload {
             header,
@@ -71,6 +83,7 @@ impl<'a> DecodedPayload<'a> {
             eth_withdrawal_due,
             custom_token_list,
             erc20_withdrawals_bytes,
+            custom_market_list,
         })
     }
 }

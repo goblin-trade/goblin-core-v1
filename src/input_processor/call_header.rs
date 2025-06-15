@@ -1,6 +1,5 @@
 use crate::{
-    markets::MARKET_ITEM_SIZE, quantities::Atoms, settlement::ERC20_WITHDRAWAL_ITEM_SIZE,
-    types::Address,
+    markets::MarketItem, quantities::Atoms, settlement::ERC20_WITHDRAWAL_ITEM_SIZE, types::Address,
 };
 
 pub struct CallHeader {
@@ -11,8 +10,9 @@ pub struct CallHeader {
     /// operations for these many tokens. Maximum 2^4 - 1 = 15
     pub token_delta_count: usize,
 
-    // TODO use first 3 bits for new variable `custom_market_count: usize`
-    // Read flags from the 4th bit and onward
+    /// Number of custom market addresses provided, maximum 2^3 - 1 = 7
+    pub custom_market_count: usize,
+
     /// Whether to read recipient address from payload. If false, use msg.sender as recipient.
     pub recipient_provided: bool,
 
@@ -51,18 +51,17 @@ impl CallHeader {
             // Lists
             custom_token_count: (input[0] & 0b0000_1111) as usize,
             token_delta_count: (input[0] >> 4) as usize,
+            custom_market_count: (input[1] & 0b0000_0111) as usize,
 
             // Optional variables
-            recipient_provided: (input[1] & 0b0000_0001) != 0,
-            track_msg_value: (input[1] & 0b0000_0010) != 0,
-            track_eth_withdrawal_due: (input[1] & 0b0000_0100) != 0,
+            recipient_provided: (input[1] & 0b0000_1000) != 0,
+            track_msg_value: (input[1] & 0b0001_0000) != 0,
+            track_eth_withdrawal_due: (input[1] & 0b0010_0000) != 0,
 
             // Settlement flags
-            deposit_shortfall: (input[1] & 0b0000_1000) != 0,
-            withdraw_internally: (input[1] & 0b0001_0000) != 0,
+            deposit_shortfall: (input[1] & 0b0100_0000) != 0,
+            withdraw_internally: (input[1] & 0b1000_0000) != 0,
 
-            // We have 3 free bits on input[1] because ix_collect_fee_count is
-            // removed
             ix_post_only_count: input[2] & 0b0000_1111,
             ix_cancel_count: input[2] >> 4,
 
@@ -77,10 +76,8 @@ impl CallHeader {
             + self.track_msg_value as usize * core::mem::size_of::<Atoms>()
             // Lists
             + self.custom_token_count * core::mem::size_of::<Address>()
-            + self.token_delta_count * ERC20_WITHDRAWAL_ITEM_SIZE;
-
-        // TODO add self.custom_market_count * MARKET_ITEM_SIZE;
-        MARKET_ITEM_SIZE;
+            + self.token_delta_count * ERC20_WITHDRAWAL_ITEM_SIZE
+            + self.custom_market_count * core::mem::size_of::<MarketItem>();
 
         // TODO add instruction sizes once finalized
         // PlaceMultiplePostOnly() and CancelMultipleOrders() have variable size-
@@ -101,6 +98,7 @@ mod tests {
 
         assert_eq!(header.custom_token_count, 0);
         assert_eq!(header.token_delta_count, 0);
+        assert_eq!(header.custom_market_count, 0);
         assert!(!header.recipient_provided);
         assert!(!header.track_msg_value);
         assert!(!header.track_eth_withdrawal_due);
@@ -135,12 +133,38 @@ mod tests {
     }
 
     #[test]
-    fn test_init_byte_1_boolean_flags() {
+    fn test_init_byte_1_custom_market_count() {
         let mut input = [0u8; 512];
-        // Set all boolean flags in byte 1 (bits 0-4)
-        input[1] = 0b0001_1111;
+        // Set custom_market_count = 5 (bits 0-2)
+        input[1] = 0b0000_0101;
 
         let header = CallHeader::init(&input);
+        assert_eq!(header.custom_market_count, 5);
+        assert!(!header.recipient_provided);
+        assert!(!header.track_msg_value);
+        assert!(!header.track_eth_withdrawal_due);
+        assert!(!header.deposit_shortfall);
+        assert!(!header.withdraw_internally);
+    }
+
+    #[test]
+    fn test_init_byte_1_max_custom_market_count() {
+        let mut input = [0u8; 512];
+        // Set custom_market_count = 7 (maximum value for 3 bits)
+        input[1] = 0b0000_0111;
+
+        let header = CallHeader::init(&input);
+        assert_eq!(header.custom_market_count, 7);
+    }
+
+    #[test]
+    fn test_init_byte_1_boolean_flags() {
+        let mut input = [0u8; 512];
+        // Set all boolean flags in byte 1 (bits 3-7)
+        input[1] = 0b1111_1000;
+
+        let header = CallHeader::init(&input);
+        assert_eq!(header.custom_market_count, 0); // bits 0-2 are 0
         assert!(header.recipient_provided);
         assert!(header.track_msg_value);
         assert!(header.track_eth_withdrawal_due);
@@ -149,14 +173,15 @@ mod tests {
     }
 
     #[test]
-    fn test_init_byte_1_upper_bits_unused() {
+    fn test_init_byte_1_combined_market_count_and_flags() {
         let mut input = [0u8; 512];
-        // Set upper 3 bits of byte 1 (these are now unused/reserved)
-        input[1] = 0b1110_0000; // 7 << 5 = 224
+        // Set custom_market_count = 3 (bits 0-2) and some flags
+        input[1] = 0b0001_1011; // withdraw_internally=0, deposit_shortfall=0, track_eth_withdrawal_due=0, track_msg_value=1, recipient_provided=1, custom_market_count=3
 
         let header = CallHeader::init(&input);
-        assert!(!header.recipient_provided);
-        assert!(!header.track_msg_value);
+        assert_eq!(header.custom_market_count, 3);
+        assert!(header.recipient_provided);
+        assert!(header.track_msg_value);
         assert!(!header.track_eth_withdrawal_due);
         assert!(!header.deposit_shortfall);
         assert!(!header.withdraw_internally);
@@ -188,7 +213,7 @@ mod tests {
     fn test_init_all_fields_set() {
         let mut input = [0u8; 512];
         input[0] = 0b1010_0101; // token_delta_count=10, custom_token_count=5
-        input[1] = 0b0001_1111; // all flags set (upper 3 bits unused)
+        input[1] = 0b1111_1111; // all flags set, custom_market_count=7
         input[2] = 0b1100_0011; // ix_cancel_count=12, ix_post_only_count=3
         input[3] = 0b0110_1000; // ix_limit_order_count=6, ix_take_only_count=8
 
@@ -197,6 +222,7 @@ mod tests {
         // Verify all fields
         assert_eq!(header.custom_token_count, 5);
         assert_eq!(header.token_delta_count, 10);
+        assert_eq!(header.custom_market_count, 7);
         assert!(header.recipient_provided);
         assert!(header.track_msg_value);
         assert!(header.track_eth_withdrawal_due);
@@ -220,7 +246,7 @@ mod tests {
     #[test]
     fn test_payload_size_with_recipient() {
         let mut input = [0u8; 512];
-        input[1] = 0b0000_0001; // recipient_provided = true
+        input[1] = 0b0000_1000; // recipient_provided = true (bit 3)
 
         let header = CallHeader::init(&input);
         let expected_size = CallHeader::HEADER_BYTE_SIZE + core::mem::size_of::<Address>();
@@ -231,7 +257,7 @@ mod tests {
     #[test]
     fn test_payload_size_with_msg_value() {
         let mut input = [0u8; 512];
-        input[1] = 0b0000_0010; // track_msg_value = true
+        input[1] = 0b0001_0000; // track_msg_value = true (bit 4)
 
         let header = CallHeader::init(&input);
         let expected_size = CallHeader::HEADER_BYTE_SIZE + core::mem::size_of::<Atoms>();
@@ -262,17 +288,29 @@ mod tests {
     }
 
     #[test]
+    fn test_payload_size_with_custom_markets() {
+        let mut input = [0u8; 512];
+        input[1] = 0b0000_0100; // custom_market_count = 4
+
+        let header = CallHeader::init(&input);
+        let expected_size = CallHeader::HEADER_BYTE_SIZE + 4 * core::mem::size_of::<MarketItem>();
+
+        assert_eq!(header.payload_size(), expected_size);
+    }
+
+    #[test]
     fn test_payload_size_comprehensive() {
         let mut input = [0u8; 512];
         input[0] = 0b0011_0101; // token_delta_count=3, custom_token_count=5
-        input[1] = 0b0000_0011; // recipient_provided=true, track_msg_value=true
+        input[1] = 0b0001_1010; // custom_market_count=2, recipient_provided=true, track_msg_value=true
 
         let header = CallHeader::init(&input);
         let expected_size = CallHeader::HEADER_BYTE_SIZE
             + core::mem::size_of::<Address>() // recipient
             + core::mem::size_of::<Atoms>() // msg_value
             + 5 * core::mem::size_of::<Address>() // custom tokens
-            + 3 * ERC20_WITHDRAWAL_ITEM_SIZE; // token deltas
+            + 3 * ERC20_WITHDRAWAL_ITEM_SIZE // token deltas
+            + 2 * core::mem::size_of::<MarketItem>(); // custom markets
 
         assert_eq!(header.payload_size(), expected_size);
     }
@@ -287,7 +325,7 @@ mod tests {
         let mut input = [0u8; 512];
         // Test maximum values for each field
         input[0] = 0xFF; // Both counts at max (15)
-        input[1] = 0xFF; // All flags true (upper 3 bits unused)
+        input[1] = 0xFF; // All flags true, custom_market_count at max (7)
         input[2] = 0xFF; // Both counts at max (15)
         input[3] = 0xFF; // Both counts at max (15)
 
@@ -295,6 +333,7 @@ mod tests {
 
         assert_eq!(header.custom_token_count, 15);
         assert_eq!(header.token_delta_count, 15);
+        assert_eq!(header.custom_market_count, 7);
         assert!(header.recipient_provided);
         assert!(header.track_msg_value);
         assert!(header.track_eth_withdrawal_due);
@@ -321,16 +360,17 @@ mod tests {
         assert_eq!(header.custom_token_count, 0);
         assert_eq!(header.token_delta_count, 1);
 
-        // Test individual boolean flags
-        for i in 0..5 {
+        // Test individual boolean flags (now starting from bit 3)
+        for i in 3..8 {
             input[1] = 1 << i;
             let header = CallHeader::init(&input);
 
-            assert_eq!(header.recipient_provided, i == 0);
-            assert_eq!(header.track_msg_value, i == 1);
-            assert_eq!(header.track_eth_withdrawal_due, i == 2);
-            assert_eq!(header.deposit_shortfall, i == 3);
-            assert_eq!(header.withdraw_internally, i == 4);
+            assert_eq!(header.custom_market_count, 0); // bits 0-2 are 0
+            assert_eq!(header.recipient_provided, i == 3);
+            assert_eq!(header.track_msg_value, i == 4);
+            assert_eq!(header.track_eth_withdrawal_due, i == 5);
+            assert_eq!(header.deposit_shortfall, i == 6);
+            assert_eq!(header.withdraw_internally, i == 7);
         }
     }
 }

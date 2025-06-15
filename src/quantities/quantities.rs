@@ -38,22 +38,20 @@ define_custom_types!(BaseLots<u64>, BaseAtoms<u64>);
 // define_custom_types!(BaseLots<u64>, BaseAtomsPerBaseLot<u64>, BaseAtoms<u64>);
 // define_inter_type_operations!(BaseLots<u64>, BaseAtomsPerBaseLot<u64>, BaseAtoms<u64>);
 
+define_custom_types!(BaseLotsPerBaseUnit<u64>, QuoteLotsPerQuoteUnit<u64>);
+
 define_custom_types!(
     QuoteLotsPerBaseUnitPerTick<u64>,
     Ticks<u32>,
-    QuoteLotsBaseUnit<u64>
+    QuoteLotsPerBaseUnit<u64>
 );
 define_inter_type_operations!(
     QuoteLotsPerBaseUnitPerTick<u64>,
     Ticks<u32>,
-    QuoteLotsBaseUnit<u64>
+    QuoteLotsPerBaseUnit<u64>
 );
 
-define_custom_types!(
-    BaseLotsPerBaseUnit<u64>,
-    QuoteLotsPerBaseUnit<u64>,
-    AdjustedQuoteLots<u64>
-);
+define_custom_types!(AdjustedQuoteLots<u64>);
 
 define_inter_type_operations!(
     QuoteLots<u64>,
@@ -76,11 +74,11 @@ mod tests {
         let ticks = Ticks(5);
 
         // Test multiplication
-        assert_eq!(lots_per_tick * ticks, QuoteLotsBaseUnit(500));
-        assert_eq!(ticks * lots_per_tick, QuoteLotsBaseUnit(500));
+        assert_eq!(lots_per_tick * ticks, QuoteLotsPerBaseUnit(500));
+        assert_eq!(ticks * lots_per_tick, QuoteLotsPerBaseUnit(500));
 
         // Test division
-        let lots = QuoteLotsBaseUnit(500);
+        let lots = QuoteLotsPerBaseUnit(500);
         assert_eq!(lots / ticks, QuoteLotsPerBaseUnitPerTick(100));
         assert_eq!(lots / lots_per_tick, Ticks(5));
     }
@@ -91,6 +89,6 @@ mod tests {
         let ticks = Ticks(1_000);
 
         // Should handle larger numbers without overflow since result type is u64
-        assert_eq!(lots_per_tick * ticks, QuoteLotsBaseUnit(1_000_000_000));
+        assert_eq!(lots_per_tick * ticks, QuoteLotsPerBaseUnit(1_000_000_000));
     }
 }
