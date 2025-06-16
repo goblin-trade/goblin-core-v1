@@ -18,6 +18,7 @@ pub enum GoblinError {
     InsufficientFreeBalance = 15,
     ShortfallDepositNotAllowed = 16,
     NoMarketAtIndex = 17,
+    InvalidMarket = 18,
 }
 
 impl GoblinError {

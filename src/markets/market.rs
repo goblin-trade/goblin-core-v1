@@ -2,6 +2,7 @@ use crate::{
     goblin_error::GoblinError,
     markets::HARDCODED_MARKETS,
     quantities::{BaseLotsPerBaseUnit, QuoteLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick},
+    require,
     tokens::get_token_by_index,
     types::Address,
 };
@@ -47,23 +48,6 @@ impl Market {
         }
     }
 
-    pub const fn new(
-        base_token: Address,
-        quote_token: Address,
-        base_lot_size: BaseLotsPerBaseUnit,
-        quote_lot_size: QuoteLotsPerBaseUnit,
-        tick_size: QuoteLotsPerBaseUnitPerTick,
-    ) -> Result<Self, GoblinError> {
-        // TODO validate params
-        Ok(Self {
-            base_token,
-            quote_token,
-            base_lot_size,
-            quote_lot_size,
-            tick_size,
-        })
-    }
-
     pub fn from_index(
         index: usize,
         custom_market_list: &[MarketItem],
@@ -92,6 +76,24 @@ impl Market {
                 }
             }
         }
+    }
+
+    fn new(
+        base_token: Address,
+        quote_token: Address,
+        base_lot_size: BaseLotsPerBaseUnit,
+        quote_lot_size: QuoteLotsPerBaseUnit,
+        tick_size: QuoteLotsPerBaseUnitPerTick,
+    ) -> Result<Self, GoblinError> {
+        require!(base_token != quote_token, GoblinError::InvalidMarket);
+
+        Ok(Self {
+            base_token,
+            quote_token,
+            base_lot_size,
+            quote_lot_size,
+            tick_size,
+        })
     }
 
     // Getters
