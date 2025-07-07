@@ -10,14 +10,13 @@
 
   outputs = { self, nixpkgs, nitro, ... }:
     let
-      system = "x86_64-linux";
-      pkgs = import nixpkgs {
-        inherit system;
-      };
+      supportedSystems = [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ];
 
-      rustPlatform = pkgs.rustPlatform;
+      forAllSystems = nixpkgs.lib.genAttrs supportedSystems;
 
-      cargoStylus = rustPlatform.buildRustPackage rec {
+      nixpkgsFor = forAllSystems (system: import nixpkgs { inherit system; });
+
+      makeCargoStylus = pkgs: pkgs.rustPlatform.buildRustPackage rec {
         pname = "cargo-stylus";
         version = "0.5.3";
 
@@ -36,6 +35,9 @@
 
         buildInputs = [
           pkgs.openssl
+        ] ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [
+          pkgs.darwin.apple_sdk.frameworks.Security
+          pkgs.darwin.apple_sdk.frameworks.SystemConfiguration
         ];
 
         meta = {
@@ -44,37 +46,44 @@
           license = pkgs.lib.licenses.mit;
         };
       };
-
-
-      nitroShell = nitro.devShells.${system}.default;
     in {
-      devShells.${system}.default = pkgs.mkShell {
-        buildInputs = nitroShell.buildInputs ++ [
-          pkgs.sqlx-cli
-          cargoStylus
-        ];
+      devShells = forAllSystems (system:
+        let
+          pkgs = nixpkgsFor.${system};
+          cargoStylus = makeCargoStylus pkgs;
+          nitroShell = nitro.devShells.${system}.default or (pkgs.mkShell {});
+        in {
+          default = pkgs.mkShell {
+            buildInputs = (nitroShell.buildInputs or []) ++ [
+              pkgs.sqlx-cli
+              cargoStylus
+            ];
 
-        shellHook = ''
-          ${nitroShell.shellHook or ""}
+            shellHook = ''
+              ${nitroShell.shellHook or ""}
 
-          # Goblin-specific environment setup
-          export ETH_RPC_URL="http://127.0.0.1:8547"
-          export ADDRESS="0x3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E"
-          export PRIVATE_KEY="0xb6b15c8cb491557369f3c7d2c287b053eb229daa9c22138887752191c9520659"
+              # Goblin-specific environment setup
+              export ETH_RPC_URL="http://127.0.0.1:8547"
+              export ADDRESS="0x3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E"
+              export PRIVATE_KEY="0xb6b15c8cb491557369f3c7d2c287b053eb229daa9c22138887752191c9520659"
 
-          export ARB_WASM_CONTRACT="0x0000000000000000000000000000000000000071"
-          export CREATE3_FACTORY="0xA6E41fFD769491a42A6e5Ce453259b93983a22EF"
-          export GOBLIN_SALT="0x000000000000000000000000000000000000000000000000400000000000485b"
-          export CONTRACT="0x8888415db80eabcf580283a3d65249887d3161b0"
+              export ARB_WASM_CONTRACT="0x0000000000000000000000000000000000000071"
+              export CREATE3_FACTORY="0xA6E41fFD769491a42A6e5Ce453259b93983a22EF"
+              export GOBLIN_SALT="0x000000000000000000000000000000000000000000000000400000000000485b"
+              export CONTRACT="0x8888415db80eabcf580283a3d65249887d3161b0"
 
-          export BASE_TOKEN="0xe1080224B632A93951A7CFA33EeEa9Fd81558b5e"
-          export QUOTE_TOKEN="0x3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E"
+              export BASE_TOKEN="0xe1080224B632A93951A7CFA33EeEa9Fd81558b5e"
+              export QUOTE_TOKEN="0x3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E"
 
-          export FOUNDRY_DISABLE_NIGHTLY_WARNING="true"
+              export FOUNDRY_DISABLE_NIGHTLY_WARNING="true"
 
-          # Sqlite database
-          export DATABASE_URL=sqlite://$XDG_DATA_HOME/goblin/goblin.db
-        '';
-      };
+              # Sqlite database
+              export DATABASE_URL=sqlite://$XDG_DATA_HOME/goblin/goblin.db
+
+              # Timezone
+              export TZ=GMT-2
+            '';
+          };
+        });
     };
 }
