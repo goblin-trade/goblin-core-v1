@@ -1,10 +1,9 @@
 #![cfg_attr(not(test), no_std)]
 #![cfg_attr(not(test), no_main)]
 
-use crate::{input_processor::DecodedPayload, settlement::ERC20DeltaList};
+use crate::{input_processor::Args, settlement::ERC20DeltaList};
 use goblin_error::*;
 use hostio::*;
-use input_processor::CallPayload;
 use settlement::EthDelta;
 
 pub mod erc20;
@@ -30,20 +29,13 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
     let msg_reentrant = unsafe { hostio::msg_reentrant() };
     require!(!msg_reentrant, GoblinError::Reentrant);
 
-    let payload = CallPayload::new(len);
-    let decoded_payload = DecodedPayload::new(&payload)?;
+    let args_buffer = unsafe { hostio_helpers::hostio_read_args() };
+    let args = Args::new(args_buffer.as_ref(), len)?;
 
     let msg_sender = unsafe { hostio_msg_sender() };
 
-    let eth_delta = EthDelta::init(
-        decoded_payload.header.track_msg_value,
-        decoded_payload.eth_withdrawal_due,
-    )?;
-
-    let mut erc20_delta_list = ERC20DeltaList::init(
-        decoded_payload.erc20_withdrawals_bytes,
-        decoded_payload.custom_token_list,
-    )?;
+    let eth_delta = EthDelta::init(args.header.track_msg_value, args.eth_withdrawal_due)?;
+    let mut erc20_delta_list = ERC20DeltaList::init(args.erc20_delta_list, args.custom_token_list)?;
 
     // TODO execution
 
@@ -51,16 +43,16 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
 
     eth_delta.settle(
         msg_sender.as_ref(),
-        decoded_payload.recipient,
-        decoded_payload.header.withdraw_internally,
+        args.recipient,
+        args.header.withdraw_internally,
     )?;
 
     for erc20_delta in erc20_delta_list.iter_mut() {
         erc20_delta.settle(
             msg_sender.as_ref(),
-            decoded_payload.recipient,
-            decoded_payload.header.deposit_shortfall,
-            decoded_payload.header.withdraw_internally,
+            args.recipient,
+            args.header.deposit_shortfall,
+            args.header.withdraw_internally,
         )?;
     }
 

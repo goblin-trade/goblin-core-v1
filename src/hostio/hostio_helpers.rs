@@ -1,9 +1,9 @@
-use crate::{input_processor::PayloadBuffer, quantities::RawAtoms, types::Address};
+use crate::{input_processor::ArgsBuffer, quantities::RawAtoms, types::Address};
 
 use super::{hostio, HostioBuffer};
 
-pub unsafe fn hostio_read_args() -> HostioBuffer<PayloadBuffer> {
-    HostioBuffer::<PayloadBuffer>::new(|ptr| hostio::read_args(ptr))
+pub unsafe fn hostio_read_args() -> HostioBuffer<ArgsBuffer> {
+    HostioBuffer::<ArgsBuffer>::new(|ptr| hostio::read_args(ptr))
 }
 
 pub unsafe fn hostio_msg_sender() -> HostioBuffer<Address> {

@@ -14,9 +14,9 @@ pub const MAX_CUSTOM_MARKETS: usize = 7;
 /// These hold token indices instead of token addresses. The tokens
 /// can be mapped to obtain `Market` struct
 #[repr(C, packed)]
-pub struct MarketItem {
+pub struct IndexedMarket {
     pub base_token_index: u8,
-    pub quote_token: u8,
+    pub quote_token_index: u8,
     pub base_lot_size: BaseLotsPerBaseUnit,
     pub quote_lot_size: QuoteLotsPerBaseUnit,
     pub tick_size: QuoteLotsPerBaseUnitPerTick,
@@ -25,10 +25,10 @@ pub struct MarketItem {
 #[derive(Clone, Copy)]
 pub struct Market {
     base_token: Address,
-    pub quote_token: Address,
-    pub base_lot_size: BaseLotsPerBaseUnit,
-    pub quote_lot_size: QuoteLotsPerBaseUnit,
-    pub tick_size: QuoteLotsPerBaseUnitPerTick,
+    quote_token: Address,
+    base_lot_size: BaseLotsPerBaseUnit,
+    quote_lot_size: QuoteLotsPerBaseUnit,
+    tick_size: QuoteLotsPerBaseUnitPerTick,
 }
 
 impl Market {
@@ -50,7 +50,7 @@ impl Market {
 
     pub fn from_index(
         index: usize,
-        custom_market_list: &[MarketItem],
+        custom_market_list: &[IndexedMarket],
         custom_token_list: &[Address],
     ) -> Result<Self, GoblinError> {
         match custom_market_list.get(index) {

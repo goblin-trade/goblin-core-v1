@@ -1,7 +1,8 @@
 use core::mem::MaybeUninit;
 
 use crate::{
-    goblin_error::GoblinError, quantities::Delta, tokens::get_token_by_index, types::Address,
+    goblin_error::GoblinError, settlement::IndexedERC20Delta, tokens::get_token_by_index,
+    types::Address,
 };
 
 use super::ERC20Delta;
@@ -11,9 +12,6 @@ use super::ERC20Delta;
 // The max length of `withdrawal_list` is also 15. If withdrawal_list has 15
 // elements we cannot insert more in ERC20DeltaList
 pub const MAX_DELTAS: usize = 15;
-
-// Number of bytes per token in erc20_withdrawals_bytes
-pub const ERC20_WITHDRAWAL_ITEM_SIZE: usize = 1 + 8;
 
 pub struct ERC20DeltaList {
     /// The list of token deltas
@@ -31,22 +29,19 @@ impl ERC20DeltaList {
         }
     }
 
-    pub fn init(bytes: &[u8], custom_token_list: &[Address]) -> Result<Self, GoblinError> {
-        debug_assert!(bytes.len() <= MAX_DELTAS * ERC20_WITHDRAWAL_ITEM_SIZE);
+    pub fn init(
+        indexed_erc20_delta_list: &[IndexedERC20Delta],
+        custom_token_list: &[Address],
+    ) -> Result<Self, GoblinError> {
+        let mut list = Self::default();
 
-        let mut delta_list = ERC20DeltaList::default();
-        delta_list.len = bytes.len() / ERC20_WITHDRAWAL_ITEM_SIZE;
-
-        // TODO optimize with as_chunks() when stable
-        // let (chunks, _remainder): (&[[u8; 9]], &[u8]) = bytes.as_chunks();
-        for (i, chunk) in bytes.chunks_exact(ERC20_WITHDRAWAL_ITEM_SIZE).enumerate() {
-            let index = chunk[0];
-            let address = get_token_by_index(custom_token_list, index as usize)?;
-            let withdrawal_due = Delta(unsafe { *(chunk.as_ptr().add(1) as *const i64) });
-            delta_list.inner[i].write(ERC20Delta::new(index, address, withdrawal_due));
+        for (i, item) in indexed_erc20_delta_list.iter().enumerate() {
+            let address = get_token_by_index(custom_token_list, item.index as usize)?;
+            let withdrawal_due = item.withdrawal_due;
+            list.inner[i].write(ERC20Delta::new(address, withdrawal_due));
         }
 
-        Ok(delta_list)
+        Ok(list)
     }
 
     /// Returns an iterator over the initialized ERC20Delta elements

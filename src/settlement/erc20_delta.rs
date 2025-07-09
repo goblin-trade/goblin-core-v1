@@ -10,12 +10,19 @@ use crate::{
     CONTRACT_ADDRESS,
 };
 
+/// Withdrawal due for an ERC20 token as read from the args.
+/// It contains the token index instead of the token address.
+#[repr(C, packed)]
+pub struct IndexedERC20Delta {
+    pub index: u8,
+    pub withdrawal_due: Delta,
+}
+
 /// ERC20 atoms due to be deducted, locked or transferred out on settlement
 #[derive(Clone, Copy)]
 pub struct ERC20Delta {
-    /// The token index
-    pub index: u8,
-
+    // /// The token index
+    // pub index: u8,
     /// The token address as read from hardcoded and custom lists
     pub token: Address,
 
@@ -34,9 +41,9 @@ pub struct ERC20Delta {
 }
 
 impl ERC20Delta {
-    pub fn new(index: u8, token: Address, withdrawal_due: Delta) -> Self {
+    pub fn new(token: Address, withdrawal_due: Delta) -> Self {
         Self {
-            index,
+            // index,
             token,
             withdrawal_due,
             consumed_by_engine: Delta::ZERO,

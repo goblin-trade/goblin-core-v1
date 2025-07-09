@@ -1,14 +1,15 @@
 use crate::{
-    markets::MarketItem, quantities::Atoms, settlement::ERC20_WITHDRAWAL_ITEM_SIZE, types::Address,
+    goblin_error::GoblinError, markets::IndexedMarket, quantities::Atoms, require,
+    settlement::IndexedERC20Delta, types::Address,
 };
 
-pub struct CallHeader {
+pub struct Header {
     /// Number of custom token addresses provided, maximum 2^4 - 1 = 15
     pub custom_token_count: usize,
 
-    /// Number of token deltas to update, i.e. perform deposit or withdraw
+    /// Number of ERC20 token deltas to update, i.e. perform deposit or withdraw
     /// operations for these many tokens. Maximum 2^4 - 1 = 15
-    pub token_delta_count: usize,
+    pub erc20_delta_count: usize,
 
     /// Number of custom market addresses provided, maximum 2^3 - 1 = 7
     pub custom_market_count: usize,
@@ -43,14 +44,23 @@ pub struct CallHeader {
     pub ix_limit_order_count: u8,
 }
 
-impl CallHeader {
+impl Header {
     pub const HEADER_BYTE_SIZE: usize = 4;
 
-    pub fn init(input: &[u8; 512]) -> Self {
-        CallHeader {
+    pub fn init(input: &[u8; 512], len: usize) -> Result<Self, GoblinError> {
+        require!(len >= Header::HEADER_BYTE_SIZE, GoblinError::InvalidPayload);
+
+        let header = Header::init_inner(input);
+        require!(len >= header.payload_size(), GoblinError::InvalidPayload);
+
+        Ok(header)
+    }
+
+    fn init_inner(input: &[u8; 512]) -> Self {
+        Header {
             // Lists
             custom_token_count: (input[0] & 0b0000_1111) as usize,
-            token_delta_count: (input[0] >> 4) as usize,
+            erc20_delta_count: (input[0] >> 4) as usize,
             custom_market_count: (input[1] & 0b0000_0111) as usize,
 
             // Optional variables
@@ -76,8 +86,8 @@ impl CallHeader {
             + self.track_msg_value as usize * core::mem::size_of::<Atoms>()
             // Lists
             + self.custom_token_count * core::mem::size_of::<Address>()
-            + self.token_delta_count * ERC20_WITHDRAWAL_ITEM_SIZE
-            + self.custom_market_count * core::mem::size_of::<MarketItem>();
+            + self.erc20_delta_count * core::mem::size_of::<IndexedERC20Delta>()
+            + self.custom_market_count * core::mem::size_of::<IndexedMarket>();
 
         // TODO add instruction sizes once finalized
         // PlaceMultiplePostOnly() and CancelMultipleOrders() have variable size-
@@ -94,10 +104,10 @@ mod tests {
     #[test]
     fn test_init_with_zero_input() {
         let input = [0u8; 512];
-        let header = CallHeader::init(&input);
+        let header = Header::init_inner(&input);
 
         assert_eq!(header.custom_token_count, 0);
-        assert_eq!(header.token_delta_count, 0);
+        assert_eq!(header.erc20_delta_count, 0);
         assert_eq!(header.custom_market_count, 0);
         assert!(!header.recipient_provided);
         assert!(!header.track_msg_value);
@@ -113,12 +123,12 @@ mod tests {
     #[test]
     fn test_init_byte_0_parsing() {
         let mut input = [0u8; 512];
-        // Set byte 0: custom_token_count = 5 (lower 4 bits), token_delta_count = 10 (upper 4 bits)
+        // Set byte 0: custom_token_count = 5 (lower 4 bits), erc20_delta_count = 10 (upper 4 bits)
         input[0] = 0b1010_0101; // 10 << 4 | 5 = 165
 
-        let header = CallHeader::init(&input);
+        let header = Header::init_inner(&input);
         assert_eq!(header.custom_token_count, 5);
-        assert_eq!(header.token_delta_count, 10);
+        assert_eq!(header.erc20_delta_count, 10);
     }
 
     #[test]
@@ -127,9 +137,9 @@ mod tests {
         // Set byte 0: both fields to maximum (15)
         input[0] = 0b1111_1111; // 255
 
-        let header = CallHeader::init(&input);
+        let header = Header::init_inner(&input);
         assert_eq!(header.custom_token_count, 15);
-        assert_eq!(header.token_delta_count, 15);
+        assert_eq!(header.erc20_delta_count, 15);
     }
 
     #[test]
@@ -138,7 +148,7 @@ mod tests {
         // Set custom_market_count = 5 (bits 0-2)
         input[1] = 0b0000_0101;
 
-        let header = CallHeader::init(&input);
+        let header = Header::init_inner(&input);
         assert_eq!(header.custom_market_count, 5);
         assert!(!header.recipient_provided);
         assert!(!header.track_msg_value);
@@ -153,7 +163,7 @@ mod tests {
         // Set custom_market_count = 7 (maximum value for 3 bits)
         input[1] = 0b0000_0111;
 
-        let header = CallHeader::init(&input);
+        let header = Header::init_inner(&input);
         assert_eq!(header.custom_market_count, 7);
     }
 
@@ -163,7 +173,7 @@ mod tests {
         // Set all boolean flags in byte 1 (bits 3-7)
         input[1] = 0b1111_1000;
 
-        let header = CallHeader::init(&input);
+        let header = Header::init_inner(&input);
         assert_eq!(header.custom_market_count, 0); // bits 0-2 are 0
         assert!(header.recipient_provided);
         assert!(header.track_msg_value);
@@ -178,7 +188,7 @@ mod tests {
         // Set custom_market_count = 3 (bits 0-2) and some flags
         input[1] = 0b0001_1011; // withdraw_internally=0, deposit_shortfall=0, track_eth_withdrawal_due=0, track_msg_value=1, recipient_provided=1, custom_market_count=3
 
-        let header = CallHeader::init(&input);
+        let header = Header::init_inner(&input);
         assert_eq!(header.custom_market_count, 3);
         assert!(header.recipient_provided);
         assert!(header.track_msg_value);
@@ -193,7 +203,7 @@ mod tests {
         // Set byte 2: ix_post_only_count = 3 (lower 4 bits), ix_cancel_count = 12 (upper 4 bits)
         input[2] = 0b1100_0011; // 12 << 4 | 3 = 195
 
-        let header = CallHeader::init(&input);
+        let header = Header::init_inner(&input);
         assert_eq!(header.ix_post_only_count, 3);
         assert_eq!(header.ix_cancel_count, 12);
     }
@@ -204,7 +214,7 @@ mod tests {
         // Set byte 3: ix_take_only_count = 8 (lower 4 bits), ix_limit_order_count = 6 (upper 4 bits)
         input[3] = 0b0110_1000; // 6 << 4 | 8 = 104
 
-        let header = CallHeader::init(&input);
+        let header = Header::init_inner(&input);
         assert_eq!(header.ix_take_only_count, 8);
         assert_eq!(header.ix_limit_order_count, 6);
     }
@@ -212,16 +222,16 @@ mod tests {
     #[test]
     fn test_init_all_fields_set() {
         let mut input = [0u8; 512];
-        input[0] = 0b1010_0101; // token_delta_count=10, custom_token_count=5
+        input[0] = 0b1010_0101; // erc20_delta_count=10, custom_token_count=5
         input[1] = 0b1111_1111; // all flags set, custom_market_count=7
         input[2] = 0b1100_0011; // ix_cancel_count=12, ix_post_only_count=3
         input[3] = 0b0110_1000; // ix_limit_order_count=6, ix_take_only_count=8
 
-        let header = CallHeader::init(&input);
+        let header = Header::init_inner(&input);
 
         // Verify all fields
         assert_eq!(header.custom_token_count, 5);
-        assert_eq!(header.token_delta_count, 10);
+        assert_eq!(header.erc20_delta_count, 10);
         assert_eq!(header.custom_market_count, 7);
         assert!(header.recipient_provided);
         assert!(header.track_msg_value);
@@ -237,10 +247,10 @@ mod tests {
     #[test]
     fn test_payload_size_minimal() {
         let input = [0u8; 512];
-        let header = CallHeader::init(&input);
+        let header = Header::init_inner(&input);
 
         // Should only include the header size
-        assert_eq!(header.payload_size(), CallHeader::HEADER_BYTE_SIZE);
+        assert_eq!(header.payload_size(), Header::HEADER_BYTE_SIZE);
     }
 
     #[test]
@@ -248,8 +258,8 @@ mod tests {
         let mut input = [0u8; 512];
         input[1] = 0b0000_1000; // recipient_provided = true (bit 3)
 
-        let header = CallHeader::init(&input);
-        let expected_size = CallHeader::HEADER_BYTE_SIZE + core::mem::size_of::<Address>();
+        let header = Header::init_inner(&input);
+        let expected_size = Header::HEADER_BYTE_SIZE + core::mem::size_of::<Address>();
 
         assert_eq!(header.payload_size(), expected_size);
     }
@@ -259,8 +269,8 @@ mod tests {
         let mut input = [0u8; 512];
         input[1] = 0b0001_0000; // track_msg_value = true (bit 4)
 
-        let header = CallHeader::init(&input);
-        let expected_size = CallHeader::HEADER_BYTE_SIZE + core::mem::size_of::<Atoms>();
+        let header = Header::init_inner(&input);
+        let expected_size = Header::HEADER_BYTE_SIZE + core::mem::size_of::<Atoms>();
 
         assert_eq!(header.payload_size(), expected_size);
     }
@@ -270,19 +280,20 @@ mod tests {
         let mut input = [0u8; 512];
         input[0] = 0b0000_0011; // custom_token_count = 3
 
-        let header = CallHeader::init(&input);
-        let expected_size = CallHeader::HEADER_BYTE_SIZE + 3 * core::mem::size_of::<Address>();
+        let header = Header::init_inner(&input);
+        let expected_size = Header::HEADER_BYTE_SIZE + 3 * core::mem::size_of::<Address>();
 
         assert_eq!(header.payload_size(), expected_size);
     }
 
     #[test]
-    fn test_payload_size_with_token_deltas() {
+    fn test_payload_size_with_erc20_deltas() {
         let mut input = [0u8; 512];
-        input[0] = 0b0010_0000; // token_delta_count = 2
+        input[0] = 0b0010_0000; // erc20_delta_count = 2
 
-        let header = CallHeader::init(&input);
-        let expected_size = CallHeader::HEADER_BYTE_SIZE + 2 * ERC20_WITHDRAWAL_ITEM_SIZE;
+        let header = Header::init_inner(&input);
+        let expected_size =
+            Header::HEADER_BYTE_SIZE + 2 * core::mem::size_of::<IndexedERC20Delta>();
 
         assert_eq!(header.payload_size(), expected_size);
     }
@@ -292,8 +303,8 @@ mod tests {
         let mut input = [0u8; 512];
         input[1] = 0b0000_0100; // custom_market_count = 4
 
-        let header = CallHeader::init(&input);
-        let expected_size = CallHeader::HEADER_BYTE_SIZE + 4 * core::mem::size_of::<MarketItem>();
+        let header = Header::init_inner(&input);
+        let expected_size = Header::HEADER_BYTE_SIZE + 4 * core::mem::size_of::<IndexedMarket>();
 
         assert_eq!(header.payload_size(), expected_size);
     }
@@ -301,23 +312,23 @@ mod tests {
     #[test]
     fn test_payload_size_comprehensive() {
         let mut input = [0u8; 512];
-        input[0] = 0b0011_0101; // token_delta_count=3, custom_token_count=5
+        input[0] = 0b0011_0101; // erc20_delta_count=3, custom_token_count=5
         input[1] = 0b0001_1010; // custom_market_count=2, recipient_provided=true, track_msg_value=true
 
-        let header = CallHeader::init(&input);
-        let expected_size = CallHeader::HEADER_BYTE_SIZE
+        let header = Header::init_inner(&input);
+        let expected_size = Header::HEADER_BYTE_SIZE
             + core::mem::size_of::<Address>() // recipient
             + core::mem::size_of::<Atoms>() // msg_value
             + 5 * core::mem::size_of::<Address>() // custom tokens
-            + 3 * ERC20_WITHDRAWAL_ITEM_SIZE // token deltas
-            + 2 * core::mem::size_of::<MarketItem>(); // custom markets
+            + 3 * core::mem::size_of::<IndexedERC20Delta>() // token deltas
+            + 2 * core::mem::size_of::<IndexedMarket>(); // custom markets
 
         assert_eq!(header.payload_size(), expected_size);
     }
 
     #[test]
     fn test_header_byte_size_constant() {
-        assert_eq!(CallHeader::HEADER_BYTE_SIZE, 4);
+        assert_eq!(Header::HEADER_BYTE_SIZE, 4);
     }
 
     #[test]
@@ -329,10 +340,10 @@ mod tests {
         input[2] = 0xFF; // Both counts at max (15)
         input[3] = 0xFF; // Both counts at max (15)
 
-        let header = CallHeader::init(&input);
+        let header = Header::init_inner(&input);
 
         assert_eq!(header.custom_token_count, 15);
-        assert_eq!(header.token_delta_count, 15);
+        assert_eq!(header.erc20_delta_count, 15);
         assert_eq!(header.custom_market_count, 7);
         assert!(header.recipient_provided);
         assert!(header.track_msg_value);
@@ -351,19 +362,19 @@ mod tests {
 
         // Test that setting one field doesn't affect others
         input[0] = 0b0000_0001; // Only custom_token_count = 1
-        let header = CallHeader::init(&input);
+        let header = Header::init_inner(&input);
         assert_eq!(header.custom_token_count, 1);
-        assert_eq!(header.token_delta_count, 0);
+        assert_eq!(header.erc20_delta_count, 0);
 
-        input[0] = 0b0001_0000; // Only token_delta_count = 1
-        let header = CallHeader::init(&input);
+        input[0] = 0b0001_0000; // Only erc20_delta_count = 1
+        let header = Header::init_inner(&input);
         assert_eq!(header.custom_token_count, 0);
-        assert_eq!(header.token_delta_count, 1);
+        assert_eq!(header.erc20_delta_count, 1);
 
         // Test individual boolean flags (now starting from bit 3)
         for i in 3..8 {
             input[1] = 1 << i;
-            let header = CallHeader::init(&input);
+            let header = Header::init_inner(&input);
 
             assert_eq!(header.custom_market_count, 0); // bits 0-2 are 0
             assert_eq!(header.recipient_provided, i == 3);
