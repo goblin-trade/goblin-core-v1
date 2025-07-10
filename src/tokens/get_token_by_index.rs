@@ -1,7 +1,8 @@
-use crate::{goblin_error::GoblinError, types::Address};
+use crate::{goblin_error::GoblinError, tokens::HARDCODED_TOKENS, types::Address};
 
-use super::HARDCODED_TOKENS;
-
+/// Get token address for the given index.
+///
+/// First look up in custom_token_list, then in hardcoded_tokens. Hardcoded tokens are indexed from 128 to 128 + HARDCODED_TOKENS.len().
 pub fn get_token_by_index(
     custom_token_list: &[Address],
     index: usize,
