@@ -1,3 +1,10 @@
+///! Arguments read from calldata.
+///!
+///! * We use a custom deserialization format that begins with a header. The header tells how bytes should be interpreted.
+///! For example args can contain an optional fields like `recipient` address and `eth_withdrawal_due`,
+///! along with slices of variable length.
+///!
+///! *
 use crate::{
     goblin_error::GoblinError,
     input_processor::{ArgsBuffer, ArgsDecoder, Header},
@@ -17,14 +24,15 @@ pub struct Args<'a> {
     /// Amount of ETH to withdraw
     pub eth_withdrawal_due: Option<&'a Atoms>,
 
-    /// Addresses of custom tokens to use
-    pub custom_token_list: &'a [Address],
+    /// Addresses of custom erc20 tokens to use
+    pub custom_erc20_list: &'a [Address],
 
     /// Pending ERC20 deposits or withdrawals
     pub erc20_delta_list: &'a [IndexedERC20Delta],
 
     /// Custom markets to use
     pub custom_market_list: &'a [IndexedMarket],
+    // TODO trading instructions
 }
 
 impl<'a> Args<'a> {
@@ -49,7 +57,7 @@ impl<'a> Args<'a> {
         };
 
         let custom_token_list = {
-            let count = header.custom_token_count;
+            let count = header.custom_erc20_count;
             let value = payload.decode_slice::<Address>(offset, count);
             offset += count * core::mem::size_of::<Address>();
             value
@@ -73,7 +81,7 @@ impl<'a> Args<'a> {
             header,
             recipient: provided_recipient,
             eth_withdrawal_due,
-            custom_token_list,
+            custom_erc20_list: custom_token_list,
             erc20_delta_list,
             custom_market_list,
         })

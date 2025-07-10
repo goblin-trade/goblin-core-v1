@@ -4,8 +4,8 @@ use crate::{
 };
 
 pub struct Header {
-    /// Number of custom token addresses provided, maximum 2^4 - 1 = 15
-    pub custom_token_count: usize,
+    /// Number of custom erc20 token addresses provided, maximum 2^4 - 1 = 15
+    pub custom_erc20_count: usize,
 
     /// Number of ERC20 token deltas to update, i.e. perform deposit or withdraw
     /// operations for these many tokens. Maximum 2^4 - 1 = 15
@@ -26,11 +26,9 @@ pub struct Header {
     /// Whether to deposit shortfall amount during settlement
     pub deposit_shortfall: bool,
 
-    /// Whether to update TraderTokenState for recipient, or to actually transfer out tokens
+    /// Whether to credit tokens to ERC20Store or EthStore, or to actually transfer out tokens
     pub withdraw_internally: bool,
 
-    // We have 3 free bits on input[1] because ix_collect_fee_count is
-    // removed
     /// The number of post-only order instructions. Occupies 4 bits, max 2^4 - 1 = 15
     pub ix_post_only_count: u8,
 
@@ -59,7 +57,7 @@ impl Header {
     fn init_inner(input: &[u8; 512]) -> Self {
         Header {
             // Lists
-            custom_token_count: (input[0] & 0b0000_1111) as usize,
+            custom_erc20_count: (input[0] & 0b0000_1111) as usize,
             erc20_delta_count: (input[0] >> 4) as usize,
             custom_market_count: (input[1] & 0b0000_0111) as usize,
 
@@ -72,6 +70,7 @@ impl Header {
             deposit_shortfall: (input[1] & 0b0100_0000) != 0,
             withdraw_internally: (input[1] & 0b1000_0000) != 0,
 
+            // Trading instructions
             ix_post_only_count: input[2] & 0b0000_1111,
             ix_cancel_count: input[2] >> 4,
 
@@ -85,7 +84,7 @@ impl Header {
             + self.recipient_provided as usize * core::mem::size_of::<Address>()
             + self.track_msg_value as usize * core::mem::size_of::<Atoms>()
             // Lists
-            + self.custom_token_count * core::mem::size_of::<Address>()
+            + self.custom_erc20_count * core::mem::size_of::<Address>()
             + self.erc20_delta_count * core::mem::size_of::<IndexedERC20Delta>()
             + self.custom_market_count * core::mem::size_of::<IndexedMarket>();
 
@@ -106,7 +105,7 @@ mod tests {
         let input = [0u8; 512];
         let header = Header::init_inner(&input);
 
-        assert_eq!(header.custom_token_count, 0);
+        assert_eq!(header.custom_erc20_count, 0);
         assert_eq!(header.erc20_delta_count, 0);
         assert_eq!(header.custom_market_count, 0);
         assert!(!header.recipient_provided);
@@ -127,7 +126,7 @@ mod tests {
         input[0] = 0b1010_0101; // 10 << 4 | 5 = 165
 
         let header = Header::init_inner(&input);
-        assert_eq!(header.custom_token_count, 5);
+        assert_eq!(header.custom_erc20_count, 5);
         assert_eq!(header.erc20_delta_count, 10);
     }
 
@@ -138,7 +137,7 @@ mod tests {
         input[0] = 0b1111_1111; // 255
 
         let header = Header::init_inner(&input);
-        assert_eq!(header.custom_token_count, 15);
+        assert_eq!(header.custom_erc20_count, 15);
         assert_eq!(header.erc20_delta_count, 15);
     }
 
@@ -230,7 +229,7 @@ mod tests {
         let header = Header::init_inner(&input);
 
         // Verify all fields
-        assert_eq!(header.custom_token_count, 5);
+        assert_eq!(header.custom_erc20_count, 5);
         assert_eq!(header.erc20_delta_count, 10);
         assert_eq!(header.custom_market_count, 7);
         assert!(header.recipient_provided);
@@ -342,7 +341,7 @@ mod tests {
 
         let header = Header::init_inner(&input);
 
-        assert_eq!(header.custom_token_count, 15);
+        assert_eq!(header.custom_erc20_count, 15);
         assert_eq!(header.erc20_delta_count, 15);
         assert_eq!(header.custom_market_count, 7);
         assert!(header.recipient_provided);
@@ -363,12 +362,12 @@ mod tests {
         // Test that setting one field doesn't affect others
         input[0] = 0b0000_0001; // Only custom_token_count = 1
         let header = Header::init_inner(&input);
-        assert_eq!(header.custom_token_count, 1);
+        assert_eq!(header.custom_erc20_count, 1);
         assert_eq!(header.erc20_delta_count, 0);
 
         input[0] = 0b0001_0000; // Only erc20_delta_count = 1
         let header = Header::init_inner(&input);
-        assert_eq!(header.custom_token_count, 0);
+        assert_eq!(header.custom_erc20_count, 0);
         assert_eq!(header.erc20_delta_count, 1);
 
         // Test individual boolean flags (now starting from bit 3)
