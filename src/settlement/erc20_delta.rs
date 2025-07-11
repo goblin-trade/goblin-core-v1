@@ -6,6 +6,7 @@ use crate::{
     quantities::{Atoms, Delta},
     require,
     state::{ERC20Store, ERC20StoreKey, SlotState},
+    tokens::Token,
     types::Address,
     CONTRACT_ADDRESS,
 };
@@ -21,10 +22,8 @@ pub struct IndexedERC20Delta {
 /// ERC20 atoms due to be deducted, locked or transferred out on settlement
 #[derive(Clone, Copy)]
 pub struct ERC20Delta {
-    // /// The token index
-    // pub index: u8,
-    /// The token address as read from hardcoded and custom lists
-    pub token: Address,
+    /// The token as read from hardcoded or custom list
+    pub token: Token,
 
     /// Amount of atoms pending withdrawal, as read from input payload.
     ///
@@ -41,9 +40,8 @@ pub struct ERC20Delta {
 }
 
 impl ERC20Delta {
-    pub fn new(token: Address, withdrawal_due: Delta) -> Self {
+    pub fn new(token: Token, withdrawal_due: Delta) -> Self {
         Self {
-            // index,
             token,
             withdrawal_due,
             consumed_by_engine: Delta::ZERO,
@@ -74,14 +72,13 @@ impl ERC20Delta {
         deposit_shortfall: bool,
         withdraw_internally: bool,
     ) -> Result<(), GoblinError> {
-        let key = ERC20StoreKey::new(msg_sender, &self.token);
+        let key = ERC20StoreKey::new(msg_sender, self.token.address());
         let mut store = ERC20Store::load(&key);
         let store_mut = store.as_mut();
 
         // If ERC20 store was read for the first time, fetch and store token decimals
         if store_mut.is_empty() {
-            // TODO first check if hardcoded
-            store_mut.decimals = erc20::decimals(&self.token)?;
+            store_mut.decimals = self.token.decimals()?;
         }
 
         self.settle_for_sender(msg_sender, store_mut, deposit_shortfall)?;
@@ -108,8 +105,7 @@ impl ERC20Delta {
         deposit_shortfall: bool,
     ) -> Result<(), GoblinError> {
         if msg_sender_store.is_empty() {
-            // TODO check if decimals are hardcoded first
-            msg_sender_store.decimals = erc20::decimals(&self.token)?;
+            msg_sender_store.decimals = self.token.decimals()?;
         }
 
         // Update locked atoms
@@ -133,7 +129,12 @@ impl ERC20Delta {
         if self.withdrawal_due < Delta::ZERO {
             let debit = self.withdrawal_due.abs();
             let debit_raw_atoms = debit.to_raw_atoms(msg_sender_store.decimals)?;
-            erc20::transfer_from(&self.token, msg_sender, &CONTRACT_ADDRESS, &debit_raw_atoms)?;
+            erc20::transfer_from(
+                self.token.address(),
+                msg_sender,
+                &CONTRACT_ADDRESS,
+                &debit_raw_atoms,
+            )?;
             self.withdrawal_due = Delta::ZERO;
         }
 
@@ -171,7 +172,7 @@ impl ERC20Delta {
                 }
                 Some(recipient_addr) => {
                     // Credit to different recipient
-                    let recipient_key = ERC20StoreKey::new(recipient_addr, &self.token);
+                    let recipient_key = ERC20StoreKey::new(recipient_addr, self.token.address());
                     let mut recipient_store = ERC20Store::load(&recipient_key);
                     let recipient_store_mut = recipient_store.as_mut();
 
@@ -189,7 +190,7 @@ impl ERC20Delta {
             };
 
             let credit_raw_atoms = credit.to_raw_atoms(msg_sender_store.decimals)?;
-            erc20::transfer(&self.token, to, &credit_raw_atoms)
+            erc20::transfer(self.token.address(), to, &credit_raw_atoms)
         }
     }
 }

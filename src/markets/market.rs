@@ -3,7 +3,7 @@ use crate::{
     markets::HARDCODED_MARKETS,
     quantities::{BaseLotsPerBaseUnit, QuoteLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick},
     require,
-    tokens::get_token_by_index,
+    tokens::Token,
     types::Address,
 };
 
@@ -55,14 +55,18 @@ impl Market {
     ) -> Result<Self, GoblinError> {
         match custom_market_list.get(index) {
             Some(market_item) => {
-                let base_token =
-                    get_token_by_index(custom_token_list, market_item.base_token_index as usize)?;
-                let quote_token =
-                    get_token_by_index(custom_token_list, market_item.base_token_index as usize)?;
+                let base_token = Token::get_token_by_index(
+                    custom_token_list,
+                    market_item.base_token_index as usize,
+                )?;
+                let quote_token = Token::get_token_by_index(
+                    custom_token_list,
+                    market_item.base_token_index as usize,
+                )?;
 
                 Market::new(
-                    base_token,
-                    quote_token,
+                    *base_token.address(),
+                    *quote_token.address(),
                     market_item.base_lot_size,
                     market_item.quote_lot_size,
                     market_item.tick_size,

@@ -1,5 +1,5 @@
-pub mod get_token_by_index;
-pub use get_token_by_index::*;
+pub mod token;
+pub use token::*;
 
 #[cfg(feature = "localnet")]
 pub mod localnet;
