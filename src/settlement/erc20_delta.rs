@@ -80,6 +80,7 @@ impl ERC20Delta {
 
         // If ERC20 store was read for the first time, fetch and store token decimals
         if store_mut.is_empty() {
+            // TODO first check if hardcoded
             store_mut.decimals = erc20::decimals(&self.token)?;
         }
 
@@ -107,6 +108,7 @@ impl ERC20Delta {
         deposit_shortfall: bool,
     ) -> Result<(), GoblinError> {
         if msg_sender_store.is_empty() {
+            // TODO check if decimals are hardcoded first
             msg_sender_store.decimals = erc20::decimals(&self.token)?;
         }
 

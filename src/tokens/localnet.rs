@@ -18,6 +18,13 @@ impl Token {
             ],
         }
     }
+
+    pub const fn decimals(&self) -> u8 {
+        match self {
+            Token::BaseToken => 18,
+            Token::QuoteToken => 18,
+        }
+    }
 }
 
 pub const HARDCODED_TOKENS: [[u8; 20]; 2] =

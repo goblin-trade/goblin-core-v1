@@ -11,6 +11,13 @@ impl Token {
             Token::ExampleToken2 => [0x12; 20],
         }
     }
+
+    pub const fn decimals(&self) -> u8 {
+        match self {
+            Token::ExampleToken1 => 18,
+            Token::ExampleToken2 => 18,
+        }
+    }
 }
 
 pub const HARDCODED_TOKENS: [[u8; 20]; 2] = [
