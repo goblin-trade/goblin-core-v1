@@ -1,7 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
     markets::HARDCODED_MARKETS,
-    quantities::{BaseLotsPerBaseUnit, QuoteLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick},
+    quantities::{BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit},
     require,
     tokens::Token,
     types::Address,
@@ -10,15 +10,14 @@ use crate::{
 // Max number of custom markets
 pub const MAX_CUSTOM_MARKETS: usize = 7;
 
-/// Input payload receives an array of MarketItems.
-/// These hold token indices instead of token addresses. The tokens
-/// can be mapped to obtain `Market` struct
+/// Input payload receives an array of MarketItems. They hold token indices instead of token addresses.
+/// Token addresses are mapped to token indices to obtain the Market struct.
 #[repr(C, packed)]
 pub struct IndexedMarket {
     pub base_token_index: u8,
     pub quote_token_index: u8,
     pub base_lot_size: BaseLotsPerBaseUnit,
-    pub quote_lot_size: QuoteLotsPerBaseUnit,
+    pub quote_lot_size: QuoteLotsPerQuoteUnit,
     pub tick_size: QuoteLotsPerBaseUnitPerTick,
 }
 
@@ -27,7 +26,7 @@ pub struct Market {
     base_token: Address,
     quote_token: Address,
     base_lot_size: BaseLotsPerBaseUnit,
-    quote_lot_size: QuoteLotsPerBaseUnit,
+    quote_lot_size: QuoteLotsPerQuoteUnit,
     tick_size: QuoteLotsPerBaseUnitPerTick,
 }
 
@@ -36,7 +35,7 @@ impl Market {
         base_token: Address,
         quote_token: Address,
         base_lot_size: BaseLotsPerBaseUnit,
-        quote_lot_size: QuoteLotsPerBaseUnit,
+        quote_lot_size: QuoteLotsPerQuoteUnit,
         tick_size: QuoteLotsPerBaseUnitPerTick,
     ) -> Self {
         Self {
@@ -86,10 +85,13 @@ impl Market {
         base_token: Address,
         quote_token: Address,
         base_lot_size: BaseLotsPerBaseUnit,
-        quote_lot_size: QuoteLotsPerBaseUnit,
+        quote_lot_size: QuoteLotsPerQuoteUnit,
         tick_size: QuoteLotsPerBaseUnitPerTick,
     ) -> Result<Self, GoblinError> {
         require!(base_token != quote_token, GoblinError::InvalidMarket);
+        require!(base_lot_size.valid(), GoblinError::InvalidMarket);
+        require!(quote_lot_size.valid(), GoblinError::InvalidMarket);
+        require!(tick_size % base_lot_size == 0, GoblinError::InvalidMarket);
 
         Ok(Self {
             base_token,
@@ -117,7 +119,7 @@ impl Market {
     }
 
     #[inline(always)]
-    pub const fn quote_lot_size(&self) -> QuoteLotsPerBaseUnit {
+    pub const fn quote_lot_size(&self) -> QuoteLotsPerQuoteUnit {
         self.quote_lot_size
     }
 

@@ -10,9 +10,9 @@ use core::u64;
 ///! These atoms are grouped into lots.
 ///!
 ///! Important- Decimal places must be in the range [6, 19]
-/// * Raw atoms will be undefined if decimal places are less than 6
-/// * Since raw atoms are internally capped to 128 bits, decimal places more than
-/// 19 can overflow this value.
+///! * Raw atoms will be undefined if decimal places are less than 6
+///! * Since raw atoms are internally capped to 128 bits, decimal places more than
+///! 19 can overflow this value.
 ///!
 ///! # Math
 ///!

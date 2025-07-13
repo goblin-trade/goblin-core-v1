@@ -121,3 +121,15 @@ macro_rules! define_inter_type_operations {
         }
     };
 }
+
+#[macro_export]
+macro_rules! allow_mod {
+    ($type_1:ident, $type_2:ident) => {
+        impl core::ops::Rem<$type_2> for $type_1 {
+            type Output = u64;
+            fn rem(self, other: $type_2) -> u64 {
+                self.0 % other.0
+            }
+        }
+    };
+}
