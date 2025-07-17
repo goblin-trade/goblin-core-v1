@@ -39,6 +39,10 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
 
     // TODO execution
 
+    // Execute post-only orders
+    // args.header.ix_post_only_count gives the number of post-only orders
+    // Decode the bytes further for instruction data
+
     // Settlement
 
     eth_delta.settle(
