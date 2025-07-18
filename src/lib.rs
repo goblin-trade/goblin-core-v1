@@ -1,7 +1,9 @@
 #![cfg_attr(not(test), no_std)]
 #![cfg_attr(not(test), no_main)]
 
-use crate::{input_processor::Args, settlement::ERC20DeltaList};
+use crate::{
+    input_processor::Args, instructions::update_resting_order, settlement::ERC20DeltaList,
+};
 use goblin_error::*;
 use hostio::*;
 use settlement::EthDelta;
@@ -30,7 +32,10 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
     require!(!msg_reentrant, GoblinError::Reentrant);
 
     let args_buffer = unsafe { hostio_helpers::hostio_read_args() };
-    let args = Args::new(args_buffer.as_ref(), len)?;
+
+    // Ideally args should remain immutable. We only need a variable offset.
+    // This is going to cause some problem, TODO update.
+    let mut args = Args::new(args_buffer.as_ref(), len)?;
 
     let msg_sender = unsafe { hostio_msg_sender() };
 
@@ -38,6 +43,17 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
     let mut erc20_delta_list = ERC20DeltaList::init(args.erc20_delta_list, args.custom_erc20_list)?;
 
     // TODO execution
+    for _ in 0..args.header.ix_post_only_count {
+        // Decode bytes one by one
+        // This instruction has variable number of bytes
+        update_resting_order(
+            args_buffer.as_ref(),
+            len,
+            &mut args.offset,
+            args.custom_market_list,
+            args.custom_erc20_list,
+        )?;
+    }
 
     // Execute post-only orders
     // args.header.ix_post_only_count gives the number of post-only orders

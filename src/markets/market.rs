@@ -13,6 +13,7 @@ pub const MAX_CUSTOM_MARKETS: usize = 7;
 /// Input payload receives an array of MarketItems. They hold token indices instead of token addresses.
 /// Token addresses are mapped to token indices to obtain the Market struct.
 #[repr(C, packed)]
+#[derive(Clone, Copy)]
 pub struct IndexedMarket {
     pub base_token_index: u8,
     pub quote_token_index: u8,
@@ -52,32 +53,29 @@ impl Market {
         custom_market_list: &[IndexedMarket],
         custom_token_list: &[Address],
     ) -> Result<Self, GoblinError> {
-        match custom_market_list.get(index) {
-            Some(market_item) => {
-                let base_token = Token::get_token_by_index(
-                    custom_token_list,
-                    market_item.base_token_index as usize,
-                )?;
-                let quote_token = Token::get_token_by_index(
-                    custom_token_list,
-                    market_item.base_token_index as usize,
-                )?;
+        if index < custom_market_list.len() {
+            let indexed_market = custom_market_list[index];
 
-                Market::new(
-                    *base_token.address(),
-                    *quote_token.address(),
-                    market_item.base_lot_size,
-                    market_item.quote_lot_size,
-                    market_item.tick_size,
-                )
-            }
-            None => {
-                if index > 127 && index < (127 + HARDCODED_MARKETS.len()) {
-                    Ok(HARDCODED_MARKETS[index - 127])
-                } else {
-                    Err(GoblinError::NoMarketAtIndex)
-                }
-            }
+            let base_token = Token::get_token_by_index(
+                custom_token_list,
+                indexed_market.base_token_index as usize,
+            )?;
+            let quote_token = Token::get_token_by_index(
+                custom_token_list,
+                indexed_market.base_token_index as usize,
+            )?;
+
+            Market::new(
+                *base_token.address(),
+                *quote_token.address(),
+                indexed_market.base_lot_size,
+                indexed_market.quote_lot_size,
+                indexed_market.tick_size,
+            )
+        } else if index > 127 && index < (127 + HARDCODED_MARKETS.len()) {
+            Ok(HARDCODED_MARKETS[index - 127])
+        } else {
+            Err(GoblinError::NoMarketAtIndex)
         }
     }
 

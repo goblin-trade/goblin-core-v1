@@ -33,6 +33,7 @@ pub struct Args<'a> {
     /// Custom markets to use
     pub custom_market_list: &'a [IndexedMarket],
     // TODO trading instructions
+    pub offset: usize,
 }
 
 impl<'a> Args<'a> {
@@ -84,6 +85,7 @@ impl<'a> Args<'a> {
             custom_erc20_list: custom_token_list,
             erc20_delta_list,
             custom_market_list,
+            offset,
         })
     }
 }
