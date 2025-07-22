@@ -40,7 +40,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
     let msg_sender = unsafe { hostio_msg_sender() };
 
     let mut eth_delta = EthDelta::init(args.header.track_msg_value, args.eth_withdrawal_due)?;
-    let mut erc20_delta_list = ERC20DeltaList::init(args.erc20_delta_list, args.custom_erc20_list)?;
+    let mut erc20_delta_list = ERC20DeltaList::init(args.erc20_delta_list)?;
 
     // TODO execution
     for _ in 0..args.header.ix_post_only_count {
@@ -71,6 +71,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
 
     for erc20_delta in erc20_delta_list.iter_mut() {
         erc20_delta.settle(
+            args.custom_erc20_list,
             msg_sender.as_ref(),
             args.recipient,
             args.header.deposit_shortfall,

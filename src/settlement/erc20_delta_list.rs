@@ -32,16 +32,13 @@ impl ERC20DeltaList {
         }
     }
 
-    pub fn init(
-        indexed_erc20_delta_list: &[IndexedERC20Delta],
-        custom_token_list: &[Address],
-    ) -> Result<Self, GoblinError> {
+    pub fn init(indexed_erc20_delta_list: &[IndexedERC20Delta]) -> Result<Self, GoblinError> {
         let mut list = Self::default();
 
         for (i, item) in indexed_erc20_delta_list.iter().enumerate() {
-            let token = Token::get_token_by_index(custom_token_list, item.index as usize)?;
-            let withdrawal_due = item.withdrawal_due;
-            list.inner[i].write(ERC20Delta::new(token, withdrawal_due));
+            // let token = Token::get_token_by_index(custom_token_list, item.index as usize)?;
+            // let withdrawal_due = item.withdrawal_due;
+            list.inner[i].write(ERC20Delta::new(item.index, item.withdrawal_due));
         }
 
         list.len = indexed_erc20_delta_list.len();
@@ -56,35 +53,47 @@ impl ERC20DeltaList {
             .map(|maybe_uninit| unsafe { maybe_uninit.assume_init_ref() })
     }
 
-    /// Returns a mutable iterator over the initialized ERC20Delta elements
+    /// Returns an iterator over the initialized ERC20Delta elements
     pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut ERC20Delta> {
         self.inner[..self.len]
             .iter_mut()
             .map(|maybe_uninit| unsafe { maybe_uninit.assume_init_mut() })
     }
 
-    /// Returns reference to the ERC20Delta element for the given token.
-    /// If the element is not found, inserts a new element with default values.
-    pub fn get_token_delta(&mut self, token: &Token) -> Option<&mut ERC20Delta> {
-        let mut match_index = None;
-
+    /// Returns a mutable reference to the ERC20Delta for the given token index.
+    /// If the token index is not found, inserts a new ERC20Delta with zero deltas.
+    pub fn get_or_insert(&mut self, token_index: u8) -> Result<&mut ERC20Delta, GoblinError> {
+        // First, try to find existing delta with this token index
         for i in 0..self.len {
-            let t = unsafe { self.inner[i].assume_init_ref() };
-            if t.token == *token {
-                match_index = Some(i);
-                break;
+            let delta_ref = unsafe { self.inner[i].assume_init_ref() };
+            if delta_ref.index == token_index {
+                return Ok(unsafe { self.inner[i].assume_init_mut() });
             }
         }
 
-        if let Some(i) = match_index {
-            Some(unsafe { self.inner[i].assume_init_mut() })
-        } else if self.len < MAX_DELTAS {
-            let index = self.len;
-            self.inner[index].write(ERC20Delta::new(token.clone(), Delta::ZERO));
-            self.len += 1;
-            Some(unsafe { self.inner[index].assume_init_mut() })
-        } else {
-            None
+        // Not found, insert new delta
+        if self.len >= MAX_DELTAS {
+            return Err(GoblinError::DeltaListFull);
         }
+
+        // Insert new delta at the end
+        let new_delta = ERC20Delta::new(token_index, Delta::ZERO);
+        self.inner[self.len].write(new_delta);
+        self.len += 1;
+
+        // Return reference to the newly inserted delta
+        Ok(unsafe { self.inner[self.len - 1].assume_init_mut() })
+    }
+
+    /// Returns a reference to the ERC20Delta for the given token index.
+    /// Returns None if the token index is not found.
+    pub fn get(&self, token_index: u8) -> Option<&ERC20Delta> {
+        for i in 0..self.len {
+            let delta_ref = unsafe { self.inner[i].assume_init_ref() };
+            if delta_ref.index == token_index {
+                return Some(delta_ref);
+            }
+        }
+        None
     }
 }

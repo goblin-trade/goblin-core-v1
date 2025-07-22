@@ -22,21 +22,36 @@ pub struct IndexedMarket {
     pub tick_size: QuoteLotsPerBaseUnitPerTick,
 }
 
-// impl IndexedMarket {
-//     pub fn from_index(
-//         index: usize,
-//         custom_market_list: &[IndexedMarket],
-//         custom_token_list: &[Address],
-//     ) -> Result<Self, GoblinError> {
-//         if index < custom_market_list.len() {
-//             custom_market_list[index]
-//         } else if index > 127 && index < (127 + HARDCODED_MARKETS.len()) {
-//             Ok(HARDCODED_MARKETS[index - 127])
-//         } else {
-//             Err(GoblinError::NoMarketAtIndex)
-//         }
-//     }
-// }
+impl IndexedMarket {
+    pub(crate) const fn new_unchecked(
+        base_token_index: u8,
+        quote_token_index: u8,
+        base_lot_size: BaseLotsPerBaseUnit,
+        quote_lot_size: QuoteLotsPerQuoteUnit,
+        tick_size: QuoteLotsPerBaseUnitPerTick,
+    ) -> Self {
+        IndexedMarket {
+            base_token_index,
+            quote_token_index,
+            base_lot_size,
+            quote_lot_size,
+            tick_size,
+        }
+    }
+
+    pub fn from_index(
+        index: usize,
+        custom_market_list: &[IndexedMarket],
+    ) -> Result<Self, GoblinError> {
+        if index < custom_market_list.len() {
+            Ok(custom_market_list[index])
+        } else if index > 127 && index < (127 + HARDCODED_MARKETS.len()) {
+            Ok(HARDCODED_MARKETS[index - 127])
+        } else {
+            Err(GoblinError::NoMarketAtIndex)
+        }
+    }
+}
 
 #[derive(Clone, Copy)]
 pub struct Market {
@@ -64,36 +79,36 @@ impl Market {
         }
     }
 
-    pub fn from_index(
-        index: usize,
-        custom_market_list: &[IndexedMarket],
-        custom_token_list: &[Address],
-    ) -> Result<Self, GoblinError> {
-        if index < custom_market_list.len() {
-            let indexed_market = custom_market_list[index];
+    // pub fn from_index(
+    //     index: usize,
+    //     custom_market_list: &[IndexedMarket],
+    //     custom_token_list: &[Address],
+    // ) -> Result<Self, GoblinError> {
+    //     if index < custom_market_list.len() {
+    //         let indexed_market = custom_market_list[index];
 
-            let base_token = Token::get_token_by_index(
-                custom_token_list,
-                indexed_market.base_token_index as usize,
-            )?;
-            let quote_token = Token::get_token_by_index(
-                custom_token_list,
-                indexed_market.base_token_index as usize,
-            )?;
+    //         let base_token = Token::get_token_by_index(
+    //             custom_token_list,
+    //             indexed_market.base_token_index as usize,
+    //         )?;
+    //         let quote_token = Token::get_token_by_index(
+    //             custom_token_list,
+    //             indexed_market.base_token_index as usize,
+    //         )?;
 
-            Market::new(
-                *base_token.address(),
-                *quote_token.address(),
-                indexed_market.base_lot_size,
-                indexed_market.quote_lot_size,
-                indexed_market.tick_size,
-            )
-        } else if index > 127 && index < (127 + HARDCODED_MARKETS.len()) {
-            Ok(HARDCODED_MARKETS[index - 127])
-        } else {
-            Err(GoblinError::NoMarketAtIndex)
-        }
-    }
+    //         Market::new(
+    //             *base_token.address(),
+    //             *quote_token.address(),
+    //             indexed_market.base_lot_size,
+    //             indexed_market.quote_lot_size,
+    //             indexed_market.tick_size,
+    //         )
+    //     } else if index > 127 && index < (127 + HARDCODED_MARKETS.len()) {
+    //         Ok(HARDCODED_MARKETS[index - 127])
+    //     } else {
+    //         Err(GoblinError::NoMarketAtIndex)
+    //     }
+    // }
 
     fn new(
         base_token: Address,

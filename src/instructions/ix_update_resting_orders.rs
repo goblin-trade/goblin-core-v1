@@ -71,28 +71,17 @@ pub fn update_resting_order(
         payload.decode_slice::<UpdateArgs>(*offset + header.bids as usize, header.asks as usize);
     *offset += order_byte_size;
 
-    // Indexed market is a better struct. It allows us to get hardcoded markets with
-    // their token decimal places. We should convert to 'MarketKey' only for reading or writing to slots.
-    let market = Market::from_index(
-        header.market_index as usize,
-        custom_market_list,
-        custom_erc20_list,
-    )?;
+    let indexed_market =
+        IndexedMarket::from_index(header.market_index as usize, custom_market_list)?;
 
-    // Now suppose we want to increment base token delta and decrement quote token delta
-    // Iterate to see if base token is present in list. If not, then insert this token
+    // Update deltas
+    // First get struct, then update.
+    // We can't update base_token_delta after declaring quote_token_delta due to borrow checker
+    let base_token_delta = erc20_delta_list.get_or_insert(indexed_market.base_token_index)?;
+    base_token_delta.add_consumed_amount(Delta(10))?;
 
-    let base_token_delta = erc20_delta_list
-        .iter_mut()
-        .find(|delta| *delta.token.address() == *market.base_token());
+    let quote_token_delta = erc20_delta_list.get_or_insert(indexed_market.quote_token_index)?;
+    quote_token_delta.add_consumed_amount(Delta(10))?;
 
-    match base_token_delta {
-        Some(base_token_delta) => {
-            base_token_delta.add_consumed_amount(Delta(1));
-        }
-        None => {
-            let delta = ERC20Delta::new(token, withdrawal_due)
-        }
-    }
     Ok(())
 }

@@ -22,9 +22,9 @@ pub struct IndexedERC20Delta {
 /// ERC20 atoms due to be deducted, locked or transferred out on settlement
 #[derive(Clone, Copy)]
 pub struct ERC20Delta {
-    /// The token as read from hardcoded or custom list
-    pub token: Token,
-
+    pub index: u8,
+    // /// The token as read from hardcoded or custom list
+    // pub token: Token,
     /// Amount of atoms pending withdrawal, as read from input payload.
     ///
     /// Unlike EthDelta, withdrawal_due is of type Delta intead of Atoms.
@@ -40,9 +40,9 @@ pub struct ERC20Delta {
 }
 
 impl ERC20Delta {
-    pub fn new(token: Token, withdrawal_due: Delta) -> Self {
+    pub fn new(index: u8, withdrawal_due: Delta) -> Self {
         Self {
-            token,
+            index,
             withdrawal_due,
             consumed_by_engine: Delta::ZERO,
             locked_by_engine: Delta::ZERO,
@@ -67,22 +67,31 @@ impl ERC20Delta {
 
     pub fn settle(
         &mut self,
+        custom_token_list: &[Address],
         msg_sender: &Address,
         recipient: Option<&Address>,
         deposit_shortfall: bool,
         withdraw_internally: bool,
     ) -> Result<(), GoblinError> {
-        let key = ERC20StoreKey::new(msg_sender, self.token.address());
+        let token = Token::get_token_by_index(custom_token_list, self.index as usize)?;
+
+        let key = ERC20StoreKey::new(msg_sender, token.address());
         let mut store = ERC20Store::load(&key);
         let store_mut = store.as_mut();
 
         // If ERC20 store was read for the first time, fetch and store token decimals
         if store_mut.is_empty() {
-            store_mut.decimals = self.token.decimals()?;
+            store_mut.decimals = token.decimals()?;
         }
 
-        self.settle_for_sender(msg_sender, store_mut, deposit_shortfall)?;
-        self.settle_for_recipient(msg_sender, store_mut, recipient, withdraw_internally)?;
+        self.settle_for_sender(&token, msg_sender, store_mut, deposit_shortfall)?;
+        self.settle_for_recipient(
+            &token,
+            msg_sender,
+            store_mut,
+            recipient,
+            withdraw_internally,
+        )?;
 
         store_mut.store(&key);
 
@@ -100,12 +109,13 @@ impl ERC20Delta {
     /// the shortfall is added to withdrawal_due
     pub fn settle_for_sender(
         &mut self,
+        token: &Token,
         msg_sender: &Address,
         msg_sender_store: &mut ERC20Store,
         deposit_shortfall: bool,
     ) -> Result<(), GoblinError> {
         if msg_sender_store.is_empty() {
-            msg_sender_store.decimals = self.token.decimals()?;
+            msg_sender_store.decimals = token.decimals()?;
         }
 
         // Update locked atoms
@@ -130,7 +140,7 @@ impl ERC20Delta {
             let debit = self.withdrawal_due.abs();
             let debit_raw_atoms = debit.to_raw_atoms(msg_sender_store.decimals)?;
             erc20::transfer_from(
-                self.token.address(),
+                token.address(),
                 msg_sender,
                 &CONTRACT_ADDRESS,
                 &debit_raw_atoms,
@@ -147,6 +157,7 @@ impl ERC20Delta {
     /// * Negative withdrawal_due is illegal. It is already handled in settle_for_sender()
     fn settle_for_recipient(
         &self,
+        token: &Token,
         msg_sender: &Address,
         msg_sender_store: &mut ERC20Store,
         recipient: Option<&Address>,
@@ -172,7 +183,7 @@ impl ERC20Delta {
                 }
                 Some(recipient_addr) => {
                     // Credit to different recipient
-                    let recipient_key = ERC20StoreKey::new(recipient_addr, self.token.address());
+                    let recipient_key = ERC20StoreKey::new(recipient_addr, token.address());
                     let mut recipient_store = ERC20Store::load(&recipient_key);
                     let recipient_store_mut = recipient_store.as_mut();
 
@@ -190,7 +201,7 @@ impl ERC20Delta {
             };
 
             let credit_raw_atoms = credit.to_raw_atoms(msg_sender_store.decimals)?;
-            erc20::transfer(self.token.address(), to, &credit_raw_atoms)
+            erc20::transfer(token.address(), to, &credit_raw_atoms)
         }
     }
 }
