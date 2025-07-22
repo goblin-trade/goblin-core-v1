@@ -22,6 +22,22 @@ pub struct IndexedMarket {
     pub tick_size: QuoteLotsPerBaseUnitPerTick,
 }
 
+// impl IndexedMarket {
+//     pub fn from_index(
+//         index: usize,
+//         custom_market_list: &[IndexedMarket],
+//         custom_token_list: &[Address],
+//     ) -> Result<Self, GoblinError> {
+//         if index < custom_market_list.len() {
+//             custom_market_list[index]
+//         } else if index > 127 && index < (127 + HARDCODED_MARKETS.len()) {
+//             Ok(HARDCODED_MARKETS[index - 127])
+//         } else {
+//             Err(GoblinError::NoMarketAtIndex)
+//         }
+//     }
+// }
+
 #[derive(Clone, Copy)]
 pub struct Market {
     base_token: Address,

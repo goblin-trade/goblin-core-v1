@@ -2,8 +2,9 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::{Args, ArgsBuffer, ArgsDecoder},
     markets::{IndexedMarket, Market},
-    quantities::{BaseLots, Ticks},
+    quantities::{BaseLots, Delta, Ticks},
     require,
+    settlement::{ERC20Delta, ERC20DeltaList, EthDelta},
     types::Address,
 };
 
@@ -48,6 +49,8 @@ pub fn update_resting_order(
     offset: &mut usize,
     custom_market_list: &[IndexedMarket],
     custom_erc20_list: &[Address],
+    eth_delta: &mut EthDelta,
+    erc20_delta_list: &mut ERC20DeltaList,
 ) -> Result<(), GoblinError> {
     // First decode header
     require!(
@@ -68,11 +71,28 @@ pub fn update_resting_order(
         payload.decode_slice::<UpdateArgs>(*offset + header.bids as usize, header.asks as usize);
     *offset += order_byte_size;
 
+    // Indexed market is a better struct. It allows us to get hardcoded markets with
+    // their token decimal places. We should convert to 'MarketKey' only for reading or writing to slots.
     let market = Market::from_index(
         header.market_index as usize,
         custom_market_list,
         custom_erc20_list,
     )?;
 
+    // Now suppose we want to increment base token delta and decrement quote token delta
+    // Iterate to see if base token is present in list. If not, then insert this token
+
+    let base_token_delta = erc20_delta_list
+        .iter_mut()
+        .find(|delta| *delta.token.address() == *market.base_token());
+
+    match base_token_delta {
+        Some(base_token_delta) => {
+            base_token_delta.add_consumed_amount(Delta(1));
+        }
+        None => {
+            let delta = ERC20Delta::new(token, withdrawal_due)
+        }
+    }
     Ok(())
 }

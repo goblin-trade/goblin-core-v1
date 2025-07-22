@@ -1,7 +1,8 @@
 use core::mem::MaybeUninit;
 
 use crate::{
-    goblin_error::GoblinError, settlement::IndexedERC20Delta, tokens::Token, types::Address,
+    goblin_error::GoblinError, quantities::Delta, settlement::IndexedERC20Delta, tokens::Token,
+    types::Address,
 };
 
 use super::ERC20Delta;
@@ -12,6 +13,9 @@ use super::ERC20Delta;
 // elements we cannot insert more in ERC20DeltaList
 pub const MAX_DELTAS: usize = 15;
 
+/// An expandable list of ERC20 deltas.
+/// It gets initialized with `indexed_erc20_delta_list` from args. However more tokens
+/// can be added as we perform trades.
 pub struct ERC20DeltaList {
     /// The list of token deltas
     inner: [MaybeUninit<ERC20Delta>; MAX_DELTAS],
@@ -40,6 +44,8 @@ impl ERC20DeltaList {
             list.inner[i].write(ERC20Delta::new(token, withdrawal_due));
         }
 
+        list.len = indexed_erc20_delta_list.len();
+
         Ok(list)
     }
 
@@ -55,5 +61,30 @@ impl ERC20DeltaList {
         self.inner[..self.len]
             .iter_mut()
             .map(|maybe_uninit| unsafe { maybe_uninit.assume_init_mut() })
+    }
+
+    /// Returns reference to the ERC20Delta element for the given token.
+    /// If the element is not found, inserts a new element with default values.
+    pub fn get_token_delta(&mut self, token: &Token) -> Option<&mut ERC20Delta> {
+        let mut match_index = None;
+
+        for i in 0..self.len {
+            let t = unsafe { self.inner[i].assume_init_ref() };
+            if t.token == *token {
+                match_index = Some(i);
+                break;
+            }
+        }
+
+        if let Some(i) = match_index {
+            Some(unsafe { self.inner[i].assume_init_mut() })
+        } else if self.len < MAX_DELTAS {
+            let index = self.len;
+            self.inner[index].write(ERC20Delta::new(token.clone(), Delta::ZERO));
+            self.len += 1;
+            Some(unsafe { self.inner[index].assume_init_mut() })
+        } else {
+            None
+        }
     }
 }

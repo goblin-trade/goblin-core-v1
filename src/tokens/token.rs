@@ -2,7 +2,7 @@ use crate::{erc20, goblin_error::GoblinError, tokens::HARDCODED_TOKENS, types::A
 
 /// A generic token type to represent custom and hardcoded tokens.
 /// Decimal places are already set for hardcoded tokens, whereas we need to fetch them for custom tokens.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 pub enum Token {
     Custom(Address),
     Hardcoded(HardcodedToken),
@@ -13,6 +13,12 @@ pub enum Token {
 pub struct HardcodedToken {
     pub address: Address,
     pub decimals: u8,
+}
+
+impl PartialEq for HardcodedToken {
+    fn eq(&self, other: &Self) -> bool {
+        self.address == other.address
+    }
 }
 
 impl Token {
