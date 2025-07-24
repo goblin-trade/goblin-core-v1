@@ -1,7 +1,6 @@
 use crate::{
-    markets::{IndexedMarket, Market},
+    markets::IndexedMarket,
     quantities::{BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit},
-    tokens::HARDCODED_TOKENS,
 };
 
 // pub const HARDCODED_MARKETS: [Market; 1] = [Market::new_unchecked(

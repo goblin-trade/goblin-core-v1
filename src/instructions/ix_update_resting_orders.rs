@@ -1,10 +1,11 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::{ArgsBuffer, ArgsDecoder},
-    markets::{IndexedMarket, MarketKey},
+    markets::IndexedMarket,
     quantities::{BaseLots, Delta, Ticks},
     require,
     settlement::TokenDeltas,
+    state::MarketKey,
     tokens::Token,
     types::Address,
 };

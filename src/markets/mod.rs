@@ -1,7 +1,5 @@
-pub mod market;
-pub use market::*;
-pub mod token_pair;
-pub use token_pair::*;
+pub mod indexed_market;
+pub use indexed_market::*;
 
 #[cfg(feature = "localnet")]
 pub mod localnet;
