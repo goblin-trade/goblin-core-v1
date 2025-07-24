@@ -41,15 +41,30 @@ impl IndexedMarket {
 
     pub fn from_index(
         index: usize,
-        custom_market_list: &[IndexedMarket],
+        dangerous_custom_market_list: &[IndexedMarket],
     ) -> Result<Self, GoblinError> {
-        if index < custom_market_list.len() {
-            Ok(custom_market_list[index])
+        if index < dangerous_custom_market_list.len() {
+            let dangerous_custom_market = dangerous_custom_market_list[index];
+            require!(
+                dangerous_custom_market.is_valid(),
+                GoblinError::InvalidMarket
+            );
+
+            Ok(dangerous_custom_market)
         } else if index > 127 && index < (127 + HARDCODED_MARKETS.len()) {
             Ok(HARDCODED_MARKETS[index - 127])
         } else {
             Err(GoblinError::NoMarketAtIndex)
         }
+    }
+
+    fn is_valid(&self) -> bool {
+        let base_lot_size = self.base_lot_size;
+        let quote_lot_size = self.quote_lot_size;
+        self.base_token_index != self.quote_token_index
+            && base_lot_size.valid()
+            && quote_lot_size.valid()
+            && self.tick_size % self.base_lot_size == 0
     }
 }
 
@@ -62,98 +77,98 @@ pub struct Market {
     tick_size: QuoteLotsPerBaseUnitPerTick,
 }
 
-impl Market {
-    pub(crate) const fn new_unchecked(
-        base_token: Address,
-        quote_token: Address,
-        base_lot_size: BaseLotsPerBaseUnit,
-        quote_lot_size: QuoteLotsPerQuoteUnit,
-        tick_size: QuoteLotsPerBaseUnitPerTick,
-    ) -> Self {
-        Self {
-            base_token,
-            quote_token,
-            base_lot_size,
-            quote_lot_size,
-            tick_size,
-        }
-    }
+// impl Market {
+//     pub(crate) const fn new_unchecked(
+//         base_token: Address,
+//         quote_token: Address,
+//         base_lot_size: BaseLotsPerBaseUnit,
+//         quote_lot_size: QuoteLotsPerQuoteUnit,
+//         tick_size: QuoteLotsPerBaseUnitPerTick,
+//     ) -> Self {
+//         Self {
+//             base_token,
+//             quote_token,
+//             base_lot_size,
+//             quote_lot_size,
+//             tick_size,
+//         }
+//     }
 
-    // pub fn from_index(
-    //     index: usize,
-    //     custom_market_list: &[IndexedMarket],
-    //     custom_token_list: &[Address],
-    // ) -> Result<Self, GoblinError> {
-    //     if index < custom_market_list.len() {
-    //         let indexed_market = custom_market_list[index];
+//     // pub fn from_index(
+//     //     index: usize,
+//     //     custom_market_list: &[IndexedMarket],
+//     //     custom_token_list: &[Address],
+//     // ) -> Result<Self, GoblinError> {
+//     //     if index < custom_market_list.len() {
+//     //         let indexed_market = custom_market_list[index];
 
-    //         let base_token = Token::get_token_by_index(
-    //             custom_token_list,
-    //             indexed_market.base_token_index as usize,
-    //         )?;
-    //         let quote_token = Token::get_token_by_index(
-    //             custom_token_list,
-    //             indexed_market.base_token_index as usize,
-    //         )?;
+//     //         let base_token = Token::get_token_by_index(
+//     //             custom_token_list,
+//     //             indexed_market.base_token_index as usize,
+//     //         )?;
+//     //         let quote_token = Token::get_token_by_index(
+//     //             custom_token_list,
+//     //             indexed_market.base_token_index as usize,
+//     //         )?;
 
-    //         Market::new(
-    //             *base_token.address(),
-    //             *quote_token.address(),
-    //             indexed_market.base_lot_size,
-    //             indexed_market.quote_lot_size,
-    //             indexed_market.tick_size,
-    //         )
-    //     } else if index > 127 && index < (127 + HARDCODED_MARKETS.len()) {
-    //         Ok(HARDCODED_MARKETS[index - 127])
-    //     } else {
-    //         Err(GoblinError::NoMarketAtIndex)
-    //     }
-    // }
+//     //         Market::new(
+//     //             *base_token.address(),
+//     //             *quote_token.address(),
+//     //             indexed_market.base_lot_size,
+//     //             indexed_market.quote_lot_size,
+//     //             indexed_market.tick_size,
+//     //         )
+//     //     } else if index > 127 && index < (127 + HARDCODED_MARKETS.len()) {
+//     //         Ok(HARDCODED_MARKETS[index - 127])
+//     //     } else {
+//     //         Err(GoblinError::NoMarketAtIndex)
+//     //     }
+//     // }
 
-    fn new(
-        base_token: Address,
-        quote_token: Address,
-        base_lot_size: BaseLotsPerBaseUnit,
-        quote_lot_size: QuoteLotsPerQuoteUnit,
-        tick_size: QuoteLotsPerBaseUnitPerTick,
-    ) -> Result<Self, GoblinError> {
-        require!(base_token != quote_token, GoblinError::InvalidMarket);
-        require!(base_lot_size.valid(), GoblinError::InvalidMarket);
-        require!(quote_lot_size.valid(), GoblinError::InvalidMarket);
-        require!(tick_size % base_lot_size == 0, GoblinError::InvalidMarket);
+//     fn new(
+//         base_token: Address,
+//         quote_token: Address,
+//         base_lot_size: BaseLotsPerBaseUnit,
+//         quote_lot_size: QuoteLotsPerQuoteUnit,
+//         tick_size: QuoteLotsPerBaseUnitPerTick,
+//     ) -> Result<Self, GoblinError> {
+//         require!(base_token != quote_token, GoblinError::InvalidMarket);
+//         require!(base_lot_size.valid(), GoblinError::InvalidMarket);
+//         require!(quote_lot_size.valid(), GoblinError::InvalidMarket);
+//         require!(tick_size % base_lot_size == 0, GoblinError::InvalidMarket);
 
-        Ok(Self {
-            base_token,
-            quote_token,
-            base_lot_size,
-            quote_lot_size,
-            tick_size,
-        })
-    }
+//         Ok(Self {
+//             base_token,
+//             quote_token,
+//             base_lot_size,
+//             quote_lot_size,
+//             tick_size,
+//         })
+//     }
 
-    // Getters
-    #[inline(always)]
-    pub const fn base_token(&self) -> &Address {
-        &self.base_token
-    }
+//     // Getters
+//     #[inline(always)]
+//     pub const fn base_token(&self) -> &Address {
+//         &self.base_token
+//     }
 
-    #[inline(always)]
-    pub const fn quote_token(&self) -> &Address {
-        &self.quote_token
-    }
+//     #[inline(always)]
+//     pub const fn quote_token(&self) -> &Address {
+//         &self.quote_token
+//     }
 
-    #[inline(always)]
-    pub const fn base_lot_size(&self) -> BaseLotsPerBaseUnit {
-        self.base_lot_size
-    }
+//     #[inline(always)]
+//     pub const fn base_lot_size(&self) -> BaseLotsPerBaseUnit {
+//         self.base_lot_size
+//     }
 
-    #[inline(always)]
-    pub const fn quote_lot_size(&self) -> QuoteLotsPerQuoteUnit {
-        self.quote_lot_size
-    }
+//     #[inline(always)]
+//     pub const fn quote_lot_size(&self) -> QuoteLotsPerQuoteUnit {
+//         self.quote_lot_size
+//     }
 
-    #[inline(always)]
-    pub const fn tick_size(&self) -> QuoteLotsPerBaseUnitPerTick {
-        self.tick_size
-    }
-}
+//     #[inline(always)]
+//     pub const fn tick_size(&self) -> QuoteLotsPerBaseUnitPerTick {
+//         self.tick_size
+//     }
+// }

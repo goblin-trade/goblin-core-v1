@@ -1,11 +1,10 @@
 use crate::{
     goblin_error::GoblinError,
-    input_processor::{Args, ArgsBuffer, ArgsDecoder},
-    markets::{IndexedMarket, Market},
+    input_processor::{ArgsBuffer, ArgsDecoder},
+    markets::IndexedMarket,
     quantities::{BaseLots, Delta, Ticks},
     require,
-    settlement::{ERC20Delta, ERC20DeltaList, EthDelta},
-    types::Address,
+    settlement::TokenDeltas,
 };
 
 #[repr(C, packed)]
@@ -48,9 +47,7 @@ pub fn update_resting_order(
     len: usize,
     offset: &mut usize,
     custom_market_list: &[IndexedMarket],
-    custom_erc20_list: &[Address],
-    eth_delta: &mut EthDelta,
-    erc20_delta_list: &mut ERC20DeltaList,
+    token_deltas: &mut TokenDeltas,
 ) -> Result<(), GoblinError> {
     // First decode header
     require!(
@@ -74,14 +71,12 @@ pub fn update_resting_order(
     let indexed_market =
         IndexedMarket::from_index(header.market_index as usize, custom_market_list)?;
 
-    // Update deltas
-    // First get struct, then update.
-    // We can't update base_token_delta after declaring quote_token_delta due to borrow checker
-    let base_token_delta = erc20_delta_list.get_or_insert(indexed_market.base_token_index)?;
-    base_token_delta.add_consumed_amount(Delta(10))?;
+    // Mock amounts that need to be settled
+    let base_delta = Delta(10);
+    let quote_delta = Delta(-4);
 
-    let quote_token_delta = erc20_delta_list.get_or_insert(indexed_market.quote_token_index)?;
-    quote_token_delta.add_consumed_amount(Delta(10))?;
+    token_deltas.add_consumed_amount(indexed_market.base_token_index, base_delta)?;
+    token_deltas.add_consumed_amount(indexed_market.quote_token_index, quote_delta)?;
 
     Ok(())
 }

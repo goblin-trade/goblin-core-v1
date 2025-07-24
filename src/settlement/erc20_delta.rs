@@ -5,6 +5,7 @@ use crate::{
     goblin_error::GoblinError,
     quantities::{Atoms, Delta},
     require,
+    settlement::DeltaAccumulator,
     state::{ERC20Store, ERC20StoreKey, SlotState},
     tokens::Token,
     types::Address,
@@ -39,6 +40,18 @@ pub struct ERC20Delta {
     locked_by_engine: Delta,
 }
 
+impl DeltaAccumulator for ERC20Delta {
+    fn add_consumed_amount(&mut self, consumed: Delta) -> Result<(), GoblinError> {
+        self.consumed_by_engine = self.consumed_by_engine.checked_add(consumed)?;
+        Ok(())
+    }
+
+    fn add_locked_amount(&mut self, locked: Delta) -> Result<(), GoblinError> {
+        self.locked_by_engine = self.locked_by_engine.checked_add(locked)?;
+        Ok(())
+    }
+}
+
 impl ERC20Delta {
     pub fn new(index: u8, withdrawal_due: Delta) -> Self {
         Self {
@@ -47,16 +60,6 @@ impl ERC20Delta {
             consumed_by_engine: Delta::ZERO,
             locked_by_engine: Delta::ZERO,
         }
-    }
-
-    pub fn add_consumed_amount(&mut self, consumed: Delta) -> Result<(), GoblinError> {
-        self.consumed_by_engine = self.consumed_by_engine.checked_add(consumed)?;
-        Ok(())
-    }
-
-    pub fn add_locked_amount(&mut self, locked: Delta) -> Result<(), GoblinError> {
-        self.locked_by_engine = self.locked_by_engine.checked_add(locked)?;
-        Ok(())
     }
 
     fn debit_due(&self) -> Result<Delta, GoblinError> {

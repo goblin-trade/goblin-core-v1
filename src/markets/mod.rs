@@ -1,7 +1,7 @@
 pub mod market;
 pub use market::*;
-pub mod market_v2;
-pub use market_v2::*;
+pub mod token_pair;
+pub use token_pair::*;
 
 #[cfg(feature = "localnet")]
 pub mod localnet;

@@ -1,12 +1,9 @@
 #![cfg_attr(not(test), no_std)]
 #![cfg_attr(not(test), no_main)]
 
-use crate::{
-    input_processor::Args, instructions::update_resting_order, settlement::ERC20DeltaList,
-};
+use crate::{input_processor::Args, instructions::update_resting_order, settlement::TokenDeltas};
 use goblin_error::*;
 use hostio::*;
-use settlement::EthDelta;
 
 pub mod erc20;
 pub mod eth;
@@ -39,8 +36,11 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
 
     let msg_sender = unsafe { hostio_msg_sender() };
 
-    let mut eth_delta = EthDelta::init(args.header.track_msg_value, args.eth_withdrawal_due)?;
-    let mut erc20_delta_list = ERC20DeltaList::init(args.erc20_delta_list)?;
+    let mut token_deltas = TokenDeltas::new(
+        args.header.track_msg_value,
+        args.eth_withdrawal_due,
+        args.erc20_delta_list,
+    )?;
 
     // TODO execution
     for _ in 0..args.header.ix_post_only_count {
@@ -51,33 +51,18 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
             len,
             &mut args.offset,
             args.custom_market_list,
-            args.custom_erc20_list,
-            &mut eth_delta,
-            &mut erc20_delta_list,
+            &mut token_deltas,
         )?;
     }
-
-    // Execute post-only orders
-    // args.header.ix_post_only_count gives the number of post-only orders
-    // Decode the bytes further for instruction data
 
     // Settlement
-
-    eth_delta.settle(
+    token_deltas.settle(
         msg_sender.as_ref(),
         args.recipient,
+        args.custom_erc20_list,
         args.header.withdraw_internally,
+        args.header.deposit_shortfall,
     )?;
-
-    for erc20_delta in erc20_delta_list.iter_mut() {
-        erc20_delta.settle(
-            args.custom_erc20_list,
-            msg_sender.as_ref(),
-            args.recipient,
-            args.header.deposit_shortfall,
-            args.header.withdraw_internally,
-        )?;
-    }
 
     // Write cache to trie
     // https://github.com/OffchainLabs/stylus-sdk-rs/blob/2c709a5a1a620ed7585c7d8af64fefabe3a0fc9a/stylus-sdk/src/storage/mod.rs#L81
