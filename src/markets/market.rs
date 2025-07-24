@@ -1,8 +1,10 @@
 use crate::{
     goblin_error::GoblinError,
+    hostio::{hostio_native_keccak256, HostioBuffer},
     markets::HARDCODED_MARKETS,
     quantities::{BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit},
     require,
+    state::SlotKey,
     tokens::Token,
     types::Address,
 };
@@ -66,15 +68,64 @@ impl IndexedMarket {
             && quote_lot_size.valid()
             && self.tick_size % self.base_lot_size == 0
     }
+
+    pub fn to_market(&self, custom_erc20_list: &[Address]) -> Result<Market, GoblinError> {
+        let base_token =
+            Token::get_token_by_index(custom_erc20_list, self.base_token_index as usize)?;
+        let quote_token =
+            Token::get_token_by_index(custom_erc20_list, self.base_token_index as usize)?;
+
+        Ok(Market {
+            base_token: *base_token.address(),
+            quote_token: *quote_token.address(),
+            base_lot_size: self.base_lot_size,
+            quote_lot_size: self.quote_lot_size,
+            tick_size: self.tick_size,
+        })
+    }
+}
+
+pub struct MarketKey {
+    hash: HostioBuffer<[u8; 32]>,
+}
+
+impl SlotKey for MarketKey {
+    const DISCRIMINATOR: u8 = 3;
+
+    fn hash(&self) -> &[u8; 32] {
+        self.hash.as_ref()
+    }
+}
+
+impl MarketKey {
+    pub fn new(
+        base_token: &Address,
+        quote_token: &Address,
+        base_lot_size: BaseLotsPerBaseUnit,
+        quote_lot_size: QuoteLotsPerQuoteUnit,
+        tick_size: QuoteLotsPerBaseUnitPerTick,
+    ) -> Self {
+        let mut bytes = [0u8; (1 + 2 * 20 + 3 * 8)];
+        bytes[0] = Self::DISCRIMINATOR;
+        bytes[1..21].copy_from_slice(base_token);
+        bytes[21..41].copy_from_slice(quote_token);
+        bytes[41..49].copy_from_slice(&base_lot_size.0.to_le_bytes());
+        bytes[49..57].copy_from_slice(&quote_lot_size.0.to_le_bytes());
+        bytes[57..65].copy_from_slice(&tick_size.0.to_le_bytes());
+
+        let hash = unsafe { hostio_native_keccak256(bytes.as_slice()) };
+
+        Self { hash }
+    }
 }
 
 #[derive(Clone, Copy)]
 pub struct Market {
-    base_token: Address,
-    quote_token: Address,
-    base_lot_size: BaseLotsPerBaseUnit,
-    quote_lot_size: QuoteLotsPerQuoteUnit,
-    tick_size: QuoteLotsPerBaseUnitPerTick,
+    pub base_token: Address,
+    pub quote_token: Address,
+    pub base_lot_size: BaseLotsPerBaseUnit,
+    pub quote_lot_size: QuoteLotsPerQuoteUnit,
+    pub tick_size: QuoteLotsPerBaseUnitPerTick,
 }
 
 // impl Market {

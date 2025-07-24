@@ -1,10 +1,12 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::{ArgsBuffer, ArgsDecoder},
-    markets::IndexedMarket,
+    markets::{IndexedMarket, MarketKey},
     quantities::{BaseLots, Delta, Ticks},
     require,
     settlement::TokenDeltas,
+    tokens::Token,
+    types::Address,
 };
 
 #[repr(C, packed)]
@@ -47,6 +49,7 @@ pub fn update_resting_order(
     len: usize,
     offset: &mut usize,
     custom_market_list: &[IndexedMarket],
+    custom_erc20_list: &[Address],
     token_deltas: &mut TokenDeltas,
 ) -> Result<(), GoblinError> {
     // First decode header
@@ -70,6 +73,22 @@ pub fn update_resting_order(
 
     let indexed_market =
         IndexedMarket::from_index(header.market_index as usize, custom_market_list)?;
+
+    let base_token =
+        Token::get_token_by_index(custom_erc20_list, indexed_market.base_token_index as usize)?;
+    let quote_token =
+        Token::get_token_by_index(custom_erc20_list, indexed_market.base_token_index as usize)?;
+
+    // Obtain market key
+    let market_key = MarketKey::new(
+        base_token.address(),
+        quote_token.address(),
+        indexed_market.base_lot_size,
+        indexed_market.quote_lot_size,
+        indexed_market.tick_size,
+    );
+
+    // Read market state
 
     // Mock amounts that need to be settled
     let base_delta = Delta(10);

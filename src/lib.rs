@@ -51,6 +51,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
             len,
             &mut args.offset,
             args.custom_market_list,
+            args.custom_erc20_list,
             &mut token_deltas,
         )?;
     }
