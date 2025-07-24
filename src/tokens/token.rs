@@ -1,5 +1,8 @@
 use crate::{erc20, goblin_error::GoblinError, tokens::HARDCODED_TOKENS, types::Address};
 
+/// This represents ERC20 tokens with decimal places.
+/// We need a way to represent ETH. ETH has index 255
+
 /// A generic token type to represent custom and hardcoded tokens.
 /// Decimal places are already set for hardcoded tokens, whereas we need to fetch them for custom tokens.
 #[derive(Clone, Copy, PartialEq)]

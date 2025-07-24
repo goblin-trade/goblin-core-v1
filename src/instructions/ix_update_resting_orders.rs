@@ -5,7 +5,7 @@ use crate::{
     quantities::{BaseLots, Delta, Ticks},
     require,
     settlement::TokenDeltas,
-    state::MarketKey,
+    state::{MarketKey, MarketState, SlotState},
     tokens::Token,
     types::Address,
 };
@@ -89,7 +89,9 @@ pub fn update_resting_order(
         indexed_market.tick_size,
     );
 
-    // Read market state
+    // Read and store market state
+    let mut market_state = MarketState::load(&market_key);
+    market_state.as_mut().store(&market_key);
 
     // Mock amounts that need to be settled
     let base_delta = Delta(10);
