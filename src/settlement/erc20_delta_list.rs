@@ -1,7 +1,7 @@
 use core::mem::MaybeUninit;
 
 use crate::{
-    goblin_error::GoblinError, quantities::Delta, settlement::IndexedERC20Delta, tokens::TokenIndex,
+    goblin_error::GoblinError, quantities::Delta, settlement::ERC20DeltaInput, tokens::TokenIndex,
 };
 
 use super::ERC20Delta;
@@ -31,16 +31,13 @@ impl ERC20DeltaList {
         }
     }
 
-    pub fn init(indexed_erc20_delta_list: &[IndexedERC20Delta]) -> Result<Self, GoblinError> {
+    pub fn init(erc20_delta_input_list: &[ERC20DeltaInput]) -> Result<Self, GoblinError> {
         let mut list = Self::default();
+        list.len = erc20_delta_input_list.len();
 
-        for (i, item) in indexed_erc20_delta_list.iter().enumerate() {
-            // let token = Token::get_token_by_index(custom_token_list, item.index as usize)?;
-            // let withdrawal_due = item.withdrawal_due;
+        for (i, item) in erc20_delta_input_list.iter().enumerate() {
             list.inner[i].write(ERC20Delta::new(item.index, item.withdrawal_due));
         }
-
-        list.len = indexed_erc20_delta_list.len();
 
         Ok(list)
     }

@@ -1,6 +1,6 @@
 use crate::{
     goblin_error::GoblinError, markets::IndexedMarket, quantities::Atoms, require,
-    settlement::IndexedERC20Delta, types::Address,
+    settlement::ERC20DeltaInput, types::Address,
 };
 
 pub struct Header {
@@ -85,7 +85,7 @@ impl Header {
             + self.track_msg_value as usize * core::mem::size_of::<Atoms>()
             // Lists
             + self.custom_erc20_count * core::mem::size_of::<Address>()
-            + self.erc20_delta_count * core::mem::size_of::<IndexedERC20Delta>()
+            + self.erc20_delta_count * core::mem::size_of::<ERC20DeltaInput>()
             + self.custom_market_count * core::mem::size_of::<IndexedMarket>();
 
         // TODO add instruction sizes once finalized
@@ -291,8 +291,7 @@ mod tests {
         input[0] = 0b0010_0000; // erc20_delta_count = 2
 
         let header = Header::init_inner(&input);
-        let expected_size =
-            Header::HEADER_BYTE_SIZE + 2 * core::mem::size_of::<IndexedERC20Delta>();
+        let expected_size = Header::HEADER_BYTE_SIZE + 2 * core::mem::size_of::<ERC20DeltaInput>();
 
         assert_eq!(header.payload_size(), expected_size);
     }
@@ -319,7 +318,7 @@ mod tests {
             + core::mem::size_of::<Address>() // recipient
             + core::mem::size_of::<Atoms>() // msg_value
             + 5 * core::mem::size_of::<Address>() // custom tokens
-            + 3 * core::mem::size_of::<IndexedERC20Delta>() // token deltas
+            + 3 * core::mem::size_of::<ERC20DeltaInput>() // token deltas
             + 2 * core::mem::size_of::<IndexedMarket>(); // custom markets
 
         assert_eq!(header.payload_size(), expected_size);

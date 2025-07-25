@@ -75,15 +75,6 @@ pub fn update_resting_order(
     let indexed_market =
         IndexedMarket::from_index(header.market_index as usize, custom_market_list)?;
 
-    // Token type only covers ERC20 tokens, not ETH
-    // Currently if index = 255 then this will fail
-    //
-    // Hierarchy
-    // - Token type
-    //   - ETH
-    //   - ERC20
-    //     - Hardcoded
-    //     - Custom
     let base_token = indexed_market
         .base_token_index
         .to_token(custom_erc20_list)?;
@@ -91,14 +82,6 @@ pub fn update_resting_order(
     let quote_token = indexed_market
         .quote_token_index
         .to_token(custom_erc20_list)?;
-
-    // Now we're performing index to address lookups at 2 stages
-    // - Market key fetching: We need token address to read slot.
-    // - Settlement: We just push index to delta list, deferring address lookup for later.
-    //
-    // Should we write address also?
-    // Comparison happens with index which is cheaper. But we can easily store token address
-    // in the struct to reduce duplicate fetching later.
 
     // // Obtain market key
     // let market_key = MarketKey::new(
@@ -117,6 +100,7 @@ pub fn update_resting_order(
     let base_delta = Delta(10);
     let quote_delta = Delta(-4);
 
+    // TokenIndex to Token address lookup happens again in settlement phase.
     token_deltas.add_consumed_amount(indexed_market.base_token_index, base_delta)?;
     token_deltas.add_consumed_amount(indexed_market.quote_token_index, quote_delta)?;
 

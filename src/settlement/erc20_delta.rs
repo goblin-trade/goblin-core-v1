@@ -12,10 +12,9 @@ use crate::{
     CONTRACT_ADDRESS,
 };
 
-/// Withdrawal due for an ERC20 token as read from the args.
-/// It contains the token index instead of the token address.
+/// Withdrawal delta due for an ERC20 token as read from the args.
 #[repr(C, packed)]
-pub struct IndexedERC20Delta {
+pub struct ERC20DeltaInput {
     pub index: TokenIndex,
     pub withdrawal_due: Delta,
 }
@@ -24,8 +23,7 @@ pub struct IndexedERC20Delta {
 #[derive(Clone, Copy)]
 pub struct ERC20Delta {
     pub index: TokenIndex,
-    // /// The token as read from hardcoded or custom list
-    // pub token: Token,
+
     /// Amount of atoms pending withdrawal, as read from input payload.
     ///
     /// Unlike EthDelta, withdrawal_due is of type Delta intead of Atoms.

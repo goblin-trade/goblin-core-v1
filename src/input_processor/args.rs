@@ -10,7 +10,7 @@ use crate::{
     input_processor::{ArgsBuffer, ArgsDecoder, Header},
     markets::IndexedMarket,
     quantities::Atoms,
-    settlement::IndexedERC20Delta,
+    settlement::ERC20DeltaInput,
     types::Address,
 };
 
@@ -28,7 +28,7 @@ pub struct Args<'a> {
     pub custom_erc20_list: &'a [Address],
 
     /// Pending ERC20 deposits or withdrawals
-    pub erc20_delta_list: &'a [IndexedERC20Delta],
+    pub erc20_delta_list: &'a [ERC20DeltaInput],
 
     /// Custom markets to use
     pub custom_market_list: &'a [IndexedMarket],
@@ -66,8 +66,8 @@ impl<'a> Args<'a> {
 
         let erc20_delta_list = {
             let count = header.erc20_delta_count;
-            let value = payload.decode_slice::<IndexedERC20Delta>(offset, count);
-            offset += count * core::mem::size_of::<IndexedERC20Delta>();
+            let value = payload.decode_slice::<ERC20DeltaInput>(offset, count);
+            offset += count * core::mem::size_of::<ERC20DeltaInput>();
             value
         };
 

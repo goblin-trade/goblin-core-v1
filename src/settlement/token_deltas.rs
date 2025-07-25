@@ -1,7 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
     quantities::{Atoms, Delta},
-    settlement::{DeltaAccumulator, ERC20DeltaList, EthDelta, IndexedERC20Delta},
+    settlement::{DeltaAccumulator, ERC20DeltaInput, ERC20DeltaList, EthDelta},
     tokens::TokenIndex,
     types::Address,
 };
@@ -15,7 +15,7 @@ impl TokenDeltas {
     pub fn new(
         track_msg_value: bool,
         eth_withdrawal_due: Option<&Atoms>,
-        indexed_erc20_delta_list: &[IndexedERC20Delta],
+        indexed_erc20_delta_list: &[ERC20DeltaInput],
     ) -> Result<Self, GoblinError> {
         Ok(TokenDeltas {
             eth_delta: EthDelta::init(track_msg_value, eth_withdrawal_due)?,
