@@ -1,12 +1,14 @@
 use crate::{erc20, goblin_error::GoblinError, tokens::HARDCODED_TOKENS, types::Address};
 
-/// This represents ERC20 tokens with decimal places.
-/// We need a way to represent ETH. ETH has index 255
+pub enum Token {
+    Eth,
+    ERC20(ERC20Token),
+}
 
-/// A generic token type to represent custom and hardcoded tokens.
+/// A generic token type to represent custom and hardcoded ERC20 tokens.
 /// Decimal places are already set for hardcoded tokens, whereas we need to fetch them for custom tokens.
 #[derive(Clone, Copy, PartialEq)]
-pub enum Token {
+pub enum ERC20Token {
     Custom(Address),
     Hardcoded(HardcodedToken),
 }
@@ -24,7 +26,7 @@ impl PartialEq for HardcodedToken {
     }
 }
 
-impl Token {
+impl ERC20Token {
     /// Get token by index
     ///
     /// * Custom tokens begin at index 0
@@ -47,16 +49,16 @@ impl Token {
     /// Returns the address of the token
     pub fn address(&self) -> &Address {
         match self {
-            Token::Custom(token) => token,
-            Token::Hardcoded(token) => &token.address,
+            ERC20Token::Custom(token) => token,
+            ERC20Token::Hardcoded(token) => &token.address,
         }
     }
 
     /// Returns the decimals of the token
     pub fn decimals(&self) -> Result<u8, GoblinError> {
         match self {
-            Token::Custom(token) => erc20::decimals(token),
-            Token::Hardcoded(token) => Ok(token.decimals),
+            ERC20Token::Custom(token) => erc20::decimals(token),
+            ERC20Token::Hardcoded(token) => Ok(token.decimals),
         }
     }
 }

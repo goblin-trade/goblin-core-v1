@@ -3,6 +3,7 @@ use crate::{
     markets::HARDCODED_MARKETS,
     quantities::{BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit},
     require,
+    tokens::TokenIndex,
     types::Address,
 };
 
@@ -14,10 +15,10 @@ pub const MAX_CUSTOM_MARKETS: usize = 7;
 #[derive(Clone, Copy)]
 pub struct IndexedMarket {
     /// The base token index. It will be mapped to token address
-    pub base_token_index: u8,
+    pub base_token_index: TokenIndex,
 
     /// The quote token index. It will be mapped to token address
-    pub quote_token_index: u8,
+    pub quote_token_index: TokenIndex,
 
     /// Base lots per unit
     pub base_lot_size: BaseLotsPerBaseUnit,
@@ -33,8 +34,8 @@ impl IndexedMarket {
     /// Initialize an IndexedMarket, bypassing legality checks.
     /// This function is used to define hardcoded markets
     pub(crate) const fn new_unchecked(
-        base_token_index: u8,
-        quote_token_index: u8,
+        base_token_index: TokenIndex,
+        quote_token_index: TokenIndex,
         base_lot_size: BaseLotsPerBaseUnit,
         quote_lot_size: QuoteLotsPerQuoteUnit,
         tick_size: QuoteLotsPerBaseUnitPerTick,

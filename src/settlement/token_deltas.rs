@@ -2,6 +2,7 @@ use crate::{
     goblin_error::GoblinError,
     quantities::{Atoms, Delta},
     settlement::{DeltaAccumulator, ERC20DeltaList, EthDelta, IndexedERC20Delta},
+    tokens::TokenIndex,
     types::Address,
 };
 
@@ -24,22 +25,26 @@ impl TokenDeltas {
 
     pub fn add_consumed_amount(
         &mut self,
-        token_index: u8,
+        token_index: TokenIndex,
         consumed: Delta,
     ) -> Result<(), GoblinError> {
-        if token_index == 255 {
+        if token_index.is_eth() {
             self.eth_delta.add_consumed_amount(consumed)
         } else {
-            let erc20_delta_item = self.erc20_delta_list.get_or_insert(token_index)?;
+            let erc20_delta_item = self.erc20_delta_list.get_or_insert(token_index.0)?;
             erc20_delta_item.add_consumed_amount(consumed)
         }
     }
 
-    pub fn add_locked_amount(&mut self, token_index: u8, locked: Delta) -> Result<(), GoblinError> {
-        if token_index == 255 {
+    pub fn add_locked_amount(
+        &mut self,
+        token_index: TokenIndex,
+        locked: Delta,
+    ) -> Result<(), GoblinError> {
+        if token_index.is_eth() {
             self.eth_delta.add_locked_amount(locked)
         } else {
-            let erc20_delta_item = self.erc20_delta_list.get_or_insert(token_index)?;
+            let erc20_delta_item = self.erc20_delta_list.get_or_insert(token_index.0)?;
             erc20_delta_item.add_locked_amount(locked)
         }
     }

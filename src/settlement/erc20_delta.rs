@@ -7,7 +7,7 @@ use crate::{
     require,
     settlement::DeltaAccumulator,
     state::{ERC20Store, ERC20StoreKey, SlotState},
-    tokens::Token,
+    tokens::ERC20Token,
     types::Address,
     CONTRACT_ADDRESS,
 };
@@ -76,7 +76,7 @@ impl ERC20Delta {
         deposit_shortfall: bool,
         withdraw_internally: bool,
     ) -> Result<(), GoblinError> {
-        let token = Token::get_token_by_index(custom_token_list, self.index as usize)?;
+        let token = ERC20Token::get_token_by_index(custom_token_list, self.index as usize)?;
 
         let key = ERC20StoreKey::new(msg_sender, token.address());
         let mut store = ERC20Store::load(&key);
@@ -112,7 +112,7 @@ impl ERC20Delta {
     /// the shortfall is added to withdrawal_due
     pub fn settle_for_sender(
         &mut self,
-        token: &Token,
+        token: &ERC20Token,
         msg_sender: &Address,
         msg_sender_store: &mut ERC20Store,
         deposit_shortfall: bool,
@@ -160,7 +160,7 @@ impl ERC20Delta {
     /// * Negative withdrawal_due is illegal. It is already handled in settle_for_sender()
     fn settle_for_recipient(
         &self,
-        token: &Token,
+        token: &ERC20Token,
         msg_sender: &Address,
         msg_sender_store: &mut ERC20Store,
         recipient: Option<&Address>,

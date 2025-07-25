@@ -1,5 +1,7 @@
 pub mod token;
 pub use token::*;
+pub mod token_index;
+pub use token_index::*;
 
 #[cfg(feature = "localnet")]
 pub mod localnet;
