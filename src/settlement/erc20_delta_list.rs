@@ -1,6 +1,8 @@
 use core::mem::MaybeUninit;
 
-use crate::{goblin_error::GoblinError, quantities::Delta, settlement::IndexedERC20Delta};
+use crate::{
+    goblin_error::GoblinError, quantities::Delta, settlement::IndexedERC20Delta, tokens::TokenIndex,
+};
 
 use super::ERC20Delta;
 
@@ -59,7 +61,12 @@ impl ERC20DeltaList {
 
     /// Returns a mutable reference to the ERC20Delta for the given token index.
     /// If the token index is not found, inserts a new ERC20Delta with zero deltas.
-    pub fn get_or_insert(&mut self, token_index: u8) -> Result<&mut ERC20Delta, GoblinError> {
+    ///
+    /// Validity check of the token index is deferred to the settlement phase.
+    pub fn get_or_insert(
+        &mut self,
+        token_index: TokenIndex,
+    ) -> Result<&mut ERC20Delta, GoblinError> {
         // First, try to find existing delta with this token index
         for i in 0..self.len {
             let delta_ref = unsafe { self.inner[i].assume_init_ref() };
@@ -84,7 +91,7 @@ impl ERC20DeltaList {
 
     /// Returns a reference to the ERC20Delta for the given token index.
     /// Returns None if the token index is not found.
-    pub fn get(&self, token_index: u8) -> Option<&ERC20Delta> {
+    pub fn get(&self, token_index: TokenIndex) -> Option<&ERC20Delta> {
         for i in 0..self.len {
             let delta_ref = unsafe { self.inner[i].assume_init_ref() };
             if delta_ref.index == token_index {

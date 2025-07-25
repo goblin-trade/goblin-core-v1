@@ -7,7 +7,7 @@ use crate::{
     require,
     settlement::DeltaAccumulator,
     state::{ERC20Store, ERC20StoreKey, SlotState},
-    tokens::ERC20Token,
+    tokens::{ERC20Token, Token, TokenIndex},
     types::Address,
     CONTRACT_ADDRESS,
 };
@@ -16,14 +16,14 @@ use crate::{
 /// It contains the token index instead of the token address.
 #[repr(C, packed)]
 pub struct IndexedERC20Delta {
-    pub index: u8,
+    pub index: TokenIndex,
     pub withdrawal_due: Delta,
 }
 
 /// ERC20 atoms due to be deducted, locked or transferred out on settlement
 #[derive(Clone, Copy)]
 pub struct ERC20Delta {
-    pub index: u8,
+    pub index: TokenIndex,
     // /// The token as read from hardcoded or custom list
     // pub token: Token,
     /// Amount of atoms pending withdrawal, as read from input payload.
@@ -53,7 +53,7 @@ impl DeltaAccumulator for ERC20Delta {
 }
 
 impl ERC20Delta {
-    pub fn new(index: u8, withdrawal_due: Delta) -> Self {
+    pub fn new(index: TokenIndex, withdrawal_due: Delta) -> Self {
         Self {
             index,
             withdrawal_due,
@@ -76,29 +76,32 @@ impl ERC20Delta {
         deposit_shortfall: bool,
         withdraw_internally: bool,
     ) -> Result<(), GoblinError> {
-        let token = ERC20Token::get_token_by_index(custom_token_list, self.index as usize)?;
+        match self.index.to_token(custom_token_list)? {
+            Token::ERC20(token) => {
+                let key = ERC20StoreKey::new(msg_sender, token.address());
+                let mut store = ERC20Store::load(&key);
+                let store_mut = store.as_mut();
 
-        let key = ERC20StoreKey::new(msg_sender, token.address());
-        let mut store = ERC20Store::load(&key);
-        let store_mut = store.as_mut();
+                // If ERC20 store was read for the first time, fetch and store token decimals
+                if store_mut.is_empty() {
+                    store_mut.decimals = token.decimals()?;
+                }
 
-        // If ERC20 store was read for the first time, fetch and store token decimals
-        if store_mut.is_empty() {
-            store_mut.decimals = token.decimals()?;
+                self.settle_for_sender(&token, msg_sender, store_mut, deposit_shortfall)?;
+                self.settle_for_recipient(
+                    &token,
+                    msg_sender,
+                    store_mut,
+                    recipient,
+                    withdraw_internally,
+                )?;
+
+                store_mut.store(&key);
+
+                Ok(())
+            }
+            Token::Eth => Err(GoblinError::ERC20NotETH),
         }
-
-        self.settle_for_sender(&token, msg_sender, store_mut, deposit_shortfall)?;
-        self.settle_for_recipient(
-            &token,
-            msg_sender,
-            store_mut,
-            recipient,
-            withdraw_internally,
-        )?;
-
-        store_mut.store(&key);
-
-        Ok(())
     }
 
     /// Settle the balance for msg.sender.

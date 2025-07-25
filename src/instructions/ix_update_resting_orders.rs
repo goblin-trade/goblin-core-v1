@@ -92,14 +92,13 @@ pub fn update_resting_order(
         .quote_token_index
         .to_token(custom_erc20_list)?;
 
-    // let base_token = ERC20Token::get_token_by_index(
-    //     custom_erc20_list,
-    //     indexed_market.base_token_index as usize,
-    // )?;
-    // let quote_token = ERC20Token::get_token_by_index(
-    //     custom_erc20_list,
-    //     indexed_market.base_token_index as usize,
-    // )?;
+    // Now we're performing index to address lookups at 2 stages
+    // - Market key fetching: We need token address to read slot.
+    // - Settlement: We just push index to delta list, deferring address lookup for later.
+    //
+    // Should we write address also?
+    // Comparison happens with index which is cheaper. But we can easily store token address
+    // in the struct to reduce duplicate fetching later.
 
     // // Obtain market key
     // let market_key = MarketKey::new(

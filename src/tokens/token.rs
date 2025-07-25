@@ -1,7 +1,10 @@
-use crate::{erc20, goblin_error::GoblinError, tokens::HARDCODED_TOKENS, types::Address};
+use crate::{erc20, goblin_error::GoblinError, types::Address};
 
 pub enum Token {
+    /// The native gas token
     Eth,
+
+    /// ERC20 token
     ERC20(ERC20Token),
 }
 
@@ -27,25 +30,6 @@ impl PartialEq for HardcodedToken {
 }
 
 impl ERC20Token {
-    /// Get token by index
-    ///
-    /// * Custom tokens begin at index 0
-    /// * Hardcoded tokens begin at index 127
-    pub fn get_token_by_index(
-        custom_token_list: &[Address],
-        index: usize,
-    ) -> Result<Self, GoblinError> {
-        if index < custom_token_list.len() {
-            let token = custom_token_list[index];
-            Ok(Self::Custom(token))
-        } else if index > 127 && index < (127 + HARDCODED_TOKENS.len()) {
-            let token = HARDCODED_TOKENS[index - 127];
-            Ok(Self::Hardcoded(token))
-        } else {
-            Err(GoblinError::NoTokenAtIndex)
-        }
-    }
-
     /// Returns the address of the token
     pub fn address(&self) -> &Address {
         match self {

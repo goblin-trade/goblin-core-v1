@@ -15,10 +15,11 @@ pub enum GoblinError {
     DeltaOverflow = 12,
     DeltaUnderflow = 13,
     NoTokenAtIndex = 14,
-    InsufficientFreeBalance = 15,
-    ShortfallDepositNotAllowed = 16,
-    NoMarketAtIndex = 17,
-    InvalidMarket = 18,
+    ERC20NotETH = 15,
+    InsufficientFreeBalance = 16,
+    ShortfallDepositNotAllowed = 17,
+    NoMarketAtIndex = 18,
+    InvalidMarket = 19,
 }
 
 impl GoblinError {

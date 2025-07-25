@@ -31,7 +31,7 @@ impl TokenDeltas {
         if token_index.is_eth() {
             self.eth_delta.add_consumed_amount(consumed)
         } else {
-            let erc20_delta_item = self.erc20_delta_list.get_or_insert(token_index.0)?;
+            let erc20_delta_item = self.erc20_delta_list.get_or_insert(token_index)?;
             erc20_delta_item.add_consumed_amount(consumed)
         }
     }
@@ -44,7 +44,7 @@ impl TokenDeltas {
         if token_index.is_eth() {
             self.eth_delta.add_locked_amount(locked)
         } else {
-            let erc20_delta_item = self.erc20_delta_list.get_or_insert(token_index.0)?;
+            let erc20_delta_item = self.erc20_delta_list.get_or_insert(token_index)?;
             erc20_delta_item.add_locked_amount(locked)
         }
     }
