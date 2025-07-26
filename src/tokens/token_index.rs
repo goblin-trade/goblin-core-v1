@@ -9,11 +9,7 @@ use crate::{
 pub struct TokenIndex(pub u8);
 
 impl TokenIndex {
-    const ETH: u8 = 255;
-
-    pub fn is_eth(&self) -> bool {
-        self.0 == Self::ETH
-    }
+    pub const ETH: Self = TokenIndex(255);
 
     /// Obtain the token corresponding to the token index.
     /// Token can be ETH or an ERC20
@@ -37,7 +33,7 @@ impl TokenIndex {
         } else if index > 127 && index < (127 + HARDCODED_TOKENS.len()) {
             let token = HARDCODED_TOKENS[index - 127];
             Ok(Token::ERC20(ERC20Token::Hardcoded(token)))
-        } else if self.is_eth() {
+        } else if *self == Self::ETH {
             Ok(Token::Eth)
         } else {
             Err(GoblinError::NoTokenAtIndex)

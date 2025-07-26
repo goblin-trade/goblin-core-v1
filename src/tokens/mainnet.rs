@@ -1,7 +1,7 @@
 ///! Top 50 token addresses from https://www.arbiscan.io/tokens
 ///! TODO insert Goblin token address. The address can be found before TGE.
 ///! 50 addresses consume 50 * 20 bytes = 1kb
-use crate::tokens::HardcodedToken;
+use crate::tokens::{HardcodedToken, TokenIndex};
 
 pub enum NamedToken {
     Goblin,
@@ -58,8 +58,8 @@ pub enum NamedToken {
 }
 
 impl NamedToken {
-    pub const fn index(&self) -> usize {
-        match self {
+    pub const fn index(&self) -> TokenIndex {
+        let index = match self {
             NamedToken::Goblin => 0,
             NamedToken::USDT => 1,
             NamedToken::BridgedUSDC => 2,
@@ -111,7 +111,9 @@ impl NamedToken {
             NamedToken::Frax => 48,
             NamedToken::FraxShare => 49,
             NamedToken::AaveGHO => 50,
-        }
+        };
+
+        TokenIndex(index)
     }
 }
 

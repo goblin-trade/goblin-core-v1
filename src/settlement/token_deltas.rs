@@ -28,7 +28,7 @@ impl TokenDeltas {
         token_index: TokenIndex,
         consumed: Delta,
     ) -> Result<(), GoblinError> {
-        if token_index.is_eth() {
+        if token_index == TokenIndex::ETH {
             self.eth_delta.add_consumed_amount(consumed)
         } else {
             let erc20_delta_item = self.erc20_delta_list.get_or_insert(token_index)?;
@@ -41,7 +41,7 @@ impl TokenDeltas {
         token_index: TokenIndex,
         locked: Delta,
     ) -> Result<(), GoblinError> {
-        if token_index.is_eth() {
+        if token_index == TokenIndex::ETH {
             self.eth_delta.add_locked_amount(locked)
         } else {
             let erc20_delta_item = self.erc20_delta_list.get_or_insert(token_index)?;
