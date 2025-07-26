@@ -20,6 +20,7 @@ pub enum GoblinError {
     ShortfallDepositNotAllowed = 17,
     NoMarketAtIndex = 18,
     InvalidMarket = 19,
+    InvalidTokenPair = 20,
 }
 
 impl GoblinError {

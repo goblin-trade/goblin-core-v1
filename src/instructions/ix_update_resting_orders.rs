@@ -6,7 +6,7 @@ use crate::{
     require,
     settlement::TokenDeltas,
     state::{MarketKey, MarketState, SlotState},
-    tokens::ERC20Token,
+    tokens::{ERC20Token, ValidatedTokenPair},
     types::Address,
 };
 
@@ -75,26 +75,23 @@ pub fn update_resting_order(
     let indexed_market =
         IndexedMarket::from_index(header.market_index as usize, custom_market_list)?;
 
-    let base_token = indexed_market
-        .base_token_index
-        .to_token(custom_erc20_list)?;
+    let token_pair = ValidatedTokenPair::new(
+        indexed_market.base_token_index,
+        indexed_market.quote_token_index,
+        custom_erc20_list,
+    )?;
 
-    let quote_token = indexed_market
-        .quote_token_index
-        .to_token(custom_erc20_list)?;
+    // Obtain market key
+    let market_key = MarketKey::new(
+        &token_pair,
+        indexed_market.base_lot_size,
+        indexed_market.quote_lot_size,
+        indexed_market.tick_size,
+    );
 
-    // // Obtain market key
-    // let market_key = MarketKey::new(
-    //     base_token.address(),
-    //     quote_token.address(),
-    //     indexed_market.base_lot_size,
-    //     indexed_market.quote_lot_size,
-    //     indexed_market.tick_size,
-    // );
-
-    // // Read and store market state
-    // let mut market_state = MarketState::load(&market_key);
-    // market_state.as_mut().store(&market_key);
+    // Read and store market state
+    let mut market_state = MarketState::load(&market_key);
+    market_state.as_mut().store(&market_key);
 
     // Mock amounts that need to be settled
     let base_delta = Delta(10);

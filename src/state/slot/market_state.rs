@@ -2,7 +2,7 @@ use crate::{
     hostio::{hostio_native_keccak256, HostioBuffer},
     quantities::{BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit, Ticks},
     state::{SlotKey, SlotState},
-    types::Address,
+    tokens::{ERC20TokenPair, ValidatedTokenPair},
 };
 
 pub struct MarketKey {
@@ -19,23 +19,42 @@ impl SlotKey for MarketKey {
 
 impl MarketKey {
     pub fn new(
-        base_token: &Address,
-        quote_token: &Address,
+        token_pair: &ValidatedTokenPair,
         base_lot_size: BaseLotsPerBaseUnit,
         quote_lot_size: QuoteLotsPerQuoteUnit,
         tick_size: QuoteLotsPerBaseUnitPerTick,
     ) -> Self {
-        let mut bytes = [0u8; (1 + 2 * 20 + 3 * 8)];
-        bytes[0] = Self::DISCRIMINATOR;
-        bytes[1..21].copy_from_slice(base_token);
-        bytes[21..41].copy_from_slice(quote_token);
-        bytes[41..49].copy_from_slice(&base_lot_size.0.to_le_bytes());
-        bytes[49..57].copy_from_slice(&quote_lot_size.0.to_le_bytes());
-        bytes[57..65].copy_from_slice(&tick_size.0.to_le_bytes());
+        match token_pair {
+            ValidatedTokenPair::ERC20ERC20(ERC20TokenPair {
+                base_token,
+                quote_token,
+            }) => {
+                let mut bytes = [0u8; (1 + 2 * 20 + 3 * 8)];
+                bytes[0] = token_pair.discriminator();
+                bytes[1..21].copy_from_slice(base_token.address());
+                bytes[21..41].copy_from_slice(quote_token.address());
+                bytes[41..49].copy_from_slice(&base_lot_size.0.to_le_bytes());
+                bytes[49..57].copy_from_slice(&quote_lot_size.0.to_le_bytes());
+                bytes[57..65].copy_from_slice(&tick_size.0.to_le_bytes());
 
-        let hash = unsafe { hostio_native_keccak256(bytes.as_slice()) };
+                let hash = unsafe { hostio_native_keccak256(bytes.as_slice()) };
 
-        Self { hash }
+                Self { hash }
+            }
+            ValidatedTokenPair::ETHERC20(erc20_token)
+            | ValidatedTokenPair::ERC20ETH(erc20_token) => {
+                let mut bytes = [0u8; (1 + 20 + 3 * 8)];
+                bytes[0] = token_pair.discriminator();
+                bytes[1..21].copy_from_slice(erc20_token.address());
+                bytes[21..29].copy_from_slice(&base_lot_size.0.to_le_bytes());
+                bytes[29..37].copy_from_slice(&quote_lot_size.0.to_le_bytes());
+                bytes[37..45].copy_from_slice(&tick_size.0.to_le_bytes());
+
+                let hash = unsafe { hostio_native_keccak256(bytes.as_slice()) };
+
+                Self { hash }
+            }
+        }
     }
 }
 

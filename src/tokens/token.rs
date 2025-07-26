@@ -1,5 +1,6 @@
 use crate::{erc20, goblin_error::GoblinError, types::Address};
 
+#[derive(PartialEq)]
 pub enum Token {
     /// The native gas token
     Eth,
