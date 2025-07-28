@@ -32,8 +32,8 @@ pub struct Header {
     /// The number of post-only order instructions. Occupies 4 bits, max 2^4 - 1 = 15
     pub ix_post_only_count: u8,
 
-    /// The number of cancel order instructions. Occupies 4 bits, max 2^4 - 1 = 15
-    pub ix_cancel_count: u8,
+    /// The number of reduce order instructions. Occupies 4 bits, max 2^4 - 1 = 15
+    pub ix_reduce_count: u8,
 
     /// The number of take-only order instructions. Occupies 4 bits, max 2^4 - 1 = 15
     pub ix_take_only_count: u8,
@@ -72,7 +72,7 @@ impl Header {
 
             // Trading instructions
             ix_post_only_count: input[2] & 0b0000_1111,
-            ix_cancel_count: input[2] >> 4,
+            ix_reduce_count: input[2] >> 4,
 
             ix_take_only_count: input[3] & 0b0000_1111,
             ix_limit_order_count: input[3] >> 4,
@@ -114,7 +114,7 @@ mod tests {
         assert!(!header.deposit_shortfall);
         assert!(!header.withdraw_internally);
         assert_eq!(header.ix_post_only_count, 0);
-        assert_eq!(header.ix_cancel_count, 0);
+        assert_eq!(header.ix_reduce_count, 0);
         assert_eq!(header.ix_take_only_count, 0);
         assert_eq!(header.ix_limit_order_count, 0);
     }
@@ -204,7 +204,7 @@ mod tests {
 
         let header = Header::init_inner(&input);
         assert_eq!(header.ix_post_only_count, 3);
-        assert_eq!(header.ix_cancel_count, 12);
+        assert_eq!(header.ix_reduce_count, 12);
     }
 
     #[test]
@@ -238,7 +238,7 @@ mod tests {
         assert!(header.deposit_shortfall);
         assert!(header.withdraw_internally);
         assert_eq!(header.ix_post_only_count, 3);
-        assert_eq!(header.ix_cancel_count, 12);
+        assert_eq!(header.ix_reduce_count, 12);
         assert_eq!(header.ix_take_only_count, 8);
         assert_eq!(header.ix_limit_order_count, 6);
     }
@@ -349,7 +349,7 @@ mod tests {
         assert!(header.deposit_shortfall);
         assert!(header.withdraw_internally);
         assert_eq!(header.ix_post_only_count, 15);
-        assert_eq!(header.ix_cancel_count, 15);
+        assert_eq!(header.ix_reduce_count, 15);
         assert_eq!(header.ix_take_only_count, 15);
         assert_eq!(header.ix_limit_order_count, 15);
     }

@@ -1,7 +1,7 @@
 #![cfg_attr(not(test), no_std)]
 #![cfg_attr(not(test), no_main)]
 
-use crate::{input_processor::Args, instructions::update_resting_order, settlement::TokenDeltas};
+use crate::{input_processor::Args, instructions::ix_reduce_orders, settlement::TokenDeltas};
 use goblin_error::*;
 use hostio::*;
 
@@ -43,10 +43,12 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
     )?;
 
     // TODO execution
-    for _ in 0..args.header.ix_post_only_count {
+    for _ in 0..args.header.ix_post_only_count {}
+
+    for _ in 0..args.header.ix_reduce_count {
         // Decode bytes one by one
         // This instruction has variable number of bytes
-        update_resting_order(
+        ix_reduce_orders(
             args_buffer.as_ref(),
             len,
             &mut args.offset,
