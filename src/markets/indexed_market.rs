@@ -1,8 +1,5 @@
 use crate::{
-    goblin_error::GoblinError,
-    markets::HARDCODED_MARKETS,
     quantities::{BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit},
-    require,
     tokens::TokenIndex,
     types::Address,
 };
@@ -49,33 +46,6 @@ impl IndexedMarket {
         }
     }
 
-    /// Obtain an IndexedMarket from market index number.
-    /// We use the index number to lookup in custom and hardcoded market lists.
-    /// Custom markets are tested for validity.
-    ///
-    /// # Arguments
-    ///
-    /// * `index`- Market index
-    /// * `dangerous_custom_market_list` - Market list read from args
-    pub fn from_index(
-        index: usize,
-        dangerous_custom_market_list: &[IndexedMarket],
-    ) -> Result<Self, GoblinError> {
-        if index < dangerous_custom_market_list.len() {
-            let dangerous_custom_market = dangerous_custom_market_list[index];
-            require!(
-                dangerous_custom_market.is_valid(),
-                GoblinError::InvalidMarket
-            );
-
-            Ok(dangerous_custom_market)
-        } else if index > 127 && index < (127 + HARDCODED_MARKETS.len()) {
-            Ok(HARDCODED_MARKETS[index - 127])
-        } else {
-            Err(GoblinError::NoMarketAtIndex)
-        }
-    }
-
     /// Whether market params are valid
     ///
     /// # Tests
@@ -101,7 +71,7 @@ impl IndexedMarket {
     ///   or T % B == 0
     ///    ```
     ///
-    fn is_valid(&self) -> bool {
+    pub(crate) fn is_valid(&self) -> bool {
         let base_lot_size = self.base_lot_size;
         let quote_lot_size = self.quote_lot_size;
 

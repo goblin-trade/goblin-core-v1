@@ -1,8 +1,8 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::{ArgsBuffer, ArgsDecoder},
-    markets::IndexedMarket,
-    quantities::{BaseLots, Delta, Ticks},
+    markets::{IndexedMarket, MarketIndex},
+    quantities::{BaseLots, Delta},
     require,
     settlement::TokenDeltas,
     state::{MarketKey, MarketState, SlotState},
@@ -11,7 +11,7 @@ use crate::{
 };
 
 struct ReduceOrdersHeader {
-    pub market_index: u8,
+    pub market_index: MarketIndex,
 
     pub bid_outer_indices: u8,
 
@@ -31,7 +31,7 @@ impl ReduceOrdersHeader {
             GoblinError::InvalidPayload
         );
         let header = Self {
-            market_index: payload[*offset],
+            market_index: MarketIndex(payload[*offset]),
             bid_outer_indices: payload[*offset + 1] & 0b0000_1111,
             ask_outer_indices: (payload[*offset + 1] & 0b1111_0000) >> 4,
         };
@@ -69,6 +69,7 @@ impl MatrixHeader {
 
 #[repr(C, packed)]
 pub struct ReduceOrderPacket {
+    // TODO replace with a single MatrixPosition: u8
     pub row_index: u8,    // 5 bits
     pub column_index: u8, // 3 bits
     pub size: BaseLots,
@@ -116,9 +117,7 @@ pub fn ix_reduce_orders(
     token_deltas: &mut TokenDeltas,
 ) -> Result<(), GoblinError> {
     let header = ReduceOrdersHeader::decode(payload, len, offset)?;
-
-    let indexed_market =
-        IndexedMarket::from_index(header.market_index as usize, custom_market_list)?;
+    let indexed_market = header.market_index.to_indexed_market(custom_market_list)?;
 
     let token_pair = ValidatedTokenPair::new(
         indexed_market.base_token_index,
