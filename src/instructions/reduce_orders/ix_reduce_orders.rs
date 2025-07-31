@@ -2,7 +2,7 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::ArgsBuffer,
     instructions::reduce_orders::{
-        headers::{MatrixHeader, ReduceOrdersHeader},
+        header::{MatrixHeader, ReduceOrdersHeader},
         reduce_order_packet::ReduceOrderPacket,
     },
     markets::IndexedMarket,

@@ -5,6 +5,7 @@ use crate::{
 };
 
 /// Index representing a market from the entered custom market list or hardcoded market list
+#[derive(Clone, Copy)]
 pub struct MarketIndex(pub u8);
 
 impl MarketIndex {

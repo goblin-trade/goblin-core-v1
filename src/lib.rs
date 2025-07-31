@@ -1,7 +1,11 @@
 #![cfg_attr(not(test), no_std)]
 #![cfg_attr(not(test), no_main)]
 
-use crate::{input_processor::Args, instructions::ix_reduce_orders, settlement::TokenDeltas};
+use crate::{
+    input_processor::Args,
+    instructions::{ix_reduce_orders, ix_take},
+    settlement::TokenDeltas,
+};
 use goblin_error::*;
 use hostio::*;
 
@@ -49,6 +53,17 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
         // Decode bytes one by one
         // This instruction has variable number of bytes
         ix_reduce_orders(
+            args_buffer.as_ref(),
+            len,
+            &mut args.offset,
+            args.custom_market_list,
+            args.custom_erc20_list,
+            &mut token_deltas,
+        )?;
+    }
+
+    for _ in 0..args.header.ix_take_only_count {
+        ix_take(
             args_buffer.as_ref(),
             len,
             &mut args.offset,
