@@ -1,25 +1,24 @@
-use crate::hostio::hostio_helpers;
-
-#[repr(C, packed)]
-pub struct OrderExpiry(u64);
+pub enum OrderExpiry {
+    BlockNumber(u32),
+    BlockTime(u32),
+}
 
 impl OrderExpiry {
-    pub fn valid(&self) -> bool {
-        !self.used()
+    pub fn new(is_block_number: bool, value: u32) -> Self {
+        match is_block_number {
+            true => Self::BlockNumber(value),
+            false => Self::BlockTime(value),
+        }
     }
 
-    // Bit 0: Whether expiry is used
-    fn used(&self) -> bool {
-        self.0 & 0b1 != 0
+    pub fn used(&self) -> bool {
+        *self.inner() != 0
     }
 
-    // Bit 1: Whether expiry is based on block number of block time
-    fn is_block_number(&self) -> bool {
-        self.0 & 0b10 != 0
-    }
-
-    /// Bits 2..63: Expiry value
-    fn value(&self) -> u64 {
-        self.0 >> 2
+    fn inner(&self) -> &u32 {
+        match self {
+            OrderExpiry::BlockNumber(value) => value,
+            OrderExpiry::BlockTime(value) => value,
+        }
     }
 }

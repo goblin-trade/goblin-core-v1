@@ -8,3 +8,12 @@ pub enum Side {
     Bid,
     Ask,
 }
+
+impl From<bool> for Side {
+    fn from(value: bool) -> Self {
+        match value {
+            true => Side::Bid,
+            false => Side::Ask,
+        }
+    }
+}

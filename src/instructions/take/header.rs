@@ -21,9 +21,9 @@ pub struct TakeHeader {
     /// The market to trade on
     pub market_index: MarketIndex,
 
-    /// Whether to match against bids or asks
-    /// TODO we can save 1 byte by turning it into a bit flag
-    pub side: Side,
+    /// 4 bits represent flags- side, self trade behavior and expiry type (block number or block timestamp based)
+    /// 28 bits represent the expiry value itself
+    pub flags_and_expiry: u32,
 
     /// The order size, i.e. number of base lots to fill.
     /// One of num_base_lots and num_quote_lots must be zero and and the other non-zero.
@@ -46,14 +46,6 @@ pub struct TakeHeader {
 
     /// Max number of orders to match against. Pass u8::MAX for max matching.
     pub match_limit: u8,
-
-    // This needs 3 bits.
-    // Total flags = 6. We are still left with 64 - 6 = 58 bits for timestamp
-    // We can save 2 bytes, i.e 1 gas
-    pub self_trade_behavior: SelfTradeBehavior,
-
-    /// Order expiry constraints
-    pub order_expiry: OrderExpiry,
 }
 
 impl TakeHeader {
@@ -75,9 +67,24 @@ impl TakeHeader {
         Ok(header)
     }
 
+    pub fn side(&self) -> Side {
+        Side::from(self.flags_and_expiry & 0b1 != 0)
+    }
+
+    pub fn self_trade_behavior(&self) -> Result<SelfTradeBehavior, GoblinError> {
+        SelfTradeBehavior::try_from((self.flags_and_expiry & 0b110) as u8)
+    }
+
+    pub fn order_expiry(&self) -> OrderExpiry {
+        OrderExpiry::new(
+            self.flags_and_expiry & 0b1000 != 0,
+            self.flags_and_expiry >> 4,
+        )
+    }
+
     fn valid(&self) -> bool {
         // At price zero, bidding one quote lot will give undefined base lots
-        (self.side == Side::Bid && self.price_limit > Ticks::ZERO)
+        (self.side() == Side::Bid && self.price_limit > Ticks::ZERO)
             // Order size must be either in base lots or quote lots
             && (self.num_base_lots == BaseLots::ZERO && self.num_quote_lots > QuoteLots::ZERO
                 || self.num_base_lots > BaseLots::ZERO && self.num_quote_lots == QuoteLots::ZERO)
