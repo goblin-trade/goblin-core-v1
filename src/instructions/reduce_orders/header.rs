@@ -37,7 +37,6 @@ impl ReduceOrdersHeader {
 }
 
 #[repr(C, packed)]
-#[derive(Clone, Copy)]
 pub struct MatrixHeader {
     pub outer_index: u16,
     pub order_count: u8,
@@ -46,11 +45,11 @@ pub struct MatrixHeader {
 impl MatrixHeader {
     const BYTE_SIZE: usize = core::mem::size_of::<Self>();
 
-    pub fn decode(
-        payload: &ArgsBuffer,
+    pub fn decode<'a>(
+        payload: &'a ArgsBuffer,
         len: usize,
         offset: &mut usize,
-    ) -> Result<Self, GoblinError> {
+    ) -> Result<&'a Self, GoblinError> {
         require!(
             len >= *offset + Self::BYTE_SIZE,
             GoblinError::InvalidPayload
@@ -58,6 +57,6 @@ impl MatrixHeader {
         let header = payload.decode_ref::<MatrixHeader>(*offset);
         *offset += Self::BYTE_SIZE;
 
-        Ok(*header)
+        Ok(header)
     }
 }

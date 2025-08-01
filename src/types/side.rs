@@ -3,7 +3,7 @@
 // pub struct Side(bool);
 
 #[repr(u8)]
-#[derive(Clone, Copy, PartialEq)]
+#[derive(PartialEq)]
 pub enum Side {
     Bid,
     Ask,

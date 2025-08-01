@@ -17,12 +17,12 @@ use crate::{
 /// num_quote_lots == min_quote_lots_to_fill
 ///
 #[repr(C)]
-#[derive(Clone, Copy)]
 pub struct TakeHeader {
     /// The market to trade on
     pub market_index: MarketIndex,
 
     /// Whether to match against bids or asks
+    /// TODO we can save 1 byte by turning it into a bit flag
     pub side: Side,
 
     /// The order size, i.e. number of base lots to fill.
@@ -47,6 +47,11 @@ pub struct TakeHeader {
     /// Max number of orders to match against. Pass u8::MAX for max matching.
     pub match_limit: u8,
 
+    // This needs 3 bits.
+    // Total flags = 6. We are still left with 64 - 6 = 58 bits for timestamp
+    // We can save 2 bytes, i.e 1 gas
+    pub self_trade_behavior: SelfTradeBehavior,
+
     /// Order expiry constraints
     pub order_expiry: OrderExpiry,
 }
@@ -54,12 +59,11 @@ pub struct TakeHeader {
 impl TakeHeader {
     const BYTE_SIZE: usize = core::mem::size_of::<TakeHeader>();
 
-    #[inline(always)]
-    pub fn decode(
-        payload: &ArgsBuffer,
+    pub fn decode<'a>(
+        payload: &'a ArgsBuffer,
         len: usize,
         offset: &mut usize,
-    ) -> Result<Self, GoblinError> {
+    ) -> Result<&'a Self, GoblinError> {
         require!(
             len >= *offset + Self::BYTE_SIZE,
             GoblinError::InvalidPayload
@@ -68,7 +72,7 @@ impl TakeHeader {
         *offset += Self::BYTE_SIZE;
 
         require!(header.valid(), GoblinError::InvalidTakeArgs);
-        Ok(*header)
+        Ok(header)
     }
 
     fn valid(&self) -> bool {

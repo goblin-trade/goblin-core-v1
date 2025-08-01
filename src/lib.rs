@@ -38,7 +38,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
     // This is going to cause some problem, TODO update.
     let mut args = Args::new(args_buffer.as_ref(), len)?;
 
-    let msg_sender = unsafe { hostio_msg_sender() };
+    let msg_sender = unsafe { hostio_helpers::hostio_msg_sender() };
 
     let mut token_deltas = TokenDeltas::new(
         args.header.track_msg_value,
