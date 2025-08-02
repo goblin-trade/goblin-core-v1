@@ -7,7 +7,6 @@ use crate::{
     settlement::TokenDeltas,
 };
 use goblin_error::*;
-use hostio::*;
 
 pub mod erc20;
 pub mod eth;
@@ -15,7 +14,6 @@ pub mod goblin_error;
 pub mod hostio;
 pub mod input_processor;
 pub mod instructions;
-pub mod market_params;
 pub mod markets;
 pub mod quantities;
 pub mod settlement;
@@ -29,16 +27,13 @@ pub const CONTRACT_ADDRESS: [u8; 20] = [
 ];
 
 fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
-    let msg_reentrant = unsafe { hostio::msg_reentrant() };
+    let msg_reentrant = hostio::msg_reentrant();
     require!(!msg_reentrant, GoblinError::Reentrant);
 
-    let args_buffer = unsafe { hostio_helpers::hostio_read_args() };
-
-    // Ideally args should remain immutable. We only need a variable offset.
-    // This is going to cause some problem, TODO update.
+    let args_buffer = hostio::read_args();
     let mut args = Args::new(args_buffer.as_ref(), len)?;
 
-    let msg_sender = unsafe { hostio_helpers::hostio_msg_sender() };
+    let msg_sender = hostio::msg_sender();
 
     let mut token_deltas = TokenDeltas::new(
         args.header.track_msg_value,
@@ -84,9 +79,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
 
     // Write cache to trie
     // https://github.com/OffchainLabs/stylus-sdk-rs/blob/2c709a5a1a620ed7585c7d8af64fefabe3a0fc9a/stylus-sdk/src/storage/mod.rs#L81
-    unsafe {
-        hostio::storage_flush_cache(false);
-    }
+    hostio::storage_flush_cache(false);
 
     Ok(())
 }

@@ -9,6 +9,11 @@
 pub struct RawAtoms(pub [u8; 32]);
 
 impl RawAtoms {
+    pub const ZERO: RawAtoms = RawAtoms([0; 32]);
+
+    #[cfg(test)]
+    pub const MAX: RawAtoms = RawAtoms([0xff; 32]);
+
     /// Convert RawAtoms to a clamped u128.
     /// Values are clamped to u128::MAX if they exceed the maximum representable value.
     ///
@@ -23,9 +28,6 @@ impl RawAtoms {
             u128::from_be_bytes(*lower_bytes)
         }
     }
-
-    #[cfg(test)]
-    pub const MAX: RawAtoms = RawAtoms([0xff; 32]);
 
     #[cfg(test)]
     pub fn from_u128(value: u128) -> Self {

@@ -3,7 +3,7 @@ use core::ops::{Add, Sub};
 use crate::{
     eth,
     goblin_error::GoblinError,
-    hostio::hostio_msg_value,
+    hostio,
     quantities::{Atoms, Delta},
     settlement::DeltaAccumulator,
     state::{EthStore, EthStoreKey, SlotState},
@@ -45,10 +45,8 @@ impl EthDelta {
         eth_withdrawal_due: Option<&Atoms>,
     ) -> Result<Self, GoblinError> {
         let msg_value_atoms = if track_msg_value {
-            unsafe {
-                let msg_value = hostio_msg_value();
-                Atoms::from_raw_atoms(msg_value.as_ref(), NATIVE_TOKEN_DECIMALS)?
-            }
+            let msg_value = hostio::msg_value();
+            Atoms::from_raw_atoms(msg_value.as_ref(), NATIVE_TOKEN_DECIMALS)?
         } else {
             Atoms::ZERO
         };

@@ -4,7 +4,7 @@ pub enum GoblinError {
     InvalidPayload = 1,
     CustomTokenLimitExceeded = 2,
     UnsupportedDecimals = 3,
-    DecimalReadFail = 4,
+    StaticCallFail = 4,
     CallFail = 5,
     CallResultInvalid = 6,
     TraderTokenStateEmpty = 7,

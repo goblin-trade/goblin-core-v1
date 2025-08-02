@@ -1,5 +1,3 @@
-use core::mem::MaybeUninit;
-
 use crate::{goblin_error::GoblinError, hostio, quantities::RawAtoms, require, types::Address};
 
 // keccak256('decimals()') = 0x313ce567
@@ -13,28 +11,11 @@ const TRANSFER_FROM_SELECTOR: [u8; 4] = [0x23, 0xb8, 0x72, 0xdd];
 
 pub fn decimals(contract: &Address) -> Result<u8, GoblinError> {
     let calldata = DECIMALS_SELECTOR;
-    let return_data_len: &mut usize = &mut 0;
-
-    let call_result = unsafe {
-        hostio::static_call_contract(
-            contract.as_ptr(),
-            calldata.as_ptr(),
-            calldata.len(),
-            u64::MAX,
-            return_data_len,
-        )
-    };
-
-    require!(call_result == 0, GoblinError::DecimalReadFail);
+    hostio::static_call_contract(contract, calldata.as_slice())?;
 
     // Result is padded to 32 bytes in big endian. We need to extract a single byte.
-    let mut decimals_maybe = MaybeUninit::<u8>::uninit();
-    let decimals = unsafe {
-        hostio::read_return_data(decimals_maybe.as_mut_ptr(), 31, 1);
-        decimals_maybe.assume_init_ref()
-    };
-
-    Ok(*decimals)
+    let decimals = hostio::read_return_data::<u8>(31);
+    Ok(decimals.into_inner())
 }
 
 pub fn transfer(
@@ -54,31 +35,7 @@ pub fn transfer(
     let amount_as_be_bytes: &[u8; 32] = unsafe { &*(amount.0.as_ptr() as *const [u8; 32]) };
     calldata[36..68].copy_from_slice(amount_as_be_bytes);
 
-    let zero_value = RawAtoms::default(); // Sending tokens, not ETH
-    let return_data_len: &mut usize = &mut 0;
-
-    let call_result = unsafe {
-        hostio::call_contract(
-            contract.as_ptr(),
-            calldata.as_ptr(),
-            calldata.len(),
-            zero_value.0.as_ptr() as *const u8,
-            u64::MAX,
-            return_data_len,
-        )
-    };
-    require!(call_result == 0, GoblinError::CallFail);
-
-    // Check if the return value is false
-    let mut result_byte_maybe = MaybeUninit::<u8>::uninit();
-    let result_byte = unsafe {
-        hostio::read_return_data(result_byte_maybe.as_mut_ptr(), 31, 1);
-        result_byte_maybe.assume_init_ref()
-    };
-
-    require!(*result_byte == true.into(), GoblinError::CallResultInvalid);
-
-    Ok(())
+    call_and_check(contract, &calldata)
 }
 
 pub fn transfer_from(
@@ -101,32 +58,21 @@ pub fn transfer_from(
     let amount_as_be_bytes: &[u8; 32] = unsafe { &*(amount.0.as_ptr() as *const [u8; 32]) };
     calldata[68..100].copy_from_slice(amount_as_be_bytes);
 
-    let zero_value = RawAtoms::default();
-    let return_data_len: &mut usize = &mut 0;
+    call_and_check(contract, &calldata)
+}
 
-    let call_result = unsafe {
-        hostio::call_contract(
-            contract.as_ptr(),
-            calldata.as_ptr(),
-            calldata.len(),
-            zero_value.0.as_ptr() as *const u8,
-            // Use max gas to follow EVM's CALL 63/64 rule. The VM will decide how much gas to use
-            u64::MAX,
-            return_data_len,
-        )
-    };
+/// Perform a call and validate the response
+///
+/// msg.value is zero
+fn call_and_check(contract: &Address, calldata: &[u8]) -> Result<(), GoblinError> {
+    hostio::call_contract(contract, &calldata, &RawAtoms::ZERO)?;
 
-    // If the call itself failed, treat as error.
-    require!(call_result == 0, GoblinError::CallFail);
-
-    // If the contract returned `false`, treat as error.
-    let mut result_byte_maybe = MaybeUninit::<u8>::uninit();
-    let result_byte = unsafe {
-        hostio::read_return_data(result_byte_maybe.as_mut_ptr(), 31, 1);
-        result_byte_maybe.assume_init_ref()
-    };
-
-    require!(*result_byte == true.into(), GoblinError::CallResultInvalid);
+    // Ensure call succeeded
+    let result_byte = hostio::read_return_data::<u8>(31);
+    require!(
+        result_byte.into_inner() == true.into(),
+        GoblinError::CallResultInvalid
+    );
 
     Ok(())
 }

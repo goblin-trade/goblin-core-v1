@@ -1,5 +1,5 @@
 use crate::{
-    hostio::{hostio_native_keccak256, HostioBuffer},
+    hostio::{self, HostioBuffer},
     quantities::Atoms,
     state::{SlotKey, SlotState},
     types::Address,
@@ -23,7 +23,7 @@ impl EthStoreKey {
         bytes[0] = Self::DISCRIMINATOR;
         bytes[1..21].copy_from_slice(trader.as_slice());
 
-        let hash = unsafe { hostio_native_keccak256(bytes.as_slice()) };
+        let hash = hostio::native_keccak256(bytes.as_slice());
 
         Self { hash }
     }

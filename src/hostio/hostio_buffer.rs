@@ -27,4 +27,12 @@ impl<T> HostioBuffer<T> {
     pub fn as_mut(&mut self) -> &mut T {
         unsafe { self.inner.assume_init_mut() }
     }
+
+    /// Consume the buffer and return the owned initialized value.
+    ///
+    /// # Safety
+    /// Caller must ensure the buffer is fully initialized (as guaranteed by the hostio call).
+    pub fn into_inner(self) -> T {
+        unsafe { self.inner.assume_init() }
+    }
 }

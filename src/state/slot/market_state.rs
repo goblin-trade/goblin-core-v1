@@ -1,5 +1,5 @@
 use crate::{
-    hostio::{hostio_native_keccak256, HostioBuffer},
+    hostio::{self, HostioBuffer},
     quantities::{BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit, Ticks},
     state::{SlotKey, SlotState},
     tokens::{ERC20TokenPair, ValidatedTokenPair},
@@ -37,7 +37,7 @@ impl MarketKey {
                 bytes[49..57].copy_from_slice(&quote_lot_size.0.to_le_bytes());
                 bytes[57..65].copy_from_slice(&tick_size.0.to_le_bytes());
 
-                let hash = unsafe { hostio_native_keccak256(bytes.as_slice()) };
+                let hash = hostio::native_keccak256(bytes.as_slice());
 
                 Self { hash }
             }
@@ -50,7 +50,7 @@ impl MarketKey {
                 bytes[29..37].copy_from_slice(&quote_lot_size.0.to_le_bytes());
                 bytes[37..45].copy_from_slice(&tick_size.0.to_le_bytes());
 
-                let hash = unsafe { hostio_native_keccak256(bytes.as_slice()) };
+                let hash = hostio::native_keccak256(bytes.as_slice());
 
                 Self { hash }
             }
