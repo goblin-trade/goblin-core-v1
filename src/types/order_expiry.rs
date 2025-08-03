@@ -11,9 +11,9 @@ impl OrderExpiry {
         }
     }
 
-    pub fn used(&self) -> bool {
-        *self.inner() != 0
-    }
+    // pub fn used(&self) -> bool {
+    //     *self.inner() != 0
+    // }
 
     fn inner(&self) -> &u32 {
         match self {
