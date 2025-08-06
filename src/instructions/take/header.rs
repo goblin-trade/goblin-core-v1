@@ -132,12 +132,26 @@ impl TakeHeaderFlags {
 }
 
 impl TakeHeaderV2 {
+    // Fixed min size for
+    // * flags: 1
+    // * market_index: 1
+    // * num_lots: 8
+    // * min_lots_to_fill: 8
+    const MIN_SIZE: usize = 1 + 1 + 8 + 8;
+
     pub fn decode(
         payload: &ArgsBuffer,
         len: usize,
         offset: &mut usize,
     ) -> Result<Self, GoblinError> {
-        let flags = payload.decode::<u8>(offset, len)?;
+        crate::require!(
+            len >= *offset + Self::MIN_SIZE,
+            crate::goblin_error::GoblinError::InvalidPayload
+        );
+
+        // Fixed fields
+        // We should perform a single size check instead of doing 3
+        let flags = payload.decode_unchecked::<u8>(*offset);
         let TakeHeaderFlags {
             side,
             read_price_limit,
@@ -147,9 +161,11 @@ impl TakeHeaderV2 {
             is_block_number_expiry,
         } = TakeHeaderFlags::new(flags);
 
-        let market_index = MarketIndex(payload.decode::<u8>(offset, len)?);
-        let num_lots = payload.decode::<u64>(offset, len)?;
-        let min_lots_to_fill = payload.decode::<u64>(offset, len)?;
+        let market_index = MarketIndex(payload.decode_unchecked::<u8>(*offset));
+        let num_lots = payload.decode_unchecked::<u64>(*offset);
+        let min_lots_to_fill = payload.decode_unchecked::<u64>(*offset);
+
+        // Decode optional fields
 
         let price_limit = match read_price_limit {
             true => Ticks(payload.decode::<u32>(offset, len)?),

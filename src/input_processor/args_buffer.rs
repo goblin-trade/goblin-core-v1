@@ -28,6 +28,7 @@ pub trait ArgsDecoder {
         offset: &mut usize,
         len: usize,
     ) -> Result<T, crate::goblin_error::GoblinError>;
+    fn decode_unchecked<T: DecodePrimitive>(&self, offset: usize) -> T;
 }
 
 impl ArgsDecoder for ArgsBuffer {
@@ -66,9 +67,18 @@ impl ArgsDecoder for ArgsBuffer {
             crate::goblin_error::GoblinError::InvalidPayload
         );
 
-        let value = T::from_le_bytes_at(self, *offset);
+        let value = Self::decode_unchecked::<T>(self, *offset);
         *offset += size;
         Ok(value)
+    }
+
+    /// Decode a primitive value without bounds check and without advancing the offset
+    ///
+    /// While decode() checks for size and advances the offset in each call,
+    /// decode_unchecked() can be used to batch read multiple fields. Bounds check
+    /// and offset update must be performed externally.
+    fn decode_unchecked<T: DecodePrimitive>(&self, offset: usize) -> T {
+        T::from_le_bytes_at(self, offset)
     }
 }
 
