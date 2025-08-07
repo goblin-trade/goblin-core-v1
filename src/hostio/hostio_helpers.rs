@@ -35,12 +35,19 @@ pub fn storage_cache_bytes32<T>(key: &[u8; 32], value: &T) {
     unsafe { hostio_unsafe::storage_cache_bytes32(key.as_ptr(), value as *const T as *const u8) }
 }
 
-pub fn block_number() -> u64 {
-    unsafe { hostio_unsafe::block_number() }
+pub fn block_number() -> u32 {
+    unsafe { hostio_unsafe::block_number() as u32 }
 }
 
-pub fn block_timestamp() -> u64 {
-    unsafe { hostio_unsafe::block_timestamp() }
+pub fn block_timestamp() -> u32 {
+    unsafe { hostio_unsafe::block_timestamp() as u32 }
+}
+
+pub fn order_not_expired(is_block_number: bool, expiry_value: u32) -> bool {
+    match is_block_number {
+        true => block_number() <= expiry_value,
+        false => block_timestamp() <= expiry_value,
+    }
 }
 
 pub fn msg_reentrant() -> bool {

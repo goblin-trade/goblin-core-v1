@@ -1,11 +1,12 @@
 use crate::{
     goblin_error::GoblinError,
+    hostio::hostio_helpers,
     input_processor::{ArgsBuffer, ArgsDecoder},
     instructions::take::self_trade_behavior::SelfTradeBehavior,
     markets::MarketIndex,
     quantities::Ticks,
     require,
-    types::{OrderExpiry, Side},
+    types::Side,
 };
 
 /// Instructions for a limit order. Limit orders are also known as market orders or immediate or cancel (IOC).
@@ -14,6 +15,9 @@ use crate::{
 /// otherwise the order gets cancelled, i.e.
 ///
 /// num_lots == min_lots_to_fill
+///
+/// The header reads optinally reads and evaluates a 32 bit expiry paramter. This is not stored in the struct
+/// because it is not used anywhere else.
 pub struct TakeHeader {
     /// The market to trade on
     pub market_index: MarketIndex,
@@ -36,9 +40,6 @@ pub struct TakeHeader {
 
     /// How to handle self trades
     pub self_trade_behavior: SelfTradeBehavior,
-
-    /// Optional expiry parameters
-    pub expiry: Option<OrderExpiry>,
 }
 
 struct TakeHeaderFlags {
@@ -46,7 +47,11 @@ struct TakeHeaderFlags {
     pub read_price_limit: bool,
     pub read_match_limit: bool,
     pub read_self_trade_behavior: bool,
+
+    /// Whether to read 32 bits of expiry parameter
     pub read_expiry: bool,
+
+    /// Whether expiry condition is block number or block time based
     pub is_block_number_expiry: bool,
 }
 
@@ -117,13 +122,15 @@ impl TakeHeader {
             false => SelfTradeBehavior::CancelProvide,
         };
 
-        let expiry = match read_expiry {
-            true => Some(OrderExpiry::new(
-                is_block_number_expiry,
-                payload.decode::<u32>(offset, len)?,
-            )),
-            false => None,
-        };
+        // Check for expiry
+        require!(
+            !read_expiry
+                || hostio_helpers::order_not_expired(
+                    is_block_number_expiry,
+                    payload.decode::<u32>(offset, len)?
+                ),
+            GoblinError::OrderExpired
+        );
 
         let header = Self {
             market_index,
@@ -133,7 +140,6 @@ impl TakeHeader {
             price_limit,
             match_limit,
             self_trade_behavior,
-            expiry,
         };
         require!(header.is_valid(), GoblinError::InvalidTakeArgs);
 
