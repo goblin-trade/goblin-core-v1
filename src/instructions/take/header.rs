@@ -1,6 +1,5 @@
 use crate::{
     goblin_error::GoblinError,
-    hostio::hostio_helpers,
     input_processor::{ArgsBuffer, ArgsDecoder},
     instructions::take::self_trade_behavior::SelfTradeBehavior,
     markets::MarketIndex,
@@ -15,9 +14,6 @@ use crate::{
 /// otherwise the order gets cancelled, i.e.
 ///
 /// num_lots == min_lots_to_fill
-///
-/// The header reads optinally reads and evaluates a 32 bit expiry paramter. This is not stored in the struct
-/// because it is not used anywhere else.
 pub struct TakeHeader {
     /// The market to trade on
     pub market_index: MarketIndex,
@@ -42,17 +38,12 @@ pub struct TakeHeader {
     pub self_trade_behavior: SelfTradeBehavior,
 }
 
+/// The order side and flags telling which flags to read, compressed in 1 byte
 struct TakeHeaderFlags {
     pub side: Side,
     pub read_price_limit: bool,
     pub read_match_limit: bool,
     pub read_self_trade_behavior: bool,
-
-    /// Whether to read 32 bits of expiry parameter
-    pub read_expiry: bool,
-
-    /// Whether expiry condition is block number or block time based
-    pub is_block_number_expiry: bool,
 }
 
 impl TakeHeaderFlags {
@@ -62,8 +53,6 @@ impl TakeHeaderFlags {
             read_price_limit: flags & 0b10 == 1,
             read_match_limit: flags & 0b100 == 1,
             read_self_trade_behavior: flags & 0b1000 == 1,
-            read_expiry: flags & 0b1_0000 == 1,
-            is_block_number_expiry: flags & 0b10_0000 == 1,
         }
     }
 }
@@ -94,8 +83,6 @@ impl TakeHeader {
             read_price_limit,
             read_match_limit,
             read_self_trade_behavior,
-            read_expiry,
-            is_block_number_expiry,
         } = TakeHeaderFlags::new(flags);
 
         let market_index = MarketIndex(payload.decode_unchecked::<u8>(*offset));
@@ -122,17 +109,17 @@ impl TakeHeader {
             false => SelfTradeBehavior::CancelProvide,
         };
 
-        // Check for expiry
+        // Validate
+        //
+        // * Lot size > 0
+        // * price limit cannot be 0 for bids as it will give an undefined value.
+        // We don't need to check for bids and Ticks::MAX because 2^64 - 1 is a finite value, not infinity.
         require!(
-            !read_expiry
-                || hostio_helpers::order_not_expired(
-                    is_block_number_expiry,
-                    payload.decode::<u32>(offset, len)?
-                ),
-            GoblinError::OrderExpired
+            num_lots > 0 && (side == Side::Ask || price_limit > Ticks::ZERO),
+            GoblinError::InvalidTakeArgs
         );
 
-        let header = Self {
+        Ok(Self {
             market_index,
             side,
             num_lots,
@@ -140,13 +127,6 @@ impl TakeHeader {
             price_limit,
             match_limit,
             self_trade_behavior,
-        };
-        require!(header.is_valid(), GoblinError::InvalidTakeArgs);
-
-        Ok(header)
-    }
-
-    fn is_valid(&self) -> bool {
-        self.num_lots > 0 && (self.side == Side::Ask || self.price_limit > Ticks::ZERO)
+        })
     }
 }
