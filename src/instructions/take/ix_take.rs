@@ -1,7 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::ArgsBuffer,
-    instructions::take::header::TakeHeader,
+    instructions::take::take_packet::TakePacket,
     markets::IndexedMarket,
     settlement::TokenDeltas,
     state::{MarketKey, MarketState, SlotState},
@@ -17,8 +17,8 @@ pub fn ix_take(
     custom_erc20_list: &[Address],
     token_deltas: &mut TokenDeltas,
 ) -> Result<(), GoblinError> {
-    let header = TakeHeader::decode(payload, len, offset)?;
-    let indexed_market = header.market_index.to_indexed_market(custom_market_list)?;
+    let packet = TakePacket::decode(payload, len, offset)?;
+    let indexed_market = packet.market_index.to_indexed_market(custom_market_list)?;
 
     let token_pair = ValidatedTokenPair::new(
         indexed_market.base_token_index,

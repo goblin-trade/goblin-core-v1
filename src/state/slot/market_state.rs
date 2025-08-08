@@ -61,19 +61,13 @@ impl MarketKey {
 /// The market state stored in a slot
 #[repr(C, packed)]
 pub struct MarketState {
-    /// The number of active outer indices for bids
-    pub bids_outer_indices: u16,
-
-    /// The number of active outer indices for asks
-    pub asks_outer_indices: u16,
-
     /// Price of the highest bid
     pub best_bid_price: Ticks,
 
     /// The lowest ask
     pub best_ask_price: Ticks,
 
-    _padding: [u8; 20],
+    _padding: [u8; 24],
 }
 
 impl SlotState<MarketKey> for MarketState {}

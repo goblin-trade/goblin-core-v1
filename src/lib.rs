@@ -15,6 +15,7 @@ pub mod hostio;
 pub mod input_processor;
 pub mod instructions;
 pub mod markets;
+pub mod matching;
 pub mod quantities;
 pub mod settlement;
 pub mod state;
