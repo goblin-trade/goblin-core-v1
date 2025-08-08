@@ -3,6 +3,7 @@ use crate::{
     quantities::{BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit, Ticks},
     state::{SlotKey, SlotState},
     tokens::{ERC20TokenPair, ValidatedTokenPair},
+    types::Side,
 };
 
 pub struct MarketKey {
@@ -59,15 +60,27 @@ impl MarketKey {
 }
 
 /// The market state stored in a slot
-#[repr(C, packed)]
+/// We do not use packed because fields are already multiples of 8
+#[repr(C)]
 pub struct MarketState {
-    /// Price of the highest bid
-    pub best_bid_price: Ticks,
-
-    /// The lowest ask
-    pub best_ask_price: Ticks,
-
+    /// The best bid and best ask price
+    /// * Index 0: best bid price
+    /// * Index 1: best ask price
+    ///
+    /// We use an array for branchless lookup
+    best_prices: [Ticks; 2],
     _padding: [u8; 24],
 }
 
 impl SlotState<MarketKey> for MarketState {}
+
+impl MarketState {
+    // pub fn best_price(&self, side: Side) -> Ticks {
+    //     self.best_prices[side as usize]
+    // }
+
+    pub fn price_limit_reached(&self, order_side: Side, order_price_limit: Ticks) -> bool {
+        (order_side == Side::Bid && order_price_limit > self.best_prices[Side::Ask as usize])
+            || (order_side == Side::Ask && order_price_limit < self.best_prices[Side::Bid as usize])
+    }
+}
