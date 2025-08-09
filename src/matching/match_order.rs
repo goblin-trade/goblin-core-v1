@@ -1,5 +1,6 @@
 use crate::{
-    goblin_error::GoblinError, quantities::Ticks, require, state::MarketState, types::Side,
+    goblin_error::GoblinError, matching::match_iterator::MatchIterator, quantities::Ticks, require,
+    state::MarketState, types::Side,
 };
 
 pub fn match_order(
@@ -22,6 +23,13 @@ pub fn match_order(
     //
     // Calling next() again will close the previous slot
     // Each quote will deduct from budget
+
+    let mut match_iterator = MatchIterator {
+        side: opposite_side,
+        best_price: market_state.best_price_mut(opposite_side),
+    };
+
+    while let Some(resting_order) = match_iterator.next() {}
 
     Ok(())
 }

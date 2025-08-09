@@ -1,10 +1,14 @@
-use crate::{quantities::Ticks, types::Side};
+use crate::{quantities::Ticks, state::RestingOrder, types::Side};
 
-pub struct MatchIterator {
+pub struct MatchIterator<'a> {
     pub side: Side,
-    pub best_price: Ticks,
+    pub best_price: &'a mut Ticks,
 }
 
-// impl Iterator for MatchIterator {
+impl<'a> Iterator for MatchIterator<'a> {
+    type Item = RestingOrder;
 
-// }
+    fn next(&mut self) -> Option<Self::Item> {
+        None
+    }
+}

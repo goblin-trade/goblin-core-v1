@@ -84,4 +84,8 @@ impl MarketState {
         (order_side == Side::Bid && order_price_limit < self.best_prices[Side::Ask as usize])
             || (order_side == Side::Ask && order_price_limit > self.best_prices[Side::Bid as usize])
     }
+
+    pub fn best_price_mut(&mut self, side: Side) -> &mut Ticks {
+        &mut self.best_prices[side as usize]
+    }
 }
