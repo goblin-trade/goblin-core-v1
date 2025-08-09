@@ -26,7 +26,7 @@
 ///! to represent a tick, but we use u32 for simplicity.
 ///! * 16 bits are contributed by the outer index and 5 bits by the inner index.
 ///! * The outer index ranges from 0 to u16::MAX while the inner index ranges from 0 to 31.
-use crate::{allow_mod, define_custom_types, define_inter_type_operations};
+use crate::{allow_mod, define_custom_types, define_inter_type_operations, quantities::Ticks};
 
 define_custom_types!(QuoteLots<u64>, QuoteAtoms<u64>);
 // define_custom_types!(QuoteLots<u64>, QuoteAtomsPerQuoteLot<u64>, QuoteAtoms<u64>);
@@ -45,11 +45,8 @@ define_custom_types!(BaseLots<u64>, BaseAtoms<u64>);
 // A value if legal iff 10^6 % lots per unit == 0
 define_custom_types!(BaseLotsPerBaseUnit<u64>, QuoteLotsPerQuoteUnit<u64>);
 
-define_custom_types!(
-    QuoteLotsPerBaseUnitPerTick<u64>,
-    Ticks<u32>,
-    QuoteLotsPerBaseUnit<u64>
-);
+define_custom_types!(QuoteLotsPerBaseUnitPerTick<u64>, QuoteLotsPerBaseUnit<u64>);
+
 define_inter_type_operations!(
     QuoteLotsPerBaseUnitPerTick<u64>,
     Ticks<u32>,

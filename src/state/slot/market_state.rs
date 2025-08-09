@@ -79,8 +79,9 @@ impl MarketState {
     //     self.best_prices[side as usize]
     // }
 
+    /// Limit is reached if limit price is closer to the centre than the best market price
     pub fn price_limit_reached(&self, order_side: Side, order_price_limit: Ticks) -> bool {
-        (order_side == Side::Bid && order_price_limit > self.best_prices[Side::Ask as usize])
-            || (order_side == Side::Ask && order_price_limit < self.best_prices[Side::Bid as usize])
+        (order_side == Side::Bid && order_price_limit < self.best_prices[Side::Ask as usize])
+            || (order_side == Side::Ask && order_price_limit > self.best_prices[Side::Bid as usize])
     }
 }
