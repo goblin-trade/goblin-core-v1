@@ -19,6 +19,11 @@ pub fn msg_value() -> HostioBuffer<RawAtoms> {
     unsafe { HostioBuffer::<RawAtoms>::new(|f| hostio_unsafe::msg_value(f)) }
 }
 
+// keccak is charged by the number of words. Eg. hashing a 16 bit costs the same as 256 bits.
+// Padding is done by the VM so we do not have to worry.
+//
+// https://docs.arbitrum.io/stylus/reference/opcode-hostio-pricing#host-io-costs
+//
 pub fn native_keccak256(bytes: &[u8]) -> HostioBuffer<[u8; 32]> {
     unsafe {
         HostioBuffer::<[u8; 32]>::new(|f| {

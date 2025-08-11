@@ -44,6 +44,9 @@ pub fn ix_take(
     // Read and store market state
     let mut market_state = MarketState::load(&market_key);
 
+    // matching will produce two deltas
+    // - Token in: positive delta
+    // - Token out: negative delta
     match_order(market_state.as_mut(), side, num_lots, price_limit)?;
 
     // TODO check whether minimum lots were filled
