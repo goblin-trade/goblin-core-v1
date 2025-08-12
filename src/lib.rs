@@ -1,7 +1,14 @@
 #![cfg_attr(not(test), no_std)]
 #![cfg_attr(not(test), no_main)]
 
-use crate::{input_processor::Args, instructions::ix_take, settlement::TokenDeltas};
+use crate::{
+    input_processor::Args,
+    instructions::ix_take,
+    settlement::TokenDeltas,
+    state::{MarketKey, MarketState, SlotState},
+    tokens::ValidatedTokenPair,
+    types::Side,
+};
 use goblin_error::*;
 
 pub mod erc20;
@@ -38,7 +45,43 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
         args.erc20_delta_list,
     )?;
 
-    // // TODO execution
+    // TODO execution
+
+    for market_instructions in args.market_instructions_list {
+        let indexed_market = market_instructions
+            .market_index
+            .to_indexed_market(args.custom_market_list)?;
+
+        let token_pair = ValidatedTokenPair::new(
+            indexed_market.base_token_index,
+            indexed_market.quote_token_index,
+            args.custom_erc20_list,
+        )?;
+
+        // Obtain market key
+        let market_key = MarketKey::new(
+            &token_pair,
+            indexed_market.base_lot_size,
+            indexed_market.quote_lot_size,
+            indexed_market.tick_size,
+        );
+
+        let mut market_state = MarketState::load(&market_key);
+
+        if market_instructions.take_bid() {
+            ix_take(
+                market_state.as_mut(),
+                Side::Bid,
+                args_buffer.as_ref(),
+                len,
+                &mut args.offset,
+            )?;
+        }
+
+        // Write market state to slot
+        market_state.as_mut().store(&market_key);
+    }
+
     // for _ in 0..args.header.ix_post_only_count {}
 
     // for _ in 0..args.header.ix_reduce_count {

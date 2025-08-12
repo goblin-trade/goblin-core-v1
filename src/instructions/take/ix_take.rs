@@ -1,56 +1,24 @@
 use crate::{
-    goblin_error::GoblinError,
-    input_processor::ArgsBuffer,
-    instructions::take::take_packet::TakePacket,
-    markets::IndexedMarket,
-    matching::match_order,
-    settlement::TokenDeltas,
-    state::{MarketKey, MarketState, SlotState},
-    tokens::ValidatedTokenPair,
-    types::Address,
+    goblin_error::GoblinError, input_processor::ArgsBuffer,
+    instructions::take::take_packet::TakePacket, matching::match_order, state::MarketState,
+    types::Side,
 };
 
 pub fn ix_take(
+    market_state: &mut MarketState,
+    side: Side,
     payload: &ArgsBuffer,
     len: usize,
     offset: &mut usize,
-    custom_market_list: &[IndexedMarket],
-    custom_erc20_list: &[Address],
-    token_deltas: &mut TokenDeltas,
 ) -> Result<(), GoblinError> {
-    let TakePacket {
-        market_index,
+    let packet = TakePacket::decode(side, payload, len, offset)?;
+    match_order(
+        market_state,
         side,
-        price_limit,
-        num_lots,
-        min_lots_to_fill,
-    } = TakePacket::decode(payload, len, offset)?;
-    let indexed_market = market_index.to_indexed_market(custom_market_list)?;
-
-    let token_pair = ValidatedTokenPair::new(
-        indexed_market.base_token_index,
-        indexed_market.quote_token_index,
-        custom_erc20_list,
+        packet.num_lots,
+        packet.min_lots_to_fill,
+        packet.price_limit,
     )?;
 
-    // Obtain market key
-    let market_key = MarketKey::new(
-        &token_pair,
-        indexed_market.base_lot_size,
-        indexed_market.quote_lot_size,
-        indexed_market.tick_size,
-    );
-
-    // Read and store market state
-    let mut market_state = MarketState::load(&market_key);
-
-    // matching will produce two deltas
-    // - Token in: positive delta
-    // - Token out: negative delta
-    match_order(market_state.as_mut(), side, num_lots, price_limit)?;
-
-    // TODO check whether minimum lots were filled
-
-    market_state.as_mut().store(&market_key);
     Ok(())
 }

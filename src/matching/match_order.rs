@@ -7,6 +7,7 @@ pub fn match_order(
     market_state: &mut MarketState,
     side: Side,
     num_lots: u64,
+    min_lots_to_fill: u64,
     price_limit: Ticks,
 ) -> Result<(), GoblinError> {
     let opposite_side = side.opposite();
