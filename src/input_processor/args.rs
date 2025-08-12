@@ -8,7 +8,7 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::{ArgsBuffer, ArgsDecoder, Header},
-    markets::IndexedMarket,
+    markets::{IndexedMarket, MarketInstructions},
     quantities::Atoms,
     settlement::ERC20DeltaInput,
     types::Address,
@@ -32,7 +32,10 @@ pub struct Args<'a> {
 
     /// Custom markets to use
     pub custom_market_list: &'a [IndexedMarket],
-    // TODO trading instructions
+
+    /// List of market namespaced instructions
+    pub market_instructions_list: &'a [MarketInstructions],
+
     pub offset: usize,
 }
 
@@ -41,50 +44,33 @@ impl<'a> Args<'a> {
         let header = Header::init(payload, len)?;
         let mut offset = Header::HEADER_BYTE_SIZE;
 
-        let provided_recipient = if header.recipient_provided {
-            let value = payload.decode_ref::<Address>(offset);
-            offset += core::mem::size_of::<Address>();
-            Some(value)
-        } else {
-            None
-        };
+        let provided_recipient = header
+            .recipient_provided
+            .then(|| payload.decode_ref_unchecked::<Address>(&mut offset));
 
-        let eth_withdrawal_due = if header.track_eth_withdrawal_due {
-            let value = payload.decode_ref::<Atoms>(offset);
-            offset += core::mem::size_of::<Atoms>();
-            Some(value)
-        } else {
-            None
-        };
+        let eth_withdrawal_due = header
+            .track_eth_withdrawal_due
+            .then(|| payload.decode_ref_unchecked::<Atoms>(&mut offset));
 
-        let custom_token_list = {
-            let count = header.custom_erc20_count;
-            let value = payload.decode_slice::<Address>(offset, count);
-            offset += count * core::mem::size_of::<Address>();
-            value
-        };
-
-        let erc20_delta_list = {
-            let count = header.erc20_delta_count;
-            let value = payload.decode_slice::<ERC20DeltaInput>(offset, count);
-            offset += count * core::mem::size_of::<ERC20DeltaInput>();
-            value
-        };
-
-        let custom_market_list = {
-            let count = header.custom_market_count;
-            let value = payload.decode_slice::<IndexedMarket>(offset, count);
-            offset += count * core::mem::size_of::<IndexedMarket>();
-            value
-        };
+        let custom_erc20_list =
+            payload.decode_slice_unchecked::<Address>(&mut offset, header.custom_erc20_count);
+        let erc20_delta_list = payload
+            .decode_slice_unchecked::<ERC20DeltaInput>(&mut offset, header.erc20_delta_count);
+        let custom_market_list = payload
+            .decode_slice_unchecked::<IndexedMarket>(&mut offset, header.custom_market_count);
+        let market_instructions_list = payload.decode_slice_unchecked::<MarketInstructions>(
+            &mut offset,
+            header.market_instructions_count,
+        );
 
         Ok(Args {
             header,
             recipient: provided_recipient,
             eth_withdrawal_due,
-            custom_erc20_list: custom_token_list,
+            custom_erc20_list,
             erc20_delta_list,
             custom_market_list,
+            market_instructions_list,
             offset,
         })
     }

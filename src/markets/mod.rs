@@ -2,6 +2,8 @@ pub mod indexed_market;
 pub use indexed_market::*;
 pub mod market_index;
 pub use market_index::*;
+pub mod market_instructions;
+pub use market_instructions::*;
 
 #[cfg(feature = "localnet")]
 pub mod localnet;

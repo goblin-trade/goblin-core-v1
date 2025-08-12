@@ -21,30 +21,11 @@ pub const INPUT_SIZE: usize = 512;
 pub type ArgsBuffer = [u8; INPUT_SIZE];
 
 pub trait ArgsDecoder {
-    fn decode_ref<T>(&self, start: usize) -> &T;
-    fn decode_slice<T>(&self, start: usize, len: usize) -> &[T];
-    fn decode<T: DecodePrimitive>(
-        &self,
-        offset: &mut usize,
-        len: usize,
-    ) -> Result<T, crate::goblin_error::GoblinError>;
-    fn decode_unchecked<T: DecodePrimitive>(&self, offset: usize) -> T;
-}
-
-impl ArgsDecoder for ArgsBuffer {
     /// Zero-copy decoding of a reference to a value of type `T` from the buffer.
-    fn decode_ref<T>(&self, start: usize) -> &T {
-        let end = start + core::mem::size_of::<T>();
-        unsafe { &*(self[start..end].as_ptr() as *const T) }
-    }
+    fn decode_ref_unchecked<T>(&self, offset: &mut usize) -> &T;
 
     /// Zero-copy decoding of a slice of values of type `T` from the buffer.
-    fn decode_slice<T>(&self, start: usize, len: usize) -> &[T] {
-        let byte_len = len * core::mem::size_of::<T>();
-        let end = start + byte_len;
-
-        unsafe { core::slice::from_raw_parts(self[start..end].as_ptr() as *const T, len) }
-    }
+    fn decode_slice_unchecked<T>(&self, offset: &mut usize, len: usize) -> &[T];
 
     /// Decode a primitive value from the buffer with bounds checking.
     ///
@@ -56,6 +37,33 @@ impl ArgsDecoder for ArgsBuffer {
     ///
     /// # Returns
     /// The decoded value or an InvalidPayload error if bounds are exceeded
+    fn decode<T: DecodePrimitive>(
+        &self,
+        offset: &mut usize,
+        len: usize,
+    ) -> Result<T, crate::goblin_error::GoblinError>;
+
+    /// Decode a primitive value without bounds check and without advancing the offset
+    ///
+    /// While decode() checks for size and advances the offset in each call,
+    /// decode_unchecked() can be used to batch read multiple fields. Bounds check
+    /// and offset update must be performed externally.
+    fn decode_unchecked<T: DecodePrimitive>(&self, offset: usize) -> T;
+}
+
+impl ArgsDecoder for ArgsBuffer {
+    fn decode_ref_unchecked<T>(&self, offset: &mut usize) -> &T {
+        let start = *offset;
+        *offset += core::mem::size_of::<T>();
+        unsafe { &*(self[start..*offset].as_ptr() as *const T) }
+    }
+
+    fn decode_slice_unchecked<T>(&self, offset: &mut usize, len: usize) -> &[T] {
+        let start = *offset;
+        *offset += len * core::mem::size_of::<T>();
+        unsafe { core::slice::from_raw_parts(self[start..*offset].as_ptr() as *const T, len) }
+    }
+
     fn decode<T: DecodePrimitive>(
         &self,
         offset: &mut usize,
@@ -72,11 +80,6 @@ impl ArgsDecoder for ArgsBuffer {
         Ok(value)
     }
 
-    /// Decode a primitive value without bounds check and without advancing the offset
-    ///
-    /// While decode() checks for size and advances the offset in each call,
-    /// decode_unchecked() can be used to batch read multiple fields. Bounds check
-    /// and offset update must be performed externally.
     fn decode_unchecked<T: DecodePrimitive>(&self, offset: usize) -> T {
         T::from_le_bytes_at(self, offset)
     }
