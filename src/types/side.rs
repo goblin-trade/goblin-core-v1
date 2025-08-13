@@ -1,3 +1,7 @@
+use crate::quantities::{
+    AdjustedQuoteLots, BaseLots, QuoteLots, QuoteLotsPerBaseUnitPerTick, Ticks,
+};
+
 #[repr(u8)]
 #[derive(PartialEq, Clone, Copy)]
 pub enum Side {
@@ -30,5 +34,55 @@ impl Side {
         // SAFETY: XOR with 1 flips bit 0: 0 becomes 1, 1 becomes 0
         // This directly maps to our enum discriminants (Bid=0, Ask=1)
         unsafe { core::mem::transmute((self as u8) ^ 1) }
+    }
+}
+
+pub struct Bid;
+pub struct Ask;
+
+pub trait SideMarker {
+    type Lots;
+    type Quote;
+
+    fn side() -> Side;
+
+    fn get_quote(
+        size: BaseLots,
+        tick_size: QuoteLotsPerBaseUnitPerTick,
+        price: Ticks,
+    ) -> Self::Quote;
+}
+
+impl SideMarker for Bid {
+    type Lots = QuoteLots;
+    type Quote = AdjustedQuoteLots;
+
+    fn side() -> Side {
+        Side::Bid
+    }
+
+    fn get_quote(
+        size: BaseLots,
+        tick_size: QuoteLotsPerBaseUnitPerTick,
+        price: Ticks,
+    ) -> Self::Quote {
+        (tick_size * price) * size
+    }
+}
+
+impl SideMarker for Ask {
+    type Lots = BaseLots;
+    type Quote = BaseLots;
+
+    fn side() -> Side {
+        Side::Ask
+    }
+
+    fn get_quote(
+        size: BaseLots,
+        _tick_size: QuoteLotsPerBaseUnitPerTick,
+        _price: Ticks,
+    ) -> Self::Quote {
+        size
     }
 }

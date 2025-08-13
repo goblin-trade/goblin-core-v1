@@ -12,13 +12,13 @@ pub fn ix_take(
     offset: &mut usize,
 ) -> Result<(), GoblinError> {
     let packet = TakePacket::decode(side, payload, len, offset)?;
-    match_order(
-        market_state,
-        side,
-        packet.num_lots,
-        packet.min_lots_to_fill,
-        packet.price_limit,
-    )?;
+    // match_order(
+    //     market_state,
+    //     side,
+    //     packet.num_lots,
+    //     packet.min_lots_to_fill,
+    //     packet.price_limit,
+    // )?;
 
     Ok(())
 }
