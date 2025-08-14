@@ -3,7 +3,7 @@ use crate::{
     quantities::{BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit, Ticks},
     state::{SlotKey, SlotState},
     tokens::{ERC20TokenPair, ValidatedTokenPair},
-    types::Side,
+    types::{Side, SideMarker},
 };
 
 pub struct MarketKey {
@@ -87,5 +87,14 @@ impl MarketState {
 
     pub fn best_price_mut(&mut self, side: Side) -> &mut Ticks {
         &mut self.best_prices[side as usize]
+    }
+
+    pub fn price_limit_reached_v2<S: SideMarker>(&self, order_price_limit: Ticks) -> bool {
+        (S::SIDE == Side::Bid && order_price_limit < self.best_prices[Side::Ask as usize])
+            || (S::SIDE == Side::Ask && order_price_limit > self.best_prices[Side::Bid as usize])
+    }
+
+    pub fn best_price_mut_v2<S: SideMarker>(&mut self) -> &mut Ticks {
+        &mut self.best_prices[S::SIDE as usize]
     }
 }

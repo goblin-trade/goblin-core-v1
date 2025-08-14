@@ -6,6 +6,12 @@ macro_rules! define_custom_types {
             #[derive(Debug, Default, Clone, Copy, PartialEq, PartialOrd)]
             pub struct $type(pub $t);
 
+            impl From<$t> for $type {
+                fn from(value: $t) -> Self {
+                    $type(value)
+                }
+            }
+
             impl core::ops::Add for $type {
                 type Output = Self;
 

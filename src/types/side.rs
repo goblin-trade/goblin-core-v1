@@ -43,29 +43,33 @@ pub struct Ask;
 pub trait SideMarker {
     type Lots;
     type Quote;
+    type Opposite;
 
-    fn side() -> Side;
+    const INDEX: usize;
+    const SIDE: Side;
 
-    fn get_quote(
-        size: BaseLots,
-        tick_size: QuoteLotsPerBaseUnitPerTick,
-        price: Ticks,
-    ) -> Self::Quote;
+    // fn get_quote(
+    //     size: BaseLots,
+    //     tick_size: QuoteLotsPerBaseUnitPerTick,
+    //     price: Ticks,
+    // ) -> Self::Quote;
 }
 
 impl SideMarker for Bid {
     type Lots = QuoteLots;
     type Quote = AdjustedQuoteLots;
+    type Opposite = Ask;
 
-    fn side() -> Side {
-        Side::Bid
-    }
+    const INDEX: usize = 0;
+    const SIDE: Side = Side::Bid;
+}
 
-    fn get_quote(
+impl Bid {
+    pub fn get_quote(
         size: BaseLots,
         tick_size: QuoteLotsPerBaseUnitPerTick,
         price: Ticks,
-    ) -> Self::Quote {
+    ) -> <Bid as SideMarker>::Quote {
         (tick_size * price) * size
     }
 }
@@ -73,16 +77,22 @@ impl SideMarker for Bid {
 impl SideMarker for Ask {
     type Lots = BaseLots;
     type Quote = BaseLots;
+    type Opposite = Bid;
 
-    fn side() -> Side {
-        Side::Ask
-    }
+    const INDEX: usize = 1;
+    const SIDE: Side = Side::Ask;
 
-    fn get_quote(
-        size: BaseLots,
-        _tick_size: QuoteLotsPerBaseUnitPerTick,
-        _price: Ticks,
-    ) -> Self::Quote {
+    // fn get_quote(
+    //     size: BaseLots,
+    //     _tick_size: QuoteLotsPerBaseUnitPerTick,
+    //     _price: Ticks,
+    // ) -> Self::Quote {
+    //     size
+    // }
+}
+
+impl Ask {
+    pub fn get_quote(size: BaseLots) -> <Ask as SideMarker>::Quote {
         size
     }
 }

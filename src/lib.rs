@@ -7,7 +7,7 @@ use crate::{
     settlement::TokenDeltas,
     state::{MarketKey, MarketState, SlotState},
     tokens::ValidatedTokenPair,
-    types::Side,
+    types::{Ask, Bid, Side, SideMarker},
 };
 use goblin_error::*;
 
@@ -69,9 +69,19 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
         let mut market_state = MarketState::load(&market_key);
 
         if market_instructions.take_bid() {
-            ix_take(
+            ix_take::<Bid>(
                 market_state.as_mut(),
-                Side::Bid,
+                |size, price| Bid::get_quote(size, indexed_market.tick_size, price),
+                args_buffer.as_ref(),
+                len,
+                &mut args.offset,
+            )?;
+        }
+
+        if market_instructions.take_ask() {
+            ix_take::<Ask>(
+                market_state.as_mut(),
+                |size, _price| Ask::get_quote(size),
                 args_buffer.as_ref(),
                 len,
                 &mut args.offset,
