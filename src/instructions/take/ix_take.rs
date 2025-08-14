@@ -3,21 +3,22 @@ use crate::{
     input_processor::ArgsBuffer,
     instructions::take::take_packet::TakePacket,
     matching::match_order,
-    quantities::{BaseLots, Ticks},
+    quantities::{BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick},
     state::MarketState,
-    types::{Side, SideMarker},
+    types::SideMarker,
 };
 
 pub fn ix_take<S: SideMarker>(
     market_state: &mut MarketState,
-    get_quote: impl Fn(BaseLots, Ticks) -> S::Quote,
+    tick_size: QuoteLotsPerBaseUnitPerTick,
+    base_lot_size: BaseLotsPerBaseUnit,
     payload: &ArgsBuffer,
     len: usize,
     offset: &mut usize,
 ) -> Result<(), GoblinError>
 where
-    S::Quote: From<u64>,
-    S::Quote: PartialOrd,
+    S::Lots: From<u64>,
+    S::Lots: PartialOrd,
     S::Quote: core::ops::SubAssign,
     S::Opposite: SideMarker,
 {
@@ -25,10 +26,12 @@ where
 
     match_order::<S>(
         market_state,
+        tick_size,
+        base_lot_size,
         packet.num_lots,
         packet.min_lots_to_fill,
         packet.price_limit,
-        get_quote,
     )?;
+
     Ok(())
 }

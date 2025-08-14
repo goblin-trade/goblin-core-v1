@@ -71,7 +71,8 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
         if market_instructions.take_bid() {
             ix_take::<Bid>(
                 market_state.as_mut(),
-                |size, price| Bid::get_quote(size, indexed_market.tick_size, price),
+                indexed_market.tick_size,
+                indexed_market.base_lot_size,
                 args_buffer.as_ref(),
                 len,
                 &mut args.offset,
@@ -81,7 +82,8 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
         if market_instructions.take_ask() {
             ix_take::<Ask>(
                 market_state.as_mut(),
-                |size, _price| Ask::get_quote(size),
+                indexed_market.tick_size,
+                indexed_market.base_lot_size,
                 args_buffer.as_ref(),
                 len,
                 &mut args.offset,

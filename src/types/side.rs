@@ -1,5 +1,5 @@
 use crate::quantities::{
-    AdjustedQuoteLots, BaseLots, QuoteLots, QuoteLotsPerBaseUnitPerTick, Ticks,
+    AdjustedQuoteLots, BaseLots, BaseLotsPerBaseUnit, QuoteLots, QuoteLotsPerBaseUnitPerTick, Ticks,
 };
 
 #[repr(u8)]
@@ -47,12 +47,17 @@ pub trait SideMarker {
 
     const INDEX: usize;
     const SIDE: Side;
+    const DEFAULT_PRICE_LIMIT: Ticks;
 
-    // fn get_quote(
-    //     size: BaseLots,
-    //     tick_size: QuoteLotsPerBaseUnitPerTick,
-    //     price: Ticks,
-    // ) -> Self::Quote;
+    fn price_limit_valid(price_limit: Ticks) -> bool;
+
+    fn get_resting_order_quote(
+        size: BaseLots,
+        tick_size: QuoteLotsPerBaseUnitPerTick,
+        price: Ticks,
+    ) -> Self::Quote;
+
+    fn get_budget(num_lots: Self::Lots, base_lot_size: BaseLotsPerBaseUnit) -> Self::Quote;
 }
 
 impl SideMarker for Bid {
@@ -62,15 +67,22 @@ impl SideMarker for Bid {
 
     const INDEX: usize = 0;
     const SIDE: Side = Side::Bid;
-}
+    const DEFAULT_PRICE_LIMIT: Ticks = Ticks::MAX;
 
-impl Bid {
-    pub fn get_quote(
+    fn price_limit_valid(price_limit: Ticks) -> bool {
+        price_limit > Ticks::ZERO
+    }
+
+    fn get_resting_order_quote(
         size: BaseLots,
         tick_size: QuoteLotsPerBaseUnitPerTick,
         price: Ticks,
     ) -> <Bid as SideMarker>::Quote {
         (tick_size * price) * size
+    }
+
+    fn get_budget(num_lots: Self::Lots, base_lot_size: BaseLotsPerBaseUnit) -> Self::Quote {
+        num_lots * base_lot_size
     }
 }
 
@@ -81,18 +93,21 @@ impl SideMarker for Ask {
 
     const INDEX: usize = 1;
     const SIDE: Side = Side::Ask;
+    const DEFAULT_PRICE_LIMIT: Ticks = Ticks::ZERO;
 
-    // fn get_quote(
-    //     size: BaseLots,
-    //     _tick_size: QuoteLotsPerBaseUnitPerTick,
-    //     _price: Ticks,
-    // ) -> Self::Quote {
-    //     size
-    // }
-}
+    fn price_limit_valid(_price_limit: Ticks) -> bool {
+        true
+    }
 
-impl Ask {
-    pub fn get_quote(size: BaseLots) -> <Ask as SideMarker>::Quote {
+    fn get_resting_order_quote(
+        size: BaseLots,
+        _tick_size: QuoteLotsPerBaseUnitPerTick,
+        _price: Ticks,
+    ) -> Self::Quote {
         size
+    }
+
+    fn get_budget(num_lots: Self::Lots, _base_lot_size: BaseLotsPerBaseUnit) -> Self::Quote {
+        num_lots
     }
 }
