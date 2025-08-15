@@ -20,13 +20,14 @@ where
 {
     let mut initial_budget = S::get_budget(num_lots, base_lot_size);
 
+    let best_opposite_price = S::Opposite::best_price_mut(market_state);
+
     // Halt early if best price is further from the centre than the price limit
-    if market_state.price_limit_reached_v2::<S>(price_limit) {
+    if S::Opposite::closer_to_centre(*best_opposite_price, price_limit) {
         return Ok(());
     }
 
-    let mut quote_iterator =
-        QuoteIterator::<S::Opposite>::new(market_state.best_price_mut_v2::<S::Opposite>());
+    let mut quote_iterator = QuoteIterator::<S::Opposite>::new(best_opposite_price);
 
     while let Some(Quote {
         price,

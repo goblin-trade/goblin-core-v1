@@ -1,8 +1,4 @@
-use crate::{
-    quantities::Ticks,
-    state::RestingOrder,
-    types::{Side, SideMarker},
-};
+use crate::{quantities::Ticks, state::RestingOrder, types::SideMarker};
 
 pub struct QuoteIterator<'a, S: SideMarker> {
     pub best_price: &'a mut Ticks,
@@ -28,7 +24,6 @@ impl<'a, S: SideMarker> Iterator for QuoteIterator<'a, S> {
     type Item = Quote;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let index = S::INDEX;
         None
     }
 }

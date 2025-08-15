@@ -7,7 +7,7 @@ use crate::{
     settlement::TokenDeltas,
     state::{MarketKey, MarketState, SlotState},
     tokens::ValidatedTokenPair,
-    types::{Ask, Bid, Side, SideMarker},
+    types::{Ask, Bid},
 };
 use goblin_error::*;
 

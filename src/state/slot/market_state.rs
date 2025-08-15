@@ -3,7 +3,6 @@ use crate::{
     quantities::{BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit, Ticks},
     state::{SlotKey, SlotState},
     tokens::{ERC20TokenPair, ValidatedTokenPair},
-    types::{Side, SideMarker},
 };
 
 pub struct MarketKey {
@@ -60,41 +59,12 @@ impl MarketKey {
 }
 
 /// The market state stored in a slot
-/// We do not use packed because fields are already multiples of 8
 #[repr(C)]
 pub struct MarketState {
-    /// The best bid and best ask price
-    /// * Index 0: best bid price
-    /// * Index 1: best ask price
-    ///
-    /// We use an array for branchless lookup
-    best_prices: [Ticks; 2],
+    pub best_bid_price: Ticks,
+    pub best_ask_price: Ticks,
+    /// Padding to match 32 bits
     _padding: [u8; 24],
 }
 
 impl SlotState<MarketKey> for MarketState {}
-
-impl MarketState {
-    // pub fn best_price(&self, side: Side) -> Ticks {
-    //     self.best_prices[side as usize]
-    // }
-
-    /// Limit is reached if limit price is closer to the centre than the best market price
-    pub fn price_limit_reached(&self, order_side: Side, order_price_limit: Ticks) -> bool {
-        (order_side == Side::Bid && order_price_limit < self.best_prices[Side::Ask as usize])
-            || (order_side == Side::Ask && order_price_limit > self.best_prices[Side::Bid as usize])
-    }
-
-    pub fn best_price_mut(&mut self, side: Side) -> &mut Ticks {
-        &mut self.best_prices[side as usize]
-    }
-
-    pub fn price_limit_reached_v2<S: SideMarker>(&self, order_price_limit: Ticks) -> bool {
-        (S::SIDE == Side::Bid && order_price_limit < self.best_prices[Side::Ask as usize])
-            || (S::SIDE == Side::Ask && order_price_limit > self.best_prices[Side::Bid as usize])
-    }
-
-    pub fn best_price_mut_v2<S: SideMarker>(&mut self) -> &mut Ticks {
-        &mut self.best_prices[S::SIDE as usize]
-    }
-}
