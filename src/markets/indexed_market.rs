@@ -1,5 +1,9 @@
 use crate::{
-    quantities::{BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit},
+    quantities::{
+        BaseAtomsPerBaseLot, BaseLotsPerBaseUnit, QuoteAtomsPerQuoteLot,
+        QuoteLotsPerBaseLotsPerTick, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit,
+        BASE_ATOMS_PER_BASE_UNIT, QUOTE_ATOMS_PER_QUOTE_UNIT,
+    },
     tokens::TokenIndex,
     types::Address,
 };
@@ -76,17 +80,8 @@ impl IndexedMarket {
         let quote_lot_size = self.quote_lot_size;
 
         self.base_token_index != self.quote_token_index
-            && base_lot_size.valid()
-            && quote_lot_size.valid()
-            && self.tick_size % self.base_lot_size == 0
+            && BASE_ATOMS_PER_BASE_UNIT % base_lot_size == BaseAtomsPerBaseLot::ZERO
+            && QUOTE_ATOMS_PER_QUOTE_UNIT % quote_lot_size == QuoteAtomsPerQuoteLot::ZERO
+            && self.tick_size % self.base_lot_size == QuoteLotsPerBaseLotsPerTick::ZERO
     }
-}
-
-#[derive(Clone, Copy)]
-pub struct Market {
-    pub base_token: Address,
-    pub quote_token: Address,
-    pub base_lot_size: BaseLotsPerBaseUnit,
-    pub quote_lot_size: QuoteLotsPerQuoteUnit,
-    pub tick_size: QuoteLotsPerBaseUnitPerTick,
 }

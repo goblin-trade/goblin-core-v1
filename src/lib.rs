@@ -1,13 +1,16 @@
 #![cfg_attr(not(test), no_std)]
 #![cfg_attr(not(test), no_main)]
 
+use core::ops::{Add, Sub};
+
 use crate::{
     input_processor::Args,
     instructions::ix_take,
+    quantities::{BaseLotsDelta, MarketDelta, QuoteLotsDelta},
     settlement::TokenDeltas,
     state::{MarketKey, MarketState, SlotState},
     tokens::ValidatedTokenPair,
-    types::{Ask, Bid},
+    types::{Ask, Bid, SideMarker},
 };
 use goblin_error::*;
 
@@ -45,8 +48,6 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
         args.erc20_delta_list,
     )?;
 
-    // TODO execution
-
     for market_instructions in args.market_instructions_list {
         let indexed_market = market_instructions
             .market_index
@@ -67,31 +68,52 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
         );
 
         let mut market_state = MarketState::load(&market_key);
+        let mut market_delta = MarketDelta::default();
 
         if market_instructions.take_bid() {
-            ix_take::<Bid>(
+            let bid_match_result = ix_take::<Bid>(
+                &indexed_market,
                 market_state.as_mut(),
-                indexed_market.tick_size,
-                indexed_market.base_lot_size,
                 args_buffer.as_ref(),
                 len,
                 &mut args.offset,
             )?;
+
+            market_delta.base_lots_delta = market_delta
+                .base_lots_delta
+                .sub(bid_match_result.lots_out)?;
+
+            market_delta.base_lots_delta = market_delta
+                .base_lots_delta
+                .add(bid_match_result.lots_out)?;
+
+            // base_lots_delta = base_lots_delta.sub(base_lots_out)?;
+            // quote_lots_delta = quote_lots_delta.add(quote_lots_in)?;
         }
 
-        if market_instructions.take_ask() {
-            ix_take::<Ask>(
-                market_state.as_mut(),
-                indexed_market.tick_size,
-                indexed_market.base_lot_size,
-                args_buffer.as_ref(),
-                len,
-                &mut args.offset,
-            )?;
-        }
+        // if market_instructions.take_ask() {
+        //     let (base_lots_in, quote_lots_out) = ix_take::<Ask>(
+        //         &indexed_market,
+        //         market_state.as_mut(),
+        //         args_buffer.as_ref(),
+        //         len,
+        //         &mut args.offset,
+        //     )?;
+        //     base_lots_delta = base_lots_delta.add(base_lots_in)?;
+        //     quote_lots_delta = quote_lots_delta.sub(quote_lots_out)?;
+        // }
 
-        // Write market state to slot
-        market_state.as_mut().store(&market_key);
+        // // Write market state to slot
+        // market_state.as_mut().store(&market_key);
+
+        // // Update deltas
+        // let base_atoms_delta =
+        //     Ask::lots_delta_to_atoms_delta(base_lots_delta, indexed_market.base_lot_size);
+        // let quote_atoms_delta =
+        //     Bid::lots_delta_to_atoms_delta(quote_lots_delta, indexed_market.quote_lot_size);
+
+        // token_deltas.add_consumed_amount(indexed_market.base_token_index, base_atoms_delta)?;
+        // token_deltas.add_consumed_amount(indexed_market.quote_token_index, quote_atoms_delta)?;
     }
 
     // for _ in 0..args.header.ix_post_only_count {}

@@ -126,16 +126,98 @@ macro_rules! define_inter_type_operations {
                 $type_2((self.0 as $tr / rhs.0 as $tr) as $t2)
             }
         }
+
+        // type_result % type_2 = type_1
+        impl core::ops::Rem<$type_2> for $type_result {
+            type Output = $type_1;
+
+            fn rem(self, rhs: $type_2) -> Self::Output {
+                $type_1((self.0 as $tr % rhs.0 as $tr) as $t1)
+            }
+        }
+
+        // type_result % type_1 = type_2
+        impl core::ops::Rem<$type_1> for $type_result {
+            type Output = $type_2;
+
+            fn rem(self, rhs: $type_1) -> Self::Output {
+                $type_2((self.0 as $tr % rhs.0 as $tr) as $t2)
+            }
+        }
     };
 }
 
 #[macro_export]
-macro_rules! allow_mod {
-    ($type_1:ident, $type_2:ident) => {
-        impl core::ops::Rem<$type_2> for $type_1 {
-            type Output = u64;
-            fn rem(self, other: $type_2) -> u64 {
-                self.0 % other.0
+macro_rules! define_delta_operations {
+    ($delta_type:ident<$delta_inner:ty>, $base_type:ident<$base_inner:ty>) => {
+        // DeltaType + BaseType = Result<DeltaType, GoblinError>
+        impl core::ops::Add<$base_type> for $delta_type {
+            type Output = Result<$delta_type, crate::goblin_error::GoblinError>;
+
+            fn add(self, base: $base_type) -> Self::Output {
+                // Ensure the base value fits in delta's inner type
+                if let Ok(val) = <$delta_inner>::try_from(base.0) {
+                    self.0
+                        .checked_add(val)
+                        .map($delta_type)
+                        .ok_or(crate::goblin_error::GoblinError::DeltaOverflow)
+                } else {
+                    Err(crate::goblin_error::GoblinError::DeltaOverflow)
+                }
+            }
+        }
+
+        // DeltaType - BaseType = Result<DeltaType, GoblinError>
+        impl core::ops::Sub<$base_type> for $delta_type {
+            type Output = Result<$delta_type, crate::goblin_error::GoblinError>;
+
+            fn sub(self, base: $base_type) -> Self::Output {
+                if let Ok(val) = <$delta_inner>::try_from(base.0) {
+                    self.0
+                        .checked_sub(val)
+                        .map($delta_type)
+                        .ok_or(crate::goblin_error::GoblinError::DeltaUnderflow)
+                } else {
+                    Err(crate::goblin_error::GoblinError::DeltaUnderflow)
+                }
+            }
+        }
+
+        // BaseType + DeltaType = Result<BaseType, GoblinError>
+        impl core::ops::Add<$delta_type> for $base_type {
+            type Output = Result<$base_type, crate::goblin_error::GoblinError>;
+
+            fn add(self, delta: $delta_type) -> Self::Output {
+                if delta.0 >= 0 {
+                    self.0
+                        .checked_add(delta.0 as $base_inner)
+                        .map($base_type)
+                        .ok_or(crate::goblin_error::GoblinError::Overflow)
+                } else {
+                    self.0
+                        .checked_sub(delta.0.unsigned_abs())
+                        .map($base_type)
+                        .ok_or(crate::goblin_error::GoblinError::Underflow)
+                }
+            }
+        }
+
+        // BaseType - DeltaType = Result<BaseType, GoblinError>
+        impl core::ops::Sub<$delta_type> for $base_type {
+            type Output = Result<$base_type, crate::goblin_error::GoblinError>;
+
+            fn sub(self, delta: $delta_type) -> Self::Output {
+                if delta.0 >= 0 {
+                    self.0
+                        .checked_sub(delta.0 as $base_inner)
+                        .map($base_type)
+                        .ok_or(crate::goblin_error::GoblinError::Underflow)
+                } else {
+                    self.0
+                        .checked_add(delta.0.unsigned_abs())
+                        .map($base_type)
+                        .ok_or(crate::goblin_error::GoblinError::Overflow)
+                }
             }
         }
     };

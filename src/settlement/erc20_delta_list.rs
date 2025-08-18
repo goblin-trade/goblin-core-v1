@@ -1,7 +1,7 @@
 use core::mem::MaybeUninit;
 
 use crate::{
-    goblin_error::GoblinError, quantities::Delta, settlement::ERC20DeltaInput, tokens::TokenIndex,
+    goblin_error::GoblinError, quantities::AtomsDelta, settlement::ERC20DeltaInput, tokens::TokenIndex,
 };
 
 use super::ERC20Delta;
@@ -78,7 +78,7 @@ impl ERC20DeltaList {
         }
 
         // Insert new delta at the end
-        let new_delta = ERC20Delta::new(token_index, Delta::ZERO);
+        let new_delta = ERC20Delta::new(token_index, AtomsDelta::ZERO);
         self.inner[self.len].write(new_delta);
         self.len += 1;
 

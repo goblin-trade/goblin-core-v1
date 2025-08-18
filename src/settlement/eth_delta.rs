@@ -4,7 +4,7 @@ use crate::{
     eth,
     goblin_error::GoblinError,
     hostio,
-    quantities::{Atoms, Delta},
+    quantities::{Atoms, AtomsDelta},
     settlement::DeltaAccumulator,
     state::{EthStore, EthStoreKey, SlotState},
     types::{Address, NATIVE_TOKEN_DECIMALS},
@@ -20,20 +20,20 @@ pub struct EthDelta {
     pub withdrawal_due: Atoms,
 
     /// Delta consumed by taker orders, due for subtraction from EthStore
-    consumed_by_engine: Delta,
+    consumed_by_engine: AtomsDelta,
 
     /// Delta locked in maker orders. Positive if tokens are locked in maker orders,
     /// negative if unlocked by cancelled orders
-    locked_by_engine: Delta,
+    locked_by_engine: AtomsDelta,
 }
 
 impl DeltaAccumulator for EthDelta {
-    fn add_consumed_amount(&mut self, consumed: Delta) -> Result<(), GoblinError> {
+    fn add_consumed_amount(&mut self, consumed: AtomsDelta) -> Result<(), GoblinError> {
         self.consumed_by_engine = self.consumed_by_engine.checked_add(consumed)?;
         Ok(())
     }
 
-    fn add_locked_amount(&mut self, locked: Delta) -> Result<(), GoblinError> {
+    fn add_locked_amount(&mut self, locked: AtomsDelta) -> Result<(), GoblinError> {
         self.locked_by_engine = self.locked_by_engine.checked_add(locked)?;
         Ok(())
     }
@@ -59,12 +59,12 @@ impl EthDelta {
         Ok(Self {
             msg_value_atoms,
             withdrawal_due,
-            consumed_by_engine: Delta::ZERO,
-            locked_by_engine: Delta::ZERO,
+            consumed_by_engine: AtomsDelta::ZERO,
+            locked_by_engine: AtomsDelta::ZERO,
         })
     }
 
-    fn debit_due(&self) -> Result<Delta, GoblinError> {
+    fn debit_due(&self) -> Result<AtomsDelta, GoblinError> {
         self.consumed_by_engine
             .checked_add(self.locked_by_engine)?
             .add(self.withdrawal_due)

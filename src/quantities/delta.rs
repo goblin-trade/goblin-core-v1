@@ -1,96 +1,50 @@
-use crate::{define_custom_types, goblin_error::GoblinError};
+use crate::{
+    define_custom_types, define_delta_operations, define_inter_type_operations,
+    matching::MatchResult,
+    quantities::{BaseAtomsPerBaseLot, BaseLots, QuoteAtomsPerQuoteLot, QuoteLots},
+    types::SideMarker,
+};
 
 use super::Atoms;
 
-define_custom_types!(Delta<i64>);
+// Delta for atoms
+define_custom_types!(AtomsDelta<i64>);
+define_delta_operations!(AtomsDelta<i64>, Atoms<u64>);
 
-impl Delta {
+// Delta for lots
+define_custom_types!(BaseLotsDelta<i64>, QuoteLotsDelta<i64>);
+define_delta_operations!(BaseLotsDelta<i64>, BaseLots<u64>);
+define_delta_operations!(QuoteLotsDelta<i64>, QuoteLots<u64>);
+
+define_inter_type_operations!(
+    BaseAtomsPerBaseLot<u64>,
+    BaseLotsDelta<i64>,
+    AtomsDelta<i64>
+);
+define_inter_type_operations!(
+    QuoteAtomsPerQuoteLot<u64>,
+    QuoteLotsDelta<i64>,
+    AtomsDelta<i64>
+);
+
+impl AtomsDelta {
     pub fn abs(&self) -> Atoms {
         Atoms(self.0.abs() as u64)
     }
-
-    pub fn rev(&self) -> Self {
-        Delta(-self.0)
-    }
-
-    // pub fn checked_add(self, rhs: Delta) -> Result<Delta, GoblinError> {
-    //     self.0
-    //         .checked_add(rhs.0)
-    //         .map(Delta)
-    //         .ok_or(GoblinError::DeltaOverflow)
-    // }
-
-    // pub fn checked_sub(self, rhs: Delta) -> Result<Delta, GoblinError> {
-    //     self.0
-    //         .checked_sub(rhs.0)
-    //         .map(Delta)
-    //         .ok_or(GoblinError::DeltaUnderflow)
-    // }
 }
 
-impl core::ops::Add<Atoms> for Delta {
-    type Output = Result<Delta, GoblinError>;
-
-    fn add(self, atoms: Atoms) -> Self::Output {
-        // Ensure the atoms value fits in i64
-        if let Ok(val) = i64::try_from(atoms.0) {
-            self.0
-                .checked_add(val)
-                .map(Delta)
-                .ok_or(GoblinError::DeltaOverflow)
-        } else {
-            Err(GoblinError::DeltaOverflow)
-        }
-    }
+#[derive(Default)]
+pub struct MarketDelta {
+    pub base_lots_delta: BaseLotsDelta,
+    pub quote_lots_delta: QuoteLotsDelta,
 }
 
-impl core::ops::Sub<Atoms> for Delta {
-    type Output = Result<Delta, GoblinError>;
+impl MarketDelta {
+    pub fn apply_match<S: SideMarker>(&mut self, match_result: &MatchResult<S>) {
+        let delta = S::delta_for_side(self);
 
-    fn sub(self, atoms: Atoms) -> Self::Output {
-        if let Ok(val) = i64::try_from(atoms.0) {
-            self.0
-                .checked_sub(val)
-                .map(Delta)
-                .ok_or(GoblinError::DeltaUnderflow)
-        } else {
-            Err(GoblinError::DeltaUnderflow)
-        }
-    }
-}
+        // *delta = delta.add(match_result.lots_in)?;
 
-impl core::ops::Add<Delta> for Atoms {
-    type Output = Result<Atoms, GoblinError>;
-
-    fn add(self, delta: Delta) -> Self::Output {
-        if delta.0 >= 0 {
-            self.0
-                .checked_add(delta.0 as u64)
-                .map(Atoms)
-                .ok_or(GoblinError::Overflow)
-        } else {
-            self.0
-                .checked_sub(delta.0.unsigned_abs())
-                .map(Atoms)
-                .ok_or(GoblinError::Underflow)
-        }
-    }
-}
-
-impl core::ops::Sub<Delta> for Atoms {
-    type Output = Result<Atoms, GoblinError>;
-
-    fn sub(self, delta: Delta) -> Self::Output {
-        if delta.0 >= 0 {
-            self.0
-                .checked_sub(delta.0 as u64)
-                .map(Atoms)
-                .ok_or(GoblinError::Underflow)
-        } else {
-            self.0
-                .checked_add(delta.0.unsigned_abs())
-                .map(Atoms)
-                .ok_or(GoblinError::Overflow)
-        }
+        // *S::delta_for_side(self) = S::delta_for_side(self).add(match_result.lots_in);
     }
 }

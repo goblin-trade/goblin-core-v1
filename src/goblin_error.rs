@@ -21,6 +21,8 @@ pub enum GoblinError {
     InvalidMarket = 18,
     InvalidTokenPair = 19,
     InvalidTakeArgs = 20,
+    TakerPriceLimitReached = 21,
+    InsufficientTakerFill = 22,
 }
 
 impl GoblinError {

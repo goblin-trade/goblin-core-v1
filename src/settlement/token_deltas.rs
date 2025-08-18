@@ -1,6 +1,6 @@
 use crate::{
     goblin_error::GoblinError,
-    quantities::{Atoms, Delta},
+    quantities::{Atoms, AtomsDelta},
     settlement::{DeltaAccumulator, ERC20DeltaInput, ERC20DeltaList, EthDelta},
     tokens::TokenIndex,
     types::Address,
@@ -26,7 +26,7 @@ impl TokenDeltas {
     pub fn add_consumed_amount(
         &mut self,
         token_index: TokenIndex,
-        consumed: Delta,
+        consumed: AtomsDelta,
     ) -> Result<(), GoblinError> {
         if token_index == TokenIndex::ETH {
             self.eth_delta.add_consumed_amount(consumed)
@@ -39,7 +39,7 @@ impl TokenDeltas {
     pub fn add_locked_amount(
         &mut self,
         token_index: TokenIndex,
-        locked: Delta,
+        locked: AtomsDelta,
     ) -> Result<(), GoblinError> {
         if token_index == TokenIndex::ETH {
             self.eth_delta.add_locked_amount(locked)

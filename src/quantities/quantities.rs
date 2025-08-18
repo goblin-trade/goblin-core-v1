@@ -26,7 +26,7 @@
 ///! to represent a tick, but we use u32 for simplicity.
 ///! * 16 bits are contributed by the outer index and 5 bits by the inner index.
 ///! * The outer index ranges from 0 to u16::MAX while the inner index ranges from 0 to 31.
-use crate::{allow_mod, define_custom_types, define_inter_type_operations, quantities::Ticks};
+use crate::{define_custom_types, define_inter_type_operations, quantities::Ticks};
 
 define_custom_types!(QuoteLots<u64>, QuoteAtoms<u64>);
 // define_custom_types!(QuoteLots<u64>, QuoteAtomsPerQuoteLot<u64>, QuoteAtoms<u64>);
@@ -66,22 +66,53 @@ define_inter_type_operations!(
     AdjustedQuoteLots<u64>
 );
 
-allow_mod!(QuoteLotsPerBaseUnitPerTick, BaseLotsPerBaseUnit);
+define_custom_types!(QuoteLotsPerBaseLotsPerTick<u64>);
+
+define_inter_type_operations!(
+    BaseLotsPerBaseUnit<u64>,
+    QuoteLotsPerBaseLotsPerTick<u64>,
+    QuoteLotsPerBaseUnitPerTick<u64>
+);
+
+// To check for orderbook invariant self.tick_size % self.base_lot_size == 0
+// define_inter_type_operations!(QuoteLotsPerBaseUnitPerTick, BaseLotsPerBaseUnit);
+
+// allow_mod!(QuoteLotsPerBaseUnitPerTick, BaseLotsPerBaseUnit);
+
+define_custom_types!(BaseAtomsPerBaseUnit<u64>, QuoteAtomsPerQuoteUnit<u64>);
+define_custom_types!(BaseAtomsPerBaseLot<u64>, QuoteAtomsPerQuoteLot<u64>);
+
+define_inter_type_operations!(
+    BaseLotsPerBaseUnit<u64>,
+    BaseAtomsPerBaseLot<u64>,
+    BaseAtomsPerBaseUnit<u64>
+);
+define_inter_type_operations!(
+    QuoteLotsPerQuoteUnit<u64>,
+    QuoteAtomsPerQuoteLot<u64>,
+    QuoteAtomsPerQuoteUnit<u64>
+);
+
+define_inter_type_operations!(QuoteAtomsPerQuoteLot<u64>, QuoteLots<u64>, QuoteAtoms<u64>);
+define_inter_type_operations!(BaseAtomsPerBaseLot<u64>, BaseLots<u64>, BaseAtoms<u64>);
 
 /// Token amounts are normalized to 10^6 atoms per unit.
-const ATOMS_PER_UNIT: u64 = 1_000_000;
+pub const BASE_ATOMS_PER_BASE_UNIT: BaseAtomsPerBaseUnit = BaseAtomsPerBaseUnit(1_000_000);
+pub const QUOTE_ATOMS_PER_QUOTE_UNIT: QuoteAtomsPerQuoteUnit = QuoteAtomsPerQuoteUnit(1_000_000);
 
-impl BaseLotsPerBaseUnit {
-    pub fn valid(&self) -> bool {
-        ATOMS_PER_UNIT % self.0 == 0
-    }
-}
+// pub const ATOMS_PER_UNIT: u64 = 1_000_000;
 
-impl QuoteLotsPerQuoteUnit {
-    pub fn valid(&self) -> bool {
-        ATOMS_PER_UNIT % self.0 == 0
-    }
-}
+// impl BaseLotsPerBaseUnit {
+//     pub fn valid(&self) -> bool {
+//         ATOMS_PER_UNIT % self.0 == 0
+//     }
+// }
+
+// impl QuoteLotsPerQuoteUnit {
+//     pub fn valid(&self) -> bool {
+//         ATOMS_PER_UNIT % self.0 == 0
+//     }
+// }
 
 #[cfg(test)]
 mod tests {

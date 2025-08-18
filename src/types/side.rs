@@ -1,7 +1,10 @@
 use crate::{
+    markets::IndexedMarket,
+    matching::MatchResult,
     quantities::{
-        AdjustedQuoteLots, BaseLots, BaseLotsPerBaseUnit, QuoteLots, QuoteLotsPerBaseUnitPerTick,
-        Ticks,
+        AdjustedQuoteLots, AtomsDelta, BaseAtoms, BaseLots, BaseLotsDelta, BaseLotsPerBaseUnit,
+        MarketDelta, QuoteAtoms, QuoteLots, QuoteLotsDelta, QuoteLotsPerBaseUnitPerTick,
+        QuoteLotsPerQuoteUnit, Ticks, BASE_ATOMS_PER_BASE_UNIT, QUOTE_ATOMS_PER_QUOTE_UNIT,
     },
     state::MarketState,
 };
@@ -10,10 +13,24 @@ pub struct Bid;
 pub struct Ask;
 
 pub trait SideMarker {
+    // The input lots for a take order of this side
     type Lots;
-    type Quote;
-    type Opposite;
 
+    type DeltaLots;
+
+    // The unit of accounting used for matching
+    type Quote;
+
+    // The unit of lots per unit
+    type LotSize;
+
+    // The unit of atoms
+    type Atoms;
+
+    // The opposite side
+    type Opposite: SideMarker;
+
+    // Default price limit for take orders
     const DEFAULT_PRICE_LIMIT: Ticks;
 
     fn price_limit_valid(price_limit: Ticks) -> bool;
@@ -24,17 +41,34 @@ pub trait SideMarker {
         price: Ticks,
     ) -> Self::Quote;
 
+    fn get_opposite_quote(
+        quote: Self::Quote,
+        tick_size: QuoteLotsPerBaseUnitPerTick,
+        price: Ticks,
+    ) -> <Self::Opposite as SideMarker>::Quote;
+
     fn get_budget(num_lots: Self::Lots, base_lot_size: BaseLotsPerBaseUnit) -> Self::Quote;
+
+    fn get_lots_from_quote(quote: Self::Quote, base_lot_size: BaseLotsPerBaseUnit) -> Self::Lots;
 
     /// Whether price_1 is closer to centre than price_0
     fn closer_to_centre(price_0: Ticks, price_1: Ticks) -> bool;
 
     fn best_price_mut(market_state: &mut MarketState) -> &mut Ticks;
+
+    fn get_lot_size(indexed_market: &IndexedMarket) -> Self::LotSize;
+
+    fn lots_delta_to_atoms_delta(lots: Self::DeltaLots, lot_size: Self::LotSize) -> AtomsDelta;
+
+    fn delta_for_side(market_delta: &mut MarketDelta) -> &mut Self::DeltaLots;
 }
 
 impl SideMarker for Bid {
     type Lots = QuoteLots;
+    type DeltaLots = QuoteLotsDelta;
     type Quote = AdjustedQuoteLots;
+    type LotSize = QuoteLotsPerQuoteUnit;
+    type Atoms = QuoteAtoms;
     type Opposite = Ask;
 
     const DEFAULT_PRICE_LIMIT: Ticks = Ticks::MAX;
@@ -47,12 +81,24 @@ impl SideMarker for Bid {
         size: BaseLots,
         tick_size: QuoteLotsPerBaseUnitPerTick,
         price: Ticks,
-    ) -> <Bid as SideMarker>::Quote {
+    ) -> Self::Quote {
         (tick_size * price) * size
+    }
+
+    fn get_opposite_quote(
+        quote: Self::Quote,
+        tick_size: QuoteLotsPerBaseUnitPerTick,
+        price: Ticks,
+    ) -> <Self::Opposite as SideMarker>::Quote {
+        quote / (tick_size * price)
     }
 
     fn get_budget(num_lots: Self::Lots, base_lot_size: BaseLotsPerBaseUnit) -> Self::Quote {
         num_lots * base_lot_size
+    }
+
+    fn get_lots_from_quote(quote: Self::Quote, base_lot_size: BaseLotsPerBaseUnit) -> Self::Lots {
+        quote / base_lot_size
     }
 
     fn closer_to_centre(price_0: Ticks, price_1: Ticks) -> bool {
@@ -62,11 +108,26 @@ impl SideMarker for Bid {
     fn best_price_mut(market_state: &mut MarketState) -> &mut Ticks {
         &mut market_state.best_bid_price
     }
+
+    fn get_lot_size(indexed_market: &IndexedMarket) -> Self::LotSize {
+        indexed_market.quote_lot_size
+    }
+
+    fn lots_delta_to_atoms_delta(lots: Self::DeltaLots, lot_size: Self::LotSize) -> AtomsDelta {
+        (QUOTE_ATOMS_PER_QUOTE_UNIT / lot_size) * lots
+    }
+
+    fn delta_for_side(market_delta: &mut MarketDelta) -> &mut Self::DeltaLots {
+        &mut market_delta.quote_lots_delta
+    }
 }
 
 impl SideMarker for Ask {
     type Lots = BaseLots;
+    type DeltaLots = BaseLotsDelta;
     type Quote = BaseLots;
+    type LotSize = BaseLotsPerBaseUnit;
+    type Atoms = BaseAtoms;
     type Opposite = Bid;
 
     const DEFAULT_PRICE_LIMIT: Ticks = Ticks::ZERO;
@@ -83,8 +144,20 @@ impl SideMarker for Ask {
         size
     }
 
+    fn get_opposite_quote(
+        quote: Self::Quote,
+        tick_size: QuoteLotsPerBaseUnitPerTick,
+        price: Ticks,
+    ) -> <Self::Opposite as SideMarker>::Quote {
+        (tick_size * price) * quote
+    }
+
     fn get_budget(num_lots: Self::Lots, _base_lot_size: BaseLotsPerBaseUnit) -> Self::Quote {
         num_lots
+    }
+
+    fn get_lots_from_quote(quote: Self::Quote, _base_lot_size: BaseLotsPerBaseUnit) -> Self::Lots {
+        quote
     }
 
     fn closer_to_centre(price_0: Ticks, price_1: Ticks) -> bool {
@@ -94,39 +167,16 @@ impl SideMarker for Ask {
     fn best_price_mut(market_state: &mut MarketState) -> &mut Ticks {
         &mut market_state.best_ask_price
     }
+
+    fn get_lot_size(indexed_market: &IndexedMarket) -> Self::LotSize {
+        indexed_market.base_lot_size
+    }
+
+    fn lots_delta_to_atoms_delta(lots: Self::DeltaLots, lot_size: Self::LotSize) -> AtomsDelta {
+        (BASE_ATOMS_PER_BASE_UNIT / lot_size) * lots
+    }
+
+    fn delta_for_side(market_delta: &mut MarketDelta) -> &mut Self::DeltaLots {
+        &mut market_delta.base_lots_delta
+    }
 }
-
-// #[repr(u8)]
-// #[derive(PartialEq, Clone, Copy)]
-// pub enum Side {
-//     Bid = 0,
-//     Ask = 1,
-// }
-
-// impl From<bool> for Side {
-//     #[inline]
-//     fn from(value: bool) -> Self {
-//         // SAFETY: bool is guaranteed to be 0 (false) or 1 (true),
-//         // which directly maps to our enum discriminants
-//         unsafe { core::mem::transmute(value) }
-//     }
-// }
-
-// impl From<Side> for bool {
-//     #[inline]
-//     fn from(value: Side) -> bool {
-//         // SAFETY: Side enum has discriminants 0 and 1, which are valid bool values
-//         unsafe { core::mem::transmute(value as u8) }
-//     }
-// }
-
-// impl Side {
-//     /// Returns the opposite side in a branchless manner.
-//     /// Bid becomes Ask, Ask becomes Bid.
-//     #[inline]
-//     pub const fn opposite(self) -> Self {
-//         // SAFETY: XOR with 1 flips bit 0: 0 becomes 1, 1 becomes 0
-//         // This directly maps to our enum discriminants (Bid=0, Ask=1)
-//         unsafe { core::mem::transmute((self as u8) ^ 1) }
-//     }
-// }
