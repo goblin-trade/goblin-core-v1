@@ -2,7 +2,7 @@ use crate::{
     goblin_error::GoblinError,
     markets::IndexedMarket,
     matching::quote_iterator::{Quote, QuoteIterator},
-    quantities::{MarketDelta, Ticks},
+    quantities::Ticks,
     require,
     state::MarketState,
     types::SideMarker,
@@ -19,24 +19,7 @@ pub fn match_order<S: SideMarker>(
     num_lots: S::Lots,
     min_lots_to_fill: S::Lots,
     price_limit: Ticks,
-) -> Result<MatchResult<S>, GoblinError>
-where
-    S::Lots: PartialOrd,
-    S::Lots: Default,
-    S::Lots: From<u64>,
-    S::Quote: Copy,
-    S::Quote: core::ops::Add<Output = S::Quote>,
-    S::Quote: core::ops::Sub<Output = S::Quote>,
-    S::Quote: core::ops::AddAssign,
-    S::Quote: core::ops::SubAssign,
-    S::Quote: PartialOrd,
-    S::Quote: From<u64>,
-    S::Opposite: SideMarker,
-    <S::Opposite as SideMarker>::Quote: From<u64>,
-    <S::Opposite as SideMarker>::Quote: core::ops::AddAssign,
-    <S::Opposite as SideMarker>::Lots: From<u64>,
-    <S::Opposite as SideMarker>::Lots: Default,
-{
+) -> Result<MatchResult<S>, GoblinError> {
     let budget = S::get_budget(num_lots, indexed_market.base_lot_size);
 
     let mut matched = S::Quote::from(0);

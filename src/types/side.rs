@@ -14,12 +14,18 @@ pub struct Ask;
 
 pub trait SideMarker {
     // The input lots for a take order of this side
-    type Lots;
+    type Lots: PartialOrd + Default + From<u64>;
 
     type DeltaLots;
 
     // The unit of accounting used for matching
-    type Quote;
+    type Quote: Copy
+        + PartialOrd
+        + From<u64>
+        + core::ops::Add<Output = Self::Quote>
+        + core::ops::Sub<Output = Self::Quote>
+        + core::ops::AddAssign
+        + core::ops::SubAssign;
 
     // The unit of lots per unit
     type LotSize;
