@@ -1,7 +1,8 @@
 use core::mem::MaybeUninit;
 
 use crate::{
-    goblin_error::GoblinError, quantities::AtomsDelta, settlement::ERC20DeltaInput, tokens::TokenIndex,
+    goblin_error::GoblinError, quantities::AtomsDelta, settlement::ERC20DeltaInput,
+    tokens::TokenIndex,
 };
 
 use super::ERC20Delta;

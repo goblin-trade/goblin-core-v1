@@ -1,6 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
-    quantities::{Atoms, AtomsDelta},
+    markets::IndexedMarket,
+    quantities::{Atoms, AtomsDelta, MarketLotsDelta},
     settlement::{DeltaAccumulator, ERC20DeltaInput, ERC20DeltaList, EthDelta},
     tokens::TokenIndex,
     types::Address,
@@ -21,6 +22,25 @@ impl TokenDeltas {
             eth_delta: EthDelta::init(track_msg_value, eth_withdrawal_due)?,
             erc20_delta_list: ERC20DeltaList::init(indexed_erc20_delta_list)?,
         })
+    }
+
+    pub fn apply_market_delta(
+        &mut self,
+        indexed_market: &IndexedMarket,
+        market_delta: &MarketLotsDelta,
+    ) -> Result<(), GoblinError> {
+        let market_atom_delta = indexed_market.get_atoms_delta(market_delta);
+
+        self.add_consumed_amount(
+            indexed_market.base_token_index,
+            market_atom_delta.base_atoms_delta,
+        )?;
+        self.add_consumed_amount(
+            indexed_market.quote_token_index,
+            market_atom_delta.quote_atoms_delta,
+        )?;
+
+        Ok(())
     }
 
     pub fn add_consumed_amount(

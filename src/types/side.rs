@@ -1,10 +1,9 @@
 use crate::{
     markets::IndexedMarket,
-    matching::MatchResult,
     quantities::{
-        AdjustedQuoteLots, AtomsDelta, BaseAtoms, BaseLots, BaseLotsDelta, BaseLotsPerBaseUnit,
-        MarketDelta, QuoteAtoms, QuoteLots, QuoteLotsDelta, QuoteLotsPerBaseUnitPerTick,
-        QuoteLotsPerQuoteUnit, Ticks, BASE_ATOMS_PER_BASE_UNIT, QUOTE_ATOMS_PER_QUOTE_UNIT,
+        AdjustedQuoteLots, BaseAtoms, BaseLots, BaseLotsDelta, BaseLotsPerBaseUnit,
+        MarketLotsDelta, QuoteAtoms, QuoteLots, QuoteLotsDelta, QuoteLotsPerBaseUnitPerTick,
+        QuoteLotsPerQuoteUnit, Ticks,
     },
     state::MarketState,
 };
@@ -14,9 +13,16 @@ pub struct Ask;
 
 pub trait SideMarker {
     // The input lots for a take order of this side
-    type Lots: PartialOrd + Default + From<u64>;
+    type Lots: Copy + PartialOrd + Default + From<u64>;
 
-    type DeltaLots;
+    type DeltaLots: Copy
+        + core::ops::Add<
+            Self::Lots,
+            Output = Result<Self::DeltaLots, crate::goblin_error::GoblinError>,
+        > + core::ops::Sub<
+            Self::Lots,
+            Output = Result<Self::DeltaLots, crate::goblin_error::GoblinError>,
+        >;
 
     // The unit of accounting used for matching
     type Quote: Copy
@@ -64,9 +70,7 @@ pub trait SideMarker {
 
     fn get_lot_size(indexed_market: &IndexedMarket) -> Self::LotSize;
 
-    fn lots_delta_to_atoms_delta(lots: Self::DeltaLots, lot_size: Self::LotSize) -> AtomsDelta;
-
-    fn delta_for_side(market_delta: &mut MarketDelta) -> &mut Self::DeltaLots;
+    fn delta_for_side(market_delta: &mut MarketLotsDelta) -> &mut Self::DeltaLots;
 }
 
 impl SideMarker for Bid {
@@ -119,11 +123,7 @@ impl SideMarker for Bid {
         indexed_market.quote_lot_size
     }
 
-    fn lots_delta_to_atoms_delta(lots: Self::DeltaLots, lot_size: Self::LotSize) -> AtomsDelta {
-        (QUOTE_ATOMS_PER_QUOTE_UNIT / lot_size) * lots
-    }
-
-    fn delta_for_side(market_delta: &mut MarketDelta) -> &mut Self::DeltaLots {
+    fn delta_for_side(market_delta: &mut MarketLotsDelta) -> &mut Self::DeltaLots {
         &mut market_delta.quote_lots_delta
     }
 }
@@ -178,11 +178,7 @@ impl SideMarker for Ask {
         indexed_market.base_lot_size
     }
 
-    fn lots_delta_to_atoms_delta(lots: Self::DeltaLots, lot_size: Self::LotSize) -> AtomsDelta {
-        (BASE_ATOMS_PER_BASE_UNIT / lot_size) * lots
-    }
-
-    fn delta_for_side(market_delta: &mut MarketDelta) -> &mut Self::DeltaLots {
+    fn delta_for_side(market_delta: &mut MarketLotsDelta) -> &mut Self::DeltaLots {
         &mut market_delta.base_lots_delta
     }
 }

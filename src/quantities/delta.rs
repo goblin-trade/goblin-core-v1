@@ -1,5 +1,8 @@
+use core::ops::{Add, Sub};
+
 use crate::{
     define_custom_types, define_delta_operations, define_inter_type_operations,
+    goblin_error::GoblinError,
     matching::MatchResult,
     quantities::{BaseAtomsPerBaseLot, BaseLots, QuoteAtomsPerQuoteLot, QuoteLots},
     types::SideMarker,
@@ -33,18 +36,25 @@ impl AtomsDelta {
     }
 }
 
+/// Base and quote lot deltas for a market
 #[derive(Default)]
-pub struct MarketDelta {
+pub struct MarketLotsDelta {
     pub base_lots_delta: BaseLotsDelta,
     pub quote_lots_delta: QuoteLotsDelta,
 }
 
-impl MarketDelta {
-    pub fn apply_match<S: SideMarker>(&mut self, match_result: &MatchResult<S>) {
-        let delta = S::delta_for_side(self);
-
-        // *delta = delta.add(match_result.lots_in)?;
-
-        // *S::delta_for_side(self) = S::delta_for_side(self).add(match_result.lots_in);
+impl MarketLotsDelta {
+    /// Apply the match result to the market lots delta
+    ///
+    /// As per convention, we add when tokens are consumed by the engine and subtact
+    /// when tokens are emitted out.
+    pub fn apply_match_result<S: SideMarker>(
+        &mut self,
+        match_result: &MatchResult<S>,
+    ) -> Result<(), GoblinError> {
+        *S::delta_for_side(self) = S::delta_for_side(self).add(match_result.lots_in)?;
+        *S::Opposite::delta_for_side(self) =
+            S::Opposite::delta_for_side(self).sub(match_result.lots_out)?;
+        Ok(())
     }
 }

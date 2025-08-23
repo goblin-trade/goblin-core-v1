@@ -1,11 +1,10 @@
 use crate::{
     quantities::{
-        BaseAtomsPerBaseLot, BaseLotsPerBaseUnit, QuoteAtomsPerQuoteLot,
-        QuoteLotsPerBaseLotsPerTick, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit,
-        BASE_ATOMS_PER_BASE_UNIT, QUOTE_ATOMS_PER_QUOTE_UNIT,
+        AtomsDelta, BaseAtomsPerBaseLot, BaseLotsPerBaseUnit, MarketLotsDelta,
+        QuoteAtomsPerQuoteLot, QuoteLotsPerBaseLotsPerTick, QuoteLotsPerBaseUnitPerTick,
+        QuoteLotsPerQuoteUnit, BASE_ATOMS_PER_BASE_UNIT, QUOTE_ATOMS_PER_QUOTE_UNIT,
     },
     tokens::TokenIndex,
-    types::Address,
 };
 
 // Max number of custom markets
@@ -84,4 +83,24 @@ impl IndexedMarket {
             && QUOTE_ATOMS_PER_QUOTE_UNIT % quote_lot_size == QuoteAtomsPerQuoteLot::ZERO
             && self.tick_size % self.base_lot_size == QuoteLotsPerBaseLotsPerTick::ZERO
     }
+
+    /// Convert market lot delta to atom delta
+    pub fn get_atoms_delta(&self, market_delta: &MarketLotsDelta) -> MarketAtomsDelta {
+        // Atoms per lot are guaranteed to be whole numbers because of the validation check above
+        let base_atoms_per_base_lot = BASE_ATOMS_PER_BASE_UNIT / self.base_lot_size;
+        let quote_atoms_per_quote_lot = QUOTE_ATOMS_PER_QUOTE_UNIT / self.quote_lot_size;
+
+        let base_atoms_delta = base_atoms_per_base_lot * market_delta.base_lots_delta;
+        let quote_atoms_delta = quote_atoms_per_quote_lot * market_delta.quote_lots_delta;
+
+        MarketAtomsDelta {
+            base_atoms_delta,
+            quote_atoms_delta,
+        }
+    }
+}
+
+pub struct MarketAtomsDelta {
+    pub base_atoms_delta: AtomsDelta,
+    pub quote_atoms_delta: AtomsDelta,
 }

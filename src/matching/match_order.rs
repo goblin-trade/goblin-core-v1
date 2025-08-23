@@ -2,7 +2,7 @@ use crate::{
     goblin_error::GoblinError,
     markets::IndexedMarket,
     matching::quote_iterator::{Quote, QuoteIterator},
-    quantities::Ticks,
+    quantities::{BaseLotsDelta, QuoteLotsDelta, Ticks},
     require,
     state::MarketState,
     types::SideMarker,
@@ -11,6 +11,11 @@ use crate::{
 pub struct MatchResult<S: SideMarker> {
     pub lots_in: S::Lots,
     pub lots_out: <S::Opposite as SideMarker>::Lots,
+}
+
+pub struct MatchResultDeltas {
+    pub base_lots_delta: BaseLotsDelta,
+    pub quote_lots_delta: QuoteLotsDelta,
 }
 
 pub fn match_order<S: SideMarker>(
