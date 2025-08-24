@@ -1,10 +1,10 @@
 use crate::{
     goblin_error::GoblinError,
     markets::IndexedMarket,
-    matching::quote_iterator::{Quote, QuoteIterator},
-    quantities::{BaseLotsDelta, QuoteLotsDelta, Ticks},
+    matching::quote_iterator::RestingOrderPositionIterator,
+    quantities::Ticks,
     require,
-    state::MarketState,
+    state::{MarketState, RestingOrder, RestingOrderKey, SlotState},
     types::SideMarker,
 };
 
@@ -13,12 +13,7 @@ pub struct MatchResult<S: SideMarker> {
     pub lots_out: <S::Opposite as SideMarker>::Lots,
 }
 
-pub struct MatchResultDeltas {
-    pub base_lots_delta: BaseLotsDelta,
-    pub quote_lots_delta: QuoteLotsDelta,
-}
-
-pub fn match_order<S: SideMarker>(
+pub fn match_order_v2<S: SideMarker>(
     indexed_market: &IndexedMarket,
     market_state: &mut MarketState,
     num_lots: S::Lots,
@@ -27,8 +22,8 @@ pub fn match_order<S: SideMarker>(
 ) -> Result<MatchResult<S>, GoblinError> {
     let budget = S::get_budget(num_lots, indexed_market.base_lot_size);
 
-    let mut matched = S::Quote::from(0);
-    let mut matched_opposite = <S::Opposite as SideMarker>::Quote::from(0);
+    let mut remaining_budget = budget;
+    let mut matched_opposite = <S::Opposite as SideMarker>::MatchingLots::from(0);
 
     // Halt early if best price is further from the centre than the price limit
     let best_opposite_price = S::Opposite::best_price_mut(market_state);
@@ -44,35 +39,156 @@ pub fn match_order<S: SideMarker>(
         });
     }
 
-    let mut quote_iterator = QuoteIterator::<S::Opposite>::new(best_opposite_price);
+    let mut quote_iterator = RestingOrderPositionIterator::<S::Opposite>::new(best_opposite_price);
 
-    // TODO separate price iteration from resting order reads
-    // If price is beyond threshold no need to read resting order from slot
-    while let Some(Quote {
-        price,
-        resting_order,
-    }) = quote_iterator.next()
-    {
-        // Get quote in both forms and add to accumulators
-        let quote = S::get_resting_order_quote(resting_order.size, indexed_market.tick_size, price);
+    while let Some(resting_order_position) = quote_iterator.next() {
+        let price = resting_order_position.price();
+        if S::Opposite::closer_to_centre(price, price_limit) {
+            break;
+        }
 
+        // Read resting order slot now
+        let resting_order_key = RestingOrderKey::new(
+            &resting_order_position.inner_bitmap_key,
+            resting_order_position.inner_index,
+        );
+        let mut resting_order = RestingOrder::load(&resting_order_key);
+        let resting_order_size = resting_order.as_ref().size;
+
+        let quote =
+            S::get_quote_from_base_lots(resting_order_size, indexed_market.tick_size, price);
+
+        if remaining_budget > quote {
+            // Entire quote consumed but budget remains. Iterate to clear the last order and read the next one.
+            // Equal to case- we need to call next() to clear the last order.
+            remaining_budget -= quote;
+            matched_opposite += S::Opposite::get_quote_from_base_lots(
+                resting_order_size,
+                indexed_market.tick_size,
+                price,
+            );
+        } else {
+            if remaining_budget == quote {
+                // Sub case where both budget and resting order are exhausted
+                // Call next() to clear this resting order
+                quote_iterator.next();
+            }
+            // Budget exhausted but quote remains. Stop matching.
+            let matched_quote = remaining_budget;
+            let matched_quote_opposite =
+                S::get_opposite_quote(matched_quote, indexed_market.tick_size, price);
+
+            remaining_budget = S::MatchingLots::from(0);
+            matched_opposite += matched_quote_opposite;
+
+            break;
+        }
+    }
+
+    let consumed_budget = budget - remaining_budget;
+
+    let matched_lots = S::get_lots_from_quote(consumed_budget, indexed_market.base_lot_size);
+    require!(
+        matched_lots >= min_lots_to_fill,
+        GoblinError::InsufficientTakerFill
+    );
+    let matched_lots_opposite =
+        S::Opposite::get_lots_from_quote(matched_opposite, indexed_market.base_lot_size);
+
+    // Update deltas
+    Ok(MatchResult {
+        lots_in: matched_lots,
+        lots_out: matched_lots_opposite,
+    })
+}
+
+pub fn match_order<S: SideMarker>(
+    indexed_market: &IndexedMarket,
+    market_state: &mut MarketState,
+    num_lots: S::Lots,
+    min_lots_to_fill: S::Lots,
+    price_limit: Ticks,
+) -> Result<MatchResult<S>, GoblinError> {
+    let budget = S::get_budget(num_lots, indexed_market.base_lot_size);
+
+    let mut matched = S::MatchingLots::from(0);
+    let mut matched_opposite = <S::Opposite as SideMarker>::MatchingLots::from(0);
+
+    // Halt early if best price is further from the centre than the price limit
+    let best_opposite_price = S::Opposite::best_price_mut(market_state);
+    if S::Opposite::closer_to_centre(*best_opposite_price, price_limit) {
+        require!(
+            min_lots_to_fill == S::Lots::from(0),
+            GoblinError::TakerPriceLimitReached
+        );
+
+        return Ok(MatchResult {
+            lots_in: S::Lots::from(0),
+            lots_out: <S::Opposite as SideMarker>::Lots::from(0),
+        });
+    }
+
+    let mut quote_iterator = RestingOrderPositionIterator::<S::Opposite>::new(best_opposite_price);
+
+    while let Some(resting_order_position) = quote_iterator.next() {
+        let price = resting_order_position.price();
+        if S::Opposite::closer_to_centre(price, price_limit) {
+            break;
+        }
+
+        // Read resting order slot now
+        let resting_order_key = RestingOrderKey::new(
+            &resting_order_position.inner_bitmap_key,
+            resting_order_position.inner_index,
+        );
+        let mut resting_order = RestingOrder::load(&resting_order_key);
+        let resting_order_size = resting_order.as_ref().size;
+
+        let quote =
+            S::get_quote_from_base_lots(resting_order_size, indexed_market.tick_size, price);
+
+        // Stop when budget is completely matched but resting order remains
+        //
+        //         @
+        //         @ surplus
+        //   quote _______
+        //         @     $
+        //         @     $  contribution
+        //         @     $
+        //         _______ budget
+        // matched *     $
+        //         *     $
         if (matched + quote) > budget {
-            let amount_to_add = budget - matched;
+            let surplus = (matched + quote) - budget;
+            let contribution = budget - matched;
 
-            // Amount completely filled
-            matched = budget;
+            matched = budget; // equivalent to matched += contribution
             matched_opposite +=
-                S::get_opposite_quote(amount_to_add, indexed_market.tick_size, price);
+                S::get_opposite_quote(contribution, indexed_market.tick_size, price);
+
+            // Write the quote surplus back to the resting order
+            let surplus_base_lots =
+                S::get_base_lots_from_quote(surplus, indexed_market.tick_size, price);
+
+            (*resting_order.as_mut()).size = surplus_base_lots;
+            resting_order.as_mut().store(&resting_order_key);
+
+            // Read and update trader state of resting order owner
+            // If it is a self trade, no need to read state now. Just update delta
 
             break;
         }
 
+        // order is fully consumed
+        // The next iteration will deactivate the order
         matched += quote;
-        matched_opposite += S::Opposite::get_resting_order_quote(
-            resting_order.size,
+        matched_opposite += S::Opposite::get_quote_from_base_lots(
+            resting_order_size,
             indexed_market.tick_size,
             price,
         );
+
+        // TODO we still need to update trader state
     }
 
     let matched_lots = S::get_lots_from_quote(matched, indexed_market.base_lot_size);

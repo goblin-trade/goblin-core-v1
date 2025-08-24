@@ -23,10 +23,6 @@ impl InnerIndex {
     }
 }
 
-// Outer bitmap
-define_custom_types!(OuterBitmapIndex<u32>);
-define_custom_types!(OuterIndex<u8>);
-
 impl InnerBitmapIndex {
     pub fn outer_bitmap_index(&self) -> OuterBitmapIndex {
         // divide by 256 → right shift 8 bits
@@ -38,3 +34,7 @@ impl InnerBitmapIndex {
         OuterIndex((self.0 & 0b1111_1111) as u8)
     }
 }
+
+// Outer bitmap
+define_custom_types!(OuterBitmapIndex<u32>);
+define_custom_types!(OuterIndex<u8>);

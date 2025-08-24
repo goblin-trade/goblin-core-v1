@@ -25,11 +25,11 @@ pub trait SideMarker {
         >;
 
     // The unit of accounting used for matching
-    type Quote: Copy
+    type MatchingLots: Copy
         + PartialOrd
         + From<u64>
-        + core::ops::Add<Output = Self::Quote>
-        + core::ops::Sub<Output = Self::Quote>
+        + core::ops::Add<Output = Self::MatchingLots>
+        + core::ops::Sub<Output = Self::MatchingLots>
         + core::ops::AddAssign
         + core::ops::SubAssign;
 
@@ -47,21 +47,31 @@ pub trait SideMarker {
 
     fn price_limit_valid(price_limit: Ticks) -> bool;
 
-    fn get_resting_order_quote(
+    fn get_quote_from_base_lots(
         size: BaseLots,
         tick_size: QuoteLotsPerBaseUnitPerTick,
         price: Ticks,
-    ) -> Self::Quote;
+    ) -> Self::MatchingLots;
 
-    fn get_opposite_quote(
-        quote: Self::Quote,
+    fn get_base_lots_from_quote(
+        quote: Self::MatchingLots,
         tick_size: QuoteLotsPerBaseUnitPerTick,
         price: Ticks,
-    ) -> <Self::Opposite as SideMarker>::Quote;
+    ) -> BaseLots;
 
-    fn get_budget(num_lots: Self::Lots, base_lot_size: BaseLotsPerBaseUnit) -> Self::Quote;
+    // Redundant, TODO remove
+    fn get_opposite_quote(
+        quote: Self::MatchingLots,
+        tick_size: QuoteLotsPerBaseUnitPerTick,
+        price: Ticks,
+    ) -> <Self::Opposite as SideMarker>::MatchingLots;
 
-    fn get_lots_from_quote(quote: Self::Quote, base_lot_size: BaseLotsPerBaseUnit) -> Self::Lots;
+    fn get_budget(num_lots: Self::Lots, base_lot_size: BaseLotsPerBaseUnit) -> Self::MatchingLots;
+
+    fn get_lots_from_quote(
+        quote: Self::MatchingLots,
+        base_lot_size: BaseLotsPerBaseUnit,
+    ) -> Self::Lots;
 
     /// Whether price_1 is closer to centre than price_0
     fn closer_to_centre(price_0: Ticks, price_1: Ticks) -> bool;
@@ -76,7 +86,7 @@ pub trait SideMarker {
 impl SideMarker for Bid {
     type Lots = QuoteLots;
     type DeltaLots = QuoteLotsDelta;
-    type Quote = AdjustedQuoteLots;
+    type MatchingLots = AdjustedQuoteLots;
     type LotSize = QuoteLotsPerQuoteUnit;
     type Atoms = QuoteAtoms;
     type Opposite = Ask;
@@ -87,27 +97,38 @@ impl SideMarker for Bid {
         price_limit > Ticks::ZERO
     }
 
-    fn get_resting_order_quote(
+    fn get_quote_from_base_lots(
         size: BaseLots,
         tick_size: QuoteLotsPerBaseUnitPerTick,
         price: Ticks,
-    ) -> Self::Quote {
+    ) -> Self::MatchingLots {
         (tick_size * price) * size
     }
 
-    fn get_opposite_quote(
-        quote: Self::Quote,
+    fn get_base_lots_from_quote(
+        quote: Self::MatchingLots,
         tick_size: QuoteLotsPerBaseUnitPerTick,
         price: Ticks,
-    ) -> <Self::Opposite as SideMarker>::Quote {
+    ) -> BaseLots {
         quote / (tick_size * price)
     }
 
-    fn get_budget(num_lots: Self::Lots, base_lot_size: BaseLotsPerBaseUnit) -> Self::Quote {
+    fn get_opposite_quote(
+        quote: Self::MatchingLots,
+        tick_size: QuoteLotsPerBaseUnitPerTick,
+        price: Ticks,
+    ) -> <Self::Opposite as SideMarker>::MatchingLots {
+        quote / (tick_size * price)
+    }
+
+    fn get_budget(num_lots: Self::Lots, base_lot_size: BaseLotsPerBaseUnit) -> Self::MatchingLots {
         num_lots * base_lot_size
     }
 
-    fn get_lots_from_quote(quote: Self::Quote, base_lot_size: BaseLotsPerBaseUnit) -> Self::Lots {
+    fn get_lots_from_quote(
+        quote: Self::MatchingLots,
+        base_lot_size: BaseLotsPerBaseUnit,
+    ) -> Self::Lots {
         quote / base_lot_size
     }
 
@@ -131,7 +152,7 @@ impl SideMarker for Bid {
 impl SideMarker for Ask {
     type Lots = BaseLots;
     type DeltaLots = BaseLotsDelta;
-    type Quote = BaseLots;
+    type MatchingLots = BaseLots;
     type LotSize = BaseLotsPerBaseUnit;
     type Atoms = BaseAtoms;
     type Opposite = Bid;
@@ -142,27 +163,38 @@ impl SideMarker for Ask {
         true
     }
 
-    fn get_resting_order_quote(
+    fn get_quote_from_base_lots(
         size: BaseLots,
         _tick_size: QuoteLotsPerBaseUnitPerTick,
         _price: Ticks,
-    ) -> Self::Quote {
+    ) -> Self::MatchingLots {
         size
     }
 
-    fn get_opposite_quote(
-        quote: Self::Quote,
+    fn get_base_lots_from_quote(
+        quote: Self::MatchingLots,
         tick_size: QuoteLotsPerBaseUnitPerTick,
         price: Ticks,
-    ) -> <Self::Opposite as SideMarker>::Quote {
+    ) -> BaseLots {
+        quote
+    }
+
+    fn get_opposite_quote(
+        quote: Self::MatchingLots,
+        tick_size: QuoteLotsPerBaseUnitPerTick,
+        price: Ticks,
+    ) -> <Self::Opposite as SideMarker>::MatchingLots {
         (tick_size * price) * quote
     }
 
-    fn get_budget(num_lots: Self::Lots, _base_lot_size: BaseLotsPerBaseUnit) -> Self::Quote {
+    fn get_budget(num_lots: Self::Lots, _base_lot_size: BaseLotsPerBaseUnit) -> Self::MatchingLots {
         num_lots
     }
 
-    fn get_lots_from_quote(quote: Self::Quote, _base_lot_size: BaseLotsPerBaseUnit) -> Self::Lots {
+    fn get_lots_from_quote(
+        quote: Self::MatchingLots,
+        _base_lot_size: BaseLotsPerBaseUnit,
+    ) -> Self::Lots {
         quote
     }
 
