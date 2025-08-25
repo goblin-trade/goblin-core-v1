@@ -1,10 +1,16 @@
 use crate::{
-    goblin_error::GoblinError, input_processor::ArgsBuffer,
-    instructions::take::take_packet::TakePacket, markets::IndexedMarket, matching::match_order,
-    quantities::MarketLotsDelta, state::MarketState, types::SideMarker,
+    goblin_error::GoblinError,
+    input_processor::ArgsBuffer,
+    instructions::take::take_packet::TakePacket,
+    markets::IndexedMarket,
+    matching::{match_order, match_order_v2},
+    quantities::MarketLotsDelta,
+    state::MarketState,
+    types::{Address, SideMarker},
 };
 
 pub fn ix_take<S: SideMarker>(
+    taker: &Address,
     indexed_market: &IndexedMarket,
     market_state: &mut MarketState,
     market_lots_delta: &mut MarketLotsDelta,
@@ -14,7 +20,8 @@ pub fn ix_take<S: SideMarker>(
 ) -> Result<(), GoblinError> {
     let packet = TakePacket::<S>::decode(payload, len, offset)?;
 
-    let match_result = match_order::<S>(
+    let match_result = match_order_v2::<S>(
+        taker,
         indexed_market,
         market_state,
         packet.num_lots,

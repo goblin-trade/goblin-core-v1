@@ -36,11 +36,13 @@ impl AtomsDelta {
     }
 }
 
-/// Base and quote lot deltas for a market
+/// Consumed and locked deltas for a market
 #[derive(Default)]
 pub struct MarketLotsDelta {
-    pub base_lots_delta: BaseLotsDelta,
-    pub quote_lots_delta: QuoteLotsDelta,
+    pub base_lots_consumed: BaseLotsDelta,
+    pub quote_lots_consumed: QuoteLotsDelta,
+    pub base_lots_locked: BaseLotsDelta,
+    pub quote_lots_locked: QuoteLotsDelta,
 }
 
 impl MarketLotsDelta {
@@ -48,13 +50,21 @@ impl MarketLotsDelta {
     ///
     /// As per convention, we add when tokens are consumed by the engine and subtact
     /// when tokens are emitted out.
+    ///
+    /// * lots_in are consumed by the engine, therefore add.
+    /// * lots_out are released by engine therefore subtract.
+    /// * self trade results in release of locked opposite tokens, therfore subtract.
     pub fn apply_match_result<S: SideMarker>(
         &mut self,
         match_result: &MatchResult<S>,
     ) -> Result<(), GoblinError> {
-        *S::delta_for_side(self) = S::delta_for_side(self).add(match_result.lots_in)?;
-        *S::Opposite::delta_for_side(self) =
-            S::Opposite::delta_for_side(self).sub(match_result.lots_out)?;
+        *S::consumed_for_side(self) = S::consumed_for_side(self).add(match_result.lots_in)?;
+        *S::Opposite::consumed_for_side(self) =
+            S::Opposite::consumed_for_side(self).sub(match_result.lots_out)?;
+
+        *S::Opposite::locked_for_side(self) =
+            S::Opposite::locked_for_side(self).sub(match_result.released_by_self_trade)?;
+
         Ok(())
     }
 }

@@ -33,11 +33,20 @@ impl TokenDeltas {
 
         self.add_consumed_amount(
             indexed_market.base_token_index,
-            market_atom_delta.base_atoms_delta,
+            market_atom_delta.base_atoms_consumed,
         )?;
         self.add_consumed_amount(
             indexed_market.quote_token_index,
-            market_atom_delta.quote_atoms_delta,
+            market_atom_delta.quote_atoms_consumed,
+        )?;
+
+        self.add_locked_amount(
+            indexed_market.base_token_index,
+            market_atom_delta.base_atoms_locked,
+        )?;
+        self.add_locked_amount(
+            indexed_market.quote_token_index,
+            market_atom_delta.quote_atoms_locked,
         )?;
 
         Ok(())

@@ -90,17 +90,24 @@ impl IndexedMarket {
         let base_atoms_per_base_lot = BASE_ATOMS_PER_BASE_UNIT / self.base_lot_size;
         let quote_atoms_per_quote_lot = QUOTE_ATOMS_PER_QUOTE_UNIT / self.quote_lot_size;
 
-        let base_atoms_delta = base_atoms_per_base_lot * market_delta.base_lots_delta;
-        let quote_atoms_delta = quote_atoms_per_quote_lot * market_delta.quote_lots_delta;
+        let base_atoms_consumed = base_atoms_per_base_lot * market_delta.base_lots_consumed;
+        let quote_atoms_consumed = quote_atoms_per_quote_lot * market_delta.quote_lots_consumed;
+
+        let base_atoms_locked = base_atoms_per_base_lot * market_delta.base_lots_locked;
+        let quote_atoms_locked = quote_atoms_per_quote_lot * market_delta.quote_lots_locked;
 
         MarketAtomsDelta {
-            base_atoms_delta,
-            quote_atoms_delta,
+            base_atoms_consumed,
+            quote_atoms_consumed,
+            base_atoms_locked,
+            quote_atoms_locked,
         }
     }
 }
 
 pub struct MarketAtomsDelta {
-    pub base_atoms_delta: AtomsDelta,
-    pub quote_atoms_delta: AtomsDelta,
+    pub base_atoms_consumed: AtomsDelta,
+    pub quote_atoms_consumed: AtomsDelta,
+    pub base_atoms_locked: AtomsDelta,
+    pub quote_atoms_locked: AtomsDelta,
 }

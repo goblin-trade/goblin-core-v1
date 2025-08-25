@@ -80,7 +80,9 @@ pub trait SideMarker {
 
     fn get_lot_size(indexed_market: &IndexedMarket) -> Self::LotSize;
 
-    fn delta_for_side(market_delta: &mut MarketLotsDelta) -> &mut Self::DeltaLots;
+    fn consumed_for_side(market_delta: &mut MarketLotsDelta) -> &mut Self::DeltaLots;
+
+    fn locked_for_side(market_delta: &mut MarketLotsDelta) -> &mut Self::DeltaLots;
 }
 
 impl SideMarker for Bid {
@@ -144,8 +146,12 @@ impl SideMarker for Bid {
         indexed_market.quote_lot_size
     }
 
-    fn delta_for_side(market_delta: &mut MarketLotsDelta) -> &mut Self::DeltaLots {
-        &mut market_delta.quote_lots_delta
+    fn consumed_for_side(market_delta: &mut MarketLotsDelta) -> &mut Self::DeltaLots {
+        &mut market_delta.quote_lots_consumed
+    }
+
+    fn locked_for_side(market_delta: &mut MarketLotsDelta) -> &mut Self::DeltaLots {
+        &mut market_delta.quote_lots_locked
     }
 }
 
@@ -210,7 +216,11 @@ impl SideMarker for Ask {
         indexed_market.base_lot_size
     }
 
-    fn delta_for_side(market_delta: &mut MarketLotsDelta) -> &mut Self::DeltaLots {
-        &mut market_delta.base_lots_delta
+    fn consumed_for_side(market_delta: &mut MarketLotsDelta) -> &mut Self::DeltaLots {
+        &mut market_delta.base_lots_consumed
+    }
+
+    fn locked_for_side(market_delta: &mut MarketLotsDelta) -> &mut Self::DeltaLots {
+        &mut market_delta.base_lots_locked
     }
 }
