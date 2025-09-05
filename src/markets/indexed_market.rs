@@ -84,11 +84,19 @@ impl IndexedMarket {
             && self.tick_size % self.base_lot_size == QuoteLotsPerBaseLotsPerTick::ZERO
     }
 
+    // Atoms per lot are guaranteed to be whole numbers because of the validation check above
+    pub fn base_atoms_per_base_lot(&self) -> BaseAtomsPerBaseLot {
+        BASE_ATOMS_PER_BASE_UNIT / self.base_lot_size
+    }
+
+    pub fn quote_atoms_per_quote_lot(&self) -> QuoteAtomsPerQuoteLot {
+        QUOTE_ATOMS_PER_QUOTE_UNIT / self.quote_lot_size
+    }
+
     /// Convert market lot delta to atom delta
     pub fn get_atoms_delta(&self, market_delta: &MarketLotsDelta) -> MarketAtomsDelta {
-        // Atoms per lot are guaranteed to be whole numbers because of the validation check above
-        let base_atoms_per_base_lot = BASE_ATOMS_PER_BASE_UNIT / self.base_lot_size;
-        let quote_atoms_per_quote_lot = QUOTE_ATOMS_PER_QUOTE_UNIT / self.quote_lot_size;
+        let base_atoms_per_base_lot = self.base_atoms_per_base_lot();
+        let quote_atoms_per_quote_lot = self.quote_atoms_per_quote_lot();
 
         let base_atoms_consumed = base_atoms_per_base_lot * market_delta.base_lots_consumed;
         let quote_atoms_consumed = quote_atoms_per_quote_lot * market_delta.quote_lots_consumed;

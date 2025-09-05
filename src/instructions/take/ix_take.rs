@@ -3,13 +3,15 @@ use crate::{
     input_processor::ArgsBuffer,
     instructions::take::take_packet::TakePacket,
     markets::IndexedMarket,
-    matching::{match_order, match_order_v2},
+    matching::match_order,
     quantities::MarketLotsDelta,
     state::MarketState,
+    tokens::ValidatedTokenPair,
     types::{Address, SideMarker},
 };
 
 pub fn ix_take<S: SideMarker>(
+    token_pair: &ValidatedTokenPair,
     taker: &Address,
     indexed_market: &IndexedMarket,
     market_state: &mut MarketState,
@@ -20,7 +22,8 @@ pub fn ix_take<S: SideMarker>(
 ) -> Result<(), GoblinError> {
     let packet = TakePacket::<S>::decode(payload, len, offset)?;
 
-    let match_result = match_order_v2::<S>(
+    let match_result = match_order::<S>(
+        token_pair,
         taker,
         indexed_market,
         market_state,

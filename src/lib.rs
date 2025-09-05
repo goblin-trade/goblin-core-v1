@@ -70,6 +70,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
 
         if market_instructions.take_bid() {
             ix_take::<Bid>(
+                &token_pair,
                 msg_sender.as_ref(),
                 &indexed_market,
                 market_state.as_mut(),
@@ -82,6 +83,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
 
         if market_instructions.take_ask() {
             ix_take::<Ask>(
+                &token_pair,
                 msg_sender.as_ref(),
                 &indexed_market,
                 market_state.as_mut(),

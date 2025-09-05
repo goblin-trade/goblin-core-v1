@@ -29,24 +29,24 @@ impl TokenDeltas {
         indexed_market: &IndexedMarket,
         market_delta: &MarketLotsDelta,
     ) -> Result<(), GoblinError> {
-        let market_atom_delta = indexed_market.get_atoms_delta(market_delta);
+        let market_atoms_delta = indexed_market.get_atoms_delta(market_delta);
 
         self.add_consumed_amount(
             indexed_market.base_token_index,
-            market_atom_delta.base_atoms_consumed,
+            market_atoms_delta.base_atoms_consumed,
         )?;
         self.add_consumed_amount(
             indexed_market.quote_token_index,
-            market_atom_delta.quote_atoms_consumed,
+            market_atoms_delta.quote_atoms_consumed,
         )?;
 
         self.add_locked_amount(
             indexed_market.base_token_index,
-            market_atom_delta.base_atoms_locked,
+            market_atoms_delta.base_atoms_locked,
         )?;
         self.add_locked_amount(
             indexed_market.quote_token_index,
-            market_atom_delta.quote_atoms_locked,
+            market_atoms_delta.quote_atoms_locked,
         )?;
 
         Ok(())

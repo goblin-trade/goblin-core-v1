@@ -1,4 +1,10 @@
-use crate::{erc20, goblin_error::GoblinError, types::Address};
+use crate::{
+    erc20,
+    goblin_error::GoblinError,
+    quantities::Atoms,
+    state::{ERC20Store, ERC20StoreKey, EthStore, EthStoreKey, SlotState},
+    types::Address,
+};
 
 #[derive(PartialEq)]
 pub enum Token {
@@ -7,6 +13,29 @@ pub enum Token {
 
     /// ERC20 token
     ERC20(ERC20Token),
+}
+
+impl Token {
+    /// Unlocked matched tokens for a maker
+    /// Since resting orders are backed by locked tokens, we can subtract directly.
+    pub fn unlock_matched_atoms(&mut self, trader: &Address, unlocked: Atoms) {
+        match self {
+            Token::Eth => {
+                let key = EthStoreKey::new(trader);
+                let mut store = EthStore::load(&key);
+
+                store.as_mut().atoms_locked -= unlocked.into();
+                store.as_mut().store(&key);
+            }
+            Token::ERC20(erc20_token) => {
+                let key = ERC20StoreKey::new(trader, erc20_token.address());
+                let mut store = ERC20Store::load(&key);
+
+                store.as_mut().atoms_locked -= unlocked.into();
+                store.as_mut().store(&key);
+            }
+        }
+    }
 }
 
 /// A generic token type to represent custom and hardcoded ERC20 tokens.

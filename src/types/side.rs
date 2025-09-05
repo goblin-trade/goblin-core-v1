@@ -1,11 +1,14 @@
 use crate::{
+    goblin_error::GoblinError,
     markets::IndexedMarket,
     quantities::{
-        AdjustedQuoteLots, BaseAtoms, BaseLots, BaseLotsDelta, BaseLotsPerBaseUnit,
-        MarketLotsDelta, QuoteAtoms, QuoteLots, QuoteLotsDelta, QuoteLotsPerBaseUnitPerTick,
-        QuoteLotsPerQuoteUnit, Ticks,
+        AdjustedQuoteLots, BaseAtoms, BaseAtomsPerBaseLot, BaseLots, BaseLotsDelta,
+        BaseLotsPerBaseUnit, MarketLotsDelta, QuoteAtoms, QuoteAtomsPerQuoteLot, QuoteLots,
+        QuoteLotsDelta, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit, Ticks,
     },
-    state::MarketState,
+    state::{ERC20Store, ERC20StoreKey, EthStore, EthStoreKey, MarketState, SlotState},
+    tokens::{ERC20TokenPair, ValidatedTokenPair},
+    types::Address,
 };
 
 pub struct Bid;
@@ -13,7 +16,11 @@ pub struct Ask;
 
 pub trait SideMarker {
     // The input lots for a take order of this side
-    type Lots: Copy + PartialOrd + Default + From<u64>;
+    type Lots: Copy
+        + PartialOrd
+        + Default
+        + From<u64>
+        + core::ops::Mul<Self::AtomsPerLot, Output = Self::Atoms>;
 
     type DeltaLots: Copy
         + core::ops::Add<
@@ -38,6 +45,8 @@ pub trait SideMarker {
 
     // The unit of atoms
     type Atoms;
+
+    type AtomsPerLot;
 
     // The opposite side
     type Opposite: SideMarker;
@@ -80,9 +89,21 @@ pub trait SideMarker {
 
     fn get_lot_size(indexed_market: &IndexedMarket) -> Self::LotSize;
 
+    fn atoms_per_lot(indexed_market: &IndexedMarket) -> Self::AtomsPerLot;
+
     fn consumed_for_side(market_delta: &mut MarketLotsDelta) -> &mut Self::DeltaLots;
 
     fn locked_for_side(market_delta: &mut MarketLotsDelta) -> &mut Self::DeltaLots;
+
+    // Update token stores for the maker where 'S' is the taker side.
+    // - If side is Bid, the maker is executing an Ask.
+    // - If side is Ask, the maker is executing a Bid.
+    fn update_maker_stores(
+        token_pair: &ValidatedTokenPair,
+        maker: &Address,
+        atoms: Self::Atoms,
+        atoms_opposite: <Self::Opposite as SideMarker>::Atoms,
+    ) -> Result<(), GoblinError>;
 }
 
 impl SideMarker for Bid {
@@ -91,6 +112,7 @@ impl SideMarker for Bid {
     type MatchingLots = AdjustedQuoteLots;
     type LotSize = QuoteLotsPerQuoteUnit;
     type Atoms = QuoteAtoms;
+    type AtomsPerLot = QuoteAtomsPerQuoteLot;
     type Opposite = Ask;
 
     const DEFAULT_PRICE_LIMIT: Ticks = Ticks::MAX;
@@ -146,12 +168,68 @@ impl SideMarker for Bid {
         indexed_market.quote_lot_size
     }
 
+    fn atoms_per_lot(indexed_market: &IndexedMarket) -> Self::AtomsPerLot {
+        indexed_market.quote_atoms_per_quote_lot()
+    }
+
     fn consumed_for_side(market_delta: &mut MarketLotsDelta) -> &mut Self::DeltaLots {
         &mut market_delta.quote_lots_consumed
     }
 
     fn locked_for_side(market_delta: &mut MarketLotsDelta) -> &mut Self::DeltaLots {
         &mut market_delta.quote_lots_locked
+    }
+
+    fn update_maker_stores(
+        token_pair: &ValidatedTokenPair,
+        maker: &Address,
+        atoms: Self::Atoms,
+        atoms_opposite: <Self::Opposite as SideMarker>::Atoms,
+    ) -> Result<(), GoblinError> {
+        match token_pair {
+            ValidatedTokenPair::ERC20ERC20(ERC20TokenPair {
+                base_token,
+                quote_token,
+            }) => {
+                // Side- bid
+                // The maker is filling an ask
+                // Maker gains quote and loses base
+                // Subtraction is safe because backing assets are guaranteed
+                let base_token_key = ERC20StoreKey::new(maker, base_token.address());
+                let mut base_token_store = ERC20Store::load(&base_token_key);
+                base_token_store.as_mut().atoms_locked -= atoms_opposite.into();
+                base_token_store.as_mut().store(&base_token_key);
+
+                // Overflow on adding is acceptable. The taker's balance will be wiped.
+                let quote_token_key = ERC20StoreKey::new(maker, quote_token.address());
+                let mut quote_token_store = ERC20Store::load(&quote_token_key);
+                quote_token_store.as_mut().atoms_free += atoms.into();
+                quote_token_store.as_mut().store(&quote_token_key);
+            }
+            ValidatedTokenPair::ETHERC20(quote_token) => {
+                let base_token_key = EthStoreKey::new(maker);
+                let mut base_token_store = EthStore::load(&base_token_key);
+                base_token_store.as_mut().atoms_locked -= atoms_opposite.into();
+                base_token_store.as_mut().store(&base_token_key);
+
+                let quote_token_key = ERC20StoreKey::new(maker, quote_token.address());
+                let mut quote_token_store = ERC20Store::load(&quote_token_key);
+                quote_token_store.as_mut().atoms_free += atoms.into();
+                quote_token_store.as_mut().store(&quote_token_key);
+            }
+            ValidatedTokenPair::ERC20ETH(base_token) => {
+                let base_token_key = ERC20StoreKey::new(maker, base_token.address());
+                let mut base_token_store = ERC20Store::load(&base_token_key);
+                base_token_store.as_mut().atoms_locked -= atoms_opposite.into();
+                base_token_store.as_mut().store(&base_token_key);
+
+                let quote_token_key = EthStoreKey::new(maker);
+                let mut quote_token_store = EthStore::load(&quote_token_key);
+                quote_token_store.as_mut().atoms_free += atoms.into();
+                quote_token_store.as_mut().store(&quote_token_key);
+            }
+        }
+        Ok(())
     }
 }
 
@@ -161,6 +239,7 @@ impl SideMarker for Ask {
     type MatchingLots = BaseLots;
     type LotSize = BaseLotsPerBaseUnit;
     type Atoms = BaseAtoms;
+    type AtomsPerLot = BaseAtomsPerBaseLot;
     type Opposite = Bid;
 
     const DEFAULT_PRICE_LIMIT: Ticks = Ticks::ZERO;
@@ -216,11 +295,65 @@ impl SideMarker for Ask {
         indexed_market.base_lot_size
     }
 
+    fn atoms_per_lot(indexed_market: &IndexedMarket) -> Self::AtomsPerLot {
+        indexed_market.base_atoms_per_base_lot()
+    }
+
     fn consumed_for_side(market_delta: &mut MarketLotsDelta) -> &mut Self::DeltaLots {
         &mut market_delta.base_lots_consumed
     }
 
     fn locked_for_side(market_delta: &mut MarketLotsDelta) -> &mut Self::DeltaLots {
         &mut market_delta.base_lots_locked
+    }
+
+    fn update_maker_stores(
+        token_pair: &ValidatedTokenPair,
+        maker: &Address,
+        atoms: Self::Atoms,
+        atoms_opposite: <Self::Opposite as SideMarker>::Atoms,
+    ) -> Result<(), GoblinError> {
+        match token_pair {
+            ValidatedTokenPair::ERC20ERC20(ERC20TokenPair {
+                base_token,
+                quote_token,
+            }) => {
+                // Side- ask
+                // The maker is filling a bid
+                // Maker gains base and loses quote
+                let base_token_key = ERC20StoreKey::new(maker, base_token.address());
+                let mut base_token_store = ERC20Store::load(&base_token_key);
+                base_token_store.as_mut().atoms_free += atoms.into();
+                base_token_store.as_mut().store(&base_token_key);
+
+                let quote_token_key = ERC20StoreKey::new(maker, quote_token.address());
+                let mut quote_token_store = ERC20Store::load(&quote_token_key);
+                quote_token_store.as_mut().atoms_locked -= atoms_opposite.into();
+                quote_token_store.as_mut().store(&quote_token_key);
+            }
+            ValidatedTokenPair::ETHERC20(quote_token) => {
+                let base_token_key = EthStoreKey::new(maker);
+                let mut base_token_store = EthStore::load(&base_token_key);
+                base_token_store.as_mut().atoms_free += atoms.into();
+                base_token_store.as_mut().store(&base_token_key);
+
+                let quote_token_key = ERC20StoreKey::new(maker, quote_token.address());
+                let mut quote_token_store = ERC20Store::load(&quote_token_key);
+                quote_token_store.as_mut().atoms_locked -= atoms_opposite.into();
+                quote_token_store.as_mut().store(&quote_token_key);
+            }
+            ValidatedTokenPair::ERC20ETH(base_token) => {
+                let base_token_key = ERC20StoreKey::new(maker, base_token.address());
+                let mut base_token_store = ERC20Store::load(&base_token_key);
+                base_token_store.as_mut().atoms_free += atoms.into();
+                base_token_store.as_mut().store(&base_token_key);
+
+                let quote_token_key = EthStoreKey::new(maker);
+                let mut quote_token_store = EthStore::load(&quote_token_key);
+                quote_token_store.as_mut().atoms_locked -= atoms_opposite.into();
+                quote_token_store.as_mut().store(&quote_token_key);
+            }
+        }
+        Ok(())
     }
 }

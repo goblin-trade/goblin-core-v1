@@ -5,6 +5,7 @@ use crate::{
     quantities::Ticks,
     require,
     state::{MarketState, RestingOrder, RestingOrderKey, SlotState},
+    tokens::{TokenIndex, ValidatedTokenPair},
     types::{Address, SideMarker},
 };
 
@@ -14,7 +15,8 @@ pub struct MatchResult<S: SideMarker> {
     pub released_by_self_trade: <S::Opposite as SideMarker>::Lots,
 }
 
-pub fn match_order_v2<S: SideMarker>(
+pub fn match_order<S: SideMarker>(
+    token_pair: &ValidatedTokenPair,
     taker: &Address,
     indexed_market: &IndexedMarket,
     market_state: &mut MarketState,
@@ -58,38 +60,49 @@ pub fn match_order_v2<S: SideMarker>(
         );
         let mut resting_order = RestingOrder::load(&resting_order_key);
         let RestingOrder {
-            trader,
+            trader: maker,
             size: resting_order_size,
         } = *resting_order.as_ref();
 
-        // Self trade- close the resting order and mark lots for release
-        if trader == *taker {
-            released += S::Opposite::get_quote_from_base_lots(
-                resting_order_size,
-                indexed_market.tick_size,
-                price,
-            );
-
-            continue;
-        }
-
         let quote =
             S::get_quote_from_base_lots(resting_order_size, indexed_market.tick_size, price);
+        let quote_opposite = S::Opposite::get_quote_from_base_lots(
+            resting_order_size,
+            indexed_market.tick_size,
+            price,
+        );
+
+        // Self trade- close the resting order and mark lots for release
+        if maker == *taker {
+            released += quote_opposite;
+            continue;
+        }
 
         if remaining_budget > quote {
             // Entire quote consumed but budget remains. Iterate to clear the last order and read the next one.
             // Equal to case- we need to call next() to clear the last order.
-
             remaining_budget -= quote;
-            matched_opposite += S::Opposite::get_quote_from_base_lots(
-                resting_order_size,
-                indexed_market.tick_size,
-                price,
-            );
+            matched_opposite += quote_opposite;
 
-            // Update trader states of maker for base and quote
-            // This can either be EthStore or ERC20Store
-            // We need token index -> this will give either ETH or ERC20
+            // We will update stores for both the tokens in the pair
+            // side just determines whether we debit or credit
+            // convert quote and quote_opposite to Lots and then to atoms
+
+            let lots = S::get_lots_from_quote(quote, indexed_market.base_lot_size);
+            let lots_opposite =
+                S::Opposite::get_lots_from_quote(quote_opposite, indexed_market.base_lot_size);
+
+            let atoms = lots * S::atoms_per_lot(indexed_market);
+            let atoms_opposite = lots_opposite * S::Opposite::atoms_per_lot(indexed_market);
+
+            // Case- Bid
+            // - Taker loses quote, gains base
+            // - Maker loses base, gains quote
+            //
+            // Case- Ask
+            // - Taker loses base, gains quote
+            // - Maker gains quote, loses base
+            S::update_maker_stores(token_pair, &maker, atoms, atoms_opposite)?;
         } else {
             if remaining_budget == quote {
                 // Sub case where both budget and resting order are exhausted
@@ -117,7 +130,6 @@ pub fn match_order_v2<S: SideMarker>(
     }
 
     let consumed_budget = budget - remaining_budget;
-
     let matched_lots = S::get_lots_from_quote(consumed_budget, indexed_market.base_lot_size);
     require!(
         matched_lots >= min_lots_to_fill,
