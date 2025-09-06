@@ -5,6 +5,7 @@ use crate::{
         BaseLotsPerBaseUnit, MarketLotsDelta, QuoteAtoms, QuoteAtomsPerQuoteLot, QuoteLots,
         QuoteLotsDelta, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit, Ticks,
     },
+    settlement::{MakerDeltasForSide, MarketMakerDelta},
     state::{MakerStore, MarketState},
 };
 
@@ -16,6 +17,7 @@ pub trait SideMarker {
     type Lots: Copy
         + PartialOrd
         + Default
+        + core::ops::AddAssign
         + From<u64>
         + core::ops::Mul<Self::AtomsPerLot, Output = Self::Atoms>;
 
@@ -106,6 +108,18 @@ pub trait SideMarker {
         atoms: Self::Atoms,
         atoms_opposite: <Self::Opposite as SideMarker>::Atoms,
     );
+
+    fn update_maker_deltas(
+        market_maker_delta: &mut MarketMakerDelta,
+        lots: Self::Lots,
+        lots_opposite: <Self::Opposite as SideMarker>::Lots,
+    );
+
+    fn maker_deltas_for_side<'a>(
+        market_maker_delta: &'a mut MarketMakerDelta,
+    ) -> &'a mut MakerDeltasForSide<Self>
+    where
+        Self: Sized;
 }
 
 impl SideMarker for Bid {
@@ -195,6 +209,19 @@ impl SideMarker for Bid {
         base_store.reduce_locked(atoms_opposite.into());
         quote_store.add_free(atoms.into());
     }
+
+    fn update_maker_deltas(
+        market_maker_delta: &mut MarketMakerDelta,
+        lots: Self::Lots,
+        lots_opposite: <Self::Opposite as SideMarker>::Lots,
+    ) {
+    }
+
+    fn maker_deltas_for_side<'a>(
+        market_maker_delta: &'a mut MarketMakerDelta,
+    ) -> &'a mut MakerDeltasForSide<Self> {
+        &mut market_maker_delta.maker_deltas_for_bid
+    }
 }
 
 impl SideMarker for Ask {
@@ -283,5 +310,18 @@ impl SideMarker for Ask {
         // Overflow on addition, i.e. maker overflowing to 0 balance is acceptable.
         base_store.add_free(atoms.into());
         quote_store.reduce_locked(atoms_opposite.into());
+    }
+
+    fn update_maker_deltas(
+        market_maker_delta: &mut MarketMakerDelta,
+        lots: Self::Lots,
+        lots_opposite: <Self::Opposite as SideMarker>::Lots,
+    ) {
+    }
+
+    fn maker_deltas_for_side<'a>(
+        market_maker_delta: &'a mut MarketMakerDelta,
+    ) -> &'a mut MakerDeltasForSide<Self> {
+        &mut market_maker_delta.maker_deltas_for_ask
     }
 }

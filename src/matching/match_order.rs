@@ -4,8 +4,8 @@ use crate::{
     matching::quote_iterator::RestingOrderPositionIterator,
     quantities::Ticks,
     require,
+    settlement::MarketMakerDeltas,
     state::{MarketState, RestingOrder, RestingOrderKey, SlotState},
-    tokens::{TokenIndex, ValidatedTokenPair},
     types::{Address, SideMarker},
 };
 
@@ -16,7 +16,7 @@ pub struct MatchResult<S: SideMarker> {
 }
 
 pub fn match_order<S: SideMarker>(
-    token_pair: &ValidatedTokenPair,
+    maker_deltas: &mut MarketMakerDeltas,
     taker: &Address,
     indexed_market: &IndexedMarket,
     market_state: &mut MarketState,
@@ -81,8 +81,6 @@ pub fn match_order<S: SideMarker>(
         // Entire quote consumed but budget remains. Iterate to clear the last order and read the next one.
         // Equal to case- we need to call next() to clear the last order.
         if remaining_budget > quote {
-            // taker loses quote, gains quote_opposite
-            // maker gains atoms, loses atoms_opposite
             remaining_budget -= quote;
             matched_opposite += quote_opposite;
 
@@ -90,10 +88,7 @@ pub fn match_order<S: SideMarker>(
             let lots_opposite =
                 S::Opposite::get_lots_from_quote(quote_opposite, indexed_market.base_lot_size);
 
-            let atoms = lots * S::atoms_per_lot(indexed_market);
-            let atoms_opposite = lots_opposite * S::Opposite::atoms_per_lot(indexed_market);
-
-            token_pair.update_maker_stores::<S>(&maker, atoms, atoms_opposite)?;
+            maker_deltas.update_match::<S>(&maker, lots, lots_opposite)?;
         } else {
             if remaining_budget == quote {
                 // Sub case where both budget and resting order are exhausted

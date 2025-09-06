@@ -75,24 +75,17 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
 
         let mut market_state = MarketState::load(&market_key);
 
-        // Deltas for taker
+        // Deltas for taker and makers
         let mut taker_delta = MarketLotsDelta::default();
+        let mut maker_deltas = MarketMakerDeltas::default();
 
-        let mut market_maker_deltas = MarketMakerDeltas::default();
-
-        // For a bid, maker is ask
-        // maker loses base (unlock base) and gains quote (free quote)
-        // That is both deltas are simultaneously updated. We should have a single array
-        //
-        // maker_deltas.match::<S>(quote, quote_opposite)
-        // - Add quote to free and subtract quote_opposite from locked
         if market_instructions.take_bid() {
             ix_take::<Bid>(
-                &token_pair,
                 msg_sender.as_ref(),
                 &indexed_market,
                 market_state.as_mut(),
                 &mut taker_delta,
+                &mut maker_deltas,
                 args_buffer.as_ref(),
                 len,
                 &mut args.offset,
@@ -101,11 +94,11 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
 
         if market_instructions.take_ask() {
             ix_take::<Ask>(
-                &token_pair,
                 msg_sender.as_ref(),
                 &indexed_market,
                 market_state.as_mut(),
                 &mut taker_delta,
+                &mut maker_deltas,
                 args_buffer.as_ref(),
                 len,
                 &mut args.offset,
