@@ -78,15 +78,13 @@ pub fn match_order<S: SideMarker>(
             continue;
         }
 
+        // Entire quote consumed but budget remains. Iterate to clear the last order and read the next one.
+        // Equal to case- we need to call next() to clear the last order.
         if remaining_budget > quote {
-            // Entire quote consumed but budget remains. Iterate to clear the last order and read the next one.
-            // Equal to case- we need to call next() to clear the last order.
+            // taker loses quote, gains quote_opposite
+            // maker gains atoms, loses atoms_opposite
             remaining_budget -= quote;
             matched_opposite += quote_opposite;
-
-            // We will update stores for both the tokens in the pair
-            // side just determines whether we debit or credit
-            // convert quote and quote_opposite to Lots and then to atoms
 
             let lots = S::get_lots_from_quote(quote, indexed_market.base_lot_size);
             let lots_opposite =
@@ -95,14 +93,7 @@ pub fn match_order<S: SideMarker>(
             let atoms = lots * S::atoms_per_lot(indexed_market);
             let atoms_opposite = lots_opposite * S::Opposite::atoms_per_lot(indexed_market);
 
-            // Case- Bid
-            // - Taker loses quote, gains base
-            // - Maker loses base, gains quote
-            //
-            // Case- Ask
-            // - Taker loses base, gains quote
-            // - Maker gains quote, loses base
-            S::update_maker_stores(token_pair, &maker, atoms, atoms_opposite)?;
+            token_pair.update_maker_stores::<S>(&maker, atoms, atoms_opposite)?;
         } else {
             if remaining_budget == quote {
                 // Sub case where both budget and resting order are exhausted

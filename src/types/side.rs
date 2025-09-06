@@ -1,14 +1,11 @@
 use crate::{
-    goblin_error::GoblinError,
     markets::IndexedMarket,
     quantities::{
         AdjustedQuoteLots, BaseAtoms, BaseAtomsPerBaseLot, BaseLots, BaseLotsDelta,
         BaseLotsPerBaseUnit, MarketLotsDelta, QuoteAtoms, QuoteAtomsPerQuoteLot, QuoteLots,
         QuoteLotsDelta, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit, Ticks,
     },
-    state::{ERC20Store, ERC20StoreKey, EthStore, EthStoreKey, MarketState, SlotState},
-    tokens::{ERC20TokenPair, ValidatedTokenPair},
-    types::Address,
+    state::{MakerStore, MarketState},
 };
 
 pub struct Bid;
@@ -95,15 +92,20 @@ pub trait SideMarker {
 
     fn locked_for_side(market_delta: &mut MarketLotsDelta) -> &mut Self::DeltaLots;
 
-    // Update token stores for the maker where 'S' is the taker side.
-    // - If side is Bid, the maker is executing an Ask.
-    // - If side is Ask, the maker is executing a Bid.
+    /// Update token stores for a maker upon a match
+    ///
+    /// # Arguments
+    ///
+    /// * `base_store`- The base store
+    /// * `quote_store` - The quote stoore
+    /// * `atoms`- The atoms lost by the taker. Add to the maker's free tokens.
+    /// * `atoms_opposite`- The atoms gained by the maker. Subtract from maker's locked tokens.
     fn update_maker_stores(
-        token_pair: &ValidatedTokenPair,
-        maker: &Address,
+        base_store: &mut impl MakerStore,
+        quote_store: &mut impl MakerStore,
         atoms: Self::Atoms,
         atoms_opposite: <Self::Opposite as SideMarker>::Atoms,
-    ) -> Result<(), GoblinError>;
+    );
 }
 
 impl SideMarker for Bid {
@@ -181,55 +183,17 @@ impl SideMarker for Bid {
     }
 
     fn update_maker_stores(
-        token_pair: &ValidatedTokenPair,
-        maker: &Address,
+        base_store: &mut impl MakerStore,
+        quote_store: &mut impl MakerStore,
         atoms: Self::Atoms,
         atoms_opposite: <Self::Opposite as SideMarker>::Atoms,
-    ) -> Result<(), GoblinError> {
-        match token_pair {
-            ValidatedTokenPair::ERC20ERC20(ERC20TokenPair {
-                base_token,
-                quote_token,
-            }) => {
-                // Side- bid
-                // The maker is filling an ask
-                // Maker gains quote and loses base
-                // Subtraction is safe because backing assets are guaranteed
-                let base_token_key = ERC20StoreKey::new(maker, base_token.address());
-                let mut base_token_store = ERC20Store::load(&base_token_key);
-                base_token_store.as_mut().atoms_locked -= atoms_opposite.into();
-                base_token_store.as_mut().store(&base_token_key);
-
-                // Overflow on adding is acceptable. The taker's balance will be wiped.
-                let quote_token_key = ERC20StoreKey::new(maker, quote_token.address());
-                let mut quote_token_store = ERC20Store::load(&quote_token_key);
-                quote_token_store.as_mut().atoms_free += atoms.into();
-                quote_token_store.as_mut().store(&quote_token_key);
-            }
-            ValidatedTokenPair::ETHERC20(quote_token) => {
-                let base_token_key = EthStoreKey::new(maker);
-                let mut base_token_store = EthStore::load(&base_token_key);
-                base_token_store.as_mut().atoms_locked -= atoms_opposite.into();
-                base_token_store.as_mut().store(&base_token_key);
-
-                let quote_token_key = ERC20StoreKey::new(maker, quote_token.address());
-                let mut quote_token_store = ERC20Store::load(&quote_token_key);
-                quote_token_store.as_mut().atoms_free += atoms.into();
-                quote_token_store.as_mut().store(&quote_token_key);
-            }
-            ValidatedTokenPair::ERC20ETH(base_token) => {
-                let base_token_key = ERC20StoreKey::new(maker, base_token.address());
-                let mut base_token_store = ERC20Store::load(&base_token_key);
-                base_token_store.as_mut().atoms_locked -= atoms_opposite.into();
-                base_token_store.as_mut().store(&base_token_key);
-
-                let quote_token_key = EthStoreKey::new(maker);
-                let mut quote_token_store = EthStore::load(&quote_token_key);
-                quote_token_store.as_mut().atoms_free += atoms.into();
-                quote_token_store.as_mut().store(&quote_token_key);
-            }
-        }
-        Ok(())
+    ) {
+        // For side bid, the maker is filling an ask.
+        // Maker loses base and gains quote.
+        // Subtraction is safe because backing assets are guaranteed.
+        // Overflow on addition, i.e. maker overflowing to 0 balance is acceptable.
+        base_store.reduce_locked(atoms_opposite.into());
+        quote_store.add_free(atoms.into());
     }
 }
 
@@ -308,52 +272,16 @@ impl SideMarker for Ask {
     }
 
     fn update_maker_stores(
-        token_pair: &ValidatedTokenPair,
-        maker: &Address,
+        base_store: &mut impl MakerStore,
+        quote_store: &mut impl MakerStore,
         atoms: Self::Atoms,
         atoms_opposite: <Self::Opposite as SideMarker>::Atoms,
-    ) -> Result<(), GoblinError> {
-        match token_pair {
-            ValidatedTokenPair::ERC20ERC20(ERC20TokenPair {
-                base_token,
-                quote_token,
-            }) => {
-                // Side- ask
-                // The maker is filling a bid
-                // Maker gains base and loses quote
-                let base_token_key = ERC20StoreKey::new(maker, base_token.address());
-                let mut base_token_store = ERC20Store::load(&base_token_key);
-                base_token_store.as_mut().atoms_free += atoms.into();
-                base_token_store.as_mut().store(&base_token_key);
-
-                let quote_token_key = ERC20StoreKey::new(maker, quote_token.address());
-                let mut quote_token_store = ERC20Store::load(&quote_token_key);
-                quote_token_store.as_mut().atoms_locked -= atoms_opposite.into();
-                quote_token_store.as_mut().store(&quote_token_key);
-            }
-            ValidatedTokenPair::ETHERC20(quote_token) => {
-                let base_token_key = EthStoreKey::new(maker);
-                let mut base_token_store = EthStore::load(&base_token_key);
-                base_token_store.as_mut().atoms_free += atoms.into();
-                base_token_store.as_mut().store(&base_token_key);
-
-                let quote_token_key = ERC20StoreKey::new(maker, quote_token.address());
-                let mut quote_token_store = ERC20Store::load(&quote_token_key);
-                quote_token_store.as_mut().atoms_locked -= atoms_opposite.into();
-                quote_token_store.as_mut().store(&quote_token_key);
-            }
-            ValidatedTokenPair::ERC20ETH(base_token) => {
-                let base_token_key = ERC20StoreKey::new(maker, base_token.address());
-                let mut base_token_store = ERC20Store::load(&base_token_key);
-                base_token_store.as_mut().atoms_free += atoms.into();
-                base_token_store.as_mut().store(&base_token_key);
-
-                let quote_token_key = EthStoreKey::new(maker);
-                let mut quote_token_store = EthStore::load(&quote_token_key);
-                quote_token_store.as_mut().atoms_locked -= atoms_opposite.into();
-                quote_token_store.as_mut().store(&quote_token_key);
-            }
-        }
-        Ok(())
+    ) {
+        // For side ask, the maker is filling a bid.
+        // Maker gains base and loses quote.
+        // Subtraction is safe because backing assets are guaranteed.
+        // Overflow on addition, i.e. maker overflowing to 0 balance is acceptable.
+        base_store.add_free(atoms.into());
+        quote_store.reduce_locked(atoms_opposite.into());
     }
 }
