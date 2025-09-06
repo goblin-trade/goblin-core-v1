@@ -4,15 +4,23 @@ use crate::{
     matching::quote_iterator::RestingOrderPositionIterator,
     quantities::Ticks,
     require,
-    settlement::MarketMakerDeltas,
+    settlement::{MakerDeltasForSide, MarketMakerDeltas},
     state::{MarketState, RestingOrder, RestingOrderKey, SlotState},
     types::{Address, SideMarker},
 };
 
 pub struct MatchResult<S: SideMarker> {
-    pub lots_in: S::Lots,
-    pub lots_out: <S::Opposite as SideMarker>::Lots,
+    pub delta: MakerDeltasForSide<S>,
     pub released_by_self_trade: <S::Opposite as SideMarker>::Lots,
+}
+
+impl<S: SideMarker> Default for MatchResult<S> {
+    fn default() -> Self {
+        Self {
+            delta: MakerDeltasForSide::default(),
+            released_by_self_trade: <S::Opposite as SideMarker>::Lots::default(),
+        }
+    }
 }
 
 pub fn match_order<S: SideMarker>(
@@ -38,11 +46,7 @@ pub fn match_order<S: SideMarker>(
             GoblinError::TakerPriceLimitReached
         );
 
-        return Ok(MatchResult {
-            lots_in: S::Lots::from(0),
-            lots_out: <S::Opposite as SideMarker>::Lots::from(0),
-            released_by_self_trade: <S::Opposite as SideMarker>::Lots::from(0),
-        });
+        return Ok(MatchResult::default());
     }
 
     let mut quote_iterator = RestingOrderPositionIterator::<S::Opposite>::new(best_opposite_price);
@@ -128,10 +132,17 @@ pub fn match_order<S: SideMarker>(
         S::Opposite::get_lots_from_quote(released, indexed_market.base_lot_size);
     // Update deltas
     Ok(MatchResult {
-        lots_in: matched_lots,
-        lots_out: matched_lots_opposite,
+        delta: MakerDeltasForSide {
+            locked_lots_out: matched_lots_opposite,
+            free_lots_in: matched_lots,
+        },
         released_by_self_trade,
     })
+    // Ok(MatchResult {
+    //     lots_in: matched_lots,
+    //     lots_out: matched_lots_opposite,
+    //     released_by_self_trade,
+    // })
 }
 
 // pub fn match_order<S: SideMarker>(
