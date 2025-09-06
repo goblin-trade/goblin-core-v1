@@ -5,7 +5,7 @@ use crate::{
     input_processor::Args,
     instructions::ix_take,
     quantities::MarketLotsDelta,
-    settlement::TokenDeltas,
+    settlement::{MarketMakerDeltas, OppositeDeltas, TokenDeltas},
     state::{MarketKey, MarketState, SlotState},
     tokens::ValidatedTokenPair,
     types::{Ask, Bid},
@@ -46,7 +46,15 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
         args.erc20_delta_list,
     )?;
 
+    let mut opposite_deltas = OppositeDeltas::default();
+
     for market_instructions in args.market_instructions_list {
+        // We now need 2 delta arrays
+        // - base_lot_deltas
+        // - quote_lot_deltas
+        //
+        // They just have maker address, not token
+        // Map into opposite_deltas in the end
         let indexed_market = market_instructions
             .market_index
             .to_indexed_market(args.custom_market_list)?;
@@ -66,15 +74,25 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
         );
 
         let mut market_state = MarketState::load(&market_key);
-        let mut market_lots_delta = MarketLotsDelta::default();
 
+        // Deltas for taker
+        let mut taker_delta = MarketLotsDelta::default();
+
+        let mut market_maker_deltas = MarketMakerDeltas::default();
+
+        // For a bid, maker is ask
+        // maker loses base (unlock base) and gains quote (free quote)
+        // That is both deltas are simultaneously updated. We should have a single array
+        //
+        // maker_deltas.match::<S>(quote, quote_opposite)
+        // - Add quote to free and subtract quote_opposite from locked
         if market_instructions.take_bid() {
             ix_take::<Bid>(
                 &token_pair,
                 msg_sender.as_ref(),
                 &indexed_market,
                 market_state.as_mut(),
-                &mut market_lots_delta,
+                &mut taker_delta,
                 args_buffer.as_ref(),
                 len,
                 &mut args.offset,
@@ -87,7 +105,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
                 msg_sender.as_ref(),
                 &indexed_market,
                 market_state.as_mut(),
-                &mut market_lots_delta,
+                &mut taker_delta,
                 args_buffer.as_ref(),
                 len,
                 &mut args.offset,
@@ -98,7 +116,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
         market_state.as_mut().store(&market_key);
 
         // Apply market delta to token deltas
-        token_deltas.apply_market_delta(&indexed_market, &market_lots_delta)?;
+        token_deltas.apply_market_delta(&indexed_market, &taker_delta)?;
     }
 
     // for _ in 0..args.header.ix_post_only_count {}
