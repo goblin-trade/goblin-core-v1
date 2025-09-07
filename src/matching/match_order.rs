@@ -92,7 +92,11 @@ pub fn match_order<S: SideMarker>(
             let lots_opposite =
                 S::Opposite::get_lots_from_quote(quote_opposite, indexed_market.base_lot_size);
 
-            pending_maker_updates.accumulate_match_result::<S>(&maker, lots, lots_opposite)?;
+            let pending_maker_update_mut = pending_maker_updates
+                .get_or_insert_mut(&maker)
+                .ok_or(GoblinError::DeltaListFull)?;
+
+            pending_maker_update_mut.accumulate_match_result::<S>(lots, lots_opposite)?;
         } else {
             if remaining_budget == quote {
                 // Sub case where both budget and resting order are exhausted

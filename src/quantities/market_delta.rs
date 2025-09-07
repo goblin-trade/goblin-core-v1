@@ -31,8 +31,8 @@ impl MarketLotsDelta {
     ) -> Result<(), GoblinError> {
         *S::consumed_for_side(self) =
             S::consumed_for_side(self).add(match_result.pending_update.free_lots_in)?;
-        *S::Opposite::consumed_for_side(self) =
-            S::Opposite::consumed_for_side(self).sub(match_result.pending_update.locked_lots_out)?;
+        *S::Opposite::consumed_for_side(self) = S::Opposite::consumed_for_side(self)
+            .sub(match_result.pending_update.locked_lots_out)?;
 
         *S::Opposite::locked_for_side(self) =
             S::Opposite::locked_for_side(self).sub(match_result.released_by_self_trade)?;

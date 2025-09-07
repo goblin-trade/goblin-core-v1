@@ -19,29 +19,29 @@ impl<K, V, const N: usize> FixedMap<K, V, N> {
         }
     }
 
-    fn find_index(&self, key: &K) -> Option<usize>
-    where
-        K: PartialEq,
-    {
-        for i in 0..self.len {
-            // SAFETY: slots [0..len) are initialized
-            let (k, _) = unsafe { &*self.entries[i].as_ptr() };
-            if *k == *key {
-                return Some(i);
-            }
-        }
-        None
-    }
+    // fn find_index(&self, key: &K) -> Option<usize>
+    // where
+    //     K: PartialEq,
+    // {
+    //     for i in 0..self.len {
+    //         // SAFETY: slots [0..len) are initialized
+    //         let (k, _) = unsafe { &*self.entries[i].as_ptr() };
+    //         if *k == *key {
+    //             return Some(i);
+    //         }
+    //     }
+    //     None
+    // }
 
-    pub fn get_mut(&mut self, key: &K) -> Option<&mut V>
-    where
-        K: PartialEq,
-    {
-        self.find_index(key)
-            .map(|i| unsafe { &mut (*self.entries[i].as_mut_ptr()).1 })
-    }
+    // pub fn get_mut(&mut self, key: &K) -> Option<&mut V>
+    // where
+    //     K: PartialEq,
+    // {
+    //     self.find_index(key)
+    //         .map(|i| unsafe { &mut (*self.entries[i].as_mut_ptr()).1 })
+    // }
 
-    pub fn get_or_insert(&mut self, key: &K) -> Option<&mut V>
+    pub fn get_or_insert_mut(&mut self, key: &K) -> Option<&mut V>
     where
         K: PartialEq + Clone + Copy,
         V: Default,

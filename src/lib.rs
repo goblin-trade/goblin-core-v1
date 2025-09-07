@@ -5,7 +5,7 @@ use crate::{
     input_processor::Args,
     instructions::ix_take,
     quantities::MarketLotsDelta,
-    settlement::{OppositeDeltas, PendingMakerUpdates, PendingMakerUpdatesV2, TokenDeltas},
+    settlement::{OppositeDeltas, PendingMakerUpdates, TokenDeltas},
     state::{MarketKey, MarketState, SlotState},
     tokens::ValidatedTokenPair,
     types::{Ask, Bid},
@@ -78,9 +78,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
 
         // Deltas for taker and makers
         let mut market_delta = MarketLotsDelta::default();
-        let mut pending_maker_updates = PendingMakerUpdates::default();
-
-        let mut pending_maker_updatesV2 = PendingMakerUpdatesV2::new();
+        let mut pending_maker_updates = PendingMakerUpdates::new();
 
         if market_instructions.take_bid() {
             let match_result = ix_take::<Bid>(
