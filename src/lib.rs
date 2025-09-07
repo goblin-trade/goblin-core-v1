@@ -5,7 +5,7 @@ use crate::{
     input_processor::Args,
     instructions::ix_take,
     quantities::MarketLotsDelta,
-    settlement::{MarketMakerDeltas, OppositeDeltas, TokenDeltas},
+    settlement::{OppositeDeltas, PendingMakerUpdates, TokenDeltas},
     state::{MarketKey, MarketState, SlotState},
     tokens::ValidatedTokenPair,
     types::{Ask, Bid},
@@ -76,67 +76,42 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
         let mut market_state = MarketState::load(&market_key);
 
         // Deltas for taker and makers
-        let mut taker_delta = MarketLotsDelta::default();
-        let mut maker_deltas = MarketMakerDeltas::default();
+        let mut market_delta = MarketLotsDelta::default();
+        let mut pending_maker_updates = PendingMakerUpdates::default();
 
         if market_instructions.take_bid() {
-            ix_take::<Bid>(
+            let match_result = ix_take::<Bid>(
                 msg_sender.as_ref(),
                 &indexed_market,
                 market_state.as_mut(),
-                &mut taker_delta,
-                &mut maker_deltas,
+                &mut pending_maker_updates,
                 args_buffer.as_ref(),
                 len,
                 &mut args.offset,
             )?;
+
+            market_delta.apply_match_result(&match_result)?;
         }
 
         if market_instructions.take_ask() {
-            ix_take::<Ask>(
+            let match_result = ix_take::<Ask>(
                 msg_sender.as_ref(),
                 &indexed_market,
                 market_state.as_mut(),
-                &mut taker_delta,
-                &mut maker_deltas,
+                &mut pending_maker_updates,
                 args_buffer.as_ref(),
                 len,
                 &mut args.offset,
             )?;
+            market_delta.apply_match_result(&match_result)?;
         }
 
         // Write market state to slot
         market_state.as_mut().store(&market_key);
 
         // Apply market delta to token deltas
-        token_deltas.apply_market_delta(&indexed_market, &taker_delta)?;
+        token_deltas.apply_market_delta(&indexed_market, &market_delta)?;
     }
-
-    // for _ in 0..args.header.ix_post_only_count {}
-
-    // for _ in 0..args.header.ix_reduce_count {
-    //     // Decode bytes one by one
-    //     // This instruction has variable number of bytes
-    //     ix_reduce_orders(
-    //         args_buffer.as_ref(),
-    //         len,
-    //         &mut args.offset,
-    //         args.custom_market_list,
-    //         args.custom_erc20_list,
-    //         &mut token_deltas,
-    //     )?;
-    // }
-
-    // for _ in 0..args.header.ix_take_only_count {
-    //     ix_take(
-    //         args_buffer.as_ref(),
-    //         len,
-    //         &mut args.offset,
-    //         args.custom_market_list,
-    //         args.custom_erc20_list,
-    //         &mut token_deltas,
-    //     )?;
-    // }
 
     // Settlement
     token_deltas.settle(

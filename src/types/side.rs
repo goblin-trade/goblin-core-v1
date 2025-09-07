@@ -7,7 +7,7 @@ use crate::{
         BaseLotsPerBaseUnit, MarketLotsDelta, QuoteAtoms, QuoteAtomsPerQuoteLot, QuoteLots,
         QuoteLotsDelta, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit, Ticks,
     },
-    settlement::{MakerDeltasForSide, MarketMakerDelta},
+    settlement::{MakerUpdate, MakerUpdateSide},
     state::{MakerStore, MarketState},
 };
 
@@ -112,14 +112,14 @@ pub trait SideMarker {
     );
 
     fn update_maker_deltas(
-        market_maker_delta: &mut MarketMakerDelta,
+        market_maker_delta: &mut MakerUpdate,
         lots: Self::Lots,
         lots_opposite: <Self::Opposite as SideMarker>::Lots,
     );
 
     fn maker_deltas_for_side<'a>(
-        market_maker_delta: &'a mut MarketMakerDelta,
-    ) -> &'a mut MakerDeltasForSide<Self>
+        market_maker_delta: &'a mut MakerUpdate,
+    ) -> &'a mut MakerUpdateSide<Self>
     where
         Self: Sized;
 }
@@ -213,16 +213,16 @@ impl SideMarker for Bid {
     }
 
     fn update_maker_deltas(
-        market_maker_delta: &mut MarketMakerDelta,
+        market_maker_delta: &mut MakerUpdate,
         lots: Self::Lots,
         lots_opposite: <Self::Opposite as SideMarker>::Lots,
     ) {
     }
 
     fn maker_deltas_for_side<'a>(
-        market_maker_delta: &'a mut MarketMakerDelta,
-    ) -> &'a mut MakerDeltasForSide<Self> {
-        &mut market_maker_delta.maker_deltas_for_bid
+        market_maker_delta: &'a mut MakerUpdate,
+    ) -> &'a mut MakerUpdateSide<Self> {
+        &mut market_maker_delta.bid
     }
 }
 
@@ -315,15 +315,15 @@ impl SideMarker for Ask {
     }
 
     fn update_maker_deltas(
-        market_maker_delta: &mut MarketMakerDelta,
+        market_maker_delta: &mut MakerUpdate,
         lots: Self::Lots,
         lots_opposite: <Self::Opposite as SideMarker>::Lots,
     ) {
     }
 
     fn maker_deltas_for_side<'a>(
-        market_maker_delta: &'a mut MarketMakerDelta,
-    ) -> &'a mut MakerDeltasForSide<Self> {
-        &mut market_maker_delta.maker_deltas_for_ask
+        market_maker_delta: &'a mut MakerUpdate,
+    ) -> &'a mut MakerUpdateSide<Self> {
+        &mut market_maker_delta.ask
     }
 }

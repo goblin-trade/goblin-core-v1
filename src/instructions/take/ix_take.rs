@@ -3,11 +3,9 @@ use crate::{
     input_processor::ArgsBuffer,
     instructions::take::take_packet::TakePacket,
     markets::IndexedMarket,
-    matching::match_order,
-    quantities::MarketLotsDelta,
-    settlement::MarketMakerDeltas,
+    matching::{match_order, MatchResult},
+    settlement::PendingMakerUpdates,
     state::MarketState,
-    tokens::ValidatedTokenPair,
     types::{Address, SideMarker},
 };
 
@@ -15,23 +13,20 @@ pub fn ix_take<S: SideMarker>(
     taker: &Address,
     indexed_market: &IndexedMarket,
     market_state: &mut MarketState,
-    taker_delta: &mut MarketLotsDelta,
-    maker_deltas: &mut MarketMakerDeltas,
+    pending_maker_updates: &mut PendingMakerUpdates,
     payload: &ArgsBuffer,
     len: usize,
     offset: &mut usize,
-) -> Result<(), GoblinError> {
+) -> Result<MatchResult<S>, GoblinError> {
     let packet = TakePacket::<S>::decode(payload, len, offset)?;
 
-    let match_result = match_order::<S>(
-        maker_deltas,
+    match_order::<S>(
+        pending_maker_updates,
         taker,
         indexed_market,
         market_state,
         packet.num_lots,
         packet.min_lots_to_fill,
         packet.price_limit,
-    )?;
-
-    taker_delta.apply_match_result(&match_result)
+    )
 }

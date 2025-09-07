@@ -4,27 +4,27 @@ use crate::{
     matching::quote_iterator::RestingOrderPositionIterator,
     quantities::Ticks,
     require,
-    settlement::{MakerDeltasForSide, MarketMakerDeltas},
+    settlement::{MakerUpdateSide, PendingMakerUpdates},
     state::{MarketState, RestingOrder, RestingOrderKey, SlotState},
     types::{Address, SideMarker},
 };
 
 pub struct MatchResult<S: SideMarker> {
-    pub delta: MakerDeltasForSide<S>,
+    pub pending_update: MakerUpdateSide<S>,
     pub released_by_self_trade: <S::Opposite as SideMarker>::Lots,
 }
 
 impl<S: SideMarker> Default for MatchResult<S> {
     fn default() -> Self {
         Self {
-            delta: MakerDeltasForSide::default(),
+            pending_update: MakerUpdateSide::default(),
             released_by_self_trade: <S::Opposite as SideMarker>::Lots::default(),
         }
     }
 }
 
 pub fn match_order<S: SideMarker>(
-    maker_deltas: &mut MarketMakerDeltas,
+    pending_maker_updates: &mut PendingMakerUpdates,
     taker: &Address,
     indexed_market: &IndexedMarket,
     market_state: &mut MarketState,
@@ -92,7 +92,7 @@ pub fn match_order<S: SideMarker>(
             let lots_opposite =
                 S::Opposite::get_lots_from_quote(quote_opposite, indexed_market.base_lot_size);
 
-            maker_deltas.update_match::<S>(&maker, lots, lots_opposite)?;
+            pending_maker_updates.accumulate_match_result::<S>(&maker, lots, lots_opposite)?;
         } else {
             if remaining_budget == quote {
                 // Sub case where both budget and resting order are exhausted
@@ -130,19 +130,14 @@ pub fn match_order<S: SideMarker>(
 
     let released_by_self_trade =
         S::Opposite::get_lots_from_quote(released, indexed_market.base_lot_size);
-    // Update deltas
+
     Ok(MatchResult {
-        delta: MakerDeltasForSide {
+        pending_update: MakerUpdateSide {
             locked_lots_out: matched_lots_opposite,
             free_lots_in: matched_lots,
         },
         released_by_self_trade,
     })
-    // Ok(MatchResult {
-    //     lots_in: matched_lots,
-    //     lots_out: matched_lots_opposite,
-    //     released_by_self_trade,
-    // })
 }
 
 // pub fn match_order<S: SideMarker>(
