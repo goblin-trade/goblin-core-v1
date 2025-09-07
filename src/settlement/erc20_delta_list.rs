@@ -27,7 +27,7 @@ pub struct ERC20DeltaList {
 impl ERC20DeltaList {
     fn default() -> Self {
         ERC20DeltaList {
-            inner: [MaybeUninit::<ERC20Delta>::uninit(); MAX_DELTAS],
+            inner: [const { MaybeUninit::uninit() }; MAX_DELTAS],
             len: 0,
         }
     }
