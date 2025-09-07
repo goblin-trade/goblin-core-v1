@@ -20,10 +20,8 @@ pub struct ERC20DeltaInput {
 }
 
 /// ERC20 atoms due to be deducted, locked or transferred out on settlement
-#[derive(Clone, Copy)]
+#[derive(Default, Clone, Copy)]
 pub struct ERC20Delta {
-    pub index: TokenIndex,
-
     /// Amount of atoms pending withdrawal, as read from input payload.
     ///
     /// Unlike EthDelta, withdrawal_due is of type Delta intead of Atoms.
@@ -51,9 +49,8 @@ impl DeltaAccumulator for ERC20Delta {
 }
 
 impl ERC20Delta {
-    pub fn new(index: TokenIndex, withdrawal_due: AtomsDelta) -> Self {
+    pub fn new(withdrawal_due: AtomsDelta) -> Self {
         Self {
-            index,
             withdrawal_due,
             consumed_by_engine: AtomsDelta::ZERO,
             locked_by_engine: AtomsDelta::ZERO,
@@ -68,13 +65,14 @@ impl ERC20Delta {
 
     pub fn settle(
         &mut self,
+        index: TokenIndex,
         custom_token_list: &[Address],
         msg_sender: &Address,
         recipient: Option<&Address>,
         deposit_shortfall: bool,
         withdraw_internally: bool,
     ) -> Result<(), GoblinError> {
-        match self.index.to_token(custom_token_list)? {
+        match index.to_token(custom_token_list)? {
             Token::ERC20(token) => {
                 let key = ERC20StoreKey::new(msg_sender, token.address());
                 let mut store = ERC20Store::load(&key);

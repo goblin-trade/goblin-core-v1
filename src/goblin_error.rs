@@ -8,7 +8,7 @@ pub enum GoblinError {
     CallFail = 5,
     CallResultInvalid = 6,
     TraderTokenStateEmpty = 7,
-    DeltaListFull = 8,
+    ERC20DeltaListFull = 8,
     Overflow = 9,
     Underflow = 10,
     DeltaOverflow = 11,
@@ -23,6 +23,7 @@ pub enum GoblinError {
     InvalidTakeArgs = 20,
     TakerPriceLimitReached = 21,
     InsufficientTakerFill = 22,
+    MakerListFull = 23,
 }
 
 impl GoblinError {

@@ -78,7 +78,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
 
         // Deltas for taker and makers
         let mut market_delta = MarketLotsDelta::default();
-        let mut pending_maker_updates = PendingMakerUpdates::new();
+        let mut pending_maker_updates = PendingMakerUpdates::default();
 
         if market_instructions.take_bid() {
             let match_result = ix_take::<Bid>(
