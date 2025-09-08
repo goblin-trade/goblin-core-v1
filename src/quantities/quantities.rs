@@ -26,11 +26,12 @@
 ///! to represent a tick, but we use u32 for simplicity.
 ///! * 16 bits are contributed by the outer index and 5 bits by the inner index.
 ///! * The outer index ranges from 0 to u16::MAX while the inner index ranges from 0 to 31.
-use crate::{define_custom_types, define_inter_type_operations, quantities::Ticks};
+use crate::{define_custom_type, define_inter_type_operations, quantities::Ticks};
 
-define_custom_types!(QuoteLots<u64>, QuoteAtoms<u64>);
-
-define_custom_types!(BaseLots<u64>, BaseAtoms<u64>);
+define_custom_type!(QuoteLots<u64>);
+define_custom_type!(QuoteAtoms<u64>);
+define_custom_type!(BaseLots<u64>);
+define_custom_type!(BaseAtoms<u64>);
 
 // The number of lots per unit
 //
@@ -39,9 +40,11 @@ define_custom_types!(BaseLots<u64>, BaseAtoms<u64>);
 // * MIN: 1 lot per unit, i.e. 11 lot = 10^6 atom, i.e. 1 lot = 1 unit
 //
 // A value if legal iff 10^6 % lots per unit == 0
-define_custom_types!(BaseLotsPerBaseUnit<u64>, QuoteLotsPerQuoteUnit<u64>);
+define_custom_type!(BaseLotsPerBaseUnit<u64>);
+define_custom_type!(QuoteLotsPerQuoteUnit<u64>);
 
-define_custom_types!(QuoteLotsPerBaseUnitPerTick<u64>, QuoteLotsPerBaseUnit<u64>);
+define_custom_type!(QuoteLotsPerBaseUnitPerTick<u64>);
+define_custom_type!(QuoteLotsPerBaseUnit<u64>);
 
 define_inter_type_operations!(
     QuoteLotsPerBaseUnitPerTick<u64>,
@@ -49,7 +52,7 @@ define_inter_type_operations!(
     QuoteLotsPerBaseUnit<u64>
 );
 
-define_custom_types!(AdjustedQuoteLots<u64>);
+define_custom_type!(AdjustedQuoteLots<u64>);
 
 define_inter_type_operations!(
     QuoteLots<u64>,
@@ -62,7 +65,7 @@ define_inter_type_operations!(
     AdjustedQuoteLots<u64>
 );
 
-define_custom_types!(QuoteLotsPerBaseLotsPerTick<u64>);
+define_custom_type!(QuoteLotsPerBaseLotsPerTick<u64>);
 
 define_inter_type_operations!(
     BaseLotsPerBaseUnit<u64>,
@@ -70,8 +73,10 @@ define_inter_type_operations!(
     QuoteLotsPerBaseUnitPerTick<u64>
 );
 
-define_custom_types!(BaseAtomsPerBaseUnit<u64>, QuoteAtomsPerQuoteUnit<u64>);
-define_custom_types!(BaseAtomsPerBaseLot<u64>, QuoteAtomsPerQuoteLot<u64>);
+define_custom_type!(BaseAtomsPerBaseUnit<u64>);
+define_custom_type!(QuoteAtomsPerQuoteUnit<u64>);
+define_custom_type!(BaseAtomsPerBaseLot<u64>);
+define_custom_type!(QuoteAtomsPerQuoteLot<u64>);
 
 define_inter_type_operations!(
     BaseLotsPerBaseUnit<u64>,

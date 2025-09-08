@@ -25,13 +25,13 @@ use super::{AtomsDelta, RawAtoms};
 ///! - For USDC = raw atoms / 10^0 = raw atoms
 ///! - For eth = raw atoms / 10^(18 - 6) = raw atoms / 10^12
 use crate::{
-    define_custom_types,
+    define_custom_type,
     goblin_error::GoblinError,
     quantities::{BaseAtoms, QuoteAtoms},
 };
 use core::u64;
 
-define_custom_types!(Atoms<u64>);
+define_custom_type!(Atoms<u64>);
 
 impl Atoms {
     pub fn from_raw_atoms(raw: &RawAtoms, decimals: u8) -> Result<Self, GoblinError> {

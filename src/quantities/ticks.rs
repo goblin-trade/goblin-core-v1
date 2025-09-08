@@ -1,9 +1,9 @@
 use crate::{
-    define_custom_types,
+    define_custom_type,
     quantities::{InnerBitmapIndex, Row},
 };
 
-define_custom_types!(Ticks<u32>);
+define_custom_type!(Ticks<u32>);
 
 impl Ticks {
     pub fn inner_bitmap_index(&self) -> InnerBitmapIndex {
