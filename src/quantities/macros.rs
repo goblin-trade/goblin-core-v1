@@ -1,5 +1,3 @@
-// macros.rs
-
 #[macro_export]
 macro_rules! define_custom_type {
     ($type:ident<$t:ty>) => {
