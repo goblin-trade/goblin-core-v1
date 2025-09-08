@@ -29,12 +29,8 @@
 use crate::{define_custom_types, define_inter_type_operations, quantities::Ticks};
 
 define_custom_types!(QuoteLots<u64>, QuoteAtoms<u64>);
-// define_custom_types!(QuoteLots<u64>, QuoteAtomsPerQuoteLot<u64>, QuoteAtoms<u64>);
-// define_inter_type_operations!(QuoteLots<u64>, QuoteAtomsPerQuoteLot<u64>, QuoteAtoms<u64>);
 
 define_custom_types!(BaseLots<u64>, BaseAtoms<u64>);
-// define_custom_types!(BaseLots<u64>, BaseAtomsPerBaseLot<u64>, BaseAtoms<u64>);
-// define_inter_type_operations!(BaseLots<u64>, BaseAtomsPerBaseLot<u64>, BaseAtoms<u64>);
 
 // The number of lots per unit
 //
@@ -74,11 +70,6 @@ define_inter_type_operations!(
     QuoteLotsPerBaseUnitPerTick<u64>
 );
 
-// To check for orderbook invariant self.tick_size % self.base_lot_size == 0
-// define_inter_type_operations!(QuoteLotsPerBaseUnitPerTick, BaseLotsPerBaseUnit);
-
-// allow_mod!(QuoteLotsPerBaseUnitPerTick, BaseLotsPerBaseUnit);
-
 define_custom_types!(BaseAtomsPerBaseUnit<u64>, QuoteAtomsPerQuoteUnit<u64>);
 define_custom_types!(BaseAtomsPerBaseLot<u64>, QuoteAtomsPerQuoteLot<u64>);
 
@@ -99,20 +90,6 @@ define_inter_type_operations!(BaseAtomsPerBaseLot<u64>, BaseLots<u64>, BaseAtoms
 /// Token amounts are normalized to 10^6 atoms per unit.
 pub const BASE_ATOMS_PER_BASE_UNIT: BaseAtomsPerBaseUnit = BaseAtomsPerBaseUnit(1_000_000);
 pub const QUOTE_ATOMS_PER_QUOTE_UNIT: QuoteAtomsPerQuoteUnit = QuoteAtomsPerQuoteUnit(1_000_000);
-
-// pub const ATOMS_PER_UNIT: u64 = 1_000_000;
-
-// impl BaseLotsPerBaseUnit {
-//     pub fn valid(&self) -> bool {
-//         ATOMS_PER_UNIT % self.0 == 0
-//     }
-// }
-
-// impl QuoteLotsPerQuoteUnit {
-//     pub fn valid(&self) -> bool {
-//         ATOMS_PER_UNIT % self.0 == 0
-//     }
-// }
 
 #[cfg(test)]
 mod tests {
