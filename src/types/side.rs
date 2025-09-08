@@ -1,14 +1,17 @@
 use core::ops::Add;
 
 use crate::{
+    goblin_error::GoblinError,
     markets::IndexedMarket,
     quantities::{
-        AdjustedQuoteLots, BaseAtoms, BaseAtomsPerBaseLot, BaseLots, BaseLotsDelta,
+        AdjustedQuoteLots, Atoms, BaseAtoms, BaseAtomsPerBaseLot, BaseLots, BaseLotsDelta,
         BaseLotsPerBaseUnit, MarketLotsDelta, QuoteAtoms, QuoteAtomsPerQuoteLot, QuoteLots,
         QuoteLotsDelta, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit, Ticks,
     },
-    settlement::{MakerUpdate, MakerUpdateSide},
+    settlement::{MakerUpdate, MakerUpdateSide, PendingMakerStoreUpdates, PendingStoreKey},
     state::{MakerStore, MarketState},
+    tokens::TokenIndex,
+    types::Address,
 };
 
 pub struct Bid;
@@ -111,17 +114,18 @@ pub trait SideMarker {
         atoms_opposite: <Self::Opposite as SideMarker>::Atoms,
     );
 
-    fn update_maker_deltas(
-        market_maker_delta: &mut MakerUpdate,
-        lots: Self::Lots,
-        lots_opposite: <Self::Opposite as SideMarker>::Lots,
-    );
+    fn maker_update_for_side_ref<'a>(maker_update: &'a MakerUpdate) -> &'a MakerUpdateSide<Self>
+    where
+        Self: Sized;
 
-    fn maker_deltas_for_side<'a>(
-        market_maker_delta: &'a mut MakerUpdate,
+    fn maker_update_for_side_mut<'a>(
+        maker_update: &'a mut MakerUpdate,
     ) -> &'a mut MakerUpdateSide<Self>
     where
         Self: Sized;
+
+    // Token index of the input token, i.e. 'Lots'
+    fn token_index_for_side(indexed_market: &IndexedMarket) -> TokenIndex;
 }
 
 impl SideMarker for Bid {
@@ -212,17 +216,20 @@ impl SideMarker for Bid {
         quote_store.add_free(atoms.into());
     }
 
-    fn update_maker_deltas(
-        market_maker_delta: &mut MakerUpdate,
-        lots: Self::Lots,
-        lots_opposite: <Self::Opposite as SideMarker>::Lots,
-    ) {
+    fn maker_update_for_side_ref<'a>(
+        market_maker_delta: &'a MakerUpdate,
+    ) -> &'a MakerUpdateSide<Self> {
+        &market_maker_delta.bid
     }
 
-    fn maker_deltas_for_side<'a>(
+    fn maker_update_for_side_mut<'a>(
         market_maker_delta: &'a mut MakerUpdate,
     ) -> &'a mut MakerUpdateSide<Self> {
         &mut market_maker_delta.bid
+    }
+
+    fn token_index_for_side(indexed_market: &IndexedMarket) -> TokenIndex {
+        indexed_market.quote_token_index
     }
 }
 
@@ -314,16 +321,19 @@ impl SideMarker for Ask {
         quote_store.reduce_locked(atoms_opposite.into());
     }
 
-    fn update_maker_deltas(
-        market_maker_delta: &mut MakerUpdate,
-        lots: Self::Lots,
-        lots_opposite: <Self::Opposite as SideMarker>::Lots,
-    ) {
+    fn maker_update_for_side_ref<'a>(
+        market_maker_delta: &'a MakerUpdate,
+    ) -> &'a MakerUpdateSide<Self> {
+        &market_maker_delta.ask
     }
 
-    fn maker_deltas_for_side<'a>(
+    fn maker_update_for_side_mut<'a>(
         market_maker_delta: &'a mut MakerUpdate,
     ) -> &'a mut MakerUpdateSide<Self> {
         &mut market_maker_delta.ask
+    }
+
+    fn token_index_for_side(indexed_market: &IndexedMarket) -> TokenIndex {
+        indexed_market.base_token_index
     }
 }

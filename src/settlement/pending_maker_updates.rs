@@ -9,8 +9,6 @@ pub type PendingMakerUpdates = FixedMap<Address, MakerUpdate, MAX_MAKERS>;
 
 #[derive(Default)]
 pub struct MakerUpdate {
-    pub address: Address,
-
     pub bid: MakerUpdateSide<Bid>,
     pub ask: MakerUpdateSide<Ask>,
 }
@@ -36,7 +34,7 @@ impl MakerUpdate {
         lots: S::Lots,
         lots_opposite: <S::Opposite as SideMarker>::Lots,
     ) -> Result<(), GoblinError> {
-        let deltas_for_side = S::maker_deltas_for_side(self);
+        let deltas_for_side = S::maker_update_for_side_mut(self);
 
         deltas_for_side.free_lots_in += lots;
         deltas_for_side.locked_lots_out += lots_opposite;

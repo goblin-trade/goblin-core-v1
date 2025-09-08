@@ -24,6 +24,7 @@ pub enum GoblinError {
     TakerPriceLimitReached = 21,
     InsufficientTakerFill = 22,
     MakerListFull = 23,
+    MakerStoreListFull = 24,
 }
 
 impl GoblinError {

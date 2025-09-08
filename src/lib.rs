@@ -5,7 +5,7 @@ use crate::{
     input_processor::Args,
     instructions::ix_take,
     quantities::MarketLotsDelta,
-    settlement::{OppositeDeltas, PendingMakerUpdates, TokenDeltas},
+    settlement::{PendingMakerStoreUpdates, PendingMakerUpdates, TokenDeltas},
     state::{MarketKey, MarketState, SlotState},
     tokens::ValidatedTokenPair,
     types::{Ask, Bid},
@@ -47,15 +47,9 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
         args.erc20_delta_list,
     )?;
 
-    let mut opposite_deltas = OppositeDeltas::default();
+    let mut pending_maker_store_updates = PendingMakerStoreUpdates::default();
 
     for market_instructions in args.market_instructions_list {
-        // We now need 2 delta arrays
-        // - base_lot_deltas
-        // - quote_lot_deltas
-        //
-        // They just have maker address, not token
-        // Map into opposite_deltas in the end
         let indexed_market = market_instructions
             .market_index
             .to_indexed_market(args.custom_market_list)?;
@@ -112,6 +106,9 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
 
         // Apply market delta to token deltas
         token_deltas.apply_market_delta(&indexed_market, &market_delta)?;
+
+        // Apply pending maker updates
+        pending_maker_store_updates.apply_updates(&indexed_market, &pending_maker_updates)?;
     }
 
     // Settlement

@@ -58,6 +58,12 @@ impl<K, V, const N: usize> FixedMap<K, V, N> {
         self.len
     }
 
+    pub fn iter(&self) -> impl Iterator<Item = &(K, V)> {
+        self.entries[..self.len]
+            .iter()
+            .map(|maybe_uninit| unsafe { maybe_uninit.assume_init_ref() })
+    }
+
     pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut (K, V)> {
         self.entries[..self.len]
             .iter_mut()
