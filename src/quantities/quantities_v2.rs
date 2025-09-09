@@ -18,9 +18,11 @@ define_legged_type!(Units<u64>);
 pub struct Ratio<N, D>(pub u64, pub core::marker::PhantomData<(N, D)>);
 
 // Define ratio implementations for all leg combinations
-define_ratio_type!(Lots<Base>, Units<Base>);
-define_ratio_type!(Lots<Quote>, Units<Quote>);
-define_ratio_type!(Lots<Quote>, Units<Base>);
+define_ratio_type!(Lots<Base>, u64, Units<Base>, u64);
+define_ratio_type!(Lots<Quote>, u64, Units<Quote>, u64);
+define_ratio_type!(Lots<Quote>, u64, Units<Base>, u64);
+
+define_ratio_type!(Ratio<Lots<Quote>, Units<Base>>, u64, Tick, u32);
 
 #[cfg(test)]
 mod tests {
@@ -41,5 +43,8 @@ mod tests {
 
         let base_unit_derived = quote_lots / ratio_3;
         let quote_lots_derived = ratio_3 * base_unit;
+
+        let tick = Tick::from(5u32);
+        let ratio_tick = ratio_3 / tick;
     }
 }

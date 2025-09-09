@@ -191,7 +191,7 @@ macro_rules! define_dimensionless_type {
 }
 #[macro_export]
 macro_rules! define_ratio_type {
-    ($numerator:ty, $denominator:ty) => {
+    ($numerator:ty, $num_type:ty, $denominator:ty, $den_type:ty) => {
         impl From<u64> for Ratio<$numerator, $denominator> {
             fn from(value: u64) -> Self {
                 Ratio(value, core::marker::PhantomData)
@@ -288,7 +288,7 @@ macro_rules! define_ratio_type {
             type Output = Ratio<$numerator, $denominator>;
 
             fn div(self, rhs: $denominator) -> Self::Output {
-                Ratio(self.0 / rhs.0, core::marker::PhantomData)
+                Ratio((self.0 as u64) / (rhs.0 as u64), core::marker::PhantomData)
             }
         }
 
@@ -297,7 +297,7 @@ macro_rules! define_ratio_type {
             type Output = $numerator;
 
             fn mul(self, rhs: $denominator) -> Self::Output {
-                <$numerator>::new(self.0 * rhs.0)
+                <$numerator>::from((self.0 * (rhs.0 as u64)) as $num_type)
             }
         }
 
@@ -306,7 +306,7 @@ macro_rules! define_ratio_type {
             type Output = $denominator;
 
             fn div(self, rhs: Ratio<$numerator, $denominator>) -> Self::Output {
-                <$denominator>::new(self.0 / rhs.0)
+                <$denominator>::from(((self.0 as u64) / rhs.0) as $den_type)
             }
         }
     };
