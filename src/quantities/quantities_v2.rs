@@ -1,9 +1,17 @@
-use crate::{define_legged_type, types::leg::LegMarker};
+use crate::{define_dimensionless_type, define_legged_type, types::leg::LegMarker};
 
 // Basic quantity types with leg markers
 define_legged_type!(AtomsV2<u64>);
 define_legged_type!(LotsV2<u64>);
 
+// The only dimensionless unit
+define_dimensionless_type!(TicksV2<u32>);
+
+// TODO composite units
+
+// How to handle
+// - legless unit: Ticks
+// - complex units with multiplication and division?
 #[cfg(test)]
 mod tests {
     use crate::types::{Base, Quote};
