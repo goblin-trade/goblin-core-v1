@@ -1,4 +1,7 @@
+#[derive(Clone, Copy)]
 pub struct Base;
+
+#[derive(Clone, Copy)]
 pub struct Quote;
 
 pub trait LegMarker {

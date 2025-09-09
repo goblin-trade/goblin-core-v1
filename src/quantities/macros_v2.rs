@@ -279,22 +279,34 @@ macro_rules! define_ratio_type {
                     .map(|v| Ratio(v, core::marker::PhantomData))
                     .ok_or(crate::goblin_error::GoblinError::Underflow)
             }
+        }
 
-            // Ratio operations: x/y=k, x = y*k, y = x/k
+        // Core library trait implementations for Ratio operations
 
-            /// Given numerator and denominator, calculate the ratio: x/y=k
-            pub fn from_division(numerator: $numerator, denominator: $denominator) -> Self {
-                Ratio(numerator.0 / denominator.0, core::marker::PhantomData)
+        // Division: numerator / denominator = ratio
+        impl core::ops::Div<$denominator> for $numerator {
+            type Output = Ratio<$numerator, $denominator>;
+
+            fn div(self, rhs: $denominator) -> Self::Output {
+                Ratio(self.0 / rhs.0, core::marker::PhantomData)
             }
+        }
 
-            /// Given denominator and ratio, calculate numerator: x = y*k
-            pub fn calculate_numerator(self, denominator: $denominator) -> $numerator {
-                <$numerator>::new(self.0 * denominator.0)
+        // Multiplication: ratio * denominator = numerator
+        impl core::ops::Mul<$denominator> for Ratio<$numerator, $denominator> {
+            type Output = $numerator;
+
+            fn mul(self, rhs: $denominator) -> Self::Output {
+                <$numerator>::new(self.0 * rhs.0)
             }
+        }
 
-            /// Given numerator and ratio, calculate denominator: y = x/k
-            pub fn calculate_denominator(self, numerator: $numerator) -> $denominator {
-                <$denominator>::new(numerator.0 / self.0)
+        // Division: numerator / ratio = denominator
+        impl core::ops::Div<Ratio<$numerator, $denominator>> for $numerator {
+            type Output = $denominator;
+
+            fn div(self, rhs: Ratio<$numerator, $denominator>) -> Self::Output {
+                <$denominator>::new(self.0 / rhs.0)
             }
         }
     };
