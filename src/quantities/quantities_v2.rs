@@ -1,52 +1,46 @@
 use core::marker::PhantomData;
 
-use crate::types::{leg::LegMarker, Base, Quote};
+use crate::{
+    define_dimensionless_type, define_legged_type, define_ratio_type,
+    types::{leg::LegMarker, Base, Quote},
+};
 
 // 1. Base units
 
-#[repr(transparent)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Tick(pub u64);
+define_dimensionless_type!(Tick<u32>);
+define_legged_type!(Atom<u64>);
+define_legged_type!(Lots<u64>);
+define_legged_type!(Units<u64>);
 
-pub struct Lots<L: LegMarker>(pub u64, PhantomData<L>);
-pub struct Units<L: LegMarker>(pub u64, PhantomData<L>);
-pub struct Atom<L: LegMarker>(pub u64, PhantomData<L>);
+// 2. Composite units
+// Define the generic Ratio struct
+#[repr(C)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, PartialOrd)]
+pub struct Ratio<N, D>(pub u64, pub core::marker::PhantomData<(N, D)>);
 
-// 2. Composite traits
-
-pub struct Ratio<N, D>(pub u64, PhantomData<(N, D)>);
-pub struct Prod<A, B>(pub u64, PhantomData<(A, B)>);
-
-// Need operations between these 3 types
-pub type BaseLotsPerBaseUnitV2 = Ratio<Lots<Base>, Units<Base>>;
-
-// // 2. Powered unit
-// //
-// // Allows us to use a single Prod<> struct instead of Prod<> and Ratio<>
-// //
-// // # Problem
-// // We only have +1 and -1 power, so unnecesary
-// pub struct PoweredLot<L: LegMarker, const P: i8>(pub u64, PhantomData<L>);
-// pub struct PoweredUnit<L: LegMarker, const P: i8>(pub u64, PhantomData<L>);
-// pub struct PoweredAtoms<L: LegMarker, const P: i8>(pub u64, PhantomData<L>);
-
-// // 3. Dimenstion algebra
-// //
-// // # Problems
-// // - Can't fit Ticks as u32
-// // - Can't use `LegMarker`
-// pub struct SidedVal<M: LegMarker, const L: i8, const U: i8, const A: i8>(pub u64, PhantomData<M>);
+// Define ratio implementations for all leg combinations
+define_ratio_type!(Lots<Base>, Units<Base>);
+define_ratio_type!(Lots<Quote>, Units<Quote>);
+define_ratio_type!(Lots<Quote>, Units<Base>);
 
 #[cfg(test)]
 mod tests {
 
+    use core::ops::Div;
+
     use super::*;
     #[test]
     fn test_ratio() {
-        let base_lots = Lots::<Base>(1, PhantomData::<Base>);
-        let base_unit = Units::<Base>(1, PhantomData::<Base>);
+        let base_lots = Lots::<Base>::from(1);
+        let base_unit = Units::<Base>::from(1);
 
-        // let rat = base_lots / base_unit;
+        let quote_lots = Lots::<Quote>::from(1);
+        let quote_unit = Units::<Quote>::from(1);
+
+        let ratio_0 = Ratio::<Lots<Base>, Units<Base>>::from_division(base_lots, base_unit);
+        let ratio_1 = Ratio::<Lots<Quote>, Units<Quote>>::from_division(quote_lots, quote_unit);
+
+        // let ratio_3 = Ratio::<Lots<Quote>, Units<Base>>::from_division(quote_lots, base_unit);
     }
 }
 
