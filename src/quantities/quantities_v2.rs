@@ -1,15 +1,15 @@
 use core::marker::PhantomData;
-use core::ops::{Div, Mul};
+use core::ops::{Add, AddAssign, Div, Mul, Sub, SubAssign};
 
 //
 // Type-level integers for exponents: -1, 0, +1
 //
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub struct N1; // -1
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Z0; //  0
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub struct P1; // +1
 
 pub trait Exp {}
@@ -123,7 +123,7 @@ impl<
         TickExp,
     >
 {
-    pub fn new(v: V) -> Self {
+    pub const fn new(v: V) -> Self {
         Self {
             value: v,
             _phantom: PhantomData,
@@ -314,6 +314,350 @@ where
 }
 
 //
+// Addition
+//
+impl<
+        V,
+        BaseLotsExp: Exp,
+        BaseUnitsExp: Exp,
+        BaseAtomsExp: Exp,
+        QuoteLotsExp: Exp,
+        QuoteUnitsExp: Exp,
+        QuoteAtomsExp: Exp,
+        TickExp: Exp,
+    >
+    Add<
+        Quantity<
+            V,
+            BaseLotsExp,
+            BaseUnitsExp,
+            BaseAtomsExp,
+            QuoteLotsExp,
+            QuoteUnitsExp,
+            QuoteAtomsExp,
+            TickExp,
+        >,
+    >
+    for Quantity<
+        V,
+        BaseLotsExp,
+        BaseUnitsExp,
+        BaseAtomsExp,
+        QuoteLotsExp,
+        QuoteUnitsExp,
+        QuoteAtomsExp,
+        TickExp,
+    >
+where
+    V: Copy + Add<Output = V>,
+{
+    type Output = Quantity<
+        V,
+        BaseLotsExp,
+        BaseUnitsExp,
+        BaseAtomsExp,
+        QuoteLotsExp,
+        QuoteUnitsExp,
+        QuoteAtomsExp,
+        TickExp,
+    >;
+
+    fn add(
+        self,
+        rhs: Quantity<
+            V,
+            BaseLotsExp,
+            BaseUnitsExp,
+            BaseAtomsExp,
+            QuoteLotsExp,
+            QuoteUnitsExp,
+            QuoteAtomsExp,
+            TickExp,
+        >,
+    ) -> Self::Output {
+        Quantity::new(self.value + rhs.value)
+    }
+}
+
+//
+// Subtraction
+//
+impl<
+        V,
+        BaseLotsExp: Exp,
+        BaseUnitsExp: Exp,
+        BaseAtomsExp: Exp,
+        QuoteLotsExp: Exp,
+        QuoteUnitsExp: Exp,
+        QuoteAtomsExp: Exp,
+        TickExp: Exp,
+    >
+    Sub<
+        Quantity<
+            V,
+            BaseLotsExp,
+            BaseUnitsExp,
+            BaseAtomsExp,
+            QuoteLotsExp,
+            QuoteUnitsExp,
+            QuoteAtomsExp,
+            TickExp,
+        >,
+    >
+    for Quantity<
+        V,
+        BaseLotsExp,
+        BaseUnitsExp,
+        BaseAtomsExp,
+        QuoteLotsExp,
+        QuoteUnitsExp,
+        QuoteAtomsExp,
+        TickExp,
+    >
+where
+    V: Copy + Sub<Output = V>,
+{
+    type Output = Quantity<
+        V,
+        BaseLotsExp,
+        BaseUnitsExp,
+        BaseAtomsExp,
+        QuoteLotsExp,
+        QuoteUnitsExp,
+        QuoteAtomsExp,
+        TickExp,
+    >;
+
+    fn sub(
+        self,
+        rhs: Quantity<
+            V,
+            BaseLotsExp,
+            BaseUnitsExp,
+            BaseAtomsExp,
+            QuoteLotsExp,
+            QuoteUnitsExp,
+            QuoteAtomsExp,
+            TickExp,
+        >,
+    ) -> Self::Output {
+        Quantity::new(self.value - rhs.value)
+    }
+}
+
+//
+// AddAssign
+//
+impl<
+        V,
+        BaseLotsExp: Exp,
+        BaseUnitsExp: Exp,
+        BaseAtomsExp: Exp,
+        QuoteLotsExp: Exp,
+        QuoteUnitsExp: Exp,
+        QuoteAtomsExp: Exp,
+        TickExp: Exp,
+    >
+    AddAssign<
+        Quantity<
+            V,
+            BaseLotsExp,
+            BaseUnitsExp,
+            BaseAtomsExp,
+            QuoteLotsExp,
+            QuoteUnitsExp,
+            QuoteAtomsExp,
+            TickExp,
+        >,
+    >
+    for Quantity<
+        V,
+        BaseLotsExp,
+        BaseUnitsExp,
+        BaseAtomsExp,
+        QuoteLotsExp,
+        QuoteUnitsExp,
+        QuoteAtomsExp,
+        TickExp,
+    >
+where
+    V: Copy + AddAssign,
+{
+    fn add_assign(
+        &mut self,
+        rhs: Quantity<
+            V,
+            BaseLotsExp,
+            BaseUnitsExp,
+            BaseAtomsExp,
+            QuoteLotsExp,
+            QuoteUnitsExp,
+            QuoteAtomsExp,
+            TickExp,
+        >,
+    ) {
+        self.value += rhs.value;
+    }
+}
+
+//
+// SubAssign
+//
+impl<
+        V,
+        BaseLotsExp: Exp,
+        BaseUnitsExp: Exp,
+        BaseAtomsExp: Exp,
+        QuoteLotsExp: Exp,
+        QuoteUnitsExp: Exp,
+        QuoteAtomsExp: Exp,
+        TickExp: Exp,
+    >
+    SubAssign<
+        Quantity<
+            V,
+            BaseLotsExp,
+            BaseUnitsExp,
+            BaseAtomsExp,
+            QuoteLotsExp,
+            QuoteUnitsExp,
+            QuoteAtomsExp,
+            TickExp,
+        >,
+    >
+    for Quantity<
+        V,
+        BaseLotsExp,
+        BaseUnitsExp,
+        BaseAtomsExp,
+        QuoteLotsExp,
+        QuoteUnitsExp,
+        QuoteAtomsExp,
+        TickExp,
+    >
+where
+    V: Copy + SubAssign,
+{
+    fn sub_assign(
+        &mut self,
+        rhs: Quantity<
+            V,
+            BaseLotsExp,
+            BaseUnitsExp,
+            BaseAtomsExp,
+            QuoteLotsExp,
+            QuoteUnitsExp,
+            QuoteAtomsExp,
+            TickExp,
+        >,
+    ) {
+        self.value -= rhs.value;
+    }
+}
+
+impl<
+        V,
+        BaseLotsExp: Exp,
+        BaseUnitsExp: Exp,
+        BaseAtomsExp: Exp,
+        QuoteLotsExp: Exp,
+        QuoteUnitsExp: Exp,
+        QuoteAtomsExp: Exp,
+        TickExp: Exp,
+    >
+    Quantity<
+        V,
+        BaseLotsExp,
+        BaseUnitsExp,
+        BaseAtomsExp,
+        QuoteLotsExp,
+        QuoteUnitsExp,
+        QuoteAtomsExp,
+        TickExp,
+    >
+where
+    V: Copy,
+{
+    /// Checked addition that returns `None` on overflow
+    pub fn checked_add(
+        self,
+        rhs: Quantity<
+            V,
+            BaseLotsExp,
+            BaseUnitsExp,
+            BaseAtomsExp,
+            QuoteLotsExp,
+            QuoteUnitsExp,
+            QuoteAtomsExp,
+            TickExp,
+        >,
+    ) -> Option<Self>
+    where
+        V: CheckedAdd<Output = V>,
+    {
+        self.value.checked_add(rhs.value).map(|v| Quantity::new(v))
+    }
+
+    /// Checked subtraction that returns `None` on underflow
+    pub fn checked_sub(
+        self,
+        rhs: Quantity<
+            V,
+            BaseLotsExp,
+            BaseUnitsExp,
+            BaseAtomsExp,
+            QuoteLotsExp,
+            QuoteUnitsExp,
+            QuoteAtomsExp,
+            TickExp,
+        >,
+    ) -> Option<Self>
+    where
+        V: CheckedSub<Output = V>,
+    {
+        self.value.checked_sub(rhs.value).map(|v| Quantity::new(v))
+    }
+}
+
+/// Trait for types that support checked addition
+pub trait CheckedAdd {
+    type Output;
+    fn checked_add(self, rhs: Self) -> Option<Self::Output>;
+}
+
+/// Trait for types that support checked subtraction
+pub trait CheckedSub {
+    type Output;
+    fn checked_sub(self, rhs: Self) -> Option<Self::Output>;
+}
+
+impl CheckedAdd for i64 {
+    type Output = i64;
+    fn checked_add(self, rhs: Self) -> Option<Self::Output> {
+        i64::checked_add(self, rhs)
+    }
+}
+impl CheckedSub for i64 {
+    type Output = i64;
+    fn checked_sub(self, rhs: Self) -> Option<Self::Output> {
+        i64::checked_sub(self, rhs)
+    }
+}
+
+impl CheckedAdd for u64 {
+    type Output = u64;
+    fn checked_add(self, rhs: Self) -> Option<Self::Output> {
+        u64::checked_add(self, rhs)
+    }
+}
+impl CheckedSub for u64 {
+    type Output = u64;
+    fn checked_sub(self, rhs: Self) -> Option<Self::Output> {
+        u64::checked_sub(self, rhs)
+    }
+}
+
+//
 // Base units (you can choose numeric type)
 //
 type BaseLots = Quantity<u64, P1, Z0, Z0, Z0, Z0, Z0, Z0>;
@@ -340,18 +684,43 @@ type QuoteLotsPerBaseUnitPerTick = Quantity<u64, Z0, N1, Z0, P1, Z0, Z0, N1>;
 type QuoteLotsPerBaseLotPerTick = Quantity<u64, N1, Z0, Z0, P1, Z0, Z0, N1>;
 type AdjustedQuoteLots = Quantity<u64, P1, N1, Z0, P1, Z0, Z0, Z0>;
 
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
+const BASE_ATOMS_PER_BASE_UNIT: BaseAtomsPerBaseUnit = BaseAtomsPerBaseUnit::new(1_000_000);
+const QUOTE_ATOMS_PER_QUOTE_UNIT: QuoteAtomsPerQuoteUnit = QuoteAtomsPerQuoteUnit::new(1_000_000);
 
-//     #[test]
-//     fn test_prod() {
-//         let base_lots: BaseLots = Quantity::new(10);
-//         let base_units: BaseUnits = Quantity::new(5);
-//         let ticks: Tick = Quantity::new(2);
+// Delta types
+type BaseLotsDelta = Quantity<i64, P1, Z0, Z0, Z0, Z0, Z0, Z0>;
+type QuoteLotsDelta = Quantity<i64, Z0, Z0, Z0, P1, Z0, Z0, Z0>;
+type BaseAtomsDelta = Quantity<i64, Z0, Z0, P1, Z0, Z0, Z0, Z0>;
+type QuoteAtomsDelta = Quantity<i64, Z0, Z0, Z0, Z0, Z0, P1, Z0>;
 
-//         let lot_unit = base_lots * base_units; // BaseLots*BaseUnits
-//         let lot_unit_tick = lot_unit * ticks;
-//         let lot_per_unit = base_lots / base_units; // BaseLots/BaseUnits
-//     }
-// }
+// TODO implement conversion between u64 and i64 variants
+// - u64 to i64: two functions for positive and negative value. Return type Result<X, GoblinError>
+// Return GoblinError::DeltaOverflow if value doesn't fit in i64.
+//
+// - i64 to u64: abs() function
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_prod() {
+        let base_lots: BaseLots = Quantity::new(10);
+        let base_units: BaseUnits = Quantity::new(5);
+        let ticks: Tick = Quantity::new(2);
+
+        // Addition and subtraction work for quantities with same dimensions
+        let more_ticks = Tick::new(1);
+        let _tick_sum = ticks + more_ticks; // Tick + Tick = Tick
+        let _tick_diff = ticks - more_ticks; // Tick - Tick = Tick
+
+        // AddAssign and SubAssign
+        let mut mutable_ticks = ticks;
+        mutable_ticks += more_ticks;
+        mutable_ticks -= Tick::new(1);
+
+        let _lot_unit = base_lots * base_units; // BaseLots*BaseUnits
+        let _lot_unit_tick = _lot_unit * ticks;
+        let _lot_per_unit = base_lots / base_units; // BaseLots/BaseUnits
+    }
+}

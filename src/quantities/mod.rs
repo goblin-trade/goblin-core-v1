@@ -2,7 +2,6 @@ pub mod atoms;
 pub mod bitmap;
 pub mod delta;
 mod macros;
-mod macros_v2;
 pub mod market_delta;
 pub mod quantities;
 mod quantities_v2;

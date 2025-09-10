@@ -20,6 +20,7 @@ define_custom_type!(QuoteLotsDelta<i64>);
 define_delta_operations!(BaseLotsDelta<i64>, BaseLots<u64>);
 define_delta_operations!(QuoteLotsDelta<i64>, QuoteLots<u64>);
 
+// This should actually yield BaseAtoms delta
 define_inter_type_operations!(
     BaseAtomsPerBaseLot<u64>,
     BaseLotsDelta<i64>,

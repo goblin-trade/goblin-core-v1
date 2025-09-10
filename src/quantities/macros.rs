@@ -151,6 +151,8 @@ macro_rules! define_inter_type_operations {
     };
 }
 
+// These operations are on dissimilar types
+// We should instead convert to Delta type first, then operate
 #[macro_export]
 macro_rules! define_delta_operations {
     ($delta_type:ident<$delta_inner:ty>, $base_type:ident<$base_inner:ty>) => {
