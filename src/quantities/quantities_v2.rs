@@ -158,17 +158,32 @@ impl<
 // Quantity type: value + Dim
 //
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Quantity<V, D: Exp> {
+pub struct Quantity<V: Copy + Sized + Numeric, D: Exp> {
     pub inner: V,
     _phantom: PhantomData<D>,
 }
 
-impl<V, D: Exp> Quantity<V, D> {
+impl<V: Copy + Sized + Numeric, D: Exp> Quantity<V, D> {
+    pub const MIN: Self = Self::new(V::MIN);
+    pub const MAX: Self = Self::new(V::MAX);
+    pub const ZERO: Self = Self::new(V::ZERO);
+    pub const ONE: Self = Self::new(V::ONE);
+
     pub const fn new(v: V) -> Self {
         Self {
             inner: v,
             _phantom: PhantomData,
         }
+    }
+
+    // Checked Add/Sub
+
+    pub fn checked_add(self, rhs: Self) -> Option<Self> {
+        self.inner.checked_add(rhs.inner).map(Quantity::new)
+    }
+
+    pub fn checked_sub(self, rhs: Self) -> Option<Self> {
+        self.inner.checked_sub(rhs.inner).map(Quantity::new)
     }
 }
 
@@ -177,7 +192,7 @@ impl<V, D: Exp> Quantity<V, D> {
 //
 impl<V, D1: Exp, D2: Exp> Mul<Quantity<V, D2>> for Quantity<V, D1>
 where
-    V: Copy + Mul<Output = V>,
+    V: Copy + Mul<Output = V> + Numeric,
     D1: AddExp<D2>,
 {
     type Output = Quantity<V, <D1 as AddExp<D2>>::Output>;
@@ -192,7 +207,7 @@ where
 //
 impl<V, D1: Exp, D2: Exp> Div<Quantity<V, D2>> for Quantity<V, D1>
 where
-    V: Copy + Div<Output = V>,
+    V: Copy + Div<Output = V> + Numeric,
     D1: SubExp<D2>,
 {
     type Output = Quantity<V, <D1 as SubExp<D2>>::Output>;
@@ -207,7 +222,7 @@ where
 //
 impl<V, D: Exp> Add for Quantity<V, D>
 where
-    V: Copy + Add<Output = V>,
+    V: Copy + Add<Output = V> + Numeric,
 {
     type Output = Self;
     fn add(self, rhs: Self) -> Self::Output {
@@ -220,7 +235,7 @@ where
 //
 impl<V, D: Exp> Sub for Quantity<V, D>
 where
-    V: Copy + Sub<Output = V>,
+    V: Copy + Sub<Output = V> + Numeric,
 {
     type Output = Self;
     fn sub(self, rhs: Self) -> Self::Output {
@@ -233,7 +248,7 @@ where
 //
 impl<V, D: Exp> AddAssign for Quantity<V, D>
 where
-    V: Copy + AddAssign,
+    V: Copy + AddAssign + Numeric,
 {
     fn add_assign(&mut self, rhs: Self) {
         self.inner += rhs.inner;
@@ -245,64 +260,49 @@ where
 //
 impl<V, D: Exp> SubAssign for Quantity<V, D>
 where
-    V: Copy + SubAssign,
+    V: Copy + SubAssign + Numeric,
 {
     fn sub_assign(&mut self, rhs: Self) {
         self.inner -= rhs.inner;
     }
 }
 
-//
-// Checked Add/Sub
-//
-impl<V, D: Exp> Quantity<V, D>
-where
-    V: Copy + Sized,
-{
-    pub fn checked_add(self, rhs: Self) -> Option<Self>
-    where
-        V: CheckedAdd,
-    {
-        self.inner.checked_add(rhs.inner).map(Quantity::new)
-    }
+/// Trait for numeric types that support checked arithmetic operations
+pub trait Numeric: Sized {
+    const MIN: Self;
+    const MAX: Self;
+    const ZERO: Self;
+    const ONE: Self;
 
-    pub fn checked_sub(self, rhs: Self) -> Option<Self>
-    where
-        V: CheckedSub,
-    {
-        self.inner.checked_sub(rhs.inner).map(Quantity::new)
-    }
-}
-
-/// Trait for types that support checked addition
-pub trait CheckedAdd: Sized {
     fn checked_add(self, rhs: Self) -> Option<Self>;
-}
-
-/// Trait for types that support checked subtraction
-pub trait CheckedSub: Sized {
     fn checked_sub(self, rhs: Self) -> Option<Self>;
 }
 
-impl CheckedAdd for i64 {
+impl Numeric for i64 {
+    const MIN: Self = i64::MIN;
+    const MAX: Self = i64::MAX;
+    const ZERO: Self = 0i64;
+    const ONE: Self = 1i64;
+
     fn checked_add(self, rhs: Self) -> Option<Self> {
         i64::checked_add(self, rhs)
     }
-}
 
-impl CheckedSub for i64 {
     fn checked_sub(self, rhs: Self) -> Option<Self> {
         i64::checked_sub(self, rhs)
     }
 }
 
-impl CheckedAdd for u64 {
+impl Numeric for u64 {
+    const MIN: Self = u64::MIN;
+    const MAX: Self = u64::MAX;
+    const ZERO: Self = 0u64;
+    const ONE: Self = 1u64;
+
     fn checked_add(self, rhs: Self) -> Option<Self> {
         u64::checked_add(self, rhs)
     }
-}
 
-impl CheckedSub for u64 {
     fn checked_sub(self, rhs: Self) -> Option<Self> {
         u64::checked_sub(self, rhs)
     }
@@ -385,6 +385,33 @@ mod tests {
         let _lot_unit_tick = _lot_unit * ticks;
         let _lot_per_unit = base_lots / base_units;
 
-        let checked_add = Tick::new(1).checked_add(Tick::new(2));
+        let _checked_add = Tick::new(1).checked_add(Tick::new(2));
+    }
+
+    #[test]
+    fn test_numeric_trait() {
+        let tick1 = Tick::new(5);
+        let tick2 = Tick::new(3);
+
+        // Test checked_add
+        let add_result = tick1.checked_add(tick2);
+        assert_eq!(add_result, Some(Tick::new(8)));
+
+        // Test checked_sub
+        let sub_result = tick1.checked_sub(tick2);
+        assert_eq!(sub_result, Some(Tick::new(2)));
+
+        // Test overflow behavior
+        let max_tick = Tick::new(u64::MAX);
+        let overflow_result = max_tick.checked_add(Tick::new(1));
+        assert_eq!(overflow_result, None);
+
+        // Test underflow behavior
+        let min_tick = Tick::new(0);
+        let underflow_result = min_tick.checked_sub(Tick::new(1));
+        assert_eq!(underflow_result, None);
+
+        let max_tick = Tick::MAX;
+        assert_eq!(max_tick, Tick::new(u64::MAX));
     }
 }
