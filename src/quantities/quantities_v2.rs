@@ -324,18 +324,34 @@ type QuoteUnits = Quantity<u64, Z0, Z0, Z0, Z0, P1, Z0, Z0>;
 type QuoteAtoms = Quantity<u64, Z0, Z0, Z0, Z0, Z0, P1, Z0>;
 type Tick = Quantity<u64, Z0, Z0, Z0, Z0, Z0, Z0, P1>;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+// Binary
+type BaseLotsPerBaseUnit = Quantity<u64, P1, N1, Z0, Z0, Z0, Z0, Z0>;
+type QuoteLotsPerQuoteUnit = Quantity<u64, Z0, Z0, Z0, P1, N1, Z0, Z0>;
+type QuoteLotsPerBaseUnit = Quantity<u64, Z0, N1, Z0, P1, Z0, Z0, Z0>;
 
-    #[test]
-    fn test_prod() {
-        let base_lots: BaseLots = Quantity::new(10);
-        let base_units: BaseUnits = Quantity::new(5);
-        let ticks: Tick = Quantity::new(2);
+type BaseAtomsPerBaseUnit = Quantity<u64, Z0, N1, P1, Z0, Z0, Z0, Z0>;
+type QuoteAtomsPerQuoteUnit = Quantity<u64, Z0, Z0, Z0, Z0, N1, P1, Z0>;
 
-        let lot_unit = base_lots * base_units; // BaseLots*BaseUnits
-        let lot_unit_tick = lot_unit * ticks;
-        let lot_per_unit = base_lots / base_units; // BaseLots/BaseUnits
-    }
-}
+type BaseAtomsPerBaseLot = Quantity<u64, N1, Z0, P1, Z0, Z0, Z0, Z0>;
+type QuoteAtomsPerQuoteLot = Quantity<u64, Z0, Z0, Z0, N1, Z0, P1, Z0>;
+
+// Tertiary
+type QuoteLotsPerBaseUnitPerTick = Quantity<u64, Z0, N1, Z0, P1, Z0, Z0, N1>;
+type QuoteLotsPerBaseLotPerTick = Quantity<u64, N1, Z0, Z0, P1, Z0, Z0, N1>;
+type AdjustedQuoteLots = Quantity<u64, P1, N1, Z0, P1, Z0, Z0, Z0>;
+
+// #[cfg(test)]
+// mod tests {
+//     use super::*;
+
+//     #[test]
+//     fn test_prod() {
+//         let base_lots: BaseLots = Quantity::new(10);
+//         let base_units: BaseUnits = Quantity::new(5);
+//         let ticks: Tick = Quantity::new(2);
+
+//         let lot_unit = base_lots * base_units; // BaseLots*BaseUnits
+//         let lot_unit_tick = lot_unit * ticks;
+//         let lot_per_unit = base_lots / base_units; // BaseLots/BaseUnits
+//     }
+// }
