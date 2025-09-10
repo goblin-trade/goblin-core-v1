@@ -12,40 +12,40 @@ pub struct Z0; //  0
 #[derive(Clone, Copy, PartialEq)]
 pub struct P1; // +1
 
-pub trait Dim {}
-impl Dim for N1 {}
-impl Dim for Z0 {}
-impl Dim for P1 {}
+pub trait Exp {}
+impl Exp for N1 {}
+impl Exp for Z0 {}
+impl Exp for P1 {}
 
 //
-// Type-level addition of dimensions
+// Type-level addition of exponents
 //
-pub trait AddDim<Rhs: Dim> {
-    type Output: Dim;
+pub trait AddExp<Rhs: Exp> {
+    type Output: Exp;
 }
 
-impl AddDim<Z0> for Z0 {
+impl AddExp<Z0> for Z0 {
     type Output = Z0;
 }
-impl AddDim<P1> for Z0 {
+impl AddExp<P1> for Z0 {
     type Output = P1;
 }
-impl AddDim<N1> for Z0 {
+impl AddExp<N1> for Z0 {
     type Output = N1;
 }
 
-impl AddDim<Z0> for P1 {
+impl AddExp<Z0> for P1 {
     type Output = P1;
 }
-impl AddDim<N1> for P1 {
+impl AddExp<N1> for P1 {
     type Output = Z0;
 }
 // P1 + P1 would be invalid → no impl
 
-impl AddDim<Z0> for N1 {
+impl AddExp<Z0> for N1 {
     type Output = N1;
 }
-impl AddDim<P1> for N1 {
+impl AddExp<P1> for N1 {
     type Output = Z0;
 }
 // N1 + N1 would be invalid → no impl
@@ -53,74 +53,171 @@ impl AddDim<P1> for N1 {
 //
 // Negation
 //
-pub trait NegDim {
-    type Output: Dim;
+pub trait NegExp {
+    type Output: Exp;
 }
-impl NegDim for P1 {
+impl NegExp for P1 {
     type Output = N1;
 }
-impl NegDim for N1 {
+impl NegExp for N1 {
     type Output = P1;
 }
-impl NegDim for Z0 {
+impl NegExp for Z0 {
     type Output = Z0;
 }
 
 //
 // Subtraction = add negated RHS
 //
-pub trait SubDim<Rhs: Dim>: Dim {
-    type Output: Dim;
+pub trait SubExp<Rhs: Exp>: Exp {
+    type Output: Exp;
 }
-impl<L: Dim + AddDim<<R as NegDim>::Output>, R: Dim + NegDim> SubDim<R> for L {
-    type Output = <L as AddDim<<R as NegDim>::Output>>::Output;
+impl<L: Exp + AddExp<<R as NegExp>::Output>, R: Exp + NegExp> SubExp<R> for L {
+    type Output = <L as AddExp<<R as NegExp>::Output>>::Output;
 }
 
 //
-// Quantity type: value + 3 exponents (Lot, Unit, Atom, Tick)
+// Quantity type: value + 7 exponents (BaseLots, BaseUnits, BaseAtoms, QuoteLots, QuoteUnits, QuoteAtoms, Tick)
 //
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Quantity<V, L: Dim, U: Dim, A: Dim, T: Dim> {
+pub struct Quantity<
+    V,
+    BaseLotsExp: Exp,
+    BaseUnitsExp: Exp,
+    BaseAtomsExp: Exp,
+    QuoteLotsExp: Exp,
+    QuoteUnitsExp: Exp,
+    QuoteAtomsExp: Exp,
+    TickExp: Exp,
+> {
     value: V,
-    _phantom: PhantomData<(L, U, A, T)>,
+    _phantom: PhantomData<(
+        BaseLotsExp,
+        BaseUnitsExp,
+        BaseAtomsExp,
+        QuoteLotsExp,
+        QuoteUnitsExp,
+        QuoteAtomsExp,
+        TickExp,
+    )>,
 }
 
-impl<V, L: Dim, U: Dim, A: Dim, T: Dim> Quantity<V, L, U, A, T> {
+impl<
+        V,
+        BaseLotsExp: Exp,
+        BaseUnitsExp: Exp,
+        BaseAtomsExp: Exp,
+        QuoteLotsExp: Exp,
+        QuoteUnitsExp: Exp,
+        QuoteAtomsExp: Exp,
+        TickExp: Exp,
+    >
+    Quantity<
+        V,
+        BaseLotsExp,
+        BaseUnitsExp,
+        BaseAtomsExp,
+        QuoteLotsExp,
+        QuoteUnitsExp,
+        QuoteAtomsExp,
+        TickExp,
+    >
+{
     pub fn new(v: V) -> Self {
         Self {
             value: v,
             _phantom: PhantomData,
         }
     }
-    pub fn value(&self) -> &V {
-        &self.value
-    }
 }
 
 //
 // Multiplication
 //
-impl<V, L1: Dim, U1: Dim, A1: Dim, T1: Dim, L2: Dim, U2: Dim, A2: Dim, T2: Dim>
-    Mul<Quantity<V, L2, U2, A2, T2>> for Quantity<V, L1, U1, A1, T1>
+impl<
+        V,
+        BaseLotsExp1: Exp,
+        BaseUnitsExp1: Exp,
+        BaseAtomsExp1: Exp,
+        QuoteLotsExp1: Exp,
+        QuoteUnitsExp1: Exp,
+        QuoteAtomsExp1: Exp,
+        TickExp1: Exp,
+        BaseLotsExp2: Exp,
+        BaseUnitsExp2: Exp,
+        BaseAtomsExp2: Exp,
+        QuoteLotsExp2: Exp,
+        QuoteUnitsExp2: Exp,
+        QuoteAtomsExp2: Exp,
+        TickExp2: Exp,
+    >
+    Mul<
+        Quantity<
+            V,
+            BaseLotsExp2,
+            BaseUnitsExp2,
+            BaseAtomsExp2,
+            QuoteLotsExp2,
+            QuoteUnitsExp2,
+            QuoteAtomsExp2,
+            TickExp2,
+        >,
+    >
+    for Quantity<
+        V,
+        BaseLotsExp1,
+        BaseUnitsExp1,
+        BaseAtomsExp1,
+        QuoteLotsExp1,
+        QuoteUnitsExp1,
+        QuoteAtomsExp1,
+        TickExp1,
+    >
 where
     V: Copy + Mul<Output = V>,
-    L1: AddDim<L2>,
-    U1: AddDim<U2>,
-    A1: AddDim<A2>,
-    T1: AddDim<T2>,
+    BaseLotsExp1: AddExp<BaseLotsExp2>,
+    BaseUnitsExp1: AddExp<BaseUnitsExp2>,
+    BaseAtomsExp1: AddExp<BaseAtomsExp2>,
+    QuoteLotsExp1: AddExp<QuoteLotsExp2>,
+    QuoteUnitsExp1: AddExp<QuoteUnitsExp2>,
+    QuoteAtomsExp1: AddExp<QuoteAtomsExp2>,
+    TickExp1: AddExp<TickExp2>,
 {
     type Output = Quantity<
         V,
-        <L1 as AddDim<L2>>::Output,
-        <U1 as AddDim<U2>>::Output,
-        <A1 as AddDim<A2>>::Output,
-        <T1 as AddDim<T2>>::Output,
+        <BaseLotsExp1 as AddExp<BaseLotsExp2>>::Output,
+        <BaseUnitsExp1 as AddExp<BaseUnitsExp2>>::Output,
+        <BaseAtomsExp1 as AddExp<BaseAtomsExp2>>::Output,
+        <QuoteLotsExp1 as AddExp<QuoteLotsExp2>>::Output,
+        <QuoteUnitsExp1 as AddExp<QuoteUnitsExp2>>::Output,
+        <QuoteAtomsExp1 as AddExp<QuoteAtomsExp2>>::Output,
+        <TickExp1 as AddExp<TickExp2>>::Output,
     >;
 
     fn mul(
         self,
-        rhs: Quantity<V, L2, U2, A2, T2>,
-    ) -> <Self as Mul<Quantity<V, L2, U2, A2, T2>>>::Output {
+        rhs: Quantity<
+            V,
+            BaseLotsExp2,
+            BaseUnitsExp2,
+            BaseAtomsExp2,
+            QuoteLotsExp2,
+            QuoteUnitsExp2,
+            QuoteAtomsExp2,
+            TickExp2,
+        >,
+    ) -> <Self as Mul<
+        Quantity<
+            V,
+            BaseLotsExp2,
+            BaseUnitsExp2,
+            BaseAtomsExp2,
+            QuoteLotsExp2,
+            QuoteUnitsExp2,
+            QuoteAtomsExp2,
+            TickExp2,
+        >,
+    >>::Output {
         Quantity::new(self.value * rhs.value)
     }
 }
@@ -128,27 +225,90 @@ where
 //
 // Division
 //
-impl<V, L1: Dim, U1: Dim, A1: Dim, T1: Dim, L2: Dim, U2: Dim, A2: Dim, T2: Dim>
-    Div<Quantity<V, L2, U2, A2, T2>> for Quantity<V, L1, U1, A1, T1>
+impl<
+        V,
+        BaseLotsExp1: Exp,
+        BaseUnitsExp1: Exp,
+        BaseAtomsExp1: Exp,
+        QuoteLotsExp1: Exp,
+        QuoteUnitsExp1: Exp,
+        QuoteAtomsExp1: Exp,
+        TickExp1: Exp,
+        BaseLotsExp2: Exp,
+        BaseUnitsExp2: Exp,
+        BaseAtomsExp2: Exp,
+        QuoteLotsExp2: Exp,
+        QuoteUnitsExp2: Exp,
+        QuoteAtomsExp2: Exp,
+        TickExp2: Exp,
+    >
+    Div<
+        Quantity<
+            V,
+            BaseLotsExp2,
+            BaseUnitsExp2,
+            BaseAtomsExp2,
+            QuoteLotsExp2,
+            QuoteUnitsExp2,
+            QuoteAtomsExp2,
+            TickExp2,
+        >,
+    >
+    for Quantity<
+        V,
+        BaseLotsExp1,
+        BaseUnitsExp1,
+        BaseAtomsExp1,
+        QuoteLotsExp1,
+        QuoteUnitsExp1,
+        QuoteAtomsExp1,
+        TickExp1,
+    >
 where
     V: Copy + Div<Output = V>,
-    L1: SubDim<L2>,
-    U1: SubDim<U2>,
-    A1: SubDim<A2>,
-    T1: SubDim<T2>,
+    BaseLotsExp1: SubExp<BaseLotsExp2>,
+    BaseUnitsExp1: SubExp<BaseUnitsExp2>,
+    BaseAtomsExp1: SubExp<BaseAtomsExp2>,
+    QuoteLotsExp1: SubExp<QuoteLotsExp2>,
+    QuoteUnitsExp1: SubExp<QuoteUnitsExp2>,
+    QuoteAtomsExp1: SubExp<QuoteAtomsExp2>,
+    TickExp1: SubExp<TickExp2>,
 {
     type Output = Quantity<
         V,
-        <L1 as SubDim<L2>>::Output,
-        <U1 as SubDim<U2>>::Output,
-        <A1 as SubDim<A2>>::Output,
-        <T1 as SubDim<T2>>::Output,
+        <BaseLotsExp1 as SubExp<BaseLotsExp2>>::Output,
+        <BaseUnitsExp1 as SubExp<BaseUnitsExp2>>::Output,
+        <BaseAtomsExp1 as SubExp<BaseAtomsExp2>>::Output,
+        <QuoteLotsExp1 as SubExp<QuoteLotsExp2>>::Output,
+        <QuoteUnitsExp1 as SubExp<QuoteUnitsExp2>>::Output,
+        <QuoteAtomsExp1 as SubExp<QuoteAtomsExp2>>::Output,
+        <TickExp1 as SubExp<TickExp2>>::Output,
     >;
 
     fn div(
         self,
-        rhs: Quantity<V, L2, U2, A2, T2>,
-    ) -> <Self as Div<Quantity<V, L2, U2, A2, T2>>>::Output {
+        rhs: Quantity<
+            V,
+            BaseLotsExp2,
+            BaseUnitsExp2,
+            BaseAtomsExp2,
+            QuoteLotsExp2,
+            QuoteUnitsExp2,
+            QuoteAtomsExp2,
+            TickExp2,
+        >,
+    ) -> <Self as Div<
+        Quantity<
+            V,
+            BaseLotsExp2,
+            BaseUnitsExp2,
+            BaseAtomsExp2,
+            QuoteLotsExp2,
+            QuoteUnitsExp2,
+            QuoteAtomsExp2,
+            TickExp2,
+        >,
+    >>::Output {
         Quantity::new(self.value / rhs.value)
     }
 }
@@ -156,10 +316,13 @@ where
 //
 // Base units (you can choose numeric type)
 //
-type Lot = Quantity<u64, P1, Z0, Z0, Z0>;
-type Unit = Quantity<u64, Z0, P1, Z0, Z0>;
-type Atom = Quantity<u64, Z0, Z0, P1, Z0>;
-type Tick = Quantity<u64, Z0, Z0, Z0, P1>;
+type BaseLots = Quantity<u64, P1, Z0, Z0, Z0, Z0, Z0, Z0>;
+type BaseUnits = Quantity<u64, Z0, P1, Z0, Z0, Z0, Z0, Z0>;
+type BaseAtoms = Quantity<u64, Z0, Z0, P1, Z0, Z0, Z0, Z0>;
+type QuoteLots = Quantity<u64, Z0, Z0, Z0, P1, Z0, Z0, Z0>;
+type QuoteUnits = Quantity<u64, Z0, Z0, Z0, Z0, P1, Z0, Z0>;
+type QuoteAtoms = Quantity<u64, Z0, Z0, Z0, Z0, Z0, P1, Z0>;
+type Tick = Quantity<u64, Z0, Z0, Z0, Z0, Z0, Z0, P1>;
 
 #[cfg(test)]
 mod tests {
@@ -167,12 +330,12 @@ mod tests {
 
     #[test]
     fn test_prod() {
-        let lots: Lot = Quantity::new(10);
-        let units: Unit = Quantity::new(5);
+        let base_lots: BaseLots = Quantity::new(10);
+        let base_units: BaseUnits = Quantity::new(5);
         let ticks: Tick = Quantity::new(2);
 
-        let lot_unit = lots * units; // Lot*Unit
+        let lot_unit = base_lots * base_units; // BaseLots*BaseUnits
         let lot_unit_tick = lot_unit * ticks;
-        let lot_per_unit = lots / units; // Lot/Unit
+        let lot_per_unit = base_lots / base_units; // BaseLots/BaseUnits
     }
 }
