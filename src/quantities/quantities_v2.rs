@@ -77,15 +77,15 @@ impl<L: Dim + AddDim<<R as NegDim>::Output>, R: Dim + NegDim> SubDim<R> for L {
 }
 
 //
-// Quantity type: value + 3 exponents (Lot, Unit, Tick)
+// Quantity type: value + 3 exponents (Lot, Unit, Atom, Tick)
 //
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Quantity<V, L: Dim, U: Dim, T: Dim> {
+pub struct Quantity<V, L: Dim, U: Dim, A: Dim, T: Dim> {
     value: V,
-    _phantom: PhantomData<(L, U, T)>,
+    _phantom: PhantomData<(L, U, A, T)>,
 }
 
-impl<V, L: Dim, U: Dim, T: Dim> Quantity<V, L, U, T> {
+impl<V, L: Dim, U: Dim, A: Dim, T: Dim> Quantity<V, L, U, A, T> {
     pub fn new(v: V) -> Self {
         Self {
             value: v,
@@ -100,22 +100,27 @@ impl<V, L: Dim, U: Dim, T: Dim> Quantity<V, L, U, T> {
 //
 // Multiplication
 //
-impl<V, L1: Dim, U1: Dim, T1: Dim, L2: Dim, U2: Dim, T2: Dim> Mul<Quantity<V, L2, U2, T2>>
-    for Quantity<V, L1, U1, T1>
+impl<V, L1: Dim, U1: Dim, A1: Dim, T1: Dim, L2: Dim, U2: Dim, A2: Dim, T2: Dim>
+    Mul<Quantity<V, L2, U2, A2, T2>> for Quantity<V, L1, U1, A1, T1>
 where
     V: Copy + Mul<Output = V>,
     L1: AddDim<L2>,
     U1: AddDim<U2>,
+    A1: AddDim<A2>,
     T1: AddDim<T2>,
 {
     type Output = Quantity<
         V,
         <L1 as AddDim<L2>>::Output,
         <U1 as AddDim<U2>>::Output,
+        <A1 as AddDim<A2>>::Output,
         <T1 as AddDim<T2>>::Output,
     >;
 
-    fn mul(self, rhs: Quantity<V, L2, U2, T2>) -> <Self as Mul<Quantity<V, L2, U2, T2>>>::Output {
+    fn mul(
+        self,
+        rhs: Quantity<V, L2, U2, A2, T2>,
+    ) -> <Self as Mul<Quantity<V, L2, U2, A2, T2>>>::Output {
         Quantity::new(self.value * rhs.value)
     }
 }
@@ -123,22 +128,27 @@ where
 //
 // Division
 //
-impl<V, L1: Dim, U1: Dim, T1: Dim, L2: Dim, U2: Dim, T2: Dim> Div<Quantity<V, L2, U2, T2>>
-    for Quantity<V, L1, U1, T1>
+impl<V, L1: Dim, U1: Dim, A1: Dim, T1: Dim, L2: Dim, U2: Dim, A2: Dim, T2: Dim>
+    Div<Quantity<V, L2, U2, A2, T2>> for Quantity<V, L1, U1, A1, T1>
 where
     V: Copy + Div<Output = V>,
     L1: SubDim<L2>,
     U1: SubDim<U2>,
+    A1: SubDim<A2>,
     T1: SubDim<T2>,
 {
     type Output = Quantity<
         V,
         <L1 as SubDim<L2>>::Output,
         <U1 as SubDim<U2>>::Output,
+        <A1 as SubDim<A2>>::Output,
         <T1 as SubDim<T2>>::Output,
     >;
 
-    fn div(self, rhs: Quantity<V, L2, U2, T2>) -> <Self as Div<Quantity<V, L2, U2, T2>>>::Output {
+    fn div(
+        self,
+        rhs: Quantity<V, L2, U2, A2, T2>,
+    ) -> <Self as Div<Quantity<V, L2, U2, A2, T2>>>::Output {
         Quantity::new(self.value / rhs.value)
     }
 }
@@ -146,9 +156,10 @@ where
 //
 // Base units (you can choose numeric type)
 //
-type Lot<V> = Quantity<V, P1, Z0, Z0>;
-type Unit<V> = Quantity<V, Z0, P1, Z0>;
-type Tick<V> = Quantity<V, Z0, Z0, P1>;
+type Lot = Quantity<u64, P1, Z0, Z0, Z0>;
+type Unit = Quantity<u64, Z0, P1, Z0, Z0>;
+type Atom = Quantity<u64, Z0, Z0, P1, Z0>;
+type Tick = Quantity<u64, Z0, Z0, Z0, P1>;
 
 #[cfg(test)]
 mod tests {
@@ -156,9 +167,9 @@ mod tests {
 
     #[test]
     fn test_prod() {
-        let lots: Lot<u64> = Quantity::new(10);
-        let units: Unit<u64> = Quantity::new(5);
-        let ticks: Tick<u64> = Quantity::new(2);
+        let lots: Lot = Quantity::new(10);
+        let units: Unit = Quantity::new(5);
+        let ticks: Tick = Quantity::new(2);
 
         let lot_unit = lots * units; // Lot*Unit
         let lot_unit_tick = lot_unit * ticks;
