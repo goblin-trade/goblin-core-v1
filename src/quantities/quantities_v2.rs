@@ -1,6 +1,9 @@
 use core::marker::PhantomData;
 use core::ops::{Add, AddAssign, Div, Mul, Sub, SubAssign};
 
+use crate::goblin_error::GoblinError;
+use crate::require;
+
 //
 // Type-level integers for exponents: -1, 0, +1
 //
@@ -156,14 +159,14 @@ impl<
 //
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Quantity<V, D: Exp> {
-    value: V,
+    pub inner: V,
     _phantom: PhantomData<D>,
 }
 
 impl<V, D: Exp> Quantity<V, D> {
     pub const fn new(v: V) -> Self {
         Self {
-            value: v,
+            inner: v,
             _phantom: PhantomData,
         }
     }
@@ -180,7 +183,7 @@ where
     type Output = Quantity<V, <D1 as AddExp<D2>>::Output>;
 
     fn mul(self, rhs: Quantity<V, D2>) -> Self::Output {
-        Quantity::new(self.value * rhs.value)
+        Quantity::new(self.inner * rhs.inner)
     }
 }
 
@@ -195,7 +198,7 @@ where
     type Output = Quantity<V, <D1 as SubExp<D2>>::Output>;
 
     fn div(self, rhs: Quantity<V, D2>) -> Self::Output {
-        Quantity::new(self.value / rhs.value)
+        Quantity::new(self.inner / rhs.inner)
     }
 }
 
@@ -208,7 +211,7 @@ where
 {
     type Output = Self;
     fn add(self, rhs: Self) -> Self::Output {
-        Quantity::new(self.value + rhs.value)
+        Quantity::new(self.inner + rhs.inner)
     }
 }
 
@@ -221,7 +224,7 @@ where
 {
     type Output = Self;
     fn sub(self, rhs: Self) -> Self::Output {
-        Quantity::new(self.value - rhs.value)
+        Quantity::new(self.inner - rhs.inner)
     }
 }
 
@@ -233,7 +236,7 @@ where
     V: Copy + AddAssign,
 {
     fn add_assign(&mut self, rhs: Self) {
-        self.value += rhs.value;
+        self.inner += rhs.inner;
     }
 }
 
@@ -245,7 +248,7 @@ where
     V: Copy + SubAssign,
 {
     fn sub_assign(&mut self, rhs: Self) {
-        self.value -= rhs.value;
+        self.inner -= rhs.inner;
     }
 }
 
@@ -260,14 +263,14 @@ where
     where
         V: CheckedAdd,
     {
-        self.value.checked_add(rhs.value).map(Quantity::new)
+        self.inner.checked_add(rhs.inner).map(Quantity::new)
     }
 
     pub fn checked_sub(self, rhs: Self) -> Option<Self>
     where
         V: CheckedSub,
     {
-        self.value.checked_sub(rhs.value).map(Quantity::new)
+        self.inner.checked_sub(rhs.inner).map(Quantity::new)
     }
 }
 
@@ -340,6 +343,23 @@ type BaseLotsDelta = Quantity<i64, Dim<P1, Z0, Z0, Z0, Z0, Z0, Z0>>;
 type QuoteLotsDelta = Quantity<i64, Dim<Z0, Z0, Z0, P1, Z0, Z0, Z0>>;
 type BaseAtomsDelta = Quantity<i64, Dim<Z0, Z0, P1, Z0, Z0, Z0, Z0>>;
 type QuoteAtomsDelta = Quantity<i64, Dim<Z0, Z0, Z0, Z0, Z0, P1, Z0>>;
+
+// Try to convert unsigned to delta. Return error if we overflow the bounds of i64 delta
+impl<D: Exp> TryFrom<Quantity<u64, D>> for Quantity<i64, D> {
+    type Error = GoblinError;
+
+    fn try_from(value: Quantity<u64, D>) -> Result<Self, Self::Error> {
+        require!(value.inner <= i64::MAX as u64, GoblinError::DeltaOverflow);
+        Ok(Quantity::new(value.inner as i64))
+    }
+}
+
+// Convert delta to unsigned. Use the absolute unsigned value.
+impl<D: Exp> From<Quantity<i64, D>> for Quantity<u64, D> {
+    fn from(value: Quantity<i64, D>) -> Self {
+        Quantity::new(value.inner.unsigned_abs())
+    }
+}
 
 #[cfg(test)]
 mod tests {
