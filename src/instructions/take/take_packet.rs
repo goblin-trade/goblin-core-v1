@@ -59,7 +59,7 @@ where
         });
 
         let price_limit = match read_price_limit {
-            true => Ticks(payload.decode::<u32>(offset, len)?),
+            true => Ticks::new(payload.decode::<u32>(offset, len)? as u64),
             false => S::DEFAULT_PRICE_LIMIT,
         };
 

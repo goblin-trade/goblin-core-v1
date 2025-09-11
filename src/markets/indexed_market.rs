@@ -1,7 +1,7 @@
 use crate::{
     quantities::{
         AtomsDelta, BaseAtomsPerBaseLot, BaseLotsPerBaseUnit, MarketLotsDelta,
-        QuoteAtomsPerQuoteLot, QuoteLotsPerBaseLotsPerTick, QuoteLotsPerBaseUnitPerTick,
+        QuoteAtomsPerQuoteLot, QuoteLotsPerBaseLotPerTick, QuoteLotsPerBaseUnitPerTick,
         QuoteLotsPerQuoteUnit, BASE_ATOMS_PER_BASE_UNIT, QUOTE_ATOMS_PER_QUOTE_UNIT,
     },
     tokens::TokenIndex,
@@ -81,7 +81,7 @@ impl IndexedMarket {
         self.base_token_index != self.quote_token_index
             && BASE_ATOMS_PER_BASE_UNIT % base_lot_size == BaseAtomsPerBaseLot::ZERO
             && QUOTE_ATOMS_PER_QUOTE_UNIT % quote_lot_size == QuoteAtomsPerQuoteLot::ZERO
-            && self.tick_size % self.base_lot_size == QuoteLotsPerBaseLotsPerTick::ZERO
+            && self.tick_size % self.base_lot_size == QuoteLotsPerBaseLotPerTick::ZERO
     }
 
     // Atoms per lot are guaranteed to be whole numbers because of the validation check above

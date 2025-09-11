@@ -10,30 +10,30 @@ use crate::{
 
 use super::Atoms;
 
-// Delta for atoms
 define_custom_type!(AtomsDelta<i64>);
-define_delta_operations!(AtomsDelta<i64>, Atoms<u64>);
-
-// Delta for lots
-define_custom_type!(BaseLotsDelta<i64>);
-define_custom_type!(QuoteLotsDelta<i64>);
-define_delta_operations!(BaseLotsDelta<i64>, BaseLots<u64>);
-define_delta_operations!(QuoteLotsDelta<i64>, QuoteLots<u64>);
-
-// This should actually yield BaseAtoms delta
-define_inter_type_operations!(
-    BaseAtomsPerBaseLot<u64>,
-    BaseLotsDelta<i64>,
-    AtomsDelta<i64>
-);
-define_inter_type_operations!(
-    QuoteAtomsPerQuoteLot<u64>,
-    QuoteLotsDelta<i64>,
-    AtomsDelta<i64>
-);
 
 impl AtomsDelta {
     pub fn abs(&self) -> Atoms {
         Atoms(self.0.abs() as u64)
     }
 }
+
+// define_delta_operations!(AtomsDelta<i64>, Atoms<u64>);
+
+// // Delta for lots
+// define_custom_type!(BaseLotsDelta<i64>);
+// define_custom_type!(QuoteLotsDelta<i64>);
+// define_delta_operations!(BaseLotsDelta<i64>, BaseLots<u64>);
+// define_delta_operations!(QuoteLotsDelta<i64>, QuoteLots<u64>);
+
+// // This should actually yield BaseAtoms delta
+// define_inter_type_operations!(
+//     BaseAtomsPerBaseLot<u64>,
+//     BaseLotsDelta<i64>,
+//     AtomsDelta<i64>
+// );
+// define_inter_type_operations!(
+//     QuoteAtomsPerQuoteLot<u64>,
+//     QuoteLotsDelta<i64>,
+//     AtomsDelta<i64>
+// );

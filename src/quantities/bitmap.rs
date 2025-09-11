@@ -1,10 +1,14 @@
 use crate::define_custom_type;
 
 // Inner bitmap
-define_custom_type!(InnerBitmapIndex<u32>);
+define_custom_type!(InnerBitmapIndex<u64>);
 define_custom_type!(InnerIndex<u8>);
 define_custom_type!(Row<u8>);
 define_custom_type!(Column<u8>);
+
+// Outer bitmap
+define_custom_type!(OuterBitmapIndex<u64>);
+define_custom_type!(OuterIndex<u8>);
 
 impl InnerIndex {
     pub fn row(&self) -> Row {
@@ -34,7 +38,3 @@ impl InnerBitmapIndex {
         OuterIndex((self.0 & 0b1111_1111) as u8)
     }
 }
-
-// Outer bitmap
-define_custom_type!(OuterBitmapIndex<u32>);
-define_custom_type!(OuterIndex<u8>);

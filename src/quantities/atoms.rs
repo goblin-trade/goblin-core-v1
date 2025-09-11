@@ -88,13 +88,13 @@ impl Atoms {
 
 impl From<BaseAtoms> for Atoms {
     fn from(value: BaseAtoms) -> Self {
-        Self(value.0)
+        Self(value.inner)
     }
 }
 
 impl From<QuoteAtoms> for Atoms {
     fn from(value: QuoteAtoms) -> Self {
-        Self(value.0)
+        Self(value.inner)
     }
 }
 
