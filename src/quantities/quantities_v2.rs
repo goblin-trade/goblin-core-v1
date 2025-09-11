@@ -180,23 +180,48 @@ pub struct Quantity<V: Copy + Sized + Numeric, D: Exp> {
 }
 
 impl<V: Copy + Sized + Numeric, D: Exp> Quantity<V, D> {
-    pub const MIN: Self = Self::new(V::MIN);
-    pub const MAX: Self = Self::new(V::MAX);
-    pub const ZERO: Self = Self::new(V::ZERO);
-    pub const ONE: Self = Self::new(V::ONE);
-
     pub const fn new(v: V) -> Self {
         Self {
             inner: v,
             _phantom: PhantomData,
         }
     }
+}
 
-    pub fn checked_add(self, rhs: Self) -> Option<Self> {
+/// Types that support +, -, +=, -=
+/// Blanket trait for all supported Quantity operations
+pub trait QuantityOps:
+    Copy + Sized + PartialEq + Add<Output = Self> + Sub<Output = Self> + AddAssign + SubAssign
+{
+    const MIN: Self;
+    const MAX: Self;
+    const ZERO: Self;
+    const ONE: Self;
+
+    fn checked_add(self, rhs: Self) -> Option<Self>;
+    fn checked_sub(self, rhs: Self) -> Option<Self>;
+}
+
+// Implementation for constants, addition and subtraction.
+// These will be used in the leg namespace.
+//
+// Multiplication and division operations are asymmetric and happen
+// in the side namespace.
+impl<V, D> QuantityOps for Quantity<V, D>
+where
+    V: Copy + Numeric + Add<Output = V> + Sub<Output = V> + AddAssign + SubAssign + PartialEq,
+    D: Exp + Copy + PartialEq,
+{
+    const MIN: Self = Self::new(V::MIN);
+    const MAX: Self = Self::new(V::MAX);
+    const ZERO: Self = Self::new(V::ZERO);
+    const ONE: Self = Self::new(V::ONE);
+
+    fn checked_add(self, rhs: Self) -> Option<Self> {
         self.inner.checked_add(rhs.inner).map(Quantity::new)
     }
 
-    pub fn checked_sub(self, rhs: Self) -> Option<Self> {
+    fn checked_sub(self, rhs: Self) -> Option<Self> {
         self.inner.checked_sub(rhs.inner).map(Quantity::new)
     }
 }
