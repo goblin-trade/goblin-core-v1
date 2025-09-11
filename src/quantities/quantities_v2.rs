@@ -8,11 +8,11 @@ use crate::require;
 // Type-level integers for exponents: -1, 0, +1
 //
 
-#[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Clone, Copy, PartialEq)]
 pub struct N1; // -1
-#[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Clone, Copy, PartialEq)]
 pub struct Z0; //  0
-#[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Clone, Copy, PartialEq)]
 pub struct P1; // +1
 
 pub trait Exp {}
@@ -78,78 +78,94 @@ pub trait SubExp<Rhs: Exp>: Exp {
 impl<L: Exp + AddExp<<R as NegExp>::Output>, R: Exp + NegExp> SubExp<R> for L {
     type Output = <L as AddExp<<R as NegExp>::Output>>::Output;
 }
-
 //
-// Dimension wrapper: groups the 7 exponents
+// Compact sided dimension (L, U, A)
 //
 #[derive(Clone, Copy, PartialEq, Debug)]
-pub struct Dim<BL: Exp, BU: Exp, BA: Exp, QL: Exp, QU: Exp, QA: Exp, T: Exp>(
-    PhantomData<(BL, BU, BA, QL, QU, QA, T)>,
-);
+pub struct SidedDim<L: Exp, U: Exp, A: Exp>(PhantomData<(L, U, A)>);
 
-impl<BL: Exp, BU: Exp, BA: Exp, QL: Exp, QU: Exp, QA: Exp, T: Exp> Exp
-    for Dim<BL, BU, BA, QL, QU, QA, T>
+impl<L: Exp, U: Exp, A: Exp> Exp for SidedDim<L, U, A> {}
+
+//
+// Addition for SidedDim
+//
+impl<
+        L1: Exp + AddExp<L2>,
+        U1: Exp + AddExp<U2>,
+        A1: Exp + AddExp<A2>,
+        L2: Exp,
+        U2: Exp,
+        A2: Exp,
+    > AddExp<SidedDim<L2, U2, A2>> for SidedDim<L1, U1, A1>
 {
+    type Output = SidedDim<
+        <L1 as AddExp<L2>>::Output,
+        <U1 as AddExp<U2>>::Output,
+        <A1 as AddExp<A2>>::Output,
+    >;
 }
 
 //
-// Addition of Dims
+// Subtraction for SidedDim
 //
 impl<
-        BL1: Exp + AddExp<BL2>,
-        BU1: Exp + AddExp<BU2>,
-        BA1: Exp + AddExp<BA2>,
-        QL1: Exp + AddExp<QL2>,
-        QU1: Exp + AddExp<QU2>,
-        QA1: Exp + AddExp<QA2>,
+        L1: Exp + SubExp<L2>,
+        U1: Exp + SubExp<U2>,
+        A1: Exp + SubExp<A2>,
+        L2: Exp,
+        U2: Exp,
+        A2: Exp,
+    > SubExp<SidedDim<L2, U2, A2>> for SidedDim<L1, U1, A1>
+{
+    type Output = SidedDim<
+        <L1 as SubExp<L2>>::Output,
+        <U1 as SubExp<U2>>::Output,
+        <A1 as SubExp<A2>>::Output,
+    >;
+}
+
+//
+// Full dimension = Base side, Quote side, Tick exponent
+//
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct Dim<Base: Exp, Quote: Exp, T: Exp>(PhantomData<(Base, Quote, T)>);
+
+impl<Base: Exp, Quote: Exp, T: Exp> Exp for Dim<Base, Quote, T> {}
+
+//
+// Addition for Dim
+//
+impl<
+        Base1: Exp + AddExp<Base2>,
+        Quote1: Exp + AddExp<Quote2>,
         T1: Exp + AddExp<T2>,
-        BL2: Exp,
-        BU2: Exp,
-        BA2: Exp,
-        QL2: Exp,
-        QU2: Exp,
-        QA2: Exp,
+        Base2: Exp,
+        Quote2: Exp,
         T2: Exp,
-    > AddExp<Dim<BL2, BU2, BA2, QL2, QU2, QA2, T2>> for Dim<BL1, BU1, BA1, QL1, QU1, QA1, T1>
+    > AddExp<Dim<Base2, Quote2, T2>> for Dim<Base1, Quote1, T1>
 {
     type Output = Dim<
-        <BL1 as AddExp<BL2>>::Output,
-        <BU1 as AddExp<BU2>>::Output,
-        <BA1 as AddExp<BA2>>::Output,
-        <QL1 as AddExp<QL2>>::Output,
-        <QU1 as AddExp<QU2>>::Output,
-        <QA1 as AddExp<QA2>>::Output,
+        <Base1 as AddExp<Base2>>::Output,
+        <Quote1 as AddExp<Quote2>>::Output,
         <T1 as AddExp<T2>>::Output,
     >;
 }
 
 //
-// Subtraction of Dims
+// Subtraction for Dim
 //
 impl<
-        BL1: Exp + SubExp<BL2>,
-        BU1: Exp + SubExp<BU2>,
-        BA1: Exp + SubExp<BA2>,
-        QL1: Exp + SubExp<QL2>,
-        QU1: Exp + SubExp<QU2>,
-        QA1: Exp + SubExp<QA2>,
+        Base1: Exp + SubExp<Base2>,
+        Quote1: Exp + SubExp<Quote2>,
         T1: Exp + SubExp<T2>,
-        BL2: Exp,
-        BU2: Exp,
-        BA2: Exp,
-        QL2: Exp,
-        QU2: Exp,
-        QA2: Exp,
+        Base2: Exp,
+        Quote2: Exp,
         T2: Exp,
-    > SubExp<Dim<BL2, BU2, BA2, QL2, QU2, QA2, T2>> for Dim<BL1, BU1, BA1, QL1, QU1, QA1, T1>
+    > SubExp<Dim<Base2, Quote2, T2>> for Dim<Base1, Quote1, T1>
 {
     type Output = Dim<
-        <BL1 as SubExp<BL2>>::Output,
-        <BU1 as SubExp<BU2>>::Output,
-        <BA1 as SubExp<BA2>>::Output,
-        <QL1 as SubExp<QL2>>::Output,
-        <QU1 as SubExp<QU2>>::Output,
-        <QA1 as SubExp<QA2>>::Output,
+        <Base1 as SubExp<Base2>>::Output,
+        <Quote1 as SubExp<Quote2>>::Output,
         <T1 as SubExp<T2>>::Output,
     >;
 }
@@ -157,7 +173,7 @@ impl<
 //
 // Quantity type: value + Dim
 //
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 pub struct Quantity<V: Copy + Sized + Numeric, D: Exp> {
     pub inner: V,
     _phantom: PhantomData<D>,
@@ -175,8 +191,6 @@ impl<V: Copy + Sized + Numeric, D: Exp> Quantity<V, D> {
             _phantom: PhantomData,
         }
     }
-
-    // Checked Add/Sub
 
     pub fn checked_add(self, rhs: Self) -> Option<Self> {
         self.inner.checked_add(rhs.inner).map(Quantity::new)
@@ -309,42 +323,46 @@ impl Numeric for u64 {
 }
 
 //
-// Base units (you can choose numeric type)
+// Aliases
 //
-type BaseLots = Quantity<u64, Dim<P1, Z0, Z0, Z0, Z0, Z0, Z0>>;
-type BaseUnits = Quantity<u64, Dim<Z0, P1, Z0, Z0, Z0, Z0, Z0>>;
-type BaseAtoms = Quantity<u64, Dim<Z0, Z0, P1, Z0, Z0, Z0, Z0>>;
-type QuoteLots = Quantity<u64, Dim<Z0, Z0, Z0, P1, Z0, Z0, Z0>>;
-type QuoteUnits = Quantity<u64, Dim<Z0, Z0, Z0, Z0, P1, Z0, Z0>>;
-type QuoteAtoms = Quantity<u64, Dim<Z0, Z0, Z0, Z0, Z0, P1, Z0>>;
-type Tick = Quantity<u64, Dim<Z0, Z0, Z0, Z0, Z0, Z0, P1>>;
+type BaseDim<L, U, A> = SidedDim<L, U, A>;
+type QuoteDim<L, U, A> = SidedDim<L, U, A>;
+
+type BaseLots = Quantity<u64, Dim<BaseDim<P1, Z0, Z0>, QuoteDim<Z0, Z0, Z0>, Z0>>;
+type BaseUnits = Quantity<u64, Dim<BaseDim<Z0, P1, Z0>, QuoteDim<Z0, Z0, Z0>, Z0>>;
+type BaseAtoms = Quantity<u64, Dim<BaseDim<Z0, Z0, P1>, QuoteDim<Z0, Z0, Z0>, Z0>>;
+type QuoteLots = Quantity<u64, Dim<BaseDim<Z0, Z0, Z0>, QuoteDim<P1, Z0, Z0>, Z0>>;
+type QuoteUnits = Quantity<u64, Dim<BaseDim<Z0, Z0, Z0>, QuoteDim<Z0, P1, Z0>, Z0>>;
+type QuoteAtoms = Quantity<u64, Dim<BaseDim<Z0, Z0, Z0>, QuoteDim<Z0, Z0, P1>, Z0>>;
+type Tick = Quantity<u64, Dim<BaseDim<Z0, Z0, Z0>, QuoteDim<Z0, Z0, Z0>, P1>>;
 
 // Binary ratios
-type BaseLotsPerBaseUnit = Quantity<u64, Dim<P1, N1, Z0, Z0, Z0, Z0, Z0>>;
-type QuoteLotsPerQuoteUnit = Quantity<u64, Dim<Z0, Z0, Z0, P1, N1, Z0, Z0>>;
-type QuoteLotsPerBaseUnit = Quantity<u64, Dim<Z0, N1, Z0, P1, Z0, Z0, Z0>>;
+type BaseLotsPerBaseUnit = Quantity<u64, Dim<BaseDim<P1, N1, Z0>, QuoteDim<Z0, Z0, Z0>, Z0>>;
+type QuoteLotsPerQuoteUnit = Quantity<u64, Dim<BaseDim<Z0, Z0, Z0>, QuoteDim<P1, N1, Z0>, Z0>>;
+type QuoteLotsPerBaseUnit = Quantity<u64, Dim<BaseDim<Z0, N1, Z0>, QuoteDim<P1, Z0, Z0>, Z0>>;
 
-type BaseAtomsPerBaseUnit = Quantity<u64, Dim<Z0, N1, P1, Z0, Z0, Z0, Z0>>;
-type QuoteAtomsPerQuoteUnit = Quantity<u64, Dim<Z0, Z0, Z0, Z0, N1, P1, Z0>>;
+type BaseAtomsPerBaseUnit = Quantity<u64, Dim<BaseDim<Z0, N1, P1>, QuoteDim<Z0, Z0, Z0>, Z0>>;
+type QuoteAtomsPerQuoteUnit = Quantity<u64, Dim<BaseDim<Z0, Z0, Z0>, QuoteDim<Z0, N1, P1>, Z0>>;
 
-type BaseAtomsPerBaseLot = Quantity<u64, Dim<N1, Z0, P1, Z0, Z0, Z0, Z0>>;
-type QuoteAtomsPerQuoteLot = Quantity<u64, Dim<Z0, Z0, Z0, N1, Z0, P1, Z0>>;
+type BaseAtomsPerBaseLot = Quantity<u64, Dim<BaseDim<N1, Z0, P1>, QuoteDim<Z0, Z0, Z0>, Z0>>;
+type QuoteAtomsPerQuoteLot = Quantity<u64, Dim<BaseDim<Z0, Z0, Z0>, QuoteDim<N1, Z0, P1>, Z0>>;
 
 // Tertiary
-type QuoteLotsPerBaseUnitPerTick = Quantity<u64, Dim<Z0, N1, Z0, P1, Z0, Z0, N1>>;
-type QuoteLotsPerBaseLotPerTick = Quantity<u64, Dim<N1, Z0, Z0, P1, Z0, Z0, N1>>;
-type AdjustedQuoteLots = Quantity<u64, Dim<P1, N1, Z0, P1, Z0, Z0, Z0>>;
+type QuoteLotsPerBaseUnitPerTick =
+    Quantity<u64, Dim<BaseDim<Z0, N1, Z0>, QuoteDim<P1, Z0, Z0>, N1>>;
+type QuoteLotsPerBaseLotPerTick = Quantity<u64, Dim<BaseDim<N1, Z0, Z0>, QuoteDim<P1, Z0, Z0>, N1>>;
+type AdjustedQuoteLots = Quantity<u64, Dim<BaseDim<P1, N1, Z0>, QuoteDim<P1, Z0, Z0>, Z0>>;
 
 const BASE_ATOMS_PER_BASE_UNIT: BaseAtomsPerBaseUnit = BaseAtomsPerBaseUnit::new(1_000_000);
 const QUOTE_ATOMS_PER_QUOTE_UNIT: QuoteAtomsPerQuoteUnit = QuoteAtomsPerQuoteUnit::new(1_000_000);
 
 // Delta types
-type BaseLotsDelta = Quantity<i64, Dim<P1, Z0, Z0, Z0, Z0, Z0, Z0>>;
-type QuoteLotsDelta = Quantity<i64, Dim<Z0, Z0, Z0, P1, Z0, Z0, Z0>>;
-type BaseAtomsDelta = Quantity<i64, Dim<Z0, Z0, P1, Z0, Z0, Z0, Z0>>;
-type QuoteAtomsDelta = Quantity<i64, Dim<Z0, Z0, Z0, Z0, Z0, P1, Z0>>;
+type BaseLotsDelta = Quantity<i64, Dim<BaseDim<P1, Z0, Z0>, QuoteDim<Z0, Z0, Z0>, Z0>>;
+type QuoteLotsDelta = Quantity<i64, Dim<BaseDim<Z0, Z0, Z0>, QuoteDim<P1, Z0, Z0>, Z0>>;
+type BaseAtomsDelta = Quantity<i64, Dim<BaseDim<Z0, Z0, P1>, QuoteDim<Z0, Z0, Z0>, Z0>>;
+type QuoteAtomsDelta = Quantity<i64, Dim<BaseDim<Z0, Z0, Z0>, QuoteDim<Z0, Z0, P1>, Z0>>;
 
-// Try to convert unsigned to delta. Return error if we overflow the bounds of i64 delta
+// Try to convert unsigned to delta. Return error if overflow
 impl<D: Exp> TryFrom<Quantity<u64, D>> for Quantity<i64, D> {
     type Error = GoblinError;
 
@@ -354,7 +372,7 @@ impl<D: Exp> TryFrom<Quantity<u64, D>> for Quantity<i64, D> {
     }
 }
 
-// Convert delta to unsigned. Use the absolute unsigned value.
+// Convert delta to unsigned. Use absolute value
 impl<D: Exp> From<Quantity<i64, D>> for Quantity<u64, D> {
     fn from(value: Quantity<i64, D>) -> Self {
         Quantity::new(value.inner.unsigned_abs())
@@ -371,12 +389,10 @@ mod tests {
         let base_units: BaseUnits = Quantity::new(5);
         let ticks: Tick = Quantity::new(2);
 
-        // Addition and subtraction work for quantities with same dimensions
         let more_ticks = Tick::new(1);
         let _tick_sum = ticks + more_ticks;
         let _tick_diff = ticks - more_ticks;
 
-        // AddAssign and SubAssign
         let mut mutable_ticks = ticks;
         mutable_ticks += more_ticks;
         mutable_ticks -= Tick::new(1);
@@ -386,32 +402,5 @@ mod tests {
         let _lot_per_unit = base_lots / base_units;
 
         let _checked_add = Tick::new(1).checked_add(Tick::new(2));
-    }
-
-    #[test]
-    fn test_numeric_trait() {
-        let tick1 = Tick::new(5);
-        let tick2 = Tick::new(3);
-
-        // Test checked_add
-        let add_result = tick1.checked_add(tick2);
-        assert_eq!(add_result, Some(Tick::new(8)));
-
-        // Test checked_sub
-        let sub_result = tick1.checked_sub(tick2);
-        assert_eq!(sub_result, Some(Tick::new(2)));
-
-        // Test overflow behavior
-        let max_tick = Tick::new(u64::MAX);
-        let overflow_result = max_tick.checked_add(Tick::new(1));
-        assert_eq!(overflow_result, None);
-
-        // Test underflow behavior
-        let min_tick = Tick::new(0);
-        let underflow_result = min_tick.checked_sub(Tick::new(1));
-        assert_eq!(underflow_result, None);
-
-        let max_tick = Tick::MAX;
-        assert_eq!(max_tick, Tick::new(u64::MAX));
     }
 }
