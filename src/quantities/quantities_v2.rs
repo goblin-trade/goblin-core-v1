@@ -191,7 +191,7 @@ impl<V: Copy + Sized + Numeric, D: Exp> Quantity<V, D> {
 /// Blanket trait for all supported Quantity operations
 ///
 pub trait QuantityOps:
-    Copy + Sized + PartialEq + Add<Output = Self> + Sub<Output = Self> + AddAssign + SubAssign
+    Copy + Sized + PartialEq + Default + Add<Output = Self> + Sub<Output = Self> + AddAssign + SubAssign
 {
     const MIN: Self;
     const MAX: Self;
@@ -209,8 +209,15 @@ pub trait QuantityOps:
 // in the side namespace.
 impl<V, D> QuantityOps for Quantity<V, D>
 where
-    V: Copy + Numeric + Add<Output = V> + Sub<Output = V> + AddAssign + SubAssign + PartialEq,
-    D: Exp + Copy + PartialEq,
+    V: Copy
+        + Numeric
+        + Default
+        + Add<Output = V>
+        + Sub<Output = V>
+        + AddAssign
+        + SubAssign
+        + PartialEq,
+    D: Exp + Copy + PartialEq + Default,
 {
     const MIN: Self = Self::new(V::MIN);
     const MAX: Self = Self::new(V::MAX);
@@ -420,6 +427,27 @@ impl<D: Exp> From<Quantity<i64, D>> for Quantity<u64, D> {
     }
 }
 
+// Multiplying unsigned with signed delta
+// Exponent rules remain the same
+// We just cast the unsigned to signed and then do the operation
+// i64::try_from(u64)
+// Instead of returning Quantity, return Result or Option type
+
+// impl<V1, V2, D1: Exp, D2: Exp> Mul<Quantity<V2, D2>> for Quantity<V1, D1>
+// where
+//     V1: Copy + Mul<V2, Output = V1> + Numeric,
+//     // V2: Copy + Mul<Output = V> + Numeric,
+//     D1: AddExp<D2>,
+// {
+//     type Output = Quantity<V1, <D1 as AddExp<D2>>::Output>;
+
+//     fn mul(self, rhs: Quantity<V2, D2>) -> Self::Output {
+//         // Inner type of RHS (V2) must be cast to inner type of self V1
+//         Quantity::new(self.inner)
+//         // Quantity::new(self.inner * rhs.inner)
+//     }
+// }
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -446,10 +474,17 @@ mod tests {
     }
 
     #[test]
-    fn mod_test() {
+    fn test_mod() {
         let lot_size = BaseLotsPerBaseUnit::new(1);
 
         // This works here. I need mod to work via LegMarker trait
         let zz = BASE_ATOMS_PER_BASE_UNIT % lot_size;
+    }
+
+    #[test]
+    fn test_cast() {
+        let a = 10u64;
+        let b = a as i64;
+        let c = i64::try_from(a);
     }
 }

@@ -1,4 +1,4 @@
-use super::{AtomsDelta, RawAtoms};
+use super::RawAtoms;
 ///! The number of atoms of a token, obtained by normalizing raw atoms.
 ///!
 ///! Every token is normalized from K decimal places to 6 decimal places.
@@ -25,13 +25,14 @@ use super::{AtomsDelta, RawAtoms};
 ///! - For USDC = raw atoms / 10^0 = raw atoms
 ///! - For eth = raw atoms / 10^(18 - 6) = raw atoms / 10^12
 use crate::{
-    define_custom_type,
+    define_custom_type, define_delta_operations,
     goblin_error::GoblinError,
     quantities::{BaseAtoms, QuoteAtoms},
 };
 use core::u64;
 
 define_custom_type!(Atoms<u64>);
+define_custom_type!(AtomsDelta<i64>);
 
 impl Atoms {
     pub fn from_raw_atoms(raw: &RawAtoms, decimals: u8) -> Result<Self, GoblinError> {
@@ -97,6 +98,14 @@ impl From<QuoteAtoms> for Atoms {
         Self(value.inner)
     }
 }
+
+impl AtomsDelta {
+    pub fn abs(&self) -> Atoms {
+        Atoms(self.0.abs() as u64)
+    }
+}
+
+define_delta_operations!(AtomsDelta<i64>, Atoms<u64>);
 
 #[cfg(test)]
 mod tests {

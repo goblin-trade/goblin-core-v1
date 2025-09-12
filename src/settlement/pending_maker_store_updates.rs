@@ -1,11 +1,6 @@
 use crate::{
-    goblin_error::GoblinError,
-    markets::IndexedMarket,
-    quantities::Atoms,
-    settlement::PendingMakerUpdates,
-    tokens::TokenIndex,
-    types::{Address, SideMarker},
-    utils::FixedMap,
+    goblin_error::GoblinError, markets::IndexedMarketV2, quantities::Atoms,
+    settlement::PendingMakerUpdates, tokens::TokenIndex, types::Address, utils::FixedMap,
 };
 
 pub const MAX_OPPOSITE_DELTAS: usize = 16;
@@ -28,32 +23,33 @@ pub type PendingMakerStoreUpdates =
 impl PendingMakerStoreUpdates {
     pub fn apply_updates(
         &mut self,
-        indexed_market: &IndexedMarket,
+        indexed_market: &IndexedMarketV2,
         updates: &PendingMakerUpdates,
     ) -> Result<(), GoblinError> {
         for (maker, update) in updates.iter() {
             // TODO make it compact using SideMarker
             // But each store receives contributions from both bid and ask side
             // Base / Quote namespace is separate from the side namespace.
-            let base_atoms_per_base_lot = indexed_market.base_atoms_per_base_lot();
+            let base_atoms_per_base_lot = indexed_market.base.atoms_per_lot();
 
             let base_store = self
                 .get_or_insert_mut(PendingStoreKey {
                     maker: *maker,
-                    token_index: indexed_market.base_token_index,
+                    token_index: indexed_market.base.token_index,
                 })
                 .ok_or(GoblinError::MakerStoreListFull)?;
 
+            // Convert BaseAtoms and QuoteAtoms to Atoms
             base_store.locked_atoms_out +=
                 Atoms::from(update.bid.locked_lots_out * base_atoms_per_base_lot);
             base_store.free_atoms_in +=
                 Atoms::from(update.ask.free_lots_in * base_atoms_per_base_lot);
 
-            let quote_atoms_per_quote_lot = indexed_market.quote_atoms_per_quote_lot();
+            let quote_atoms_per_quote_lot = indexed_market.quote.atoms_per_lot();
             let quote_store = self
                 .get_or_insert_mut(PendingStoreKey {
                     maker: *maker,
-                    token_index: indexed_market.quote_token_index,
+                    token_index: indexed_market.quote.token_index,
                 })
                 .ok_or(GoblinError::MakerStoreListFull)?;
 

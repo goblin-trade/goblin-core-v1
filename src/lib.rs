@@ -71,7 +71,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
         let mut market_state = MarketState::load(&market_key);
 
         // Deltas for taker and makers
-        let mut market_delta = MarketLotsDelta::default();
+        let mut market_lots_delta = MarketLotsDelta::default();
         let mut pending_maker_updates = PendingMakerUpdates::default();
 
         if market_instructions.take_bid() {
@@ -85,7 +85,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
                 &mut args.offset,
             )?;
 
-            market_delta.apply_match_result(&match_result)?;
+            market_lots_delta.apply_match_result(&match_result)?;
         }
 
         if market_instructions.take_ask() {
@@ -98,14 +98,15 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
                 len,
                 &mut args.offset,
             )?;
-            market_delta.apply_match_result(&match_result)?;
+            market_lots_delta.apply_match_result(&match_result)?;
         }
 
         // Write market state to slot
         market_state.as_mut().store(&market_key);
 
         // Apply market delta to token deltas
-        token_deltas.apply_market_delta(&indexed_market, &market_delta)?;
+        // Convert to atoms delta, then apply to delta list
+        token_deltas.apply_market_delta(&indexed_market, &market_lots_delta)?;
 
         // Apply pending maker updates
         pending_maker_store_updates.apply_updates(&indexed_market, &pending_maker_updates)?;

@@ -10,13 +10,13 @@ use crate::{
 
 use super::Atoms;
 
-define_custom_type!(AtomsDelta<i64>);
+// define_custom_type!(AtomsDelta<i64>);
 
-impl AtomsDelta {
-    pub fn abs(&self) -> Atoms {
-        Atoms(self.0.abs() as u64)
-    }
-}
+// impl AtomsDelta {
+//     pub fn abs(&self) -> Atoms {
+//         Atoms(self.0.abs() as u64)
+//     }
+// }
 
 // define_delta_operations!(AtomsDelta<i64>, Atoms<u64>);
 

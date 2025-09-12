@@ -1,5 +1,5 @@
 use crate::{
-    quantities::{QuantityOps, QuoteLotsPerBaseUnitPerTick},
+    quantities::{MarketLotsDelta, QuantityOps, QuoteLotsPerBaseUnitPerTick},
     tokens::TokenIndex,
     types::{Base, LegMarker, Quote},
 };
@@ -80,7 +80,58 @@ impl IndexedMarketV2 {
             && self.quote.is_valid()
             && self.tick_size % self.base.lot_size == QuoteLotsPerBaseUnitPerTick::ZERO
     }
+
+    pub fn get_atoms_delta(&self, market_delta: &MarketLotsDelta) -> MarketAtomsDelta {}
 }
+
+#[derive(Default)]
+pub struct LegLotsDelta<L: LegMarker> {
+    pub consumed: L::LotsDelta,
+    pub locked: L::LotsDelta,
+}
+
+impl<L: LegMarker> LegLotsDelta<L> {
+    fn to_atoms_delta(&self, market_leg: &MarketLeg<L>) -> LegAtomsDelta<L> {
+        // TODO we must convert atoms per lot into delta. This is always
+        // a positive value.
+        //
+        // Alternative- enable multiplication between signed and unsigned.
+        // This is different from other operations because we don't add or subtract.
+        // The sign remains the same.
+        // Sub case- we only need multiplication on this one.
+        // LotsDelta * AtomsPerLot = AtomsDelta
+        let atoms_per_lot = market_leg.atoms_per_lot();
+
+        LegAtomsDelta {
+            consumed: self.consumed * atoms_per_lot,
+            locked: self.locked * atoms_per_lot,
+        }
+    }
+}
+
+/// Consumed and locked deltas of msg.sender for a market
+#[derive(Default)]
+pub struct MarketLotsDelta {
+    pub base: LegLotsDelta<Base>,
+    pub quote: LegLotsDelta<Quote>,
+}
+
+pub struct LegAtomsDelta<L: LegMarker> {
+    pub consumed: L::AtomsDelta,
+    pub locked: L::AtomsDelta,
+}
+
+pub struct MarketAtomsDelta {
+    pub base: LegAtomsDelta<Base>,
+    pub quote: LegAtomsDelta<Quote>,
+}
+
+// pub struct MarketAtomsDelta {
+//     pub base_atoms_consumed: AtomsDelta,
+//     pub quote_atoms_consumed: AtomsDelta,
+//     pub base_atoms_locked: AtomsDelta,
+//     pub quote_atoms_locked: AtomsDelta,
+// }
 
 // /// Parameters representing a Goblin market.
 // #[repr(C, packed)]

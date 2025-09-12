@@ -1,10 +1,10 @@
 use crate::{
     goblin_error::GoblinError,
-    markets::IndexedMarket,
-    quantities::{Atoms, AtomsDelta, MarketLotsDelta},
+    markets::IndexedMarketV2,
+    quantities::{Atoms, AtomsDelta, LegLotsDelta, MarketLotsDelta},
     settlement::{DeltaAccumulator, ERC20DeltaInput, ERC20DeltaList, EthDelta},
     tokens::TokenIndex,
-    types::Address,
+    types::{Address, LegMarker},
 };
 
 pub struct TokenDeltas {
@@ -24,12 +24,20 @@ impl TokenDeltas {
         })
     }
 
+    fn apply_leg_lots_delta<L: LegMarker>(
+        &mut self,
+        indexed_market: &IndexedMarketV2,
+        leg_lots_delta: LegLotsDelta<L>,
+    ) {
+        // Convert to atoms delta
+    }
+
     pub fn apply_market_delta(
         &mut self,
-        indexed_market: &IndexedMarket,
-        market_delta: &MarketLotsDelta,
+        indexed_market: &IndexedMarketV2,
+        lots_delta: &MarketLotsDelta,
     ) -> Result<(), GoblinError> {
-        let market_atoms_delta = indexed_market.get_atoms_delta(market_delta);
+        let market_atoms_delta = indexed_market.get_atoms_delta(lots_delta);
 
         self.add_consumed_amount(
             indexed_market.base_token_index,
