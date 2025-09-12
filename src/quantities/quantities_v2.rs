@@ -188,8 +188,8 @@ impl<V: Copy + Sized + Numeric, D: Exp> Quantity<V, D> {
     }
 }
 
-/// Types that support +, -, +=, -=
 /// Blanket trait for all supported Quantity operations
+///
 pub trait QuantityOps:
     Copy + Sized + PartialEq + Add<Output = Self> + Sub<Output = Self> + AddAssign + SubAssign
 {
@@ -200,6 +200,17 @@ pub trait QuantityOps:
 
     fn checked_add(self, rhs: Self) -> Option<Self>;
     fn checked_sub(self, rhs: Self) -> Option<Self>;
+}
+
+/// Common trait for cross-quantity operations: Mul, Div, Rem
+pub trait CrossQuantityOps<Rhs>: Mul<Rhs> + Div<Rhs> + Rem<Rhs> {}
+
+impl<V, D1, D2> CrossQuantityOps<Quantity<V, D2>> for Quantity<V, D1>
+where
+    V: Copy + Numeric + Mul<Output = V> + Div<Output = V> + Rem<Output = V>,
+    D1: Exp + AddExp<D2> + SubExp<D2>,
+    D2: Exp,
+{
 }
 
 // Implementation for constants, addition and subtraction.
@@ -262,9 +273,8 @@ where
 impl<V, D1: Exp, D2: Exp> Rem<Quantity<V, D2>> for Quantity<V, D1>
 where
     V: Copy + Rem<Output = V> + Numeric,
-    D1: SubExp<D2>,
 {
-    type Output = Quantity<V, <D1 as SubExp<D2>>::Output>;
+    type Output = Self;
 
     fn rem(self, rhs: Quantity<V, D2>) -> Self::Output {
         Quantity::new(self.inner % rhs.inner)
@@ -444,5 +454,16 @@ mod tests {
         let _lot_per_unit = base_lots / base_units;
 
         let _checked_add = Ticks::new(1).checked_add(Ticks::new(2));
+    }
+
+    #[test]
+    fn mod_test() {
+        let lot_size = BaseLotsPerBaseUnit::new(1);
+
+        let gg: BaseAtomsPerBaseLot = BASE_ATOMS_PER_BASE_UNIT / lot_size;
+
+        // TODO update code to support mod on dissimilar units
+        // The unit should be the same as the numerator
+        let zz = BASE_ATOMS_PER_BASE_UNIT % lot_size;
     }
 }

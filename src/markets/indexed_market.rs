@@ -1,14 +1,45 @@
 use crate::{
     quantities::{
-        AtomsDelta, BaseAtomsPerBaseLot, BaseLotsPerBaseUnit, MarketLotsDelta,
+        AtomsDelta, BaseAtomsPerBaseLot, BaseLotsPerBaseUnit, MarketLotsDelta, QuantityOps,
         QuoteAtomsPerQuoteLot, QuoteLotsPerBaseLotPerTick, QuoteLotsPerBaseUnitPerTick,
         QuoteLotsPerQuoteUnit, BASE_ATOMS_PER_BASE_UNIT, QUOTE_ATOMS_PER_QUOTE_UNIT,
     },
     tokens::TokenIndex,
+    types::{Base, LegMarker, Quote},
 };
 
 // Max number of custom markets
 pub const MAX_CUSTOM_MARKETS: usize = 7;
+
+#[repr(C, packed)]
+#[derive(Clone, Copy)]
+pub struct MarketLeg<L: LegMarker> {
+    /// The token index. It will be mapped to token address.
+    pub token_index: TokenIndex,
+
+    /// Lots per unit
+    pub lot_size: L::LotsPerUnit,
+}
+
+impl<L: LegMarker> MarketLeg<L> {
+    pub fn is_valid(&self) -> bool {
+        // (atoms / unit) % (lots / unit)
+        L::ATOMS_PER_UNIT % self.lot_size == L::AtomsPerUnit::ZERO
+    }
+}
+
+#[repr(C, packed)]
+#[derive(Clone, Copy)]
+pub struct IndexedMarketV2 {
+    /// Marker parameters for the base leg
+    pub base: MarketLeg<Base>,
+
+    /// Marker parameters for the quote leg
+    pub quote: MarketLeg<Quote>,
+
+    /// Tick size
+    pub tick_size: QuoteLotsPerBaseUnitPerTick,
+}
 
 /// Parameters representing a Goblin market.
 #[repr(C, packed)]
