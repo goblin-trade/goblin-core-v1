@@ -202,17 +202,6 @@ pub trait QuantityOps:
     fn checked_sub(self, rhs: Self) -> Option<Self>;
 }
 
-/// Common trait for cross-quantity operations: Mul, Div, Rem
-pub trait CrossQuantityOps<Rhs>: Mul<Rhs> + Div<Rhs> + Rem<Rhs> {}
-
-impl<V, D1, D2> CrossQuantityOps<Quantity<V, D2>> for Quantity<V, D1>
-where
-    V: Copy + Numeric + Mul<Output = V> + Div<Output = V> + Rem<Output = V>,
-    D1: Exp + AddExp<D2> + SubExp<D2>,
-    D2: Exp,
-{
-}
-
 // Implementation for constants, addition and subtraction.
 // These will be used in the leg namespace.
 //
@@ -460,10 +449,7 @@ mod tests {
     fn mod_test() {
         let lot_size = BaseLotsPerBaseUnit::new(1);
 
-        let gg: BaseAtomsPerBaseLot = BASE_ATOMS_PER_BASE_UNIT / lot_size;
-
-        // TODO update code to support mod on dissimilar units
-        // The unit should be the same as the numerator
+        // This works here. I need mod to work via LegMarker trait
         let zz = BASE_ATOMS_PER_BASE_UNIT % lot_size;
     }
 }

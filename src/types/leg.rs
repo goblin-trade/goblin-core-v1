@@ -1,8 +1,9 @@
+use core::ops::Rem;
+
 use crate::quantities::{
     BaseAtoms, BaseAtomsPerBaseLot, BaseAtomsPerBaseUnit, BaseLots, BaseLotsPerBaseUnit, BaseUnits,
-    CrossQuantityOps, QuantityOps, QuoteAtoms, QuoteAtomsPerQuoteLot, QuoteAtomsPerQuoteUnit,
-    QuoteLots, QuoteLotsPerQuoteUnit, QuoteUnits, BASE_ATOMS_PER_BASE_UNIT,
-    QUOTE_ATOMS_PER_QUOTE_UNIT,
+    QuantityOps, QuoteAtoms, QuoteAtomsPerQuoteLot, QuoteAtomsPerQuoteUnit, QuoteLots,
+    QuoteLotsPerQuoteUnit, QuoteUnits, BASE_ATOMS_PER_BASE_UNIT, QUOTE_ATOMS_PER_QUOTE_UNIT,
 };
 
 #[derive(Clone, Copy)]
@@ -21,7 +22,7 @@ pub trait LegMarker {
 
     // Ratios
     type LotsPerUnit: QuantityOps;
-    type AtomsPerUnit: QuantityOps;
+    type AtomsPerUnit: QuantityOps + Rem<Self::LotsPerUnit, Output = Self::AtomsPerUnit>;
     type AtomsPerLot: QuantityOps;
 
     const ATOMS_PER_UNIT: Self::AtomsPerUnit;

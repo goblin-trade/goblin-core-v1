@@ -23,7 +23,6 @@ pub struct MarketLeg<L: LegMarker> {
 
 impl<L: LegMarker> MarketLeg<L> {
     pub fn is_valid(&self) -> bool {
-        // (atoms / unit) % (lots / unit)
         L::ATOMS_PER_UNIT % self.lot_size == L::AtomsPerUnit::ZERO
     }
 }
