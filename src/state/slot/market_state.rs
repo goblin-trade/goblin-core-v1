@@ -64,7 +64,7 @@ pub struct MarketState {
     pub best_bid_price: Ticks,
     pub best_ask_price: Ticks,
     /// Padding to match 32 bits
-    _padding: [u8; 24],
+    _padding: [u8; 16],
 }
 
 impl SlotState<MarketKey> for MarketState {}

@@ -1,7 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::{ArgsBuffer, ArgsDecoder},
-    markets::{IndexedMarket, MarketInstructions},
+    markets::{IndexedMarketV2, MarketInstructions},
     quantities::Atoms,
     require,
     settlement::ERC20DeltaInput,
@@ -81,7 +81,7 @@ impl Header {
             // Lists
             + self.custom_erc20_count * core::mem::size_of::<Address>()
             + self.erc20_delta_count * core::mem::size_of::<ERC20DeltaInput>()
-            + self.custom_market_count * core::mem::size_of::<IndexedMarket>()
+            + self.custom_market_count * core::mem::size_of::<IndexedMarketV2>()
             * self.market_instructions_count * core::mem::size_of::<MarketInstructions>();
 
         // TODO add instruction sizes once finalized

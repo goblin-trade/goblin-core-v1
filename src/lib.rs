@@ -55,16 +55,16 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
             .to_indexed_market(args.custom_market_list)?;
 
         let token_pair = ValidatedTokenPair::new(
-            indexed_market.base_token_index,
-            indexed_market.quote_token_index,
+            indexed_market.base.token_index,
+            indexed_market.quote.token_index,
             args.custom_erc20_list,
         )?;
 
         // Obtain market key
         let market_key = MarketKey::new(
             &token_pair,
-            indexed_market.base_lot_size,
-            indexed_market.quote_lot_size,
+            indexed_market.base.lot_size,
+            indexed_market.quote.lot_size,
             indexed_market.tick_size,
         );
 

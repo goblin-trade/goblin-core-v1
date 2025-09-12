@@ -1,6 +1,6 @@
 use crate::{
     goblin_error::GoblinError,
-    markets::{IndexedMarket, HARDCODED_MARKETS},
+    markets::{IndexedMarketV2, HARDCODED_MARKETS},
     require,
 };
 
@@ -18,8 +18,8 @@ impl MarketIndex {
     /// * `dangerous_custom_market_list` - Custom market list read from args
     pub fn to_indexed_market(
         &self,
-        dangerous_custom_market_list: &[IndexedMarket],
-    ) -> Result<IndexedMarket, GoblinError> {
+        dangerous_custom_market_list: &[IndexedMarketV2],
+    ) -> Result<IndexedMarketV2, GoblinError> {
         let index = self.0 as usize;
 
         if index < dangerous_custom_market_list.len() {
