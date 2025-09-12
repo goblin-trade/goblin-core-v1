@@ -1,4 +1,4 @@
-use core::ops::Rem;
+use core::ops::{Div, Rem};
 
 use crate::quantities::{
     BaseAtoms, BaseAtomsPerBaseLot, BaseAtomsPerBaseUnit, BaseLots, BaseLotsPerBaseUnit, BaseUnits,
@@ -22,7 +22,9 @@ pub trait LegMarker {
 
     // Ratios
     type LotsPerUnit: QuantityOps;
-    type AtomsPerUnit: QuantityOps + Rem<Self::LotsPerUnit, Output = Self::AtomsPerUnit>;
+    type AtomsPerUnit: QuantityOps
+        + Rem<Self::LotsPerUnit, Output = Self::AtomsPerUnit>
+        + Div<Self::LotsPerUnit, Output = Self::AtomsPerLot>;
     type AtomsPerLot: QuantityOps;
 
     const ATOMS_PER_UNIT: Self::AtomsPerUnit;

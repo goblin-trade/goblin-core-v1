@@ -1,9 +1,5 @@
 use crate::{
-    quantities::{
-        AtomsDelta, BaseAtomsPerBaseLot, BaseLotsPerBaseUnit, MarketLotsDelta, QuantityOps,
-        QuoteAtomsPerQuoteLot, QuoteLotsPerBaseLotPerTick, QuoteLotsPerBaseUnitPerTick,
-        QuoteLotsPerQuoteUnit, BASE_ATOMS_PER_BASE_UNIT, QUOTE_ATOMS_PER_QUOTE_UNIT,
-    },
+    quantities::{QuantityOps, QuoteLotsPerBaseUnitPerTick},
     tokens::TokenIndex,
     types::{Base, LegMarker, Quote},
 };
@@ -22,8 +18,20 @@ pub struct MarketLeg<L: LegMarker> {
 }
 
 impl<L: LegMarker> MarketLeg<L> {
+    /// Ensure that market has an integer number of atoms per lot
+    ///
+    /// As ATOMS_PER_UNIT is hardcoded to 10^6 for base and quote, this is effectively
+    ///
+    ///  **10^6 % Lot size == 0**
     pub fn is_valid(&self) -> bool {
         L::ATOMS_PER_UNIT % self.lot_size == L::AtomsPerUnit::ZERO
+    }
+
+    /// The number of atoms per lot
+    ///
+    /// Since we have validated the modulo invariant, this will give a whole number
+    pub fn atoms_per_lot(&self) -> L::AtomsPerLot {
+        L::ATOMS_PER_UNIT / self.lot_size
     }
 }
 
@@ -40,45 +48,7 @@ pub struct IndexedMarketV2 {
     pub tick_size: QuoteLotsPerBaseUnitPerTick,
 }
 
-/// Parameters representing a Goblin market.
-#[repr(C, packed)]
-#[derive(Clone, Copy)]
-pub struct IndexedMarket {
-    /// The base token index. It will be mapped to token address
-    pub base_token_index: TokenIndex,
-
-    /// The quote token index. It will be mapped to token address
-    pub quote_token_index: TokenIndex,
-
-    /// Base lots per unit
-    pub base_lot_size: BaseLotsPerBaseUnit,
-
-    /// Quote lots per unit
-    pub quote_lot_size: QuoteLotsPerQuoteUnit,
-
-    /// Tick size
-    pub tick_size: QuoteLotsPerBaseUnitPerTick,
-}
-
-impl IndexedMarket {
-    /// Initialize an IndexedMarket, bypassing legality checks.
-    /// This function is used to define hardcoded markets
-    pub(crate) const fn new_unchecked(
-        base_token_index: TokenIndex,
-        quote_token_index: TokenIndex,
-        base_lot_size: BaseLotsPerBaseUnit,
-        quote_lot_size: QuoteLotsPerQuoteUnit,
-        tick_size: QuoteLotsPerBaseUnitPerTick,
-    ) -> Self {
-        IndexedMarket {
-            base_token_index,
-            quote_token_index,
-            base_lot_size,
-            quote_lot_size,
-            tick_size,
-        }
-    }
-
+impl IndexedMarketV2 {
     /// Whether market params are valid
     ///
     /// # Tests
@@ -104,48 +74,120 @@ impl IndexedMarket {
     ///   or T % B == 0
     ///    ```
     ///
-    pub(crate) fn is_valid(&self) -> bool {
-        let base_lot_size = self.base_lot_size;
-        let quote_lot_size = self.quote_lot_size;
-
-        self.base_token_index != self.quote_token_index
-            && BASE_ATOMS_PER_BASE_UNIT % base_lot_size == BaseAtomsPerBaseLot::ZERO
-            && QUOTE_ATOMS_PER_QUOTE_UNIT % quote_lot_size == QuoteAtomsPerQuoteLot::ZERO
-            && self.tick_size % self.base_lot_size == QuoteLotsPerBaseLotPerTick::ZERO
-    }
-
-    // Atoms per lot are guaranteed to be whole numbers because of the validation check above
-    pub fn base_atoms_per_base_lot(&self) -> BaseAtomsPerBaseLot {
-        BASE_ATOMS_PER_BASE_UNIT / self.base_lot_size
-    }
-
-    pub fn quote_atoms_per_quote_lot(&self) -> QuoteAtomsPerQuoteLot {
-        QUOTE_ATOMS_PER_QUOTE_UNIT / self.quote_lot_size
-    }
-
-    /// Convert market lot delta to atom delta
-    pub fn get_atoms_delta(&self, market_delta: &MarketLotsDelta) -> MarketAtomsDelta {
-        let base_atoms_per_base_lot = self.base_atoms_per_base_lot();
-        let quote_atoms_per_quote_lot = self.quote_atoms_per_quote_lot();
-
-        let base_atoms_consumed = base_atoms_per_base_lot * market_delta.base_lots_consumed;
-        let quote_atoms_consumed = quote_atoms_per_quote_lot * market_delta.quote_lots_consumed;
-
-        let base_atoms_locked = base_atoms_per_base_lot * market_delta.base_lots_locked;
-        let quote_atoms_locked = quote_atoms_per_quote_lot * market_delta.quote_lots_locked;
-
-        MarketAtomsDelta {
-            base_atoms_consumed,
-            quote_atoms_consumed,
-            base_atoms_locked,
-            quote_atoms_locked,
-        }
+    pub fn is_valid(&self) -> bool {
+        self.base.token_index != self.quote.token_index
+            && self.base.is_valid()
+            && self.quote.is_valid()
+            && self.tick_size % self.base.lot_size == QuoteLotsPerBaseUnitPerTick::ZERO
     }
 }
 
-pub struct MarketAtomsDelta {
-    pub base_atoms_consumed: AtomsDelta,
-    pub quote_atoms_consumed: AtomsDelta,
-    pub base_atoms_locked: AtomsDelta,
-    pub quote_atoms_locked: AtomsDelta,
-}
+// /// Parameters representing a Goblin market.
+// #[repr(C, packed)]
+// #[derive(Clone, Copy)]
+// pub struct IndexedMarket {
+//     /// The base token index. It will be mapped to token address
+//     pub base_token_index: TokenIndex,
+
+//     /// The quote token index. It will be mapped to token address
+//     pub quote_token_index: TokenIndex,
+
+//     /// Base lots per unit
+//     pub base_lot_size: BaseLotsPerBaseUnit,
+
+//     /// Quote lots per unit
+//     pub quote_lot_size: QuoteLotsPerQuoteUnit,
+
+//     /// Tick size
+//     pub tick_size: QuoteLotsPerBaseUnitPerTick,
+// }
+
+// impl IndexedMarket {
+//     /// Initialize an IndexedMarket, bypassing legality checks.
+//     /// This function is used to define hardcoded markets
+//     pub(crate) const fn new_unchecked(
+//         base_token_index: TokenIndex,
+//         quote_token_index: TokenIndex,
+//         base_lot_size: BaseLotsPerBaseUnit,
+//         quote_lot_size: QuoteLotsPerQuoteUnit,
+//         tick_size: QuoteLotsPerBaseUnitPerTick,
+//     ) -> Self {
+//         IndexedMarket {
+//             base_token_index,
+//             quote_token_index,
+//             base_lot_size,
+//             quote_lot_size,
+//             tick_size,
+//         }
+//     }
+
+//     /// Whether market params are valid
+//     ///
+//     /// # Tests
+//     ///
+//     /// 1. Base token != Quote token
+//     ///
+//     /// 2. **10^6 % Lot size == 0**
+//     ///
+//     ///   Since we normalize tokens to 6 decimal places, 1 unit holds 10^6 atoms. Therefore lot
+//     ///   size should divide 10^6.
+//     ///
+//     /// 3. T % B == 0, the tick-vs-lot invariant
+//     ///    Let:
+//     ///      - `B` = base lots per base unit
+//     ///      - `T` = quote lots per tick (per base unit)
+//     ///    A trade of **1 base lot** at **1 tick** price must yield an integer number of quote lots:
+//     ///    ```text
+//     ///    N = T (quote lots/tick)
+//     ///        × 1 (tick/base unit)
+//     ///        ÷ B (base lots/base unit)
+//     ///      = T / B ∈ ℤ
+//     ///
+//     ///   or T % B == 0
+//     ///    ```
+//     ///
+//     pub(crate) fn is_valid(&self) -> bool {
+//         let base_lot_size = self.base_lot_size;
+//         let quote_lot_size = self.quote_lot_size;
+
+//         self.base_token_index != self.quote_token_index
+//             && BASE_ATOMS_PER_BASE_UNIT % base_lot_size == BaseAtomsPerBaseLot::ZERO
+//             && QUOTE_ATOMS_PER_QUOTE_UNIT % quote_lot_size == QuoteAtomsPerQuoteLot::ZERO
+//             && self.tick_size % self.base_lot_size == QuoteLotsPerBaseLotPerTick::ZERO
+//     }
+
+//     // Atoms per lot are guaranteed to be whole numbers because of the validation check above
+//     pub fn base_atoms_per_base_lot(&self) -> BaseAtomsPerBaseLot {
+//         BASE_ATOMS_PER_BASE_UNIT / self.base_lot_size
+//     }
+
+//     pub fn quote_atoms_per_quote_lot(&self) -> QuoteAtomsPerQuoteLot {
+//         QUOTE_ATOMS_PER_QUOTE_UNIT / self.quote_lot_size
+//     }
+
+//     /// Convert market lot delta to atom delta
+//     pub fn get_atoms_delta(&self, market_delta: &MarketLotsDelta) -> MarketAtomsDelta {
+//         let base_atoms_per_base_lot = self.base_atoms_per_base_lot();
+//         let quote_atoms_per_quote_lot = self.quote_atoms_per_quote_lot();
+
+//         let base_atoms_consumed = base_atoms_per_base_lot * market_delta.base_lots_consumed;
+//         let quote_atoms_consumed = quote_atoms_per_quote_lot * market_delta.quote_lots_consumed;
+
+//         let base_atoms_locked = base_atoms_per_base_lot * market_delta.base_lots_locked;
+//         let quote_atoms_locked = quote_atoms_per_quote_lot * market_delta.quote_lots_locked;
+
+//         MarketAtomsDelta {
+//             base_atoms_consumed,
+//             quote_atoms_consumed,
+//             base_atoms_locked,
+//             quote_atoms_locked,
+//         }
+//     }
+// }
+
+// pub struct MarketAtomsDelta {
+//     pub base_atoms_consumed: AtomsDelta,
+//     pub quote_atoms_consumed: AtomsDelta,
+//     pub base_atoms_locked: AtomsDelta,
+//     pub quote_atoms_locked: AtomsDelta,
+// }
