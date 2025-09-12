@@ -1,5 +1,5 @@
 use crate::{
-    quantities::{MarketLotsDelta, QuantityOps, QuoteLotsPerBaseUnitPerTick},
+    quantities::{QuantityOps, QuoteLotsPerBaseUnitPerTick},
     tokens::TokenIndex,
     types::{Base, LegMarker, Quote},
 };
@@ -15,24 +15,6 @@ pub struct MarketLeg<L: LegMarker> {
 
     /// Lots per unit
     pub lot_size: L::LotsPerUnit,
-}
-
-impl<L: LegMarker> MarketLeg<L> {
-    /// Ensure that market has an integer number of atoms per lot
-    ///
-    /// As ATOMS_PER_UNIT is hardcoded to 10^6 for base and quote, this is effectively
-    ///
-    ///  **10^6 % Lot size == 0**
-    pub fn is_valid(&self) -> bool {
-        L::ATOMS_PER_UNIT % self.lot_size == L::AtomsPerUnit::ZERO
-    }
-
-    /// The number of atoms per lot
-    ///
-    /// Since we have validated the modulo invariant, this will give a whole number
-    pub fn atoms_per_lot(&self) -> L::AtomsPerLot {
-        L::ATOMS_PER_UNIT / self.lot_size
-    }
 }
 
 #[repr(C, packed)]
@@ -76,12 +58,10 @@ impl IndexedMarketV2 {
     ///
     pub fn is_valid(&self) -> bool {
         self.base.token_index != self.quote.token_index
-            && self.base.is_valid()
-            && self.quote.is_valid()
+            && Base::lots_per_unit_valid(self.base.lot_size)
+            && Quote::lots_per_unit_valid(self.quote.lot_size)
             && self.tick_size % self.base.lot_size == QuoteLotsPerBaseUnitPerTick::ZERO
     }
-
-    pub fn get_atoms_delta(&self, market_delta: &MarketLotsDelta) -> MarketAtomsDelta {}
 }
 
 #[derive(Default)]
@@ -91,17 +71,7 @@ pub struct LegLotsDelta<L: LegMarker> {
 }
 
 impl<L: LegMarker> LegLotsDelta<L> {
-    fn to_atoms_delta(&self, market_leg: &MarketLeg<L>) -> LegAtomsDelta<L> {
-        // TODO we must convert atoms per lot into delta. This is always
-        // a positive value.
-        //
-        // Alternative- enable multiplication between signed and unsigned.
-        // This is different from other operations because we don't add or subtract.
-        // The sign remains the same.
-        // Sub case- we only need multiplication on this one.
-        // LotsDelta * AtomsPerLot = AtomsDelta
-        let atoms_per_lot = market_leg.atoms_per_lot();
-
+    fn to_atoms_delta(&self, atoms_per_lot: L::AtomsPerLot) -> LegAtomsDelta<L> {
         LegAtomsDelta {
             consumed: self.consumed * atoms_per_lot,
             locked: self.locked * atoms_per_lot,

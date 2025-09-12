@@ -1,6 +1,11 @@
 use crate::{
-    goblin_error::GoblinError, markets::IndexedMarketV2, quantities::Atoms,
-    settlement::PendingMakerUpdates, tokens::TokenIndex, types::Address, utils::FixedMap,
+    goblin_error::GoblinError,
+    markets::IndexedMarketV2,
+    quantities::Atoms,
+    settlement::PendingMakerUpdates,
+    tokens::TokenIndex,
+    types::{Address, Base, LegMarker, Quote},
+    utils::FixedMap,
 };
 
 pub const MAX_OPPOSITE_DELTAS: usize = 16;
@@ -30,7 +35,7 @@ impl PendingMakerStoreUpdates {
             // TODO make it compact using SideMarker
             // But each store receives contributions from both bid and ask side
             // Base / Quote namespace is separate from the side namespace.
-            let base_atoms_per_base_lot = indexed_market.base.atoms_per_lot();
+            let base_atoms_per_base_lot = Base::atoms_per_lot(indexed_market.base.lot_size);
 
             let base_store = self
                 .get_or_insert_mut(PendingStoreKey {
@@ -45,7 +50,7 @@ impl PendingMakerStoreUpdates {
             base_store.free_atoms_in +=
                 Atoms::from(update.ask.free_lots_in * base_atoms_per_base_lot);
 
-            let quote_atoms_per_quote_lot = indexed_market.quote.atoms_per_lot();
+            let quote_atoms_per_quote_lot = Quote::atoms_per_lot(indexed_market.quote.lot_size);
             let quote_store = self
                 .get_or_insert_mut(PendingStoreKey {
                     maker: *maker,

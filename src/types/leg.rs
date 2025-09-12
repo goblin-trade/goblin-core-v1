@@ -1,4 +1,5 @@
-use core::ops::{Div, Rem};
+use core::ops::{Div, Mul, Rem};
+use std::process::Output;
 
 use crate::quantities::{
     BaseAtoms, BaseAtomsDelta, BaseAtomsPerBaseLot, BaseAtomsPerBaseUnit, BaseLots, BaseLotsDelta,
@@ -22,8 +23,7 @@ pub trait LegMarker {
     type Atoms: QuantityOps;
 
     // Deltas
-    type LotsDelta: QuantityOps;
-    // TODO trait LotsDelta * AtomsPerLot = AtomsDelta
+    type LotsDelta: QuantityOps + Mul<Self::AtomsPerLot, Output = Self::AtomsDelta>;
     type AtomsDelta: QuantityOps;
 
     // Ratios
@@ -34,6 +34,24 @@ pub trait LegMarker {
     type AtomsPerLot: QuantityOps;
 
     const ATOMS_PER_UNIT: Self::AtomsPerUnit;
+
+    /// Ensure that market has an integer number of atoms per lot
+    ///
+    /// As ATOMS_PER_UNIT is hardcoded to 10^6 for base and quote, this is effectively
+    ///
+    ///  **10^6 % Lot size == 0**
+    ///
+    /// lots_per_unit is also called lot_size
+    fn lots_per_unit_valid(lots_per_unit: Self::LotsPerUnit) -> bool {
+        Self::ATOMS_PER_UNIT % lots_per_unit == Self::AtomsPerUnit::ZERO
+    }
+
+    /// The number of atoms per lot
+    ///
+    /// Since we have validated the modulo invariant, this will give a whole number
+    fn atoms_per_lot(lots_per_unit: Self::LotsPerUnit) -> Self::AtomsPerLot {
+        Self::ATOMS_PER_UNIT / lots_per_unit
+    }
 }
 
 impl LegMarker for Base {

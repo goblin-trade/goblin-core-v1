@@ -433,6 +433,33 @@ impl<D: Exp> From<Quantity<i64, D>> for Quantity<u64, D> {
 // i64::try_from(u64)
 // Instead of returning Quantity, return Result or Option type
 
+//
+// Multiply Delta with an unsigned quantity
+// The result is also a delta
+impl<D1: Exp, D2: Exp> Mul<Quantity<u64, D2>> for Quantity<i64, D1>
+where
+    D1: AddExp<D2>,
+{
+    type Output = Quantity<i64, <D1 as AddExp<D2>>::Output>;
+
+    fn mul(self, rhs: Quantity<u64, D2>) -> Self::Output {
+        let right_value: i64 = rhs.inner as i64;
+        Quantity::new(self.inner * right_value)
+    }
+}
+
+// impl<D1: Exp, D2: Exp> Mul<Quantity<i64, D2>> for Quantity<u64, D1>
+// where
+//     D1: AddExp<D2>,
+// {
+//     type Output = Quantity<i64, <D1 as AddExp<D2>>::Output>;
+
+//     fn mul(self, rhs: Quantity<i64, D2>) -> Self::Output {
+//         let left_value: i64 = self.inner as i64;
+//         Quantity::new(left_value * rhs.inner)
+//     }
+// }
+
 // impl<V1, V2, D1: Exp, D2: Exp> Mul<Quantity<V2, D2>> for Quantity<V1, D1>
 // where
 //     V1: Copy + Mul<V2, Output = V1> + Numeric,
@@ -486,5 +513,15 @@ mod tests {
         let a = 10u64;
         let b = a as i64;
         let c = i64::try_from(a);
+    }
+
+    #[test]
+    fn test_delta_mul() {
+        let lots = BaseLots::new(1);
+        let lots_delta = BaseLotsDelta::new(1);
+        let atoms_per_lot = BaseAtomsPerBaseLot::new(2);
+
+        let atoms = lots * atoms_per_lot;
+        let atoms_delta = lots_delta * atoms_per_lot;
     }
 }
