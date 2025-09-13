@@ -1,5 +1,5 @@
 use crate::{
-    goblin_error::GoblinError, require, settlement::ERC20DeltaInput, tokens::TokenIndex,
+    goblin_error::GoblinError, require, settlement::ERC20DepositInput, tokens::TokenIndex,
     utils::FixedMap,
 };
 
@@ -16,7 +16,7 @@ pub type ERC20DeltaList = FixedMap<TokenIndex, ERC20Delta, MAX_DELTAS>;
 
 impl ERC20DeltaList {
     /// Create a new ERC20DeltaList initialized with inputs read from args
-    pub fn new(erc20_delta_input_list: &[ERC20DeltaInput]) -> Result<Self, GoblinError> {
+    pub fn new(erc20_delta_input_list: &[ERC20DepositInput]) -> Result<Self, GoblinError> {
         require!(
             erc20_delta_input_list.len() <= MAX_DELTAS,
             GoblinError::ERC20DeltaListFull
@@ -26,10 +26,7 @@ impl ERC20DeltaList {
             [const { core::mem::MaybeUninit::uninit() }; MAX_DELTAS];
 
         for (i, delta_input) in erc20_delta_input_list.iter().enumerate() {
-            entries[i].write((
-                delta_input.index,
-                ERC20Delta::new(delta_input.withdrawal_due),
-            ));
+            entries[i].write((delta_input.index, ERC20Delta::new(delta_input.deposit_due)));
         }
 
         Ok(FixedMap::new_unchecked(

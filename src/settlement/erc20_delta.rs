@@ -12,11 +12,18 @@ use crate::{
     CONTRACT_ADDRESS,
 };
 
-/// Withdrawal delta due for an ERC20 token as read from the args.
+/// ERC20 tokens to be deposited
 #[repr(C, packed)]
-pub struct ERC20DeltaInput {
+pub struct ERC20DepositInput {
     pub index: TokenIndex,
-    pub withdrawal_due: AtomsDelta,
+    pub deposit_due: Atoms,
+}
+
+/// ERC20 tokens to be withdrawn
+#[repr(C, packed)]
+pub struct ERC20WithdrawInput {
+    pub index: TokenIndex,
+    pub deposit_due: Atoms,
 }
 
 /// ERC20 atoms due to be deducted, locked or transferred out on settlement

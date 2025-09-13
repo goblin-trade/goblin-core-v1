@@ -1,43 +1,45 @@
-use core::ops::{Add, Sub};
-
 use crate::{
     eth,
     goblin_error::GoblinError,
     hostio,
-    quantities::{Atoms, AtomsDelta},
-    settlement::DeltaAccumulator,
+    quantities::Atoms,
+    settlement::CommonDelta,
     state::{EthStore, EthStoreKey, SlotState},
     types::{Address, NATIVE_TOKEN_DECIMALS},
 };
 
 /// ETH atoms due to be deducted, locked or transferred out on settlement
-#[derive(Default)]
 pub struct EthDelta {
     /// Atoms credited by msg.value
     pub msg_value_atoms: Atoms,
 
-    /// Amount of atoms pending withdrawal, as read from input payload
+    /// Amount of atoms pending withdrawal, as read from input payload.
+    ///
+    /// The amount is transferred out internally (store credit) or externally (transfer call).
+    /// If recipient is the same as msg_sender, then this amount which was subtracted
+    /// from atoms_free is credited back.
     pub withdrawal_due: Atoms,
 
-    /// Delta consumed by taker orders, due for subtraction from EthStore
-    consumed_by_engine: AtomsDelta,
+    pub common_delta: CommonDelta,
+    // /// Delta consumed by taker orders, due for subtraction from EthStore
+    // consumed_by_engine: AtomsDelta,
 
-    /// Delta locked in maker orders. Positive if tokens are locked in maker orders,
-    /// negative if unlocked by cancelled orders
-    locked_by_engine: AtomsDelta,
+    // /// Delta locked in maker orders. Positive if tokens are locked in maker orders,
+    // /// negative if unlocked by cancelled orders
+    // locked_by_engine: AtomsDelta,
 }
 
-impl DeltaAccumulator for EthDelta {
-    fn add_consumed_amount(&mut self, consumed: AtomsDelta) -> Result<(), GoblinError> {
-        self.consumed_by_engine = self.consumed_by_engine.checked_add(consumed)?;
-        Ok(())
-    }
+// impl DeltaAccumulator for EthDelta {
+//     fn add_consumed_amount(&mut self, consumed: AtomsDelta) -> Result<(), GoblinError> {
+//         self.consumed_by_engine = self.consumed_by_engine.checked_add(consumed)?;
+//         Ok(())
+//     }
 
-    fn add_locked_amount(&mut self, locked: AtomsDelta) -> Result<(), GoblinError> {
-        self.locked_by_engine = self.locked_by_engine.checked_add(locked)?;
-        Ok(())
-    }
-}
+//     fn add_locked_amount(&mut self, locked: AtomsDelta) -> Result<(), GoblinError> {
+//         self.locked_by_engine = self.locked_by_engine.checked_add(locked)?;
+//         Ok(())
+//     }
+// }
 
 impl EthDelta {
     pub fn init(
@@ -59,15 +61,8 @@ impl EthDelta {
         Ok(Self {
             msg_value_atoms,
             withdrawal_due,
-            consumed_by_engine: AtomsDelta::ZERO,
-            locked_by_engine: AtomsDelta::ZERO,
+            common_delta: CommonDelta::default(),
         })
-    }
-
-    fn debit_due(&self) -> Result<AtomsDelta, GoblinError> {
-        self.consumed_by_engine
-            .checked_add(self.locked_by_engine)?
-            .add(self.withdrawal_due)
     }
 
     /// Settle, i.e. update the trader's token state and transfer ETH out
@@ -97,13 +92,22 @@ impl EthDelta {
         Ok(())
     }
 
-    /// Settle EthStore for msg.sender and write to state
+    /// Apply delta on ETHStore
     fn settle_for_sender(&self, store_mut: &mut EthStore) -> Result<(), GoblinError> {
-        let initial_locked = store_mut.atoms_locked;
-        store_mut.atoms_locked = initial_locked.add(self.locked_by_engine)?;
+        let free_credit = store_mut
+            .atoms_free
+            .checked_add(self.common_delta.free_atoms_out()?)?;
 
-        let initial_free = store_mut.atoms_free.checked_add(self.msg_value_atoms)?;
-        store_mut.atoms_free = initial_free.sub(self.debit_due()?)?;
+        let free_debit = self
+            .withdrawal_due
+            .checked_add(self.common_delta.free_atoms_in()?)?;
+
+        store_mut.atoms_free = free_credit.checked_sub(free_debit)?;
+
+        store_mut.atoms_locked = store_mut
+            .atoms_locked
+            .checked_add(self.common_delta.maker_locked)?
+            .checked_sub(self.common_delta.cancel_unlocked)?;
 
         Ok(())
     }

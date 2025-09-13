@@ -4,7 +4,7 @@ use crate::{
     markets::{IndexedMarketV2, MarketInstructions},
     quantities::Atoms,
     require,
-    settlement::ERC20DeltaInput,
+    settlement::ERC20DepositInput,
     types::Address,
 };
 
@@ -12,9 +12,14 @@ pub struct Header {
     /// Number of custom erc20 token addresses provided, maximum 2^4 - 1 = 15
     pub custom_erc20_count: usize,
 
-    /// Number of ERC20 token deltas to update, i.e. perform deposit or withdraw
-    /// operations for these many tokens. Maximum 2^4 - 1 = 15
-    pub erc20_delta_count: usize,
+    /// Number of ERC20 token deltas to deposit. Maximum 2^4 - 1 = 15
+    pub erc20_deposit_count: usize,
+
+    /// Number of ERC20 token deltas to withdraw. Maximum 2^4 - 1 = 15
+    pub erc20_withdraw_count: usize,
+
+    /// The number of markets to process. Max 2^4 - 1 = 15
+    pub market_instructions_count: usize,
 
     /// Number of custom market addresses provided, maximum 2^3 - 1 = 7
     pub custom_market_count: usize,
@@ -33,9 +38,6 @@ pub struct Header {
 
     /// Whether to credit tokens to ERC20Store or EthStore, or to actually transfer out tokens
     pub withdraw_internally: bool,
-
-    /// The number of markets to process
-    pub market_instructions_count: usize,
 }
 
 impl Header {
@@ -53,24 +55,25 @@ impl Header {
         let byte_0 = input.decode_unchecked::<u8>(0);
         let byte_1 = input.decode_unchecked::<u8>(1);
         let byte_2 = input.decode_unchecked::<u8>(2);
-        // let byte_3 = input.decode_unchecked::<u8>(3);
 
         Header {
             // Lists
             custom_erc20_count: (byte_0 & 0b0000_1111) as usize,
-            erc20_delta_count: (byte_0 >> 4) as usize,
-            custom_market_count: (byte_1 & 0b0000_0111) as usize,
+            erc20_deposit_count: (byte_0 >> 4) as usize,
+
+            erc20_withdraw_count: (byte_1 & 0b0000_1111) as usize,
+            market_instructions_count: (byte_1 >> 4) as usize,
+
+            custom_market_count: (byte_2 & 0b0000_0111) as usize,
 
             // Optional variables
-            recipient_provided: (byte_1 & 0b0000_1000) != 0,
-            track_msg_value: (byte_1 & 0b0001_0000) != 0,
-            track_eth_withdrawal_due: (byte_1 & 0b0010_0000) != 0,
+            recipient_provided: (byte_2 & 0b0000_1000) != 0,
+            track_msg_value: (byte_2 & 0b0001_0000) != 0,
+            track_eth_withdrawal_due: (byte_2 & 0b0010_0000) != 0,
 
             // Settlement flags
-            deposit_shortfall: (byte_1 & 0b0100_0000) != 0,
-            withdraw_internally: (byte_1 & 0b1000_0000) != 0,
-
-            market_instructions_count: byte_2 as usize,
+            deposit_shortfall: (byte_2 & 0b0100_0000) != 0,
+            withdraw_internally: (byte_2 & 0b1000_0000) != 0,
         }
     }
 
@@ -80,7 +83,8 @@ impl Header {
             + self.track_msg_value as usize * core::mem::size_of::<Atoms>()
             // Lists
             + self.custom_erc20_count * core::mem::size_of::<Address>()
-            + self.erc20_delta_count * core::mem::size_of::<ERC20DeltaInput>()
+            + self.erc20_deposit_count * core::mem::size_of::<ERC20DepositInput>()
+            // TODO add for ERC20WithdrawInput
             + self.custom_market_count * core::mem::size_of::<IndexedMarketV2>()
             * self.market_instructions_count * core::mem::size_of::<MarketInstructions>();
 

@@ -1,3 +1,4 @@
+pub mod common_delta;
 pub mod delta_accumulator;
 pub mod erc20_delta;
 pub mod erc20_delta_list;
@@ -6,6 +7,7 @@ pub mod pending_maker_store_updates;
 pub mod pending_maker_updates;
 pub mod token_deltas;
 
+pub use common_delta::*;
 pub use delta_accumulator::*;
 pub use erc20_delta::*;
 pub use erc20_delta_list::*;

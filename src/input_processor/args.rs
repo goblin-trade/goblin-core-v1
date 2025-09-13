@@ -10,7 +10,7 @@ use crate::{
     input_processor::{ArgsBuffer, ArgsDecoder, Header},
     markets::{IndexedMarketV2, MarketInstructions},
     quantities::Atoms,
-    settlement::ERC20DeltaInput,
+    settlement::ERC20DepositInput,
     types::Address,
 };
 
@@ -28,7 +28,7 @@ pub struct Args<'a> {
     pub custom_erc20_list: &'a [Address],
 
     /// Pending ERC20 deposits or withdrawals
-    pub erc20_delta_list: &'a [ERC20DeltaInput],
+    pub erc20_delta_list: &'a [ERC20DepositInput],
 
     /// Custom markets to use
     pub custom_market_list: &'a [IndexedMarketV2],
@@ -55,7 +55,7 @@ impl<'a> Args<'a> {
         let custom_erc20_list =
             payload.decode_slice_unchecked::<Address>(&mut offset, header.custom_erc20_count);
         let erc20_delta_list = payload
-            .decode_slice_unchecked::<ERC20DeltaInput>(&mut offset, header.erc20_delta_count);
+            .decode_slice_unchecked::<ERC20DepositInput>(&mut offset, header.erc20_deposit_count);
         let custom_market_list = payload
             .decode_slice_unchecked::<IndexedMarketV2>(&mut offset, header.custom_market_count);
         let market_instructions_list = payload.decode_slice_unchecked::<MarketInstructions>(
