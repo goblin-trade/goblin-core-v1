@@ -1,7 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
-    markets::IndexedMarketV2,
-    quantities::{Atoms, AtomsDelta, LegLotsDelta, MarketLotsDelta},
+    markets::{IndexedMarketV2, LegLotsDelta, MarketLeg},
+    quantities::{Atoms, AtomsDelta},
     settlement::{DeltaAccumulator, ERC20DeltaInput, ERC20DeltaList, EthDelta},
     tokens::TokenIndex,
     types::{Address, LegMarker},
@@ -26,10 +26,18 @@ impl TokenDeltas {
 
     fn apply_leg_lots_delta<L: LegMarker>(
         &mut self,
-        indexed_market: &IndexedMarketV2,
-        leg_lots_delta: LegLotsDelta<L>,
+        market_leg: &MarketLeg<L>,
+        // lots_per_unit: L::LotsPerUnit,
+        leg_lots_delta: &LegLotsDelta<L>,
     ) {
         // Convert to atoms delta
+        let atoms_per_lot = L::atoms_per_lot(market_leg.lot_size);
+        let leg_atoms_delta = leg_lots_delta.to_atoms_delta(atoms_per_lot);
+
+        // Remove leg from atomsdelta
+        // BaseAtomsDelta -> AtomsDelta
+        let consumed = AtomsDelta::from(leg_atoms_delta.consumed);
+        self.add_consumed_amount(market_leg.token_index, leg_atoms_delta.consumed);
     }
 
     pub fn apply_market_delta(

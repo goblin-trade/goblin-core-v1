@@ -27,7 +27,7 @@ use super::RawAtoms;
 use crate::{
     define_custom_type, define_delta_operations,
     goblin_error::GoblinError,
-    quantities::{BaseAtoms, QuoteAtoms},
+    quantities::{BaseAtoms, BaseAtomsDelta, QuoteAtoms, QuoteAtomsDelta},
 };
 use core::u64;
 
@@ -106,6 +106,18 @@ impl AtomsDelta {
 }
 
 define_delta_operations!(AtomsDelta<i64>, Atoms<u64>);
+
+impl From<BaseAtomsDelta> for AtomsDelta {
+    fn from(value: BaseAtomsDelta) -> Self {
+        Self(value.inner)
+    }
+}
+
+impl From<QuoteAtomsDelta> for AtomsDelta {
+    fn from(value: QuoteAtomsDelta) -> Self {
+        Self(value.inner)
+    }
+}
 
 #[cfg(test)]
 mod tests {

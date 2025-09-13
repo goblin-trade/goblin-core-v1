@@ -71,7 +71,7 @@ pub struct LegLotsDelta<L: LegMarker> {
 }
 
 impl<L: LegMarker> LegLotsDelta<L> {
-    fn to_atoms_delta(&self, atoms_per_lot: L::AtomsPerLot) -> LegAtomsDelta<L> {
+    pub fn to_atoms_delta(&self, atoms_per_lot: L::AtomsPerLot) -> LegAtomsDelta<L> {
         LegAtomsDelta {
             consumed: self.consumed * atoms_per_lot,
             locked: self.locked * atoms_per_lot,

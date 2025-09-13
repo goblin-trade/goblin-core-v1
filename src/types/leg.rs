@@ -1,12 +1,10 @@
-use core::ops::{Div, Mul, Rem};
-use std::process::Output;
-
 use crate::quantities::{
     BaseAtoms, BaseAtomsDelta, BaseAtomsPerBaseLot, BaseAtomsPerBaseUnit, BaseLots, BaseLotsDelta,
     BaseLotsPerBaseUnit, BaseUnits, QuantityOps, QuoteAtoms, QuoteAtomsDelta,
     QuoteAtomsPerQuoteLot, QuoteAtomsPerQuoteUnit, QuoteLots, QuoteLotsDelta,
     QuoteLotsPerQuoteUnit, QuoteUnits, BASE_ATOMS_PER_BASE_UNIT, QUOTE_ATOMS_PER_QUOTE_UNIT,
 };
+use core::ops::{Div, Mul, Rem};
 
 #[derive(Default, Clone, Copy)]
 pub struct Base;
@@ -24,6 +22,16 @@ pub trait LegMarker {
 
     // Deltas
     type LotsDelta: QuantityOps + Mul<Self::AtomsPerLot, Output = Self::AtomsDelta>;
+
+    // TODO trait to convert AtomsDelta to the original AtomsDelta
+    // Fix duplicate naming between LegMarker::AtomsDelta and the original legless AtomsDelta
+    // The legless delta is an accumulator used for settlement
+    //
+    // TODO what if we avoid signed deltas in the market namespace, similar to the Maker accumulators?
+    // Track locked, unlocked, consumed lots
+    // When we leave market namespace, convert lots to atoms and net them into a delta
+    //
+    // This will get rid of both LotsDelta and AtomsDelta
     type AtomsDelta: QuantityOps;
 
     // Ratios
