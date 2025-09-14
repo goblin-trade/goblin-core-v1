@@ -1,22 +1,16 @@
-use core::ops::Add;
+use core::{marker::PhantomData, ops::Add};
 
 use crate::{
     erc20,
     goblin_error::GoblinError,
     quantities::Atoms,
     require,
-    settlement::{CommonDelta, DeltaAccumulator},
+    settlement::{CommonDelta, DeltaAccumulator, ERC20Transfer, TransferDirection},
     state::{ERC20Store, ERC20StoreKey, SlotState},
     tokens::{ERC20Token, Token, TokenIndex},
     types::Address,
     CONTRACT_ADDRESS,
 };
-
-/// ERC20 tokens to be deposited
-pub struct ERC20Deposit;
-
-/// ERC20 tokens to be withdrawn
-pub struct ERC20Withdraw;
 
 /// Generic struct for ERC20 deposits or withdrawals
 #[repr(C, packed)]
@@ -29,11 +23,11 @@ pub struct ERC20Input<S> {
 /// ERC20 atoms due to be deducted, locked or transferred out on settlement
 #[derive(Default, Clone, Copy)]
 pub struct ERC20Delta {
-    /// Amount of atoms pending deposit, as read from input payload.
-    pub deposit_due: Atoms,
+    /// Amount of atoms pending transfer, as read from input payload.
+    pub transfer_due: Atoms,
 
-    /// Amount of atoms pending withdrawal, as read from input payload.
-    pub withdrawal_due: Atoms,
+    /// The direction of pending transfer
+    pub direction: TransferDirection,
 
     pub common_delta: CommonDelta,
     // /// Delta consumed by taker orders, due for subtraction from ERC20Store
@@ -44,24 +38,12 @@ pub struct ERC20Delta {
     // locked_by_engine: AtomsDelta,
 }
 
-impl DeltaAccumulator for ERC20Delta {
-    fn add_consumed_amount(&mut self, consumed: AtomsDelta) -> Result<(), GoblinError> {
-        self.consumed_by_engine = self.consumed_by_engine.checked_add(consumed)?;
-        Ok(())
-    }
-
-    fn add_locked_amount(&mut self, locked: AtomsDelta) -> Result<(), GoblinError> {
-        self.locked_by_engine = self.locked_by_engine.checked_add(locked)?;
-        Ok(())
-    }
-}
-
 impl ERC20Delta {
-    pub fn new(withdrawal_due: AtomsDelta) -> Self {
+    pub fn new<S: ERC20Transfer>(erc20_input: &ERC20Input<S>) -> Self {
         Self {
-            withdrawal_due,
-            consumed_by_engine: AtomsDelta::ZERO,
-            locked_by_engine: AtomsDelta::ZERO,
+            transfer_due: erc20_input.amount,
+            direction: S::DIRECTION,
+            common_delta: CommonDelta::default(),
         }
     }
 
@@ -124,10 +106,6 @@ impl ERC20Delta {
         msg_sender_store: &mut ERC20Store,
         deposit_shortfall: bool,
     ) -> Result<(), GoblinError> {
-        if msg_sender_store.is_empty() {
-            msg_sender_store.decimals = token.decimals()?;
-        }
-
         // Update locked atoms
         let initial_locked = msg_sender_store.atoms_locked;
         msg_sender_store.atoms_locked = initial_locked.add(self.locked_by_engine)?;
@@ -165,6 +143,8 @@ impl ERC20Delta {
     ///
     /// * Transfer out tokens to recipient if withdrawal_due is greater than 0.
     /// * Negative withdrawal_due is illegal. It is already handled in settle_for_sender()
+    ///
+    /// TODO refactor- calling with negative withdrawal_due is illegal
     fn settle_for_recipient(
         &self,
         token: &ERC20Token,

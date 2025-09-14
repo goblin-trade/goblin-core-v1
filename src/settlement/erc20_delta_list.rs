@@ -1,7 +1,6 @@
 use crate::{
     goblin_error::GoblinError,
-    quantities::Atoms,
-    settlement::{CommonDelta, ERC20Deposit, ERC20Input, ERC20Withdraw},
+    settlement::{ERC20Deposit, ERC20Input, ERC20Withdraw},
     tokens::TokenIndex,
     utils::FixedMap,
 };
@@ -27,27 +26,13 @@ impl ERC20DeltaList {
 
         for deposit_due in erc20_deposits_due {
             delta_list
-                .insert(
-                    deposit_due.index,
-                    ERC20Delta {
-                        deposit_due: deposit_due.amount,
-                        withdrawal_due: Atoms::ZERO,
-                        common_delta: CommonDelta::default(),
-                    },
-                )
+                .insert(deposit_due.index, ERC20Delta::new(deposit_due))
                 .ok_or(GoblinError::ERC20DeltaListFull)?;
         }
 
         for withdrawal_due in erc20_withdrawals_due {
             delta_list
-                .insert(
-                    withdrawal_due.index,
-                    ERC20Delta {
-                        deposit_due: Atoms::ZERO,
-                        withdrawal_due: withdrawal_due.amount,
-                        common_delta: CommonDelta::default(),
-                    },
-                )
+                .insert(withdrawal_due.index, ERC20Delta::new(withdrawal_due))
                 .ok_or(GoblinError::ERC20DeltaListFull)?;
         }
 
