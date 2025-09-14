@@ -20,12 +20,37 @@ impl<K, V, const N: usize> Default for FixedMap<K, V, N> {
 }
 
 impl<K, V, const N: usize> FixedMap<K, V, N> {
-    pub fn new_unchecked(entries: [MaybeUninit<(K, V)>; N], len: usize) -> Self {
-        Self {
-            entries,
-            len,
-            _marker: PhantomData,
+    /// Inserts a key-value pair into the map, overwriting the existing value if the key is already present.
+    ///
+    /// # Returns
+    ///
+    /// Some(()) if insertion is successful, None if array is full
+    pub fn insert(&mut self, key: K, value: V) -> Option<()>
+    where
+        K: PartialEq,
+    {
+        // Check if the key already exists.
+        for i in 0..self.len {
+            // SAFETY: The slice `0..self.len` is guaranteed to be initialized.
+            let (k, v) = unsafe { &mut *self.entries[i].as_mut_ptr() };
+            if *k == key {
+                // Key found, just update the value and return.
+                *v = value;
+                return Some(());
+            }
         }
+
+        // If the loop finishes, the key is new. Check for capacity.
+        if self.len >= N {
+            return None;
+        }
+
+        // There is space. Write the new entry.
+        // SAFETY: `self.len < N`, so this index is in bounds and uninitialized.
+        self.entries[self.len].write((key, value));
+        self.len += 1;
+
+        Some(())
     }
 
     pub fn get_or_insert_mut(&mut self, key: K) -> Option<&mut V>

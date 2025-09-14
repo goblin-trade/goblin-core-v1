@@ -44,7 +44,8 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
     let mut token_deltas = TokenDeltas::new(
         args.header.track_msg_value,
         args.eth_withdrawal_due,
-        args.erc20_delta_list,
+        args.erc20_deposits_due,
+        args.erc20_withdrawals_due,
     )?;
 
     let mut pending_maker_store_updates = PendingMakerStoreUpdates::default();

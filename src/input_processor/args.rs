@@ -10,7 +10,7 @@ use crate::{
     input_processor::{ArgsBuffer, ArgsDecoder, Header},
     markets::{IndexedMarketV2, MarketInstructions},
     quantities::Atoms,
-    settlement::ERC20DepositInput,
+    settlement::{ERC20DepositInput, ERC20WithdrawInput},
     types::Address,
 };
 
@@ -27,8 +27,11 @@ pub struct Args<'a> {
     /// Addresses of custom erc20 tokens to use
     pub custom_erc20_list: &'a [Address],
 
-    /// Pending ERC20 deposits or withdrawals
-    pub erc20_delta_list: &'a [ERC20DepositInput],
+    /// Queued ERC20 deposits
+    pub erc20_deposits_due: &'a [ERC20DepositInput],
+
+    /// Queued ERC20 deposits
+    pub erc20_withdrawals_due: &'a [ERC20WithdrawInput],
 
     /// Custom markets to use
     pub custom_market_list: &'a [IndexedMarketV2],
@@ -54,8 +57,10 @@ impl<'a> Args<'a> {
 
         let custom_erc20_list =
             payload.decode_slice_unchecked::<Address>(&mut offset, header.custom_erc20_count);
-        let erc20_delta_list = payload
+        let erc20_deposits_due = payload
             .decode_slice_unchecked::<ERC20DepositInput>(&mut offset, header.erc20_deposit_count);
+        let erc20_withdrawals_due = payload
+            .decode_slice_unchecked::<ERC20WithdrawInput>(&mut offset, header.erc20_withdraw_count);
         let custom_market_list = payload
             .decode_slice_unchecked::<IndexedMarketV2>(&mut offset, header.custom_market_count);
         let market_instructions_list = payload.decode_slice_unchecked::<MarketInstructions>(
@@ -68,7 +73,8 @@ impl<'a> Args<'a> {
             recipient: provided_recipient,
             eth_withdrawal_due,
             custom_erc20_list,
-            erc20_delta_list,
+            erc20_deposits_due,
+            erc20_withdrawals_due,
             custom_market_list,
             market_instructions_list,
             offset,

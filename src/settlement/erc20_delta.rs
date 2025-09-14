@@ -3,9 +3,9 @@ use core::ops::Add;
 use crate::{
     erc20,
     goblin_error::GoblinError,
-    quantities::{Atoms, AtomsDelta},
+    quantities::Atoms,
     require,
-    settlement::DeltaAccumulator,
+    settlement::{CommonDelta, DeltaAccumulator},
     state::{ERC20Store, ERC20StoreKey, SlotState},
     tokens::{ERC20Token, Token, TokenIndex},
     types::Address,
@@ -13,34 +13,35 @@ use crate::{
 };
 
 /// ERC20 tokens to be deposited
-#[repr(C, packed)]
-pub struct ERC20DepositInput {
-    pub index: TokenIndex,
-    pub deposit_due: Atoms,
-}
+pub struct ERC20Deposit;
 
 /// ERC20 tokens to be withdrawn
+pub struct ERC20Withdraw;
+
+/// Generic struct for ERC20 deposits or withdrawals
 #[repr(C, packed)]
-pub struct ERC20WithdrawInput {
+pub struct ERC20Input<S> {
     pub index: TokenIndex,
-    pub deposit_due: Atoms,
+    pub amount: Atoms,
+    _marker: core::marker::PhantomData<S>,
 }
 
 /// ERC20 atoms due to be deducted, locked or transferred out on settlement
 #[derive(Default, Clone, Copy)]
 pub struct ERC20Delta {
+    /// Amount of atoms pending deposit, as read from input payload.
+    pub deposit_due: Atoms,
+
     /// Amount of atoms pending withdrawal, as read from input payload.
-    ///
-    /// Unlike EthDelta, withdrawal_due is of type Delta intead of Atoms.
-    /// It can be negative to indicate a pending deposit.
-    pub withdrawal_due: AtomsDelta,
+    pub withdrawal_due: Atoms,
 
-    /// Delta consumed by taker orders, due for subtraction from ERC20Store
-    consumed_by_engine: AtomsDelta,
+    pub common_delta: CommonDelta,
+    // /// Delta consumed by taker orders, due for subtraction from ERC20Store
+    // consumed_by_engine: AtomsDelta,
 
-    /// Delta locked in maker orders. Positive if tokens are locked in maker orders,
-    /// negative if unlocked by cancelled orders
-    locked_by_engine: AtomsDelta,
+    // /// Delta locked in maker orders. Positive if tokens are locked in maker orders,
+    // /// negative if unlocked by cancelled orders
+    // locked_by_engine: AtomsDelta,
 }
 
 impl DeltaAccumulator for ERC20Delta {

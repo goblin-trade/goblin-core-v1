@@ -2,7 +2,9 @@ use crate::{
     goblin_error::GoblinError,
     markets::{IndexedMarketV2, LegLotsDelta, MarketLeg},
     quantities::{Atoms, AtomsDelta},
-    settlement::{DeltaAccumulator, ERC20DepositInput, ERC20DeltaList, EthDelta},
+    settlement::{
+        DeltaAccumulator, ERC20DeltaList, ERC20Deposit, ERC20Input, ERC20Withdraw, EthDelta,
+    },
     tokens::TokenIndex,
     types::{Address, LegMarker},
 };
@@ -16,11 +18,12 @@ impl TokenDeltas {
     pub fn new(
         track_msg_value: bool,
         eth_withdrawal_due: Option<&Atoms>,
-        indexed_erc20_delta_list: &[ERC20DepositInput],
+        erc20_deposits_due: &[ERC20Input<ERC20Deposit>],
+        erc20_withdrawals_due: &[ERC20Input<ERC20Withdraw>],
     ) -> Result<Self, GoblinError> {
         Ok(TokenDeltas {
             eth_delta: EthDelta::init(track_msg_value, eth_withdrawal_due)?,
-            erc20_delta_list: ERC20DeltaList::new(indexed_erc20_delta_list)?,
+            erc20_delta_list: ERC20DeltaList::new(erc20_deposits_due, erc20_withdrawals_due)?,
         })
     }
 

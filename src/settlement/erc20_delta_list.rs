@@ -1,5 +1,8 @@
 use crate::{
-    goblin_error::GoblinError, require, settlement::ERC20DepositInput, tokens::TokenIndex,
+    goblin_error::GoblinError,
+    quantities::Atoms,
+    settlement::{CommonDelta, ERC20Deposit, ERC20Input, ERC20Withdraw},
+    tokens::TokenIndex,
     utils::FixedMap,
 };
 
@@ -16,22 +19,38 @@ pub type ERC20DeltaList = FixedMap<TokenIndex, ERC20Delta, MAX_DELTAS>;
 
 impl ERC20DeltaList {
     /// Create a new ERC20DeltaList initialized with inputs read from args
-    pub fn new(erc20_delta_input_list: &[ERC20DepositInput]) -> Result<Self, GoblinError> {
-        require!(
-            erc20_delta_input_list.len() <= MAX_DELTAS,
-            GoblinError::ERC20DeltaListFull
-        );
+    pub fn new(
+        erc20_deposits_due: &[ERC20Input<ERC20Deposit>],
+        erc20_withdrawals_due: &[ERC20Input<ERC20Withdraw>],
+    ) -> Result<Self, GoblinError> {
+        let mut delta_list = ERC20DeltaList::default();
 
-        let mut entries: [core::mem::MaybeUninit<(TokenIndex, ERC20Delta)>; MAX_DELTAS] =
-            [const { core::mem::MaybeUninit::uninit() }; MAX_DELTAS];
-
-        for (i, delta_input) in erc20_delta_input_list.iter().enumerate() {
-            entries[i].write((delta_input.index, ERC20Delta::new(delta_input.deposit_due)));
+        for deposit_due in erc20_deposits_due {
+            delta_list
+                .insert(
+                    deposit_due.index,
+                    ERC20Delta {
+                        deposit_due: deposit_due.amount,
+                        withdrawal_due: Atoms::ZERO,
+                        common_delta: CommonDelta::default(),
+                    },
+                )
+                .ok_or(GoblinError::ERC20DeltaListFull)?;
         }
 
-        Ok(FixedMap::new_unchecked(
-            entries,
-            erc20_delta_input_list.len(),
-        ))
+        for withdrawal_due in erc20_withdrawals_due {
+            delta_list
+                .insert(
+                    withdrawal_due.index,
+                    ERC20Delta {
+                        deposit_due: Atoms::ZERO,
+                        withdrawal_due: withdrawal_due.amount,
+                        common_delta: CommonDelta::default(),
+                    },
+                )
+                .ok_or(GoblinError::ERC20DeltaListFull)?;
+        }
+
+        Ok(delta_list)
     }
 }
