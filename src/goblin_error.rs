@@ -25,6 +25,7 @@ pub enum GoblinError {
     InsufficientTakerFill = 22,
     MakerListFull = 23,
     MakerStoreListFull = 24,
+    NoInternalSelfWithdraw = 25,
 }
 
 impl GoblinError {
