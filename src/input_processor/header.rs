@@ -4,7 +4,7 @@ use crate::{
     markets::{IndexedMarketV2, MarketInstructions},
     quantities::Atoms,
     require,
-    settlement::ERC20DepositInput,
+    settlement::{ERC20Deposit, ERC20Input, ERC20Withdraw},
     types::Address,
 };
 
@@ -83,8 +83,8 @@ impl Header {
             + self.track_msg_value as usize * core::mem::size_of::<Atoms>()
             // Lists
             + self.custom_erc20_count * core::mem::size_of::<Address>()
-            + self.erc20_deposit_count * core::mem::size_of::<ERC20DepositInput>()
-            // TODO add for ERC20WithdrawInput
+            + self.erc20_deposit_count * core::mem::size_of::<ERC20Input<ERC20Deposit>>()
+            + self.erc20_withdraw_count * core::mem::size_of::<ERC20Input<ERC20Withdraw>>()
             + self.custom_market_count * core::mem::size_of::<IndexedMarketV2>()
             * self.market_instructions_count * core::mem::size_of::<MarketInstructions>();
 

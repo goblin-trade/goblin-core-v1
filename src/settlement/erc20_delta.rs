@@ -47,6 +47,131 @@ impl ERC20Delta {
         }
     }
 
+    pub fn settle_v2(
+        &self,
+        index: TokenIndex,
+        custom_token_list: &[Address],
+        msg_sender: &Address,
+        recipient: Option<&Address>,
+        deposit_shortfall: bool,
+        withdraw_internally: bool,
+    ) -> Result<(), GoblinError> {
+        match index.to_token(custom_token_list)? {
+            Token::ERC20(token) => {
+                let key = ERC20StoreKey::new(msg_sender, token.address());
+                let mut store = ERC20Store::load(&key);
+                let store_mut = store.as_mut();
+
+                // If ERC20 store was read for the first time, fetch and store token decimals
+                if store_mut.is_empty() {
+                    store_mut.decimals = token.decimals()?;
+                }
+
+                let mut transfer_due_including_shortfall = self.transfer_due;
+
+                let mut free_credit = store_mut
+                    .atoms_free
+                    .checked_add(self.common_delta.free_atoms_out()?)?;
+
+                // If there is shortfall and deposit_shortfall is true then we can increase transfer_due
+                // Rest of the behavior is identical
+
+                let mut free_debit = self.common_delta.free_atoms_in()?;
+
+                match self.direction {
+                    TransferDirection::Deposit => {
+                        free_credit = free_credit.checked_add(self.transfer_due)?;
+                    }
+                    TransferDirection::Withdraw => {
+                        free_debit = free_debit.checked_add(self.transfer_due)?;
+                    }
+                };
+
+                // deposit_shortfall is having a definition problem with 'withdraw direction'
+                // Suppose we want to withdraw 10 ETH but there is shortfall of 10 ETH, nothing will happen as
+                // amounts are netted.
+                // What if we limit 'deposit_shortfall' to deposit case only?
+                // But deposit_shortfall is global arg while tokens can have both deposit or withdraw sides.
+                //
+                // Alternate- deposit_shortfall works only if transfer amount is 0.
+                // - deposit amount has 2 use cases: to deposit the exact amount of tokens, and to act as a slippage
+                // check. However take order already has slippage conditions, while maker orders consume exact amount of tokens.
+                //
+                // - Suppose trader wants to trade 10 ETH for X USDC. The entered amount is exact, and this amount or 'less'
+                // will be consumed and never more.
+                //
+                // - deposit shortfall is lazy method- perform the trade and pull in tokens as required.
+                // But we can find the amount on client side. Eg. if 10 ETH were to be traded in, pass amount as 10 ETH.
+                //
+                // Gotcha- this is a gas optimization to avoid passing extra fields.
+                // Hot branch- market makers trade with existing deposits. One off taker traders, mainly from
+                // DEX aggregator will use this. They will express input and output amount in the taker packet.
+                //
+                // But one-off trader will have to pass the amount out for output token.
+                // So it is likely he will not use deposit_shortfall as it affects the guarantees of withdraw amount.
+                //
+                // Decision- get rid of deposit_shortfall. Fail immediately if there is shortfall.
+                // This also makes the code symmetric with ETH, where it is not possible to transfer a-posteori.
+                let is_shortfall = free_debit > free_credit;
+                if is_shortfall && deposit_shortfall {
+                    let shortfall_amount = free_debit - free_credit;
+                    transfer_due_including_shortfall =
+                        self.transfer_due.checked_add(shortfall_amount)?;
+
+                    store_mut.atoms_free = Atoms::ZERO;
+                }
+
+                match self.direction {
+                    TransferDirection::Deposit => todo!(),
+                    TransferDirection::Withdraw => todo!(),
+                };
+
+                store_mut.store(&key);
+
+                Ok(())
+            }
+            Token::Eth => Err(GoblinError::ERC20NotETH),
+        }
+    }
+
+    pub fn settle_for_sender_v2(
+        &self,
+        token: &ERC20Token,
+        msg_sender: &Address,
+        store_mut: &mut ERC20Store,
+        deposit_shortfall: bool,
+    ) -> Result<(), GoblinError> {
+        let mut transfer_due_including_shortfall = self.transfer_due;
+
+        let mut free_credit = store_mut
+            .atoms_free
+            .checked_add(self.common_delta.free_atoms_out()?)?;
+
+        // If there is shortfall and deposit_shortfall is true then we can increase transfer_due
+        // Rest of the behavior is identical
+
+        let mut free_debit = self.common_delta.free_atoms_in()?;
+
+        match self.direction {
+            TransferDirection::Deposit => {
+                free_credit = free_credit.checked_add(self.transfer_due)?;
+            }
+            TransferDirection::Withdraw => {
+                free_debit = free_debit.checked_add(self.transfer_due)?;
+            }
+        };
+
+        let is_shortfall = free_debit > free_credit;
+        if is_shortfall && deposit_shortfall {
+            let shortfall_amount = free_debit - free_credit;
+            transfer_due_including_shortfall = self.transfer_due.checked_add(shortfall_amount)?;
+
+            store_mut.atoms_free = Atoms::ZERO;
+        }
+
+        Ok(())
+    }
+
     fn debit_due(&self) -> Result<AtomsDelta, GoblinError> {
         self.consumed_by_engine
             .checked_add(self.locked_by_engine)?
