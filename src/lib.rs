@@ -119,7 +119,6 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
         args.recipient,
         args.custom_erc20_list,
         args.header.withdraw_internally,
-        args.header.deposit_shortfall,
     )?;
 
     // Write cache to trie

@@ -109,7 +109,6 @@ impl TokenDeltas {
         recipient: Option<&Address>,
         custom_erc20_list: &[Address],
         withdraw_internally: bool,
-        deposit_shortfall: bool,
     ) -> Result<(), GoblinError> {
         self.eth_delta
             .settle(msg_sender, recipient, withdraw_internally)?;
@@ -120,7 +119,6 @@ impl TokenDeltas {
                 custom_erc20_list,
                 msg_sender,
                 recipient,
-                deposit_shortfall,
                 withdraw_internally,
             )?;
         }
