@@ -79,7 +79,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
                 msg_sender.as_ref(),
                 &indexed_market,
                 market_state.as_mut(),
-                &mut pending_maker_updates,
+                // &mut pending_maker_updates,
                 args_buffer.as_ref(),
                 len,
                 &mut args.offset,

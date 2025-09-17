@@ -1,7 +1,7 @@
 use crate::quantities::{
     BaseAtoms, BaseAtomsPerBaseLot, BaseAtomsPerBaseUnit, BaseLots, BaseLotsPerBaseUnit, BaseUnits,
     QuantityOps, QuoteAtoms, QuoteAtomsPerQuoteLot, QuoteAtomsPerQuoteUnit, QuoteLots,
-    QuoteLotsPerQuoteUnit, QuoteUnits, BASE_ATOMS_PER_BASE_UNIT, QUOTE_ATOMS_PER_QUOTE_UNIT,
+    QuoteLotsPerQuoteUnit, QuoteUnits, Ticks, BASE_ATOMS_PER_BASE_UNIT, QUOTE_ATOMS_PER_QUOTE_UNIT,
 };
 use core::ops::{Div, Rem};
 
@@ -15,7 +15,7 @@ pub trait LegMarker {
     type Opposite: LegMarker;
 
     // Basic quantities
-    type Lots: QuantityOps;
+    type Lots: QuantityOps + From<u64> + PartialOrd;
     type Units: QuantityOps;
     type Atoms: QuantityOps;
 
@@ -45,8 +45,14 @@ pub trait LegMarker {
     fn atoms_per_lot(lots_per_unit: Self::LotsPerUnit) -> Self::AtomsPerLot {
         Self::ATOMS_PER_UNIT / lots_per_unit
     }
+
+    // Trade inputs
+    const DEFAULT_PRICE_LIMIT: Ticks;
+
+    fn price_limit_valid(_price_limit: Ticks) -> bool;
 }
 
+// Input Base = side Ask (sell)
 impl LegMarker for Base {
     type Opposite = Quote;
 
@@ -59,8 +65,15 @@ impl LegMarker for Base {
     type AtomsPerLot = BaseAtomsPerBaseLot;
 
     const ATOMS_PER_UNIT: Self::AtomsPerUnit = BASE_ATOMS_PER_BASE_UNIT;
+
+    const DEFAULT_PRICE_LIMIT: Ticks = Ticks::ZERO;
+
+    fn price_limit_valid(_price_limit: Ticks) -> bool {
+        true
+    }
 }
 
+// Input Quote = side Bid (buy)
 impl LegMarker for Quote {
     type Opposite = Base;
 
@@ -73,4 +86,10 @@ impl LegMarker for Quote {
     type AtomsPerLot = QuoteAtomsPerQuoteLot;
 
     const ATOMS_PER_UNIT: Self::AtomsPerUnit = QUOTE_ATOMS_PER_QUOTE_UNIT;
+
+    const DEFAULT_PRICE_LIMIT: Ticks = Ticks::MAX;
+
+    fn price_limit_valid(price_limit: Ticks) -> bool {
+        price_limit > Ticks::ZERO
+    }
 }
