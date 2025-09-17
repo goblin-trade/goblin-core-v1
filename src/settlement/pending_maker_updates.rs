@@ -1,6 +1,6 @@
 use crate::{
     goblin_error::GoblinError,
-    types::{Address, Ask, Bid, SideMarker},
+    types::{Address, Ask, Bid, LegMarker, SideMarker},
     utils::FixedMap,
 };
 
@@ -31,8 +31,8 @@ impl MakerUpdate {
     ///   since resting orders are always backed by reserves.
     pub fn accumulate_match_result<S: SideMarker>(
         &mut self,
-        lots: S::Lots,
-        lots_opposite: <S::Opposite as SideMarker>::Lots,
+        lots: <S::InputLeg as LegMarker>::Lots,
+        lots_opposite: <<S::Opposite as SideMarker>::InputLeg as LegMarker>::Lots,
     ) -> Result<(), GoblinError> {
         let deltas_for_side = S::maker_update_for_side_mut(self);
 
@@ -45,15 +45,15 @@ impl MakerUpdate {
 
 #[derive(Clone, Copy)]
 pub struct MakerUpdateSide<S: SideMarker> {
-    pub locked_lots_out: <S::Opposite as SideMarker>::Lots,
-    pub free_lots_in: S::Lots,
+    pub locked_lots_out: <<S::Opposite as SideMarker>::InputLeg as LegMarker>::Lots,
+    pub free_lots_in: <S::InputLeg as LegMarker>::Lots,
 }
 
 impl<S: SideMarker> Default for MakerUpdateSide<S> {
     fn default() -> Self {
         Self {
-            locked_lots_out: <S::Opposite as SideMarker>::Lots::default(),
-            free_lots_in: S::Lots::default(),
+            locked_lots_out: <<S::Opposite as SideMarker>::InputLeg as LegMarker>::Lots::default(),
+            free_lots_in: <S::InputLeg as LegMarker>::Lots::default(),
         }
     }
 }

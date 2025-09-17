@@ -71,8 +71,8 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
         let mut market_state = MarketState::load(&market_key);
 
         // Deltas for taker and makers
-        let mut market_lots_delta = MarketLotsDelta::default();
-        let mut pending_maker_updates = PendingMakerUpdates::default();
+        // let mut market_lots_delta = MarketLotsDelta::default();
+        // let mut pending_maker_updates = PendingMakerUpdates::default();
 
         if market_instructions.take_bid() {
             let match_result = ix_take::<Bid>(
@@ -85,21 +85,21 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
                 &mut args.offset,
             )?;
 
-            market_lots_delta.apply_match_result(&match_result)?;
+            // market_lots_delta.apply_match_result(&match_result)?;
         }
 
-        if market_instructions.take_ask() {
-            let match_result = ix_take::<Ask>(
-                msg_sender.as_ref(),
-                &indexed_market,
-                market_state.as_mut(),
-                &mut pending_maker_updates,
-                args_buffer.as_ref(),
-                len,
-                &mut args.offset,
-            )?;
-            market_lots_delta.apply_match_result(&match_result)?;
-        }
+        // if market_instructions.take_ask() {
+        //     let match_result = ix_take::<Ask>(
+        //         msg_sender.as_ref(),
+        //         &indexed_market,
+        //         market_state.as_mut(),
+        //         &mut pending_maker_updates,
+        //         args_buffer.as_ref(),
+        //         len,
+        //         &mut args.offset,
+        //     )?;
+        //     market_lots_delta.apply_match_result(&match_result)?;
+        // }
 
         // Write market state to slot
         market_state.as_mut().store(&market_key);

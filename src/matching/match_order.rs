@@ -6,33 +6,39 @@ use crate::{
     require,
     settlement::{MakerUpdateSide, PendingMakerUpdates},
     state::{MarketState, RestingOrder, RestingOrderKey, SlotState},
-    types::{Address, SideMarker},
+    types::{Address, LegMarker, SideMarker},
 };
 
 pub struct MatchResult<S: SideMarker> {
     pub pending_update: MakerUpdateSide<S>,
-    pub released_by_self_trade: <S::Opposite as SideMarker>::Lots,
+    pub released_by_self_trade: <<S::Opposite as SideMarker>::InputLeg as LegMarker>::Lots,
 }
 
 impl<S: SideMarker> Default for MatchResult<S> {
     fn default() -> Self {
         Self {
             pending_update: MakerUpdateSide::default(),
-            released_by_self_trade: <S::Opposite as SideMarker>::Lots::default(),
+            released_by_self_trade:
+                <<S::Opposite as SideMarker>::InputLeg as LegMarker>::Lots::default(),
         }
     }
 }
+
+// Can we get rid of sidemarker and stick to a single LegMarker trait?
+// We can use <In: LegMarker> where I is the input token
+// If input = Base, side = ask
+// If input = Quote, side = bid
 
 pub fn match_order<S: SideMarker>(
     pending_maker_updates: &mut PendingMakerUpdates,
     taker: &Address,
     indexed_market: &IndexedMarket,
     market_state: &mut MarketState,
-    num_lots: S::Lots,
-    min_lots_to_fill: S::Lots,
+    num_lots: <S::InputLeg as LegMarker>::Lots,
+    min_lots_to_fill: <S::InputLeg as LegMarker>::Lots,
     price_limit: Ticks,
 ) -> Result<MatchResult<S>, GoblinError> {
-    let budget = S::get_budget(num_lots, indexed_market.base_lot_size);
+    let budget = S::get_matching_lots(num_lots, indexed_market.base.lot_size);
 
     let mut remaining_budget = budget;
     let mut matched_opposite = <S::Opposite as SideMarker>::MatchingLots::from(0);
