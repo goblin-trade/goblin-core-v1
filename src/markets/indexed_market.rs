@@ -19,7 +19,7 @@ pub struct MarketLeg<L: LegMarker> {
 
 #[repr(C, packed)]
 #[derive(Clone, Copy)]
-pub struct IndexedMarketV2 {
+pub struct IndexedMarket {
     /// Marker parameters for the base leg
     pub base: MarketLeg<Base>,
 
@@ -30,7 +30,7 @@ pub struct IndexedMarketV2 {
     pub tick_size: QuoteLotsPerBaseUnitPerTick,
 }
 
-impl IndexedMarketV2 {
+impl IndexedMarket {
     /// Whether market params are valid
     ///
     /// # Tests
@@ -64,37 +64,37 @@ impl IndexedMarketV2 {
     }
 }
 
-#[derive(Default)]
-pub struct LegLotsDelta<L: LegMarker> {
-    pub consumed: L::LotsDelta,
-    pub locked: L::LotsDelta,
-}
+// #[derive(Default)]
+// pub struct LegLotsDelta<L: LegMarker> {
+//     pub consumed: L::LotsDelta,
+//     pub locked: L::LotsDelta,
+// }
 
-impl<L: LegMarker> LegLotsDelta<L> {
-    pub fn to_atoms_delta(&self, atoms_per_lot: L::AtomsPerLot) -> LegAtomsDelta<L> {
-        LegAtomsDelta {
-            consumed: self.consumed * atoms_per_lot,
-            locked: self.locked * atoms_per_lot,
-        }
-    }
-}
+// impl<L: LegMarker> LegLotsDelta<L> {
+//     pub fn to_atoms_delta(&self, atoms_per_lot: L::AtomsPerLot) -> LegAtomsDelta<L> {
+//         LegAtomsDelta {
+//             consumed: self.consumed * atoms_per_lot,
+//             locked: self.locked * atoms_per_lot,
+//         }
+//     }
+// }
 
-/// Consumed and locked deltas of msg.sender for a market
-#[derive(Default)]
-pub struct MarketLotsDelta {
-    pub base: LegLotsDelta<Base>,
-    pub quote: LegLotsDelta<Quote>,
-}
+// /// Consumed and locked deltas of msg.sender for a market
+// #[derive(Default)]
+// pub struct MarketLotsDelta {
+//     pub base: LegLotsDelta<Base>,
+//     pub quote: LegLotsDelta<Quote>,
+// }
 
-pub struct LegAtomsDelta<L: LegMarker> {
-    pub consumed: L::AtomsDelta,
-    pub locked: L::AtomsDelta,
-}
+// pub struct LegAtomsDelta<L: LegMarker> {
+//     pub consumed: L::AtomsDelta,
+//     pub locked: L::AtomsDelta,
+// }
 
-pub struct MarketAtomsDelta {
-    pub base: LegAtomsDelta<Base>,
-    pub quote: LegAtomsDelta<Quote>,
-}
+// pub struct MarketAtomsDelta {
+//     pub base: LegAtomsDelta<Base>,
+//     pub quote: LegAtomsDelta<Quote>,
+// }
 
 // pub struct MarketAtomsDelta {
 //     pub base_atoms_consumed: AtomsDelta,

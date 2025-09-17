@@ -4,14 +4,14 @@ use crate::{
     goblin_error::GoblinError,
     markets::IndexedMarket,
     quantities::{
-        AdjustedQuoteLots, Atoms, BaseAtoms, BaseAtomsPerBaseLot, BaseLots, BaseLotsDelta,
-        BaseLotsPerBaseUnit, MarketLotsDelta, QuoteAtoms, QuoteAtomsPerQuoteLot, QuoteLots,
-        QuoteLotsDelta, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit, Ticks,
+        AdjustedQuoteLots, Atoms, BaseAtoms, BaseAtomsPerBaseLot, BaseLots, BaseLotsPerBaseUnit,
+        QuoteAtoms, QuoteAtomsPerQuoteLot, QuoteLots, QuoteLotsPerBaseUnitPerTick,
+        QuoteLotsPerQuoteUnit, Ticks,
     },
     settlement::{MakerUpdate, MakerUpdateSide, PendingMakerStoreUpdates, PendingStoreKey},
     state::{MakerStore, MarketState},
     tokens::TokenIndex,
-    types::Address,
+    types::{Address, LegMarker},
 };
 
 pub struct Bid;
@@ -25,15 +25,6 @@ pub trait SideMarker {
         + core::ops::AddAssign
         + From<u64>
         + core::ops::Mul<Self::AtomsPerLot, Output = Self::Atoms>;
-
-    type DeltaLots: Copy
-        + core::ops::Add<
-            Self::Lots,
-            Output = Result<Self::DeltaLots, crate::goblin_error::GoblinError>,
-        > + core::ops::Sub<
-            Self::Lots,
-            Output = Result<Self::DeltaLots, crate::goblin_error::GoblinError>,
-        >;
 
     // The unit of accounting used for matching
     type MatchingLots: Copy
@@ -130,7 +121,6 @@ pub trait SideMarker {
 
 impl SideMarker for Bid {
     type Lots = QuoteLots;
-    type DeltaLots = QuoteLotsDelta;
     type MatchingLots = AdjustedQuoteLots;
     type LotSize = QuoteLotsPerQuoteUnit;
     type Atoms = QuoteAtoms;
@@ -235,7 +225,6 @@ impl SideMarker for Bid {
 
 impl SideMarker for Ask {
     type Lots = BaseLots;
-    type DeltaLots = BaseLotsDelta;
     type MatchingLots = BaseLots;
     type LotSize = BaseLotsPerBaseUnit;
     type Atoms = BaseAtoms;

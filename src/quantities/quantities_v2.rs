@@ -185,6 +185,12 @@ impl<D: Exp> Quantity<D> {
     }
 }
 
+impl<D: Exp> From<u64> for Quantity<D> {
+    fn from(value: u64) -> Self {
+        Self::new(value)
+    }
+}
+
 /// Blanket trait for all supported Quantity operations
 ///
 pub trait QuantityOps:
