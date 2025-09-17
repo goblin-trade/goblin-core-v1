@@ -4,7 +4,7 @@
 use crate::{
     input_processor::Args,
     instructions::ix_take,
-    quantities::MarketLotsDelta,
+    markets::MarketLotsDelta,
     settlement::{PendingMakerStoreUpdates, PendingMakerUpdates, TokenDeltas},
     state::{MarketKey, MarketState, SlotState},
     tokens::ValidatedTokenPair,
