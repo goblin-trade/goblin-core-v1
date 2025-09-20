@@ -1,15 +1,15 @@
 use crate::{
     quantities::{InnerBitmapIndex, InnerIndex, Ticks},
-    state::{InnerBitmapKey, RestingOrder},
-    types::SideMarker,
+    state::InnerBitmapKey,
+    types::LegMarker,
 };
 
-pub struct RestingOrderPositionIterator<'a, S: SideMarker> {
+pub struct RestingOrderPositionIterator<'a, In: LegMarker> {
     pub best_price: &'a mut Ticks,
-    _marker: core::marker::PhantomData<S>,
+    _marker: core::marker::PhantomData<In>,
 }
 
-impl<'a, S: SideMarker> RestingOrderPositionIterator<'a, S> {
+impl<'a, In: LegMarker> RestingOrderPositionIterator<'a, In> {
     /// Create a new QuoteIterator starting at the given best price
     pub fn new(best_price: &'a mut Ticks) -> Self {
         Self {
@@ -31,7 +31,7 @@ impl RestingOrderPosition {
     }
 }
 
-impl<'a, S: SideMarker> Iterator for RestingOrderPositionIterator<'a, S> {
+impl<'a, In: LegMarker> Iterator for RestingOrderPositionIterator<'a, In> {
     type Item = RestingOrderPosition;
 
     fn next(&mut self) -> Option<Self::Item> {

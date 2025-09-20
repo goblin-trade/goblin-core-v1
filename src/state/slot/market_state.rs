@@ -68,3 +68,5 @@ pub struct MarketState {
 }
 
 impl SlotState<MarketKey> for MarketState {}
+
+// Better to move side related functions here

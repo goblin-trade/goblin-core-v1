@@ -4,10 +4,10 @@
 use crate::{
     input_processor::Args,
     instructions::ix_take,
-    settlement::{PendingMakerStoreUpdates, PendingMakerUpdates, TokenDeltas},
+    settlement::{MakerBalanceUpdates, MarketMakerDeltas, TokenDeltas},
     state::{MarketKey, MarketState, SlotState},
     tokens::ValidatedTokenPair,
-    types::{Ask, Bid},
+    types::{Ask, Bid, Quote},
 };
 use goblin_error::*;
 
@@ -47,7 +47,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
         args.erc20_withdrawals_due,
     )?;
 
-    let mut pending_maker_store_updates = PendingMakerStoreUpdates::default();
+    let mut maker_deltas = MakerBalanceUpdates::default();
 
     for market_instructions in args.market_instructions_list {
         let indexed_market = market_instructions
@@ -72,14 +72,14 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
 
         // Deltas for taker and makers
         // let mut market_lots_delta = MarketLotsDelta::default();
-        // let mut pending_maker_updates = PendingMakerUpdates::default();
+        let mut pending_maker_updates = MarketMakerDeltas::default();
 
         if market_instructions.take_bid() {
-            let match_result = ix_take::<Bid>(
+            let match_result = ix_take::<Quote>(
+                &mut pending_maker_updates,
                 msg_sender.as_ref(),
                 &indexed_market,
                 market_state.as_mut(),
-                // &mut pending_maker_updates,
                 args_buffer.as_ref(),
                 len,
                 &mut args.offset,
@@ -106,10 +106,10 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
 
         // Apply market delta to token deltas
         // Convert to atoms delta, then apply to delta list
-        token_deltas.apply_market_delta(&indexed_market, &market_lots_delta)?;
+        // token_deltas.apply_market_delta(&indexed_market, &market_lots_delta)?;
 
         // Apply pending maker updates
-        pending_maker_store_updates.apply_updates(&indexed_market, &pending_maker_updates)?;
+        maker_deltas.apply_updates(&indexed_market, &pending_maker_updates)?;
     }
 
     // Settlement

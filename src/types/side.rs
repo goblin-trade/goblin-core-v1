@@ -8,7 +8,7 @@ use crate::{
         QuantityOps, QuoteAtoms, QuoteAtomsPerQuoteLot, QuoteLots, QuoteLotsPerBaseUnitPerTick,
         QuoteLotsPerQuoteUnit, Ticks,
     },
-    settlement::{MakerUpdate, MakerUpdateSide, PendingMakerStoreUpdates, PendingStoreKey},
+    settlement::{MakerDelta, MakerSideDelta, MakerBalanceUpdates, PendingStoreKey},
     state::{MakerStore, MarketState},
     tokens::TokenIndex,
     types::{Address, Base, LegMarker, Quote},
@@ -38,8 +38,8 @@ pub trait SideMarker {
     fn price_limit_valid(price_limit: Ticks) -> bool;
 
     fn maker_update_for_side_mut<'a>(
-        maker_update: &'a mut MakerUpdate,
-    ) -> &'a mut MakerUpdateSide<Self>
+        maker_update: &'a mut MakerDelta,
+    ) -> &'a mut MakerSideDelta<Self>
     where
         Self: Sized;
 
@@ -129,8 +129,8 @@ impl SideMarker for Bid {
     }
 
     fn maker_update_for_side_mut<'a>(
-        market_maker_delta: &'a mut MakerUpdate,
-    ) -> &'a mut MakerUpdateSide<Self> {
+        market_maker_delta: &'a mut MakerDelta,
+    ) -> &'a mut MakerSideDelta<Self> {
         &mut market_maker_delta.bid
     }
 
@@ -155,8 +155,8 @@ impl SideMarker for Ask {
     }
 
     fn maker_update_for_side_mut<'a>(
-        market_maker_delta: &'a mut MakerUpdate,
-    ) -> &'a mut MakerUpdateSide<Self> {
+        market_maker_delta: &'a mut MakerDelta,
+    ) -> &'a mut MakerSideDelta<Self> {
         &mut market_maker_delta.ask
     }
 

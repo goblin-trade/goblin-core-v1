@@ -25,14 +25,13 @@ use super::RawAtoms;
 ///! - For USDC = raw atoms / 10^0 = raw atoms
 ///! - For eth = raw atoms / 10^(18 - 6) = raw atoms / 10^12
 use crate::{
-    define_custom_type, define_delta_operations,
+    define_custom_type,
     goblin_error::GoblinError,
-    quantities::{BaseAtoms, BaseAtomsDelta, QuoteAtoms, QuoteAtomsDelta},
+    quantities::{BaseAtoms, QuoteAtoms},
 };
 use core::u64;
 
 define_custom_type!(Atoms<u64>);
-define_custom_type!(AtomsDelta<i64>);
 
 impl Atoms {
     pub fn from_raw_atoms(raw: &RawAtoms, decimals: u8) -> Result<Self, GoblinError> {
@@ -77,14 +76,6 @@ impl Atoms {
             _ => Err(GoblinError::UnsupportedDecimals),
         }
     }
-
-    pub fn to_delta(self) -> Result<AtomsDelta, GoblinError> {
-        if self.0 <= i64::MAX as u64 {
-            Ok(AtomsDelta(self.0 as i64))
-        } else {
-            Err(GoblinError::Overflow)
-        }
-    }
 }
 
 impl From<BaseAtoms> for Atoms {
@@ -95,26 +86,6 @@ impl From<BaseAtoms> for Atoms {
 
 impl From<QuoteAtoms> for Atoms {
     fn from(value: QuoteAtoms) -> Self {
-        Self(value.inner)
-    }
-}
-
-impl AtomsDelta {
-    pub fn abs(&self) -> Atoms {
-        Atoms(self.0.abs() as u64)
-    }
-}
-
-define_delta_operations!(AtomsDelta<i64>, Atoms<u64>);
-
-impl From<BaseAtomsDelta> for AtomsDelta {
-    fn from(value: BaseAtomsDelta) -> Self {
-        Self(value.inner)
-    }
-}
-
-impl From<QuoteAtomsDelta> for AtomsDelta {
-    fn from(value: QuoteAtomsDelta) -> Self {
         Self(value.inner)
     }
 }
