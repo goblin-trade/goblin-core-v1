@@ -9,8 +9,8 @@ pub type MarketMakerDeltas = FixedMap<Address, MakerDelta, MAX_MAKERS>;
 
 #[derive(Default)]
 pub struct MakerDelta {
-    pub bid: MakerSideDelta<Quote>,
-    pub ask: MakerSideDelta<Base>,
+    pub base_in: MakerSideDelta<Base>,
+    pub quote_in: MakerSideDelta<Quote>,
 }
 
 impl MakerDelta {

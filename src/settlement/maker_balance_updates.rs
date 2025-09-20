@@ -12,13 +12,13 @@ const MAX_BALANCE_UPDATES: usize = 16;
 pub type MakerBalanceUpdates = FixedMap<UpdateKey, Update, MAX_BALANCE_UPDATES>;
 
 #[derive(PartialEq, Clone, Copy)]
-struct UpdateKey {
+pub struct UpdateKey {
     pub maker: Address,
     pub token_index: TokenIndex,
 }
 
 #[derive(Default)]
-struct Update {
+pub struct Update {
     pub locked_atoms_out: Atoms,
     pub free_atoms_in: Atoms,
 }
@@ -30,22 +30,21 @@ impl MakerBalanceUpdates {
         maker: &Address,
         maker_delta: &MakerDelta,
     ) -> Result<(), GoblinError> {
+        let base_lot_size = indexed_market.base.lot_size;
         let market_leg = In::market_leg(indexed_market);
         let atoms_per_lot = In::atoms_per_lot(market_leg.lot_size);
 
         // Free atoms in
         let maker_side_delta = In::maker_side_delta_ref(maker_delta);
-        let free_lots_in = In::decode_matching_lots(
-            maker_side_delta.free_matching_lots_in,
-            indexed_market.base.lot_size,
-        );
+        let free_lots_in =
+            In::decode_matching_lots(maker_side_delta.free_matching_lots_in, base_lot_size);
         let free_atoms_in: Atoms = (free_lots_in * atoms_per_lot).into();
 
         // Locked atoms out
         let maker_side_delta_opposite = In::Opposite::maker_side_delta_ref(maker_delta);
         let locked_lots_out = In::decode_matching_lots(
             maker_side_delta_opposite.locked_matching_lots_out,
-            indexed_market.base.lot_size,
+            base_lot_size,
         );
         let locked_atoms_out: Atoms = (locked_lots_out * atoms_per_lot).into();
 

@@ -4,10 +4,10 @@
 use crate::{
     input_processor::Args,
     instructions::ix_take,
-    settlement::{MakerBalanceUpdates, MarketMakerDeltas, TokenDeltas},
+    settlement::{MakerBalanceUpdates, MarketMakerDeltas, MarketSenderDelta, SenderBalanceUpdates},
     state::{MarketKey, MarketState, SlotState},
     tokens::ValidatedTokenPair,
-    types::{Ask, Bid, Quote},
+    types::{Base, Quote},
 };
 use goblin_error::*;
 
@@ -40,14 +40,14 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
 
     let msg_sender = hostio::msg_sender();
 
-    let mut token_deltas = TokenDeltas::new(
+    let mut sender_balance_updates = SenderBalanceUpdates::new(
         args.header.track_msg_value,
         args.eth_withdrawal_due,
         args.erc20_deposits_due,
         args.erc20_withdrawals_due,
     )?;
 
-    let mut maker_deltas = MakerBalanceUpdates::default();
+    let mut maker_balance_updates = MakerBalanceUpdates::default();
 
     for market_instructions in args.market_instructions_list {
         let indexed_market = market_instructions
@@ -70,13 +70,13 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
 
         let mut market_state = MarketState::load(&market_key);
 
-        // Deltas for taker and makers
-        // let mut market_lots_delta = MarketLotsDelta::default();
-        let mut pending_maker_updates = MarketMakerDeltas::default();
+        // Deltas for sender and makers
+        let mut market_sender_delta = MarketSenderDelta::default();
+        let mut market_maker_deltas = MarketMakerDeltas::default();
 
         if market_instructions.take_bid() {
             let match_result = ix_take::<Quote>(
-                &mut pending_maker_updates,
+                &mut market_maker_deltas,
                 msg_sender.as_ref(),
                 &indexed_market,
                 market_state.as_mut(),
@@ -84,36 +84,32 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
                 len,
                 &mut args.offset,
             )?;
-
-            // market_lots_delta.apply_match_result(&match_result)?;
+            market_sender_delta.take_quote_in = match_result;
         }
 
-        // if market_instructions.take_ask() {
-        //     let match_result = ix_take::<Ask>(
-        //         msg_sender.as_ref(),
-        //         &indexed_market,
-        //         market_state.as_mut(),
-        //         &mut pending_maker_updates,
-        //         args_buffer.as_ref(),
-        //         len,
-        //         &mut args.offset,
-        //     )?;
-        //     market_lots_delta.apply_match_result(&match_result)?;
-        // }
+        if market_instructions.take_ask() {
+            let match_result = ix_take::<Base>(
+                &mut market_maker_deltas,
+                msg_sender.as_ref(),
+                &indexed_market,
+                market_state.as_mut(),
+                args_buffer.as_ref(),
+                len,
+                &mut args.offset,
+            )?;
+            market_sender_delta.take_base_in = match_result;
+        }
 
         // Write market state to slot
         market_state.as_mut().store(&market_key);
 
-        // Apply market delta to token deltas
-        // Convert to atoms delta, then apply to delta list
-        // token_deltas.apply_market_delta(&indexed_market, &market_lots_delta)?;
-
         // Apply pending maker updates
-        maker_deltas.apply_updates(&indexed_market, &pending_maker_updates)?;
+        sender_balance_updates.apply_updates(&indexed_market, &market_sender_delta)?;
+        maker_balance_updates.apply_updates(&indexed_market, &market_maker_deltas)?;
     }
 
     // Settlement
-    token_deltas.settle(
+    sender_balance_updates.settle(
         msg_sender.as_ref(),
         args.recipient,
         args.custom_erc20_list,

@@ -45,7 +45,7 @@ pub fn match_order<In: LegMarker>(
     let mut matched_opposite = <In::Opposite as LegMarker>::MatchingLots::ZERO;
 
     // The opposite amount unlocked upon self trade
-    let mut released_by_self_trade_opposite = <In::Opposite as LegMarker>::MatchingLots::ZERO;
+    let mut released_by_self_trade = <In::Opposite as LegMarker>::MatchingLots::ZERO;
 
     // Halt early if best price is further from the centre than the price limit
     let best_opposite_price = In::Opposite::best_market_price_mut(market_state);
@@ -93,7 +93,7 @@ pub fn match_order<In: LegMarker>(
 
                 // Self trade- close the resting order and mark lots for release
                 if maker == *taker {
-                    released_by_self_trade_opposite += quote_opposite;
+                    released_by_self_trade += quote_opposite;
                     continue;
                 }
 
@@ -144,7 +144,15 @@ pub fn match_order<In: LegMarker>(
             None => break,
         }
     }
-    Ok(MatchResult::default())
+    let match_result = MatchResult::<In> {
+        pending_update: MakerSideDelta {
+            free_matching_lots_in: matched,
+            locked_matching_lots_out: matched_opposite,
+        },
+        released_by_self_trade,
+    };
+
+    Ok(match_result)
 }
 
 // pub fn match_order_old<S: SideMarker>(

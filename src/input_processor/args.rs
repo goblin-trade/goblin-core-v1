@@ -8,7 +8,7 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::{ArgsBuffer, ArgsDecoder, Header},
-    markets::{IndexedMarketV2, MarketInstructions},
+    markets::{IndexedMarket, MarketInstructions},
     quantities::Atoms,
     settlement::{ERC20Deposit, ERC20Input, ERC20Withdraw},
     types::Address,
@@ -34,7 +34,7 @@ pub struct Args<'a> {
     pub erc20_withdrawals_due: &'a [ERC20Input<ERC20Withdraw>],
 
     /// Custom markets to use
-    pub custom_market_list: &'a [IndexedMarketV2],
+    pub custom_market_list: &'a [IndexedMarket],
 
     /// List of market namespaced instructions
     pub market_instructions_list: &'a [MarketInstructions],
@@ -66,7 +66,7 @@ impl<'a> Args<'a> {
             header.erc20_withdraw_count,
         );
         let custom_market_list = payload
-            .decode_slice_unchecked::<IndexedMarketV2>(&mut offset, header.custom_market_count);
+            .decode_slice_unchecked::<IndexedMarket>(&mut offset, header.custom_market_count);
         let market_instructions_list = payload.decode_slice_unchecked::<MarketInstructions>(
             &mut offset,
             header.market_instructions_count,

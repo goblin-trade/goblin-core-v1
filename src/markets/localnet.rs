@@ -1,10 +1,10 @@
 use crate::{
-    markets::{IndexedMarketV2, MarketLeg},
+    markets::{IndexedMarket, MarketLeg},
     quantities::{BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit},
     tokens::TokenIndex,
 };
 
-pub const HARDCODED_MARKETS: [IndexedMarketV2; 1] = [IndexedMarketV2 {
+pub const HARDCODED_MARKETS: [IndexedMarket; 1] = [IndexedMarket {
     base: MarketLeg {
         token_index: TokenIndex(0),
         lot_size: BaseLotsPerBaseUnit::new(100),

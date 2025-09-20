@@ -1,12 +1,13 @@
 use crate::{
     markets::{IndexedMarket, MarketLeg},
+    matching::MatchResult,
     quantities::{
         AdjustedQuoteLots, Atoms, BaseAtoms, BaseAtomsPerBaseLot, BaseAtomsPerBaseUnit, BaseLots,
         BaseLotsPerBaseUnit, BaseUnits, QuantityOps, QuoteAtoms, QuoteAtomsPerQuoteLot,
         QuoteAtomsPerQuoteUnit, QuoteLots, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit,
         QuoteUnits, Ticks, BASE_ATOMS_PER_BASE_UNIT, QUOTE_ATOMS_PER_QUOTE_UNIT,
     },
-    settlement::{MakerDelta, MakerSideDelta},
+    settlement::{MakerDelta, MakerSideDelta, MarketSenderDelta},
     state::MarketState,
 };
 use core::ops::{Div, Mul, Rem};
@@ -64,6 +65,10 @@ pub trait LegMarker {
     fn maker_side_delta_mut<'a>(
         market_maker_delta: &'a mut MakerDelta,
     ) -> &'a mut MakerSideDelta<Self>
+    where
+        Self: Sized;
+
+    fn sender_delta_ref(market_sender_delta: &MarketSenderDelta) -> &MatchResult<Self>
     where
         Self: Sized;
 
@@ -145,13 +150,17 @@ impl LegMarker for Base {
     }
 
     fn maker_side_delta_ref(market_maker_delta: &MakerDelta) -> &MakerSideDelta<Self> {
-        &market_maker_delta.ask
+        &market_maker_delta.base_in
     }
 
     fn maker_side_delta_mut<'a>(
         market_maker_delta: &'a mut MakerDelta,
     ) -> &'a mut MakerSideDelta<Self> {
-        &mut market_maker_delta.ask
+        &mut market_maker_delta.base_in
+    }
+
+    fn sender_delta_ref(market_sender_delta: &MarketSenderDelta) -> &MatchResult<Self> {
+        &market_sender_delta.take_base_in
     }
 
     fn market_leg(indexed_market: &IndexedMarket) -> &MarketLeg<Self> {
@@ -228,13 +237,17 @@ impl LegMarker for Quote {
     }
 
     fn maker_side_delta_ref(market_maker_delta: &MakerDelta) -> &MakerSideDelta<Self> {
-        &market_maker_delta.bid
+        &market_maker_delta.quote_in
     }
 
     fn maker_side_delta_mut<'a>(
         market_maker_delta: &'a mut MakerDelta,
     ) -> &'a mut MakerSideDelta<Self> {
-        &mut market_maker_delta.bid
+        &mut market_maker_delta.quote_in
+    }
+
+    fn sender_delta_ref(market_sender_delta: &MarketSenderDelta) -> &MatchResult<Self> {
+        &market_sender_delta.take_quote_in
     }
 
     fn market_leg(indexed_market: &IndexedMarket) -> &MarketLeg<Self> {
