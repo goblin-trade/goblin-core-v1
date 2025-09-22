@@ -9,15 +9,15 @@ use crate::{
     types::{Address, LegMarker},
 };
 
-pub struct MatchResult<In: LegMarker> {
-    pub pending_update: MakerSideDelta<In>,
+pub struct SenderSideDelta<In: LegMarker> {
+    pub maker_side_delta: MakerSideDelta<In>,
     pub released_by_self_trade: <In::Opposite as LegMarker>::MatchingLots,
 }
 
-impl<In: LegMarker> Default for MatchResult<In> {
+impl<In: LegMarker> Default for SenderSideDelta<In> {
     fn default() -> Self {
         Self {
-            pending_update: MakerSideDelta::default(),
+            maker_side_delta: MakerSideDelta::default(),
             released_by_self_trade: <In::Opposite as LegMarker>::MatchingLots::default(),
         }
     }
@@ -31,7 +31,7 @@ pub fn match_order<In: LegMarker>(
     num_lots: In::Lots,
     min_lots_to_fill: In::Lots,
     price_limit: Ticks,
-) -> Result<MatchResult<In>, GoblinError> {
+) -> Result<SenderSideDelta<In>, GoblinError> {
     let budget = In::matching_lots_taker(num_lots, indexed_market.base.lot_size);
 
     // The amount matched and transferred in, i.e lost by taker and transferred to makers.
@@ -55,7 +55,7 @@ pub fn match_order<In: LegMarker>(
             GoblinError::TakerPriceLimitReached
         );
 
-        return Ok(MatchResult::default());
+        return Ok(SenderSideDelta::default());
     }
 
     let mut resting_order_position_iterator =
@@ -144,8 +144,8 @@ pub fn match_order<In: LegMarker>(
             None => break,
         }
     }
-    let match_result = MatchResult::<In> {
-        pending_update: MakerSideDelta {
+    let match_result = SenderSideDelta::<In> {
+        maker_side_delta: MakerSideDelta {
             free_matching_lots_in: matched,
             locked_matching_lots_out: matched_opposite,
         },

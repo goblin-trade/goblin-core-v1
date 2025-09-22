@@ -57,6 +57,7 @@ impl IndexedMarket {
     ///    ```
     ///
     pub fn is_valid(&self) -> bool {
+        // TODO use specialized IndexedMarket types for ERC20-ETH and ERC20-ERC20
         self.base.token_index != self.quote.token_index
             && Base::lots_per_unit_valid(self.base.lot_size)
             && Quote::lots_per_unit_valid(self.quote.lot_size)

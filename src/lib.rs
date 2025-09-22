@@ -4,7 +4,7 @@
 use crate::{
     input_processor::Args,
     instructions::ix_take,
-    settlement::{MakerBalanceUpdates, MarketMakerDeltas, MarketSenderDelta, SenderBalanceUpdates},
+    settlement::{MakerBalanceUpdates, MarketMakerDeltas, SenderBalanceUpdates, SenderDelta},
     state::{MarketKey, MarketState, SlotState},
     tokens::ValidatedTokenPair,
     types::{Base, Quote},
@@ -71,7 +71,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
         let mut market_state = MarketState::load(&market_key);
 
         // Deltas for sender and makers
-        let mut market_sender_delta = MarketSenderDelta::default();
+        let mut sender_delta = SenderDelta::default();
         let mut market_maker_deltas = MarketMakerDeltas::default();
 
         if market_instructions.take_bid() {
@@ -84,7 +84,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
                 len,
                 &mut args.offset,
             )?;
-            market_sender_delta.take_quote_in = match_result;
+            sender_delta.take_quote_in = match_result;
         }
 
         if market_instructions.take_ask() {
@@ -97,14 +97,14 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
                 len,
                 &mut args.offset,
             )?;
-            market_sender_delta.take_base_in = match_result;
+            sender_delta.take_base_in = match_result;
         }
 
         // Write market state to slot
         market_state.as_mut().store(&market_key);
 
         // Apply pending maker updates
-        sender_balance_updates.apply_updates(&indexed_market, &market_sender_delta)?;
+        sender_balance_updates.apply_updates(&indexed_market, &sender_delta)?;
         maker_balance_updates.apply_updates(&indexed_market, &market_maker_deltas)?;
     }
 

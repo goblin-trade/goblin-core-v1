@@ -1,7 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
-    markets::IndexedMarket,
-    quantities::Atoms,
+    markets::{IndexedMarket, MarketLeg},
+    quantities::{Atoms, BaseLotsPerBaseUnit},
     settlement::{MakerDelta, MarketMakerDeltas},
     tokens::TokenIndex,
     types::{Address, Base, LegMarker, Quote},
@@ -19,8 +19,39 @@ pub struct UpdateKey {
 
 #[derive(Default)]
 pub struct Update {
-    pub locked_atoms_out: Atoms,
     pub free_atoms_in: Atoms,
+    pub locked_atoms_out: Atoms,
+}
+
+impl Update {
+    fn new<In: LegMarker>(
+        maker_delta: &MakerDelta,
+        market_leg: &MarketLeg<In>,
+        base_lot_size: BaseLotsPerBaseUnit,
+    ) -> Self {
+        let atoms_per_lot = In::atoms_per_lot(market_leg.lot_size);
+
+        // Free atoms in
+        let maker_side_delta = In::maker_side_delta_ref(maker_delta);
+        let maker_side_delta_opposite = In::Opposite::maker_side_delta_ref(maker_delta);
+
+        let free_atoms_in = In::matching_lots_to_atoms(
+            maker_side_delta.free_matching_lots_in,
+            base_lot_size,
+            atoms_per_lot,
+        );
+
+        let locked_atoms_out = In::matching_lots_to_atoms(
+            maker_side_delta_opposite.locked_matching_lots_out,
+            base_lot_size,
+            atoms_per_lot,
+        );
+
+        Self {
+            locked_atoms_out,
+            free_atoms_in,
+        }
+    }
 }
 
 impl MakerBalanceUpdates {
@@ -32,21 +63,7 @@ impl MakerBalanceUpdates {
     ) -> Result<(), GoblinError> {
         let base_lot_size = indexed_market.base.lot_size;
         let market_leg = In::market_leg(indexed_market);
-        let atoms_per_lot = In::atoms_per_lot(market_leg.lot_size);
-
-        // Free atoms in
-        let maker_side_delta = In::maker_side_delta_ref(maker_delta);
-        let free_lots_in =
-            In::decode_matching_lots(maker_side_delta.free_matching_lots_in, base_lot_size);
-        let free_atoms_in: Atoms = (free_lots_in * atoms_per_lot).into();
-
-        // Locked atoms out
-        let maker_side_delta_opposite = In::Opposite::maker_side_delta_ref(maker_delta);
-        let locked_lots_out = In::decode_matching_lots(
-            maker_side_delta_opposite.locked_matching_lots_out,
-            base_lot_size,
-        );
-        let locked_atoms_out: Atoms = (locked_lots_out * atoms_per_lot).into();
+        let update = Update::new::<In>(maker_delta, market_leg, base_lot_size);
 
         // Write to store
         let store = self
@@ -55,8 +72,8 @@ impl MakerBalanceUpdates {
                 token_index: market_leg.token_index,
             })
             .ok_or(GoblinError::MakerStoreListFull)?;
-        store.free_atoms_in += free_atoms_in;
-        store.locked_atoms_out += locked_atoms_out;
+        store.free_atoms_in += update.free_atoms_in;
+        store.locked_atoms_out += update.locked_atoms_out;
 
         Ok(())
     }

@@ -1,13 +1,13 @@
 use crate::{
     markets::{IndexedMarket, MarketLeg},
-    matching::MatchResult,
+    matching::SenderSideDelta,
     quantities::{
         AdjustedQuoteLots, Atoms, BaseAtoms, BaseAtomsPerBaseLot, BaseAtomsPerBaseUnit, BaseLots,
         BaseLotsPerBaseUnit, BaseUnits, QuantityOps, QuoteAtoms, QuoteAtomsPerQuoteLot,
         QuoteAtomsPerQuoteUnit, QuoteLots, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit,
         QuoteUnits, Ticks, BASE_ATOMS_PER_BASE_UNIT, QUOTE_ATOMS_PER_QUOTE_UNIT,
     },
-    settlement::{MakerDelta, MakerSideDelta, MarketSenderDelta},
+    settlement::{MakerDelta, MakerSideDelta, SenderDelta},
     state::MarketState,
 };
 use core::ops::{Div, Mul, Rem};
@@ -68,7 +68,7 @@ pub trait LegMarker {
     where
         Self: Sized;
 
-    fn sender_delta_ref(market_sender_delta: &MarketSenderDelta) -> &MatchResult<Self>
+    fn sender_side_delta(sender_delta: &SenderDelta) -> &SenderSideDelta<Self>
     where
         Self: Sized;
 
@@ -107,21 +107,20 @@ pub trait LegMarker {
         base_lot_size: BaseLotsPerBaseUnit,
     ) -> Self::Lots;
 
+    fn matching_lots_to_atoms(
+        matching_lots: Self::MatchingLots,
+        base_lot_size: BaseLotsPerBaseUnit,
+        atoms_per_lot: Self::AtomsPerLot,
+    ) -> Atoms {
+        let lots = Self::decode_matching_lots(matching_lots, base_lot_size);
+        (lots * atoms_per_lot).into()
+    }
+
     fn base_lots_from_matching(
         matching_lots: Self::MatchingLots,
         tick_size: QuoteLotsPerBaseUnitPerTick,
         price: Ticks,
     ) -> BaseLots;
-
-    // Convert MatchingLots into Opposite::MatchingLots
-    // Combines 2 functions in 1
-    // - base_lots_from_matching()
-    // - Opposite::matching_lots_maker()
-    fn matching_lots_opposite(
-        matching_lots: Self::MatchingLots,
-        tick_size: QuoteLotsPerBaseUnitPerTick,
-        price: Ticks,
-    ) -> <Self::Opposite as LegMarker>::MatchingLots;
 
     fn best_market_price_mut(market_state: &mut MarketState) -> &mut Ticks;
 
@@ -159,8 +158,8 @@ impl LegMarker for Base {
         &mut market_maker_delta.base_in
     }
 
-    fn sender_delta_ref(market_sender_delta: &MarketSenderDelta) -> &MatchResult<Self> {
-        &market_sender_delta.take_base_in
+    fn sender_side_delta(sender_delta: &SenderDelta) -> &SenderSideDelta<Self> {
+        &sender_delta.take_base_in
     }
 
     fn market_leg(indexed_market: &IndexedMarket) -> &MarketLeg<Self> {
@@ -197,14 +196,6 @@ impl LegMarker for Base {
         _price: Ticks,
     ) -> BaseLots {
         matching
-    }
-
-    fn matching_lots_opposite(
-        matching_lots: Self::MatchingLots,
-        tick_size: QuoteLotsPerBaseUnitPerTick,
-        price: Ticks,
-    ) -> <Self::Opposite as LegMarker>::MatchingLots {
-        (tick_size * price) * matching_lots
     }
 
     fn best_market_price_mut(market_state: &mut MarketState) -> &mut Ticks {
@@ -246,8 +237,8 @@ impl LegMarker for Quote {
         &mut market_maker_delta.quote_in
     }
 
-    fn sender_delta_ref(market_sender_delta: &MarketSenderDelta) -> &MatchResult<Self> {
-        &market_sender_delta.take_quote_in
+    fn sender_side_delta(sender_delta: &SenderDelta) -> &SenderSideDelta<Self> {
+        &sender_delta.take_quote_in
     }
 
     fn market_leg(indexed_market: &IndexedMarket) -> &MarketLeg<Self> {
@@ -283,14 +274,6 @@ impl LegMarker for Quote {
         tick_size: QuoteLotsPerBaseUnitPerTick,
         price: Ticks,
     ) -> BaseLots {
-        matching_lots / (tick_size * price)
-    }
-
-    fn matching_lots_opposite(
-        matching_lots: Self::MatchingLots,
-        tick_size: QuoteLotsPerBaseUnitPerTick,
-        price: Ticks,
-    ) -> <Self::Opposite as LegMarker>::MatchingLots {
         matching_lots / (tick_size * price)
     }
 

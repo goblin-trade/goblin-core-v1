@@ -3,8 +3,7 @@ use crate::{
     markets::IndexedMarket,
     quantities::Atoms,
     settlement::{
-        CommonDelta, ERC20DeltaList, ERC20Deposit, ERC20Input, ERC20Withdraw, EthDelta,
-        MarketSenderDelta,
+        CommonDelta, ERC20DeltaList, ERC20Deposit, ERC20Input, ERC20Withdraw, EthDelta, SenderDelta,
     },
     tokens::TokenIndex,
     types::{Address, Base, LegMarker, Quote},
@@ -46,52 +45,24 @@ impl SenderBalanceUpdates {
     pub fn apply_side_update<In: LegMarker>(
         &mut self,
         indexed_market: &IndexedMarket,
-        market_sender_delta: &MarketSenderDelta,
+        sender_delta: &SenderDelta,
     ) -> Result<(), GoblinError> {
-        let base_lot_size = indexed_market.base.lot_size;
         let market_leg = In::market_leg(indexed_market);
-        let atoms_per_lot = In::atoms_per_lot(market_leg.lot_size);
+        let base_lot_size = indexed_market.base.lot_size;
 
-        // Free atoms in
-        let sender_delta_side = In::sender_delta_ref(market_sender_delta);
-        let free_lots_in = In::decode_matching_lots(
-            sender_delta_side.pending_update.free_matching_lots_in,
-            base_lot_size,
-        );
-        let free_atoms_in: Atoms = (free_lots_in * atoms_per_lot).into();
-
-        // Locked atoms out
-        let sender_delta_opposite =
-            <In::Opposite as LegMarker>::sender_delta_ref(market_sender_delta);
-        let locked_lots_out = In::decode_matching_lots(
-            sender_delta_opposite
-                .pending_update
-                .locked_matching_lots_out,
-            base_lot_size,
-        );
-        let locked_atoms_out: Atoms = (locked_lots_out * atoms_per_lot).into();
-
-        // Released on self trade
-        let self_trade_released_lots =
-            In::decode_matching_lots(sender_delta_opposite.released_by_self_trade, base_lot_size);
-        let self_trade_released_atoms: Atoms = (self_trade_released_lots * atoms_per_lot).into();
+        // Convert delta to Atoms format on Token namespace
+        let taker_token_update =
+            sender_delta.to_taker_token_update::<In>(market_leg, base_lot_size);
 
         // Update token delta
         let token_common_delta = self.token_common_delta(market_leg.token_index)?;
-        token_common_delta.accumulate_market_delta(
-            free_atoms_in,
-            locked_atoms_out,
-            self_trade_released_atoms,
-        )?;
-
-        sender_delta_side.released_by_self_trade;
-        Ok(())
+        token_common_delta.apply_taker_update(&taker_token_update)
     }
 
     pub fn apply_updates(
         &mut self,
         indexed_market: &IndexedMarket,
-        market_sender_delta: &MarketSenderDelta,
+        market_sender_delta: &SenderDelta,
     ) -> Result<(), GoblinError> {
         self.apply_side_update::<Base>(indexed_market, market_sender_delta)?;
         self.apply_side_update::<Quote>(indexed_market, market_sender_delta)?;

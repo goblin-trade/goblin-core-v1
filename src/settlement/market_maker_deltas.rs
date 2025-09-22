@@ -1,5 +1,6 @@
 use crate::{
     goblin_error::GoblinError,
+    quantities::{Atoms, BaseLotsPerBaseUnit},
     types::{Address, Base, LegMarker, Quote},
     utils::FixedMap,
 };
@@ -57,3 +58,23 @@ impl<In: LegMarker> Default for MakerSideDelta<In> {
         }
     }
 }
+
+// impl<In: LegMarker> MakerSideDelta<In> {
+//     pub fn free_atoms_in(
+//         &self,
+//         base_lot_size: BaseLotsPerBaseUnit,
+//         atoms_per_lot: In::AtomsPerLot,
+//     ) -> Atoms {
+//         let lots = In::decode_matching_lots(self.free_matching_lots_in, base_lot_size);
+//         (lots * atoms_per_lot).into()
+//     }
+
+//     pub fn locked_atoms_out(
+//         &self,
+//         base_lot_size: BaseLotsPerBaseUnit,
+//         atoms_per_lot: <In::Opposite as LegMarker>::AtomsPerLot,
+//     ) -> Atoms {
+//         let lots = In::Opposite::decode_matching_lots(self.locked_matching_lots_out, base_lot_size);
+//         (lots * atoms_per_lot).into()
+//     }
+// }

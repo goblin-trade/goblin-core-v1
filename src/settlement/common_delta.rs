@@ -1,11 +1,4 @@
-use crate::{
-    goblin_error::GoblinError,
-    markets::{indexed_market, IndexedMarket},
-    matching::MatchResult,
-    quantities::Atoms,
-    settlement::MarketSenderDelta,
-    types::LegMarker,
-};
+use crate::{goblin_error::GoblinError, quantities::Atoms, settlement::TakerTokenUpdate};
 
 /// Common delta shared by ETHDelta and ERC20Delta
 ///
@@ -48,22 +41,20 @@ impl CommonDelta {
     }
 
     // Update the amounts of the token transferred in and transferred out in a market
-    //
-    // # Arguments
-    // * taker_in: Atoms transferred in on a taker trade for side In
-    // * taker_out: Atoms transferred out on opposite side trade for side In::Opposite
-    //
-    pub fn accumulate_market_delta(
+    // when performing bid and ask taker orders
+    pub fn apply_taker_update(
         &mut self,
-        taker_in: Atoms,
-        taker_out: Atoms,
-        taker_self_trade: Atoms,
+        taker_token_update: &TakerTokenUpdate,
     ) -> Result<(), GoblinError> {
-        self.taker_in = self.taker_in.checked_add(taker_in)?;
-        self.taker_out = self.taker_out.checked_add(taker_out)?;
+        self.taker_in = self
+            .taker_in
+            .checked_add(taker_token_update.free_atoms_in)?;
+        self.taker_out = self
+            .taker_out
+            .checked_add(taker_token_update.locked_atoms_out)?;
         self.taker_self_trade_unlocked = self
             .taker_self_trade_unlocked
-            .checked_add(taker_self_trade)?;
+            .checked_add(taker_token_update.atoms_released_by_self_trade)?;
 
         Ok(())
     }
