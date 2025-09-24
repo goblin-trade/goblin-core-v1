@@ -3,49 +3,24 @@ use crate::{
     matching::SenderSideDelta,
     quantities::{
         AdjustedQuoteLots, Atoms, BaseAtoms, BaseAtomsPerBaseLot, BaseAtomsPerBaseUnit, BaseLots,
-        BaseLotsPerBaseUnit, BaseUnits, QuantityOps, QuoteAtoms, QuoteAtomsPerQuoteLot,
+        BaseLotsPerBaseUnit, BaseUnits, Opposable, QuantityOps, QuoteAtoms, QuoteAtomsPerQuoteLot,
         QuoteAtomsPerQuoteUnit, QuoteLots, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit,
         QuoteUnits, Ticks, BASE_ATOMS_PER_BASE_UNIT, QUOTE_ATOMS_PER_QUOTE_UNIT,
     },
     settlement::{MakerDelta, MakerSideDelta, SenderDelta},
     state::MarketState,
-    tokens::TokenIndex,
 };
 use core::ops::{Div, Mul, Rem};
 
-// Good solution but requires long return types
-// <In as LegMarker>::Limb<<Base as LegMarker>::LotsPerUnit, <Quote as LegMarker>::LotsPerUnit>
-pub struct LegPair<B, Q> {
-    base: B,
-    quote: Q,
-}
+// A pair of quantities with opposite dimensions.
+// The compiler guarantees that T::Opposite is the type of the second element.
+pub struct Pair<T: Opposable>(pub T, pub T::Opposite);
 
-// Scalar
-type TokenIndexPair = LegPair<TokenIndex, TokenIndex>;
-type TokenIndexLimb<In> = <In as LegMarker>::Limb<TokenIndex, TokenIndex>;
-
-// Struct with generic
-type MarketPair = LegPair<MarketLeg<Base>, MarketLeg<Quote>>;
-
-// Opposite side quantities
-type LotSizePair = LegPair<<Base as LegMarker>::LotsPerUnit, <Quote as LegMarker>::LotsPerUnit>;
-
-fn get_index<In: LegMarker>(pair: &TokenIndexPair) -> &TokenIndexLimb<In> {
-    let index = In::get_on_pair(pair);
-
-    index
-}
-
-fn get_market_leg<In: LegMarker>(
-    pair: &MarketPair,
-) -> &<In as LegMarker>::Limb<MarketLeg<Base>, MarketLeg<Quote>> {
-    In::get_on_pair(pair)
-}
-
-fn get_lot_size<In: LegMarker>(
-    pair: &LotSizePair,
-) -> &<In as LegMarker>::Limb<<Base as LegMarker>::LotsPerUnit, <Quote as LegMarker>::LotsPerUnit> {
-    In::get_on_pair(pair)
+impl<T: Opposable> Pair<T> {
+    /// Creates a new pair with opposable quantities.
+    pub fn new(first: T, second: <T as Opposable>::Opposite) -> Self {
+        Self(first, second)
+    }
 }
 
 #[derive(Default, Clone, Copy)]
@@ -54,44 +29,28 @@ pub struct Base;
 #[derive(Default, Clone, Copy)]
 pub struct Quote;
 
-pub trait Leggable {
-    type BaseType;
-    type QuoteType;
-}
-
-impl<In: LegMarker> Leggable for MarketLeg<In> {
-    type BaseType = MarketLeg<Base>;
-    type QuoteType = MarketLeg<Quote>;
-}
-
-pub struct LegPairV2<T: Leggable> {
-    pub base: T::BaseType,
-    pub quote: T::QuoteType,
-}
-
 pub trait LegMarker {
     type Opposite: LegMarker<Opposite = Self>;
-    type Limb<B, Q>;
 
-    type LimbV2<T: Leggable>;
-
-    fn get_on_pair_v2<'a, T: Leggable>(pair: &'a LegPairV2<T>) -> &'a Self::LimbV2<T>;
-
-    fn get_on_pair<'a, B, Q>(pair: &'a LegPair<B, Q>) -> &'a Self::Limb<B, Q>;
-    fn get_on_pair_mut<'a, B, Q>(pair: &'a mut LegPair<B, Q>) -> &'a mut Self::Limb<B, Q>;
-    fn take_from_pair<B, Q>(pair: LegPair<B, Q>) -> Self::Limb<B, Q>;
+    type SideOfPair<T: Opposable>;
+    fn of<'a, T: Opposable>(pair: &'a Pair<T>) -> &'a Self::SideOfPair<T>;
 
     // Basic quantities
-    type Lots: QuantityOps + From<u64> + PartialOrd + Mul<Self::AtomsPerLot, Output = Self::Atoms>;
-    type Units: QuantityOps;
-    type Atoms: QuantityOps + Into<Atoms>;
+    type Lots: QuantityOps
+        + Opposable
+        + From<u64>
+        + PartialOrd
+        + Mul<Self::AtomsPerLot, Output = Self::Atoms>;
+    type Units: QuantityOps + Opposable;
+    type Atoms: QuantityOps + Opposable + Into<Atoms>;
 
     // Ratios
-    type LotsPerUnit: QuantityOps;
+    type LotsPerUnit: QuantityOps + Opposable;
     type AtomsPerUnit: QuantityOps
+        + Opposable
         + Rem<Self::LotsPerUnit, Output = Self::AtomsPerUnit>
         + Div<Self::LotsPerUnit, Output = Self::AtomsPerLot>;
-    type AtomsPerLot: QuantityOps;
+    type AtomsPerLot: QuantityOps + Opposable;
 
     const ATOMS_PER_UNIT: Self::AtomsPerUnit;
 
@@ -192,22 +151,10 @@ pub trait LegMarker {
 impl LegMarker for Base {
     type Opposite = Quote;
 
-    type Limb<B, Q> = B;
+    type SideOfPair<T: Opposable> = T;
 
-    type LimbV2<T: Leggable> = T::BaseType;
-
-    fn get_on_pair_v2<'a, T: Leggable>(pair: &'a LegPairV2<T>) -> &'a Self::LimbV2<T> {
-        &pair.base
-    }
-
-    fn get_on_pair<'a, B, Q>(pair: &'a LegPair<B, Q>) -> &'a B {
-        &pair.base
-    }
-    fn get_on_pair_mut<'a, B, Q>(pair: &'a mut LegPair<B, Q>) -> &'a mut B {
-        &mut pair.base
-    }
-    fn take_from_pair<B, Q>(pair: LegPair<B, Q>) -> B {
-        pair.base
+    fn of<'a, T: Opposable>(pair: &'a Pair<T>) -> &'a Self::SideOfPair<T> {
+        &pair.0
     }
 
     type Lots = BaseLots;
@@ -289,22 +236,10 @@ impl LegMarker for Base {
 impl LegMarker for Quote {
     type Opposite = Base;
 
-    type Limb<B, Q> = Q;
+    type SideOfPair<T: Opposable> = T::Opposite;
 
-    type LimbV2<T: Leggable> = T::QuoteType;
-
-    fn get_on_pair_v2<'a, T: Leggable>(pair: &'a LegPairV2<T>) -> &'a Self::LimbV2<T> {
-        &pair.quote
-    }
-
-    fn get_on_pair<'a, B, Q>(pair: &'a LegPair<B, Q>) -> &'a Q {
-        &pair.quote
-    }
-    fn get_on_pair_mut<'a, B, Q>(pair: &'a mut LegPair<B, Q>) -> &'a mut Q {
-        &mut pair.quote
-    }
-    fn take_from_pair<B, Q>(pair: LegPair<B, Q>) -> Q {
-        pair.quote
+    fn of<'a, T: Opposable>(pair: &'a Pair<T>) -> &'a Self::SideOfPair<T> {
+        &pair.1
     }
 
     type Lots = QuoteLots;
