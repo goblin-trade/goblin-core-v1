@@ -3,25 +3,26 @@ use crate::{
     matching::SenderSideDelta,
     quantities::{
         AdjustedQuoteLots, Atoms, BaseAtoms, BaseAtomsPerBaseLot, BaseAtomsPerBaseUnit, BaseLots,
-        BaseLotsPerBaseUnit, BaseUnits, Opposable, QuantityOps, QuoteAtoms, QuoteAtomsPerQuoteLot,
+        BaseLotsPerBaseUnit, BaseUnits, QuantityOps, QuoteAtoms, QuoteAtomsPerQuoteLot,
         QuoteAtomsPerQuoteUnit, QuoteLots, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit,
         QuoteUnits, Ticks, BASE_ATOMS_PER_BASE_UNIT, QUOTE_ATOMS_PER_QUOTE_UNIT,
     },
     settlement::{MakerDelta, MakerSideDelta, SenderDelta},
     state::MarketState,
+    tokens::TokenIndex,
 };
 use core::ops::{Div, Mul, Rem};
 
-// A pair of quantities with opposite dimensions.
-// The compiler guarantees that T::Opposite is the type of the second element.
-pub struct Pair<T: Opposable>(pub T, pub T::Opposite);
-
-impl<T: Opposable> Pair<T> {
-    /// Creates a new pair with opposable quantities.
-    pub fn new(first: T, second: <T as Opposable>::Opposite) -> Self {
-        Self(first, second)
-    }
+pub struct LegPair<B, Q> {
+    pub base: B,
+    pub quote: Q,
 }
+
+// Scalar
+type TokenIndexPair = LegPair<TokenIndex, TokenIndex>;
+
+// Struct with generic
+type MarketPair = LegPair<MarketLeg<Base>, MarketLeg<Quote>>;
 
 #[derive(Default, Clone, Copy)]
 pub struct Base;
@@ -32,25 +33,22 @@ pub struct Quote;
 pub trait LegMarker {
     type Opposite: LegMarker<Opposite = Self>;
 
-    type SideOfPair<T: Opposable>;
-    fn of<'a, T: Opposable>(pair: &'a Pair<T>) -> &'a Self::SideOfPair<T>;
+    type Limb<B, Q>;
+    fn get_on_pair<'a, B, Q>(pair: &'a LegPair<B, Q>) -> &'a Self::Limb<B, Q>;
+    fn get_on_pair_mut<'a, B, Q>(pair: &'a mut LegPair<B, Q>) -> &'a mut Self::Limb<B, Q>;
+    fn take_from_pair<B, Q>(pair: LegPair<B, Q>) -> Self::Limb<B, Q>;
 
     // Basic quantities
-    type Lots: QuantityOps
-        + Opposable
-        + From<u64>
-        + PartialOrd
-        + Mul<Self::AtomsPerLot, Output = Self::Atoms>;
-    type Units: QuantityOps + Opposable;
-    type Atoms: QuantityOps + Opposable + Into<Atoms>;
+    type Lots: QuantityOps + From<u64> + PartialOrd + Mul<Self::AtomsPerLot, Output = Self::Atoms>;
+    type Units: QuantityOps;
+    type Atoms: QuantityOps + Into<Atoms>;
 
     // Ratios
-    type LotsPerUnit: QuantityOps + Opposable;
+    type LotsPerUnit: QuantityOps;
     type AtomsPerUnit: QuantityOps
-        + Opposable
         + Rem<Self::LotsPerUnit, Output = Self::AtomsPerUnit>
         + Div<Self::LotsPerUnit, Output = Self::AtomsPerLot>;
-    type AtomsPerLot: QuantityOps + Opposable;
+    type AtomsPerLot: QuantityOps;
 
     const ATOMS_PER_UNIT: Self::AtomsPerUnit;
 
@@ -151,10 +149,16 @@ pub trait LegMarker {
 impl LegMarker for Base {
     type Opposite = Quote;
 
-    type SideOfPair<T: Opposable> = T;
+    type Limb<B, Q> = B;
 
-    fn of<'a, T: Opposable>(pair: &'a Pair<T>) -> &'a Self::SideOfPair<T> {
-        &pair.0
+    fn get_on_pair<'a, B, Q>(pair: &'a LegPair<B, Q>) -> &'a B {
+        &pair.base
+    }
+    fn get_on_pair_mut<'a, B, Q>(pair: &'a mut LegPair<B, Q>) -> &'a mut B {
+        &mut pair.base
+    }
+    fn take_from_pair<B, Q>(pair: LegPair<B, Q>) -> B {
+        pair.base
     }
 
     type Lots = BaseLots;
@@ -236,10 +240,16 @@ impl LegMarker for Base {
 impl LegMarker for Quote {
     type Opposite = Base;
 
-    type SideOfPair<T: Opposable> = T::Opposite;
+    type Limb<B, Q> = Q;
 
-    fn of<'a, T: Opposable>(pair: &'a Pair<T>) -> &'a Self::SideOfPair<T> {
-        &pair.1
+    fn get_on_pair<'a, B, Q>(pair: &'a LegPair<B, Q>) -> &'a Q {
+        &pair.quote
+    }
+    fn get_on_pair_mut<'a, B, Q>(pair: &'a mut LegPair<B, Q>) -> &'a mut Q {
+        &mut pair.quote
+    }
+    fn take_from_pair<B, Q>(pair: LegPair<B, Q>) -> Q {
+        pair.quote
     }
 
     type Lots = QuoteLots;

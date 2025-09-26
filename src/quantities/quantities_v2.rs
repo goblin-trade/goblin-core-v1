@@ -340,30 +340,6 @@ pub const BASE_ATOMS_PER_BASE_UNIT: BaseAtomsPerBaseUnit = BaseAtomsPerBaseUnit:
 pub const QUOTE_ATOMS_PER_QUOTE_UNIT: QuoteAtomsPerQuoteUnit =
     QuoteAtomsPerQuoteUnit::new(1_000_000);
 
-// Good solution- move this trait in quantities_v2.rs
-//
-// Breaking- MakerDelta, MakerSideDelta etc will change. We will have
-// * free_matching_lots_in: Pair
-// * locked_matching_lots_out: Pair
-//
-// However since functions are monomorphized, there should be no performance impact.
-
-//
-// Opposable
-//
-pub trait Opposable {
-    type Opposite;
-}
-
-impl<Base, Quote, T> Opposable for Quantity<Dim<Base, Quote, T>>
-where
-    Base: Exp,
-    Quote: Exp,
-    T: Exp,
-{
-    type Opposite = Quantity<Dim<Quote, Base, T>>;
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
