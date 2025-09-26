@@ -13,16 +13,84 @@ use crate::{
 };
 use core::ops::{Div, Mul, Rem};
 
-pub struct LegPair<B, Q> {
-    pub base: B,
-    pub quote: Q,
+// Alternative to not adding functions inside LegMarker- define a trait extending
+// LegMarker and then implement it for Base and Quote
+// The In::get() sytax remains, the other form get_leg<In>() is syntactic sugar.
+//
+// But this also means we need to import the new traits too.
+//
+// define_pair!(Name, base_size, quote_size, output_type)
+// - This will work for all 3 cases- dimensionless, struct, dimensioned number
+// - Macro guarantees that types for each side map correctly to output
+pub struct LotSizePair {
+    pub base: BaseLotsPerBaseUnit,
+    pub quote: QuoteLotsPerQuoteUnit,
 }
 
-// Scalar
-type TokenIndexPair = LegPair<TokenIndex, TokenIndex>;
+pub trait LotSizeMarker: LegMarker {
+    fn get_lot_size_leg(pair: &LotSizePair) -> Self::LotsPerUnit;
+}
 
-// Struct with generic
-type MarketPair = LegPair<MarketLeg<Base>, MarketLeg<Quote>>;
+impl LotSizeMarker for Base {
+    fn get_lot_size_leg(pair: &LotSizePair) -> Self::LotsPerUnit {
+        pair.base
+    }
+}
+
+impl LotSizeMarker for Quote {
+    fn get_lot_size_leg(pair: &LotSizePair) -> Self::LotsPerUnit {
+        pair.quote
+    }
+}
+
+//
+// Macro
+//
+macro_rules! create_pair {
+    ($name:ident, $trait_name:ident, $base_ty:ty, $quote_ty:ty, $ret_ty:ty) => {
+        #[derive(Clone, Copy)]
+        pub struct $name {
+            pub base: $base_ty,
+            pub quote: $quote_ty,
+        }
+
+        pub trait $trait_name: LegMarker + Sized {
+            fn get_leg(pair: &$name) -> &$ret_ty;
+        }
+
+        impl $trait_name for Base {
+            fn get_leg(pair: &$name) -> &$ret_ty {
+                &pair.base
+            }
+        }
+
+        impl $trait_name for Quote {
+            fn get_leg(pair: &$name) -> &$ret_ty {
+                &pair.quote
+            }
+        }
+    };
+}
+
+create_pair!(
+    LotSizePairV2,
+    LotSizeMarkerV2,
+    BaseLotsPerBaseUnit,
+    QuoteLotsPerQuoteUnit,
+    <Self as LegMarker>::LotsPerUnit
+);
+
+create_pair!(
+    MarketLegs,
+    MarketLegsMarker,
+    MarketLeg<Quote>,
+    MarketLeg<Base>,
+    MarketLeg<Self::Opposite>
+);
+
+fn get_market_leg<In: LegMarker + MarketLegsMarker>(legs: &MarketLegs) {
+    let gg = In::get_leg(legs);
+}
 
 #[derive(Default, Clone, Copy)]
 pub struct Base;
@@ -32,11 +100,6 @@ pub struct Quote;
 
 pub trait LegMarker {
     type Opposite: LegMarker<Opposite = Self>;
-
-    type Limb<B, Q>;
-    fn get_on_pair<'a, B, Q>(pair: &'a LegPair<B, Q>) -> &'a Self::Limb<B, Q>;
-    fn get_on_pair_mut<'a, B, Q>(pair: &'a mut LegPair<B, Q>) -> &'a mut Self::Limb<B, Q>;
-    fn take_from_pair<B, Q>(pair: LegPair<B, Q>) -> Self::Limb<B, Q>;
 
     // Basic quantities
     type Lots: QuantityOps + From<u64> + PartialOrd + Mul<Self::AtomsPerLot, Output = Self::Atoms>;
@@ -149,18 +212,6 @@ pub trait LegMarker {
 impl LegMarker for Base {
     type Opposite = Quote;
 
-    type Limb<B, Q> = B;
-
-    fn get_on_pair<'a, B, Q>(pair: &'a LegPair<B, Q>) -> &'a B {
-        &pair.base
-    }
-    fn get_on_pair_mut<'a, B, Q>(pair: &'a mut LegPair<B, Q>) -> &'a mut B {
-        &mut pair.base
-    }
-    fn take_from_pair<B, Q>(pair: LegPair<B, Q>) -> B {
-        pair.base
-    }
-
     type Lots = BaseLots;
     type Units = BaseUnits;
     type Atoms = BaseAtoms;
@@ -239,18 +290,6 @@ impl LegMarker for Base {
 // Input Quote = side Bid (buy)
 impl LegMarker for Quote {
     type Opposite = Base;
-
-    type Limb<B, Q> = Q;
-
-    fn get_on_pair<'a, B, Q>(pair: &'a LegPair<B, Q>) -> &'a Q {
-        &pair.quote
-    }
-    fn get_on_pair_mut<'a, B, Q>(pair: &'a mut LegPair<B, Q>) -> &'a mut Q {
-        &mut pair.quote
-    }
-    fn take_from_pair<B, Q>(pair: LegPair<B, Q>) -> Q {
-        pair.quote
-    }
 
     type Lots = QuoteLots;
     type Units = QuoteUnits;
