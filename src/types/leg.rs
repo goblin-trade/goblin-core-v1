@@ -83,10 +83,14 @@ create_pair!(
 create_pair!(
     MarketLegs,
     MarketLegsMarker,
-    MarketLeg<Quote>,
     MarketLeg<Base>,
-    MarketLeg<Self::Opposite>
+    MarketLeg<Quote>,
+    MarketLeg<Self>
 );
+
+fn use_lot_size<In: LegMarker + LotSizeMarkerV2>(legs: &LotSizePairV2) {
+    let lot_size = In::get_leg(legs);
+}
 
 fn get_market_leg<In: LegMarker + MarketLegsMarker>(legs: &MarketLegs) {
     let gg = In::get_leg(legs);
