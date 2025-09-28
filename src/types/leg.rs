@@ -9,64 +9,39 @@ use crate::{
     },
     settlement::{MakerDelta, MakerSideDelta, SenderDelta},
     state::MarketState,
-    tokens::TokenIndex,
 };
 use core::ops::{Div, Mul, Rem};
 
-// Alternative to not adding functions inside LegMarker- define a trait extending
-// LegMarker and then implement it for Base and Quote
-// The In::get() sytax remains, the other form get_leg<In>() is syntactic sugar.
-//
-// But this also means we need to import the new traits too.
-//
-// define_pair!(Name, base_size, quote_size, output_type)
-// - This will work for all 3 cases- dimensionless, struct, dimensioned number
-// - Macro guarantees that types for each side map correctly to output
-pub struct LotSizePair {
-    pub base: BaseLotsPerBaseUnit,
-    pub quote: QuoteLotsPerQuoteUnit,
+pub trait PairGetter<P, R> {
+    fn get_leg(pair: &P) -> &R;
+    fn get_leg_mut(pair: &mut P) -> &mut R;
 }
 
-pub trait LotSizeMarker: LegMarker {
-    fn get_lot_size_leg(pair: &LotSizePair) -> Self::LotsPerUnit;
-}
-
-impl LotSizeMarker for Base {
-    fn get_lot_size_leg(pair: &LotSizePair) -> Self::LotsPerUnit {
-        pair.base
-    }
-}
-
-impl LotSizeMarker for Quote {
-    fn get_lot_size_leg(pair: &LotSizePair) -> Self::LotsPerUnit {
-        pair.quote
-    }
-}
-
-//
-// Macro
-//
 macro_rules! create_pair {
-    ($name:ident, $trait_name:ident, $base_ty:ty, $quote_ty:ty, $ret_ty:ty) => {
+    ($name:ident, $base_ty:ty, $quote_ty:ty, $ret_ty:ty) => {
         #[derive(Clone, Copy)]
         pub struct $name {
             pub base: $base_ty,
             pub quote: $quote_ty,
         }
 
-        pub trait $trait_name: LegMarker + Sized {
-            fn get_leg(pair: &$name) -> &$ret_ty;
-        }
-
-        impl $trait_name for Base {
+        impl PairGetter<$name, $ret_ty> for Base {
             fn get_leg(pair: &$name) -> &$ret_ty {
                 &pair.base
             }
+
+            fn get_leg_mut(pair: &mut $name) -> &mut $ret_ty {
+                &mut pair.base
+            }
         }
 
-        impl $trait_name for Quote {
+        impl PairGetter<$name, $ret_ty> for Quote {
             fn get_leg(pair: &$name) -> &$ret_ty {
                 &pair.quote
+            }
+
+            fn get_leg_mut(pair: &mut $name) -> &mut $ret_ty {
+                &mut pair.quote
             }
         }
     };
@@ -74,7 +49,6 @@ macro_rules! create_pair {
 
 create_pair!(
     LotSizePairV2,
-    LotSizeMarkerV2,
     BaseLotsPerBaseUnit,
     QuoteLotsPerQuoteUnit,
     <Self as LegMarker>::LotsPerUnit
@@ -82,17 +56,22 @@ create_pair!(
 
 create_pair!(
     MarketLegs,
-    MarketLegsMarker,
     MarketLeg<Base>,
     MarketLeg<Quote>,
     MarketLeg<Self>
 );
 
-fn use_lot_size<In: LegMarker + LotSizeMarkerV2>(legs: &LotSizePairV2) {
+fn use_lot_size<In>(legs: &LotSizePairV2)
+where
+    In: LegMarker + PairGetter<LotSizePairV2, In::LotsPerUnit>,
+{
     let lot_size = In::get_leg(legs);
 }
 
-fn get_market_leg<In: LegMarker + MarketLegsMarker>(legs: &MarketLegs) {
+fn get_market_leg<In>(legs: &MarketLegs)
+where
+    In: LegMarker + PairGetter<MarketLegs, MarketLeg<In>>,
+{
     let gg = In::get_leg(legs);
 }
 
