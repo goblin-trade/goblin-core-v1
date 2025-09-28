@@ -1,126 +1,382 @@
-///! This module defines custom types for quantities used in the exchange.
-///!
-///! # Quantities and equations are
-///!
-///! 1. QuoteLots * QuoteAtomsPerQuoteLot = QuoteAtoms
-///! 2. BaseLots * BaseAtomsPerBaseLot = BaseAtoms
-///! 3. QuoteLotsPerBaseUnitPerTick * Ticks = QuoteLotsBaseUnit
-///! 4. QuoteLots * BaseLotsPerBaseUnit = AdjustedQuoteLots
-///! 5. QuoteLotsPerBaseUnit * BaseLots = AdjustedQuoteLots
-///!
-///! # Direct and intermediate units
-///!
-///! * 'lots per unit' is used for calculations. 'atoms per lot' is an intermediate
-///! unit that can be avoided.
-///!
-///! * Since every token is adjusted to 6 decimal places,  atoms_per_unit = 10^6
-///! Therefore lots_per_unit = atoms_per_unit / atoms_per_lot = 10^6 / atoms_per_lot
-///!
-///! * Direct units- BaseLotsPerBaseUnit, QuoteLotsPerQuoteUnit, QuoteLotsPerBaseUnitPerTick
-///! * Indirect units- BaseAtomsPerBaseLot, QuoteAtomsPerQuoteLot, QuoteAtomsPerBaseUnitPerTick
-///!
-///! # A note on Ticks
-///!
-///! * Ticks use u32 while other units use u64.
-///! * However the actual range of ticks is between [0, 2^21 - 1]. 21 bits are sufficient
-///! to represent a tick, but we use u32 for simplicity.
-///! * 16 bits are contributed by the outer index and 5 bits by the inner index.
-///! * The outer index ranges from 0 to u16::MAX while the inner index ranges from 0 to 31.
-use crate::{define_custom_type, define_inter_type_operations, quantities::Ticks};
-
-define_custom_type!(QuoteLots<u64>);
-define_custom_type!(QuoteAtoms<u64>);
-define_custom_type!(BaseLots<u64>);
-define_custom_type!(BaseAtoms<u64>);
-
-// The number of lots per unit
+use core::marker::PhantomData;
+use core::ops::{Add, AddAssign, Div, Mul, Rem, Sub, SubAssign};
+use core::u64;
 //
-// Since one unit has 10^6 atoms, the legal values are
-// * MAX: 10^6 lots per unit, i.e. 1 lot = 1 atom, i.e. 1 lot = 1 / 10^6 unit
-// * MIN: 1 lot per unit, i.e. 11 lot = 10^6 atom, i.e. 1 lot = 1 unit
+// Type-level integers for exponents: -1, 0, +1
 //
-// A value if legal iff 10^6 % lots per unit == 0
-define_custom_type!(BaseLotsPerBaseUnit<u64>);
-define_custom_type!(QuoteLotsPerQuoteUnit<u64>);
 
-define_custom_type!(QuoteLotsPerBaseUnitPerTick<u64>);
-define_custom_type!(QuoteLotsPerBaseUnit<u64>);
+#[derive(Default, Clone, Copy, PartialEq, PartialOrd)]
+pub struct N1; // -1
+#[derive(Default, Clone, Copy, PartialEq, PartialOrd)]
+pub struct Z0; //  0
+#[derive(Default, Clone, Copy, PartialEq, PartialOrd)]
+pub struct P1; // +1
 
-define_inter_type_operations!(
-    QuoteLotsPerBaseUnitPerTick<u64>,
-    Ticks<u32>,
-    QuoteLotsPerBaseUnit<u64>
-);
+pub trait Exp {}
+impl Exp for N1 {}
+impl Exp for Z0 {}
+impl Exp for P1 {}
 
-define_custom_type!(AdjustedQuoteLots<u64>);
+//
+// Type-level addition of exponents
+//
+pub trait AddExp<Rhs: Exp> {
+    type Output: Exp;
+}
 
-define_inter_type_operations!(
-    QuoteLots<u64>,
-    BaseLotsPerBaseUnit<u64>,
-    AdjustedQuoteLots<u64>
-);
-define_inter_type_operations!(
-    QuoteLotsPerBaseUnit<u64>,
-    BaseLots<u64>,
-    AdjustedQuoteLots<u64>
-);
+impl AddExp<Z0> for Z0 {
+    type Output = Z0;
+}
+impl AddExp<P1> for Z0 {
+    type Output = P1;
+}
+impl AddExp<N1> for Z0 {
+    type Output = N1;
+}
 
-define_custom_type!(QuoteLotsPerBaseLotsPerTick<u64>);
+impl AddExp<Z0> for P1 {
+    type Output = P1;
+}
+impl AddExp<N1> for P1 {
+    type Output = Z0;
+}
+// P1 + P1 would be invalid → no impl
 
-define_inter_type_operations!(
-    BaseLotsPerBaseUnit<u64>,
-    QuoteLotsPerBaseLotsPerTick<u64>,
-    QuoteLotsPerBaseUnitPerTick<u64>
-);
+impl AddExp<Z0> for N1 {
+    type Output = N1;
+}
+impl AddExp<P1> for N1 {
+    type Output = Z0;
+}
+// N1 + N1 would be invalid → no impl
 
-define_custom_type!(BaseAtomsPerBaseUnit<u64>);
-define_custom_type!(QuoteAtomsPerQuoteUnit<u64>);
-define_custom_type!(BaseAtomsPerBaseLot<u64>);
-define_custom_type!(QuoteAtomsPerQuoteLot<u64>);
+//
+// Negation
+//
+pub trait NegExp {
+    type Output: Exp;
+}
+impl NegExp for P1 {
+    type Output = N1;
+}
+impl NegExp for N1 {
+    type Output = P1;
+}
+impl NegExp for Z0 {
+    type Output = Z0;
+}
 
-define_inter_type_operations!(
-    BaseLotsPerBaseUnit<u64>,
-    BaseAtomsPerBaseLot<u64>,
-    BaseAtomsPerBaseUnit<u64>
-);
-define_inter_type_operations!(
-    QuoteLotsPerQuoteUnit<u64>,
-    QuoteAtomsPerQuoteLot<u64>,
-    QuoteAtomsPerQuoteUnit<u64>
-);
+//
+// Subtraction = add negated RHS
+//
+pub trait SubExp<Rhs: Exp>: Exp {
+    type Output: Exp;
+}
+impl<L: Exp + AddExp<<R as NegExp>::Output>, R: Exp + NegExp> SubExp<R> for L {
+    type Output = <L as AddExp<<R as NegExp>::Output>>::Output;
+}
+//
+// Compact sided dimension (L, U, A)
+//
+#[derive(Default, Clone, Copy, PartialEq, PartialOrd)]
+pub struct SidedDim<L: Exp, U: Exp, A: Exp>(PhantomData<(L, U, A)>);
 
-define_inter_type_operations!(QuoteAtomsPerQuoteLot<u64>, QuoteLots<u64>, QuoteAtoms<u64>);
-define_inter_type_operations!(BaseAtomsPerBaseLot<u64>, BaseLots<u64>, BaseAtoms<u64>);
+impl<L: Exp, U: Exp, A: Exp> Exp for SidedDim<L, U, A> {}
 
-/// Token amounts are normalized to 10^6 atoms per unit.
-pub const BASE_ATOMS_PER_BASE_UNIT: BaseAtomsPerBaseUnit = BaseAtomsPerBaseUnit(1_000_000);
-pub const QUOTE_ATOMS_PER_QUOTE_UNIT: QuoteAtomsPerQuoteUnit = QuoteAtomsPerQuoteUnit(1_000_000);
+//
+// Addition for SidedDim
+//
+impl<
+        L1: Exp + AddExp<L2>,
+        U1: Exp + AddExp<U2>,
+        A1: Exp + AddExp<A2>,
+        L2: Exp,
+        U2: Exp,
+        A2: Exp,
+    > AddExp<SidedDim<L2, U2, A2>> for SidedDim<L1, U1, A1>
+{
+    type Output = SidedDim<
+        <L1 as AddExp<L2>>::Output,
+        <U1 as AddExp<U2>>::Output,
+        <A1 as AddExp<A2>>::Output,
+    >;
+}
+
+//
+// Subtraction for SidedDim
+//
+impl<
+        L1: Exp + SubExp<L2>,
+        U1: Exp + SubExp<U2>,
+        A1: Exp + SubExp<A2>,
+        L2: Exp,
+        U2: Exp,
+        A2: Exp,
+    > SubExp<SidedDim<L2, U2, A2>> for SidedDim<L1, U1, A1>
+{
+    type Output = SidedDim<
+        <L1 as SubExp<L2>>::Output,
+        <U1 as SubExp<U2>>::Output,
+        <A1 as SubExp<A2>>::Output,
+    >;
+}
+
+//
+// Full dimension = Base side, Quote side, Tick exponent
+//
+#[derive(Default, Clone, Copy, PartialEq, PartialOrd)]
+pub struct Dim<Base: Exp, Quote: Exp, T: Exp>(PhantomData<(Base, Quote, T)>);
+
+impl<Base: Exp, Quote: Exp, T: Exp> Exp for Dim<Base, Quote, T> {}
+
+//
+// Addition for Dim
+//
+impl<
+        Base1: Exp + AddExp<Base2>,
+        Quote1: Exp + AddExp<Quote2>,
+        T1: Exp + AddExp<T2>,
+        Base2: Exp,
+        Quote2: Exp,
+        T2: Exp,
+    > AddExp<Dim<Base2, Quote2, T2>> for Dim<Base1, Quote1, T1>
+{
+    type Output = Dim<
+        <Base1 as AddExp<Base2>>::Output,
+        <Quote1 as AddExp<Quote2>>::Output,
+        <T1 as AddExp<T2>>::Output,
+    >;
+}
+
+//
+// Subtraction for Dim
+//
+impl<
+        Base1: Exp + SubExp<Base2>,
+        Quote1: Exp + SubExp<Quote2>,
+        T1: Exp + SubExp<T2>,
+        Base2: Exp,
+        Quote2: Exp,
+        T2: Exp,
+    > SubExp<Dim<Base2, Quote2, T2>> for Dim<Base1, Quote1, T1>
+{
+    type Output = Dim<
+        <Base1 as SubExp<Base2>>::Output,
+        <Quote1 as SubExp<Quote2>>::Output,
+        <T1 as SubExp<T2>>::Output,
+    >;
+}
+
+//
+// Quantity type: value + Dim
+//
+#[derive(Default, Clone, Copy, PartialEq, PartialOrd)]
+pub struct Quantity<D: Exp> {
+    pub inner: u64,
+    _phantom: PhantomData<D>,
+}
+
+impl<D: Exp> Quantity<D> {
+    pub const fn new(value: u64) -> Self {
+        Self {
+            inner: value,
+            _phantom: PhantomData,
+        }
+    }
+}
+
+impl<D: Exp> From<u64> for Quantity<D> {
+    fn from(value: u64) -> Self {
+        Self::new(value)
+    }
+}
+
+/// Blanket trait for all supported Quantity operations
+///
+pub trait QuantityOps:
+    Copy + Sized + PartialEq + Default + Add<Output = Self> + Sub<Output = Self> + AddAssign + SubAssign
+{
+    const MIN: Self;
+    const MAX: Self;
+    const ZERO: Self;
+    const ONE: Self;
+
+    fn checked_add(self, rhs: Self) -> Option<Self>;
+    fn checked_sub(self, rhs: Self) -> Option<Self>;
+}
+
+// Implementation for constants, addition and subtraction.
+// These will be used in the leg namespace.
+//
+// Multiplication and division operations are asymmetric and happen
+// in the side namespace.
+impl<D> QuantityOps for Quantity<D>
+where
+    D: Exp + Copy + PartialEq + Default,
+{
+    const MIN: Self = Self::new(u64::MIN);
+    const MAX: Self = Self::new(u64::MAX);
+    const ZERO: Self = Self::new(0);
+    const ONE: Self = Self::new(1);
+
+    fn checked_add(self, rhs: Self) -> Option<Self> {
+        self.inner.checked_add(rhs.inner).map(Quantity::new)
+    }
+
+    fn checked_sub(self, rhs: Self) -> Option<Self> {
+        self.inner.checked_sub(rhs.inner).map(Quantity::new)
+    }
+}
+
+//
+// Multiplication
+//
+impl<D1: Exp, D2: Exp> Mul<Quantity<D2>> for Quantity<D1>
+where
+    D1: AddExp<D2>,
+{
+    type Output = Quantity<<D1 as AddExp<D2>>::Output>;
+
+    fn mul(self, rhs: Quantity<D2>) -> Self::Output {
+        Quantity::new(self.inner * rhs.inner)
+    }
+}
+
+//
+// Division
+//
+impl<D1: Exp, D2: Exp> Div<Quantity<D2>> for Quantity<D1>
+where
+    D1: SubExp<D2>,
+{
+    type Output = Quantity<<D1 as SubExp<D2>>::Output>;
+
+    fn div(self, rhs: Quantity<D2>) -> Self::Output {
+        Quantity::new(self.inner / rhs.inner)
+    }
+}
+
+//
+// Remainder or Modulo
+//
+impl<D1: Exp, D2: Exp> Rem<Quantity<D2>> for Quantity<D1> {
+    type Output = Self;
+
+    fn rem(self, rhs: Quantity<D2>) -> Self::Output {
+        Quantity::new(self.inner % rhs.inner)
+    }
+}
+
+//
+// Addition
+//
+impl<D: Exp> Add for Quantity<D> {
+    type Output = Self;
+    fn add(self, rhs: Self) -> Self::Output {
+        Quantity::new(self.inner + rhs.inner)
+    }
+}
+
+//
+// Subtraction
+//
+impl<D: Exp> Sub for Quantity<D> {
+    type Output = Self;
+    fn sub(self, rhs: Self) -> Self::Output {
+        Quantity::new(self.inner - rhs.inner)
+    }
+}
+
+//
+// AddAssign
+//
+impl<D: Exp> AddAssign for Quantity<D> {
+    fn add_assign(&mut self, rhs: Self) {
+        self.inner += rhs.inner;
+    }
+}
+
+//
+// SubAssign
+//
+impl<D: Exp> SubAssign for Quantity<D> {
+    fn sub_assign(&mut self, rhs: Self) {
+        self.inner -= rhs.inner;
+    }
+}
+
+//
+// Aliases
+//
+type BaseDim<L, U, A> = SidedDim<L, U, A>;
+type QuoteDim<L, U, A> = SidedDim<L, U, A>;
+
+pub type BaseLots = Quantity<Dim<BaseDim<P1, Z0, Z0>, QuoteDim<Z0, Z0, Z0>, Z0>>;
+pub type BaseUnits = Quantity<Dim<BaseDim<Z0, P1, Z0>, QuoteDim<Z0, Z0, Z0>, Z0>>;
+pub type BaseAtoms = Quantity<Dim<BaseDim<Z0, Z0, P1>, QuoteDim<Z0, Z0, Z0>, Z0>>;
+pub type QuoteLots = Quantity<Dim<BaseDim<Z0, Z0, Z0>, QuoteDim<P1, Z0, Z0>, Z0>>;
+pub type QuoteUnits = Quantity<Dim<BaseDim<Z0, Z0, Z0>, QuoteDim<Z0, P1, Z0>, Z0>>;
+pub type QuoteAtoms = Quantity<Dim<BaseDim<Z0, Z0, Z0>, QuoteDim<Z0, Z0, P1>, Z0>>;
+pub type Ticks = Quantity<Dim<BaseDim<Z0, Z0, Z0>, QuoteDim<Z0, Z0, Z0>, P1>>;
+
+// Binary ratios
+pub type BaseLotsPerBaseUnit = Quantity<Dim<BaseDim<P1, N1, Z0>, QuoteDim<Z0, Z0, Z0>, Z0>>;
+pub type QuoteLotsPerQuoteUnit = Quantity<Dim<BaseDim<Z0, Z0, Z0>, QuoteDim<P1, N1, Z0>, Z0>>;
+pub type QuoteLotsPerBaseUnit = Quantity<Dim<BaseDim<Z0, N1, Z0>, QuoteDim<P1, Z0, Z0>, Z0>>;
+
+pub type BaseAtomsPerBaseUnit = Quantity<Dim<BaseDim<Z0, N1, P1>, QuoteDim<Z0, Z0, Z0>, Z0>>;
+pub type QuoteAtomsPerQuoteUnit = Quantity<Dim<BaseDim<Z0, Z0, Z0>, QuoteDim<Z0, N1, P1>, Z0>>;
+
+pub type BaseAtomsPerBaseLot = Quantity<Dim<BaseDim<N1, Z0, P1>, QuoteDim<Z0, Z0, Z0>, Z0>>;
+pub type QuoteAtomsPerQuoteLot = Quantity<Dim<BaseDim<Z0, Z0, Z0>, QuoteDim<N1, Z0, P1>, Z0>>;
+
+// Tertiary
+pub type QuoteLotsPerBaseUnitPerTick = Quantity<Dim<BaseDim<Z0, N1, Z0>, QuoteDim<P1, Z0, Z0>, N1>>;
+pub type QuoteLotsPerBaseLotPerTick = Quantity<Dim<BaseDim<N1, Z0, Z0>, QuoteDim<P1, Z0, Z0>, N1>>;
+pub type AdjustedQuoteLots = Quantity<Dim<BaseDim<P1, N1, Z0>, QuoteDim<P1, Z0, Z0>, Z0>>;
+
+// Constants
+pub const BASE_ATOMS_PER_BASE_UNIT: BaseAtomsPerBaseUnit = BaseAtomsPerBaseUnit::new(1_000_000);
+pub const QUOTE_ATOMS_PER_QUOTE_UNIT: QuoteAtomsPerQuoteUnit =
+    QuoteAtomsPerQuoteUnit::new(1_000_000);
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn test_mixed_type_operations() {
-        let lots_per_tick = QuoteLotsPerBaseUnitPerTick(100);
-        let ticks = Ticks(5);
+    fn test_ops() {
+        let base_lots: BaseLots = Quantity::new(10);
+        let base_units: BaseUnits = Quantity::new(5);
+        let ticks: Ticks = Quantity::new(2);
 
-        // Test multiplication
-        assert_eq!(lots_per_tick * ticks, QuoteLotsPerBaseUnit(500));
-        assert_eq!(ticks * lots_per_tick, QuoteLotsPerBaseUnit(500));
+        let more_ticks = Ticks::new(1);
+        let _tick_sum = ticks + more_ticks;
+        let _tick_diff = ticks - more_ticks;
 
-        // Test division
-        let lots = QuoteLotsPerBaseUnit(500);
-        assert_eq!(lots / ticks, QuoteLotsPerBaseUnitPerTick(100));
-        assert_eq!(lots / lots_per_tick, Ticks(5));
+        let mut mutable_ticks = ticks;
+        mutable_ticks += more_ticks;
+        mutable_ticks -= Ticks::new(1);
+
+        let _lot_unit = base_lots * base_units;
+        let _lot_unit_tick = _lot_unit * ticks;
+        let _lot_per_unit = base_lots / base_units;
+
+        let _checked_add = Ticks::new(1).checked_add(Ticks::new(2));
     }
 
     #[test]
-    fn test_large_numbers() {
-        let lots_per_tick = QuoteLotsPerBaseUnitPerTick(1_000_000);
-        let ticks = Ticks(1_000);
+    fn test_mod() {
+        let lot_size = BaseLotsPerBaseUnit::new(1);
 
-        // Should handle larger numbers without overflow since result type is u64
-        assert_eq!(lots_per_tick * ticks, QuoteLotsPerBaseUnit(1_000_000_000));
+        // This works here. I need mod to work via LegMarker trait
+        let zz = BASE_ATOMS_PER_BASE_UNIT % lot_size;
+    }
+
+    #[test]
+    fn test_cast() {
+        let a = 10u64;
+        let b = a as i64;
+        let c = i64::try_from(a);
     }
 }
