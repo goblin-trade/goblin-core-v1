@@ -12,69 +12,6 @@ use crate::{
 };
 use core::ops::{Div, Mul, Rem};
 
-pub trait PairGetter<P, R> {
-    fn get_leg(pair: &P) -> &R;
-    fn get_leg_mut(pair: &mut P) -> &mut R;
-}
-
-macro_rules! create_pair {
-    ($name:ident, $base_ty:ty, $quote_ty:ty, $ret_ty:ty) => {
-        #[derive(Clone, Copy)]
-        pub struct $name {
-            pub base: $base_ty,
-            pub quote: $quote_ty,
-        }
-
-        impl PairGetter<$name, $ret_ty> for Base {
-            fn get_leg(pair: &$name) -> &$ret_ty {
-                &pair.base
-            }
-
-            fn get_leg_mut(pair: &mut $name) -> &mut $ret_ty {
-                &mut pair.base
-            }
-        }
-
-        impl PairGetter<$name, $ret_ty> for Quote {
-            fn get_leg(pair: &$name) -> &$ret_ty {
-                &pair.quote
-            }
-
-            fn get_leg_mut(pair: &mut $name) -> &mut $ret_ty {
-                &mut pair.quote
-            }
-        }
-    };
-}
-
-create_pair!(
-    LotSizePairV2,
-    BaseLotsPerBaseUnit,
-    QuoteLotsPerQuoteUnit,
-    <Self as LegMarker>::LotsPerUnit
-);
-
-create_pair!(
-    MarketLegs,
-    MarketLeg<Base>,
-    MarketLeg<Quote>,
-    MarketLeg<Self>
-);
-
-fn use_lot_size<In>(legs: &LotSizePairV2)
-where
-    In: LegMarker + PairGetter<LotSizePairV2, In::LotsPerUnit>,
-{
-    let lot_size = In::get_leg(legs);
-}
-
-fn get_market_leg<In>(legs: &MarketLegs)
-where
-    In: LegMarker + PairGetter<MarketLegs, MarketLeg<In>>,
-{
-    let gg = In::get_leg(legs);
-}
-
 #[derive(Default, Clone, Copy)]
 pub struct Base;
 
