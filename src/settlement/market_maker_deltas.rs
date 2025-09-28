@@ -1,6 +1,5 @@
 use crate::{
     goblin_error::GoblinError,
-    quantities::{Atoms, BaseLotsPerBaseUnit},
     types::{Address, Base, LegMarker, Quote},
     utils::FixedMap,
 };

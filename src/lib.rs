@@ -80,7 +80,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
                 len,
                 &mut args.offset,
             )?;
-            sender_delta.take_quote_in = match_result;
+            sender_delta.quote = match_result;
         }
 
         if market_instructions.take_ask() {
@@ -93,7 +93,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
                 len,
                 &mut args.offset,
             )?;
-            sender_delta.take_base_in = match_result;
+            sender_delta.base = match_result;
         }
 
         // Write market state to slot

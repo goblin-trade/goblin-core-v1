@@ -1,16 +1,13 @@
 use crate::{
     markets::LotSizePair,
-    matching::SenderSideDelta,
+    matching::MatchResult,
     quantities::{Atoms, BaseLotsPerBaseUnit},
-    types::{Base, LegMarker, PairAccessor, Quote},
+    types::{Base, LegMarker, Pair, PairAccessor, Quote},
 };
 
-#[derive(Default)]
-pub struct SenderDelta {
-    pub take_base_in: SenderSideDelta<Base>,
-    pub take_quote_in: SenderSideDelta<Quote>,
-    // Add limit order and cancel fields later
-}
+// The sender delta currently contains results of matching base in and quote in
+// take orders. TODO add other types in here later for limit orders and cancellations.
+pub type SenderDelta = Pair<MatchResult<Base>, MatchResult<Quote>>;
 
 // Pending updates for the taker per token after performing
 // taker ask and quote trades on a market
@@ -32,13 +29,15 @@ impl SenderDelta {
                 <Base as LegMarker>::LotsPerUnit,
                 <Quote as LegMarker>::LotsPerUnit,
                 Result = In::LotsPerUnit,
-            >,
+            > + PairAccessor<MatchResult<Base>, MatchResult<Quote>, Result = MatchResult<In>>,
+        In::Opposite:
+            PairAccessor<MatchResult<Base>, MatchResult<Quote>, Result = MatchResult<In::Opposite>>,
     {
         let lot_size = *In::get_leg(&lot_size_pair);
         let atoms_per_lot = In::atoms_per_lot(lot_size);
 
-        let delta = In::sender_side_delta(self);
-        let delta_opposite = <In::Opposite as LegMarker>::sender_side_delta(self);
+        let delta = In::get_leg(self);
+        let delta_opposite = In::Opposite::get_leg(self);
 
         let free_atoms_in = In::matching_lots_to_atoms(
             delta.maker_side_delta.free_matching_lots_in,

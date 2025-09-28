@@ -1,12 +1,11 @@
 use crate::{
-    matching::SenderSideDelta,
     quantities::{
         AdjustedQuoteLots, Atoms, BaseAtoms, BaseAtomsPerBaseLot, BaseAtomsPerBaseUnit, BaseLots,
         BaseLotsPerBaseUnit, BaseUnits, QuantityOps, QuoteAtoms, QuoteAtomsPerQuoteLot,
         QuoteAtomsPerQuoteUnit, QuoteLots, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit,
         QuoteUnits, Ticks, BASE_ATOMS_PER_BASE_UNIT, QUOTE_ATOMS_PER_QUOTE_UNIT,
     },
-    settlement::{MakerDelta, MakerSideDelta, SenderDelta},
+    settlement::{MakerDelta, MakerSideDelta},
     state::MarketState,
 };
 use core::ops::{Div, Mul, Rem};
@@ -67,9 +66,9 @@ pub trait LegMarker {
     where
         Self: Sized;
 
-    fn sender_side_delta(sender_delta: &SenderDelta) -> &SenderSideDelta<Self>
-    where
-        Self: Sized;
+    // fn sender_side_delta(sender_delta: &SenderDelta) -> &SenderSideDelta<Self>
+    // where
+    //     Self: Sized;
 
     // Match function
 
@@ -153,10 +152,6 @@ impl LegMarker for Base {
         &mut market_maker_delta.base_in
     }
 
-    fn sender_side_delta(sender_delta: &SenderDelta) -> &SenderSideDelta<Self> {
-        &sender_delta.take_base_in
-    }
-
     type MatchingLots = BaseLots;
 
     fn matching_lots_taker(
@@ -226,10 +221,6 @@ impl LegMarker for Quote {
         market_maker_delta: &'a mut MakerDelta,
     ) -> &'a mut MakerSideDelta<Self> {
         &mut market_maker_delta.quote_in
-    }
-
-    fn sender_side_delta(sender_delta: &SenderDelta) -> &SenderSideDelta<Self> {
-        &sender_delta.take_quote_in
     }
 
     type MatchingLots = AdjustedQuoteLots;

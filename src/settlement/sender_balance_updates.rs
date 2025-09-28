@@ -1,6 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
     markets::IndexedMarket,
+    matching::MatchResult,
     quantities::Atoms,
     settlement::{
         CommonDelta, ERC20DeltaList, ERC20Deposit, ERC20Input, ERC20Withdraw, EthDelta, SenderDelta,
@@ -54,7 +55,9 @@ impl SenderBalanceUpdates {
                 <Base as LegMarker>::LotsPerUnit,
                 <Quote as LegMarker>::LotsPerUnit,
                 Result = In::LotsPerUnit,
-            >,
+            > + PairAccessor<MatchResult<Base>, MatchResult<Quote>, Result = MatchResult<In>>,
+        In::Opposite:
+            PairAccessor<MatchResult<Base>, MatchResult<Quote>, Result = MatchResult<In::Opposite>>,
     {
         // Convert delta to Atoms format on Token namespace
         let taker_token_update = sender_delta.to_taker_token_update::<In>(
