@@ -21,6 +21,7 @@ pub fn match_order<In>(
 where
     In: LegMarker
         + PairAccessor<MakerSideDelta<Base>, MakerSideDelta<Quote>, Result = MakerSideDelta<In>>,
+    In::Opposite: PairAccessor<Ticks, Ticks, Result = Ticks>,
 {
     let budget = In::matching_lots_taker(num_lots, indexed_market.base_lot_size());
 
@@ -38,7 +39,8 @@ where
     let mut released_by_self_trade = <In::Opposite as LegMarker>::MatchingLots::ZERO;
 
     // Halt early if best price is further from the centre than the price limit
-    let best_opposite_price = In::Opposite::best_market_price_mut(market_state);
+    let best_opposite_price = In::Opposite::get_leg_mut(&mut market_state.best_prices);
+
     if In::Opposite::closer_to_centre(price_limit, *best_opposite_price) {
         require!(
             min_lots_to_fill == In::Lots::ZERO,

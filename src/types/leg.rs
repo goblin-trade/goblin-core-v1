@@ -1,11 +1,8 @@
-use crate::{
-    quantities::{
-        AdjustedQuoteLots, Atoms, BaseAtoms, BaseAtomsPerBaseLot, BaseAtomsPerBaseUnit, BaseLots,
-        BaseLotsPerBaseUnit, BaseUnits, QuantityOps, QuoteAtoms, QuoteAtomsPerQuoteLot,
-        QuoteAtomsPerQuoteUnit, QuoteLots, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit,
-        QuoteUnits, Ticks, BASE_ATOMS_PER_BASE_UNIT, QUOTE_ATOMS_PER_QUOTE_UNIT,
-    },
-    state::MarketState,
+use crate::quantities::{
+    AdjustedQuoteLots, Atoms, BaseAtoms, BaseAtomsPerBaseLot, BaseAtomsPerBaseUnit, BaseLots,
+    BaseLotsPerBaseUnit, BaseUnits, QuantityOps, QuoteAtoms, QuoteAtomsPerQuoteLot,
+    QuoteAtomsPerQuoteUnit, QuoteLots, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit,
+    QuoteUnits, Ticks, BASE_ATOMS_PER_BASE_UNIT, QUOTE_ATOMS_PER_QUOTE_UNIT,
 };
 use core::ops::{Div, Mul, Rem};
 
@@ -101,8 +98,6 @@ pub trait LegMarker {
         price: Ticks,
     ) -> BaseLots;
 
-    fn best_market_price_mut(market_state: &mut MarketState) -> &mut Ticks;
-
     /// Whether price_0 is closer to centre than price_1
     fn closer_to_centre(price_0: Ticks, price_1: Ticks) -> bool;
 }
@@ -157,10 +152,6 @@ impl LegMarker for Base {
         _price: Ticks,
     ) -> BaseLots {
         matching
-    }
-
-    fn best_market_price_mut(market_state: &mut MarketState) -> &mut Ticks {
-        &mut market_state.best_ask_price
     }
 
     fn closer_to_centre(price_0: Ticks, price_1: Ticks) -> bool {
@@ -218,10 +209,6 @@ impl LegMarker for Quote {
         price: Ticks,
     ) -> BaseLots {
         matching_lots / (tick_size * price)
-    }
-
-    fn best_market_price_mut(market_state: &mut MarketState) -> &mut Ticks {
-        &mut market_state.best_bid_price
     }
 
     fn closer_to_centre(price_0: Ticks, price_1: Ticks) -> bool {

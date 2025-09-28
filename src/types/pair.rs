@@ -1,6 +1,22 @@
 use crate::types::{Base, Quote};
 
-/// A generic container for a pair of items for the base and quote sides of a market
+/// A generic container for the base and quote sides of a market.
+///
+/// # Example
+///
+/// Define a pair of lot sizes and access one leg generically:
+///
+/// ```rs
+/// pub type LotSizePair = Pair<BaseLotsPerBaseUnit, QuoteLotsPerQuoteUnit>;
+///
+/// fn use_lot_size<In>(legs: &LotSizePair)
+/// where
+///     In: LegMarker + PairAccessor<BaseLotsPerBaseUnit, QuoteLotsPerQuoteUnit, Result = In::LotsPerUnit>,
+/// {
+///     let lot_size = In::get_leg(legs);
+///     assert!(In::lots_per_unit_valid(*lot_size));
+/// }
+/// ```
 #[repr(C)]
 #[derive(Clone, Copy, Default)]
 pub struct Pair<B, Q> {
@@ -39,29 +55,3 @@ impl<B, Q> PairAccessor<B, Q> for Quote {
         &mut pair.quote
     }
 }
-
-// pub type LotSizePairV2 = Pair<BaseLotsPerBaseUnit, QuoteLotsPerQuoteUnit>;
-// pub type MarketLegs = Pair<MarketLeg<Base>, MarketLeg<Quote>>;
-// pub type TokenIndexPair = Pair<TokenIndex, TokenIndex>;
-
-// fn use_token_index<In>(legs: &TokenIndexPair)
-// where
-//     In: LegMarker + PairAccessor<TokenIndex, TokenIndex, Result = TokenIndex>,
-// {
-//     let index = In::get_leg(legs);
-// }
-
-// fn use_lot_size<In>(legs: &LotSizePairV2)
-// where
-//     In: LegMarker + PairAccessor<BaseLotsPerBaseUnit, QuoteLotsPerQuoteUnit, Result = In::LotsPerUnit>,
-// {
-//     let lot_size = In::get_leg(legs);
-//     assert!(In::lots_per_unit_valid(*lot_size));
-// }
-
-// fn get_market_leg<In>(legs: &MarketLegs)
-// where
-//     In: LegMarker + PairAccessor<MarketLeg<Base>, MarketLeg<Quote>, Result = MarketLeg<In>>,
-// {
-//     let gg = In::get_leg(legs);
-// }

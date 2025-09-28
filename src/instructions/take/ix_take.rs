@@ -4,6 +4,7 @@ use crate::{
     instructions::take::take_packet::TakePacket,
     markets::IndexedMarket,
     matching::{match_order, MatchResult},
+    quantities::Ticks,
     settlement::{MakerSideDelta, MarketMakerDeltas},
     state::MarketState,
     types::{Address, Base, LegMarker, PairAccessor, Quote},
@@ -21,6 +22,7 @@ pub fn ix_take<In>(
 where
     In: LegMarker
         + PairAccessor<MakerSideDelta<Base>, MakerSideDelta<Quote>, Result = MakerSideDelta<In>>,
+    In::Opposite: PairAccessor<Ticks, Ticks, Result = Ticks>,
 {
     let packet = TakePacket::<In>::decode(payload, len, offset)?;
 

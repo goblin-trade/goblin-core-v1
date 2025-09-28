@@ -4,6 +4,7 @@ use crate::{
     quantities::{QuoteLotsPerBaseUnitPerTick, Ticks},
     state::{SlotKey, SlotState},
     tokens::{ERC20TokenPair, ValidatedTokenPair},
+    types::Pair,
 };
 
 pub struct MarketKey {
@@ -61,8 +62,7 @@ impl MarketKey {
 /// The market state stored in a slot
 #[repr(C)]
 pub struct MarketState {
-    pub best_bid_price: Ticks,
-    pub best_ask_price: Ticks,
+    pub best_prices: Pair<Ticks, Ticks>,
     /// Padding to match 32 bits
     _padding: [u8; 16],
 }
