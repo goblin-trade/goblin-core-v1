@@ -2,7 +2,7 @@ use crate::{
     goblin_error::GoblinError,
     markets::{IndexedMarket, LotSizePair},
     quantities::{Atoms, BaseLotsPerBaseUnit},
-    settlement::{MakerDelta, MarketMakerDeltas},
+    settlement::{MakerDelta, MakerSideDelta, MarketMakerDeltas},
     tokens::TokenIndex,
     types::{Address, Base, LegMarker, PairAccessor, Quote},
     utils::FixedMap,
@@ -35,23 +35,24 @@ impl Update {
                 <Base as LegMarker>::LotsPerUnit,
                 <Quote as LegMarker>::LotsPerUnit,
                 Result = In::LotsPerUnit,
-            >,
+            > + PairAccessor<MakerSideDelta<Base>, MakerSideDelta<Quote>, Result = MakerSideDelta<In>>,
+        In::Opposite: PairAccessor<
+            MakerSideDelta<Base>,
+            MakerSideDelta<Quote>,
+            Result = MakerSideDelta<In::Opposite>,
+        >,
     {
         let lot_size = *In::get_leg(&lot_size_pair);
         let atoms_per_lot = In::atoms_per_lot(lot_size);
 
-        // Free atoms in
-        let maker_side_delta = In::maker_side_delta_ref(maker_delta);
-        let maker_side_delta_opposite = In::Opposite::maker_side_delta_ref(maker_delta);
+        let delta = In::get_leg(maker_delta);
+        let delta_opposite = In::Opposite::get_leg(maker_delta);
 
-        let free_atoms_in = In::matching_lots_to_atoms(
-            maker_side_delta.free_matching_lots_in,
-            base_lot_size,
-            atoms_per_lot,
-        );
+        let free_atoms_in =
+            In::matching_lots_to_atoms(delta.free_matching_lots_in, base_lot_size, atoms_per_lot);
 
         let locked_atoms_out = In::matching_lots_to_atoms(
-            maker_side_delta_opposite.locked_matching_lots_out,
+            delta_opposite.locked_matching_lots_out,
             base_lot_size,
             atoms_per_lot,
         );
@@ -77,7 +78,12 @@ impl MakerBalanceUpdates {
                 <Base as LegMarker>::LotsPerUnit,
                 <Quote as LegMarker>::LotsPerUnit,
                 Result = In::LotsPerUnit,
-            >,
+            > + PairAccessor<MakerSideDelta<Base>, MakerSideDelta<Quote>, Result = MakerSideDelta<In>>,
+        In::Opposite: PairAccessor<
+            MakerSideDelta<Base>,
+            MakerSideDelta<Quote>,
+            Result = MakerSideDelta<In::Opposite>,
+        >,
     {
         let update = Update::new::<In>(
             maker_delta,

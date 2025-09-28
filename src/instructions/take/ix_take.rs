@@ -4,12 +4,12 @@ use crate::{
     instructions::take::take_packet::TakePacket,
     markets::IndexedMarket,
     matching::{match_order, MatchResult},
-    settlement::MarketMakerDeltas,
+    settlement::{MakerSideDelta, MarketMakerDeltas},
     state::MarketState,
-    types::{Address, LegMarker},
+    types::{Address, Base, LegMarker, PairAccessor, Quote},
 };
 
-pub fn ix_take<In: LegMarker>(
+pub fn ix_take<In>(
     pending_maker_updates: &mut MarketMakerDeltas,
     taker: &Address,
     indexed_market: &IndexedMarket,
@@ -17,7 +17,11 @@ pub fn ix_take<In: LegMarker>(
     payload: &ArgsBuffer,
     len: usize,
     offset: &mut usize,
-) -> Result<MatchResult<In>, GoblinError> {
+) -> Result<MatchResult<In>, GoblinError>
+where
+    In: LegMarker
+        + PairAccessor<MakerSideDelta<Base>, MakerSideDelta<Quote>, Result = MakerSideDelta<In>>,
+{
     let packet = TakePacket::<In>::decode(payload, len, offset)?;
 
     match_order::<In>(

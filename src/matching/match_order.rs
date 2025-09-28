@@ -6,10 +6,10 @@ use crate::{
     require,
     settlement::{MakerSideDelta, MarketMakerDeltas},
     state::{MarketState, RestingOrder, RestingOrderKey, SlotState},
-    types::{Address, LegMarker},
+    types::{Address, Base, LegMarker, PairAccessor, Quote},
 };
 
-pub fn match_order<In: LegMarker>(
+pub fn match_order<In>(
     pending_maker_updates: &mut MarketMakerDeltas,
     taker: &Address,
     indexed_market: &IndexedMarket,
@@ -17,7 +17,11 @@ pub fn match_order<In: LegMarker>(
     num_lots: In::Lots,
     min_lots_to_fill: In::Lots,
     price_limit: Ticks,
-) -> Result<MatchResult<In>, GoblinError> {
+) -> Result<MatchResult<In>, GoblinError>
+where
+    In: LegMarker
+        + PairAccessor<MakerSideDelta<Base>, MakerSideDelta<Quote>, Result = MakerSideDelta<In>>,
+{
     let budget = In::matching_lots_taker(num_lots, indexed_market.base_lot_size());
 
     // The amount matched and transferred in, i.e lost by taker and transferred to makers.

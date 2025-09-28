@@ -5,7 +5,6 @@ use crate::{
         QuoteAtomsPerQuoteUnit, QuoteLots, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit,
         QuoteUnits, Ticks, BASE_ATOMS_PER_BASE_UNIT, QUOTE_ATOMS_PER_QUOTE_UNIT,
     },
-    settlement::{MakerDelta, MakerSideDelta},
     state::MarketState,
 };
 use core::ops::{Div, Mul, Rem};
@@ -55,20 +54,6 @@ pub trait LegMarker {
     const DEFAULT_PRICE_LIMIT: Ticks;
 
     fn price_limit_valid(_price_limit: Ticks) -> bool;
-
-    fn maker_side_delta_ref(market_maker_delta: &MakerDelta) -> &MakerSideDelta<Self>
-    where
-        Self: Sized;
-
-    fn maker_side_delta_mut<'a>(
-        market_maker_delta: &'a mut MakerDelta,
-    ) -> &'a mut MakerSideDelta<Self>
-    where
-        Self: Sized;
-
-    // fn sender_side_delta(sender_delta: &SenderDelta) -> &SenderSideDelta<Self>
-    // where
-    //     Self: Sized;
 
     // Match function
 
@@ -142,16 +127,6 @@ impl LegMarker for Base {
         true
     }
 
-    fn maker_side_delta_ref(market_maker_delta: &MakerDelta) -> &MakerSideDelta<Self> {
-        &market_maker_delta.base_in
-    }
-
-    fn maker_side_delta_mut<'a>(
-        market_maker_delta: &'a mut MakerDelta,
-    ) -> &'a mut MakerSideDelta<Self> {
-        &mut market_maker_delta.base_in
-    }
-
     type MatchingLots = BaseLots;
 
     fn matching_lots_taker(
@@ -211,16 +186,6 @@ impl LegMarker for Quote {
 
     fn price_limit_valid(price_limit: Ticks) -> bool {
         price_limit > Ticks::ZERO
-    }
-
-    fn maker_side_delta_ref(market_maker_delta: &MakerDelta) -> &MakerSideDelta<Self> {
-        &market_maker_delta.quote_in
-    }
-
-    fn maker_side_delta_mut<'a>(
-        market_maker_delta: &'a mut MakerDelta,
-    ) -> &'a mut MakerSideDelta<Self> {
-        &mut market_maker_delta.quote_in
     }
 
     type MatchingLots = AdjustedQuoteLots;
