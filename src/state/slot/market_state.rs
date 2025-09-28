@@ -26,8 +26,8 @@ impl MarketKey {
     ) -> Self {
         match token_pair {
             ValidatedTokenPair::ERC20ERC20(ERC20TokenPair {
-                base_token,
-                quote_token,
+                base: base_token,
+                quote: quote_token,
             }) => {
                 let mut bytes = [0u8; (1 + 2 * 20 + 3 * 8)];
                 bytes[0] = token_pair.discriminator();

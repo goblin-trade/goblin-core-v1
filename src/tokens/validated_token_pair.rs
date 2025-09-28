@@ -3,13 +3,10 @@ use crate::{
     markets::TokenIndexPair,
     require,
     tokens::{ERC20Token, Token},
-    types::Address,
+    types::{Address, Pair},
 };
 
-pub struct ERC20TokenPair {
-    pub base_token: ERC20Token,
-    pub quote_token: ERC20Token,
-}
+pub type ERC20TokenPair = Pair<ERC20Token, ERC20Token>;
 
 pub enum ValidatedTokenPair {
     ERC20ERC20(ERC20TokenPair),
@@ -33,8 +30,8 @@ impl ValidatedTokenPair {
         match (base_token, quote_token) {
             (Token::ERC20(base_token), Token::ERC20(quote_token)) => {
                 Ok(ValidatedTokenPair::ERC20ERC20(ERC20TokenPair {
-                    base_token,
-                    quote_token,
+                    base: base_token,
+                    quote: quote_token,
                 }))
             }
             (Token::Eth, Token::ERC20(quote_erc20)) => {
