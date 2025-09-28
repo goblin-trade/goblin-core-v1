@@ -1,8 +1,8 @@
 use crate::{
-    markets::{IndexedMarket, MarketLeg},
+    markets::LotSizePair,
     matching::SenderSideDelta,
     quantities::{Atoms, BaseLotsPerBaseUnit},
-    types::{Base, LegMarker, Quote},
+    types::{Base, LegMarker, PairAccessor, Quote},
 };
 
 #[derive(Default)]
@@ -21,12 +21,21 @@ pub struct TakerTokenUpdate {
 }
 
 impl SenderDelta {
-    pub fn to_taker_token_update<In: LegMarker>(
+    pub fn to_taker_token_update<In>(
         &self,
-        market_leg: &MarketLeg<In>,
+        lot_size_pair: LotSizePair,
         base_lot_size: BaseLotsPerBaseUnit,
-    ) -> TakerTokenUpdate {
-        let atoms_per_lot = In::atoms_per_lot(market_leg.lot_size);
+    ) -> TakerTokenUpdate
+    where
+        In: LegMarker
+            + PairAccessor<
+                <Base as LegMarker>::LotsPerUnit,
+                <Quote as LegMarker>::LotsPerUnit,
+                Result = In::LotsPerUnit,
+            >,
+    {
+        let lot_size = *In::get_leg(&lot_size_pair);
+        let atoms_per_lot = In::atoms_per_lot(lot_size);
 
         let delta = In::sender_side_delta(self);
         let delta_opposite = <In::Opposite as LegMarker>::sender_side_delta(self);

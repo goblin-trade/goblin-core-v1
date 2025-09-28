@@ -1,10 +1,10 @@
 use crate::{
     goblin_error::GoblinError,
-    markets::{IndexedMarket, MarketLeg},
+    markets::{IndexedMarket, LotSizePair},
     quantities::{Atoms, BaseLotsPerBaseUnit},
     settlement::{MakerDelta, MarketMakerDeltas},
     tokens::TokenIndex,
-    types::{Address, Base, LegMarker, Quote},
+    types::{Address, Base, LegMarker, PairAccessor, Quote},
     utils::FixedMap,
 };
 
@@ -24,12 +24,21 @@ pub struct Update {
 }
 
 impl Update {
-    fn new<In: LegMarker>(
+    fn new<In>(
         maker_delta: &MakerDelta,
-        market_leg: &MarketLeg<In>,
+        lot_size_pair: LotSizePair,
         base_lot_size: BaseLotsPerBaseUnit,
-    ) -> Self {
-        let atoms_per_lot = In::atoms_per_lot(market_leg.lot_size);
+    ) -> Self
+    where
+        In: LegMarker
+            + PairAccessor<
+                <Base as LegMarker>::LotsPerUnit,
+                <Quote as LegMarker>::LotsPerUnit,
+                Result = In::LotsPerUnit,
+            >,
+    {
+        let lot_size = *In::get_leg(&lot_size_pair);
+        let atoms_per_lot = In::atoms_per_lot(lot_size);
 
         // Free atoms in
         let maker_side_delta = In::maker_side_delta_ref(maker_delta);
@@ -55,21 +64,34 @@ impl Update {
 }
 
 impl MakerBalanceUpdates {
-    fn apply_side_update<In: LegMarker>(
+    fn apply_side_update<In>(
         &mut self,
         indexed_market: &IndexedMarket,
         maker: &Address,
         maker_delta: &MakerDelta,
-    ) -> Result<(), GoblinError> {
-        let base_lot_size = indexed_market.base.lot_size;
-        let market_leg = In::market_leg(indexed_market);
-        let update = Update::new::<In>(maker_delta, market_leg, base_lot_size);
+    ) -> Result<(), GoblinError>
+    where
+        In: LegMarker
+            + PairAccessor<TokenIndex, TokenIndex, Result = TokenIndex>
+            + PairAccessor<
+                <Base as LegMarker>::LotsPerUnit,
+                <Quote as LegMarker>::LotsPerUnit,
+                Result = In::LotsPerUnit,
+            >,
+    {
+        let update = Update::new::<In>(
+            maker_delta,
+            indexed_market.lot_size_pair,
+            indexed_market.base_lot_size(),
+        );
+
+        let token_index = *In::get_leg(&indexed_market.token_index_pair);
 
         // Write to store
         let store = self
             .get_or_insert_mut(UpdateKey {
                 maker: *maker,
-                token_index: market_leg.token_index,
+                token_index,
             })
             .ok_or(GoblinError::MakerStoreListFull)?;
         store.free_atoms_in += update.free_atoms_in;

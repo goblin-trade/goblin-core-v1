@@ -6,7 +6,7 @@ use crate::{
         CommonDelta, ERC20DeltaList, ERC20Deposit, ERC20Input, ERC20Withdraw, EthDelta, SenderDelta,
     },
     tokens::TokenIndex,
-    types::{Address, Base, LegMarker, Quote},
+    types::{Address, Base, LegMarker, PairAccessor, Quote},
 };
 
 pub struct SenderBalanceUpdates {
@@ -42,20 +42,30 @@ impl SenderBalanceUpdates {
         })
     }
 
-    pub fn apply_side_update<In: LegMarker>(
+    pub fn apply_side_update<In>(
         &mut self,
         indexed_market: &IndexedMarket,
         sender_delta: &SenderDelta,
-    ) -> Result<(), GoblinError> {
-        let market_leg = In::market_leg(indexed_market);
-        let base_lot_size = indexed_market.base.lot_size;
-
+    ) -> Result<(), GoblinError>
+    where
+        In: LegMarker
+            + PairAccessor<TokenIndex, TokenIndex, Result = TokenIndex>
+            + PairAccessor<
+                <Base as LegMarker>::LotsPerUnit,
+                <Quote as LegMarker>::LotsPerUnit,
+                Result = In::LotsPerUnit,
+            >,
+    {
         // Convert delta to Atoms format on Token namespace
-        let taker_token_update =
-            sender_delta.to_taker_token_update::<In>(market_leg, base_lot_size);
+        let taker_token_update = sender_delta.to_taker_token_update::<In>(
+            indexed_market.lot_size_pair,
+            indexed_market.base_lot_size(),
+        );
+
+        let token_index = *In::get_leg(&indexed_market.token_index_pair);
 
         // Update token delta
-        let token_common_delta = self.token_common_delta(market_leg.token_index)?;
+        let token_common_delta = self.token_common_delta(token_index)?;
         token_common_delta.apply_taker_update(&taker_token_update)
     }
 

@@ -1,36 +1,31 @@
 use crate::{
     quantities::{QuantityOps, QuoteLotsPerBaseUnitPerTick},
     tokens::TokenIndex,
-    types::{Base, LegMarker, Quote},
+    types::{Base, LegMarker, Pair, Quote},
 };
 
 // Max number of custom markets
 pub const MAX_CUSTOM_MARKETS: usize = 7;
 
-#[repr(C, packed)]
-#[derive(Clone, Copy)]
-pub struct MarketLeg<L: LegMarker> {
-    /// The token index. It will be mapped to token address.
-    pub token_index: TokenIndex,
-
-    /// Lots per unit
-    pub lot_size: L::LotsPerUnit,
-}
+pub type TokenIndexPair = Pair<TokenIndex, TokenIndex>;
+pub type LotSizePair = Pair<<Base as LegMarker>::LotsPerUnit, <Quote as LegMarker>::LotsPerUnit>;
 
 #[repr(C, packed)]
 #[derive(Clone, Copy)]
 pub struct IndexedMarket {
-    /// Marker parameters for the base leg
-    pub base: MarketLeg<Base>,
+    pub token_index_pair: TokenIndexPair,
 
-    /// Marker parameters for the quote leg
-    pub quote: MarketLeg<Quote>,
+    pub lot_size_pair: LotSizePair,
 
     /// Tick size
     pub tick_size: QuoteLotsPerBaseUnitPerTick,
 }
 
 impl IndexedMarket {
+    pub fn base_lot_size(&self) -> <Base as LegMarker>::LotsPerUnit {
+        self.lot_size_pair.base
+    }
+
     /// Whether market params are valid
     ///
     /// # Tests
@@ -58,9 +53,9 @@ impl IndexedMarket {
     ///
     pub fn is_valid(&self) -> bool {
         // TODO use specialized IndexedMarket types for ERC20-ETH and ERC20-ERC20
-        self.base.token_index != self.quote.token_index
-            && Base::lots_per_unit_valid(self.base.lot_size)
-            && Quote::lots_per_unit_valid(self.quote.lot_size)
-            && self.tick_size % self.base.lot_size == QuoteLotsPerBaseUnitPerTick::ZERO
+        self.token_index_pair.base != self.token_index_pair.quote
+            && Base::lots_per_unit_valid(self.lot_size_pair.base)
+            && Quote::lots_per_unit_valid(self.lot_size_pair.quote)
+            && self.tick_size % self.base_lot_size() == QuoteLotsPerBaseUnitPerTick::ZERO
     }
 }

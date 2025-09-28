@@ -1,5 +1,4 @@
 use crate::{
-    markets::{IndexedMarket, MarketLeg},
     matching::SenderSideDelta,
     quantities::{
         AdjustedQuoteLots, Atoms, BaseAtoms, BaseAtomsPerBaseLot, BaseAtomsPerBaseUnit, BaseLots,
@@ -69,10 +68,6 @@ pub trait LegMarker {
         Self: Sized;
 
     fn sender_side_delta(sender_delta: &SenderDelta) -> &SenderSideDelta<Self>
-    where
-        Self: Sized;
-
-    fn market_leg(indexed_market: &IndexedMarket) -> &MarketLeg<Self>
     where
         Self: Sized;
 
@@ -162,10 +157,6 @@ impl LegMarker for Base {
         &sender_delta.take_base_in
     }
 
-    fn market_leg(indexed_market: &IndexedMarket) -> &MarketLeg<Self> {
-        &indexed_market.base
-    }
-
     type MatchingLots = BaseLots;
 
     fn matching_lots_taker(
@@ -239,10 +230,6 @@ impl LegMarker for Quote {
 
     fn sender_side_delta(sender_delta: &SenderDelta) -> &SenderSideDelta<Self> {
         &sender_delta.take_quote_in
-    }
-
-    fn market_leg(indexed_market: &IndexedMarket) -> &MarketLeg<Self> {
-        &indexed_market.quote
     }
 
     type MatchingLots = AdjustedQuoteLots;

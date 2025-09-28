@@ -1,6 +1,7 @@
 use crate::{
     hostio::{self, HostioBuffer},
-    quantities::{BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit, Ticks},
+    markets::LotSizePair,
+    quantities::{QuoteLotsPerBaseUnitPerTick, Ticks},
     state::{SlotKey, SlotState},
     tokens::{ERC20TokenPair, ValidatedTokenPair},
 };
@@ -20,8 +21,7 @@ impl SlotKey for MarketKey {
 impl MarketKey {
     pub fn new(
         token_pair: &ValidatedTokenPair,
-        base_lot_size: BaseLotsPerBaseUnit,
-        quote_lot_size: QuoteLotsPerQuoteUnit,
+        lot_size_pair: LotSizePair,
         tick_size: QuoteLotsPerBaseUnitPerTick,
     ) -> Self {
         match token_pair {
@@ -33,8 +33,8 @@ impl MarketKey {
                 bytes[0] = token_pair.discriminator();
                 bytes[1..21].copy_from_slice(base_token.address());
                 bytes[21..41].copy_from_slice(quote_token.address());
-                bytes[41..49].copy_from_slice(&base_lot_size.inner.to_le_bytes());
-                bytes[49..57].copy_from_slice(&quote_lot_size.inner.to_le_bytes());
+                bytes[41..49].copy_from_slice(&lot_size_pair.base.inner.to_le_bytes());
+                bytes[49..57].copy_from_slice(&lot_size_pair.quote.inner.to_le_bytes());
                 bytes[57..65].copy_from_slice(&tick_size.inner.to_le_bytes());
 
                 let hash = hostio::native_keccak256(bytes.as_slice());
@@ -46,8 +46,8 @@ impl MarketKey {
                 let mut bytes = [0u8; (1 + 20 + 3 * 8)];
                 bytes[0] = token_pair.discriminator();
                 bytes[1..21].copy_from_slice(erc20_token.address());
-                bytes[21..29].copy_from_slice(&base_lot_size.inner.to_le_bytes());
-                bytes[29..37].copy_from_slice(&quote_lot_size.inner.to_le_bytes());
+                bytes[21..29].copy_from_slice(&lot_size_pair.base.inner.to_le_bytes());
+                bytes[29..37].copy_from_slice(&lot_size_pair.quote.inner.to_le_bytes());
                 bytes[37..45].copy_from_slice(&tick_size.inner.to_le_bytes());
 
                 let hash = hostio::native_keccak256(bytes.as_slice());

@@ -1,6 +1,7 @@
 use crate::types::{Base, Quote};
 
 /// A generic container for a pair of items for the base and quote sides of a market
+#[repr(C)]
 #[derive(Clone, Copy, Default)]
 pub struct Pair<B, Q> {
     pub base: B,

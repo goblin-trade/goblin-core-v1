@@ -32,7 +32,7 @@ pub fn match_order<In: LegMarker>(
     min_lots_to_fill: In::Lots,
     price_limit: Ticks,
 ) -> Result<SenderSideDelta<In>, GoblinError> {
-    let budget = In::matching_lots_taker(num_lots, indexed_market.base.lot_size);
+    let budget = In::matching_lots_taker(num_lots, indexed_market.base_lot_size());
 
     // The amount matched and transferred in, i.e lost by taker and transferred to makers.
     // We keep matching until

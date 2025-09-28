@@ -1,7 +1,8 @@
 use crate::{
     goblin_error::GoblinError,
+    markets::TokenIndexPair,
     require,
-    tokens::{ERC20Token, Token, TokenIndex},
+    tokens::{ERC20Token, Token},
     types::Address,
 };
 
@@ -18,17 +19,16 @@ pub enum ValidatedTokenPair {
 
 impl ValidatedTokenPair {
     pub fn new(
-        base_token_index: TokenIndex,
-        quote_token_index: TokenIndex,
+        token_index_pair: TokenIndexPair,
         custom_erc20_list: &[Address],
     ) -> Result<Self, GoblinError> {
         require!(
-            base_token_index != quote_token_index,
+            token_index_pair.base != token_index_pair.quote,
             GoblinError::InvalidTokenPair
         );
 
-        let base_token = base_token_index.to_token(custom_erc20_list)?;
-        let quote_token = quote_token_index.to_token(custom_erc20_list)?;
+        let base_token = token_index_pair.base.to_token(custom_erc20_list)?;
+        let quote_token = token_index_pair.quote.to_token(custom_erc20_list)?;
 
         match (base_token, quote_token) {
             (Token::ERC20(base_token), Token::ERC20(quote_token)) => {
