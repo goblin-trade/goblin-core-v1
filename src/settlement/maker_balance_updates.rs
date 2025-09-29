@@ -1,7 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
     markets::{IndexedMarket, LotSizePair},
-    quantities::{Atoms, BaseLotsPerBaseUnit},
+    quantities::{BaseLotsPerBaseUnit, UnsidedAtoms},
     settlement::{MakerDelta, MakerSideDelta, MarketMakerDeltas},
     tokens::TokenIndex,
     types::{Address, Base, LegMarker, PairAccessor, Quote},
@@ -19,8 +19,8 @@ pub struct UpdateKey {
 
 #[derive(Default)]
 pub struct Update {
-    pub free_atoms_in: Atoms,
-    pub locked_atoms_out: Atoms,
+    pub free_atoms_in: UnsidedAtoms,
+    pub locked_atoms_out: UnsidedAtoms,
 }
 
 impl Update {
@@ -48,10 +48,13 @@ impl Update {
         let delta = In::get_leg(maker_delta);
         let delta_opposite = In::Opposite::get_leg(maker_delta);
 
-        let free_atoms_in =
-            In::matching_lots_to_atoms(delta.free_matching_lots_in, base_lot_size, atoms_per_lot);
+        let free_atoms_in = In::matching_lots_to_atoms_unsided(
+            delta.free_matching_lots_in,
+            base_lot_size,
+            atoms_per_lot,
+        );
 
-        let locked_atoms_out = In::matching_lots_to_atoms(
+        let locked_atoms_out = In::matching_lots_to_atoms_unsided(
             delta_opposite.locked_matching_lots_out,
             base_lot_size,
             atoms_per_lot,

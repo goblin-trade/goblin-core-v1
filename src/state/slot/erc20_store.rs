@@ -1,6 +1,6 @@
 use crate::{
     hostio::{self, HostioBuffer},
-    quantities::Atoms,
+    quantities::UnsidedAtoms,
     state::{SlotKey, SlotState},
     types::Address,
 };
@@ -32,8 +32,8 @@ impl ERC20StoreKey {
 
 #[repr(C)]
 pub struct ERC20Store {
-    pub atoms_locked: Atoms,
-    pub atoms_free: Atoms,
+    pub atoms_locked: UnsidedAtoms,
+    pub atoms_free: UnsidedAtoms,
     pub decimals: u8,
     _padding: [u8; 15],
 }

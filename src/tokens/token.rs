@@ -1,7 +1,7 @@
 use crate::{
     erc20,
     goblin_error::GoblinError,
-    quantities::Atoms,
+    quantities::UnsidedAtoms,
     state::{ERC20Store, ERC20StoreKey, EthStore, EthStoreKey, SlotState},
     types::Address,
 };
@@ -18,7 +18,7 @@ pub enum Token {
 impl Token {
     /// Unlocked matched tokens for a maker
     /// Since resting orders are backed by locked tokens, we can subtract directly.
-    pub fn unlock_matched_atoms(&mut self, trader: &Address, unlocked: Atoms) {
+    pub fn unlock_matched_atoms(&mut self, trader: &Address, unlocked: UnsidedAtoms) {
         match self {
             Token::Eth => {
                 let key = EthStoreKey::new(trader);

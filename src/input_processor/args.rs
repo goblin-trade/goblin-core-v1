@@ -9,7 +9,7 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::{ArgsBuffer, ArgsDecoder, Header},
     markets::{IndexedMarket, MarketInstructions},
-    quantities::Atoms,
+    quantities::UnsidedAtoms,
     settlement::{ERC20Deposit, ERC20Input, ERC20Withdraw},
     types::Address,
 };
@@ -22,7 +22,7 @@ pub struct Args<'a> {
     pub recipient: Option<&'a Address>,
 
     /// Amount of ETH to withdraw
-    pub eth_withdrawal_due: Option<&'a Atoms>,
+    pub eth_withdrawal_due: Option<&'a UnsidedAtoms>,
 
     /// Addresses of custom erc20 tokens to use
     pub custom_erc20_list: &'a [Address],
@@ -53,7 +53,7 @@ impl<'a> Args<'a> {
 
         let eth_withdrawal_due = header
             .track_eth_withdrawal_due
-            .then(|| payload.decode_ref_unchecked::<Atoms>(&mut offset));
+            .then(|| payload.decode_ref_unchecked::<UnsidedAtoms>(&mut offset));
 
         let custom_erc20_list =
             payload.decode_slice_unchecked::<Address>(&mut offset, header.custom_erc20_count);

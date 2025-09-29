@@ -1,4 +1,7 @@
-use crate::{goblin_error::GoblinError, quantities::Atoms, settlement::TakerTokenUpdate};
+use crate::{
+    quantities::{UnsidedAtoms, QuantityOps},
+    settlement::TakerTokenUpdate,
+};
 
 /// Common delta shared by ETHDelta and ERC20Delta
 ///
@@ -14,38 +17,35 @@ use crate::{goblin_error::GoblinError, quantities::Atoms, settlement::TakerToken
 #[derive(Default, Clone, Copy)]
 pub struct CommonDelta {
     /// Tokens transferred into the engine, i.e. lost as taker
-    pub taker_in: Atoms,
+    pub taker_in: UnsidedAtoms,
 
     /// Tokens transferred out by the engine, i.e. gained as taker
-    pub taker_out: Atoms,
+    pub taker_out: UnsidedAtoms,
 
     /// Locked tokens released from taking a self trade
-    pub taker_self_trade_unlocked: Atoms,
+    pub taker_self_trade_unlocked: UnsidedAtoms,
 
     /// Tokens locked on making a resting order
-    pub maker_locked: Atoms,
+    pub maker_locked: UnsidedAtoms,
 
     /// Tokens unlocked on cancelling a resting order
-    pub cancel_unlocked: Atoms,
+    pub cancel_unlocked: UnsidedAtoms,
 }
 
 impl CommonDelta {
-    pub fn free_atoms_out(&self) -> Result<Atoms, GoblinError> {
+    pub fn free_atoms_out(&self) -> Option<UnsidedAtoms> {
         self.taker_out
             .checked_add(self.taker_self_trade_unlocked)?
             .checked_add(self.cancel_unlocked)
     }
 
-    pub fn free_atoms_in(&self) -> Result<Atoms, GoblinError> {
+    pub fn free_atoms_in(&self) -> Option<UnsidedAtoms> {
         self.taker_in.checked_add(self.maker_locked)
     }
 
     // Update the amounts of the token transferred in and transferred out in a market
     // when performing bid and ask taker orders
-    pub fn apply_taker_update(
-        &mut self,
-        taker_token_update: &TakerTokenUpdate,
-    ) -> Result<(), GoblinError> {
+    pub fn apply_taker_update(&mut self, taker_token_update: &TakerTokenUpdate) -> Option<()> {
         self.taker_in = self
             .taker_in
             .checked_add(taker_token_update.free_atoms_in)?;
@@ -56,6 +56,6 @@ impl CommonDelta {
             .taker_self_trade_unlocked
             .checked_add(taker_token_update.atoms_released_by_self_trade)?;
 
-        Ok(())
+        Some(())
     }
 }

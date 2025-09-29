@@ -1,7 +1,7 @@
 use crate::{
     erc20,
     goblin_error::GoblinError,
-    quantities::Atoms,
+    quantities::{QuantityOps, UnsidedAtoms},
     require,
     settlement::{CommonDelta, ERC20Input, ERC20Transfer, TransferDirection},
     state::{ERC20Store, ERC20StoreKey, SlotState},
@@ -18,7 +18,7 @@ pub struct ERC20Delta {
     /// - If direction Deposit, the exact amount must be deposited or the transaction will revert.
     /// - For direction withdraw, amount MIN(available, transfer_due) is withdrawn.
     /// This allows max available amount to be transferred out by passing u64::MAX
-    pub transfer_due: Atoms,
+    pub transfer_due: UnsidedAtoms,
 
     /// The direction of pending transfer
     pub direction: TransferDirection,
@@ -33,6 +33,22 @@ impl ERC20Delta {
             direction: S::DIRECTION,
             common_delta: CommonDelta::default(),
         }
+    }
+
+    /// Update locked and free atoms of the store by applying the common delta
+    fn apply_common_delta(&self, store_mut: &mut ERC20Store) -> Option<()> {
+        store_mut.atoms_locked = store_mut
+            .atoms_locked
+            .checked_add(self.common_delta.maker_locked)?
+            .checked_sub(self.common_delta.cancel_unlocked)?
+            .checked_sub(self.common_delta.taker_self_trade_unlocked)?;
+
+        store_mut.atoms_free = store_mut
+            .atoms_free
+            .checked_add(self.common_delta.free_atoms_out()?)?
+            .checked_sub(self.common_delta.free_atoms_in()?)?;
+
+        Some(())
     }
 
     pub fn settle(
@@ -54,18 +70,8 @@ impl ERC20Delta {
                     store_mut.decimals = token.decimals()?;
                 }
 
-                // Update locked
-                store_mut.atoms_locked = store_mut
-                    .atoms_locked
-                    .checked_add(self.common_delta.maker_locked)?
-                    .checked_sub(self.common_delta.cancel_unlocked)?
-                    .checked_sub(self.common_delta.taker_self_trade_unlocked)?;
-
-                // Update free
-                store_mut.atoms_free = store_mut
-                    .atoms_free
-                    .checked_add(self.common_delta.free_atoms_out()?)?
-                    .checked_sub(self.common_delta.free_atoms_in()?)?;
+                self.apply_common_delta(store_mut)
+                    .ok_or(GoblinError::Overflow);
 
                 match self.direction {
                     TransferDirection::Deposit => {
@@ -87,7 +93,7 @@ impl ERC20Delta {
                         store_mut.atoms_free -= withdraw_amount;
                         store_mut.store(&key);
 
-                        if withdraw_amount == Atoms::ZERO {
+                        if withdraw_amount == UnsidedAtoms::ZERO {
                             return Ok(());
                         }
 

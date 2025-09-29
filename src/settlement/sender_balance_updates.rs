@@ -2,7 +2,7 @@ use crate::{
     goblin_error::GoblinError,
     markets::IndexedMarket,
     matching::MatchResult,
-    quantities::Atoms,
+    quantities::UnsidedAtoms,
     settlement::{
         CommonDelta, ERC20DeltaList, ERC20Deposit, ERC20Input, ERC20Withdraw, EthDelta, SenderDelta,
     },
@@ -18,7 +18,7 @@ pub struct SenderBalanceUpdates {
 impl SenderBalanceUpdates {
     pub fn new(
         track_msg_value: bool,
-        eth_withdrawal_due: Option<&Atoms>,
+        eth_withdrawal_due: Option<&UnsidedAtoms>,
         erc20_deposits_due: &[ERC20Input<ERC20Deposit>],
         erc20_withdrawals_due: &[ERC20Input<ERC20Withdraw>],
     ) -> Result<Self, GoblinError> {
@@ -69,7 +69,9 @@ impl SenderBalanceUpdates {
 
         // Update token delta
         let token_common_delta = self.token_common_delta(token_index)?;
-        token_common_delta.apply_taker_update(&taker_token_update)
+        token_common_delta
+            .apply_taker_update(&taker_token_update)
+            .ok_or(GoblinError::Overflow)
     }
 
     pub fn apply_updates(

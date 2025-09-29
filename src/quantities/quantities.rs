@@ -7,11 +7,11 @@ use crate::types::{Base, LegMarker, Quote};
 // Type-level integers for exponents: -1, 0, +1
 //
 
-#[derive(Default, Clone, Copy, PartialEq, PartialOrd)]
+#[derive(Default, Clone, Copy, PartialEq, PartialOrd, Eq, Ord)]
 pub struct N1; // -1
-#[derive(Default, Clone, Copy, PartialEq, PartialOrd)]
+#[derive(Default, Clone, Copy, PartialEq, PartialOrd, Eq, Ord)]
 pub struct Z0; //  0
-#[derive(Default, Clone, Copy, PartialEq, PartialOrd)]
+#[derive(Default, Clone, Copy, PartialEq, PartialOrd, Eq, Ord)]
 pub struct P1; // +1
 
 pub trait Exp {}
@@ -80,7 +80,7 @@ impl<L: Exp + AddExp<<R as NegExp>::Output>, R: Exp + NegExp> SubExp<R> for L {
 //
 // Compact sided dimension (L, U, A)
 //
-#[derive(Default, Clone, Copy, PartialEq, PartialOrd)]
+#[derive(Default, Clone, Copy, PartialEq, PartialOrd, Eq, Ord)]
 pub struct SidedDim<L: Exp, U: Exp, A: Exp>(PhantomData<(L, U, A)>);
 
 impl<L: Exp, U: Exp, A: Exp> Exp for SidedDim<L, U, A> {}
@@ -126,7 +126,7 @@ impl<
 //
 // Full dimension = Base side, Quote side, Tick exponent
 //
-#[derive(Default, Clone, Copy, PartialEq, PartialOrd)]
+#[derive(Default, Clone, Copy, PartialEq, PartialOrd, Eq, Ord)]
 pub struct Dim<Base: Exp, Quote: Exp, T: Exp>(PhantomData<(Base, Quote, T)>);
 
 impl<Base: Exp, Quote: Exp, T: Exp> Exp for Dim<Base, Quote, T> {}
@@ -172,7 +172,7 @@ impl<
 //
 // Quantity type: value + Dim
 //
-#[derive(Default, Clone, Copy, PartialEq, PartialOrd)]
+#[derive(Default, Clone, Copy, PartialEq, PartialOrd, Eq, Ord)]
 pub struct Quantity<D: Exp> {
     pub inner: u64,
     _phantom: PhantomData<D>,
@@ -343,9 +343,12 @@ pub const QUOTE_ATOMS_PER_QUOTE_UNIT: QuoteAtomsPerQuoteUnit =
     QuoteAtomsPerQuoteUnit::new(1_000_000);
 
 // Unsided units
+//
+// The code only uses UnsidedAtoms
+//
+// The definitions however allow conversions between any quantities belonging to a specific side.
+// Eg. BaseLotsPerBaseUnit can be converted to sideless LotsPerUnit
 pub type Unsided<L, U, A> = Quantity<SidedDim<L, U, A>>;
-pub type UnsidedLots = Unsided<P1, Z0, Z0>;
-pub type UnsidedUnits = Unsided<Z0, P1, Z0>;
 pub type UnsidedAtoms = Unsided<Z0, Z0, P1>;
 
 pub trait AsUnsided<S: LegMarker, L: Exp, U: Exp, A: Exp> {
@@ -404,5 +407,13 @@ mod tests {
         quote_atoms.unsided();
 
         let adjusted = AdjustedQuoteLots::new(1);
+    }
+
+    #[test]
+    fn test_min() {
+        let a = BaseAtoms::new(1);
+        let b = BaseAtoms::new(2);
+
+        a.min(b);
     }
 }

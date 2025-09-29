@@ -1,6 +1,6 @@
 use crate::{
     hostio::{self, HostioBuffer},
-    quantities::Atoms,
+    quantities::UnsidedAtoms,
     state::{SlotKey, SlotState},
     types::Address,
 };
@@ -31,8 +31,8 @@ impl EthStoreKey {
 
 #[repr(C)]
 pub struct EthStore {
-    pub atoms_locked: Atoms,
-    pub atoms_free: Atoms,
+    pub atoms_locked: UnsidedAtoms,
+    pub atoms_free: UnsidedAtoms,
     _padding: [u8; 16],
 }
 

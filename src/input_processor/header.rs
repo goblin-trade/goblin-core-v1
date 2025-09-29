@@ -2,7 +2,7 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::{ArgsBuffer, ArgsDecoder},
     markets::{IndexedMarket, MarketInstructions},
-    quantities::Atoms,
+    quantities::UnsidedAtoms,
     require,
     settlement::{ERC20Deposit, ERC20Input, ERC20Withdraw},
     types::Address,
@@ -76,7 +76,7 @@ impl Header {
     pub fn payload_size(&self) -> usize {
         let size = Self::HEADER_BYTE_SIZE
             + self.recipient_provided as usize * core::mem::size_of::<Address>()
-            + self.track_msg_value as usize * core::mem::size_of::<Atoms>()
+            + self.track_msg_value as usize * core::mem::size_of::<UnsidedAtoms>()
             // Lists
             + self.custom_erc20_count * core::mem::size_of::<Address>()
             + self.erc20_deposit_count * core::mem::size_of::<ERC20Input<ERC20Deposit>>()

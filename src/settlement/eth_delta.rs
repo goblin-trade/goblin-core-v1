@@ -2,7 +2,7 @@ use crate::{
     eth,
     goblin_error::GoblinError,
     hostio,
-    quantities::Atoms,
+    quantities::{UnsidedAtoms, QuantityOps},
     require,
     settlement::CommonDelta,
     state::{EthStore, EthStoreKey, SlotState},
@@ -12,7 +12,7 @@ use crate::{
 /// ETH atoms due to be deducted, locked or transferred out on settlement
 pub struct EthDelta {
     /// Atoms credited by msg.value
-    pub msg_value_atoms: Atoms,
+    pub msg_value_atoms: UnsidedAtoms,
 
     /// Amount of atoms pending withdrawal, as read from input payload.
     ///
@@ -20,7 +20,7 @@ pub struct EthDelta {
     /// This allows us to withdraw max available amount by passing u64::MAX
     ///
     /// The amount is transferred out internally (store credit) or externally (transfer call).
-    pub withdrawal_due: Atoms,
+    pub withdrawal_due: UnsidedAtoms,
 
     pub common_delta: CommonDelta,
 }
@@ -28,18 +28,18 @@ pub struct EthDelta {
 impl EthDelta {
     pub fn init(
         track_msg_value: bool,
-        eth_withdrawal_due: Option<&Atoms>,
+        eth_withdrawal_due: Option<&UnsidedAtoms>,
     ) -> Result<Self, GoblinError> {
         let msg_value_atoms = if track_msg_value {
             let msg_value = hostio::msg_value();
-            Atoms::from_raw_atoms(msg_value.as_ref(), NATIVE_TOKEN_DECIMALS)?
+            UnsidedAtoms::from_raw_atoms(msg_value.as_ref(), NATIVE_TOKEN_DECIMALS)?
         } else {
-            Atoms::ZERO
+            UnsidedAtoms::ZERO
         };
 
         let withdrawal_due = match eth_withdrawal_due {
             Some(eth_withdrawal_due) => *eth_withdrawal_due,
-            None => Atoms::ZERO,
+            None => UnsidedAtoms::ZERO,
         };
 
         Ok(Self {
@@ -47,6 +47,22 @@ impl EthDelta {
             withdrawal_due,
             common_delta: CommonDelta::default(),
         })
+    }
+
+    /// Update locked and free atoms of the store by applying the common delta
+    fn apply_common_delta(&self, store_mut: &mut EthStore) -> Option<()> {
+        store_mut.atoms_locked = store_mut
+            .atoms_locked
+            .checked_add(self.common_delta.maker_locked)?
+            .checked_sub(self.common_delta.cancel_unlocked)?
+            .checked_sub(self.common_delta.taker_self_trade_unlocked)?;
+
+        store_mut.atoms_free = store_mut
+            .atoms_free
+            .checked_add(self.common_delta.free_atoms_out()?)?
+            .checked_sub(self.common_delta.free_atoms_in()?)?;
+
+        Some(())
     }
 
     /// Settle, i.e. update the trader's token state and transfer ETH out
@@ -69,25 +85,15 @@ impl EthDelta {
         let mut store = EthStore::load(&key);
         let store_mut = store.as_mut();
 
-        // Update locked
-        store_mut.atoms_locked = store_mut
-            .atoms_locked
-            .checked_add(self.common_delta.maker_locked)?
-            .checked_sub(self.common_delta.cancel_unlocked)?
-            .checked_sub(self.common_delta.taker_self_trade_unlocked)?;
-
-        // Update free
-        store_mut.atoms_free = store_mut
-            .atoms_free
-            .checked_add(self.common_delta.free_atoms_out()?)?
-            .checked_sub(self.common_delta.free_atoms_in()?)?;
+        self.apply_common_delta(store_mut)
+            .ok_or(GoblinError::Overflow)?;
 
         // Deduct withdraw amount
         let withdraw_amount = store_mut.atoms_free.min(self.withdrawal_due);
         store_mut.atoms_free -= withdraw_amount;
         store_mut.store(&key);
 
-        if withdraw_amount == Atoms::ZERO {
+        if withdraw_amount == UnsidedAtoms::ZERO {
             return Ok(());
         }
 

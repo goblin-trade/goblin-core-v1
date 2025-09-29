@@ -1,7 +1,7 @@
 use crate::{
     markets::LotSizePair,
     matching::MatchResult,
-    quantities::{Atoms, BaseLotsPerBaseUnit},
+    quantities::{BaseLotsPerBaseUnit, UnsidedAtoms},
     types::{Base, LegMarker, Pair, PairAccessor, Quote},
 };
 
@@ -12,9 +12,9 @@ pub type SenderDelta = Pair<MatchResult<Base>, MatchResult<Quote>>;
 // Pending updates for the taker per token after performing
 // taker ask and quote trades on a market
 pub struct TakerTokenUpdate {
-    pub free_atoms_in: Atoms,
-    pub locked_atoms_out: Atoms,
-    pub atoms_released_by_self_trade: Atoms,
+    pub free_atoms_in: UnsidedAtoms,
+    pub locked_atoms_out: UnsidedAtoms,
+    pub atoms_released_by_self_trade: UnsidedAtoms,
 }
 
 impl SenderDelta {
@@ -39,19 +39,19 @@ impl SenderDelta {
         let delta = In::get_leg(self);
         let delta_opposite = In::Opposite::get_leg(self);
 
-        let free_atoms_in = In::matching_lots_to_atoms(
+        let free_atoms_in = In::matching_lots_to_atoms_unsided(
             delta.maker_side_delta.free_matching_lots_in,
             base_lot_size,
             atoms_per_lot,
         );
 
-        let locked_atoms_out = In::matching_lots_to_atoms(
+        let locked_atoms_out = In::matching_lots_to_atoms_unsided(
             delta_opposite.maker_side_delta.locked_matching_lots_out,
             base_lot_size,
             atoms_per_lot,
         );
 
-        let atoms_released_by_self_trade = In::matching_lots_to_atoms(
+        let atoms_released_by_self_trade = In::matching_lots_to_atoms_unsided(
             delta_opposite.released_by_self_trade,
             base_lot_size,
             atoms_per_lot,

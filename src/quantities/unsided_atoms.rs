@@ -1,4 +1,3 @@
-use super::RawAtoms;
 ///! The number of atoms of a token, obtained by normalizing raw atoms.
 ///!
 ///! Every token is normalized from K decimal places to 6 decimal places.
@@ -24,16 +23,11 @@ use super::RawAtoms;
 ///! atoms = |raw atoms / 10^(K - 6)|
 ///! - For USDC = raw atoms / 10^0 = raw atoms
 ///! - For eth = raw atoms / 10^(18 - 6) = raw atoms / 10^12
-use crate::{
-    define_custom_type,
-    goblin_error::GoblinError,
-    quantities::{BaseAtoms, QuoteAtoms},
-};
-use core::u64;
+///
+use super::RawAtoms;
+use crate::{goblin_error::GoblinError, quantities::UnsidedAtoms};
 
-define_custom_type!(Atoms<u64>);
-
-impl Atoms {
+impl UnsidedAtoms {
     pub fn from_raw_atoms(raw: &RawAtoms, decimals: u8) -> Result<Self, GoblinError> {
         let raw_atoms_clamped = raw.to_clamped_u128();
 
@@ -41,13 +35,13 @@ impl Atoms {
             6 => {
                 // Decimal places are already 6
                 let atoms = raw_atoms_clamped.min(u64::MAX as u128) as u64;
-                Ok(Atoms(atoms))
+                Ok(UnsidedAtoms::new(atoms))
             }
             7..19 => {
                 let divisor = 10u128.pow(decimals as u32 - 6);
                 let atoms = (raw_atoms_clamped / divisor).min(u64::MAX as u128) as u64;
 
-                Ok(Atoms(atoms))
+                Ok(UnsidedAtoms::new(atoms))
             }
             _ => Err(GoblinError::UnsupportedDecimals),
         }
@@ -59,14 +53,14 @@ impl Atoms {
                 // No conversion needed. Optimized implementation avoids creation of multiplier.
                 //  Simply copy the 64 bit number from index 24 onwards
                 let mut raw_atom_bytes = [0u8; 32];
-                raw_atom_bytes[24..].copy_from_slice(&self.0.to_be_bytes());
+                raw_atom_bytes[24..].copy_from_slice(&self.inner.to_be_bytes());
                 Ok(RawAtoms(raw_atom_bytes))
             }
             7..19 => {
                 // floor (log2 (u64::MAX * 10^12)) + 1 = 104
                 // This fits in u128
                 let multiplier = 10u128.pow(decimals as u32 - 6);
-                let raw_atoms = self.0 as u128 * multiplier;
+                let raw_atoms = self.inner as u128 * multiplier;
 
                 let mut raw_atom_bytes = [0u8; 32];
                 raw_atom_bytes[16..].copy_from_slice(&raw_atoms.to_be_bytes());
@@ -75,18 +69,6 @@ impl Atoms {
 
             _ => Err(GoblinError::UnsupportedDecimals),
         }
-    }
-}
-
-impl From<BaseAtoms> for Atoms {
-    fn from(value: BaseAtoms) -> Self {
-        Self(value.inner)
-    }
-}
-
-impl From<QuoteAtoms> for Atoms {
-    fn from(value: QuoteAtoms) -> Self {
-        Self(value.inner)
     }
 }
 
@@ -103,61 +85,61 @@ mod tests {
         fn test_raw_atoms_to_atoms() {
             // Less than 6 decimals
             let raw = RawAtoms::from_u128(1_000_000);
-            let atoms_result = Atoms::from_raw_atoms(&raw, 5);
+            let atoms_result = UnsidedAtoms::from_raw_atoms(&raw, 5);
             assert!(atoms_result.is_err());
 
             // USDC (6 decimals)
             let raw = RawAtoms::from_u128(1_000_000);
-            let atoms = Atoms::from_raw_atoms(&raw, 6).unwrap();
-            assert_eq!(atoms.0, 1000000);
+            let atoms = UnsidedAtoms::from_raw_atoms(&raw, 6).unwrap();
+            assert_eq!(atoms.inner, 1000000);
 
             // ETH (18 decimals)
             let raw = RawAtoms::from_u128(10u128.pow(18));
-            let atoms = Atoms::from_raw_atoms(&raw, 18).unwrap();
-            assert_eq!(atoms.0, 1000000);
+            let atoms = UnsidedAtoms::from_raw_atoms(&raw, 18).unwrap();
+            assert_eq!(atoms.inner, 1000000);
         }
 
         #[test]
         fn test_dust() {
             // ETH (18 decimals)
             let raw = RawAtoms::from_u128(1_000_000);
-            let atoms = Atoms::from_raw_atoms(&raw, 18).unwrap();
-            assert_eq!(atoms.0, 0);
+            let atoms = UnsidedAtoms::from_raw_atoms(&raw, 18).unwrap();
+            assert_eq!(atoms.inner, 0);
         }
 
         #[test]
         fn test_max_value() {
             // MAX possible value
             let raw = RawAtoms::MAX;
-            let atoms = Atoms::from_raw_atoms(&raw, 6).unwrap();
-            assert_eq!(atoms.0, u64::MAX);
+            let atoms = UnsidedAtoms::from_raw_atoms(&raw, 6).unwrap();
+            assert_eq!(atoms.inner, u64::MAX);
 
             // Set MSB (0 index in big endian) to 1
             let mut raw = RawAtoms::default();
             raw.0[0] = 1;
-            let atoms = Atoms::from_raw_atoms(&raw, 6).unwrap();
-            assert_eq!(atoms.0, u64::MAX);
+            let atoms = UnsidedAtoms::from_raw_atoms(&raw, 6).unwrap();
+            assert_eq!(atoms.inner, u64::MAX);
 
             // Smallest value greater than u128::MAX. This will get clamped to u128::MAX
             let mut raw = RawAtoms::default();
             raw.0[15] = 1;
-            let atoms = Atoms::from_raw_atoms(&raw, 6).unwrap();
-            assert_eq!(atoms.0, u64::MAX);
+            let atoms = UnsidedAtoms::from_raw_atoms(&raw, 6).unwrap();
+            assert_eq!(atoms.inner, u64::MAX);
 
             // Just below max value of u64
             let raw = RawAtoms::from_u128(u128::MAX - 1);
-            let atoms = Atoms::from_raw_atoms(&raw, 6).unwrap();
-            assert_eq!(atoms.0, u64::MAX);
+            let atoms = UnsidedAtoms::from_raw_atoms(&raw, 6).unwrap();
+            assert_eq!(atoms.inner, u64::MAX);
 
             // u64::MAX - 1
             let raw = RawAtoms::from_u128(u64::MAX as u128 - 1);
-            let atoms = Atoms::from_raw_atoms(&raw, 6).unwrap();
-            assert_eq!(atoms.0, u64::MAX - 1);
+            let atoms = UnsidedAtoms::from_raw_atoms(&raw, 6).unwrap();
+            assert_eq!(atoms.inner, u64::MAX - 1);
 
             // Just below max value for ETH (18 decimals)
             let raw = RawAtoms::from_u128((u64::MAX as u128 - 1) * 10u128.pow(12));
-            let atoms = Atoms::from_raw_atoms(&raw, 18).unwrap();
-            assert_eq!(atoms.0, u64::MAX - 1);
+            let atoms = UnsidedAtoms::from_raw_atoms(&raw, 18).unwrap();
+            assert_eq!(atoms.inner, u64::MAX - 1);
         }
     }
 
@@ -169,7 +151,7 @@ mod tests {
             // atoms will convert to raw atoms without any loss of data
             // We just need to ensure that decimal places are valid
 
-            let atoms = Atoms(1);
+            let atoms = UnsidedAtoms::new(1);
 
             // Less than 6 decimals
             let decimals = 5;
@@ -197,7 +179,7 @@ mod tests {
 
         #[test]
         fn test_max_atoms() {
-            let atoms = Atoms(u64::MAX);
+            let atoms = UnsidedAtoms::new(u64::MAX);
 
             // 6 decimals
             let decimals = 6;
