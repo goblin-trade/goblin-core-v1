@@ -1,6 +1,8 @@
 use core::marker::PhantomData;
 use core::ops::{Add, AddAssign, Div, Mul, Rem, Sub, SubAssign};
 use core::u64;
+
+use crate::types::{Base, LegMarker, Quote};
 //
 // Type-level integers for exponents: -1, 0, +1
 //
@@ -340,6 +342,34 @@ pub const BASE_ATOMS_PER_BASE_UNIT: BaseAtomsPerBaseUnit = BaseAtomsPerBaseUnit:
 pub const QUOTE_ATOMS_PER_QUOTE_UNIT: QuoteAtomsPerQuoteUnit =
     QuoteAtomsPerQuoteUnit::new(1_000_000);
 
+// Unsided units
+pub type Unsided<L, U, A> = Quantity<SidedDim<L, U, A>>;
+pub type UnsidedLots = Unsided<P1, Z0, Z0>;
+pub type UnsidedUnits = Unsided<Z0, P1, Z0>;
+pub type UnsidedAtoms = Unsided<Z0, Z0, P1>;
+
+pub trait AsUnsided<S: LegMarker, L: Exp, U: Exp, A: Exp> {
+    fn unsided(self) -> Unsided<L, U, A>;
+}
+
+/// Base → Unsided
+impl<L: Exp, U: Exp, A: Exp> AsUnsided<Base, L, U, A>
+    for Quantity<Dim<BaseDim<L, U, A>, QuoteDim<Z0, Z0, Z0>, Z0>>
+{
+    fn unsided(self) -> Unsided<L, U, A> {
+        Quantity::new(self.inner)
+    }
+}
+
+/// Quote → Unsided
+impl<L: Exp, U: Exp, A: Exp> AsUnsided<Quote, L, U, A>
+    for Quantity<Dim<BaseDim<Z0, Z0, Z0>, QuoteDim<L, U, A>, Z0>>
+{
+    fn unsided(self) -> Unsided<L, U, A> {
+        Quantity::new(self.inner)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -366,17 +396,13 @@ mod tests {
     }
 
     #[test]
-    fn test_mod() {
-        let lot_size = BaseLotsPerBaseUnit::new(1);
+    fn test_into_unsided() {
+        let base_atoms = BaseAtoms::new(1);
+        base_atoms.unsided();
 
-        // This works here. I need mod to work via LegMarker trait
-        let zz = BASE_ATOMS_PER_BASE_UNIT % lot_size;
-    }
+        let quote_atoms = QuoteAtoms::new(1);
+        quote_atoms.unsided();
 
-    #[test]
-    fn test_cast() {
-        let a = 10u64;
-        let b = a as i64;
-        let c = i64::try_from(a);
+        let adjusted = AdjustedQuoteLots::new(1);
     }
 }
