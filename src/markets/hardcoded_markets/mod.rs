@@ -1,12 +1,3 @@
-pub mod erc20_token;
-pub use erc20_token::*;
-pub mod token_index;
-pub use token_index::*;
-pub mod validated_token_pair;
-pub use validated_token_pair::*;
-pub mod token_index_pair;
-pub use token_index_pair::*;
-
 #[cfg(feature = "localnet")]
 pub mod localnet;
 #[cfg(feature = "mainnet")]

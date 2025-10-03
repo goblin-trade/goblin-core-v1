@@ -2,7 +2,7 @@ use crate::{
     eth,
     goblin_error::GoblinError,
     hostio,
-    quantities::{UnsidedAtoms, QuantityOps},
+    quantities::{QuantityOps, UnsidedAtoms},
     require,
     settlement::CommonDelta,
     state::{EthStore, EthStoreKey, SlotState},
@@ -14,7 +14,7 @@ pub struct EthDelta {
     /// Atoms credited by msg.value
     pub msg_value_atoms: UnsidedAtoms,
 
-    /// Amount of atoms pending withdrawal, as read from input payload.
+    /// Amount of ETH atoms pending withdrawal, as read from market namespace
     ///
     /// The actual amount withdrawn is MIN(available, widthdrawal_due)
     /// This allows us to withdraw max available amount by passing u64::MAX
@@ -26,10 +26,7 @@ pub struct EthDelta {
 }
 
 impl EthDelta {
-    pub fn init(
-        track_msg_value: bool,
-        eth_withdrawal_due: Option<&UnsidedAtoms>,
-    ) -> Result<Self, GoblinError> {
+    pub fn init(track_msg_value: bool) -> Result<Self, GoblinError> {
         let msg_value_atoms = if track_msg_value {
             let msg_value = hostio::msg_value();
             UnsidedAtoms::from_raw_atoms(msg_value.as_ref(), NATIVE_TOKEN_DECIMALS)?
@@ -37,14 +34,9 @@ impl EthDelta {
             UnsidedAtoms::ZERO
         };
 
-        let withdrawal_due = match eth_withdrawal_due {
-            Some(eth_withdrawal_due) => *eth_withdrawal_due,
-            None => UnsidedAtoms::ZERO,
-        };
-
         Ok(Self {
             msg_value_atoms,
-            withdrawal_due,
+            withdrawal_due: UnsidedAtoms::ZERO,
             common_delta: CommonDelta::default(),
         })
     }

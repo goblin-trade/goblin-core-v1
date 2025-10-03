@@ -1,13 +1,13 @@
 use crate::{
     quantities::{QuantityOps, QuoteLotsPerBaseUnitPerTick},
-    tokens::TokenIndex,
+    tokens::DynamicTokenIndex,
     types::{Base, LegMarker, Pair, Quote},
 };
 
 // Max number of custom markets
 pub const MAX_CUSTOM_MARKETS: usize = 7;
 
-pub type TokenIndexPair = Pair<TokenIndex, TokenIndex>;
+pub type TokenIndexPair = Pair<DynamicTokenIndex, DynamicTokenIndex>;
 pub type LotSizePair = Pair<<Base as LegMarker>::LotsPerUnit, <Quote as LegMarker>::LotsPerUnit>;
 
 #[repr(C, packed)]

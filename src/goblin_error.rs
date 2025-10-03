@@ -1,4 +1,5 @@
 #[derive(Debug)]
+#[repr(u8)]
 pub enum GoblinError {
     Reentrant = 0,
     InvalidPayload = 1,
@@ -26,6 +27,7 @@ pub enum GoblinError {
     MakerListFull = 23,
     MakerStoreListFull = 24,
     NoInternalSelfWithdraw = 25,
+    InvalidTokenPairType = 26,
 }
 
 impl GoblinError {

@@ -4,6 +4,7 @@
 use crate::{
     input_processor::Args,
     instructions::ix_take,
+    markets::MarketHeader,
     settlement::{MakerBalanceUpdates, MarketMakerDeltas, SenderBalanceUpdates, SenderDelta},
     state::{MarketKey, MarketState, SlotState},
     tokens::ValidatedTokenPair,
@@ -40,14 +41,19 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
 
     let msg_sender = hostio::msg_sender();
 
-    let mut sender_balance_updates = SenderBalanceUpdates::new(
-        args.header.track_msg_value,
-        args.eth_withdrawal_due,
-        args.erc20_deposits_due,
-        args.erc20_withdrawals_due,
-    )?;
+    let mut sender_balance_updates = SenderBalanceUpdates::new(args.header.track_msg_value)?;
 
     let mut maker_balance_updates = MakerBalanceUpdates::default();
+
+    for _ in 0..args.header.market_count {
+        let market_header = MarketHeader::decode(args_buffer.as_ref(), len, &mut args.offset);
+
+        // * obtain enum Market
+        //   - Hardcoded case: we have 3 lists for 3 pair types.
+        //   - Custom: the token pair can be composed of hardcoded or custom tokens.
+        //
+        // * obtain deposit / withdraw amounts
+    }
 
     for market_instructions in args.market_instructions_list {
         let indexed_market = market_instructions

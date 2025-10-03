@@ -1,20 +1,11 @@
+pub mod hardcoded_markets;
 pub mod indexed_market;
-pub use indexed_market::*;
+pub mod market;
+pub mod market_header;
 pub mod market_index;
+
+pub use hardcoded_markets::*;
+pub use indexed_market::*;
+pub use market::*;
+pub use market_header::*;
 pub use market_index::*;
-pub mod market_instructions;
-pub use market_instructions::*;
-
-#[cfg(feature = "localnet")]
-pub mod localnet;
-#[cfg(feature = "mainnet")]
-pub mod mainnet;
-#[cfg(feature = "testnet")]
-pub mod testnet;
-
-#[cfg(feature = "localnet")]
-pub use localnet::*;
-#[cfg(feature = "mainnet")]
-pub use mainnet::*;
-#[cfg(feature = "testnet")]
-pub use testnet::*;

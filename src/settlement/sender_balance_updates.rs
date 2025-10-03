@@ -2,11 +2,8 @@ use crate::{
     goblin_error::GoblinError,
     markets::IndexedMarket,
     matching::MatchResult,
-    quantities::UnsidedAtoms,
-    settlement::{
-        CommonDelta, ERC20DeltaList, ERC20Deposit, ERC20Input, ERC20Withdraw, EthDelta, SenderDelta,
-    },
-    tokens::TokenIndex,
+    settlement::{CommonDelta, ERC20DeltaList, EthDelta, SenderDelta},
+    tokens::DynamicTokenIndex,
     types::{Address, Base, LegMarker, PairAccessor, Quote},
 };
 
@@ -16,23 +13,18 @@ pub struct SenderBalanceUpdates {
 }
 
 impl SenderBalanceUpdates {
-    pub fn new(
-        track_msg_value: bool,
-        eth_withdrawal_due: Option<&UnsidedAtoms>,
-        erc20_deposits_due: &[ERC20Input<ERC20Deposit>],
-        erc20_withdrawals_due: &[ERC20Input<ERC20Withdraw>],
-    ) -> Result<Self, GoblinError> {
+    pub fn new(track_msg_value: bool) -> Result<Self, GoblinError> {
         Ok(SenderBalanceUpdates {
-            eth_delta: EthDelta::init(track_msg_value, eth_withdrawal_due)?,
-            erc20_delta_list: ERC20DeltaList::new(erc20_deposits_due, erc20_withdrawals_due)?,
+            eth_delta: EthDelta::init(track_msg_value)?,
+            erc20_delta_list: ERC20DeltaList::default(),
         })
     }
 
     fn token_common_delta(
         &mut self,
-        token_index: TokenIndex,
+        token_index: DynamicTokenIndex,
     ) -> Result<&mut CommonDelta, GoblinError> {
-        Ok(if token_index == TokenIndex::ETH {
+        Ok(if token_index == DynamicTokenIndex::ETH {
             &mut self.eth_delta.common_delta
         } else {
             &mut self
@@ -50,7 +42,7 @@ impl SenderBalanceUpdates {
     ) -> Result<(), GoblinError>
     where
         In: LegMarker
-            + PairAccessor<TokenIndex, TokenIndex, Result = TokenIndex>
+            + PairAccessor<DynamicTokenIndex, DynamicTokenIndex, Result = DynamicTokenIndex>
             + PairAccessor<
                 <Base as LegMarker>::LotsPerUnit,
                 <Quote as LegMarker>::LotsPerUnit,
