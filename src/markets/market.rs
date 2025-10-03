@@ -16,6 +16,7 @@ pub struct HardcodedMarket {
 
 pub type CustomMarket = CommonMarket<DynamicTokenIndex>;
 
+// We need 3 market types corresponding to the 3 varieties of TokenPair
 pub struct CommonMarket<T> {
     pub token_pair: TokenPair<T>,
     pub lot_size_pair: LotSizePair,

@@ -28,6 +28,7 @@ pub enum GoblinError {
     MakerStoreListFull = 24,
     NoInternalSelfWithdraw = 25,
     InvalidTokenPairType = 26,
+    InvalidTransferAction = 27,
 }
 
 impl GoblinError {
