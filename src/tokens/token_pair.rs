@@ -3,17 +3,39 @@ use crate::{
     types::Pair,
 };
 
-/// Generic pair of tokens
-///
-/// * `TokenPair<HardcodedIndex>` → only hardcoded tokens. It uses a 'struct' type HardcodedIndex.
-/// * `TokenPair<TokenIndex>` → dynamic (runtime) tokens, can be hardcoded or custom.
-/// It uses an 'enum' type TokenIndex.
-pub enum TokenPair<T> {
-    ETHBaseERC20Quote(T),
-    ERC20BaseETHQuote(T),
-    ERC20BaseERC20Quote(Pair<T, T>),
+// Token variants
+pub struct Hardcoded;
+pub struct Dynamic;
+
+pub trait TokenVariant {
+    type TokenIndex;
 }
 
-// Type aliases for clarity
-pub type HardcodedPair = TokenPair<HardcodedIndex>;
-pub type DynamicPair = TokenPair<DynamicTokenIndex>;
+impl TokenVariant for Hardcoded {
+    type TokenIndex = HardcodedIndex;
+}
+
+impl TokenVariant for Dynamic {
+    type TokenIndex = DynamicTokenIndex;
+}
+
+// Pair shapes
+pub trait TokenPairShape<Idx: TokenVariant> {
+    type IndexPair;
+}
+
+pub struct ETH;
+pub struct ERC20;
+
+// ETH–ERC20 and ERC20–ETH => one index
+impl<Idx: TokenVariant> TokenPairShape<Idx> for Pair<ETH, ERC20> {
+    type IndexPair = Idx::TokenIndex;
+}
+impl<Idx: TokenVariant> TokenPairShape<Idx> for Pair<ERC20, ETH> {
+    type IndexPair = Idx::TokenIndex;
+}
+
+// ERC20–ERC20 => pair of indices
+impl<Idx: TokenVariant> TokenPairShape<Idx> for Pair<ERC20, ERC20> {
+    type IndexPair = Pair<Idx::TokenIndex, Idx::TokenIndex>;
+}

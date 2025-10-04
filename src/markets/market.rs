@@ -1,24 +1,37 @@
 use crate::{
     markets::LotSizePair,
     quantities::QuoteLotsPerBaseUnitPerTick,
-    tokens::{DynamicTokenIndex, HardcodedIndex, TokenPair},
+    tokens::{Dynamic, Hardcoded, TokenPairShape, TokenVariant},
 };
 
-pub enum Market {
-    Hardcoded(HardcodedMarket),
-    Custom(CustomMarket),
+pub struct CommonMarket<P, V>
+where
+    P: TokenPairShape<V>,
+    V: TokenVariant,
+{
+    /// The token pair, parameterized by shape and variant.
+    pub token_pair: <P as TokenPairShape<V>>::IndexPair,
+
+    /// Lot sizes (one per side)
+    pub lot_size_pair: LotSizePair,
+
+    /// Tick size (quote lots per base unit per tick)
+    pub tick_size: QuoteLotsPerBaseUnitPerTick,
 }
 
-pub struct HardcodedMarket {
-    pub common_market: CommonMarket<HardcodedIndex>,
+/// A market whose token indices are hardcoded.
+/// Works with any token pair shape (ETH–ERC20, ERC20–ETH, ERC20–ERC20).
+pub struct HardcodedMarket<P>
+where
+    P: TokenPairShape<Hardcoded>,
+{
+    /// The common market configuration (lot sizes, tick size, token indices).
+    pub common: CommonMarket<P, Hardcoded>,
+
+    /// The keccak256 hash of this market’s identifier.
     pub keccak_hash: [u8; 32],
 }
 
-pub type CustomMarket = CommonMarket<DynamicTokenIndex>;
-
-// We need 3 market types corresponding to the 3 varieties of TokenPair
-pub struct CommonMarket<T> {
-    pub token_pair: TokenPair<T>,
-    pub lot_size_pair: LotSizePair,
-    pub tick_size: QuoteLotsPerBaseUnitPerTick,
-}
+/// A market whose token indices are dynamically specified at runtime.
+/// Works with any token pair shape (ETH–ERC20, ERC20–ETH, ERC20–ERC20).
+pub type DynamicMarket<P> = CommonMarket<P, Dynamic>;

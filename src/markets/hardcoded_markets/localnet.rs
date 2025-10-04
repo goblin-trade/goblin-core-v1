@@ -1,32 +1,60 @@
 use crate::{
-    markets::{CommonMarket, HardcodedMarket, IndexedMarket},
+    markets::{CommonMarket, HardcodedMarket},
     quantities::{BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit},
-    tokens::{DynamicTokenIndex, HardcodedIndex, TokenPair},
+    tokens::{HardcodedIndex, ERC20, ETH},
     types::Pair,
 };
 
-// Problem- if we use token_pair: TokenPair<T>,
-// then a common list handles the 3 token pair variants
-// Should we have 3 different hardcoded lists, i.e. 3 distinct hardcoded market types
-// for each variant of TokenPair?
-// This means we have 3 types of MarketIndices now.
-pub const HARDCODED_MARKETS: [HardcodedMarket; 1] = [HardcodedMarket {
-    common_market: CommonMarket {
-        token_pair: TokenPair::ERC20BaseETHQuote(HardcodedIndex(0)),
-        lot_size_pair: Pair {
-            base: BaseLotsPerBaseUnit::new(100),
-            quote: QuoteLotsPerQuoteUnit::new(1000),
+// ───────────────────────────────────────────────
+// Hardcoded ETH–ERC20 markets
+// ───────────────────────────────────────────────
+
+pub const HARDCODED_MARKETS_ETH_BASE_ERC20_QUOTE: [HardcodedMarket<Pair<ETH, ERC20>>; 1] =
+    [HardcodedMarket {
+        common: CommonMarket {
+            token_pair: HardcodedIndex(0),
+            lot_size_pair: Pair {
+                base: BaseLotsPerBaseUnit::new(100),
+                quote: QuoteLotsPerQuoteUnit::new(1000),
+            },
+            tick_size: QuoteLotsPerBaseUnitPerTick::new(1),
         },
-        tick_size: QuoteLotsPerBaseUnitPerTick::new(1),
-    },
-    keccak_hash: [0u8; 32],
-    // token_index_pair: Pair {
-    //     base: DynamicTokenIndex(0),
-    //     quote: DynamicTokenIndex(1),
-    // },
-    // lot_size_pair: Pair {
-    //     base: BaseLotsPerBaseUnit::new(100),
-    //     quote: QuoteLotsPerQuoteUnit::new(1000),
-    // },
-    // tick_size: QuoteLotsPerBaseUnitPerTick::new(1),
-}];
+        keccak_hash: [0u8; 32],
+    }];
+
+// ───────────────────────────────────────────────
+// Hardcoded ERC20–ETH markets
+// ───────────────────────────────────────────────
+
+pub const HARDCODED_MARKETS_ERC20_BASE_ETH_QUOTE: [HardcodedMarket<Pair<ERC20, ETH>>; 1] =
+    [HardcodedMarket {
+        common: CommonMarket {
+            token_pair: HardcodedIndex(1),
+            lot_size_pair: Pair {
+                base: BaseLotsPerBaseUnit::new(200),
+                quote: QuoteLotsPerQuoteUnit::new(2000),
+            },
+            tick_size: QuoteLotsPerBaseUnitPerTick::new(1),
+        },
+        keccak_hash: [0u8; 32],
+    }];
+
+// ───────────────────────────────────────────────
+// Hardcoded ERC20–ERC20 markets
+// ───────────────────────────────────────────────
+
+pub const HARDCODED_MARKETS_ERC20_BASE_ERC20_QUOTE: [HardcodedMarket<Pair<ERC20, ERC20>>; 1] =
+    [HardcodedMarket {
+        common: CommonMarket {
+            token_pair: Pair {
+                base: HardcodedIndex(2),
+                quote: HardcodedIndex(3),
+            },
+            lot_size_pair: Pair {
+                base: BaseLotsPerBaseUnit::new(300),
+                quote: QuoteLotsPerQuoteUnit::new(3000),
+            },
+            tick_size: QuoteLotsPerBaseUnitPerTick::new(1),
+        },
+        keccak_hash: [0u8; 32],
+    }];
