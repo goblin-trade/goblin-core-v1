@@ -1,7 +1,7 @@
 use crate::{
     markets::{CommonMarket, HardcodedMarket},
     quantities::{BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit},
-    tokens::{HardcodedIndex, ERC20, ETH},
+    tokens::{HardcodedToken, TokenIndex, ERC20, ETH},
     types::Pair,
 };
 
@@ -12,7 +12,7 @@ use crate::{
 pub const HARDCODED_MARKETS_ETH_BASE_ERC20_QUOTE: [HardcodedMarket<Pair<ETH, ERC20>>; 1] =
     [HardcodedMarket {
         common: CommonMarket {
-            token_pair: HardcodedIndex(0),
+            token_pair: TokenIndex::<HardcodedToken>::new(0),
             lot_size_pair: Pair {
                 base: BaseLotsPerBaseUnit::new(100),
                 quote: QuoteLotsPerQuoteUnit::new(1000),
@@ -29,7 +29,7 @@ pub const HARDCODED_MARKETS_ETH_BASE_ERC20_QUOTE: [HardcodedMarket<Pair<ETH, ERC
 pub const HARDCODED_MARKETS_ERC20_BASE_ETH_QUOTE: [HardcodedMarket<Pair<ERC20, ETH>>; 1] =
     [HardcodedMarket {
         common: CommonMarket {
-            token_pair: HardcodedIndex(1),
+            token_pair: TokenIndex::<HardcodedToken>::new(1),
             lot_size_pair: Pair {
                 base: BaseLotsPerBaseUnit::new(200),
                 quote: QuoteLotsPerQuoteUnit::new(2000),
@@ -47,8 +47,8 @@ pub const HARDCODED_MARKETS_ERC20_BASE_ERC20_QUOTE: [HardcodedMarket<Pair<ERC20,
     [HardcodedMarket {
         common: CommonMarket {
             token_pair: Pair {
-                base: HardcodedIndex(2),
-                quote: HardcodedIndex(3),
+                base: TokenIndex::<HardcodedToken>::new(0),
+                quote: TokenIndex::<HardcodedToken>::new(1),
             },
             lot_size_pair: Pair {
                 base: BaseLotsPerBaseUnit::new(300),

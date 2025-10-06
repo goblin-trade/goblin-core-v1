@@ -55,6 +55,15 @@ pub struct TokenIndex<T: ERC20TokenTrait> {
     _marker: PhantomData<T>,
 }
 
+impl<T: ERC20TokenTrait> TokenIndex<T> {
+    pub const fn new(inner: u8) -> Self {
+        Self {
+            inner,
+            _marker: PhantomData,
+        }
+    }
+}
+
 impl TokenIndex<HardcodedToken> {
     fn get_token(&self) -> Option<&HardcodedToken> {
         HARDCODED_TOKENS.get(self.inner as usize)
