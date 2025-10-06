@@ -5,7 +5,7 @@ use crate::{
     require,
     settlement::{CommonDelta, ERC20Input, ERC20Transfer, TransferDirection},
     state::{ERC20Store, ERC20StoreKey, SlotState},
-    tokens::{Token, DynamicTokenIndex},
+    tokens::{DynamicIndex},, Token
     types::Address,
     CONTRACT_ADDRESS,
 };
@@ -53,7 +53,7 @@ impl ERC20Delta {
 
     pub fn settle(
         &self,
-        index: DynamicTokenIndex,
+        index: DynamicIndex,
         custom_token_list: &[Address],
         msg_sender: &Address,
         recipient: Option<&Address>,

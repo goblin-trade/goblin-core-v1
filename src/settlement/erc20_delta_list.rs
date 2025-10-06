@@ -1,7 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
     settlement::{ERC20Deposit, ERC20Input, ERC20Withdraw},
-    tokens::DynamicTokenIndex,
+    tokens::DynamicIndex,
     utils::FixedMap,
 };
 
@@ -14,7 +14,7 @@ use super::ERC20Delta;
 pub const MAX_DELTAS: usize = 16;
 
 /// An expandable list of ERC20 deltas.
-pub type ERC20DeltaList = FixedMap<DynamicTokenIndex, ERC20Delta, MAX_DELTAS>;
+pub type ERC20DeltaList = FixedMap<DynamicIndex, ERC20Delta, MAX_DELTAS>;
 
 impl ERC20DeltaList {
     /// Create a new ERC20DeltaList initialized with inputs read from args

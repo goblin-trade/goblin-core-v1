@@ -1,9 +1,9 @@
-use crate::{quantities::UnsidedAtoms, tokens::DynamicTokenIndex};
+use crate::{quantities::UnsidedAtoms, tokens::DynamicIndex};
 
 /// Generic struct for ERC20 deposits or withdrawals
 #[repr(C, packed)]
 pub struct ERC20Input<S> {
-    pub index: DynamicTokenIndex,
+    pub index: DynamicIndex,
     pub amount: UnsidedAtoms,
     _marker: core::marker::PhantomData<S>,
 }

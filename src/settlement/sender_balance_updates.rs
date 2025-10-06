@@ -3,7 +3,7 @@ use crate::{
     markets::IndexedMarket,
     matching::MatchResult,
     settlement::{CommonDelta, ERC20DeltaList, EthDelta, SenderDelta},
-    tokens::DynamicTokenIndex,
+    tokens::DynamicIndex,
     types::{Address, Base, LegMarker, PairAccessor, Quote},
 };
 
@@ -22,9 +22,9 @@ impl SenderBalanceUpdates {
 
     fn token_common_delta(
         &mut self,
-        token_index: DynamicTokenIndex,
+        token_index: DynamicIndex,
     ) -> Result<&mut CommonDelta, GoblinError> {
-        Ok(if token_index == DynamicTokenIndex::ETH {
+        Ok(if token_index == DynamicIndex::ETH {
             &mut self.eth_delta.common_delta
         } else {
             &mut self
@@ -42,7 +42,7 @@ impl SenderBalanceUpdates {
     ) -> Result<(), GoblinError>
     where
         In: LegMarker
-            + PairAccessor<DynamicTokenIndex, DynamicTokenIndex, Result = DynamicTokenIndex>
+            + PairAccessor<DynamicIndex, DynamicIndex, Result = DynamicIndex>
             + PairAccessor<
                 <Base as LegMarker>::LotsPerUnit,
                 <Quote as LegMarker>::LotsPerUnit,

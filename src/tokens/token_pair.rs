@@ -1,26 +1,33 @@
 use crate::{
-    tokens::{DynamicTokenIndex, HardcodedIndex},
+    tokens::{DynamicIndex, HardcodedToken, TokenIndex},
     types::Pair,
 };
 
-// Token variants
-pub struct Hardcoded;
-pub struct Dynamic;
+// Market variants
+// Instead of Marker marker that maps to token index, we could
+// implement MarketVariant on TokenIndex<Hardcoded> and DynamicIndex directly
 
-pub trait TokenVariant {
+// pub trait MarketVariantV2 {}
+// impl MarketVariantV2 for TokenIndex<HardcodedToken> {}
+// impl MarketVariantV2 for DynamicIndex {}
+
+pub struct HardcodedMarker;
+pub struct DynamicMarker;
+
+pub trait MarketVariant {
     type TokenIndex;
 }
 
-impl TokenVariant for Hardcoded {
+impl MarketVariant for HardcodedMarker {
     type TokenIndex = HardcodedIndex;
 }
 
-impl TokenVariant for Dynamic {
-    type TokenIndex = DynamicTokenIndex;
+impl MarketVariant for DynamicMarker {
+    type TokenIndex = DynamicIndex;
 }
 
 // Pair shapes
-pub trait TokenPairShape<Idx: TokenVariant> {
+pub trait TokenPairShape<M: MarketVariant> {
     type IndexPair;
 }
 
@@ -28,14 +35,14 @@ pub struct ETH;
 pub struct ERC20;
 
 // ETH–ERC20 and ERC20–ETH => one index
-impl<Idx: TokenVariant> TokenPairShape<Idx> for Pair<ETH, ERC20> {
-    type IndexPair = Idx::TokenIndex;
+impl<M: MarketVariant> TokenPairShape<M> for Pair<ETH, ERC20> {
+    type IndexPair = M::TokenIndex;
 }
-impl<Idx: TokenVariant> TokenPairShape<Idx> for Pair<ERC20, ETH> {
-    type IndexPair = Idx::TokenIndex;
+impl<M: MarketVariant> TokenPairShape<M> for Pair<ERC20, ETH> {
+    type IndexPair = M::TokenIndex;
 }
 
 // ERC20–ERC20 => pair of indices
-impl<Idx: TokenVariant> TokenPairShape<Idx> for Pair<ERC20, ERC20> {
-    type IndexPair = Pair<Idx::TokenIndex, Idx::TokenIndex>;
+impl<M: MarketVariant> TokenPairShape<M> for Pair<ERC20, ERC20> {
+    type IndexPair = Pair<M::TokenIndex, M::TokenIndex>;
 }

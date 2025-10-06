@@ -3,7 +3,7 @@ use crate::{
     markets::{IndexedMarket, LotSizePair},
     quantities::{BaseLotsPerBaseUnit, UnsidedAtoms},
     settlement::{MakerDelta, MakerSideDelta, MarketMakerDeltas},
-    tokens::DynamicTokenIndex,
+    tokens::DynamicIndex,
     types::{Address, Base, LegMarker, PairAccessor, Quote},
     utils::FixedMap,
 };
@@ -14,7 +14,7 @@ pub type MakerBalanceUpdates = FixedMap<UpdateKey, Update, MAX_BALANCE_UPDATES>;
 #[derive(PartialEq, Clone, Copy)]
 pub struct UpdateKey {
     pub maker: Address,
-    pub token_index: DynamicTokenIndex,
+    pub token_index: DynamicIndex,
 }
 
 #[derive(Default)]
@@ -76,7 +76,7 @@ impl MakerBalanceUpdates {
     ) -> Result<(), GoblinError>
     where
         In: LegMarker
-            + PairAccessor<DynamicTokenIndex, DynamicTokenIndex, Result = DynamicTokenIndex>
+            + PairAccessor<DynamicIndex, DynamicIndex, Result = DynamicIndex>
             + PairAccessor<
                 <Base as LegMarker>::LotsPerUnit,
                 <Quote as LegMarker>::LotsPerUnit,

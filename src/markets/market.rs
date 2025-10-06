@@ -1,13 +1,13 @@
 use crate::{
     markets::LotSizePair,
     quantities::QuoteLotsPerBaseUnitPerTick,
-    tokens::{Dynamic, Hardcoded, TokenPairShape, TokenVariant},
+    tokens::{DynamicMarker, HardcodedMarker, MarketVariant, TokenPairShape},
 };
 
 pub struct CommonMarket<P, V>
 where
     P: TokenPairShape<V>,
-    V: TokenVariant,
+    V: MarketVariant,
 {
     /// The token pair, parameterized by shape and variant.
     pub token_pair: <P as TokenPairShape<V>>::IndexPair,
@@ -23,10 +23,10 @@ where
 /// Works with any token pair shape (ETH–ERC20, ERC20–ETH, ERC20–ERC20).
 pub struct HardcodedMarket<P>
 where
-    P: TokenPairShape<Hardcoded>,
+    P: TokenPairShape<HardcodedMarker>,
 {
     /// The common market configuration (lot sizes, tick size, token indices).
-    pub common: CommonMarket<P, Hardcoded>,
+    pub common: CommonMarket<P, HardcodedMarker>,
 
     /// The keccak256 hash of this market’s identifier.
     pub keccak_hash: [u8; 32],
@@ -34,4 +34,4 @@ where
 
 /// A market whose token indices are dynamically specified at runtime.
 /// Works with any token pair shape (ETH–ERC20, ERC20–ETH, ERC20–ERC20).
-pub type DynamicMarket<P> = CommonMarket<P, Dynamic>;
+pub type DynamicMarket<P> = CommonMarket<P, DynamicMarker>;
