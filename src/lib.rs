@@ -2,13 +2,13 @@
 #![cfg_attr(not(test), no_main)]
 
 use crate::{
-    input_processor::Args,
+    input_processor::{Args, ArgsDecoder},
     instructions::ix_take,
     markets::MarketHeader,
     settlement::{MakerBalanceUpdates, MarketMakerDeltas, SenderBalanceUpdates, SenderDelta},
     state::{MarketKey, MarketState, SlotState},
-    tokens::ValidatedTokenPair,
-    types::{Base, Quote},
+    tokens::{DynamicIndex, HardcodedToken, MarketVariant, TokenIndex, TokenPairShape, ERC20, ETH},
+    types::{Base, Pair, Quote},
 };
 use goblin_error::*;
 
@@ -46,7 +46,46 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
     let mut maker_balance_updates = MakerBalanceUpdates::default();
 
     for _ in 0..args.header.market_count {
-        let market_header = MarketHeader::decode(args_buffer.as_ref(), len, &mut args.offset);
+        // Clean solution- market header only contains static fields
+        // Depending on 'MarketVariant' and 'TokenPairShape', use generic to get 6 variants
+        // of markets
+        let market_header = MarketHeader::decode(args_buffer.as_ref(), len, &mut args.offset)?;
+
+        // Each variant has unique decoding format
+        match (market_header.market_source_raw, market_header.pair_type_raw) {
+            <Pair<ETH, ERC20> as TokenPairShape<TokenIndex<HardcodedToken>>>::FLAGS => {
+                // Hardcoded market, ETH–ERC20
+                //
+                // To read
+                // - Hardcoded market index
+                // - ETH: withdraw only amount
+                // - ERC20: deposit or withdraw
+
+                let byte = args_buffer.as_ref().decode::<u8>(&mut args.offset, len)?;
+
+                // convert to market index
+                // We have 3 market indices for the 3 shapes
+                // They map to 3 corresponding hardcoded market arrays
+            }
+            <Pair<ERC20, ETH> as TokenPairShape<TokenIndex<HardcodedToken>>>::FLAGS => {
+                // Hardcoded market, ERC20–ETH
+            }
+            <Pair<ERC20, ERC20> as TokenPairShape<TokenIndex<HardcodedToken>>>::FLAGS => {
+                // Hardcoded market, ERC20–ERC20
+            }
+
+            <Pair<ETH, ERC20> as TokenPairShape<DynamicIndex>>::FLAGS => {
+                // Dynamic market, ETH–ERC20
+            }
+            <Pair<ERC20, ETH> as TokenPairShape<DynamicIndex>>::FLAGS => {
+                // Dynamic market, ERC20–ETH
+            }
+            <Pair<ERC20, ERC20> as TokenPairShape<DynamicIndex>>::FLAGS => {
+                // Dynamic market, ERC20–ERC20
+            }
+
+            _ => todo!(),
+        }
 
         // * obtain enum Market
         //   - Hardcoded case: we have 3 lists for 3 pair types.
@@ -55,60 +94,60 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
         // * obtain deposit / withdraw amounts
     }
 
-    for market_instructions in args.market_instructions_list {
-        let indexed_market = market_instructions
-            .market_index
-            .to_indexed_market(args.custom_market_list)?;
+    // for market_instructions in args.market_instructions_list {
+    //     let indexed_market = market_instructions
+    //         .market_index
+    //         .to_indexed_market(args.custom_market_list)?;
 
-        let token_pair =
-            ValidatedTokenPair::new(indexed_market.token_index_pair, args.custom_erc20_list)?;
+    //     let token_pair =
+    //         ValidatedTokenPair::new(indexed_market.token_index_pair, args.custom_erc20_list)?;
 
-        // Obtain market key
-        let market_key = MarketKey::new(
-            &token_pair,
-            indexed_market.lot_size_pair,
-            indexed_market.tick_size,
-        );
+    //     // Obtain market key
+    //     let market_key = MarketKey::new(
+    //         &token_pair,
+    //         indexed_market.lot_size_pair,
+    //         indexed_market.tick_size,
+    //     );
 
-        let mut market_state = MarketState::load(&market_key);
+    //     let mut market_state = MarketState::load(&market_key);
 
-        // Deltas for sender and makers
-        let mut sender_delta = SenderDelta::default();
-        let mut market_maker_deltas = MarketMakerDeltas::default();
+    //     // Deltas for sender and makers
+    //     let mut sender_delta = SenderDelta::default();
+    //     let mut market_maker_deltas = MarketMakerDeltas::default();
 
-        if market_instructions.take_bid() {
-            let match_result = ix_take::<Quote>(
-                &mut market_maker_deltas,
-                msg_sender.as_ref(),
-                &indexed_market,
-                market_state.as_mut(),
-                args_buffer.as_ref(),
-                len,
-                &mut args.offset,
-            )?;
-            sender_delta.quote = match_result;
-        }
+    //     if market_instructions.take_bid() {
+    //         let match_result = ix_take::<Quote>(
+    //             &mut market_maker_deltas,
+    //             msg_sender.as_ref(),
+    //             &indexed_market,
+    //             market_state.as_mut(),
+    //             args_buffer.as_ref(),
+    //             len,
+    //             &mut args.offset,
+    //         )?;
+    //         sender_delta.quote = match_result;
+    //     }
 
-        if market_instructions.take_ask() {
-            let match_result = ix_take::<Base>(
-                &mut market_maker_deltas,
-                msg_sender.as_ref(),
-                &indexed_market,
-                market_state.as_mut(),
-                args_buffer.as_ref(),
-                len,
-                &mut args.offset,
-            )?;
-            sender_delta.base = match_result;
-        }
+    //     if market_instructions.take_ask() {
+    //         let match_result = ix_take::<Base>(
+    //             &mut market_maker_deltas,
+    //             msg_sender.as_ref(),
+    //             &indexed_market,
+    //             market_state.as_mut(),
+    //             args_buffer.as_ref(),
+    //             len,
+    //             &mut args.offset,
+    //         )?;
+    //         sender_delta.base = match_result;
+    //     }
 
-        // Write market state to slot
-        market_state.as_mut().store(&market_key);
+    //     // Write market state to slot
+    //     market_state.as_mut().store(&market_key);
 
-        // Apply pending maker updates
-        sender_balance_updates.apply_updates(&indexed_market, &sender_delta)?;
-        maker_balance_updates.apply_updates(&indexed_market, &market_maker_deltas)?;
-    }
+    //     // Apply pending maker updates
+    //     sender_balance_updates.apply_updates(&indexed_market, &sender_delta)?;
+    //     maker_balance_updates.apply_updates(&indexed_market, &market_maker_deltas)?;
+    // }
 
     // Settlement
     sender_balance_updates.settle(
