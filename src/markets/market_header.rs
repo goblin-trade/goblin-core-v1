@@ -6,14 +6,9 @@ use crate::{
 };
 
 pub struct MarketHeader {
-    /// Whether a hardcoded or custom market
-    pub market_source_raw: u8,
+    /// The type of market, encoded in 3 bits
+    pub market_type_raw: u8,
 
-    /// The type of token pair
-    pub pair_type_raw: u8,
-
-    // /// Whether to deposit or withdraw one of the tokens
-    // pub transfers: Pair<TransferAction, TransferAction>,
     /// Whether to execute base-in and quote-in take orders
     pub execute_takes: Pair<bool, bool>,
 
@@ -29,8 +24,7 @@ impl MarketHeader {
     ) -> Result<Self, GoblinError> {
         let byte_0 = payload.decode::<u8>(offset, len)?;
 
-        let market_source_raw = byte_0 & 0b0000_0001;
-        let pair_type_raw = (byte_0 & 0b0000_0110) >> 1;
+        let market_type_raw = byte_0 & 0b0000_0111;
 
         let execute_takes = Pair {
             base: (byte_0 & 0b0000_1000) != 0,
@@ -42,8 +36,7 @@ impl MarketHeader {
         let outer_bitmap_indices = (byte_0 & 0b1110_0000) >> 5;
 
         Ok(Self {
-            market_source_raw,
-            pair_type_raw,
+            market_type_raw,
             execute_takes,
             outer_bitmap_indices,
         })

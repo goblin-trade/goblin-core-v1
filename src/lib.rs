@@ -7,7 +7,10 @@ use crate::{
     markets::MarketHeader,
     settlement::{MakerBalanceUpdates, MarketMakerDeltas, SenderBalanceUpdates, SenderDelta},
     state::{MarketKey, MarketState, SlotState},
-    tokens::{DynamicIndex, HardcodedToken, MarketVariant, TokenIndex, TokenPairShape, ERC20, ETH},
+    tokens::{
+        DynamicIndex, HardcodedToken, MarketVariant, TokenIndex, TokenPair, TokenPairDecoder,
+        ERC20, ETH,
+    },
     types::{Base, Pair, Quote},
 };
 use goblin_error::*;
@@ -51,40 +54,34 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
         // of markets
         let market_header = MarketHeader::decode(args_buffer.as_ref(), len, &mut args.offset)?;
 
-        // Each variant has unique decoding format
-        match (market_header.market_source_raw, market_header.pair_type_raw) {
-            <Pair<ETH, ERC20> as TokenPairShape<TokenIndex<HardcodedToken>>>::FLAGS => {
-                // Hardcoded market, ETH–ERC20
-                //
-                // To read
-                // - Hardcoded market index
-                // - ETH: withdraw only amount
-                // - ERC20: deposit or withdraw
+        match market_header.market_type_raw {
+            // Hardcoded markets
+              <TokenPair<TokenIndex<HardcodedToken>, Pair<ETH, ERC20>> as TokenPairDecoder>::DISCRIMINATOR => {
 
-                let byte = args_buffer.as_ref().decode::<u8>(&mut args.offset, len)?;
+              },
 
-                // convert to market index
-                // We have 3 market indices for the 3 shapes
-                // They map to 3 corresponding hardcoded market arrays
-            }
-            <Pair<ERC20, ETH> as TokenPairShape<TokenIndex<HardcodedToken>>>::FLAGS => {
-                // Hardcoded market, ERC20–ETH
-            }
-            <Pair<ERC20, ERC20> as TokenPairShape<TokenIndex<HardcodedToken>>>::FLAGS => {
-                // Hardcoded market, ERC20–ERC20
-            }
+              <TokenPair<TokenIndex<HardcodedToken>, Pair<ERC20, ETH>> as TokenPairDecoder>::DISCRIMINATOR => {
 
-            <Pair<ETH, ERC20> as TokenPairShape<DynamicIndex>>::FLAGS => {
-                // Dynamic market, ETH–ERC20
-            }
-            <Pair<ERC20, ETH> as TokenPairShape<DynamicIndex>>::FLAGS => {
-                // Dynamic market, ERC20–ETH
-            }
-            <Pair<ERC20, ERC20> as TokenPairShape<DynamicIndex>>::FLAGS => {
-                // Dynamic market, ERC20–ERC20
-            }
+              },
 
-            _ => todo!(),
+              <TokenPair<TokenIndex<HardcodedToken>, Pair<ERC20, ERC20>> as TokenPairDecoder>::DISCRIMINATOR => {
+
+              },
+
+              // Dynamic markets
+              <TokenPair<DynamicIndex, Pair<ETH, ERC20>> as TokenPairDecoder>::DISCRIMINATOR => {
+
+              },
+
+              <TokenPair<DynamicIndex, Pair<ERC20, ETH>> as TokenPairDecoder>::DISCRIMINATOR => {
+
+              },
+
+              <TokenPair<DynamicIndex, Pair<ERC20, ERC20>> as TokenPairDecoder>::DISCRIMINATOR => {
+
+              },
+
+              _ => {}
         }
 
         // * obtain enum Market

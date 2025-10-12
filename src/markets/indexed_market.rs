@@ -4,6 +4,8 @@ use crate::{
     types::{Base, LegMarker, Pair, Quote},
 };
 
+// TODO remove, replaced by market.rs
+
 // Max number of custom markets
 pub const MAX_CUSTOM_MARKETS: usize = 7;
 
