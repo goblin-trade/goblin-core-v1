@@ -65,26 +65,3 @@ impl<M: MarketVariant> TokenPairKind for TokenPair<M, Pair<ERC20, ETH>> {
 impl<M: MarketVariant> TokenPairKind for TokenPair<M, Pair<ERC20, ERC20>> {
     type IndexPair = Pair<M, M>;
 }
-
-// pub trait TokenPairShape<M: MarketVariant> {
-//     const DECODE_FLAG: u8;
-//     type IndexPair;
-
-//     const FLAGS: (u8, u8) = (M::DECODE_FLAG, Self::DECODE_FLAG);
-// }
-
-// // ETH–ERC20 and ERC20–ETH => one index
-// impl<M: MarketVariant> TokenPairShape<M> for Pair<ETH, ERC20> {
-//     const DECODE_FLAG: u8 = 0;
-//     type IndexPair = M;
-// }
-// impl<M: MarketVariant> TokenPairShape<M> for Pair<ERC20, ETH> {
-//     const DECODE_FLAG: u8 = 1;
-//     type IndexPair = M;
-// }
-
-// // ERC20–ERC20 => pair of indices
-// impl<M: MarketVariant> TokenPairShape<M> for Pair<ERC20, ERC20> {
-//     const DECODE_FLAG: u8 = 2;
-//     type IndexPair = Pair<M, M>;
-// }
