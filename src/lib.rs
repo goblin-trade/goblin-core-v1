@@ -54,18 +54,11 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
         match market_header.market_type_raw {
             // Hardcoded markets
             <TokenPair<TokenIndex<HardcodedToken>, Pair<ETH, ERC20>>>::DISCRIMINATOR => {
-                // Decoding is common for the 3 hardcoded types
-                // We should wrap it within a function
-                let market_index_raw =
-                    args_buffer.as_ref().decode::<u8>(&mut args.offset, len)? as usize;
-
-                let markets = <HardcodedMarket<Pair<ETH, ERC20>> as HardcodedDecoder<
-                    Pair<ETH, ERC20>,
-                >>::HARDCODED_MARKET_LIST;
-
-                let market = markets
-                    .get(market_index_raw)
-                    .ok_or(GoblinError::InvalidHardcodedMarket)?;
+                let market = HardcodedMarket::<Pair<ETH, ERC20>>::decode(
+                    args_buffer.as_ref(),
+                    &mut args.offset,
+                    len,
+                )?;
 
                 // MarketKey previously used the ValidatedTokenPair enum to handle
                 // the 3 shapes. We need dedicated MarketKey type for each TokenPair variant
@@ -74,10 +67,16 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
                 // * However for dynamic markets, each type will use a different discriminator.
                 // * Optionally add TokenPair as a generic in MarketState with PhantomData.
                 // The type system will then map each key type to its struct correctly.
-                let mut market_state = MarketState::load(&market_key);
+                // let mut market_state = MarketState::load(&market_key);
             }
 
-            <TokenPair<TokenIndex<HardcodedToken>, Pair<ERC20, ETH>>>::DISCRIMINATOR => {}
+            <TokenPair<TokenIndex<HardcodedToken>, Pair<ERC20, ETH>>>::DISCRIMINATOR => {
+                let market = HardcodedMarket::<Pair<ERC20, ETH>>::decode(
+                    args_buffer.as_ref(),
+                    &mut args.offset,
+                    len,
+                )?;
+            }
 
             <TokenPair<TokenIndex<HardcodedToken>, Pair<ERC20, ERC20>>>::DISCRIMINATOR => {}
 

@@ -1,9 +1,11 @@
 use crate::{
+    goblin_error::GoblinError,
+    input_processor::{ArgsBuffer, ArgsDecoder},
     markets::LotSizePair,
     quantities::QuoteLotsPerBaseUnitPerTick,
     tokens::{
-        DynamicIndex, HardcodedToken, MarketVariant, PairShape, TokenIndex, TokenPair,
-        TokenPairKind,
+        DynamicIndex, HardcodedDecoder, HardcodedToken, MarketVariant, PairShape, TokenIndex,
+        TokenPair, TokenPairKind,
     },
 };
 
@@ -36,6 +38,42 @@ where
     /// The keccak256 hash of this market’s identifier.
     pub keccak_hash: [u8; 32],
 }
+
+impl<P> HardcodedMarket<P>
+where
+    P: PairShape + 'static,
+    TokenPair<TokenIndex<HardcodedToken>, P>: TokenPairKind,
+    Self: HardcodedDecoder<P>,
+{
+    pub fn decode(
+        payload: &ArgsBuffer,
+        offset: &mut usize,
+        len: usize,
+    ) -> Result<&'static Self, GoblinError> {
+        let market_index_raw = payload.decode::<u8>(offset, len)? as usize;
+
+        let markets = <Self as HardcodedDecoder<P>>::HARDCODED_MARKET_LIST;
+
+        let market = markets
+            .get(market_index_raw)
+            .ok_or(GoblinError::InvalidHardcodedMarket)?;
+
+        Ok(market)
+    }
+}
+
+// impl<P: PairShape> HardcodedMarket<P>
+// where
+//     TokenPair<TokenIndex<HardcodedToken>, P>: TokenPairKind,
+// {
+//     pub fn decode(payload: &ArgsBuffer, offset: &mut usize, len: usize) -> Result<(), GoblinError> {
+//         let market_index_raw = payload.decode::<u8>(offset, len)? as usize;
+
+//         let markets = Self::HARDCODED_MARKET_LIST;
+
+//         Ok(())
+//     }
+// }
 
 /// A market whose token indices are dynamically specified at runtime.
 /// Works with any token pair shape (ETH–ERC20, ERC20–ETH, ERC20–ERC20).

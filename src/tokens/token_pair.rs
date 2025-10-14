@@ -1,8 +1,7 @@
 use core::marker::PhantomData;
 
 use crate::{
-    markets::{CommonMarket, HardcodedMarket, HARDCODED_MARKETS_ETH_BASE_ERC20_QUOTE},
-    quantities::{BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit},
+    markets::HardcodedMarket,
     tokens::{DynamicIndex, HardcodedToken, TokenIndex},
     types::Pair,
 };
@@ -86,30 +85,3 @@ where
 {
     const HARDCODED_MARKET_LIST: &'static [HardcodedMarket<P>];
 }
-
-// where
-//     TokenPair<TokenIndex<HardcodedToken>, P>: TokenPairKind,
-//
-// pub trait HardcodedDecoder<P: PairShape>
-// where
-//     TokenPair<TokenIndex<HardcodedToken>, P>: TokenPairKind,
-// {
-//     const HARDCODED_MARKET_LIST: [HardcodedMarket<P>; 1];
-// }
-
-// impl<P: PairShape> HardcodedDecoder<P> for HardcodedMarket<Pair<ETH, ERC20>>
-// where
-//     TokenPair<TokenIndex<HardcodedToken>, P>: TokenPairKind,
-// {
-//     const HARDCODED_MARKET_LIST: [HardcodedMarket<P>; 1] = [HardcodedMarket {
-//         common: CommonMarket {
-//             token_pair: TokenIndex::<HardcodedToken>::new(0),
-//             lot_size_pair: Pair {
-//                 base: BaseLotsPerBaseUnit::new(100),
-//                 quote: QuoteLotsPerQuoteUnit::new(1000),
-//             },
-//             tick_size: QuoteLotsPerBaseUnitPerTick::new(1),
-//         },
-//         keccak_hash: [0u8; 32],
-//     }];
-// }
