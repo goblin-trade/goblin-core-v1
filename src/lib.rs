@@ -4,12 +4,12 @@
 use crate::{
     input_processor::{Args, ArgsDecoder},
     instructions::ix_take,
-    markets::MarketHeader,
+    markets::{HardcodedMarket, MarketHeader},
     settlement::{MakerBalanceUpdates, MarketMakerDeltas, SenderBalanceUpdates, SenderDelta},
     state::{MarketKey, MarketState, SlotState},
     tokens::{
-        DynamicIndex, HardcodedToken, MarketVariant, TokenIndex, TokenPair, TokenPairDecoder,
-        ERC20, ETH,
+        DynamicIndex, HardcodedDecoder, HardcodedToken, MarketVariant, TokenIndex, TokenPair,
+        TokenPairDecoder, ERC20, ETH,
     },
     types::{Base, Pair, Quote},
 };
@@ -49,39 +49,46 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
     let mut maker_balance_updates = MakerBalanceUpdates::default();
 
     for _ in 0..args.header.market_count {
-        // Clean solution- market header only contains static fields
-        // Depending on 'MarketVariant' and 'TokenPairShape', use generic to get 6 variants
-        // of markets
-        let market_header = MarketHeader::decode(args_buffer.as_ref(), len, &mut args.offset)?;
+        let market_header = MarketHeader::decode(args_buffer.as_ref(), &mut args.offset, len)?;
 
         match market_header.market_type_raw {
             // Hardcoded markets
-              <TokenPair<TokenIndex<HardcodedToken>, Pair<ETH, ERC20>> as TokenPairDecoder>::DISCRIMINATOR => {
+            <TokenPair<TokenIndex<HardcodedToken>, Pair<ETH, ERC20>>>::DISCRIMINATOR => {
+                // Decoding is common for the 3 hardcoded types
+                // We should wrap it within a function
+                let market_index_raw =
+                    args_buffer.as_ref().decode::<u8>(&mut args.offset, len)? as usize;
 
-              },
+                let markets = <HardcodedMarket<Pair<ETH, ERC20>> as HardcodedDecoder<
+                    Pair<ETH, ERC20>,
+                >>::HARDCODED_MARKET_LIST;
 
-              <TokenPair<TokenIndex<HardcodedToken>, Pair<ERC20, ETH>> as TokenPairDecoder>::DISCRIMINATOR => {
+                let market = markets
+                    .get(market_index_raw)
+                    .ok_or(GoblinError::InvalidHardcodedMarket)?;
 
-              },
+                // MarketKey previously used the ValidatedTokenPair enum to handle
+                // the 3 shapes. We need dedicated MarketKey type for each TokenPair variant
+                // Hardcoded markets have the key hardcoded.
+                //
+                // * However for dynamic markets, each type will use a different discriminator.
+                // * Optionally add TokenPair as a generic in MarketState with PhantomData.
+                // The type system will then map each key type to its struct correctly.
+                let mut market_state = MarketState::load(&market_key);
+            }
 
-              <TokenPair<TokenIndex<HardcodedToken>, Pair<ERC20, ERC20>> as TokenPairDecoder>::DISCRIMINATOR => {
+            <TokenPair<TokenIndex<HardcodedToken>, Pair<ERC20, ETH>>>::DISCRIMINATOR => {}
 
-              },
+            <TokenPair<TokenIndex<HardcodedToken>, Pair<ERC20, ERC20>>>::DISCRIMINATOR => {}
 
-              // Dynamic markets
-              <TokenPair<DynamicIndex, Pair<ETH, ERC20>> as TokenPairDecoder>::DISCRIMINATOR => {
+            // Dynamic markets
+            <TokenPair<DynamicIndex, Pair<ETH, ERC20>>>::DISCRIMINATOR => {}
 
-              },
+            <TokenPair<DynamicIndex, Pair<ERC20, ETH>>>::DISCRIMINATOR => {}
 
-              <TokenPair<DynamicIndex, Pair<ERC20, ETH>> as TokenPairDecoder>::DISCRIMINATOR => {
+            <TokenPair<DynamicIndex, Pair<ERC20, ERC20>>>::DISCRIMINATOR => {}
 
-              },
-
-              <TokenPair<DynamicIndex, Pair<ERC20, ERC20>> as TokenPairDecoder>::DISCRIMINATOR => {
-
-              },
-
-              _ => {}
+            _ => {}
         }
 
         // * obtain enum Market

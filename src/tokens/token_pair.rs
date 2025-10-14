@@ -1,6 +1,8 @@
 use core::marker::PhantomData;
 
 use crate::{
+    markets::{CommonMarket, HardcodedMarket, HARDCODED_MARKETS_ETH_BASE_ERC20_QUOTE},
+    quantities::{BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit},
     tokens::{DynamicIndex, HardcodedToken, TokenIndex},
     types::Pair,
 };
@@ -50,18 +52,6 @@ impl PairShape for Pair<ERC20, ERC20> {
 /// Combined pair with 2 traits
 pub struct TokenPair<M: MarketVariant, P: PairShape>(PhantomData<(M, P)>);
 
-pub trait TokenPairDecoder {
-    const DISCRIMINATOR: u8;
-}
-
-impl<M, P> TokenPairDecoder for TokenPair<M, P>
-where
-    M: MarketVariant,
-    P: PairShape,
-{
-    const DISCRIMINATOR: u8 = M::DISCRIMINATOR | (P::DISCRIMINATOR << 1);
-}
-
 pub trait TokenPairKind {
     type IndexPair;
 }
@@ -77,3 +67,49 @@ impl<M: MarketVariant> TokenPairKind for TokenPair<M, Pair<ERC20, ETH>> {
 impl<M: MarketVariant> TokenPairKind for TokenPair<M, Pair<ERC20, ERC20>> {
     type IndexPair = Pair<M, M>;
 }
+
+pub trait TokenPairDecoder {
+    const DISCRIMINATOR: u8;
+}
+
+impl<M, P> TokenPairDecoder for TokenPair<M, P>
+where
+    M: MarketVariant,
+    P: PairShape,
+{
+    const DISCRIMINATOR: u8 = M::DISCRIMINATOR | (P::DISCRIMINATOR << 1);
+}
+
+pub trait HardcodedDecoder<P: PairShape + 'static>
+where
+    TokenPair<TokenIndex<HardcodedToken>, P>: TokenPairKind,
+{
+    const HARDCODED_MARKET_LIST: &'static [HardcodedMarket<P>];
+}
+
+// where
+//     TokenPair<TokenIndex<HardcodedToken>, P>: TokenPairKind,
+//
+// pub trait HardcodedDecoder<P: PairShape>
+// where
+//     TokenPair<TokenIndex<HardcodedToken>, P>: TokenPairKind,
+// {
+//     const HARDCODED_MARKET_LIST: [HardcodedMarket<P>; 1];
+// }
+
+// impl<P: PairShape> HardcodedDecoder<P> for HardcodedMarket<Pair<ETH, ERC20>>
+// where
+//     TokenPair<TokenIndex<HardcodedToken>, P>: TokenPairKind,
+// {
+//     const HARDCODED_MARKET_LIST: [HardcodedMarket<P>; 1] = [HardcodedMarket {
+//         common: CommonMarket {
+//             token_pair: TokenIndex::<HardcodedToken>::new(0),
+//             lot_size_pair: Pair {
+//                 base: BaseLotsPerBaseUnit::new(100),
+//                 quote: QuoteLotsPerQuoteUnit::new(1000),
+//             },
+//             tick_size: QuoteLotsPerBaseUnitPerTick::new(1),
+//         },
+//         keccak_hash: [0u8; 32],
+//     }];
+// }

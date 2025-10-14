@@ -19,8 +19,8 @@ pub struct MarketHeader {
 impl MarketHeader {
     pub fn decode(
         payload: &ArgsBuffer,
-        len: usize,
         offset: &mut usize,
+        len: usize,
     ) -> Result<Self, GoblinError> {
         let byte_0 = payload.decode::<u8>(offset, len)?;
 

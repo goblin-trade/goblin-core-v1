@@ -29,6 +29,7 @@ pub enum GoblinError {
     NoInternalSelfWithdraw = 25,
     InvalidTokenPairType = 26,
     InvalidTransferAction = 27,
+    InvalidHardcodedMarket = 28,
 }
 
 impl GoblinError {
