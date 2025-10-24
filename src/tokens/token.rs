@@ -1,6 +1,6 @@
 use core::marker::PhantomData;
 
-use crate::{erc20, goblin_error::GoblinError, tokens::HARDCODED_TOKENS, types::Address};
+use crate::{erc20, goblin_error::GoblinError, require, tokens::HARDCODED_TOKENS, types::Address};
 
 #[derive(Clone, Copy)]
 pub struct HardcodedToken {
@@ -81,4 +81,29 @@ impl TokenIndex<CustomToken> {
 pub enum DynamicIndex {
     Hardcoded(TokenIndex<HardcodedToken>),
     Custom(TokenIndex<CustomToken>),
+}
+
+impl DynamicIndex {
+    /// Decode a token index byte into either a hardcoded or custom token index.
+    ///
+    /// Convention:
+    /// - If the MSB (bit 7) is 0 → Hardcoded token index (0–127)
+    /// - If the MSB (bit 7) is 1 → Custom token index (0–127, but stored as 128–255)
+    pub fn decode(byte: u8) -> Result<Self, GoblinError> {
+        const CUSTOM_FLAG: u8 = 0b1000_0000;
+        if (byte & CUSTOM_FLAG) == 0 {
+            // Hardcoded token
+            let index = byte;
+            require!(
+                (index as usize) < HARDCODED_TOKENS.len(),
+                GoblinError::InvalidHardcodedTokenIndex
+            );
+
+            Ok(Self::Hardcoded(TokenIndex::new(index)))
+        } else {
+            // Custom token
+            let index = byte & !CUSTOM_FLAG; // remove the flag
+            Ok(Self::Custom(TokenIndex::new(index)))
+        }
+    }
 }

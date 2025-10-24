@@ -9,6 +9,9 @@ pub trait SlotKey {
 }
 
 pub trait SlotState<T: SlotKey>: Sized {
+    // Ensure that size equals 32 bytes at compile time
+    const ASSERT: () = assert!(core::mem::size_of::<Self>() == 32);
+
     fn load(key: &T) -> HostioBuffer<Self> {
         storage_load_bytes32::<Self>(key.hash())
     }

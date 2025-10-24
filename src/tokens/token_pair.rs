@@ -1,7 +1,10 @@
 use core::marker::PhantomData;
 
 use crate::{
+    goblin_error::GoblinError,
+    input_processor::{ArgsBuffer, ArgsDecoder},
     markets::HardcodedMarket,
+    require,
     tokens::{DynamicIndex, HardcodedToken, TokenIndex},
     types::Pair,
 };
@@ -44,6 +47,8 @@ impl PairShape for Pair<ERC20, ETH> {
     const DISCRIMINATOR: u8 = 1;
 }
 
+/// A pair of two ERC20 tokens.
+/// The decoder guarantees that the two tokens are different.
 impl PairShape for Pair<ERC20, ERC20> {
     const DISCRIMINATOR: u8 = 2;
 }
@@ -68,6 +73,7 @@ impl<M: MarketVariant> TokenPairKind for TokenPair<M, Pair<ERC20, ERC20>> {
 }
 
 pub trait TokenPairDecoder {
+    /// Tells the market type during decoding
     const DISCRIMINATOR: u8;
 }
 
@@ -84,4 +90,56 @@ where
     TokenPair<TokenIndex<HardcodedToken>, P>: TokenPairKind,
 {
     const HARDCODED_MARKET_LIST: &'static [HardcodedMarket<P>];
+}
+
+pub trait DynamicTokenPairDecoder: TokenPairKind {
+    fn decode(
+        payload: &ArgsBuffer,
+        offset: &mut usize,
+        len: usize,
+    ) -> Result<Self::IndexPair, GoblinError>;
+}
+
+impl DynamicTokenPairDecoder for TokenPair<DynamicIndex, Pair<ETH, ERC20>> {
+    fn decode(
+        payload: &ArgsBuffer,
+        offset: &mut usize,
+        len: usize,
+    ) -> Result<Self::IndexPair, GoblinError> {
+        let byte_quote = payload.decode::<u8>(offset, len)?;
+        DynamicIndex::decode(byte_quote)
+    }
+}
+
+impl DynamicTokenPairDecoder for TokenPair<DynamicIndex, Pair<ERC20, ETH>> {
+    fn decode(
+        payload: &ArgsBuffer,
+        offset: &mut usize,
+        len: usize,
+    ) -> Result<Self::IndexPair, GoblinError> {
+        let byte_base = payload.decode::<u8>(offset, len)?;
+        DynamicIndex::decode(byte_base)
+    }
+}
+
+impl DynamicTokenPairDecoder for TokenPair<DynamicIndex, Pair<ERC20, ERC20>> {
+    fn decode(
+        payload: &ArgsBuffer,
+        offset: &mut usize,
+        len: usize,
+    ) -> Result<Self::IndexPair, GoblinError> {
+        let byte_base = payload.decode::<u8>(offset, len)?;
+        let byte_quote = payload.decode::<u8>(offset, len)?;
+
+        // Ensure that token indices are different
+        require!(byte_base != byte_quote, GoblinError::InvalidTokenPair);
+
+        let base_index = DynamicIndex::decode(byte_base)?;
+        let quote_index = DynamicIndex::decode(byte_quote)?;
+
+        Ok(Pair {
+            base: base_index,
+            quote: quote_index,
+        })
+    }
 }

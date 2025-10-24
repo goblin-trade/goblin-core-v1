@@ -30,6 +30,7 @@ pub enum GoblinError {
     InvalidTokenPairType = 26,
     InvalidTransferAction = 27,
     InvalidHardcodedMarket = 28,
+    InvalidHardcodedTokenIndex = 29,
 }
 
 impl GoblinError {

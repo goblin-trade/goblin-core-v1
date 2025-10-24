@@ -4,9 +4,9 @@
 use crate::{
     input_processor::{Args, ArgsDecoder},
     instructions::ix_take,
-    markets::{HardcodedMarket, MarketHeader},
+    markets::{DynamicMarket, HardcodedMarket, MarketHeader},
     settlement::{MakerBalanceUpdates, MarketMakerDeltas, SenderBalanceUpdates, SenderDelta},
-    state::{MarketKey, MarketState, SlotState},
+    state::{MarketState, SlotState},
     tokens::{
         DynamicIndex, HardcodedDecoder, HardcodedToken, MarketVariant, TokenIndex, TokenPair,
         TokenPairDecoder, ERC20, ETH,
@@ -78,14 +78,38 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
                 )?;
             }
 
-            <TokenPair<TokenIndex<HardcodedToken>, Pair<ERC20, ERC20>>>::DISCRIMINATOR => {}
+            <TokenPair<TokenIndex<HardcodedToken>, Pair<ERC20, ERC20>>>::DISCRIMINATOR => {
+                let market = HardcodedMarket::<Pair<ERC20, ERC20>>::decode(
+                    args_buffer.as_ref(),
+                    &mut args.offset,
+                    len,
+                )?;
+            }
 
             // Dynamic markets
-            <TokenPair<DynamicIndex, Pair<ETH, ERC20>>>::DISCRIMINATOR => {}
+            <TokenPair<DynamicIndex, Pair<ETH, ERC20>>>::DISCRIMINATOR => {
+                let market = DynamicMarket::<Pair<ETH, ERC20>>::decode(
+                    args_buffer.as_ref(),
+                    &mut args.offset,
+                    len,
+                )?;
+            }
 
-            <TokenPair<DynamicIndex, Pair<ERC20, ETH>>>::DISCRIMINATOR => {}
+            <TokenPair<DynamicIndex, Pair<ERC20, ETH>>>::DISCRIMINATOR => {
+                let market = DynamicMarket::<Pair<ERC20, ETH>>::decode(
+                    args_buffer.as_ref(),
+                    &mut args.offset,
+                    len,
+                )?;
+            }
 
-            <TokenPair<DynamicIndex, Pair<ERC20, ERC20>>>::DISCRIMINATOR => {}
+            <TokenPair<DynamicIndex, Pair<ERC20, ERC20>>>::DISCRIMINATOR => {
+                let market = DynamicMarket::<Pair<ERC20, ERC20>>::decode(
+                    args_buffer.as_ref(),
+                    &mut args.offset,
+                    len,
+                )?;
+            }
 
             _ => {}
         }
