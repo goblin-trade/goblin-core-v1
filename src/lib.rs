@@ -2,7 +2,7 @@
 #![cfg_attr(not(test), no_main)]
 
 use crate::{
-    input_processor::{Args, ArgsDecoder},
+    input_processor::{Args, ArgsDecoder, Decodable},
     instructions::ix_take,
     markets::{DynamicMarket, HardcodedMarket, MarketHeader},
     settlement::{MakerBalanceUpdates, MarketMakerDeltas, SenderBalanceUpdates, SenderDelta},

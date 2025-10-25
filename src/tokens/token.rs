@@ -89,7 +89,7 @@ impl DynamicIndex {
     /// Convention:
     /// - If the MSB (bit 7) is 0 → Hardcoded token index (0–127)
     /// - If the MSB (bit 7) is 1 → Custom token index (0–127, but stored as 128–255)
-    pub fn decode(byte: u8) -> Result<Self, GoblinError> {
+    pub fn new(byte: u8) -> Result<Self, GoblinError> {
         const CUSTOM_FLAG: u8 = 0b1000_0000;
         if (byte & CUSTOM_FLAG) == 0 {
             // Hardcoded token

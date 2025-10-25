@@ -2,7 +2,7 @@ use core::marker::PhantomData;
 
 use crate::{
     goblin_error::GoblinError,
-    input_processor::{ArgsBuffer, ArgsDecoder},
+    input_processor::{ArgsBuffer, ArgsDecoder, Decodable},
     markets::HardcodedMarket,
     require,
     tokens::{DynamicIndex, HardcodedToken, TokenIndex},
@@ -85,6 +85,7 @@ where
     const DISCRIMINATOR: u8 = M::DISCRIMINATOR | (P::DISCRIMINATOR << 1);
 }
 
+/// Map each PairShape to a hardcoded market list
 pub trait HardcodedDecoder<P: PairShape + 'static>
 where
     TokenPair<TokenIndex<HardcodedToken>, P>: TokenPairKind,
@@ -92,50 +93,43 @@ where
     const HARDCODED_MARKET_LIST: &'static [HardcodedMarket<P>];
 }
 
-pub trait DynamicTokenPairDecoder: TokenPairKind {
-    fn decode(
-        payload: &ArgsBuffer,
-        offset: &mut usize,
-        len: usize,
-    ) -> Result<Self::IndexPair, GoblinError>;
-}
+// Impls to decode dynamic token pairs
 
-impl DynamicTokenPairDecoder for TokenPair<DynamicIndex, Pair<ETH, ERC20>> {
+impl Decodable<<Self as TokenPairKind>::IndexPair> for TokenPair<DynamicIndex, Pair<ETH, ERC20>> {
     fn decode(
         payload: &ArgsBuffer,
         offset: &mut usize,
         len: usize,
-    ) -> Result<Self::IndexPair, GoblinError> {
+    ) -> Result<<Self as TokenPairKind>::IndexPair, GoblinError> {
         let byte_quote = payload.decode::<u8>(offset, len)?;
-        DynamicIndex::decode(byte_quote)
+        DynamicIndex::new(byte_quote)
     }
 }
 
-impl DynamicTokenPairDecoder for TokenPair<DynamicIndex, Pair<ERC20, ETH>> {
+impl Decodable<<Self as TokenPairKind>::IndexPair> for TokenPair<DynamicIndex, Pair<ERC20, ETH>> {
     fn decode(
         payload: &ArgsBuffer,
         offset: &mut usize,
         len: usize,
-    ) -> Result<Self::IndexPair, GoblinError> {
-        let byte_base = payload.decode::<u8>(offset, len)?;
-        DynamicIndex::decode(byte_base)
+    ) -> Result<<Self as TokenPairKind>::IndexPair, GoblinError> {
+        let byte_quote = payload.decode::<u8>(offset, len)?;
+        DynamicIndex::new(byte_quote)
     }
 }
 
-impl DynamicTokenPairDecoder for TokenPair<DynamicIndex, Pair<ERC20, ERC20>> {
+impl Decodable<<Self as TokenPairKind>::IndexPair> for TokenPair<DynamicIndex, Pair<ERC20, ERC20>> {
     fn decode(
         payload: &ArgsBuffer,
         offset: &mut usize,
         len: usize,
-    ) -> Result<Self::IndexPair, GoblinError> {
+    ) -> Result<<Self as TokenPairKind>::IndexPair, GoblinError> {
         let byte_base = payload.decode::<u8>(offset, len)?;
         let byte_quote = payload.decode::<u8>(offset, len)?;
 
-        // Ensure that token indices are different
         require!(byte_base != byte_quote, GoblinError::InvalidTokenPair);
 
-        let base_index = DynamicIndex::decode(byte_base)?;
-        let quote_index = DynamicIndex::decode(byte_quote)?;
+        let base_index = DynamicIndex::new(byte_base)?;
+        let quote_index = DynamicIndex::new(byte_quote)?;
 
         Ok(Pair {
             base: base_index,

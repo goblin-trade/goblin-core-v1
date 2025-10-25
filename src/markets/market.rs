@@ -1,38 +1,16 @@
 use crate::{
     goblin_error::GoblinError,
-    input_processor::{ArgsBuffer, ArgsDecoder},
-    quantities::{BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick},
+    input_processor::{ArgsBuffer, ArgsDecoder, Decodable},
+    quantities::QuoteLotsPerBaseUnitPerTick,
     require,
     tokens::{
-        DynamicIndex, DynamicTokenPairDecoder, HardcodedDecoder, HardcodedToken, MarketVariant,
-        PairShape, TokenIndex, TokenPair, TokenPairKind,
+        DynamicIndex, HardcodedDecoder, HardcodedToken, MarketVariant, PairShape, TokenIndex,
+        TokenPair, TokenPairKind,
     },
     types::{Base, LegMarker, Pair, Quote},
 };
 
 pub type LotSizePair = Pair<<Base as LegMarker>::LotsPerUnit, <Quote as LegMarker>::LotsPerUnit>;
-
-// impl LotSizePair {
-//     // TODO can we use unsafe transmute?
-//     pub fn decode(
-//         payload: &ArgsBuffer,
-//         offset: &mut usize,
-//         len: usize,
-//     ) -> Result<Self, GoblinError> {
-//         let gg = payload.decode_ref_unchecked::<Self>(offset);
-
-//         let base_lot_size_raw = payload.decode::<u64>(offset, len)?;
-//         let quote_lot_size_raw = payload.decode::<u64>(offset, len)?;
-
-//         let base_lot_size = <Base as LegMarker>::LotsPerUnit::new(base_lot_size_raw);
-//         let quote_lot_size = <Quote as LegMarker>::LotsPerUnit::new(quote_lot_size_raw);
-
-//         Ok(Pair {
-//             base: base_lot_size,
-//             quote: quote_lot_size,
-//         })
-//     }
-// }
 
 pub struct CommonMarket<M: MarketVariant, P: PairShape>
 where
@@ -64,64 +42,49 @@ where
     pub keccak_hash: [u8; 32],
 }
 
-impl<P> HardcodedMarket<P>
+/// A market whose token indices are dynamically specified at runtime.
+/// Works with any token pair shape (ETH–ERC20, ERC20–ETH, ERC20–ERC20).
+pub type DynamicMarket<P: PairShape> = CommonMarket<DynamicIndex, P>;
+
+/// `Decodable` impl for HardcodedMarket<P>
+impl<P> Decodable<&'static HardcodedMarket<P>> for HardcodedMarket<P>
 where
     P: PairShape + 'static,
     TokenPair<TokenIndex<HardcodedToken>, P>: TokenPairKind,
     Self: HardcodedDecoder<P>,
 {
-    pub fn decode(
+    fn decode(
         payload: &ArgsBuffer,
         offset: &mut usize,
         len: usize,
-    ) -> Result<&'static Self, GoblinError> {
+    ) -> Result<&'static HardcodedMarket<P>, GoblinError> {
         let market_index_raw = payload.decode::<u8>(offset, len)? as usize;
 
-        let markets = <Self as HardcodedDecoder<P>>::HARDCODED_MARKET_LIST;
-
-        let market = markets
+        Self::HARDCODED_MARKET_LIST
             .get(market_index_raw)
-            .ok_or(GoblinError::InvalidHardcodedMarket)?;
-
-        Ok(market)
+            .ok_or(GoblinError::InvalidHardcodedMarket)
     }
 }
 
-// impl<P: PairShape> HardcodedMarket<P>
-// where
-//     TokenPair<TokenIndex<HardcodedToken>, P>: TokenPairKind,
-// {
-//     pub fn decode(payload: &ArgsBuffer, offset: &mut usize, len: usize) -> Result<(), GoblinError> {
-//         let market_index_raw = payload.decode::<u8>(offset, len)? as usize;
-
-//         let markets = Self::HARDCODED_MARKET_LIST;
-
-//         Ok(())
-//     }
-// }
-
-/// A market whose token indices are dynamically specified at runtime.
-/// Works with any token pair shape (ETH–ERC20, ERC20–ETH, ERC20–ERC20).
-pub type DynamicMarket<P: PairShape> = CommonMarket<DynamicIndex, P>;
-
-impl<P> DynamicMarket<P>
+/// Decodable implementation for dynamic markets
+impl<P> Decodable<DynamicMarket<P>> for DynamicMarket<P>
 where
     P: PairShape,
-    TokenPair<DynamicIndex, P>: TokenPairKind + DynamicTokenPairDecoder,
+    TokenPair<DynamicIndex, P>:
+        TokenPairKind + Decodable<<TokenPair<DynamicIndex, P> as TokenPairKind>::IndexPair>,
 {
-    pub fn decode(
+    fn decode(
         payload: &ArgsBuffer,
         offset: &mut usize,
         len: usize,
-    ) -> Result<Self, GoblinError> {
+    ) -> Result<DynamicMarket<P>, GoblinError> {
         let token_index_pair = TokenPair::<DynamicIndex, P>::decode(payload, offset, len)?;
 
-        // 2 bytes for lot sizes, 1 for tick size
         require!(len >= *offset + 3, GoblinError::InvalidPayload);
         let lot_size_pair = *payload.decode_ref_unchecked::<LotSizePair>(offset);
         let tick_size = *payload.decode_ref_unchecked::<QuoteLotsPerBaseUnitPerTick>(offset);
 
-        Ok(Self {
+        Ok(DynamicMarket::<P> {
             token_index_pair,
             lot_size_pair,
             tick_size,
