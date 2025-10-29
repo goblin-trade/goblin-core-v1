@@ -54,57 +54,15 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
         match market_header.market_type_raw {
             // Hardcoded markets
             <TokenPair<TokenIndex<HardcodedToken>, Pair<ETH, ERC20>>>::DISCRIMINATOR => {
-                // TODO cleanup- generics should not duplicate
-                //
-                // This means we need a generic free function.
-                // - decode() will give struct
-                // - hash() gives hash: for custom markets, we must map token index to address
-                // from array. Its hash() function has different arguments. Better to have
-                // implementations on MarketType instead?
-                //
-                // Cleaner approach
-                // - Decode here
-                // - Pass market as arg to process()
-                // - The process function updates deltas. We don't need to access addresses
-                // in this stage. Hardcoded markets have no need of passing address array,
-                // but custom does.
-                HardcodedMarket::<Pair<ETH, ERC20>>::process::<
-                    TokenIndex<HardcodedToken>,
-                    Pair<ETH, ERC20>,
-                >(args_buffer.as_ref(), &mut args.offset, len)?;
-
-                // GoblinMarket::process::<TokenIndex<HardcodedToken>, Pair<ETH, ERC20>>(
-                //     args_buffer.as_ref(),
-                //     &mut args.offset,
-                //     len,
-                // )?;
-
-                // HardcodedMarket::<Pair<ETH, ERC20>>::process(
-                //     args_buffer.as_ref(),
-                //     &mut args.offset,
-                //     len,
-                // )?;
-
-                // let market = HardcodedMarket::<Pair<ETH, ERC20>>::decode(
-                //     args_buffer.as_ref(),
-                //     &mut args.offset,
-                //     len,
-                // )?;
-                // Obtain hash- hardcoded, no need to compute
-                // Read market state
-
-                // MarketKey previously used the ValidatedTokenPair enum to handle
-                // the 3 shapes. We need dedicated MarketKey type for each TokenPair variant
-                // Hardcoded markets have the key hardcoded.
-                //
-                // * However for dynamic markets, each type will use a different discriminator.
-                // * Optionally add TokenPair as a generic in MarketState with PhantomData.
-                // The type system will then map each key type to its struct correctly.
-                // let mut market_state = MarketState::load(&market_key);
+                HardcodedMarket::<Pair<ETH, ERC20>>::process(
+                    args_buffer.as_ref(),
+                    &mut args.offset,
+                    len,
+                )?;
             }
 
             <TokenPair<TokenIndex<HardcodedToken>, Pair<ERC20, ETH>>>::DISCRIMINATOR => {
-                let market = HardcodedMarket::<Pair<ERC20, ETH>>::decode(
+                HardcodedMarket::<Pair<ERC20, ETH>>::process(
                     args_buffer.as_ref(),
                     &mut args.offset,
                     len,
@@ -112,7 +70,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
             }
 
             <TokenPair<TokenIndex<HardcodedToken>, Pair<ERC20, ERC20>>>::DISCRIMINATOR => {
-                let market = HardcodedMarket::<Pair<ERC20, ERC20>>::decode(
+                HardcodedMarket::<Pair<ERC20, ERC20>>::process(
                     args_buffer.as_ref(),
                     &mut args.offset,
                     len,
@@ -121,26 +79,29 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
 
             // Dynamic markets
             <TokenPair<DynamicIndex, Pair<ETH, ERC20>>>::DISCRIMINATOR => {
-                let market = DynamicMarket::<Pair<ETH, ERC20>>::decode(
+                DynamicMarket::<Pair<ETH, ERC20>>::process(
                     args_buffer.as_ref(),
                     &mut args.offset,
                     len,
+                    args.custom_erc20_list,
                 )?;
             }
 
             <TokenPair<DynamicIndex, Pair<ERC20, ETH>>>::DISCRIMINATOR => {
-                let market = DynamicMarket::<Pair<ERC20, ETH>>::decode(
+                DynamicMarket::<Pair<ERC20, ETH>>::process(
                     args_buffer.as_ref(),
                     &mut args.offset,
                     len,
+                    args.custom_erc20_list,
                 )?;
             }
 
             <TokenPair<DynamicIndex, Pair<ERC20, ERC20>>>::DISCRIMINATOR => {
-                let market = DynamicMarket::<Pair<ERC20, ERC20>>::decode(
+                DynamicMarket::<Pair<ERC20, ERC20>>::process(
                     args_buffer.as_ref(),
                     &mut args.offset,
                     len,
+                    args.custom_erc20_list,
                 )?;
             }
 

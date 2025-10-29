@@ -3,11 +3,12 @@ use crate::{
     input_processor::{ArgsBuffer, ArgsDecoder, Decodable},
     quantities::QuoteLotsPerBaseUnitPerTick,
     require,
+    state::{DynamicMarketHasher, DynamicMarketKey, HardcodedMarketKey, MarketState, SlotState},
     tokens::{
-        DynamicIndex, HardcodedMarketList, HardcodedToken, MarketVariant, PairShape, TokenIndex,
-        TokenPair, TokenPairKind,
+        CustomToken, DynamicIndex, HardcodedMarketList, HardcodedToken, MarketVariant, PairShape,
+        TokenIndex, TokenPair, TokenPairKind,
     },
-    types::{Base, LegMarker, Pair, Quote},
+    types::{Address, Base, LegMarker, Pair, Quote},
 };
 
 pub type LotSizePair = Pair<<Base as LegMarker>::LotsPerUnit, <Quote as LegMarker>::LotsPerUnit>;
@@ -31,21 +32,61 @@ where
 ///
 /// * All token indices in hardcoded markets are hardcoded.
 /// * It has 3 variants corresponding to the 3 pair shapes
-pub struct HardcodedMarket<P: PairShape>
+pub struct HardcodedMarket<P>
 where
+    P: PairShape,
     TokenPair<TokenIndex<HardcodedToken>, P>: TokenPairKind,
 {
     /// The common market configuration (lot sizes, tick size, token indices).
     pub common: CommonMarket<TokenIndex<HardcodedToken>, P>,
 
-    /// The keccak256 hash of this market’s identifier.
-    /// TODO use custom type instead of [u8; 32]
-    pub keccak_hash: [u8; 32],
+    /// The hardcoded keccak256 hash.
+    pub keccak_hash: HardcodedMarketKey<P>,
+}
+
+impl<P> HardcodedMarket<P>
+where
+    P: PairShape + 'static,
+    TokenPair<TokenIndex<HardcodedToken>, P>: TokenPairKind,
+    Self: HardcodedMarketList<P>,
+{
+    pub fn process(
+        payload: &ArgsBuffer,
+        offset: &mut usize,
+        len: usize,
+    ) -> Result<(), GoblinError> {
+        let market = Self::decode(payload, offset, len)?;
+        let market_state = MarketState::load(&market.keccak_hash);
+
+        Ok(())
+    }
 }
 
 /// A market whose token indices are dynamically specified at runtime.
 /// Works with any token pair shape (ETH–ERC20, ERC20–ETH, ERC20–ERC20).
 pub type DynamicMarket<P: PairShape> = CommonMarket<DynamicIndex, P>;
+
+impl<P> DynamicMarket<P>
+where
+    P: PairShape,
+    TokenPair<DynamicIndex, P>:
+        TokenPairKind + Decodable<<TokenPair<DynamicIndex, P> as TokenPairKind>::IndexPair>,
+    DynamicMarketKey<P>: DynamicMarketHasher<P>,
+{
+    pub fn process(
+        payload: &ArgsBuffer,
+        offset: &mut usize,
+        len: usize,
+        custom_erc20_list: &[CustomToken],
+    ) -> Result<(), GoblinError> {
+        let market = Self::decode(payload, offset, len)?;
+        let market_key = DynamicMarketKey::hash(&market, custom_erc20_list);
+
+        Ok(())
+    }
+}
+
+// Decoding traits
 
 /// `Decodable` impl for HardcodedMarket<P>
 impl<P> Decodable<&'static HardcodedMarket<P>> for HardcodedMarket<P>

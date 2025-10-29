@@ -65,13 +65,17 @@ impl<T: ERC20TokenTrait> TokenIndex<T> {
 }
 
 impl TokenIndex<HardcodedToken> {
-    fn get_token(&self) -> Option<&HardcodedToken> {
-        HARDCODED_TOKENS.get(self.inner as usize)
+    // Return the hardcoded token address corresponding to this index
+    //
+    // Externally ensure that the token index is valid. This function does
+    // not check for bounds.
+    pub fn get_token(&self) -> &HardcodedToken {
+        unsafe { HARDCODED_TOKENS.get_unchecked(self.inner as usize) }
     }
 }
 
 impl TokenIndex<CustomToken> {
-    fn get_token<'a>(&self, custom_erc20_list: &'a [CustomToken]) -> Option<&'a CustomToken> {
+    pub fn get_token<'a>(&self, custom_erc20_list: &'a [CustomToken]) -> Option<&'a CustomToken> {
         custom_erc20_list.get(self.inner as usize)
     }
 }
@@ -85,6 +89,8 @@ pub enum DynamicIndex {
 
 impl DynamicIndex {
     /// Decode a token index byte into either a hardcoded or custom token index.
+    /// Hardcoded token indices are validated. Therefore we can do `TokenIndex<HardcodedToken>::get_token()`
+    /// without safety checks.
     ///
     /// Convention:
     /// - If the MSB (bit 7) is 0 → Hardcoded token index (0–127)
@@ -105,5 +111,20 @@ impl DynamicIndex {
             let index = byte & !CUSTOM_FLAG; // remove the flag
             Ok(Self::Custom(TokenIndex::new(index)))
         }
+    }
+
+    pub fn address_bytes(&self, custom_erc20_list: &[CustomToken]) -> Option<[u8; 20]> {
+        let address = match self {
+            DynamicIndex::Hardcoded(hardcoded_token_index) => {
+                let token = hardcoded_token_index.get_token();
+                token.address
+            }
+            DynamicIndex::Custom(custom_token_index) => {
+                let token = custom_token_index.get_token(custom_erc20_list)?;
+                token.address
+            }
+        };
+
+        Some(address)
     }
 }

@@ -5,8 +5,8 @@ use crate::{
     input_processor::{ArgsBuffer, ArgsDecoder, Decodable},
     markets::HardcodedMarket,
     require,
-    state::{CustomMarketKey, HardcodedMarketKey, SlotKey},
-    tokens::{DynamicIndex, HardcodedToken, TokenIndex},
+    state::{DynamicMarketKey, HardcodedMarketKey, SlotKey},
+    tokens::{CustomToken, DynamicIndex, HardcodedToken, TokenIndex},
     types::Pair,
 };
 
@@ -39,7 +39,7 @@ impl MarketVariant for TokenIndex<HardcodedToken> {
 impl MarketVariant for DynamicIndex {
     const DISCRIMINATOR: u8 = 1;
 
-    type MarketKey<P: PairShape> = CustomMarketKey<P>;
+    type MarketKey<P: PairShape> = DynamicMarketKey<P>;
 }
 
 /// Marker type for ETH within a token pair
@@ -83,6 +83,12 @@ impl<M: MarketVariant> TokenPairKind for TokenPair<M, Pair<ERC20, ETH>> {
 
 impl<M: MarketVariant> TokenPairKind for TokenPair<M, Pair<ERC20, ERC20>> {
     type IndexPair = Pair<M, M>;
+}
+
+impl TokenPair<DynamicIndex, Pair<ERC20, ERC20>> {
+    pub fn address_bytes(index_pair: <Self as TokenPairKind>::IndexPair) -> [u8; 40] {
+        [0u8; 40]
+    }
 }
 
 pub trait TokenPairDecoder {

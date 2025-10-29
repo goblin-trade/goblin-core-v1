@@ -8,6 +8,7 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::{ArgsBuffer, ArgsDecoder, Header},
+    tokens::CustomToken,
     types::Address,
 };
 
@@ -19,7 +20,7 @@ pub struct Args<'a> {
     pub recipient: Option<&'a Address>,
 
     /// Addresses of custom erc20 tokens to use
-    pub custom_erc20_list: &'a [Address],
+    pub custom_erc20_list: &'a [CustomToken],
 
     pub offset: usize,
 }
@@ -34,7 +35,7 @@ impl<'a> Args<'a> {
             .then(|| payload.decode_ref_unchecked::<Address>(&mut offset));
 
         let custom_erc20_list =
-            payload.decode_slice_unchecked::<Address>(&mut offset, header.custom_erc20_count);
+            payload.decode_slice_unchecked::<CustomToken>(&mut offset, header.custom_erc20_count);
 
         Ok(Args {
             header,

@@ -1,6 +1,7 @@
 use crate::{
     markets::{CommonMarket, HardcodedMarket},
     quantities::{BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit},
+    state::HardcodedMarketKey,
     tokens::{HardcodedMarketList, HardcodedToken, TokenIndex, ERC20, ETH},
     types::Pair,
 };
@@ -16,7 +17,7 @@ impl HardcodedMarketList<Pair<ETH, ERC20>> for HardcodedMarket<Pair<ETH, ERC20>>
                 },
                 tick_size: QuoteLotsPerBaseUnitPerTick::new(1),
             },
-            keccak_hash: [0u8; 32],
+            keccak_hash: HardcodedMarketKey::new([0u8; 32]),
         }];
 }
 
@@ -31,7 +32,7 @@ impl HardcodedMarketList<Pair<ERC20, ETH>> for HardcodedMarket<Pair<ERC20, ETH>>
                 },
                 tick_size: QuoteLotsPerBaseUnitPerTick::new(1),
             },
-            keccak_hash: [0u8; 32],
+            keccak_hash: HardcodedMarketKey::new([0u8; 32]),
         }];
 }
 
@@ -49,6 +50,6 @@ impl HardcodedMarketList<Pair<ERC20, ERC20>> for HardcodedMarket<Pair<ERC20, ERC
                 },
                 tick_size: QuoteLotsPerBaseUnitPerTick::new(1),
             },
-            keccak_hash: [0u8; 32],
+            keccak_hash: HardcodedMarketKey::new([0u8; 32]),
         }];
 }
