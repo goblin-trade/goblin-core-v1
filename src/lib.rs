@@ -4,11 +4,11 @@
 use crate::{
     input_processor::{Args, ArgsDecoder, Decodable},
     instructions::ix_take,
-    markets::{DynamicMarket, HardcodedMarket, MarketHeader},
+    markets::{DynamicMarket, GoblinMarket, HardcodedMarket, MarketHeader},
     settlement::{MakerBalanceUpdates, MarketMakerDeltas, SenderBalanceUpdates, SenderDelta},
     state::{MarketState, SlotState},
     tokens::{
-        DynamicIndex, HardcodedDecoder, HardcodedToken, MarketVariant, TokenIndex, TokenPair,
+        DynamicIndex, HardcodedMarketList, HardcodedToken, MarketVariant, TokenIndex, TokenPair,
         TokenPairDecoder, ERC20, ETH,
     },
     types::{Base, Pair, Quote},
@@ -54,11 +54,44 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
         match market_header.market_type_raw {
             // Hardcoded markets
             <TokenPair<TokenIndex<HardcodedToken>, Pair<ETH, ERC20>>>::DISCRIMINATOR => {
-                let market = HardcodedMarket::<Pair<ETH, ERC20>>::decode(
-                    args_buffer.as_ref(),
-                    &mut args.offset,
-                    len,
-                )?;
+                // TODO cleanup- generics should not duplicate
+                //
+                // This means we need a generic free function.
+                // - decode() will give struct
+                // - hash() gives hash: for custom markets, we must map token index to address
+                // from array. Its hash() function has different arguments. Better to have
+                // implementations on MarketType instead?
+                //
+                // Cleaner approach
+                // - Decode here
+                // - Pass market as arg to process()
+                // - The process function updates deltas. We don't need to access addresses
+                // in this stage. Hardcoded markets have no need of passing address array,
+                // but custom does.
+                HardcodedMarket::<Pair<ETH, ERC20>>::process::<
+                    TokenIndex<HardcodedToken>,
+                    Pair<ETH, ERC20>,
+                >(args_buffer.as_ref(), &mut args.offset, len)?;
+
+                // GoblinMarket::process::<TokenIndex<HardcodedToken>, Pair<ETH, ERC20>>(
+                //     args_buffer.as_ref(),
+                //     &mut args.offset,
+                //     len,
+                // )?;
+
+                // HardcodedMarket::<Pair<ETH, ERC20>>::process(
+                //     args_buffer.as_ref(),
+                //     &mut args.offset,
+                //     len,
+                // )?;
+
+                // let market = HardcodedMarket::<Pair<ETH, ERC20>>::decode(
+                //     args_buffer.as_ref(),
+                //     &mut args.offset,
+                //     len,
+                // )?;
+                // Obtain hash- hardcoded, no need to compute
+                // Read market state
 
                 // MarketKey previously used the ValidatedTokenPair enum to handle
                 // the 3 shapes. We need dedicated MarketKey type for each TokenPair variant

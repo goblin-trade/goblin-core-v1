@@ -4,7 +4,7 @@ use crate::{
     quantities::QuoteLotsPerBaseUnitPerTick,
     require,
     tokens::{
-        DynamicIndex, HardcodedDecoder, HardcodedToken, MarketVariant, PairShape, TokenIndex,
+        DynamicIndex, HardcodedMarketList, HardcodedToken, MarketVariant, PairShape, TokenIndex,
         TokenPair, TokenPairKind,
     },
     types::{Base, LegMarker, Pair, Quote},
@@ -39,6 +39,7 @@ where
     pub common: CommonMarket<TokenIndex<HardcodedToken>, P>,
 
     /// The keccak256 hash of this market’s identifier.
+    /// TODO use custom type instead of [u8; 32]
     pub keccak_hash: [u8; 32],
 }
 
@@ -51,7 +52,7 @@ impl<P> Decodable<&'static HardcodedMarket<P>> for HardcodedMarket<P>
 where
     P: PairShape + 'static,
     TokenPair<TokenIndex<HardcodedToken>, P>: TokenPairKind,
-    Self: HardcodedDecoder<P>,
+    Self: HardcodedMarketList<P>,
 {
     fn decode(
         payload: &ArgsBuffer,
@@ -91,3 +92,35 @@ where
         })
     }
 }
+
+// // Confusion- we could use an overarching master trait. But sometimes
+// // the stucts themselves contain the generics
+// pub trait GoblinMarket: Sized {
+//     // fn hash(&self) -> &[u8; 32];
+
+//     fn process<M: MarketVariant, P: PairShape>(
+//         payload: &ArgsBuffer,
+//         offset: &mut usize,
+//         len: usize,
+//     ) -> Result<(), GoblinError> {
+//         // let market = Self::decode(payload, offset, len)?;
+
+//         Ok(())
+//     }
+// }
+
+// impl<P> GoblinMarket for HardcodedMarket<P>
+// where
+//     P: PairShape,
+//     TokenPair<TokenIndex<HardcodedToken>, P>: TokenPairKind,
+//     Self: Sized,
+// {
+//     // // TODO use custom type instead of raw [u8; 32]
+//     // // HardcodedMarketKey and CustomMarketKey.
+//     // //
+//     // // Also they must mirror. Add them as 'SlotKey' types on Hardcoded and custom marker traits
+//     // //
+//     // fn hash(&self) -> &[u8; 32] {
+//     //     &self.keccak_hash
+//     // }
+// }

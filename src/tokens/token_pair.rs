@@ -5,6 +5,7 @@ use crate::{
     input_processor::{ArgsBuffer, ArgsDecoder, Decodable},
     markets::HardcodedMarket,
     require,
+    state::{CustomMarketKey, HardcodedMarketKey, SlotKey},
     tokens::{DynamicIndex, HardcodedToken, TokenIndex},
     types::Pair,
 };
@@ -18,15 +19,27 @@ use crate::{
 /// TokenIndex<HardcodedToken> and DynamicIndex directly
 pub trait MarketVariant {
     const DISCRIMINATOR: u8;
+
+    type MarketKey<P: PairShape>: SlotKey;
+
+    // This is the anchor trait, similar to Side
+    // Have a common function process() that will handle instructions, so
+    // we don't have to duplicated code in lib.rs
+    // Should we move the decode part too? Or perhaps we should keep it on GoblinMarket trait
 }
 
 // TokenIndex<HardcodedToken> doubles up as marker for hardcoded markets
 // DynamicIndex doubles up as marker for dynamic markets
 impl MarketVariant for TokenIndex<HardcodedToken> {
     const DISCRIMINATOR: u8 = 0;
+
+    type MarketKey<P: PairShape> = HardcodedMarketKey<P>;
 }
+
 impl MarketVariant for DynamicIndex {
     const DISCRIMINATOR: u8 = 1;
+
+    type MarketKey<P: PairShape> = CustomMarketKey<P>;
 }
 
 /// Marker type for ETH within a token pair
@@ -86,7 +99,7 @@ where
 }
 
 /// Map each PairShape to a hardcoded market list
-pub trait HardcodedDecoder<P: PairShape + 'static>
+pub trait HardcodedMarketList<P: PairShape + 'static>
 where
     TokenPair<TokenIndex<HardcodedToken>, P>: TokenPairKind,
 {

@@ -2,7 +2,7 @@ use core::marker::PhantomData;
 
 use crate::{
     hostio::{self, HostioBuffer},
-    markets::LotSizePair,
+    markets::DynamicMarket,
     quantities::{QuoteLotsPerBaseUnitPerTick, Ticks},
     state::{SlotKey, SlotState},
     tokens::{HardcodedToken, MarketVariant, PairShape, TokenIndex, TokenPair, ERC20, ETH},
@@ -42,7 +42,23 @@ pub struct CustomMarketKey<P: PairShape> {
 
 /// Each PairShape has a custom implementation
 impl CustomMarketKey<Pair<ETH, ERC20>> {
-    pub fn new(token_pair: TokenPair<TokenIndex<HardcodedToken>, Pair<ERC20, ERC20>>) {}
+    const BYTE_SIZE: usize = 20 * 2 + 8 * 3;
+
+    pub fn new(market: DynamicMarket<Pair<ERC20, ERC20>>) {
+        let mut bytes = [0u8; Self::BYTE_SIZE];
+        bytes[0] = Self::DISCRIMINATOR;
+
+        // We need address not index. We can't pass DynamicMarket, instead we need to pass addresses
+        bytes[1..21].copy_from_slice(market.token_index_pair);
+    }
+}
+
+impl<P: PairShape> SlotKey for CustomMarketKey<P> {
+    const DISCRIMINATOR: u8 = P::DISCRIMINATOR;
+
+    fn hash(&self) -> &[u8; 32] {
+        self.hash.as_ref()
+    }
 }
 
 // impl<P: PairShape> CustomMarketKey<P> {

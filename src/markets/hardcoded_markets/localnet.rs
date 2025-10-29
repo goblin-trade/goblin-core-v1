@@ -1,11 +1,11 @@
 use crate::{
     markets::{CommonMarket, HardcodedMarket},
     quantities::{BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit},
-    tokens::{HardcodedDecoder, HardcodedToken, TokenIndex, ERC20, ETH},
+    tokens::{HardcodedMarketList, HardcodedToken, TokenIndex, ERC20, ETH},
     types::Pair,
 };
 
-impl HardcodedDecoder<Pair<ETH, ERC20>> for HardcodedMarket<Pair<ETH, ERC20>> {
+impl HardcodedMarketList<Pair<ETH, ERC20>> for HardcodedMarket<Pair<ETH, ERC20>> {
     const HARDCODED_MARKET_LIST: &'static [HardcodedMarket<Pair<ETH, ERC20>>] =
         &[HardcodedMarket {
             common: CommonMarket {
@@ -20,7 +20,7 @@ impl HardcodedDecoder<Pair<ETH, ERC20>> for HardcodedMarket<Pair<ETH, ERC20>> {
         }];
 }
 
-impl HardcodedDecoder<Pair<ERC20, ETH>> for HardcodedMarket<Pair<ERC20, ETH>> {
+impl HardcodedMarketList<Pair<ERC20, ETH>> for HardcodedMarket<Pair<ERC20, ETH>> {
     const HARDCODED_MARKET_LIST: &'static [HardcodedMarket<Pair<ERC20, ETH>>] =
         &[HardcodedMarket {
             common: CommonMarket {
@@ -35,7 +35,7 @@ impl HardcodedDecoder<Pair<ERC20, ETH>> for HardcodedMarket<Pair<ERC20, ETH>> {
         }];
 }
 
-impl HardcodedDecoder<Pair<ERC20, ERC20>> for HardcodedMarket<Pair<ERC20, ERC20>> {
+impl HardcodedMarketList<Pair<ERC20, ERC20>> for HardcodedMarket<Pair<ERC20, ERC20>> {
     const HARDCODED_MARKET_LIST: &'static [HardcodedMarket<Pair<ERC20, ERC20>>] =
         &[HardcodedMarket {
             common: CommonMarket {
