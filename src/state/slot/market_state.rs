@@ -1,6 +1,7 @@
 use core::marker::PhantomData;
 
 use crate::{
+    goblin_error::GoblinError,
     hostio::{self, HostioBuffer},
     markets::DynamicMarket,
     quantities::{QuoteLotsPerBaseUnitPerTick, Ticks},
@@ -51,7 +52,10 @@ where
 {
     const BYTE_SIZE: usize;
 
-    fn hash(market: &DynamicMarket<P>, custom_erc20_list: &[CustomToken]) -> Option<Self>;
+    fn hash(
+        market: &DynamicMarket<P>,
+        custom_erc20_list: &[CustomToken],
+    ) -> Result<Self, GoblinError>;
 }
 
 impl DynamicMarketHasher<Pair<ETH, ERC20>> for DynamicMarketKey<Pair<ETH, ERC20>> {
@@ -60,7 +64,7 @@ impl DynamicMarketHasher<Pair<ETH, ERC20>> for DynamicMarketKey<Pair<ETH, ERC20>
     fn hash(
         market: &DynamicMarket<Pair<ETH, ERC20>>,
         custom_erc20_list: &[CustomToken],
-    ) -> Option<Self> {
+    ) -> Result<Self, GoblinError> {
         let mut bytes = [0u8; Self::BYTE_SIZE];
         bytes[0] = Self::DISCRIMINATOR;
 
@@ -74,7 +78,7 @@ impl DynamicMarketHasher<Pair<ETH, ERC20>> for DynamicMarketKey<Pair<ETH, ERC20>
 
         let hash = hostio::native_keccak256(bytes.as_slice());
 
-        Some(Self {
+        Ok(Self {
             hash,
             _marker: PhantomData,
         })
@@ -87,7 +91,7 @@ impl DynamicMarketHasher<Pair<ERC20, ETH>> for DynamicMarketKey<Pair<ERC20, ETH>
     fn hash(
         market: &DynamicMarket<Pair<ERC20, ETH>>,
         custom_erc20_list: &[CustomToken],
-    ) -> Option<Self> {
+    ) -> Result<Self, GoblinError> {
         let mut bytes = [0u8; Self::BYTE_SIZE];
         bytes[0] = Self::DISCRIMINATOR;
 
@@ -101,7 +105,7 @@ impl DynamicMarketHasher<Pair<ERC20, ETH>> for DynamicMarketKey<Pair<ERC20, ETH>
 
         let hash = hostio::native_keccak256(bytes.as_slice());
 
-        Some(Self {
+        Ok(Self {
             hash,
             _marker: PhantomData,
         })
@@ -114,7 +118,7 @@ impl DynamicMarketHasher<Pair<ERC20, ERC20>> for DynamicMarketKey<Pair<ERC20, ER
     fn hash(
         market: &DynamicMarket<Pair<ERC20, ERC20>>,
         custom_erc20_list: &[CustomToken],
-    ) -> Option<Self> {
+    ) -> Result<Self, GoblinError> {
         let mut bytes = [0u8; Self::BYTE_SIZE];
         bytes[0] = Self::DISCRIMINATOR;
 
@@ -137,7 +141,7 @@ impl DynamicMarketHasher<Pair<ERC20, ERC20>> for DynamicMarketKey<Pair<ERC20, ER
 
         let hash = hostio::native_keccak256(bytes.as_slice());
 
-        Some(Self {
+        Ok(Self {
             hash,
             _marker: PhantomData,
         })
@@ -163,3 +167,4 @@ pub struct MarketState<M: MarketVariant, P: PairShape> {
 }
 
 impl<P: PairShape> SlotState<HardcodedMarketKey<P>> for MarketState<TokenIndex<HardcodedToken>, P> {}
+impl<P: PairShape> SlotState<DynamicMarketKey<P>> for MarketState<DynamicIndex, P> {}

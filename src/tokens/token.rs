@@ -113,18 +113,23 @@ impl DynamicIndex {
         }
     }
 
-    pub fn address_bytes(&self, custom_erc20_list: &[CustomToken]) -> Option<[u8; 20]> {
+    pub fn address_bytes(
+        &self,
+        custom_erc20_list: &[CustomToken],
+    ) -> Result<[u8; 20], GoblinError> {
         let address = match self {
             DynamicIndex::Hardcoded(hardcoded_token_index) => {
                 let token = hardcoded_token_index.get_token();
                 token.address
             }
             DynamicIndex::Custom(custom_token_index) => {
-                let token = custom_token_index.get_token(custom_erc20_list)?;
+                let token = custom_token_index
+                    .get_token(custom_erc20_list)
+                    .ok_or(GoblinError::InvalidCustomTokenIndex)?;
                 token.address
             }
         };
 
-        Some(address)
+        Ok(address)
     }
 }

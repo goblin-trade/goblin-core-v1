@@ -80,7 +80,8 @@ where
         custom_erc20_list: &[CustomToken],
     ) -> Result<(), GoblinError> {
         let market = Self::decode(payload, offset, len)?;
-        let market_key = DynamicMarketKey::hash(&market, custom_erc20_list);
+        let market_key = DynamicMarketKey::hash(&market, custom_erc20_list)?;
+        let market_state = MarketState::load(&market_key);
 
         Ok(())
     }
