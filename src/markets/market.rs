@@ -5,8 +5,8 @@ use crate::{
     require,
     state::{DynamicMarketHasher, DynamicMarketKey, HardcodedMarketKey, MarketState, SlotState},
     tokens::{
-        CustomToken, DynamicIndex, HardcodedMarketList, HardcodedToken, MarketVariant, PairShape,
-        TokenIndex, TokenPair, TokenPairKind,
+        CustomToken, DynamicIndex, HardcodedIndex, HardcodedMarketList, HardcodedToken,
+        MarketVariant, PairShape, TokenIndex, TokenPair, TokenPairKind,
     },
     types::{Address, Base, LegMarker, Pair, Quote},
 };
@@ -50,6 +50,8 @@ where
     TokenPair<TokenIndex<HardcodedToken>, P>: TokenPairKind,
     Self: HardcodedMarketList<P>,
 {
+    pub const DISCRIMINATOR: u8 = HardcodedIndex::DISCRIMINATOR | (P::DISCRIMINATOR << 1);
+
     pub fn process(
         payload: &ArgsBuffer,
         offset: &mut usize,
@@ -73,6 +75,8 @@ where
         TokenPairKind + Decodable<<TokenPair<DynamicIndex, P> as TokenPairKind>::IndexPair>,
     DynamicMarketKey<P>: DynamicMarketHasher<P>,
 {
+    pub const DISCRIMINATOR: u8 = DynamicIndex::DISCRIMINATOR | (P::DISCRIMINATOR << 1);
+
     pub fn process(
         payload: &ArgsBuffer,
         offset: &mut usize,

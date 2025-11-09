@@ -80,6 +80,9 @@ impl TokenIndex<CustomToken> {
     }
 }
 
+// Short alias
+pub type HardcodedIndex = TokenIndex<HardcodedToken>;
+
 /// Unifying type to lookup ERC20 token address by index
 #[derive(Clone, Copy)]
 pub enum DynamicIndex {

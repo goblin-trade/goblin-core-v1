@@ -8,8 +8,8 @@ use crate::{
     settlement::{MakerBalanceUpdates, MarketMakerDeltas, SenderBalanceUpdates, SenderDelta},
     state::{MarketState, SlotState},
     tokens::{
-        DynamicIndex, HardcodedMarketList, HardcodedToken, MarketVariant, TokenIndex, TokenPair,
-        TokenPairDecoder, ERC20, ETH,
+        DynamicIndex, HardcodedIndex, HardcodedMarketList, HardcodedToken, MarketVariant,
+        TokenIndex, TokenPair, TokenPairDecoder, ERC20, ETH,
     },
     types::{Base, Pair, Quote},
 };
@@ -36,24 +36,29 @@ pub const CONTRACT_ADDRESS: [u8; 20] = [
 ];
 
 fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
+    // Re-entrancy disabled
     let msg_reentrant = hostio::msg_reentrant();
     require!(!msg_reentrant, GoblinError::Reentrant);
 
+    // Read args and sender
     let args_buffer = hostio::read_args();
     let mut args = Args::new(args_buffer.as_ref(), len)?;
-
     let msg_sender = hostio::msg_sender();
 
+    // Initialize deltas
     let mut sender_balance_updates = SenderBalanceUpdates::new(args.header.track_msg_value)?;
-
     let mut maker_balance_updates = MakerBalanceUpdates::default();
 
+    // Iterate markets
     for _ in 0..args.header.market_count {
         let market_header = MarketHeader::decode(args_buffer.as_ref(), &mut args.offset, len)?;
 
+        // Currently there is no blanket impl for HardcodedMarket and DynamicMarket because
+        // only DynamicMarket uses custom_erc20_list.
+        // If we need to add this field on HardcodedMarket, we can use a blanket impl.
         match market_header.market_type_raw {
             // Hardcoded markets
-            <TokenPair<TokenIndex<HardcodedToken>, Pair<ETH, ERC20>>>::DISCRIMINATOR => {
+            HardcodedMarket::<Pair<ETH, ERC20>>::DISCRIMINATOR => {
                 HardcodedMarket::<Pair<ETH, ERC20>>::process(
                     args_buffer.as_ref(),
                     &mut args.offset,
@@ -61,7 +66,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
                 )?;
             }
 
-            <TokenPair<TokenIndex<HardcodedToken>, Pair<ERC20, ETH>>>::DISCRIMINATOR => {
+            HardcodedMarket::<Pair<ERC20, ETH>>::DISCRIMINATOR => {
                 HardcodedMarket::<Pair<ERC20, ETH>>::process(
                     args_buffer.as_ref(),
                     &mut args.offset,
@@ -69,7 +74,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
                 )?;
             }
 
-            <TokenPair<TokenIndex<HardcodedToken>, Pair<ERC20, ERC20>>>::DISCRIMINATOR => {
+            HardcodedMarket::<Pair<ERC20, ERC20>>::DISCRIMINATOR => {
                 HardcodedMarket::<Pair<ERC20, ERC20>>::process(
                     args_buffer.as_ref(),
                     &mut args.offset,
@@ -78,7 +83,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
             }
 
             // Dynamic markets
-            <TokenPair<DynamicIndex, Pair<ETH, ERC20>>>::DISCRIMINATOR => {
+            DynamicMarket::<Pair<ETH, ERC20>>::DISCRIMINATOR => {
                 DynamicMarket::<Pair<ETH, ERC20>>::process(
                     args_buffer.as_ref(),
                     &mut args.offset,
@@ -87,7 +92,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
                 )?;
             }
 
-            <TokenPair<DynamicIndex, Pair<ERC20, ETH>>>::DISCRIMINATOR => {
+            DynamicMarket::<Pair<ERC20, ETH>>::DISCRIMINATOR => {
                 DynamicMarket::<Pair<ERC20, ETH>>::process(
                     args_buffer.as_ref(),
                     &mut args.offset,
@@ -96,7 +101,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
                 )?;
             }
 
-            <TokenPair<DynamicIndex, Pair<ERC20, ERC20>>>::DISCRIMINATOR => {
+            DynamicMarket::<Pair<ERC20, ERC20>>::DISCRIMINATOR => {
                 DynamicMarket::<Pair<ERC20, ERC20>>::process(
                     args_buffer.as_ref(),
                     &mut args.offset,
@@ -107,12 +112,6 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
 
             _ => {}
         }
-
-        // * obtain enum Market
-        //   - Hardcoded case: we have 3 lists for 3 pair types.
-        //   - Custom: the token pair can be composed of hardcoded or custom tokens.
-        //
-        // * obtain deposit / withdraw amounts
     }
 
     // for market_instructions in args.market_instructions_list {
@@ -170,7 +169,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
     //     maker_balance_updates.apply_updates(&indexed_market, &market_maker_deltas)?;
     // }
 
-    // Settlement
+    // Settle the deltas
     sender_balance_updates.settle(
         msg_sender.as_ref(),
         args.recipient,

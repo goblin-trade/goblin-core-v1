@@ -6,7 +6,7 @@ use crate::{
     markets::HardcodedMarket,
     require,
     state::{DynamicMarketKey, HardcodedMarketKey, SlotKey},
-    tokens::{CustomToken, DynamicIndex, HardcodedToken, TokenIndex},
+    tokens::{DynamicIndex, HardcodedIndex},
     types::Pair,
 };
 
@@ -30,7 +30,7 @@ pub trait MarketVariant {
 
 // TokenIndex<HardcodedToken> doubles up as marker for hardcoded markets
 // DynamicIndex doubles up as marker for dynamic markets
-impl MarketVariant for TokenIndex<HardcodedToken> {
+impl MarketVariant for HardcodedIndex {
     const DISCRIMINATOR: u8 = 0;
 
     type MarketKey<P: PairShape> = HardcodedMarketKey<P>;
@@ -91,23 +91,10 @@ impl TokenPair<DynamicIndex, Pair<ERC20, ERC20>> {
     }
 }
 
-pub trait TokenPairDecoder {
-    /// Tells the market type during decoding
-    const DISCRIMINATOR: u8;
-}
-
-impl<M, P> TokenPairDecoder for TokenPair<M, P>
-where
-    M: MarketVariant,
-    P: PairShape,
-{
-    const DISCRIMINATOR: u8 = M::DISCRIMINATOR | (P::DISCRIMINATOR << 1);
-}
-
 /// Map each PairShape to a hardcoded market list
 pub trait HardcodedMarketList<P: PairShape + 'static>
 where
-    TokenPair<TokenIndex<HardcodedToken>, P>: TokenPairKind,
+    TokenPair<HardcodedIndex, P>: TokenPairKind,
 {
     const HARDCODED_MARKET_LIST: &'static [HardcodedMarket<P>];
 }
