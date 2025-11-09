@@ -5,8 +5,7 @@ use crate::{
     require,
     settlement::{CommonDelta, ERC20Input, ERC20Transfer, TransferDirection},
     state::{ERC20Store, ERC20StoreKey, SlotState},
-    tokens::{DynamicIndex},, Token
-    types::Address,
+    tokens::DynamicIndex,
     CONTRACT_ADDRESS,
 };
 

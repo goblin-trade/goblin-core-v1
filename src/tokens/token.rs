@@ -49,7 +49,7 @@ impl ERC20TokenTrait for CustomToken {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 pub struct TokenIndex<T: ERC20TokenTrait> {
     pub inner: u8,
     _marker: PhantomData<T>,
@@ -84,7 +84,7 @@ impl TokenIndex<CustomToken> {
 pub type HardcodedIndex = TokenIndex<HardcodedToken>;
 
 /// Unifying type to lookup ERC20 token address by index
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 pub enum DynamicIndex {
     Hardcoded(TokenIndex<HardcodedToken>),
     Custom(TokenIndex<CustomToken>),

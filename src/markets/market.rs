@@ -58,6 +58,9 @@ where
         len: usize,
     ) -> Result<(), GoblinError> {
         let market = Self::decode(payload, offset, len)?;
+
+        // TODO read deposit and withdraw amounts
+        // We can tie them up with PairShape. ETH is withdraw only, ERC20 can be deposited or withdrawn.
         let market_state = MarketState::load(&market.keccak_hash);
 
         Ok(())
@@ -138,35 +141,3 @@ where
         })
     }
 }
-
-// // Confusion- we could use an overarching master trait. But sometimes
-// // the stucts themselves contain the generics
-// pub trait GoblinMarket: Sized {
-//     // fn hash(&self) -> &[u8; 32];
-
-//     fn process<M: MarketVariant, P: PairShape>(
-//         payload: &ArgsBuffer,
-//         offset: &mut usize,
-//         len: usize,
-//     ) -> Result<(), GoblinError> {
-//         // let market = Self::decode(payload, offset, len)?;
-
-//         Ok(())
-//     }
-// }
-
-// impl<P> GoblinMarket for HardcodedMarket<P>
-// where
-//     P: PairShape,
-//     TokenPair<TokenIndex<HardcodedToken>, P>: TokenPairKind,
-//     Self: Sized,
-// {
-//     // // TODO use custom type instead of raw [u8; 32]
-//     // // HardcodedMarketKey and CustomMarketKey.
-//     // //
-//     // // Also they must mirror. Add them as 'SlotKey' types on Hardcoded and custom marker traits
-//     // //
-//     // fn hash(&self) -> &[u8; 32] {
-//     //     &self.keccak_hash
-//     // }
-// }

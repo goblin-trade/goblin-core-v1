@@ -1,7 +1,6 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::{ArgsBuffer, ArgsDecoder},
-    markets::MarketInstructions,
     quantities::UnsidedAtoms,
     require,
     types::Address,
@@ -57,8 +56,7 @@ impl Header {
             + self.recipient_provided as usize * core::mem::size_of::<Address>()
             + self.track_msg_value as usize * core::mem::size_of::<UnsidedAtoms>()
             // Lists
-            + self.custom_erc20_count * core::mem::size_of::<Address>()
-            * self.market_count * core::mem::size_of::<MarketInstructions>();
+            + self.custom_erc20_count * core::mem::size_of::<Address>();
 
         size
     }

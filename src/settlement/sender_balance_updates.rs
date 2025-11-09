@@ -20,6 +20,8 @@ impl SenderBalanceUpdates {
         })
     }
 
+    // old approach- dynamically know if token is ETH or ERC20.
+    // new approach- use Pairshape
     fn token_common_delta(
         &mut self,
         token_index: DynamicIndex,
