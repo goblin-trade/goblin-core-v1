@@ -50,20 +50,29 @@ pub struct ERC20;
 
 pub trait PairShape {
     const DISCRIMINATOR: u8;
+
+    // Token amounts to transfer in or out per market.
+    type TransferAmounts;
 }
 
 impl PairShape for Pair<ETH, ERC20> {
     const DISCRIMINATOR: u8 = 0;
+
+    type TransferAmounts = Pair<u64, i64>;
 }
 
 impl PairShape for Pair<ERC20, ETH> {
     const DISCRIMINATOR: u8 = 1;
+
+    type TransferAmounts = Pair<i64, u64>;
 }
 
 /// A pair of two ERC20 tokens.
 /// The decoder guarantees that the two tokens are different.
 impl PairShape for Pair<ERC20, ERC20> {
     const DISCRIMINATOR: u8 = 2;
+
+    type TransferAmounts = Pair<i64, i64>;
 }
 
 /// Combined pair with 2 traits

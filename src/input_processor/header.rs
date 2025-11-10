@@ -19,6 +19,9 @@ pub struct Header {
     /// Whether to read msg.value from hostio
     pub track_msg_value: bool,
 
+    /// Whether to read ETH withdraw amount from args and withdraw ETH
+    pub withdraw_eth: bool,
+
     /// Whether to credit tokens to ERC20Store or EthStore, or to actually transfer out tokens
     pub withdraw_internally: bool,
 }
@@ -45,16 +48,17 @@ impl Header {
             // Optional variables
             recipient_provided: (byte_1 & 0b0000_0001) != 0,
             track_msg_value: (byte_1 & 0b0000_0010) != 0,
+            withdraw_eth: (byte_1 & 0b0000_0100) != 0,
 
             // Settlement flags
-            withdraw_internally: (byte_1 & 0b0000_0100) != 0,
+            withdraw_internally: (byte_1 & 0b0000_1000) != 0,
         }
     }
 
     pub fn payload_size(&self) -> usize {
         let size = Self::HEADER_BYTE_SIZE
             + self.recipient_provided as usize * core::mem::size_of::<Address>()
-            + self.track_msg_value as usize * core::mem::size_of::<UnsidedAtoms>()
+            + self.withdraw_eth as usize * core::mem::size_of::<UnsidedAtoms>()
             // Lists
             + self.custom_erc20_count * core::mem::size_of::<Address>();
 

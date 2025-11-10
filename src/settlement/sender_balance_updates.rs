@@ -2,6 +2,7 @@ use crate::{
     goblin_error::GoblinError,
     markets::IndexedMarket,
     matching::MatchResult,
+    quantities::UnsidedAtoms,
     settlement::{CommonDelta, ERC20DeltaList, EthDelta, SenderDelta},
     tokens::DynamicIndex,
     types::{Address, Base, LegMarker, PairAccessor, Quote},
@@ -13,11 +14,11 @@ pub struct SenderBalanceUpdates {
 }
 
 impl SenderBalanceUpdates {
-    pub fn new(track_msg_value: bool) -> Result<Self, GoblinError> {
-        Ok(SenderBalanceUpdates {
-            eth_delta: EthDelta::init(track_msg_value)?,
+    pub fn new(msg_value: UnsidedAtoms, eth_out_due: UnsidedAtoms) -> Self {
+        SenderBalanceUpdates {
+            eth_delta: EthDelta::new(msg_value, eth_out_due),
             erc20_delta_list: ERC20DeltaList::default(),
-        })
+        }
     }
 
     // old approach- dynamically know if token is ETH or ERC20.

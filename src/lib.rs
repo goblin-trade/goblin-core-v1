@@ -46,7 +46,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
     let msg_sender = hostio::msg_sender();
 
     // Initialize deltas
-    let mut sender_balance_updates = SenderBalanceUpdates::new(args.header.track_msg_value)?;
+    let mut sender_balance_updates = SenderBalanceUpdates::new(args.msg_value, args.eth_out_due);
     let mut maker_balance_updates = MakerBalanceUpdates::default();
 
     // Iterate markets

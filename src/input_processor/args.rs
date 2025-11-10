@@ -7,14 +7,22 @@
 ///! *
 use crate::{
     goblin_error::GoblinError,
+    hostio,
     input_processor::{ArgsBuffer, ArgsDecoder, Header},
+    quantities::{QuantityOps, UnsidedAtoms},
     tokens::CustomToken,
-    types::Address,
+    types::{Address, NATIVE_TOKEN_DECIMALS},
 };
 
 pub struct Args<'a> {
     /// Flags and counts
     pub header: Header,
+
+    /// ETH atoms deposited via msg_value
+    pub msg_value: UnsidedAtoms,
+
+    /// ETH atoms to withdraw
+    pub eth_out_due: UnsidedAtoms,
 
     /// Optional custom recipient
     pub recipient: Option<&'a Address>,
@@ -30,7 +38,19 @@ impl<'a> Args<'a> {
         let header = Header::init(payload, len)?;
         let mut offset = Header::HEADER_BYTE_SIZE;
 
-        let provided_recipient = header
+        let msg_value = if header.track_msg_value {
+            let msg_value_raw = hostio::msg_value();
+            UnsidedAtoms::from_raw_atoms(msg_value_raw.as_ref(), NATIVE_TOKEN_DECIMALS)?
+        } else {
+            UnsidedAtoms::ZERO
+        };
+
+        let eth_out = match header.withdraw_eth {
+            true => *payload.decode_ref_unchecked::<UnsidedAtoms>(&mut offset),
+            false => UnsidedAtoms::ZERO,
+        };
+
+        let recipient = header
             .recipient_provided
             .then(|| payload.decode_ref_unchecked::<Address>(&mut offset));
 
@@ -39,7 +59,9 @@ impl<'a> Args<'a> {
 
         Ok(Args {
             header,
-            recipient: provided_recipient,
+            recipient,
+            msg_value,
+            eth_out_due: eth_out,
             custom_erc20_list,
             offset,
         })

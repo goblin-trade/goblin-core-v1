@@ -1,7 +1,6 @@
 use crate::{
     eth,
     goblin_error::GoblinError,
-    hostio,
     quantities::{QuantityOps, UnsidedAtoms},
     require,
     settlement::CommonDelta,
@@ -12,7 +11,7 @@ use crate::{
 /// ETH atoms due to be deducted, locked or transferred out on settlement
 pub struct EthDelta {
     /// Atoms credited by msg.value
-    pub msg_value_atoms: UnsidedAtoms,
+    pub msg_value: UnsidedAtoms,
 
     /// Amount of ETH atoms pending withdrawal, as read from market namespace
     ///
@@ -20,25 +19,18 @@ pub struct EthDelta {
     /// This allows us to withdraw max available amount by passing u64::MAX
     ///
     /// The amount is transferred out internally (store credit) or externally (transfer call).
-    pub withdrawal_due: UnsidedAtoms,
+    pub eth_out_due: UnsidedAtoms,
 
     pub common_delta: CommonDelta,
 }
 
 impl EthDelta {
-    pub fn init(track_msg_value: bool) -> Result<Self, GoblinError> {
-        let msg_value_atoms = if track_msg_value {
-            let msg_value = hostio::msg_value();
-            UnsidedAtoms::from_raw_atoms(msg_value.as_ref(), NATIVE_TOKEN_DECIMALS)?
-        } else {
-            UnsidedAtoms::ZERO
-        };
-
-        Ok(Self {
-            msg_value_atoms,
-            withdrawal_due: UnsidedAtoms::ZERO,
+    pub fn new(msg_value: UnsidedAtoms, eth_out_due: UnsidedAtoms) -> Self {
+        Self {
+            msg_value,
+            eth_out_due,
             common_delta: CommonDelta::default(),
-        })
+        }
     }
 
     /// Update locked and free atoms of the store by applying the common delta
@@ -81,7 +73,7 @@ impl EthDelta {
             .ok_or(GoblinError::Overflow)?;
 
         // Deduct withdraw amount
-        let withdraw_amount = store_mut.atoms_free.min(self.withdrawal_due);
+        let withdraw_amount = store_mut.atoms_free.min(self.eth_out_due);
         store_mut.atoms_free -= withdraw_amount;
         store_mut.store(&key);
 
