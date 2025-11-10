@@ -6,7 +6,7 @@ use crate::{
     state::{DynamicMarketHasher, DynamicMarketKey, HardcodedMarketKey, MarketState, SlotState},
     tokens::{
         CustomToken, DynamicIndex, HardcodedIndex, HardcodedMarketList, HardcodedToken,
-        MarketVariant, PairShape, TokenIndex, TokenPair, TokenPairKind,
+        IndexPairFor, MarketVariant, PairShape, TokenIndex, TokenPair,
     },
     types::{Address, Base, LegMarker, Pair, Quote},
 };
@@ -15,10 +15,10 @@ pub type LotSizePair = Pair<<Base as LegMarker>::LotsPerUnit, <Quote as LegMarke
 
 pub struct CommonMarket<M: MarketVariant, P: PairShape>
 where
-    TokenPair<M, P>: TokenPairKind,
+    TokenPair<M, P>: IndexPairFor,
 {
     /// The token pair, parameterized by shape and variant.
-    pub token_index_pair: <TokenPair<M, P> as TokenPairKind>::IndexPair,
+    pub token_index_pair: <TokenPair<M, P> as IndexPairFor>::ResolvedIndexPair,
 
     /// Lot sizes (one per side)
     pub lot_size_pair: LotSizePair,
@@ -35,7 +35,7 @@ where
 pub struct HardcodedMarket<P>
 where
     P: PairShape,
-    TokenPair<TokenIndex<HardcodedToken>, P>: TokenPairKind,
+    TokenPair<TokenIndex<HardcodedToken>, P>: IndexPairFor,
 {
     /// The common market configuration (lot sizes, tick size, token indices).
     pub common: CommonMarket<TokenIndex<HardcodedToken>, P>,
@@ -47,7 +47,7 @@ where
 impl<P> HardcodedMarket<P>
 where
     P: PairShape + 'static,
-    TokenPair<TokenIndex<HardcodedToken>, P>: TokenPairKind,
+    TokenPair<TokenIndex<HardcodedToken>, P>: IndexPairFor,
     Self: HardcodedMarketList<P>,
 {
     pub const DISCRIMINATOR: u8 = HardcodedIndex::DISCRIMINATOR | (P::DISCRIMINATOR << 1);
@@ -75,7 +75,7 @@ impl<P> DynamicMarket<P>
 where
     P: PairShape,
     TokenPair<DynamicIndex, P>:
-        TokenPairKind + Decodable<<TokenPair<DynamicIndex, P> as TokenPairKind>::IndexPair>,
+        IndexPairFor + Decodable<<TokenPair<DynamicIndex, P> as IndexPairFor>::ResolvedIndexPair>,
     DynamicMarketKey<P>: DynamicMarketHasher<P>,
 {
     pub const DISCRIMINATOR: u8 = DynamicIndex::DISCRIMINATOR | (P::DISCRIMINATOR << 1);
@@ -100,7 +100,7 @@ where
 impl<P> Decodable<&'static HardcodedMarket<P>> for HardcodedMarket<P>
 where
     P: PairShape + 'static,
-    TokenPair<TokenIndex<HardcodedToken>, P>: TokenPairKind,
+    TokenPair<TokenIndex<HardcodedToken>, P>: IndexPairFor,
     Self: HardcodedMarketList<P>,
 {
     fn decode(
@@ -121,7 +121,7 @@ impl<P> Decodable<DynamicMarket<P>> for DynamicMarket<P>
 where
     P: PairShape,
     TokenPair<DynamicIndex, P>:
-        TokenPairKind + Decodable<<TokenPair<DynamicIndex, P> as TokenPairKind>::IndexPair>,
+        IndexPairFor + Decodable<<TokenPair<DynamicIndex, P> as IndexPairFor>::ResolvedIndexPair>,
 {
     fn decode(
         payload: &ArgsBuffer,

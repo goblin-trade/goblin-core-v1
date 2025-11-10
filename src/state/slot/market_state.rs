@@ -8,7 +8,7 @@ use crate::{
     state::{SlotKey, SlotState},
     tokens::{
         CustomToken, DynamicIndex, HardcodedToken, MarketVariant, PairShape, TokenIndex, TokenPair,
-        TokenPairKind, ERC20, ETH,
+        IndexPairFor, ERC20, ETH,
     },
     types::{Address, Pair},
 };
@@ -47,7 +47,7 @@ pub struct DynamicMarketKey<P: PairShape> {
 pub trait DynamicMarketHasher<P>
 where
     P: PairShape,
-    TokenPair<DynamicIndex, P>: TokenPairKind,
+    TokenPair<DynamicIndex, P>: IndexPairFor,
     Self: Sized,
 {
     const BYTE_SIZE: usize;

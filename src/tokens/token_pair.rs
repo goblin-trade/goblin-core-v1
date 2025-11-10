@@ -14,22 +14,13 @@ use crate::{
 ///
 /// * Hardcoded market- has hardcoded tokens
 /// * Dynamic market- has dynamic tokens that can be either dynamic or custom
-///
-/// Instead of creating new marker types, we apply this trait on
-/// TokenIndex<HardcodedToken> and DynamicIndex directly
 pub trait MarketVariant {
     const DISCRIMINATOR: u8;
 
+    /// Key to read market slot
     type MarketKey<P: PairShape>: SlotKey;
-
-    // This is the anchor trait, similar to Side
-    // Have a common function process() that will handle instructions, so
-    // we don't have to duplicated code in lib.rs
-    // Should we move the decode part too? Or perhaps we should keep it on GoblinMarket trait
 }
 
-// TokenIndex<HardcodedToken> doubles up as marker for hardcoded markets
-// DynamicIndex doubles up as marker for dynamic markets
 impl MarketVariant for HardcodedIndex {
     const DISCRIMINATOR: u8 = 0;
 
@@ -50,94 +41,87 @@ pub struct ERC20;
 
 pub trait PairShape {
     const DISCRIMINATOR: u8;
-
-    // Token amounts to transfer in or out per market.
-    type TransferAmounts;
 }
 
 impl PairShape for Pair<ETH, ERC20> {
     const DISCRIMINATOR: u8 = 0;
-
-    type TransferAmounts = Pair<u64, i64>;
 }
 
 impl PairShape for Pair<ERC20, ETH> {
     const DISCRIMINATOR: u8 = 1;
-
-    type TransferAmounts = Pair<i64, u64>;
 }
 
 /// A pair of two ERC20 tokens.
 /// The decoder guarantees that the two tokens are different.
 impl PairShape for Pair<ERC20, ERC20> {
     const DISCRIMINATOR: u8 = 2;
-
-    type TransferAmounts = Pair<i64, i64>;
 }
 
 /// Combined pair with 2 traits
 pub struct TokenPair<M: MarketVariant, P: PairShape>(PhantomData<(M, P)>);
 
-pub trait TokenPairKind {
-    type IndexPair;
+/// Maps marker structs to token indices
+pub trait IndexPairFor {
+    type ResolvedIndexPair;
 }
 
-impl<M: MarketVariant> TokenPairKind for TokenPair<M, Pair<ETH, ERC20>> {
-    type IndexPair = M;
+impl<M: MarketVariant> IndexPairFor for TokenPair<M, Pair<ETH, ERC20>> {
+    type ResolvedIndexPair = M;
 }
 
-impl<M: MarketVariant> TokenPairKind for TokenPair<M, Pair<ERC20, ETH>> {
-    type IndexPair = M;
+impl<M: MarketVariant> IndexPairFor for TokenPair<M, Pair<ERC20, ETH>> {
+    type ResolvedIndexPair = M;
 }
 
-impl<M: MarketVariant> TokenPairKind for TokenPair<M, Pair<ERC20, ERC20>> {
-    type IndexPair = Pair<M, M>;
-}
-
-impl TokenPair<DynamicIndex, Pair<ERC20, ERC20>> {
-    pub fn address_bytes(index_pair: <Self as TokenPairKind>::IndexPair) -> [u8; 40] {
-        [0u8; 40]
-    }
+impl<M: MarketVariant> IndexPairFor for TokenPair<M, Pair<ERC20, ERC20>> {
+    type ResolvedIndexPair = Pair<M, M>;
 }
 
 /// Map each PairShape to a hardcoded market list
 pub trait HardcodedMarketList<P: PairShape + 'static>
 where
-    TokenPair<HardcodedIndex, P>: TokenPairKind,
+    TokenPair<HardcodedIndex, P>: IndexPairFor,
 {
     const HARDCODED_MARKET_LIST: &'static [HardcodedMarket<P>];
 }
 
+// -----------------------------------
 // Impls to decode dynamic token pairs
 
-impl Decodable<<Self as TokenPairKind>::IndexPair> for TokenPair<DynamicIndex, Pair<ETH, ERC20>> {
+impl Decodable<<Self as IndexPairFor>::ResolvedIndexPair>
+    for TokenPair<DynamicIndex, Pair<ETH, ERC20>>
+{
     fn decode(
         payload: &ArgsBuffer,
         offset: &mut usize,
         len: usize,
-    ) -> Result<<Self as TokenPairKind>::IndexPair, GoblinError> {
+    ) -> Result<<Self as IndexPairFor>::ResolvedIndexPair, GoblinError> {
         let byte_quote = payload.decode::<u8>(offset, len)?;
         DynamicIndex::new(byte_quote)
     }
 }
 
-impl Decodable<<Self as TokenPairKind>::IndexPair> for TokenPair<DynamicIndex, Pair<ERC20, ETH>> {
+impl Decodable<<Self as IndexPairFor>::ResolvedIndexPair>
+    for TokenPair<DynamicIndex, Pair<ERC20, ETH>>
+{
     fn decode(
         payload: &ArgsBuffer,
         offset: &mut usize,
         len: usize,
-    ) -> Result<<Self as TokenPairKind>::IndexPair, GoblinError> {
+    ) -> Result<<Self as IndexPairFor>::ResolvedIndexPair, GoblinError> {
         let byte_quote = payload.decode::<u8>(offset, len)?;
         DynamicIndex::new(byte_quote)
     }
 }
 
-impl Decodable<<Self as TokenPairKind>::IndexPair> for TokenPair<DynamicIndex, Pair<ERC20, ERC20>> {
+impl Decodable<<Self as IndexPairFor>::ResolvedIndexPair>
+    for TokenPair<DynamicIndex, Pair<ERC20, ERC20>>
+{
     fn decode(
         payload: &ArgsBuffer,
         offset: &mut usize,
         len: usize,
-    ) -> Result<<Self as TokenPairKind>::IndexPair, GoblinError> {
+    ) -> Result<<Self as IndexPairFor>::ResolvedIndexPair, GoblinError> {
         let byte_base = payload.decode::<u8>(offset, len)?;
         let byte_quote = payload.decode::<u8>(offset, len)?;
 
