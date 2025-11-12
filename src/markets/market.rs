@@ -1,24 +1,19 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::{ArgsBuffer, ArgsDecoder, Decodable},
+    markets::{HardcodedMarketList, MarketVariant, PairShape},
     quantities::QuoteLotsPerBaseUnitPerTick,
     require,
     state::{DynamicMarketHasher, DynamicMarketKey, HardcodedMarketKey, MarketState, SlotState},
-    tokens::{
-        CustomToken, DynamicIndex, HardcodedIndex, HardcodedMarketList, HardcodedToken,
-        IndexPairFor, MarketVariant, PairShape, TokenIndex, TokenPair,
-    },
-    types::{Address, Base, LegMarker, Pair, Quote},
+    tokens::{CustomToken, DynamicIndex, HardcodedIndex, HardcodedToken, TokenIndex},
+    types::{Base, LegMarker, Pair, Quote},
 };
 
 pub type LotSizePair = Pair<<Base as LegMarker>::LotsPerUnit, <Quote as LegMarker>::LotsPerUnit>;
 
-pub struct CommonMarket<M: MarketVariant, P: PairShape>
-where
-    TokenPair<M, P>: IndexPairFor,
-{
+pub struct CommonMarket<M: MarketVariant, P: PairShape> {
     /// The token pair, parameterized by shape and variant.
-    pub token_index_pair: <TokenPair<M, P> as IndexPairFor>::ResolvedIndexPair,
+    pub token_index_pair: P::ResolvedPair<M>,
 
     /// Lot sizes (one per side)
     pub lot_size_pair: LotSizePair,
@@ -35,7 +30,6 @@ where
 pub struct HardcodedMarket<P>
 where
     P: PairShape,
-    TokenPair<TokenIndex<HardcodedToken>, P>: IndexPairFor,
 {
     /// The common market configuration (lot sizes, tick size, token indices).
     pub common: CommonMarket<TokenIndex<HardcodedToken>, P>,
@@ -47,7 +41,6 @@ where
 impl<P> HardcodedMarket<P>
 where
     P: PairShape + 'static,
-    TokenPair<TokenIndex<HardcodedToken>, P>: IndexPairFor,
     Self: HardcodedMarketList<P>,
 {
     pub const DISCRIMINATOR: u8 = HardcodedIndex::DISCRIMINATOR | (P::DISCRIMINATOR << 1);
@@ -73,9 +66,7 @@ pub type DynamicMarket<P: PairShape> = CommonMarket<DynamicIndex, P>;
 
 impl<P> DynamicMarket<P>
 where
-    P: PairShape,
-    TokenPair<DynamicIndex, P>:
-        IndexPairFor + Decodable<<TokenPair<DynamicIndex, P> as IndexPairFor>::ResolvedIndexPair>,
+    P: PairShape + Decodable<P::ResolvedPair<DynamicIndex>>,
     DynamicMarketKey<P>: DynamicMarketHasher<P>,
 {
     pub const DISCRIMINATOR: u8 = DynamicIndex::DISCRIMINATOR | (P::DISCRIMINATOR << 1);
@@ -100,7 +91,6 @@ where
 impl<P> Decodable<&'static HardcodedMarket<P>> for HardcodedMarket<P>
 where
     P: PairShape + 'static,
-    TokenPair<TokenIndex<HardcodedToken>, P>: IndexPairFor,
     Self: HardcodedMarketList<P>,
 {
     fn decode(
@@ -116,22 +106,20 @@ where
     }
 }
 
-/// Decodable implementation for dynamic markets
 impl<P> Decodable<DynamicMarket<P>> for DynamicMarket<P>
 where
-    P: PairShape,
-    TokenPair<DynamicIndex, P>:
-        IndexPairFor + Decodable<<TokenPair<DynamicIndex, P> as IndexPairFor>::ResolvedIndexPair>,
+    P: PairShape + Decodable<P::ResolvedPair<DynamicIndex>>,
 {
     fn decode(
         payload: &ArgsBuffer,
         offset: &mut usize,
         len: usize,
     ) -> Result<DynamicMarket<P>, GoblinError> {
-        let token_index_pair = TokenPair::<DynamicIndex, P>::decode(payload, offset, len)?;
+        let token_index_pair = P::decode(payload, offset, len)?;
 
         require!(len >= *offset + 3, GoblinError::InvalidPayload);
         let lot_size_pair = *payload.decode_ref_unchecked::<LotSizePair>(offset);
+
         let tick_size = *payload.decode_ref_unchecked::<QuoteLotsPerBaseUnitPerTick>(offset);
 
         Ok(DynamicMarket::<P> {

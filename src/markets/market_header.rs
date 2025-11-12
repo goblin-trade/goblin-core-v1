@@ -1,7 +1,6 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::{ArgsBuffer, ArgsDecoder},
-    markets::MarketIndex,
     types::Pair,
 };
 

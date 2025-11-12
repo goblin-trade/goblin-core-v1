@@ -3,14 +3,11 @@ use core::marker::PhantomData;
 use crate::{
     goblin_error::GoblinError,
     hostio::{self, HostioBuffer},
-    markets::DynamicMarket,
-    quantities::{QuoteLotsPerBaseUnitPerTick, Ticks},
+    markets::{DynamicMarket, MarketVariant, PairShape, ERC20, ETH},
+    quantities::Ticks,
     state::{SlotKey, SlotState},
-    tokens::{
-        CustomToken, DynamicIndex, HardcodedToken, MarketVariant, PairShape, TokenIndex, TokenPair,
-        IndexPairFor, ERC20, ETH,
-    },
-    types::{Address, Pair},
+    tokens::{CustomToken, DynamicIndex, HardcodedToken, TokenIndex},
+    types::Pair,
 };
 
 /// The hash is hardcoded for hardcoded markets
@@ -47,7 +44,6 @@ pub struct DynamicMarketKey<P: PairShape> {
 pub trait DynamicMarketHasher<P>
 where
     P: PairShape,
-    TokenPair<DynamicIndex, P>: IndexPairFor,
     Self: Sized,
 {
     const BYTE_SIZE: usize;

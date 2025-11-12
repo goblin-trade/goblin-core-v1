@@ -4,13 +4,10 @@
 use crate::{
     input_processor::{Args, ArgsDecoder, Decodable},
     instructions::ix_take,
-    markets::{DynamicMarket, GoblinMarket, HardcodedMarket, MarketHeader},
+    markets::{DynamicMarket, HardcodedMarket, MarketHeader, ERC20, ETH},
     settlement::{MakerBalanceUpdates, MarketMakerDeltas, SenderBalanceUpdates, SenderDelta},
     state::{MarketState, SlotState},
-    tokens::{
-        DynamicIndex, HardcodedIndex, HardcodedMarketList, HardcodedToken, MarketVariant,
-        TokenIndex, TokenPair, TokenPairDecoder, ERC20, ETH,
-    },
+    tokens::{DynamicIndex, HardcodedIndex, HardcodedToken, TokenIndex},
     types::{Base, Pair, Quote},
 };
 use goblin_error::*;

@@ -1,5 +1,4 @@
 use crate::{
-    markets::LotSizePair,
     matching::MatchResult,
     quantities::{BaseLotsPerBaseUnit, UnsidedAtoms},
     types::{Base, LegMarker, Pair, PairAccessor, Quote},

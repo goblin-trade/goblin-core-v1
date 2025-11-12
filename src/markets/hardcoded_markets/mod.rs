@@ -11,3 +11,6 @@ pub use localnet::*;
 pub use mainnet::*;
 #[cfg(feature = "testnet")]
 pub use testnet::*;
+
+pub mod hardcoded_market_list;
+pub use hardcoded_market_list::*;
