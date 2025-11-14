@@ -164,12 +164,12 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
     // }
 
     // Settle the deltas
-    sender_balance_updates.settle(
-        msg_sender.as_ref(),
-        args.recipient,
-        args.custom_erc20_list,
-        args.header.withdraw_internally,
-    )?;
+    // sender_balance_updates.settle(
+    //     msg_sender.as_ref(),
+    //     args.recipient,
+    //     args.custom_erc20_list,
+    //     args.header.withdraw_internally,
+    // )?;
 
     // Write cache to trie
     // https://github.com/OffchainLabs/stylus-sdk-rs/blob/2c709a5a1a620ed7585c7d8af64fefabe3a0fc9a/stylus-sdk/src/storage/mod.rs#L81

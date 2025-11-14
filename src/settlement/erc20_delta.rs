@@ -1,13 +1,54 @@
+use core::mem::MaybeUninit;
+
 use crate::{
-    erc20,
-    goblin_error::GoblinError,
-    quantities::{DeltaAtoms, QuantityOps, UnsidedAtoms},
-    require,
+    quantities::{DeltaAtoms, QuantityOps},
     settlement::CommonDelta,
-    state::{ERC20Store, ERC20StoreKey, SlotState},
-    tokens::DynamicIndex,
-    CONTRACT_ADDRESS,
+    state::ERC20Store,
+    tokens::{CustomToken, ERC20TokenTrait, HardcodedToken, TokenIndex, HARDCODED_TOKENS},
 };
+
+pub const MAX_CUSTOM_DELTAS: usize = 8;
+
+pub type HardcodedTokenDeltas = [ERC20DeltaMaybe; HARDCODED_TOKENS.len()];
+pub type CustomTokenDeltas = [ERC20DeltaMaybe; MAX_CUSTOM_DELTAS];
+
+impl Default for HardcodedTokenDeltas {
+    fn default() -> Self {
+        [ERC20DeltaMaybe::default(); HARDCODED_TOKENS.len()]
+    }
+}
+
+pub trait DeltaListTrait<T: ERC20TokenTrait> {
+    fn get_delta(&self, token_index: TokenIndex<T>) -> &ERC20DeltaMaybe;
+}
+
+impl DeltaListTrait<HardcodedToken> for HardcodedTokenDeltas {
+    fn get_delta(&self, token_index: TokenIndex<HardcodedToken>) -> &ERC20DeltaMaybe {
+        &self[token_index.inner as usize]
+    }
+}
+
+impl DeltaListTrait<CustomToken> for CustomTokenDeltas {
+    fn get_delta(&self, token_index: TokenIndex<CustomToken>) -> &ERC20DeltaMaybe {
+        &self[token_index.inner as usize]
+    }
+}
+
+#[derive(Clone, Copy)]
+pub struct ERC20DeltaMaybe {
+    /// Whether the delta is initialized
+    pub init: bool,
+    pub inner: MaybeUninit<ERC20Delta>,
+}
+
+impl Default for ERC20DeltaMaybe {
+    fn default() -> Self {
+        Self {
+            init: false,
+            inner: MaybeUninit::uninit(),
+        }
+    }
+}
 
 /// ERC20 atoms due to be deducted, locked or transferred out on settlement
 #[derive(Default, Clone, Copy)]
