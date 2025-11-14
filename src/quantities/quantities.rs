@@ -373,6 +373,11 @@ impl<L: Exp, U: Exp, A: Exp> AsUnsided<Quote, L, U, A>
     }
 }
 
+#[derive(Default, Clone, Copy)]
+pub struct DeltaAtoms {
+    inner: i64,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

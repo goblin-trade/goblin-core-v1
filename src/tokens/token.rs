@@ -1,6 +1,9 @@
 use core::marker::PhantomData;
 
-use crate::{erc20, goblin_error::GoblinError, require, tokens::HARDCODED_TOKENS, types::Address};
+use crate::{
+    erc20, goblin_error::GoblinError, require, settlement::ERC20DeltaMaybe,
+    tokens::HARDCODED_TOKENS, types::Address,
+};
 
 #[derive(Clone, Copy)]
 pub struct HardcodedToken {
@@ -19,17 +22,24 @@ pub struct CustomToken {
     pub address: Address,
 }
 
-pub trait ERC20TokenTrait {
+pub trait ERC20TokenTrait
+where
+    Self: Sized,
+{
+    type DeltaList: AsRef<[ERC20DeltaMaybe]> + AsMut<[ERC20DeltaMaybe]>;
+    fn delta(delta_list: &Self::DeltaList, index: TokenIndex<Self>) -> &ERC20DeltaMaybe;
+
     fn address(&self) -> &Address;
     fn decimals(&self) -> Result<u8, GoblinError>;
-
-    // Incase we need a common function, otherwise remove
-    // fn decode_index(index: TokenIndex<Self>, custom_erc20_list: &[Address])
-    // where
-    //     Self: Sized;
 }
 
 impl ERC20TokenTrait for HardcodedToken {
+    type DeltaList = [ERC20DeltaMaybe; HARDCODED_TOKENS.len()];
+
+    fn delta(delta_list: &Self::DeltaList, index: TokenIndex<Self>) -> &ERC20DeltaMaybe {
+        &delta_list[index.inner as usize]
+    }
+
     fn address(&self) -> &Address {
         &self.address
     }
@@ -40,6 +50,12 @@ impl ERC20TokenTrait for HardcodedToken {
 }
 
 impl ERC20TokenTrait for CustomToken {
+    type DeltaList = [ERC20DeltaMaybe; 8];
+
+    fn delta(delta_list: &Self::DeltaList, index: TokenIndex<Self>) -> &ERC20DeltaMaybe {
+        &delta_list[index.inner as usize]
+    }
+
     fn address(&self) -> &Address {
         &self.address
     }

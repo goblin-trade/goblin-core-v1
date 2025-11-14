@@ -50,19 +50,6 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
     for _ in 0..args.header.market_count {
         let market_header = MarketHeader::decode(args_buffer.as_ref(), &mut args.offset, len)?;
 
-        // Currently there is no blanket impl for HardcodedMarket and DynamicMarket because
-        // only DynamicMarket uses custom_erc20_list.
-        // If we need to add this field on HardcodedMarket, we can use a blanket impl.
-        //
-        // TODO add withdraw and deposit logic that is namespaced by market
-        // - ETH: withdraw only. 64 bit.
-        // - ERC20: withdraw or deposit. 64 bit.
-        //
-        // Header flag will tell us whether to read deposit / withdraw amounts.
-        //
-        // No need to have if-else to separate hardcoded and custom token deposits. They are already
-        // namespaced by market type.
-        // But dynamic markets have dynamic token index- could be hardcoded or custom.
         match market_header.market_type_raw {
             // Hardcoded markets
             HardcodedMarket::<Pair<ETH, ERC20>>::DISCRIMINATOR => {

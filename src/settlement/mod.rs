@@ -1,7 +1,6 @@
 pub mod common_delta;
+pub mod custom_token_deltas;
 pub mod erc20_delta;
-pub mod erc20_delta_list;
-pub mod erc20_input;
 pub mod eth_delta;
 pub mod maker_balance_updates;
 pub mod market_maker_deltas;
@@ -9,9 +8,8 @@ pub mod sender_balance_updates;
 pub mod sender_delta;
 
 pub use common_delta::*;
+pub use custom_token_deltas::*;
 pub use erc20_delta::*;
-pub use erc20_delta_list::*;
-pub use erc20_input::*;
 pub use eth_delta::*;
 pub use maker_balance_updates::*;
 pub use market_maker_deltas::*;
