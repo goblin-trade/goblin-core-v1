@@ -53,12 +53,14 @@ where
         len: usize,
     ) -> Result<(), GoblinError> {
         let market = Self::decode(payload, offset, len)?;
-
-        let index_pair: &P::ResolvedPair<HardcodedIndex> = &market.common.token_index_pair;
-        let deposit_pair: P::ResolvedPair<i64> = P::decode(payload, offset, len)?;
-        P::deposit::<HardcodedIndex>(sender_balance_updates, index_pair, deposit_pair);
-
         let market_state = MarketState::load(&market.keccak_hash);
+
+        let deposit_pair: P::ResolvedPair<i64> = P::decode(payload, offset, len)?;
+        P::deposit::<HardcodedIndex>(
+            sender_balance_updates,
+            &market.common.token_index_pair,
+            deposit_pair,
+        );
 
         Ok(())
     }
@@ -70,20 +72,29 @@ pub type DynamicMarket<P: PairShape> = CommonMarket<DynamicIndex, P>;
 
 impl<P> DynamicMarket<P>
 where
-    P: PairShape + Decodable<P::ResolvedPair<DynamicIndex>>,
+    P: PairShape + Decodable<P::ResolvedPair<DynamicIndex>> + Decodable<P::ResolvedPair<i64>>,
     DynamicMarketKey<P>: DynamicMarketHasher<P>,
 {
     pub const DISCRIMINATOR: u8 = DynamicIndex::DISCRIMINATOR | (P::DISCRIMINATOR << 1);
 
     pub fn process(
+        sender_balance_updates: &mut SenderBalanceUpdates,
+        custom_erc20_list: &[CustomToken],
         payload: &ArgsBuffer,
         offset: &mut usize,
         len: usize,
-        custom_erc20_list: &[CustomToken],
     ) -> Result<(), GoblinError> {
         let market = Self::decode(payload, offset, len)?;
         let market_key = DynamicMarketKey::hash(&market, custom_erc20_list)?;
         let market_state = MarketState::load(&market_key);
+
+        // Decode deposit
+        let deposit_pair: P::ResolvedPair<i64> = P::decode(payload, offset, len)?;
+        P::deposit::<DynamicIndex>(
+            sender_balance_updates,
+            &market.token_index_pair,
+            deposit_pair,
+        );
 
         Ok(())
     }

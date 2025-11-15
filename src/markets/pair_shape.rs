@@ -14,9 +14,9 @@ pub trait PairShape {
     type ResolvedPair<K>;
 
     /// Queue amounts to deposit
-    fn deposit<M: MarketVariant>(
+    fn deposit<M: MarketVariant + Clone + Copy>(
         sender_balance_updates: &mut SenderBalanceUpdates,
-        index_pair: &Self::ResolvedPair<HardcodedIndex>,
+        index_pair: &Self::ResolvedPair<M>,
         deposits_pair: Self::ResolvedPair<i64>,
     );
 }
@@ -26,9 +26,9 @@ impl PairShape for Pair<ETH, ERC20> {
 
     type ResolvedPair<K> = K;
 
-    fn deposit<M: MarketVariant>(
+    fn deposit<M: MarketVariant + Clone + Copy>(
         sender_balance_updates: &mut SenderBalanceUpdates,
-        index_pair: &Self::ResolvedPair<HardcodedIndex>,
+        index_pair: &Self::ResolvedPair<M>,
         deposits: Self::ResolvedPair<i64>,
     ) {
         let quote_delta = index_pair.token_delta_mut(sender_balance_updates);
@@ -41,9 +41,9 @@ impl PairShape for Pair<ERC20, ETH> {
 
     type ResolvedPair<K> = K;
 
-    fn deposit<M: MarketVariant>(
+    fn deposit<M: MarketVariant + Clone + Copy>(
         sender_balance_updates: &mut SenderBalanceUpdates,
-        index_pair: &Self::ResolvedPair<HardcodedIndex>,
+        index_pair: &Self::ResolvedPair<M>,
         deposits: Self::ResolvedPair<i64>,
     ) {
         let base_delta = index_pair.token_delta_mut(sender_balance_updates);
@@ -58,9 +58,9 @@ impl PairShape for Pair<ERC20, ERC20> {
 
     type ResolvedPair<K> = Pair<K, K>;
 
-    fn deposit<M: MarketVariant>(
+    fn deposit<M: MarketVariant + Clone + Copy>(
         sender_balance_updates: &mut SenderBalanceUpdates,
-        index_pair: &Self::ResolvedPair<HardcodedIndex>,
+        index_pair: &Self::ResolvedPair<M>,
         deposits: Self::ResolvedPair<i64>,
     ) {
         let base_delta = index_pair.base.token_delta_mut(sender_balance_updates);

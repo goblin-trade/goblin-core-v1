@@ -46,13 +46,13 @@ impl MarketVariant for DynamicIndex {
         sender_balance_updates: &mut SenderBalanceUpdates,
     ) -> &mut ERC20DeltaMaybe {
         match self {
-            DynamicIndex::Hardcoded(index) => sender_balance_updates
+            DynamicIndex::Hardcoded(hardcoded_token_index) => sender_balance_updates
                 .hardcoded_token_deltas
-                .get_delta_mut(index),
+                .get_delta_mut(hardcoded_token_index),
 
-            DynamicIndex::Custom(index) => sender_balance_updates
+            DynamicIndex::Custom(custom_token_index) => sender_balance_updates
                 .custom_token_deltas
-                .get_delta_mut(index),
+                .get_delta_mut(custom_token_index),
         }
     }
 }

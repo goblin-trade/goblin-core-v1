@@ -82,28 +82,31 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
             // Dynamic markets
             DynamicMarket::<Pair<ETH, ERC20>>::DISCRIMINATOR => {
                 DynamicMarket::<Pair<ETH, ERC20>>::process(
+                    &mut sender_balance_updates,
+                    args.custom_erc20_list,
                     args_buffer.as_ref(),
                     &mut args.offset,
                     len,
-                    args.custom_erc20_list,
                 )?;
             }
 
             DynamicMarket::<Pair<ERC20, ETH>>::DISCRIMINATOR => {
                 DynamicMarket::<Pair<ERC20, ETH>>::process(
+                    &mut sender_balance_updates,
+                    args.custom_erc20_list,
                     args_buffer.as_ref(),
                     &mut args.offset,
                     len,
-                    args.custom_erc20_list,
                 )?;
             }
 
             DynamicMarket::<Pair<ERC20, ERC20>>::DISCRIMINATOR => {
                 DynamicMarket::<Pair<ERC20, ERC20>>::process(
+                    &mut sender_balance_updates,
+                    args.custom_erc20_list,
                     args_buffer.as_ref(),
                     &mut args.offset,
                     len,
-                    args.custom_erc20_list,
                 )?;
             }
 
