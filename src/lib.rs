@@ -54,6 +54,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
             // Hardcoded markets
             HardcodedMarket::<Pair<ETH, ERC20>>::DISCRIMINATOR => {
                 HardcodedMarket::<Pair<ETH, ERC20>>::process(
+                    &mut sender_balance_updates,
                     args_buffer.as_ref(),
                     &mut args.offset,
                     len,
@@ -62,6 +63,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
 
             HardcodedMarket::<Pair<ERC20, ETH>>::DISCRIMINATOR => {
                 HardcodedMarket::<Pair<ERC20, ETH>>::process(
+                    &mut sender_balance_updates,
                     args_buffer.as_ref(),
                     &mut args.offset,
                     len,
@@ -70,6 +72,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
 
             HardcodedMarket::<Pair<ERC20, ERC20>>::DISCRIMINATOR => {
                 HardcodedMarket::<Pair<ERC20, ERC20>>::process(
+                    &mut sender_balance_updates,
                     args_buffer.as_ref(),
                     &mut args.offset,
                     len,

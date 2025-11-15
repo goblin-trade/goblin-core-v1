@@ -1,14 +1,34 @@
 use crate::{
+    goblin_error::GoblinError,
+    markets::{MarketVariant, PairShape, ERC20, ETH},
     quantities::UnsidedAtoms,
     settlement::{CustomTokenDeltas, EthDelta, HardcodedTokenDeltas},
+    tokens::{HardcodedIndex, HardcodedToken},
+    types::Pair,
 };
 
 pub struct SenderBalanceUpdates {
+    /// Delta for ETH
     pub eth_delta: EthDelta,
 
+    /// Deltas for hardcoded tokens
     pub hardcoded_token_deltas: HardcodedTokenDeltas,
+
+    /// Deltas for custom tokens
     pub custom_token_deltas: CustomTokenDeltas,
 }
+
+// pub trait Depositable<M: MarketVariant, P: PairShape> {
+//     fn deposit(deposits: <P as PairShape>::ResolvedPair<i64>) -> Result<(), GoblinError>;
+// }
+
+// impl Depositable<HardcodedIndex, Pair<ETH, ERC20>> for SenderBalanceUpdates {
+//     fn deposit(
+//         deposits: <Pair<ETH, ERC20> as PairShape>::ResolvedPair<i64>,
+//     ) -> Result<(), GoblinError> {
+//         todo!()
+//     }
+// }
 
 impl SenderBalanceUpdates {
     pub fn new(msg_value: UnsidedAtoms, eth_out_due: UnsidedAtoms) -> Self {
@@ -18,6 +38,20 @@ impl SenderBalanceUpdates {
             custom_token_deltas: CustomTokenDeltas::default(),
         }
     }
+
+    // pub fn deposit<M: MarketVariant, P: PairShape>(
+    //     &mut self,
+    //     deposits: <P as PairShape>::ResolvedPair<i64>,
+    // ) -> Result<(), GoblinError> {
+    //     // * HardcodedIndex- hardcoded_token_deltas
+    //     // * DynamicIndex- dynamic if-else hardcoded_token_deltas or custom_token_deltas
+    //     let list = self.custom_token_deltas;
+
+    //     // This gets delta for 1 token
+    //     // But we have a pair of tokens
+    //     let delta = M::token_delta_mut(self, index);
+    //     Ok(())
+    // }
 
     // // old approach- dynamically know if token is ETH or ERC20.
     // // new approach- use Pairshape

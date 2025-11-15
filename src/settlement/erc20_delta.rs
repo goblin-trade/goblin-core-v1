@@ -12,25 +12,19 @@ pub const MAX_CUSTOM_DELTAS: usize = 8;
 pub type HardcodedTokenDeltas = [ERC20DeltaMaybe; HARDCODED_TOKENS.len()];
 pub type CustomTokenDeltas = [ERC20DeltaMaybe; MAX_CUSTOM_DELTAS];
 
-impl Default for HardcodedTokenDeltas {
-    fn default() -> Self {
-        [ERC20DeltaMaybe::default(); HARDCODED_TOKENS.len()]
-    }
-}
-
 pub trait DeltaListTrait<T: ERC20TokenTrait> {
-    fn get_delta(&self, token_index: TokenIndex<T>) -> &ERC20DeltaMaybe;
+    fn get_delta_mut(&mut self, token_index: TokenIndex<T>) -> &mut ERC20DeltaMaybe;
 }
 
 impl DeltaListTrait<HardcodedToken> for HardcodedTokenDeltas {
-    fn get_delta(&self, token_index: TokenIndex<HardcodedToken>) -> &ERC20DeltaMaybe {
-        &self[token_index.inner as usize]
+    fn get_delta_mut(&mut self, token_index: TokenIndex<HardcodedToken>) -> &mut ERC20DeltaMaybe {
+        &mut self[token_index.inner as usize]
     }
 }
 
 impl DeltaListTrait<CustomToken> for CustomTokenDeltas {
-    fn get_delta(&self, token_index: TokenIndex<CustomToken>) -> &ERC20DeltaMaybe {
-        &self[token_index.inner as usize]
+    fn get_delta_mut(&mut self, token_index: TokenIndex<CustomToken>) -> &mut ERC20DeltaMaybe {
+        &mut self[token_index.inner as usize]
     }
 }
 
@@ -50,10 +44,32 @@ impl Default for ERC20DeltaMaybe {
     }
 }
 
+impl ERC20DeltaMaybe {
+    /// Add a deposit amount to the delta accumulator.
+    /// The actualy deposit happens in settlement phase.
+    pub fn deposit(&mut self, deposit_amount: i64) {
+        if deposit_amount == 0 {
+            return;
+        }
+
+        if self.init {
+            let delta = unsafe { self.inner.assume_init_mut() };
+            delta.deposit_due += deposit_amount;
+        } else {
+            self.init = true;
+            self.inner.write(ERC20Delta {
+                deposit_due: deposit_amount,
+                common_delta: CommonDelta::default(),
+            });
+        }
+    }
+}
+
 /// ERC20 atoms due to be deducted, locked or transferred out on settlement
 #[derive(Default, Clone, Copy)]
 pub struct ERC20Delta {
-    pub deposit_due: DeltaAtoms,
+    // TODO use DeltaAtoms instead of i64
+    pub deposit_due: i64,
 
     pub common_delta: CommonDelta,
 }

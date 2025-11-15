@@ -4,6 +4,7 @@ use crate::{
     markets::{HardcodedMarketList, MarketVariant, PairShape},
     quantities::QuoteLotsPerBaseUnitPerTick,
     require,
+    settlement::SenderBalanceUpdates,
     state::{DynamicMarketHasher, DynamicMarketKey, HardcodedMarketKey, MarketState, SlotState},
     tokens::{CustomToken, DynamicIndex, HardcodedIndex, HardcodedToken, TokenIndex},
     types::{Base, LegMarker, Pair, Quote},
@@ -40,20 +41,23 @@ where
 
 impl<P> HardcodedMarket<P>
 where
-    P: PairShape + 'static,
+    P: PairShape + 'static + Decodable<P::ResolvedPair<i64>>,
     Self: HardcodedMarketList<P>,
 {
     pub const DISCRIMINATOR: u8 = HardcodedIndex::DISCRIMINATOR | (P::DISCRIMINATOR << 1);
 
     pub fn process(
+        sender_balance_updates: &mut SenderBalanceUpdates,
         payload: &ArgsBuffer,
         offset: &mut usize,
         len: usize,
     ) -> Result<(), GoblinError> {
         let market = Self::decode(payload, offset, len)?;
 
-        // TODO read deposit and withdraw amounts
-        // We can tie them up with PairShape. ETH is withdraw only, ERC20 can be deposited or withdrawn.
+        let index_pair: &P::ResolvedPair<HardcodedIndex> = &market.common.token_index_pair;
+        let deposit_pair: P::ResolvedPair<i64> = P::decode(payload, offset, len)?;
+        P::deposit::<HardcodedIndex>(sender_balance_updates, index_pair, deposit_pair);
+
         let market_state = MarketState::load(&market.keccak_hash);
 
         Ok(())
