@@ -1,5 +1,5 @@
 use crate::{
-    markets::MarketVariant, settlement::SenderBalanceUpdates, tokens::HardcodedIndex, types::Pair,
+    markets::MarketVariant, quantities::DeltaAtoms, settlement::SenderBalanceUpdates, types::Pair,
 };
 
 /// Marker type for ETH within a token pair
@@ -17,7 +17,7 @@ pub trait PairShape {
     fn deposit<M: MarketVariant + Clone + Copy>(
         sender_balance_updates: &mut SenderBalanceUpdates,
         index_pair: &Self::ResolvedPair<M>,
-        deposits_pair: Self::ResolvedPair<i64>,
+        deposits_pair: Self::ResolvedPair<DeltaAtoms>,
     );
 }
 
@@ -29,7 +29,7 @@ impl PairShape for Pair<ETH, ERC20> {
     fn deposit<M: MarketVariant + Clone + Copy>(
         sender_balance_updates: &mut SenderBalanceUpdates,
         index_pair: &Self::ResolvedPair<M>,
-        deposits: Self::ResolvedPair<i64>,
+        deposits: Self::ResolvedPair<DeltaAtoms>,
     ) {
         let quote_delta = index_pair.token_delta_mut(sender_balance_updates);
         quote_delta.deposit(deposits);
@@ -44,7 +44,7 @@ impl PairShape for Pair<ERC20, ETH> {
     fn deposit<M: MarketVariant + Clone + Copy>(
         sender_balance_updates: &mut SenderBalanceUpdates,
         index_pair: &Self::ResolvedPair<M>,
-        deposits: Self::ResolvedPair<i64>,
+        deposits: Self::ResolvedPair<DeltaAtoms>,
     ) {
         let base_delta = index_pair.token_delta_mut(sender_balance_updates);
         base_delta.deposit(deposits);
@@ -61,7 +61,7 @@ impl PairShape for Pair<ERC20, ERC20> {
     fn deposit<M: MarketVariant + Clone + Copy>(
         sender_balance_updates: &mut SenderBalanceUpdates,
         index_pair: &Self::ResolvedPair<M>,
-        deposits: Self::ResolvedPair<i64>,
+        deposits: Self::ResolvedPair<DeltaAtoms>,
     ) {
         let base_delta = index_pair.base.token_delta_mut(sender_balance_updates);
         base_delta.deposit(deposits.base);

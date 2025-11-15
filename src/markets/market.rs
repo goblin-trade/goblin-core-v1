@@ -2,7 +2,7 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::{ArgsBuffer, ArgsDecoder, Decodable},
     markets::{HardcodedMarketList, MarketVariant, PairShape},
-    quantities::QuoteLotsPerBaseUnitPerTick,
+    quantities::{DeltaAtoms, QuoteLotsPerBaseUnitPerTick},
     require,
     settlement::SenderBalanceUpdates,
     state::{DynamicMarketHasher, DynamicMarketKey, HardcodedMarketKey, MarketState, SlotState},
@@ -41,7 +41,7 @@ where
 
 impl<P> HardcodedMarket<P>
 where
-    P: PairShape + 'static + Decodable<P::ResolvedPair<i64>>,
+    P: PairShape + 'static + Decodable<P::ResolvedPair<DeltaAtoms>>,
     Self: HardcodedMarketList<P>,
 {
     pub const DISCRIMINATOR: u8 = HardcodedIndex::DISCRIMINATOR | (P::DISCRIMINATOR << 1);
@@ -55,7 +55,7 @@ where
         let market = Self::decode(payload, offset, len)?;
         let market_state = MarketState::load(&market.keccak_hash);
 
-        let deposit_pair: P::ResolvedPair<i64> = P::decode(payload, offset, len)?;
+        let deposit_pair: P::ResolvedPair<DeltaAtoms> = P::decode(payload, offset, len)?;
         P::deposit::<HardcodedIndex>(
             sender_balance_updates,
             &market.common.token_index_pair,
@@ -72,7 +72,9 @@ pub type DynamicMarket<P: PairShape> = CommonMarket<DynamicIndex, P>;
 
 impl<P> DynamicMarket<P>
 where
-    P: PairShape + Decodable<P::ResolvedPair<DynamicIndex>> + Decodable<P::ResolvedPair<i64>>,
+    P: PairShape
+        + Decodable<P::ResolvedPair<DynamicIndex>>
+        + Decodable<P::ResolvedPair<DeltaAtoms>>,
     DynamicMarketKey<P>: DynamicMarketHasher<P>,
 {
     pub const DISCRIMINATOR: u8 = DynamicIndex::DISCRIMINATOR | (P::DISCRIMINATOR << 1);
@@ -89,7 +91,7 @@ where
         let market_state = MarketState::load(&market_key);
 
         // Decode deposit
-        let deposit_pair: P::ResolvedPair<i64> = P::decode(payload, offset, len)?;
+        let deposit_pair: P::ResolvedPair<DeltaAtoms> = P::decode(payload, offset, len)?;
         P::deposit::<DynamicIndex>(
             sender_balance_updates,
             &market.token_index_pair,

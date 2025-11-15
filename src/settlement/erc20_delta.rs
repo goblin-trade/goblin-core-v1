@@ -47,8 +47,8 @@ impl Default for ERC20DeltaMaybe {
 impl ERC20DeltaMaybe {
     /// Add a deposit amount to the delta accumulator.
     /// The actualy deposit happens in settlement phase.
-    pub fn deposit(&mut self, deposit_amount: i64) -> Option<()> {
-        if deposit_amount == 0 {
+    pub fn deposit(&mut self, deposit_amount: DeltaAtoms) -> Option<()> {
+        if deposit_amount == DeltaAtoms::ZERO {
             return Some(());
         }
 
@@ -69,8 +69,7 @@ impl ERC20DeltaMaybe {
 /// ERC20 atoms due to be deducted, locked or transferred out on settlement
 #[derive(Default, Clone, Copy)]
 pub struct ERC20Delta {
-    // TODO use DeltaAtoms instead of i64
-    pub deposit_due: i64,
+    pub deposit_due: DeltaAtoms,
 
     pub common_delta: CommonDelta,
 }

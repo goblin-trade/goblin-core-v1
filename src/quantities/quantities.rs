@@ -373,12 +373,14 @@ impl<L: Exp, U: Exp, A: Exp> AsUnsided<Quote, L, U, A>
     }
 }
 
-#[derive(Default, Clone, Copy)]
+#[derive(Default, Clone, Copy, PartialEq)]
 pub struct DeltaAtoms {
     inner: i64,
 }
 
 impl DeltaAtoms {
+    pub const ZERO: Self = DeltaAtoms { inner: 0 };
+
     pub fn new(inner: i64) -> Self {
         Self { inner }
     }
