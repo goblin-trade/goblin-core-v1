@@ -47,14 +47,14 @@ impl Default for ERC20DeltaMaybe {
 impl ERC20DeltaMaybe {
     /// Add a deposit amount to the delta accumulator.
     /// The actualy deposit happens in settlement phase.
-    pub fn deposit(&mut self, deposit_amount: i64) {
+    pub fn deposit(&mut self, deposit_amount: i64) -> Option<()> {
         if deposit_amount == 0 {
-            return;
+            return Some(());
         }
 
         if self.init {
             let delta = unsafe { self.inner.assume_init_mut() };
-            delta.deposit_due += deposit_amount;
+            delta.deposit_due = delta.deposit_due.checked_add(deposit_amount)?;
         } else {
             self.init = true;
             self.inner.write(ERC20Delta {
@@ -62,6 +62,7 @@ impl ERC20DeltaMaybe {
                 common_delta: CommonDelta::default(),
             });
         }
+        Some(())
     }
 }
 

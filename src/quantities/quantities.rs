@@ -373,7 +373,7 @@ impl<L: Exp, U: Exp, A: Exp> AsUnsided<Quote, L, U, A>
     }
 }
 
-#[derive(Default, Clone, Copy, PartialEq)]
+#[derive(Default, Clone, Copy)]
 pub struct DeltaAtoms {
     inner: i64,
 }
@@ -381,6 +381,10 @@ pub struct DeltaAtoms {
 impl DeltaAtoms {
     pub fn new(inner: i64) -> Self {
         Self { inner }
+    }
+
+    pub fn checked_add(self, rhs: Self) -> Option<Self> {
+        self.inner.checked_add(rhs.inner).map(DeltaAtoms::new)
     }
 }
 
