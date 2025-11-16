@@ -4,7 +4,7 @@ use crate::{
     markets::{HardcodedMarketList, MarketHeader, MarketVariant, PairShape},
     quantities::{DeltaAtoms, QuoteLotsPerBaseUnitPerTick},
     require,
-    settlement::SenderBalanceUpdates,
+    settlement::{global::GlobalDelta, market::MarketDelta},
     state::{DynamicMarketHasher, DynamicMarketKey, HardcodedMarketKey, MarketState, SlotState},
     tokens::{CustomToken, DynamicIndex, HardcodedIndex, HardcodedToken, TokenIndex},
     types::{Base, LegMarker, Pair, Quote},
@@ -48,7 +48,7 @@ where
 
     pub fn process(
         market_header: &MarketHeader,
-        sender_balance_updates: &mut SenderBalanceUpdates,
+        global_delta: &mut GlobalDelta,
         payload: &ArgsBuffer,
         offset: &mut usize,
         len: usize,
@@ -59,15 +59,20 @@ where
         if market_header.decode_deposit_amounts {
             let deposit_pair: P::ResolvedPair<DeltaAtoms> = P::decode(payload, offset, len)?;
             P::deposit::<HardcodedIndex>(
-                sender_balance_updates,
+                global_delta,
                 &market.common.token_index_pair,
                 deposit_pair,
             );
         }
 
+        let market_delta = MarketDelta::default();
+
         // Take bid and take quote
         // Market namespaced deltas
         if market_header.execute_takes.base {}
+
+        // TODO ne
+        global_delta.apply_updates(&market_delta);
 
         Ok(())
     }
@@ -88,7 +93,7 @@ where
 
     pub fn process(
         market_header: &MarketHeader,
-        sender_balance_updates: &mut SenderBalanceUpdates,
+        global_delta: &mut GlobalDelta,
         custom_erc20_list: &[CustomToken],
         payload: &ArgsBuffer,
         offset: &mut usize,
@@ -100,12 +105,10 @@ where
 
         if market_header.decode_deposit_amounts {
             let deposit_pair: P::ResolvedPair<DeltaAtoms> = P::decode(payload, offset, len)?;
-            P::deposit::<DynamicIndex>(
-                sender_balance_updates,
-                &market.token_index_pair,
-                deposit_pair,
-            );
+            P::deposit::<DynamicIndex>(global_delta, &market.token_index_pair, deposit_pair);
         }
+
+        let market_delta = MarketDelta::default();
 
         Ok(())
     }

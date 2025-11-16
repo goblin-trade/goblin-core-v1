@@ -5,7 +5,7 @@ use crate::{
     input_processor::{Args, ArgsDecoder, Decodable},
     instructions::ix_take,
     markets::{DynamicMarket, HardcodedMarket, MarketHeader, ERC20, ETH},
-    settlement::global::SenderBalanceUpdates,
+    settlement::global::GlobalDelta,
     state::{MarketState, SlotState},
     tokens::{DynamicIndex, HardcodedIndex, HardcodedToken, TokenIndex},
     types::{Base, Pair, Quote},
@@ -43,7 +43,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
     let msg_sender = hostio::msg_sender();
 
     // Initialize deltas
-    let mut sender_balance_updates = SenderBalanceUpdates::new(args.msg_value, args.eth_out_due);
+    let mut global_delta = GlobalDelta::new(args.msg_value, args.eth_out_due);
     // let mut maker_balance_updates = MakerBalanceUpdates::default();
 
     // Iterate markets
@@ -55,7 +55,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
             HardcodedMarket::<Pair<ETH, ERC20>>::DISCRIMINATOR => {
                 HardcodedMarket::<Pair<ETH, ERC20>>::process(
                     &market_header,
-                    &mut sender_balance_updates,
+                    &mut global_delta,
                     args_buffer.as_ref(),
                     &mut args.offset,
                     len,
@@ -65,7 +65,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
             HardcodedMarket::<Pair<ERC20, ETH>>::DISCRIMINATOR => {
                 HardcodedMarket::<Pair<ERC20, ETH>>::process(
                     &market_header,
-                    &mut sender_balance_updates,
+                    &mut global_delta,
                     args_buffer.as_ref(),
                     &mut args.offset,
                     len,
@@ -75,7 +75,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
             HardcodedMarket::<Pair<ERC20, ERC20>>::DISCRIMINATOR => {
                 HardcodedMarket::<Pair<ERC20, ERC20>>::process(
                     &market_header,
-                    &mut sender_balance_updates,
+                    &mut global_delta,
                     args_buffer.as_ref(),
                     &mut args.offset,
                     len,
@@ -86,7 +86,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
             DynamicMarket::<Pair<ETH, ERC20>>::DISCRIMINATOR => {
                 DynamicMarket::<Pair<ETH, ERC20>>::process(
                     &market_header,
-                    &mut sender_balance_updates,
+                    &mut global_delta,
                     args.custom_erc20_list,
                     args_buffer.as_ref(),
                     &mut args.offset,
@@ -97,7 +97,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
             DynamicMarket::<Pair<ERC20, ETH>>::DISCRIMINATOR => {
                 DynamicMarket::<Pair<ERC20, ETH>>::process(
                     &market_header,
-                    &mut sender_balance_updates,
+                    &mut global_delta,
                     args.custom_erc20_list,
                     args_buffer.as_ref(),
                     &mut args.offset,
@@ -108,7 +108,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
             DynamicMarket::<Pair<ERC20, ERC20>>::DISCRIMINATOR => {
                 DynamicMarket::<Pair<ERC20, ERC20>>::process(
                     &market_header,
-                    &mut sender_balance_updates,
+                    &mut global_delta,
                     args.custom_erc20_list,
                     args_buffer.as_ref(),
                     &mut args.offset,

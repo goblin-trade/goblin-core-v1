@@ -1,5 +1,5 @@
 use crate::{
-    markets::MarketVariant, quantities::DeltaAtoms, settlement::SenderBalanceUpdates, types::Pair,
+    markets::MarketVariant, quantities::DeltaAtoms, settlement::global::GlobalDelta, types::Pair,
 };
 
 /// Marker type for ETH within a token pair
@@ -15,7 +15,7 @@ pub trait PairShape {
 
     /// Queue amounts to deposit
     fn deposit<M: MarketVariant + Clone + Copy>(
-        sender_balance_updates: &mut SenderBalanceUpdates,
+        global_delta: &mut GlobalDelta,
         index_pair: &Self::ResolvedPair<M>,
         deposits_pair: Self::ResolvedPair<DeltaAtoms>,
     );
@@ -27,11 +27,11 @@ impl PairShape for Pair<ETH, ERC20> {
     type ResolvedPair<K> = K;
 
     fn deposit<M: MarketVariant + Clone + Copy>(
-        sender_balance_updates: &mut SenderBalanceUpdates,
+        global_delta: &mut GlobalDelta,
         index_pair: &Self::ResolvedPair<M>,
         deposits: Self::ResolvedPair<DeltaAtoms>,
     ) {
-        let quote_delta = index_pair.token_delta_mut(sender_balance_updates);
+        let quote_delta = index_pair.token_delta_mut(global_delta);
         quote_delta.deposit(deposits);
     }
 }
@@ -42,11 +42,11 @@ impl PairShape for Pair<ERC20, ETH> {
     type ResolvedPair<K> = K;
 
     fn deposit<M: MarketVariant + Clone + Copy>(
-        sender_balance_updates: &mut SenderBalanceUpdates,
+        global_delta: &mut GlobalDelta,
         index_pair: &Self::ResolvedPair<M>,
         deposits: Self::ResolvedPair<DeltaAtoms>,
     ) {
-        let base_delta = index_pair.token_delta_mut(sender_balance_updates);
+        let base_delta = index_pair.token_delta_mut(global_delta);
         base_delta.deposit(deposits);
     }
 }
@@ -59,14 +59,14 @@ impl PairShape for Pair<ERC20, ERC20> {
     type ResolvedPair<K> = Pair<K, K>;
 
     fn deposit<M: MarketVariant + Clone + Copy>(
-        sender_balance_updates: &mut SenderBalanceUpdates,
+        global_delta: &mut GlobalDelta,
         index_pair: &Self::ResolvedPair<M>,
         deposits: Self::ResolvedPair<DeltaAtoms>,
     ) {
-        let base_delta = index_pair.base.token_delta_mut(sender_balance_updates);
+        let base_delta = index_pair.base.token_delta_mut(global_delta);
         base_delta.deposit(deposits.base);
 
-        let quote_delta = index_pair.quote.token_delta_mut(sender_balance_updates);
+        let quote_delta = index_pair.quote.token_delta_mut(global_delta);
         quote_delta.deposit(deposits.quote);
     }
 }
