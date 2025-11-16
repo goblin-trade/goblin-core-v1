@@ -5,7 +5,7 @@ use crate::{
     input_processor::{Args, ArgsDecoder, Decodable},
     instructions::ix_take,
     markets::{DynamicMarket, HardcodedMarket, MarketHeader, ERC20, ETH},
-    settlement::{MakerBalanceUpdates, MarketMakerDeltas, SenderBalanceUpdates, SenderDelta},
+    settlement::global::SenderBalanceUpdates,
     state::{MarketState, SlotState},
     tokens::{DynamicIndex, HardcodedIndex, HardcodedToken, TokenIndex},
     types::{Base, Pair, Quote},
@@ -44,7 +44,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
 
     // Initialize deltas
     let mut sender_balance_updates = SenderBalanceUpdates::new(args.msg_value, args.eth_out_due);
-    let mut maker_balance_updates = MakerBalanceUpdates::default();
+    // let mut maker_balance_updates = MakerBalanceUpdates::default();
 
     // Iterate markets
     for _ in 0..args.header.market_count {
