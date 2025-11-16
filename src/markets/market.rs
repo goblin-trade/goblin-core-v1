@@ -1,7 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::{ArgsBuffer, ArgsDecoder, Decodable},
-    markets::{HardcodedMarketList, MarketVariant, PairShape},
+    markets::{HardcodedMarketList, MarketHeader, MarketVariant, PairShape},
     quantities::{DeltaAtoms, QuoteLotsPerBaseUnitPerTick},
     require,
     settlement::SenderBalanceUpdates,
@@ -47,6 +47,7 @@ where
     pub const DISCRIMINATOR: u8 = HardcodedIndex::DISCRIMINATOR | (P::DISCRIMINATOR << 1);
 
     pub fn process(
+        market_header: &MarketHeader,
         sender_balance_updates: &mut SenderBalanceUpdates,
         payload: &ArgsBuffer,
         offset: &mut usize,
@@ -55,12 +56,18 @@ where
         let market = Self::decode(payload, offset, len)?;
         let market_state = MarketState::load(&market.keccak_hash);
 
-        let deposit_pair: P::ResolvedPair<DeltaAtoms> = P::decode(payload, offset, len)?;
-        P::deposit::<HardcodedIndex>(
-            sender_balance_updates,
-            &market.common.token_index_pair,
-            deposit_pair,
-        );
+        if market_header.decode_deposit_amounts {
+            let deposit_pair: P::ResolvedPair<DeltaAtoms> = P::decode(payload, offset, len)?;
+            P::deposit::<HardcodedIndex>(
+                sender_balance_updates,
+                &market.common.token_index_pair,
+                deposit_pair,
+            );
+        }
+
+        // Take bid and take quote
+        // Market namespaced deltas
+        if market_header.execute_takes.base {}
 
         Ok(())
     }
@@ -80,6 +87,7 @@ where
     pub const DISCRIMINATOR: u8 = DynamicIndex::DISCRIMINATOR | (P::DISCRIMINATOR << 1);
 
     pub fn process(
+        market_header: &MarketHeader,
         sender_balance_updates: &mut SenderBalanceUpdates,
         custom_erc20_list: &[CustomToken],
         payload: &ArgsBuffer,
@@ -90,13 +98,14 @@ where
         let market_key = DynamicMarketKey::hash(&market, custom_erc20_list)?;
         let market_state = MarketState::load(&market_key);
 
-        // Decode deposit
-        let deposit_pair: P::ResolvedPair<DeltaAtoms> = P::decode(payload, offset, len)?;
-        P::deposit::<DynamicIndex>(
-            sender_balance_updates,
-            &market.token_index_pair,
-            deposit_pair,
-        );
+        if market_header.decode_deposit_amounts {
+            let deposit_pair: P::ResolvedPair<DeltaAtoms> = P::decode(payload, offset, len)?;
+            P::deposit::<DynamicIndex>(
+                sender_balance_updates,
+                &market.token_index_pair,
+                deposit_pair,
+            );
+        }
 
         Ok(())
     }
