@@ -70,3 +70,5 @@ impl PairShape for Pair<ERC20, ERC20> {
         quote_delta.deposit(deposits.quote);
     }
 }
+
+impl<P: PairShape> Default for P::ResolvedPair<DeltaAtoms> {}

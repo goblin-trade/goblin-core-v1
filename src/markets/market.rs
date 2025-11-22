@@ -56,6 +56,8 @@ where
         let market = Self::decode(payload, offset, len)?;
         let market_state = MarketState::load(&market.keccak_hash);
 
+        // TODO move this to market namespace delta
+        // Deposit into global delta in the end
         if market_header.decode_deposit_amounts {
             let deposit_pair: P::ResolvedPair<DeltaAtoms> = P::decode(payload, offset, len)?;
             P::deposit::<HardcodedIndex>(
