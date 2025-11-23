@@ -12,8 +12,13 @@ use crate::{
 
 pub fn ix_take<M, P, In>(
     market_delta: &MarketDelta<P>,
-    taker: &Address,
+    msg_sender: &Address,
+
+    // TODO why not pass CommonMarket?
+    // hardcoded market hash is never used.
+    // CommonMarket will remove the need to define a general trait for M::Market
     market: &M::Market<P>,
+
     market_state: &mut MarketState<M, P>,
     payload: &ArgsBuffer,
     offset: &mut usize,
@@ -28,10 +33,10 @@ where
 {
     let packet = TakePacket::<In>::decode(payload, len, offset)?;
 
-    match_order::<In>(
-        pending_maker_updates,
-        taker,
-        indexed_market,
+    match_order::<M, P, In>(
+        market_delta,
+        msg_sender,
+        market,
         market_state,
         packet.num_lots,
         packet.min_lots_to_fill,

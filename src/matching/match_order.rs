@@ -1,24 +1,26 @@
 use crate::{
     goblin_error::GoblinError,
-    markets::IndexedMarket,
+    markets::{MarketVariant, PairShape},
     matching::{quote_iterator::RestingOrderPositionIterator, MatchResult},
     quantities::{QuantityOps, Ticks},
     require,
-    settlement::{MakerSideDelta, MarketMakerDeltas},
+    settlement::market::{MakerSideDelta, MarketDelta},
     state::{MarketState, RestingOrder, RestingOrderKey, SlotState},
     types::{Address, Base, LegMarker, PairAccessor, Quote},
 };
 
-pub fn match_order<In>(
-    pending_maker_updates: &mut MarketMakerDeltas,
-    taker: &Address,
-    indexed_market: &IndexedMarket,
-    market_state: &mut MarketState,
+pub fn match_order<M, P, In>(
+    market_delta: &MarketDelta<P>,
+    msg_sender: &Address,
+    market: &M::Market<P>,
+    market_state: &mut MarketState<M, P>,
     num_lots: In::Lots,
     min_lots_to_fill: In::Lots,
     price_limit: Ticks,
 ) -> Result<MatchResult<In>, GoblinError>
 where
+    M: MarketVariant,
+    P: PairShape,
     In: LegMarker
         + PairAccessor<MakerSideDelta<Base>, MakerSideDelta<Quote>, Result = MakerSideDelta<In>>,
     In::Opposite: PairAccessor<Ticks, Ticks, Result = Ticks>,
