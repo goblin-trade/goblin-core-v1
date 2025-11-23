@@ -54,6 +54,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
             // Hardcoded markets
             HardcodedMarket::<Pair<ETH, ERC20>>::DISCRIMINATOR => {
                 HardcodedMarket::<Pair<ETH, ERC20>>::process(
+                    msg_sender.as_ref(),
                     &market_header,
                     &mut global_delta,
                     args_buffer.as_ref(),
@@ -64,6 +65,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
 
             HardcodedMarket::<Pair<ERC20, ETH>>::DISCRIMINATOR => {
                 HardcodedMarket::<Pair<ERC20, ETH>>::process(
+                    msg_sender.as_ref(),
                     &market_header,
                     &mut global_delta,
                     args_buffer.as_ref(),
@@ -74,6 +76,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
 
             HardcodedMarket::<Pair<ERC20, ERC20>>::DISCRIMINATOR => {
                 HardcodedMarket::<Pair<ERC20, ERC20>>::process(
+                    msg_sender.as_ref(),
                     &market_header,
                     &mut global_delta,
                     args_buffer.as_ref(),
@@ -85,6 +88,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
             // Dynamic markets
             DynamicMarket::<Pair<ETH, ERC20>>::DISCRIMINATOR => {
                 DynamicMarket::<Pair<ETH, ERC20>>::process(
+                    msg_sender.as_ref(),
                     &market_header,
                     &mut global_delta,
                     args.custom_erc20_list,
@@ -96,6 +100,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
 
             DynamicMarket::<Pair<ERC20, ETH>>::DISCRIMINATOR => {
                 DynamicMarket::<Pair<ERC20, ETH>>::process(
+                    msg_sender.as_ref(),
                     &market_header,
                     &mut global_delta,
                     args.custom_erc20_list,
@@ -107,6 +112,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
 
             DynamicMarket::<Pair<ERC20, ERC20>>::DISCRIMINATOR => {
                 DynamicMarket::<Pair<ERC20, ERC20>>::process(
+                    msg_sender.as_ref(),
                     &market_header,
                     &mut global_delta,
                     args.custom_erc20_list,

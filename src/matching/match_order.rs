@@ -1,7 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
     markets::IndexedMarket,
-    matching::quote_iterator::RestingOrderPositionIterator,
+    matching::{quote_iterator::RestingOrderPositionIterator, MatchResult},
     quantities::{QuantityOps, Ticks},
     require,
     settlement::{MakerSideDelta, MarketMakerDeltas},
@@ -145,18 +145,4 @@ where
     };
 
     Ok(match_result)
-}
-
-pub struct MatchResult<In: LegMarker> {
-    pub maker_side_delta: MakerSideDelta<In>,
-    pub released_by_self_trade: <In::Opposite as LegMarker>::MatchingLots,
-}
-
-impl<In: LegMarker> Default for MatchResult<In> {
-    fn default() -> Self {
-        Self {
-            maker_side_delta: MakerSideDelta::default(),
-            released_by_self_trade: <In::Opposite as LegMarker>::MatchingLots::default(),
-        }
-    }
 }

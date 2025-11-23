@@ -2,24 +2,26 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::ArgsBuffer,
     instructions::take::take_packet::TakePacket,
-    markets::IndexedMarket,
+    markets::{MarketVariant, PairShape},
     matching::{match_order, MatchResult},
     quantities::Ticks,
-    settlement::{MakerSideDelta, MarketMakerDeltas},
+    settlement::market::{MakerSideDelta, MarketDelta},
     state::MarketState,
     types::{Address, Base, LegMarker, PairAccessor, Quote},
 };
 
-pub fn ix_take<In>(
-    pending_maker_updates: &mut MarketMakerDeltas,
+pub fn ix_take<M, P, In>(
+    market_delta: &MarketDelta<P>,
     taker: &Address,
-    indexed_market: &IndexedMarket,
-    market_state: &mut MarketState,
+    market: &M::Market<P>,
+    market_state: &mut MarketState<M, P>,
     payload: &ArgsBuffer,
-    len: usize,
     offset: &mut usize,
+    len: usize,
 ) -> Result<MatchResult<In>, GoblinError>
 where
+    M: MarketVariant,
+    P: PairShape,
     In: LegMarker
         + PairAccessor<MakerSideDelta<Base>, MakerSideDelta<Quote>, Result = MakerSideDelta<In>>,
     In::Opposite: PairAccessor<Ticks, Ticks, Result = Ticks>,

@@ -1,13 +1,14 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::{ArgsBuffer, ArgsDecoder, Decodable},
+    instructions::ix_take,
     markets::{HardcodedMarketList, MarketHeader, MarketVariant, PairShape},
     quantities::{DeltaAtoms, QuoteLotsPerBaseUnitPerTick},
     require,
     settlement::{global::GlobalDelta, market::MarketDelta},
     state::{DynamicMarketHasher, DynamicMarketKey, HardcodedMarketKey, MarketState, SlotState},
     tokens::{CustomToken, DynamicIndex, HardcodedIndex, HardcodedToken, TokenIndex},
-    types::{Base, LegMarker, Pair, Quote},
+    types::{Address, Base, LegMarker, Pair, Quote},
 };
 
 pub type LotSizePair = Pair<<Base as LegMarker>::LotsPerUnit, <Quote as LegMarker>::LotsPerUnit>;
@@ -51,7 +52,10 @@ where
 {
     pub const DISCRIMINATOR: u8 = HardcodedIndex::DISCRIMINATOR | (P::DISCRIMINATOR << 1);
 
+    // TODO define common trait for both market types if they have common arguments
+    // Currently HardcodedMarket doesn't require custom_erc20_list
     pub fn process(
+        msg_sender: &Address,
         market_header: &MarketHeader,
         global_delta: &mut GlobalDelta,
         payload: &ArgsBuffer,
@@ -59,13 +63,33 @@ where
         len: usize,
     ) -> Result<(), GoblinError> {
         let market = Self::decode(payload, offset, len)?;
-        let market_state = MarketState::load(&market.keccak_hash);
+        let mut market_state = MarketState::load(&market.keccak_hash).into_inner();
 
         let market_delta =
             MarketDelta::<P>::new(market_header.decode_deposit_amounts, payload, offset, len)?;
 
         // Take bid and take quote
-        if market_header.execute_takes.base {}
+        if market_header.execute_takes.base {
+            ix_take::<HardcodedIndex, P, Base>(
+                &market_delta,
+                msg_sender,
+                market,
+                &mut market_state,
+                payload,
+                offset,
+                len,
+            )?;
+
+            // let match_result = ix_take::<HardcodedIndex, P, Base>(
+            //     &mut market_delta,
+            //     msg_sender.as_ref(),
+            //     &indexed_market,
+            //     market_state.as_mut(),
+            //     payload,
+            //     offset,
+            //     len,
+            // )?;
+        }
 
         // Apply market delta updates on global delta
         P::commit_delta(&market.common.token_index_pair, global_delta, &market_delta)?;
@@ -85,6 +109,7 @@ where
     pub const DISCRIMINATOR: u8 = DynamicIndex::DISCRIMINATOR | (P::DISCRIMINATOR << 1);
 
     pub fn process(
+        msg_sender: &Address,
         market_header: &MarketHeader,
         global_delta: &mut GlobalDelta,
         custom_erc20_list: &[CustomToken],
