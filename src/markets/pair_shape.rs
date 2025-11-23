@@ -40,15 +40,22 @@ impl PairShape for Pair<ETH, ERC20> {
         Self: Sized,
     {
         // 3 steps
-        // 1. Update sender delta
-        // 2. Update maker deltas
-        // 3. Update deposit amounts
+        // 1. Update deposit amounts
+        // 2. Update sender delta
+        // 3. Update maker deltas
 
         // Deposit amounts
         let quote_delta = index_pair.token_delta_mut(global_delta);
         quote_delta
             .deposit(market_delta.deposit_pair)
             .ok_or(GoblinError::DepositOverflow)?;
+
+        // Sender delta
+        // It has base and quote sides
+        // We need to apply it into ETH or ERC20 as per the pair shape
+
+        let base_sender_delta = &market_delta.sender_delta.base; // TODO apply on ETH
+        let quote_sender_delta = &market_delta.sender_delta.quote; // TODO apply on ERC20
 
         Ok(())
     }

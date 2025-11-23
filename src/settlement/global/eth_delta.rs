@@ -13,7 +13,7 @@ pub struct EthDelta {
     /// Atoms credited by msg.value
     pub msg_value: UnsidedAtoms,
 
-    /// Amount of ETH atoms pending withdrawal, as read from market namespace
+    /// Amount of ETH atoms pending withdrawal, as read from global namespace header
     ///
     /// The actual amount withdrawn is MIN(available, widthdrawal_due)
     /// This allows us to withdraw max available amount by passing u64::MAX
