@@ -39,9 +39,14 @@ where
     pub keccak_hash: HardcodedMarketKey<P>,
 }
 
+/// A market whose token indices are dynamically specified at runtime.
+/// Works with any token pair shape (ETH–ERC20, ERC20–ETH, ERC20–ERC20).
+pub type DynamicMarket<P: PairShape> = CommonMarket<DynamicIndex, P>;
+
 impl<P> HardcodedMarket<P>
 where
     P: PairShape + 'static + Decodable<P::ResolvedPair<DeltaAtoms>>,
+    P::ResolvedPair<DeltaAtoms>: Default,
     Self: HardcodedMarketList<P>,
 {
     pub const DISCRIMINATOR: u8 = HardcodedIndex::DISCRIMINATOR | (P::DISCRIMINATOR << 1);
@@ -56,39 +61,25 @@ where
         let market = Self::decode(payload, offset, len)?;
         let market_state = MarketState::load(&market.keccak_hash);
 
-        // TODO move this to market namespace delta
-        // Deposit into global delta in the end
-        if market_header.decode_deposit_amounts {
-            let deposit_pair: P::ResolvedPair<DeltaAtoms> = P::decode(payload, offset, len)?;
-            P::deposit::<HardcodedIndex>(
-                global_delta,
-                &market.common.token_index_pair,
-                deposit_pair,
-            );
-        }
-
-        let market_delta = MarketDelta::default();
+        let market_delta =
+            MarketDelta::<P>::new(market_header.decode_deposit_amounts, payload, offset, len)?;
 
         // Take bid and take quote
-        // Market namespaced deltas
         if market_header.execute_takes.base {}
 
-        // TODO ne
-        global_delta.apply_updates(&market_delta);
+        // Apply market delta updates on global delta
+        P::commit_delta(&market.common.token_index_pair, global_delta, &market_delta)?;
 
         Ok(())
     }
 }
-
-/// A market whose token indices are dynamically specified at runtime.
-/// Works with any token pair shape (ETH–ERC20, ERC20–ETH, ERC20–ERC20).
-pub type DynamicMarket<P: PairShape> = CommonMarket<DynamicIndex, P>;
 
 impl<P> DynamicMarket<P>
 where
     P: PairShape
         + Decodable<P::ResolvedPair<DynamicIndex>>
         + Decodable<P::ResolvedPair<DeltaAtoms>>,
+    P::ResolvedPair<DeltaAtoms>: Default,
     DynamicMarketKey<P>: DynamicMarketHasher<P>,
 {
     pub const DISCRIMINATOR: u8 = DynamicIndex::DISCRIMINATOR | (P::DISCRIMINATOR << 1);
@@ -105,12 +96,10 @@ where
         let market_key = DynamicMarketKey::hash(&market, custom_erc20_list)?;
         let market_state = MarketState::load(&market_key);
 
-        if market_header.decode_deposit_amounts {
-            let deposit_pair: P::ResolvedPair<DeltaAtoms> = P::decode(payload, offset, len)?;
-            P::deposit::<DynamicIndex>(global_delta, &market.token_index_pair, deposit_pair);
-        }
+        let market_delta =
+            MarketDelta::<P>::new(market_header.decode_deposit_amounts, payload, offset, len)?;
 
-        let market_delta = MarketDelta::default();
+        P::commit_delta(&market.token_index_pair, global_delta, &market_delta)?;
 
         Ok(())
     }

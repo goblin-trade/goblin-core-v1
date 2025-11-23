@@ -33,10 +33,6 @@ impl GlobalDelta {
         }
     }
 
-    // TODO move function to PairShape, like we have done to the deposit() function
-    // P::apply_updates::<MarketVariant>()
-    pub fn apply_updates(&mut self, market_delta: &MarketDelta) {}
-
     fn apply_side_updates<In>() -> Result<(), GoblinError>
     where
         In: LegMarker,

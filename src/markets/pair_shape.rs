@@ -1,5 +1,8 @@
 use crate::{
-    markets::MarketVariant, quantities::DeltaAtoms, settlement::global::GlobalDelta, types::Pair,
+    goblin_error::GoblinError,
+    markets::MarketVariant,
+    settlement::{global::GlobalDelta, market::MarketDelta},
+    types::Pair,
 };
 
 /// Marker type for ETH within a token pair
@@ -13,12 +16,14 @@ pub trait PairShape {
 
     type ResolvedPair<K>;
 
-    /// Queue amounts to deposit
-    fn deposit<M: MarketVariant + Clone + Copy>(
-        global_delta: &mut GlobalDelta,
+    /// Commit market namespaced delta into the global delta
+    fn commit_delta<M: MarketVariant + Clone + Copy>(
         index_pair: &Self::ResolvedPair<M>,
-        deposits_pair: Self::ResolvedPair<DeltaAtoms>,
-    );
+        global_delta: &mut GlobalDelta,
+        market_delta: &MarketDelta<Self>,
+    ) -> Result<(), GoblinError>
+    where
+        Self: Sized;
 }
 
 impl PairShape for Pair<ETH, ERC20> {
@@ -26,13 +31,26 @@ impl PairShape for Pair<ETH, ERC20> {
 
     type ResolvedPair<K> = K;
 
-    fn deposit<M: MarketVariant + Clone + Copy>(
-        global_delta: &mut GlobalDelta,
+    fn commit_delta<M: MarketVariant + Clone + Copy>(
         index_pair: &Self::ResolvedPair<M>,
-        deposits: Self::ResolvedPair<DeltaAtoms>,
-    ) {
+        global_delta: &mut GlobalDelta,
+        market_delta: &MarketDelta<Self>,
+    ) -> Result<(), GoblinError>
+    where
+        Self: Sized,
+    {
+        // 3 steps
+        // 1. Update sender delta
+        // 2. Update maker deltas
+        // 3. Update deposit amounts
+
+        // Deposit amounts
         let quote_delta = index_pair.token_delta_mut(global_delta);
-        quote_delta.deposit(deposits);
+        quote_delta
+            .deposit(market_delta.deposit_pair)
+            .ok_or(GoblinError::DepositOverflow)?;
+
+        Ok(())
     }
 }
 
@@ -41,13 +59,20 @@ impl PairShape for Pair<ERC20, ETH> {
 
     type ResolvedPair<K> = K;
 
-    fn deposit<M: MarketVariant + Clone + Copy>(
-        global_delta: &mut GlobalDelta,
+    fn commit_delta<M: MarketVariant + Clone + Copy>(
         index_pair: &Self::ResolvedPair<M>,
-        deposits: Self::ResolvedPair<DeltaAtoms>,
-    ) {
+        global_delta: &mut GlobalDelta,
+        market_delta: &MarketDelta<Self>,
+    ) -> Result<(), GoblinError>
+    where
+        Self: Sized,
+    {
         let base_delta = index_pair.token_delta_mut(global_delta);
-        base_delta.deposit(deposits);
+        base_delta
+            .deposit(market_delta.deposit_pair)
+            .ok_or(GoblinError::DepositOverflow)?;
+
+        Ok(())
     }
 }
 
@@ -58,17 +83,24 @@ impl PairShape for Pair<ERC20, ERC20> {
 
     type ResolvedPair<K> = Pair<K, K>;
 
-    fn deposit<M: MarketVariant + Clone + Copy>(
-        global_delta: &mut GlobalDelta,
+    fn commit_delta<M: MarketVariant + Clone + Copy>(
         index_pair: &Self::ResolvedPair<M>,
-        deposits: Self::ResolvedPair<DeltaAtoms>,
-    ) {
+        global_delta: &mut GlobalDelta,
+        market_delta: &MarketDelta<Self>,
+    ) -> Result<(), GoblinError>
+    where
+        Self: Sized,
+    {
         let base_delta = index_pair.base.token_delta_mut(global_delta);
-        base_delta.deposit(deposits.base);
+        base_delta
+            .deposit(market_delta.deposit_pair.base)
+            .ok_or(GoblinError::DepositOverflow)?;
 
         let quote_delta = index_pair.quote.token_delta_mut(global_delta);
-        quote_delta.deposit(deposits.quote);
+        quote_delta
+            .deposit(market_delta.deposit_pair.quote)
+            .ok_or(GoblinError::DepositOverflow)?;
+
+        Ok(())
     }
 }
-
-impl<P: PairShape> Default for P::ResolvedPair<DeltaAtoms> {}

@@ -1,9 +1,7 @@
-use core::default;
-
 use crate::{
     goblin_error::GoblinError,
     input_processor::{ArgsBuffer, Decodable},
-    markets::{MarketVariant, PairShape},
+    markets::PairShape,
     quantities::DeltaAtoms,
     settlement::market::{MarketMakerDeltas, SenderDelta},
 };
@@ -23,6 +21,7 @@ pub struct MarketDelta<P: PairShape> {
 impl<P> MarketDelta<P>
 where
     P: PairShape + Decodable<P::ResolvedPair<DeltaAtoms>>,
+    P::ResolvedPair<DeltaAtoms>: Default,
 {
     pub fn new(
         decode_deposit_amounts: bool,
@@ -30,17 +29,11 @@ where
         offset: &mut usize,
         len: usize,
     ) -> Result<Self, GoblinError> {
-        let gg = if decode_deposit_amounts {
+        let deposit_pair = if decode_deposit_amounts {
             P::decode(payload, offset, len)?
         } else {
-            // Need to implement default()
-            //
-            // Should we apply it at top level of trait, or only on ResolvedPair<DeltaAtoms>?
-            // If we apply on top level, we need to apply it for TokenIndex and DynamicIndex
             P::ResolvedPair::<DeltaAtoms>::default()
         };
-
-        let deposit_pair: P::ResolvedPair<DeltaAtoms> = P::decode(payload, offset, len)?;
 
         Ok(MarketDelta {
             sender_delta: SenderDelta::default(),

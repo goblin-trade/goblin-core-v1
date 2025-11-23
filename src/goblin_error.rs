@@ -32,6 +32,7 @@ pub enum GoblinError {
     InvalidHardcodedMarket = 28,
     InvalidHardcodedTokenIndex = 29,
     InvalidCustomTokenIndex = 30,
+    DepositOverflow = 31,
 }
 
 impl GoblinError {
