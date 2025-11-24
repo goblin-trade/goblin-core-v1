@@ -11,19 +11,3 @@ pub struct MatchResult<In: LegMarker> {
     /// Lots of output token released on self trade
     pub released_by_self_trade: <In::Opposite as LegMarker>::MatchingLots,
 }
-
-#[cfg(test)]
-mod tests {
-    use crate::types::Base;
-
-    use super::*;
-
-    #[test]
-    fn test_default_equal() {
-        let result_0 = MatchResult::<Base>::default();
-        let result_1 = MatchResult::<Base>::default();
-
-        if result_0 == result_1 {}
-        // if result_0.eq(result_1) {}
-    }
-}
