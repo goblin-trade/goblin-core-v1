@@ -4,13 +4,13 @@ use crate::{
     matching::{quote_iterator::RestingOrderPositionIterator, MatchResult},
     quantities::{QuantityOps, Ticks},
     require,
-    settlement::market::{MakerSideDelta, MarketDelta},
+    settlement::market_delta::{MakerDelta, MarketDelta},
     state::{MarketState, RestingOrder, RestingOrderKey, SlotState},
     types::{Address, Base, LegMarker, PairAccessor, Quote},
 };
 
 pub fn match_order<M, P, In>(
-    market_delta: &MarketDelta<P>,
+    market_delta: &mut MarketDelta<P>,
     taker: &Address,
     market: &CommonMarket<M, P>,
     market_state: &mut MarketState<M, P>,
@@ -21,8 +21,7 @@ pub fn match_order<M, P, In>(
 where
     M: MarketVariant,
     P: PairShape,
-    In: LegMarker
-        + PairAccessor<MakerSideDelta<Base>, MakerSideDelta<Quote>, Result = MakerSideDelta<In>>,
+    In: LegMarker + PairAccessor<MakerDelta<Base>, MakerDelta<Quote>, Result = MakerDelta<In>>,
     In::Opposite: PairAccessor<Ticks, Ticks, Result = Ticks>,
 {
     let budget = In::matching_lots_taker(num_lots, market.lot_size_pair.base);
@@ -113,10 +112,8 @@ where
                     matched_opposite += quote_opposite;
 
                     // Update maker
-                    // TODO update market_delta instead
-                    // Also we return MatchResult, then use it to update market_delta externally. We should update
-                    // market_delta here itself. No need to return any value.
-                    let pending_maker_update_mut = pending_maker_updates
+                    let pending_maker_update_mut = market_delta
+                        .maker_deltas
                         .get_or_insert_mut(maker)
                         .ok_or(GoblinError::MakerListFull)?;
 
@@ -138,7 +135,7 @@ where
         }
     }
     let match_result = MatchResult::<In> {
-        maker_side_delta: MakerSideDelta {
+        maker_side_delta: MakerDelta {
             free_matching_lots_in: matched,
             locked_matching_lots_out: matched_opposite,
         },

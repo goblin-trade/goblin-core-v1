@@ -1,7 +1,7 @@
 use core::marker::PhantomData;
 
 use crate::{
-    erc20, goblin_error::GoblinError, require, settlement::global::ERC20DeltaMaybe,
+    erc20, goblin_error::GoblinError, require, settlement::global_delta::ERC20DeltaMaybe,
     tokens::HARDCODED_TOKENS, types::Address,
 };
 

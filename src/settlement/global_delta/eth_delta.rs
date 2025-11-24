@@ -3,7 +3,7 @@ use crate::{
     goblin_error::GoblinError,
     quantities::{QuantityOps, UnsidedAtoms},
     require,
-    settlement::global::CommonDelta,
+    settlement::global_delta::CommonDelta,
     state::{EthStore, EthStoreKey, SlotState},
     types::{Address, NATIVE_TOKEN_DECIMALS},
 };

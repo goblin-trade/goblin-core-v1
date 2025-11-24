@@ -5,7 +5,7 @@ use crate::{
     input_processor::{Args, ArgsDecoder, Decodable},
     instructions::ix_take,
     markets::{DynamicMarket, HardcodedMarket, MarketHeader, ERC20, ETH},
-    settlement::global::GlobalDelta,
+    settlement::global_delta::GlobalDelta,
     state::{MarketState, SlotState},
     tokens::{DynamicIndex, HardcodedIndex, HardcodedToken, TokenIndex},
     types::{Base, Pair, Quote},

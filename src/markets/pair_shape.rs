@@ -1,7 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
     markets::MarketVariant,
-    settlement::{global::GlobalDelta, market::MarketDelta},
+    settlement::{global_delta::GlobalDelta, market_delta::MarketDelta},
     types::Pair,
 };
 

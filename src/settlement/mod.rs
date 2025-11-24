@@ -1,2 +1,2 @@
-pub mod global;
-pub mod market;
+pub mod global_delta;
+pub mod market_delta;

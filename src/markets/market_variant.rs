@@ -1,6 +1,6 @@
 use crate::{
     markets::PairShape,
-    settlement::global::{DeltaListTrait, ERC20DeltaMaybe, GlobalDelta},
+    settlement::global_delta::{DeltaListTrait, ERC20DeltaMaybe, GlobalDelta},
     state::{DynamicMarketKey, HardcodedMarketKey, SlotKey},
     tokens::{DynamicIndex, HardcodedIndex},
 };

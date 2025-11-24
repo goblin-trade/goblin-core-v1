@@ -3,7 +3,7 @@ use crate::{
     input_processor::{ArgsBuffer, Decodable},
     markets::{CommonMarket, HardcodedMarketList, MarketHeader, MarketVariant, PairShape},
     quantities::DeltaAtoms,
-    settlement::{global::GlobalDelta, market::MarketDelta},
+    settlement::{global_delta::GlobalDelta, market_delta::MarketDelta},
     state::{HardcodedMarketKey, MarketState, SlotState},
     tokens::HardcodedIndex,
     types::Address,

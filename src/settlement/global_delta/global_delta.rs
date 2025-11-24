@@ -3,8 +3,8 @@ use crate::{
     markets::{MarketVariant, PairShape, ERC20, ETH},
     quantities::UnsidedAtoms,
     settlement::{
-        global::{CustomTokenDeltas, EthDelta, GlobalMakerDeltas, HardcodedTokenDeltas},
-        market::MarketDelta,
+        global_delta::{CustomTokenDeltas, EthDelta, GlobalMakerDeltas, HardcodedTokenDeltas},
+        market_delta::MarketDelta,
     },
     tokens::{HardcodedIndex, HardcodedToken},
     types::{LegMarker, Pair},

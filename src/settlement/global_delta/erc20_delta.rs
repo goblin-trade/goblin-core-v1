@@ -2,7 +2,7 @@ use core::mem::MaybeUninit;
 
 use crate::{
     quantities::{DeltaAtoms, QuantityOps},
-    settlement::global::CommonDelta,
+    settlement::global_delta::CommonDelta,
     state::ERC20Store,
     tokens::{CustomToken, ERC20TokenTrait, HardcodedToken, TokenIndex, HARDCODED_TOKENS},
 };
