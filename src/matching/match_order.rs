@@ -140,10 +140,8 @@ where
 
     let take_result_mut = In::get_leg_mut(&mut local_delta.sender_delta.take_result_pair);
     *take_result_mut = MatchResult::<In> {
-        maker_delta: MakerDelta {
-            free_matching_lots_in: matched,
-            locked_matching_lots_out: matched_opposite,
-        },
+        free_matching_lots_in: matched,
+        locked_matching_lots_out: matched_opposite,
         released_by_self_trade,
     };
 

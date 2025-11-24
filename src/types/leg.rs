@@ -6,13 +6,13 @@ use crate::quantities::{
 };
 use core::ops::{Div, Mul, Rem};
 
-#[derive(Default, Clone, Copy)]
+#[derive(Default, Clone, Copy, PartialEq)]
 pub struct Base;
 
-#[derive(Default, Clone, Copy)]
+#[derive(Default, Clone, Copy, PartialEq)]
 pub struct Quote;
 
-pub trait LegMarker {
+pub trait LegMarker: Default + Clone + Copy + PartialEq {
     type Opposite: LegMarker<Opposite = Self>;
 
     // Basic quantities

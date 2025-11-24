@@ -1,8 +1,9 @@
 use crate::{
     goblin_error::GoblinError,
     markets::MarketVariant,
+    matching::MatchResult,
     settlement::{global_delta::GlobalDelta, local_delta::LocalDelta},
-    types::Pair,
+    types::{Base, Pair},
 };
 
 /// Marker type for ETH within a token pair
@@ -56,9 +57,13 @@ impl PairShape for Pair<ETH, ERC20> {
         // It has base and quote sides
         // We need to apply it into ETH or ERC20 as per the pair shape
 
-        let base_take_result = &local_delta.sender_delta.take_result_pair.base; // TODO apply on ETH
-        let quote_take_result = &local_delta.sender_delta.take_result_pair.quote; // TODO apply on ERC20
+        let base_take_result = &local_delta.sender_delta.take_result_pair.base;
+        let quote_take_result = &local_delta.sender_delta.take_result_pair.quote;
 
+        if *base_take_result != MatchResult::<Base>::default() {
+            // ETH goes in, ERC20 comes out
+            // This result applies on both ETH and ERC20
+        }
         Ok(())
     }
 }
