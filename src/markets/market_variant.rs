@@ -1,5 +1,5 @@
 use crate::{
-    markets::{DynamicMarket, HardcodedMarket, PairShape},
+    markets::PairShape,
     settlement::global::{DeltaListTrait, ERC20DeltaMaybe, GlobalDelta},
     state::{DynamicMarketKey, HardcodedMarketKey, SlotKey},
     tokens::{DynamicIndex, HardcodedIndex},
@@ -12,9 +12,6 @@ use crate::{
 pub trait MarketVariant {
     const DISCRIMINATOR: u8;
 
-    /// The underlying market type
-    type Market<P: PairShape>;
-
     /// Key to read market state slot
     type MarketKey<P: PairShape>: SlotKey;
 
@@ -23,8 +20,6 @@ pub trait MarketVariant {
 
 impl MarketVariant for HardcodedIndex {
     const DISCRIMINATOR: u8 = 0;
-
-    type Market<P: PairShape> = HardcodedMarket<P>;
 
     type MarketKey<P: PairShape> = HardcodedMarketKey<P>;
 
@@ -35,8 +30,6 @@ impl MarketVariant for HardcodedIndex {
 
 impl MarketVariant for DynamicIndex {
     const DISCRIMINATOR: u8 = 1;
-
-    type Market<P: PairShape> = DynamicMarket<P>;
 
     type MarketKey<P: PairShape> = DynamicMarketKey<P>;
 

@@ -2,7 +2,7 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::ArgsBuffer,
     instructions::take::take_packet::TakePacket,
-    markets::{MarketVariant, PairShape},
+    markets::{CommonMarket, MarketVariant, PairShape},
     matching::{match_order, MatchResult},
     quantities::Ticks,
     settlement::market::{MakerSideDelta, MarketDelta},
@@ -13,12 +13,7 @@ use crate::{
 pub fn ix_take<M, P, In>(
     market_delta: &MarketDelta<P>,
     msg_sender: &Address,
-
-    // TODO why not pass CommonMarket?
-    // hardcoded market hash is never used.
-    // CommonMarket will remove the need to define a general trait for M::Market
-    market: &M::Market<P>,
-
+    market: &CommonMarket<M, P>,
     market_state: &mut MarketState<M, P>,
     payload: &ArgsBuffer,
     offset: &mut usize,

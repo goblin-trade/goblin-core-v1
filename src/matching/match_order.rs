@@ -1,6 +1,6 @@
 use crate::{
     goblin_error::GoblinError,
-    markets::{MarketVariant, PairShape},
+    markets::{CommonMarket, MarketVariant, PairShape},
     matching::{quote_iterator::RestingOrderPositionIterator, MatchResult},
     quantities::{QuantityOps, Ticks},
     require,
@@ -11,8 +11,8 @@ use crate::{
 
 pub fn match_order<M, P, In>(
     market_delta: &MarketDelta<P>,
-    msg_sender: &Address,
-    market: &M::Market<P>,
+    taker: &Address,
+    market: &CommonMarket<M, P>,
     market_state: &mut MarketState<M, P>,
     num_lots: In::Lots,
     min_lots_to_fill: In::Lots,
@@ -25,7 +25,7 @@ where
         + PairAccessor<MakerSideDelta<Base>, MakerSideDelta<Quote>, Result = MakerSideDelta<In>>,
     In::Opposite: PairAccessor<Ticks, Ticks, Result = Ticks>,
 {
-    let budget = In::matching_lots_taker(num_lots, indexed_market.base_lot_size());
+    let budget = In::matching_lots_taker(num_lots, market.lot_size_pair.base);
 
     // The amount matched and transferred in, i.e lost by taker and transferred to makers.
     // We keep matching until
@@ -77,13 +77,9 @@ where
                     size: resting_order_size,
                 } = *resting_order.as_ref();
 
-                let quote =
-                    In::matching_lots_maker(resting_order_size, indexed_market.tick_size, price);
-                let quote_opposite = In::Opposite::matching_lots_maker(
-                    resting_order_size,
-                    indexed_market.tick_size,
-                    price,
-                );
+                let quote = In::matching_lots_maker(resting_order_size, market.tick_size, price);
+                let quote_opposite =
+                    In::Opposite::matching_lots_maker(resting_order_size, market.tick_size, price);
 
                 // Self trade- close the resting order and mark lots for release
                 if maker == *taker {
@@ -95,7 +91,7 @@ where
                     // Resting order consumes the budget. Part of the resting order remains, write it back.
                     let surplus = matched + quote - budget;
                     let surplus_base_lots =
-                        In::base_lots_from_matching(surplus, indexed_market.tick_size, price);
+                        In::base_lots_from_matching(surplus, market.tick_size, price);
                     (*resting_order.as_mut()).size = surplus_base_lots;
                     resting_order.as_mut().store(&resting_order_key);
 
@@ -103,7 +99,7 @@ where
                     let consumed_base_lots = resting_order_size - surplus_base_lots;
                     let consumed_opposite = In::Opposite::matching_lots_maker(
                         consumed_base_lots,
-                        indexed_market.tick_size,
+                        market.tick_size,
                         price,
                     );
 
@@ -117,6 +113,9 @@ where
                     matched_opposite += quote_opposite;
 
                     // Update maker
+                    // TODO update market_delta instead
+                    // Also we return MatchResult, then use it to update market_delta externally. We should update
+                    // market_delta here itself. No need to return any value.
                     let pending_maker_update_mut = pending_maker_updates
                         .get_or_insert_mut(maker)
                         .ok_or(GoblinError::MakerListFull)?;
