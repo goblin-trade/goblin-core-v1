@@ -18,9 +18,11 @@ pub trait PairShape {
 
     /// Commit market namespaced delta into the global delta
     fn commit_delta<M: MarketVariant + Clone + Copy>(
+        // TODO use common_market instead of index_pair?
+        // If we need lot size pair and tick size then yes
         index_pair: &Self::ResolvedPair<M>,
         global_delta: &mut GlobalDelta,
-        market_delta: &LocalDelta<Self>,
+        local_delta: &LocalDelta<Self>,
     ) -> Result<(), GoblinError>
     where
         Self: Sized;
@@ -34,7 +36,7 @@ impl PairShape for Pair<ETH, ERC20> {
     fn commit_delta<M: MarketVariant + Clone + Copy>(
         index_pair: &Self::ResolvedPair<M>,
         global_delta: &mut GlobalDelta,
-        market_delta: &LocalDelta<Self>,
+        local_delta: &LocalDelta<Self>,
     ) -> Result<(), GoblinError>
     where
         Self: Sized,
@@ -47,15 +49,15 @@ impl PairShape for Pair<ETH, ERC20> {
         // Deposit amounts
         let quote_delta = index_pair.token_delta_mut(global_delta);
         quote_delta
-            .deposit(market_delta.deposit_pair)
+            .deposit(local_delta.deposit_pair)
             .ok_or(GoblinError::DepositOverflow)?;
 
         // Sender delta
         // It has base and quote sides
         // We need to apply it into ETH or ERC20 as per the pair shape
 
-        let base_take_result = &market_delta.sender_delta.take_result_pair.base; // TODO apply on ETH
-        let quote_take_result = &market_delta.sender_delta.take_result_pair.quote; // TODO apply on ERC20
+        let base_take_result = &local_delta.sender_delta.take_result_pair.base; // TODO apply on ETH
+        let quote_take_result = &local_delta.sender_delta.take_result_pair.quote; // TODO apply on ERC20
 
         Ok(())
     }
@@ -69,14 +71,14 @@ impl PairShape for Pair<ERC20, ETH> {
     fn commit_delta<M: MarketVariant + Clone + Copy>(
         index_pair: &Self::ResolvedPair<M>,
         global_delta: &mut GlobalDelta,
-        market_delta: &LocalDelta<Self>,
+        local_delta: &LocalDelta<Self>,
     ) -> Result<(), GoblinError>
     where
         Self: Sized,
     {
         let base_delta = index_pair.token_delta_mut(global_delta);
         base_delta
-            .deposit(market_delta.deposit_pair)
+            .deposit(local_delta.deposit_pair)
             .ok_or(GoblinError::DepositOverflow)?;
 
         Ok(())
@@ -93,19 +95,19 @@ impl PairShape for Pair<ERC20, ERC20> {
     fn commit_delta<M: MarketVariant + Clone + Copy>(
         index_pair: &Self::ResolvedPair<M>,
         global_delta: &mut GlobalDelta,
-        market_delta: &LocalDelta<Self>,
+        local_delta: &LocalDelta<Self>,
     ) -> Result<(), GoblinError>
     where
         Self: Sized,
     {
         let base_delta = index_pair.base.token_delta_mut(global_delta);
         base_delta
-            .deposit(market_delta.deposit_pair.base)
+            .deposit(local_delta.deposit_pair.base)
             .ok_or(GoblinError::DepositOverflow)?;
 
         let quote_delta = index_pair.quote.token_delta_mut(global_delta);
         quote_delta
-            .deposit(market_delta.deposit_pair.quote)
+            .deposit(local_delta.deposit_pair.quote)
             .ok_or(GoblinError::DepositOverflow)?;
 
         Ok(())
