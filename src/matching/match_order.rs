@@ -17,11 +17,13 @@ pub fn match_order<M, P, In>(
     num_lots: In::Lots,
     min_lots_to_fill: In::Lots,
     price_limit: Ticks,
-) -> Result<MatchResult<In>, GoblinError>
+) -> Result<(), GoblinError>
 where
     M: MarketVariant,
     P: PairShape,
-    In: LegMarker + PairAccessor<MakerDelta<Base>, MakerDelta<Quote>, Result = MakerDelta<In>>,
+    In: LegMarker
+        + PairAccessor<MakerDelta<Base>, MakerDelta<Quote>, Result = MakerDelta<In>>
+        + PairAccessor<MatchResult<Base>, MatchResult<Quote>, Result = MatchResult<In>>,
     In::Opposite: PairAccessor<Ticks, Ticks, Result = Ticks>,
 {
     let budget = In::matching_lots_taker(num_lots, market.lot_size_pair.base);
@@ -48,7 +50,8 @@ where
             GoblinError::TakerPriceLimitReached
         );
 
-        return Ok(MatchResult::default());
+        // return Ok(MatchResult::default());
+        return Ok(());
     }
 
     let mut resting_order_position_iterator =
@@ -134,7 +137,9 @@ where
             None => break,
         }
     }
-    let match_result = MatchResult::<In> {
+
+    let take_result_mut = In::get_leg_mut(&mut market_delta.sender_delta.take_result_pair);
+    *take_result_mut = MatchResult::<In> {
         maker_side_delta: MakerDelta {
             free_matching_lots_in: matched,
             locked_matching_lots_out: matched_opposite,
@@ -142,5 +147,5 @@ where
         released_by_self_trade,
     };
 
-    Ok(match_result)
+    Ok(())
 }

@@ -5,9 +5,12 @@ use crate::{
     types::{Base, LegMarker, Pair, PairAccessor, Quote},
 };
 
-// The sender delta currently contains results of matching base in and quote in
-// take orders. TODO add other types in here later for limit orders and cancellations.
-pub type SenderDelta = Pair<MatchResult<Base>, MatchResult<Quote>>;
+#[derive(Default)]
+pub struct SenderDelta {
+    /// The results of matching take orders
+    pub take_result_pair: Pair<MatchResult<Base>, MatchResult<Quote>>,
+}
+// pub type SenderDelta = Pair<MatchResult<Base>, MatchResult<Quote>>;
 
 // // Pending updates for the taker per token after performing
 // // taker ask and quote trades on a market

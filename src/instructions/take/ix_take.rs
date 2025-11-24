@@ -18,11 +18,13 @@ pub fn ix_take<M, P, In>(
     payload: &ArgsBuffer,
     offset: &mut usize,
     len: usize,
-) -> Result<MatchResult<In>, GoblinError>
+) -> Result<(), GoblinError>
 where
     M: MarketVariant,
     P: PairShape,
-    In: LegMarker + PairAccessor<MakerDelta<Base>, MakerDelta<Quote>, Result = MakerDelta<In>>,
+    In: LegMarker
+        + PairAccessor<MakerDelta<Base>, MakerDelta<Quote>, Result = MakerDelta<In>>
+        + PairAccessor<MatchResult<Base>, MatchResult<Quote>, Result = MatchResult<In>>,
     In::Opposite: PairAccessor<Ticks, Ticks, Result = Ticks>,
 {
     let packet = TakePacket::<In>::decode(payload, len, offset)?;

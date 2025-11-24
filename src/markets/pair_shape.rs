@@ -54,8 +54,8 @@ impl PairShape for Pair<ETH, ERC20> {
         // It has base and quote sides
         // We need to apply it into ETH or ERC20 as per the pair shape
 
-        let base_sender_delta = &market_delta.sender_delta.base; // TODO apply on ETH
-        let quote_sender_delta = &market_delta.sender_delta.quote; // TODO apply on ERC20
+        let base_take_result = &market_delta.sender_delta.take_result_pair.base; // TODO apply on ETH
+        let quote_take_result = &market_delta.sender_delta.take_result_pair.quote; // TODO apply on ERC20
 
         Ok(())
     }

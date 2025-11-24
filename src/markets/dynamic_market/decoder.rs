@@ -1,7 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::{ArgsBuffer, ArgsDecoder, Decodable},
-    markets::{DynamicMarket, LotSizePair, PairShape},
+    markets::{CommonMarket, DynamicMarket, LotSizePair, PairShape},
     quantities::QuoteLotsPerBaseUnitPerTick,
     require,
     tokens::DynamicIndex,
@@ -24,9 +24,11 @@ where
         let tick_size = *payload.decode_ref_unchecked::<QuoteLotsPerBaseUnitPerTick>(offset);
 
         Ok(DynamicMarket::<P> {
-            token_index_pair,
-            lot_size_pair,
-            tick_size,
+            common: CommonMarket::<DynamicIndex, P> {
+                token_index_pair,
+                lot_size_pair,
+                tick_size,
+            },
         })
     }
 }

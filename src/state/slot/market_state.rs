@@ -3,7 +3,7 @@ use core::marker::PhantomData;
 use crate::{
     goblin_error::GoblinError,
     hostio::{self, HostioBuffer},
-    markets::{DynamicMarket, MarketVariant, PairShape, ERC20, ETH},
+    markets::{CommonMarket, MarketVariant, PairShape, ERC20, ETH},
     quantities::Ticks,
     state::{SlotKey, SlotState},
     tokens::{CustomToken, DynamicIndex, HardcodedToken, TokenIndex},
@@ -49,7 +49,7 @@ where
     const BYTE_SIZE: usize;
 
     fn hash(
-        market: &DynamicMarket<P>,
+        market: &CommonMarket<DynamicIndex, P>,
         custom_erc20_list: &[CustomToken],
     ) -> Result<Self, GoblinError>;
 }
@@ -58,7 +58,7 @@ impl DynamicMarketHasher<Pair<ETH, ERC20>> for DynamicMarketKey<Pair<ETH, ERC20>
     const BYTE_SIZE: usize = 1 + 20 * 1 + 8 * 3;
 
     fn hash(
-        market: &DynamicMarket<Pair<ETH, ERC20>>,
+        market: &CommonMarket<DynamicIndex, Pair<ETH, ERC20>>,
         custom_erc20_list: &[CustomToken],
     ) -> Result<Self, GoblinError> {
         let mut bytes = [0u8; Self::BYTE_SIZE];
@@ -85,7 +85,7 @@ impl DynamicMarketHasher<Pair<ERC20, ETH>> for DynamicMarketKey<Pair<ERC20, ETH>
     const BYTE_SIZE: usize = 1 + 20 * 1 + 8 * 3;
 
     fn hash(
-        market: &DynamicMarket<Pair<ERC20, ETH>>,
+        market: &CommonMarket<DynamicIndex, Pair<ERC20, ETH>>,
         custom_erc20_list: &[CustomToken],
     ) -> Result<Self, GoblinError> {
         let mut bytes = [0u8; Self::BYTE_SIZE];
@@ -112,7 +112,7 @@ impl DynamicMarketHasher<Pair<ERC20, ERC20>> for DynamicMarketKey<Pair<ERC20, ER
     const BYTE_SIZE: usize = 1 + 20 * 2 + 8 * 3;
 
     fn hash(
-        market: &DynamicMarket<Pair<ERC20, ERC20>>,
+        market: &CommonMarket<DynamicIndex, Pair<ERC20, ERC20>>,
         custom_erc20_list: &[CustomToken],
     ) -> Result<Self, GoblinError> {
         let mut bytes = [0u8; Self::BYTE_SIZE];

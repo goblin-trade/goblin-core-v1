@@ -1,12 +1,13 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::{ArgsBuffer, Decodable},
+    instructions::ix_take,
     markets::{CommonMarket, HardcodedMarketList, MarketHeader, MarketVariant, PairShape},
     quantities::DeltaAtoms,
     settlement::{global_delta::GlobalDelta, market_delta::MarketDelta},
     state::{HardcodedMarketKey, MarketState, SlotState},
     tokens::HardcodedIndex,
-    types::Address,
+    types::{Address, Base},
 };
 
 /// A market hardcoded within the smart contract. It keccak hash is also hardcoded,
@@ -46,30 +47,20 @@ where
         let market = Self::decode(payload, offset, len)?;
         let mut market_state = MarketState::load(&market.keccak_hash).into_inner();
 
-        let market_delta =
+        let mut market_delta =
             MarketDelta::<P>::new(market_header.decode_deposit_amounts, payload, offset, len)?;
 
         // Take bid and take quote
         if market_header.execute_takes.base {
-            // ix_take::<HardcodedIndex, P, Base>(
-            //     &market_delta,
-            //     msg_sender,
-            //     market,
-            //     &mut market_state,
-            //     payload,
-            //     offset,
-            //     len,
-            // )?;
-
-            // let match_result = ix_take::<HardcodedIndex, P, Base>(
-            //     &mut market_delta,
-            //     msg_sender.as_ref(),
-            //     &indexed_market,
-            //     market_state.as_mut(),
-            //     payload,
-            //     offset,
-            //     len,
-            // )?;
+            ix_take::<HardcodedIndex, P, Base>(
+                &mut market_delta,
+                msg_sender,
+                &market.common,
+                &mut market_state,
+                payload,
+                offset,
+                len,
+            )?;
         }
 
         // Apply market delta updates on global delta
