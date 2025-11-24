@@ -1,7 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
     markets::MarketVariant,
-    settlement::{global_delta::GlobalDelta, market_delta::MarketDelta},
+    settlement::{global_delta::GlobalDelta, local_delta::LocalDelta},
     types::Pair,
 };
 
@@ -20,7 +20,7 @@ pub trait PairShape {
     fn commit_delta<M: MarketVariant + Clone + Copy>(
         index_pair: &Self::ResolvedPair<M>,
         global_delta: &mut GlobalDelta,
-        market_delta: &MarketDelta<Self>,
+        market_delta: &LocalDelta<Self>,
     ) -> Result<(), GoblinError>
     where
         Self: Sized;
@@ -34,7 +34,7 @@ impl PairShape for Pair<ETH, ERC20> {
     fn commit_delta<M: MarketVariant + Clone + Copy>(
         index_pair: &Self::ResolvedPair<M>,
         global_delta: &mut GlobalDelta,
-        market_delta: &MarketDelta<Self>,
+        market_delta: &LocalDelta<Self>,
     ) -> Result<(), GoblinError>
     where
         Self: Sized,
@@ -69,7 +69,7 @@ impl PairShape for Pair<ERC20, ETH> {
     fn commit_delta<M: MarketVariant + Clone + Copy>(
         index_pair: &Self::ResolvedPair<M>,
         global_delta: &mut GlobalDelta,
-        market_delta: &MarketDelta<Self>,
+        market_delta: &LocalDelta<Self>,
     ) -> Result<(), GoblinError>
     where
         Self: Sized,
@@ -93,7 +93,7 @@ impl PairShape for Pair<ERC20, ERC20> {
     fn commit_delta<M: MarketVariant + Clone + Copy>(
         index_pair: &Self::ResolvedPair<M>,
         global_delta: &mut GlobalDelta,
-        market_delta: &MarketDelta<Self>,
+        market_delta: &LocalDelta<Self>,
     ) -> Result<(), GoblinError>
     where
         Self: Sized,

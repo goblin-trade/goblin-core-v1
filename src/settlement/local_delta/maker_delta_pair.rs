@@ -1,16 +1,8 @@
 use crate::{
     goblin_error::GoblinError,
-    settlement::market_delta::MakerDelta,
-    types::{Address, Base, LegMarker, Pair, PairAccessor, Quote},
-    utils::FixedMap,
+    settlement::local_delta::MakerDelta,
+    types::{Base, LegMarker, Pair, PairAccessor, Quote},
 };
-
-pub const MAX_MAKERS: usize = 16;
-
-/// Deltas of makers in the market namespace
-///
-/// This list tracks deltas generated when resting orders are matched.
-pub type MarketMakerDeltas = FixedMap<Address, MakerDeltaPair, MAX_MAKERS>;
 
 /// Maker deltas for base and quote sides
 pub type MakerDeltaPair = Pair<MakerDelta<Base>, MakerDelta<Quote>>;

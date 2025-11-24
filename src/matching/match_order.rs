@@ -4,13 +4,13 @@ use crate::{
     matching::{quote_iterator::RestingOrderPositionIterator, MatchResult},
     quantities::{QuantityOps, Ticks},
     require,
-    settlement::market_delta::{MakerDelta, MarketDelta},
+    settlement::local_delta::{LocalDelta, MakerDelta},
     state::{MarketState, RestingOrder, RestingOrderKey, SlotState},
     types::{Address, Base, LegMarker, PairAccessor, Quote},
 };
 
 pub fn match_order<M, P, In>(
-    market_delta: &mut MarketDelta<P>,
+    local_delta: &mut LocalDelta<P>,
     taker: &Address,
     market: &CommonMarket<M, P>,
     market_state: &mut MarketState<M, P>,
@@ -115,7 +115,7 @@ where
                     matched_opposite += quote_opposite;
 
                     // Update maker
-                    let pending_maker_update_mut = market_delta
+                    let pending_maker_update_mut = local_delta
                         .maker_deltas
                         .get_or_insert_mut(maker)
                         .ok_or(GoblinError::MakerListFull)?;
@@ -138,7 +138,7 @@ where
         }
     }
 
-    let take_result_mut = In::get_leg_mut(&mut market_delta.sender_delta.take_result_pair);
+    let take_result_mut = In::get_leg_mut(&mut local_delta.sender_delta.take_result_pair);
     *take_result_mut = MatchResult::<In> {
         maker_side_delta: MakerDelta {
             free_matching_lots_in: matched,

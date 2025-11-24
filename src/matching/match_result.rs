@@ -1,4 +1,4 @@
-use crate::{settlement::market_delta::MakerDelta, types::LegMarker};
+use crate::{settlement::local_delta::MakerDelta, types::LegMarker};
 
 pub struct MatchResult<In: LegMarker> {
     pub maker_side_delta: MakerDelta<In>,

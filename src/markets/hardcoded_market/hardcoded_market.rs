@@ -4,7 +4,7 @@ use crate::{
     instructions::ix_take,
     markets::{CommonMarket, HardcodedMarketList, MarketHeader, MarketVariant, PairShape},
     quantities::DeltaAtoms,
-    settlement::{global_delta::GlobalDelta, market_delta::MarketDelta},
+    settlement::{global_delta::GlobalDelta, local_delta::LocalDelta},
     state::{HardcodedMarketKey, MarketState, SlotState},
     tokens::HardcodedIndex,
     types::{Address, Base},
@@ -47,13 +47,13 @@ where
         let market = Self::decode(payload, offset, len)?;
         let mut market_state = MarketState::load(&market.keccak_hash).into_inner();
 
-        let mut market_delta =
-            MarketDelta::<P>::new(market_header.decode_deposit_amounts, payload, offset, len)?;
+        let mut local_delta =
+            LocalDelta::<P>::new(market_header.decode_deposit_amounts, payload, offset, len)?;
 
         // Take bid and take quote
         if market_header.execute_takes.base {
             ix_take::<HardcodedIndex, P, Base>(
-                &mut market_delta,
+                &mut local_delta,
                 msg_sender,
                 &market.common,
                 &mut market_state,
@@ -64,7 +64,7 @@ where
         }
 
         // Apply market delta updates on global delta
-        P::commit_delta(&market.common.token_index_pair, global_delta, &market_delta)?;
+        P::commit_delta(&market.common.token_index_pair, global_delta, &local_delta)?;
 
         Ok(())
     }

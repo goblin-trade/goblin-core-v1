@@ -4,7 +4,7 @@ use crate::{
     instructions::ix_take,
     markets::{CommonMarket, MarketHeader, MarketVariant, PairShape},
     quantities::DeltaAtoms,
-    settlement::{global_delta::GlobalDelta, market_delta::MarketDelta},
+    settlement::{global_delta::GlobalDelta, local_delta::LocalDelta},
     state::{DynamicMarketHasher, DynamicMarketKey, MarketState, SlotState},
     tokens::{CustomToken, DynamicIndex},
     types::{Address, Base},
@@ -44,13 +44,13 @@ where
         let market_key = DynamicMarketKey::hash(&market.common, custom_erc20_list)?;
         let mut market_state = MarketState::load(&market_key).into_inner();
 
-        let mut market_delta =
-            MarketDelta::<P>::new(market_header.decode_deposit_amounts, payload, offset, len)?;
+        let mut local_delta =
+            LocalDelta::<P>::new(market_header.decode_deposit_amounts, payload, offset, len)?;
 
         // Take bid and take quote
         if market_header.execute_takes.base {
             ix_take::<DynamicIndex, P, Base>(
-                &mut market_delta,
+                &mut local_delta,
                 msg_sender,
                 &market.common,
                 &mut market_state,
@@ -60,7 +60,7 @@ where
             )?;
         }
 
-        P::commit_delta(&market.common.token_index_pair, global_delta, &market_delta)?;
+        P::commit_delta(&market.common.token_index_pair, global_delta, &local_delta)?;
 
         Ok(())
     }

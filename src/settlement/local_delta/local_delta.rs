@@ -3,22 +3,22 @@ use crate::{
     input_processor::{ArgsBuffer, Decodable},
     markets::PairShape,
     quantities::DeltaAtoms,
-    settlement::market_delta::{MarketMakerDeltas, SenderDelta},
+    settlement::local_delta::{LocalMakerDeltas, SenderDelta},
 };
 
 // #[derive(Default)]
-pub struct MarketDelta<P: PairShape> {
+pub struct LocalDelta<P: PairShape> {
     /// Delta for msg.sender
     pub sender_delta: SenderDelta,
 
     /// Deltas for makers of matched resting orders
-    pub maker_deltas: MarketMakerDeltas,
+    pub maker_deltas: LocalMakerDeltas,
 
     /// Atoms to deposit for the market's token pair
     pub deposit_pair: P::ResolvedPair<DeltaAtoms>,
 }
 
-impl<P> MarketDelta<P>
+impl<P> LocalDelta<P>
 where
     P: PairShape + Decodable<P::ResolvedPair<DeltaAtoms>>,
     P::ResolvedPair<DeltaAtoms>: Default,
@@ -35,9 +35,9 @@ where
             P::ResolvedPair::<DeltaAtoms>::default()
         };
 
-        Ok(MarketDelta {
+        Ok(LocalDelta {
             sender_delta: SenderDelta::default(),
-            maker_deltas: MarketMakerDeltas::default(),
+            maker_deltas: LocalMakerDeltas::default(),
             deposit_pair,
         })
     }

@@ -4,7 +4,7 @@ use crate::{
     quantities::UnsidedAtoms,
     settlement::{
         global_delta::{CustomTokenDeltas, EthDelta, GlobalMakerDeltas, HardcodedTokenDeltas},
-        market_delta::MarketDelta,
+        local_delta::LocalDelta,
     },
     tokens::{HardcodedIndex, HardcodedToken},
     types::{LegMarker, Pair},

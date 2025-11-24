@@ -5,13 +5,13 @@ use crate::{
     markets::{CommonMarket, MarketVariant, PairShape},
     matching::{match_order, MatchResult},
     quantities::Ticks,
-    settlement::market_delta::{MakerDelta, MarketDelta},
+    settlement::local_delta::{LocalDelta, MakerDelta},
     state::MarketState,
     types::{Address, Base, LegMarker, PairAccessor, Quote},
 };
 
 pub fn ix_take<M, P, In>(
-    market_delta: &mut MarketDelta<P>,
+    local_delta: &mut LocalDelta<P>,
     msg_sender: &Address,
     market: &CommonMarket<M, P>,
     market_state: &mut MarketState<M, P>,
@@ -30,7 +30,7 @@ where
     let packet = TakePacket::<In>::decode(payload, len, offset)?;
 
     match_order::<M, P, In>(
-        market_delta,
+        local_delta,
         msg_sender,
         market,
         market_state,
