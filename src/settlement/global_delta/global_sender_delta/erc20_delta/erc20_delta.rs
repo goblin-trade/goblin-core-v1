@@ -1,97 +1,37 @@
-use core::mem::MaybeUninit;
-
 use crate::{
     quantities::{DeltaAtoms, QuantityOps},
     settlement::global_delta::CommonDelta,
     state::ERC20Store,
-    tokens::{CustomToken, ERC20TokenTrait, HardcodedToken, TokenIndex, HARDCODED_TOKENS},
 };
-
-pub const MAX_CUSTOM_DELTAS: usize = 8;
-
-pub type HardcodedTokenDeltas = [ERC20DeltaMaybe; HARDCODED_TOKENS.len()];
-pub type CustomTokenDeltas = [ERC20DeltaMaybe; MAX_CUSTOM_DELTAS];
-
-pub trait DeltaListTrait<T: ERC20TokenTrait> {
-    fn get_delta_mut(&mut self, token_index: TokenIndex<T>) -> &mut ERC20DeltaMaybe;
-}
-
-impl DeltaListTrait<HardcodedToken> for HardcodedTokenDeltas {
-    fn get_delta_mut(&mut self, token_index: TokenIndex<HardcodedToken>) -> &mut ERC20DeltaMaybe {
-        &mut self[token_index.inner as usize]
-    }
-}
-
-impl DeltaListTrait<CustomToken> for CustomTokenDeltas {
-    fn get_delta_mut(&mut self, token_index: TokenIndex<CustomToken>) -> &mut ERC20DeltaMaybe {
-        &mut self[token_index.inner as usize]
-    }
-}
-
-#[derive(Clone, Copy)]
-pub struct ERC20DeltaMaybe {
-    /// Whether the delta is initialized
-    pub init: bool,
-    pub inner: MaybeUninit<ERC20Delta>,
-}
-
-impl Default for ERC20DeltaMaybe {
-    fn default() -> Self {
-        Self {
-            init: false,
-            inner: MaybeUninit::uninit(),
-        }
-    }
-}
-
-impl ERC20DeltaMaybe {
-    /// Add a deposit amount to the delta accumulator.
-    /// The actualy deposit happens in settlement phase.
-    pub fn deposit(&mut self, deposit_amount: DeltaAtoms) -> Option<()> {
-        if deposit_amount == DeltaAtoms::ZERO {
-            return Some(());
-        }
-
-        if self.init {
-            let delta = unsafe { self.inner.assume_init_mut() };
-            delta.deposit_due = delta.deposit_due.checked_add(deposit_amount)?;
-        } else {
-            self.init = true;
-            self.inner.write(ERC20Delta {
-                deposit_due: deposit_amount,
-                common_delta: CommonDelta::default(),
-            });
-        }
-        Some(())
-    }
-}
 
 /// ERC20 atoms due to be deducted, locked or transferred out on settlement
 #[derive(Default, Clone, Copy)]
 pub struct ERC20Delta {
+    /// Atoms to be deposited or withdrawn
     pub deposit_due: DeltaAtoms,
 
+    /// Delta from trading
     pub common_delta: CommonDelta,
 }
 
 impl ERC20Delta {
     // TODO function to add to deposit_due
 
-    /// Update locked and free atoms of the store by applying the common delta
-    fn apply_common_delta(&self, store_mut: &mut ERC20Store) -> Option<()> {
-        store_mut.atoms_locked = store_mut
-            .atoms_locked
-            .checked_add(self.common_delta.maker_locked)?
-            .checked_sub(self.common_delta.cancel_unlocked)?
-            .checked_sub(self.common_delta.taker_self_trade_unlocked)?;
+    // /// Update locked and free atoms of the store by applying the common delta
+    // fn apply_common_delta(&self, store_mut: &mut ERC20Store) -> Option<()> {
+    //     store_mut.atoms_locked = store_mut
+    //         .atoms_locked
+    //         .checked_add(self.common_delta.maker_locked)?
+    //         .checked_sub(self.common_delta.cancel_unlocked)?
+    //         .checked_sub(self.common_delta.taker_self_trade_unlocked)?;
 
-        store_mut.atoms_free = store_mut
-            .atoms_free
-            .checked_add(self.common_delta.free_atoms_out()?)?
-            .checked_sub(self.common_delta.free_atoms_in()?)?;
+    //     store_mut.atoms_free = store_mut
+    //         .atoms_free
+    //         .checked_add(self.common_delta.free_atoms_out()?)?
+    //         .checked_sub(self.common_delta.free_atoms_in()?)?;
 
-        Some(())
-    }
+    //     Some(())
+    // }
 
     // pub fn settle(
     //     &self,

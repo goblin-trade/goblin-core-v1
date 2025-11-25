@@ -60,7 +60,7 @@ where
             )?;
         }
 
-        P::commit_delta(&market.common.token_index_pair, global_delta, &local_delta)?;
+        P::commit_delta(&market.common, global_delta, &local_delta)?;
 
         Ok(())
     }
