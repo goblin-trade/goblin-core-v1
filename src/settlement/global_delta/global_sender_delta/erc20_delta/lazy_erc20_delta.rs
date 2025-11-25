@@ -5,16 +5,20 @@ use crate::{
     settlement::global_delta::{CommonDelta, ERC20Delta},
 };
 
+/// Lazily-initialized ERC20 delta accumulator.
+///
+/// Wraps `ERC20Delta` in `MaybeUninit` with an initialization flag to avoid
+/// unnecessary zero-fills. The delta is only initialized on first use.
 #[derive(Clone, Copy)]
-pub struct ERC20DeltaMaybe {
-    /// Whether the delta is initialized
+pub struct LazyERC20Delta {
+    /// Whether the delta has been initialized
     pub init: bool,
 
     /// ERC20Delta wrapped in MaybeUninit
     pub inner: MaybeUninit<ERC20Delta>,
 }
 
-impl Default for ERC20DeltaMaybe {
+impl Default for LazyERC20Delta {
     fn default() -> Self {
         Self {
             init: false,
@@ -23,9 +27,11 @@ impl Default for ERC20DeltaMaybe {
     }
 }
 
-impl ERC20DeltaMaybe {
-    /// Add a deposit amount to the delta accumulator.
-    /// The actualy deposit happens in settlement phase.
+impl LazyERC20Delta {
+    /// Accumulate a deposit amount to the delta.
+    ///
+    /// Initializes the delta on first non-zero deposit. The actual deposit
+    /// occurs during the settlement phase.
     pub fn deposit(&mut self, deposit_amount: DeltaAtoms) -> Option<()> {
         if deposit_amount == DeltaAtoms::ZERO {
             return Some(());

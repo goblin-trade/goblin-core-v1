@@ -1,6 +1,6 @@
 use crate::{
     markets::PairShape,
-    settlement::global_delta::{ERC20DeltaList, ERC20DeltaMaybe, GlobalSenderDelta},
+    settlement::global_delta::{ERC20DeltaList, GlobalSenderDelta, LazyERC20Delta},
     state::{DynamicMarketKey, HardcodedMarketKey, SlotKey},
     tokens::{DynamicIndex, HardcodedIndex},
 };
@@ -15,7 +15,7 @@ pub trait MarketVariant {
     /// Key to read market state slot
     type MarketKey<P: PairShape>: SlotKey;
 
-    fn token_delta_mut(self, global_sender_delta: &mut GlobalSenderDelta) -> &mut ERC20DeltaMaybe;
+    fn token_delta_mut(self, global_sender_delta: &mut GlobalSenderDelta) -> &mut LazyERC20Delta;
 }
 
 impl MarketVariant for HardcodedIndex {
@@ -23,7 +23,7 @@ impl MarketVariant for HardcodedIndex {
 
     type MarketKey<P: PairShape> = HardcodedMarketKey<P>;
 
-    fn token_delta_mut(self, global_sender_delta: &mut GlobalSenderDelta) -> &mut ERC20DeltaMaybe {
+    fn token_delta_mut(self, global_sender_delta: &mut GlobalSenderDelta) -> &mut LazyERC20Delta {
         global_sender_delta
             .hardcoded_token_deltas
             .get_delta_mut(self)
@@ -35,7 +35,7 @@ impl MarketVariant for DynamicIndex {
 
     type MarketKey<P: PairShape> = DynamicMarketKey<P>;
 
-    fn token_delta_mut(self, global_sender_delta: &mut GlobalSenderDelta) -> &mut ERC20DeltaMaybe {
+    fn token_delta_mut(self, global_sender_delta: &mut GlobalSenderDelta) -> &mut LazyERC20Delta {
         match self {
             DynamicIndex::Hardcoded(hardcoded_token_index) => global_sender_delta
                 .hardcoded_token_deltas
