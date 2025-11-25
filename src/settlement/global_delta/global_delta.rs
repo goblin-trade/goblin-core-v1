@@ -3,32 +3,28 @@ use crate::{
     markets::{MarketVariant, PairShape, ERC20, ETH},
     quantities::UnsidedAtoms,
     settlement::{
-        global_delta::{CustomTokenDeltas, EthDelta, GlobalMakerDeltas, HardcodedTokenDeltas},
+        global_delta::{
+            CustomTokenDeltas, EthDelta, GlobalMakerDeltas, GlobalSenderDelta, HardcodedTokenDeltas,
+        },
         local_delta::LocalDelta,
     },
     tokens::{HardcodedIndex, HardcodedToken},
     types::{LegMarker, Pair},
 };
 
+/// The top level delta. Tracks pending token balance updates.
 pub struct GlobalDelta {
-    /// Delta for ETH
-    pub eth_delta: EthDelta,
+    /// Delta for msg.sender
+    pub global_sender_delta: GlobalSenderDelta,
 
-    /// Deltas for hardcoded tokens
-    pub hardcoded_token_deltas: HardcodedTokenDeltas,
-
-    /// Deltas for custom tokens
-    pub custom_token_deltas: CustomTokenDeltas,
-
+    /// Deltas for makers of matched orders
     pub maker_deltas: GlobalMakerDeltas,
 }
 
 impl GlobalDelta {
     pub fn new(msg_value: UnsidedAtoms, eth_out_due: UnsidedAtoms) -> Self {
         GlobalDelta {
-            eth_delta: EthDelta::new(msg_value, eth_out_due),
-            hardcoded_token_deltas: HardcodedTokenDeltas::default(),
-            custom_token_deltas: CustomTokenDeltas::default(),
+            global_sender_delta: GlobalSenderDelta::new(msg_value, eth_out_due),
             maker_deltas: GlobalMakerDeltas::default(),
         }
     }

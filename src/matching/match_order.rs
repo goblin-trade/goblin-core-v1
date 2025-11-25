@@ -116,7 +116,7 @@ where
 
                     // Update maker
                     let pending_maker_update_mut = local_delta
-                        .maker_deltas
+                        .local_maker_deltas
                         .get_or_insert_mut(maker)
                         .ok_or(GoblinError::MakerListFull)?;
 
@@ -138,7 +138,7 @@ where
         }
     }
 
-    let take_result_mut = In::get_leg_mut(&mut local_delta.sender_delta.take_result_pair);
+    let take_result_mut = In::get_leg_mut(&mut local_delta.local_sender_delta.take_result_pair);
     *take_result_mut = MatchResult::<In> {
         free_matching_lots_in: matched,
         locked_matching_lots_out: matched_opposite,
