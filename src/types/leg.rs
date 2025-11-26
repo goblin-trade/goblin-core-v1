@@ -94,12 +94,6 @@ pub trait LegMarker: Default + Clone + Copy + PartialEq {
         atoms
     }
 
-    fn matching_lots_to_atoms_unsided(
-        matching_lots: Self::MatchingLots,
-        base_lot_size: BaseLotsPerBaseUnit,
-        atoms_per_lot: Self::AtomsPerLot,
-    ) -> UnsidedAtoms;
-
     fn base_lots_from_matching(
         matching_lots: Self::MatchingLots,
         tick_size: QuoteLotsPerBaseUnitPerTick,
@@ -165,20 +159,6 @@ impl LegMarker for Base {
     fn closer_to_centre(price_0: Ticks, price_1: Ticks) -> bool {
         price_0 < price_1
     }
-
-    fn matching_lots_to_atoms_unsided(
-        matching_lots: Self::MatchingLots,
-        base_lot_size: BaseLotsPerBaseUnit,
-        atoms_per_lot: Self::AtomsPerLot,
-    ) -> UnsidedAtoms
-    where
-        Self: Sized,
-        Self::Atoms: AsUnsided<Self, Z0, Z0, P1>,
-    {
-        let lots = Self::decode_matching_lots(matching_lots, base_lot_size);
-        let atoms: Self::Atoms = lots * atoms_per_lot;
-        atoms.unsided()
-    }
 }
 
 // Input Quote = side Bid (buy)
@@ -235,19 +215,5 @@ impl LegMarker for Quote {
 
     fn closer_to_centre(price_0: Ticks, price_1: Ticks) -> bool {
         price_0 > price_1
-    }
-
-    fn matching_lots_to_atoms_unsided(
-        matching_lots: Self::MatchingLots,
-        base_lot_size: BaseLotsPerBaseUnit,
-        atoms_per_lot: Self::AtomsPerLot,
-    ) -> UnsidedAtoms
-    where
-        Self: Sized,
-        Self::Atoms: AsUnsided<Self, Z0, Z0, P1>,
-    {
-        let lots = Self::decode_matching_lots(matching_lots, base_lot_size);
-        let atoms: Self::Atoms = lots * atoms_per_lot;
-        atoms.unsided()
     }
 }

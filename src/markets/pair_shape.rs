@@ -4,7 +4,7 @@ use crate::{
     matching::MatchResult,
     settlement::{
         global_delta::{CommonDelta, ERC20Delta, EthDelta, GlobalDelta, GlobalSenderDelta},
-        local_delta::{LocalDelta, SenderGlobalUpdate},
+        local_delta::LocalDelta,
     },
     types::{Base, LegMarker, Pair, Quote},
 };
