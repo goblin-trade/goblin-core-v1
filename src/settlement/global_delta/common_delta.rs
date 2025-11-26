@@ -40,6 +40,8 @@ impl CommonDelta {
         self.taker_in.checked_add(self.maker_locked)
     }
 
+    pub fn apply_local_update(&mut self) {}
+
     // // Update the amounts of the token transferred in and transferred out in a market
     // // when performing bid and ask taker orders
     // pub fn apply_taker_update(&mut self, taker_token_update: &TakerTokenUpdate) -> Option<()> {

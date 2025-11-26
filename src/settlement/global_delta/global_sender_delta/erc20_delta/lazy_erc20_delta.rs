@@ -28,6 +28,19 @@ impl Default for LazyERC20Delta {
 }
 
 impl LazyERC20Delta {
+    pub fn apply_local_update(&mut self, deposit_amount: DeltaAtoms) {
+        if self.init {
+            let delta = unsafe { self.inner.assume_init_mut() };
+            delta.common_delta.apply_local_update(); // TODO pass here
+        } else {
+            self.init = true;
+            self.inner.write(ERC20Delta {
+                deposit_due: deposit_amount,
+                common_delta: CommonDelta::default(),
+            });
+        }
+    }
+
     /// Accumulate a deposit amount to the delta.
     ///
     /// Initializes the delta on first non-zero deposit. The actual deposit

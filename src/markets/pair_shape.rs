@@ -68,13 +68,24 @@ impl PairShape for Pair<ETH, ERC20> {
             common_market.lot_size_pair,
         );
 
-        base_delta.taker_in += sender_global_update_base.free_atoms_in;
-        base_delta.taker_out += sender_global_update_quote.locked_atoms_out;
-        base_delta.cancel_unlocked += sender_global_update_quote.atoms_released_by_self_trade;
+        // SenderGlobalUpdate and apply_local_update remove the In dimension
+        // What if we pass `In` generic?
+        // Legally- only matching lots of side `In` will be accumulated.
+        // taker_in for the In leg, taker_out and cancel_unlocked from opposite leg
+        //
+        // This is actually necessary. Without an `In` generic, we won't know which
+        // leg should be added when
+        base_delta.apply_local_update();
+
+        // base_delta.taker_in += sender_global_update_base.free_atoms_in;
+        // base_delta.taker_out += sender_global_update_quote.locked_atoms_out;
+        // base_delta.cancel_unlocked += sender_global_update_quote.atoms_released_by_self_trade;
 
         let quote_delta = common_market
             .token_index_pair
             .token_delta_mut(&mut global_delta.global_sender_delta);
+
+        quote_delta.apply_local_update(local_delta.deposit_pair);
 
         // Repeat similarly for sender_global_update
 
@@ -88,9 +99,9 @@ impl PairShape for Pair<ETH, ERC20> {
         // - Applies the sender_global_update pair (both sides)
         // - Updates deposit amount
         // - Sets init = true
-        quote_delta
-            .deposit(local_delta.deposit_pair)
-            .ok_or(GoblinError::DepositOverflow)?;
+        // quote_delta
+        //     .deposit(local_delta.deposit_pair)
+        //     .ok_or(GoblinError::DepositOverflow)?;
 
         // // Sender delta
         // // It has base and quote sides
