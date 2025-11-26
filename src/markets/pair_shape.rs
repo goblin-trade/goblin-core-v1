@@ -3,7 +3,7 @@ use crate::{
     markets::{CommonMarket, MarketVariant},
     matching::MatchResult,
     settlement::{
-        global_delta::{CommonDelta, GlobalDelta},
+        global_delta::{CommonDelta, ERC20Delta, EthDelta, GlobalDelta, GlobalSenderDelta},
         local_delta::{LocalDelta, SenderGlobalUpdate},
     },
     types::{Base, LegMarker, Pair, Quote},
@@ -15,6 +15,34 @@ pub struct ETH;
 /// Marker type for ERC20 within a token pair
 pub struct ERC20;
 
+// pub trait TokenMarker {
+//     type Delta;
+
+//     fn get_delta_mut(global_sender_delta: &mut GlobalSenderDelta) -> &mut Self::Delta;
+// }
+
+// impl TokenMarker for ETH {
+//     type Delta = EthDelta;
+
+//     fn get_delta_mut(global_sender_delta: &mut GlobalSenderDelta) -> &mut Self::Delta {
+//         &mut global_sender_delta.eth_delta
+//     }
+// }
+
+// impl TokenMarker for ERC20 {
+//     type Delta = ERC20Delta;
+//     // This won't work. We need the token index.
+// }
+
+// pub type TokenPair<B: TokenMarker, Q: TokenMarker> = Pair<B, Q>;
+
+// impl<B: TokenMarker, Q: TokenMarker> Pair<B, Q> {
+//     fn delta_pair(&self) -> Pair<B::Delta, Q::Delta> {
+//         todo!()
+//     }
+// }
+
+// every PairShape is a Pair. Can we impose a requirement of Pair?
 pub trait PairShape {
     const DISCRIMINATOR: u8;
 
@@ -51,101 +79,21 @@ impl PairShape for Pair<ETH, ERC20> {
         M: MarketVariant + Clone + Copy,
         Self: Sized,
     {
-        // Deposit amounts
-        //
-        // No deposit on ETH(base), just on ERC20(quote)
-        let base_delta = &mut global_delta.global_sender_delta.eth_delta.common_delta;
-
-        // If In: Base take was performed, deduct ETH and credit ERC20
-        // We need to update both deltas. This is a pair operation.
-        let sender_global_update_base = SenderGlobalUpdate::<Base>::new(
+        let eth_base_delta = &mut global_delta.global_sender_delta.eth_delta;
+        eth_base_delta.common_delta.apply_local_update::<Base>(
             &local_delta.local_sender_delta,
-            common_market.lot_size_pair,
+            &common_market.lot_size_pair,
         );
 
-        let sender_global_update_quote = SenderGlobalUpdate::<Quote>::new(
-            &local_delta.local_sender_delta,
-            common_market.lot_size_pair,
-        );
-
-        // SenderGlobalUpdate and apply_local_update remove the In dimension
-        // What if we pass `In` generic?
-        // Legally- only matching lots of side `In` will be accumulated.
-        // taker_in for the In leg, taker_out and cancel_unlocked from opposite leg
-        //
-        // This is actually necessary. Without an `In` generic, we won't know which
-        // leg should be added when
-        base_delta.apply_local_update();
-
-        // base_delta.taker_in += sender_global_update_base.free_atoms_in;
-        // base_delta.taker_out += sender_global_update_quote.locked_atoms_out;
-        // base_delta.cancel_unlocked += sender_global_update_quote.atoms_released_by_self_trade;
-
-        let quote_delta = common_market
+        let erc20_quote_delta = common_market
             .token_index_pair
             .token_delta_mut(&mut global_delta.global_sender_delta);
 
-        quote_delta.apply_local_update(local_delta.deposit_pair);
-
-        // Repeat similarly for sender_global_update
-
-        // Deposit- only for ERC20 (quote)
-        // This checks for `init` flag. We should combine this operation with CommonDelta updates.
-        //
-        // TODO should we add non-zero checks to prevent turning `init` to true for zero values?
-        // The `init` flag is used to prevent unnecessary 0 transfers.
-        //
-        // Have a single function that
-        // - Applies the sender_global_update pair (both sides)
-        // - Updates deposit amount
-        // - Sets init = true
-        // quote_delta
-        //     .deposit(local_delta.deposit_pair)
-        //     .ok_or(GoblinError::DepositOverflow)?;
-
-        // // Sender delta
-        // // It has base and quote sides
-        // // We need to apply it into ETH or ERC20 as per the pair shape
-
-        // // MatchingLots -> Lots -> Atoms -> UnsidedAtoms
-        // let sender_global_update_base = SenderGlobalUpdate::<Base>::new(
-        //     &local_delta.local_sender_delta,
-        //     common_market.lot_size_pair,
-        // );
-
-        // // Apply to base side ETH
-        // // PairShape should have function on GobalDelta to return CommonDelta for the given side
-
-        // let common_delta = Self::common_delta::<Base>(global_delta);
-
-        // // We have a pending update ready to be applied.
-        // // It can go in 3 places- ETH, hardcoded list or custom list
-        // //
-        // // 1. Branch 1 checks In: LegMarker and PairShape: ETH or ERC20
-        // // TODO
-        // //
-        // // 2. Branch 2 if it was ERC20. This is a dynamic branch. Match on DynamicIndex for hardcoded and custom cases
-        // // MarketVariant::token_delta_mut() already does this
-        // //
-        // // We are already handling the ERC20 case in deposit case. This function could be expanded upon to get ETHDelta
-        // common_delta.taker_self_trade_unlocked +=
-        //     sender_global_update_base.atoms_released_by_self_trade;
-
-        // // let base_take_result = &local_delta.sender_delta.take_result_pair.base;
-        // // let quote_take_result = &local_delta.sender_delta.take_result_pair.quote;
-
-        // // if *base_take_result != MatchResult::<Base>::default() {
-        // //     // ETH goes in, ERC20 comes out
-        // //     // This result applies on both ETH and ERC20
-
-        // //     // The value is in MatchingLots. We need to convert it.
-        // //     // MatchingLots -> Lots -> Atoms -> UnsidedAtoms
-        // //     // Markets have different lot sizes. Therefore we cannot accumulate Lots at the top level, we
-        // //     // must convert to atoms.
-        // //     //
-        // //     // Reference function- global_delta.apply_side_update<In>
-        // //     let free_matching_lots_in = base_take_result.free_matching_lots_in;
-        // // }
+        erc20_quote_delta.apply_local_update::<Quote>(
+            &local_delta.local_sender_delta,
+            &common_market.lot_size_pair,
+            local_delta.deposit_pair,
+        );
 
         Ok(())
     }

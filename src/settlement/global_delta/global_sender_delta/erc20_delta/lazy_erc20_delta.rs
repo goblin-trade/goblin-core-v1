@@ -1,8 +1,13 @@
 use core::mem::MaybeUninit;
 
 use crate::{
+    markets::LotSizePair,
     quantities::DeltaAtoms,
-    settlement::global_delta::{CommonDelta, ERC20Delta},
+    settlement::{
+        global_delta::{CommonDelta, ERC20Delta},
+        local_delta::LocalSenderDelta,
+    },
+    types::LegMarker,
 };
 
 /// Lazily-initialized ERC20 delta accumulator.
@@ -28,10 +33,17 @@ impl Default for LazyERC20Delta {
 }
 
 impl LazyERC20Delta {
-    pub fn apply_local_update(&mut self, deposit_amount: DeltaAtoms) {
+    pub fn apply_local_update<In: LegMarker>(
+        &mut self,
+        local_sender_delta: &LocalSenderDelta,
+        lot_size_pair: &LotSizePair,
+        deposit_amount: DeltaAtoms,
+    ) {
         if self.init {
             let delta = unsafe { self.inner.assume_init_mut() };
-            delta.common_delta.apply_local_update(); // TODO pass here
+            delta
+                .common_delta
+                .apply_local_update::<In>(local_sender_delta, lot_size_pair); // TODO pass here
         } else {
             self.init = true;
             self.inner.write(ERC20Delta {

@@ -1,4 +1,9 @@
-use crate::quantities::{QuantityOps, UnsidedAtoms};
+use crate::{
+    markets::LotSizePair,
+    quantities::{QuantityOps, UnsidedAtoms},
+    settlement::local_delta::LocalSenderDelta,
+    types::LegMarker,
+};
 
 /// Common delta shared by ETHDelta and ERC20Delta
 ///
@@ -40,7 +45,14 @@ impl CommonDelta {
         self.taker_in.checked_add(self.maker_locked)
     }
 
-    pub fn apply_local_update(&mut self) {}
+    pub fn apply_local_update<In>(
+        &mut self,
+        local_sender_delta: &LocalSenderDelta,
+        lot_size_pair: &LotSizePair,
+    ) where
+        In: LegMarker,
+    {
+    }
 
     // // Update the amounts of the token transferred in and transferred out in a market
     // // when performing bid and ask taker orders
