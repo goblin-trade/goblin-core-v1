@@ -1,6 +1,6 @@
 use crate::quantities::{
     AdjustedQuoteLots, AsUnsided, BaseAtoms, BaseAtomsPerBaseLot, BaseAtomsPerBaseUnit, BaseLots,
-    BaseLotsPerBaseUnit, BaseUnits, QuantityOps, QuoteAtoms, QuoteAtomsPerQuoteLot,
+    BaseLotsPerBaseUnit, BaseUnits, Exp, QuantityOps, QuoteAtoms, QuoteAtomsPerQuoteLot,
     QuoteAtomsPerQuoteUnit, QuoteLots, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit,
     QuoteUnits, Ticks, UnsidedAtoms, BASE_ATOMS_PER_BASE_UNIT, P1, QUOTE_ATOMS_PER_QUOTE_UNIT, Z0,
 };
@@ -18,7 +18,7 @@ pub trait LegMarker: Default + Clone + Copy + PartialEq {
     // Basic quantities
     type Lots: QuantityOps + From<u64> + PartialOrd + Mul<Self::AtomsPerLot, Output = Self::Atoms>;
     type Units: QuantityOps;
-    type Atoms: QuantityOps;
+    type Atoms: QuantityOps + AsUnsided<Self, Z0, Z0, P1>;
 
     // Ratios
     type LotsPerUnit: QuantityOps;

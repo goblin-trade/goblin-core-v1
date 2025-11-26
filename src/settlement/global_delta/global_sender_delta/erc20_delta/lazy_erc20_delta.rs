@@ -2,12 +2,13 @@ use core::mem::MaybeUninit;
 
 use crate::{
     markets::LotSizePair,
+    matching::MatchResult,
     quantities::DeltaAtoms,
     settlement::{
         global_delta::{CommonDelta, ERC20Delta},
         local_delta::LocalSenderDelta,
     },
-    types::LegMarker,
+    types::{Base, LegMarker, PairAccessor, Quote},
 };
 
 /// Lazily-initialized ERC20 delta accumulator.
@@ -33,12 +34,21 @@ impl Default for LazyERC20Delta {
 }
 
 impl LazyERC20Delta {
-    pub fn apply_local_update<In: LegMarker>(
+    pub fn apply_local_update<In>(
         &mut self,
         local_sender_delta: &LocalSenderDelta,
         lot_size_pair: &LotSizePair,
         deposit_amount: DeltaAtoms,
-    ) {
+    ) where
+        In: LegMarker
+            + PairAccessor<
+                <Base as LegMarker>::LotsPerUnit,
+                <Quote as LegMarker>::LotsPerUnit,
+                Result = In::LotsPerUnit,
+            > + PairAccessor<MatchResult<Base>, MatchResult<Quote>, Result = MatchResult<In>>,
+        In::Opposite:
+            PairAccessor<MatchResult<Base>, MatchResult<Quote>, Result = MatchResult<In::Opposite>>,
+    {
         if self.init {
             let delta = unsafe { self.inner.assume_init_mut() };
             delta
