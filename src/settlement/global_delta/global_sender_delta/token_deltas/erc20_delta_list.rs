@@ -7,6 +7,8 @@ pub const MAX_CUSTOM_DELTAS: usize = 8;
 
 /// The list of ERC20 deltas. These deltas are stored in a fixed size list, indexed by
 /// the token index.
+///
+/// This function just maps index to delta. It doesn't deal with the wrapper struct.
 pub trait ERC20DeltaList<T: ERC20Token> {
     /// Get a mutable reference to LazyERC20Delta for the given token index
     ///

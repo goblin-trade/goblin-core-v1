@@ -3,6 +3,15 @@ use crate::{
     tokens::HARDCODED_TOKENS,
 };
 
+#[derive(Default)]
+pub struct TokenDeltas {
+    /// Deltas for hardcoded tokens
+    pub hardcoded_token_deltas: HardcodedTokenDeltas,
+
+    /// Deltas for custom tokens
+    pub custom_token_deltas: CustomTokenDeltas,
+}
+
 /// List of hardcoded token deltas. The tokens and their indices are hardcoded in the contract.
 pub type HardcodedTokenDeltas = [LazyERC20Delta; HARDCODED_TOKENS.len()];
 
@@ -14,12 +23,3 @@ pub type HardcodedTokenDeltas = [LazyERC20Delta; HARDCODED_TOKENS.len()];
 /// TokenIndex<CustomToken>::new() ensures that index is within MAX_CUSTOM_DELTAS bounds.
 /// Therefore lookups are safe.
 pub type CustomTokenDeltas = [LazyERC20Delta; MAX_CUSTOM_DELTAS];
-
-#[derive(Default)]
-pub struct TokenDeltas {
-    /// Deltas for hardcoded tokens
-    pub hardcoded_token_deltas: HardcodedTokenDeltas,
-
-    /// Deltas for custom tokens
-    pub custom_token_deltas: CustomTokenDeltas,
-}

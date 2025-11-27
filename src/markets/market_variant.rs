@@ -1,6 +1,6 @@
 use crate::{
     markets::PairShape,
-    settlement::global_delta::{ERC20DeltaList, GlobalSenderDelta, LazyERC20Delta},
+    settlement::global_delta::{ERC20DeltaList, LazyERC20Delta, TokenDeltas},
     state::{DynamicMarketKey, HardcodedMarketKey, SlotKey},
     tokens::{DynamicIndex, HardcodedIndex},
 };
@@ -15,7 +15,7 @@ pub trait MarketVariant {
     /// Key to read market state slot
     type MarketKey<P: PairShape>: SlotKey;
 
-    fn token_delta_mut(self, global_sender_delta: &mut GlobalSenderDelta) -> &mut LazyERC20Delta;
+    fn token_delta_mut(self, token_deltas: &mut TokenDeltas) -> &mut LazyERC20Delta;
 }
 
 impl MarketVariant for HardcodedIndex {
@@ -23,11 +23,8 @@ impl MarketVariant for HardcodedIndex {
 
     type MarketKey<P: PairShape> = HardcodedMarketKey<P>;
 
-    fn token_delta_mut(self, global_sender_delta: &mut GlobalSenderDelta) -> &mut LazyERC20Delta {
-        global_sender_delta
-            .token_deltas
-            .hardcoded_token_deltas
-            .get_delta_mut(self)
+    fn token_delta_mut(self, token_deltas: &mut TokenDeltas) -> &mut LazyERC20Delta {
+        token_deltas.hardcoded_token_deltas.get_delta_mut(self)
     }
 }
 
@@ -36,15 +33,13 @@ impl MarketVariant for DynamicIndex {
 
     type MarketKey<P: PairShape> = DynamicMarketKey<P>;
 
-    fn token_delta_mut(self, global_sender_delta: &mut GlobalSenderDelta) -> &mut LazyERC20Delta {
+    fn token_delta_mut(self, token_deltas: &mut TokenDeltas) -> &mut LazyERC20Delta {
         match self {
-            DynamicIndex::Hardcoded(hardcoded_token_index) => global_sender_delta
-                .token_deltas
+            DynamicIndex::Hardcoded(hardcoded_token_index) => token_deltas
                 .hardcoded_token_deltas
                 .get_delta_mut(hardcoded_token_index),
 
-            DynamicIndex::Custom(custom_token_index) => global_sender_delta
-                .token_deltas
+            DynamicIndex::Custom(custom_token_index) => token_deltas
                 .custom_token_deltas
                 .get_delta_mut(custom_token_index),
         }

@@ -36,8 +36,8 @@ impl Default for LazyERC20Delta {
 impl LazyERC20Delta {
     pub fn apply_local_update<In>(
         &mut self,
-        local_sender_delta: &LocalSenderDelta,
         lot_size_pair: &LotSizePair,
+        local_sender_delta: &LocalSenderDelta,
         deposit_amount: DeltaAtoms,
     ) where
         In: LegMarker
