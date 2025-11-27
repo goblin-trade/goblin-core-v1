@@ -85,6 +85,7 @@ impl PairShape for Pair<ETH, ERC20> {
             &common_market.lot_size_pair,
         );
 
+        // Improve the shape
         let erc20_quote_delta = common_market
             .token_index_pair
             .token_delta_mut(&mut global_delta.global_sender_delta);

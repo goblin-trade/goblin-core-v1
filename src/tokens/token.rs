@@ -22,7 +22,7 @@ pub struct CustomToken {
     pub address: Address,
 }
 
-pub trait ERC20TokenTrait
+pub trait ERC20Token
 where
     Self: Sized,
 {
@@ -33,7 +33,7 @@ where
     fn decimals(&self) -> Result<u8, GoblinError>;
 }
 
-impl ERC20TokenTrait for HardcodedToken {
+impl ERC20Token for HardcodedToken {
     type DeltaList = [LazyERC20Delta; HARDCODED_TOKENS.len()];
 
     fn delta(delta_list: &Self::DeltaList, index: TokenIndex<Self>) -> &LazyERC20Delta {
@@ -49,7 +49,7 @@ impl ERC20TokenTrait for HardcodedToken {
     }
 }
 
-impl ERC20TokenTrait for CustomToken {
+impl ERC20Token for CustomToken {
     type DeltaList = [LazyERC20Delta; 8];
 
     fn delta(delta_list: &Self::DeltaList, index: TokenIndex<Self>) -> &LazyERC20Delta {
@@ -66,12 +66,12 @@ impl ERC20TokenTrait for CustomToken {
 }
 
 #[derive(Clone, Copy, PartialEq)]
-pub struct TokenIndex<T: ERC20TokenTrait> {
+pub struct TokenIndex<T: ERC20Token> {
     pub inner: u8,
     _marker: PhantomData<T>,
 }
 
-impl<T: ERC20TokenTrait> TokenIndex<T> {
+impl<T: ERC20Token> TokenIndex<T> {
     pub const fn new(inner: u8) -> Self {
         Self {
             inner,

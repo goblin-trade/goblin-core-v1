@@ -25,6 +25,7 @@ impl MarketVariant for HardcodedIndex {
 
     fn token_delta_mut(self, global_sender_delta: &mut GlobalSenderDelta) -> &mut LazyERC20Delta {
         global_sender_delta
+            .token_deltas
             .hardcoded_token_deltas
             .get_delta_mut(self)
     }
@@ -38,10 +39,12 @@ impl MarketVariant for DynamicIndex {
     fn token_delta_mut(self, global_sender_delta: &mut GlobalSenderDelta) -> &mut LazyERC20Delta {
         match self {
             DynamicIndex::Hardcoded(hardcoded_token_index) => global_sender_delta
+                .token_deltas
                 .hardcoded_token_deltas
                 .get_delta_mut(hardcoded_token_index),
 
             DynamicIndex::Custom(custom_token_index) => global_sender_delta
+                .token_deltas
                 .custom_token_deltas
                 .get_delta_mut(custom_token_index),
         }
