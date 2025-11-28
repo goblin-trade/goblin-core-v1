@@ -1,13 +1,9 @@
 use core::mem::MaybeUninit;
 
 use crate::{
-    markets::LotSizePair,
     quantities::DeltaAtoms,
-    settlement::{
-        global_delta::{CommonDelta, ERC20Delta},
-        local_delta::{LocalSenderDelta, TakerDelta},
-    },
-    types::{Base, LegMarker, PairAccessor, Quote},
+    settlement::global_delta::{CommonDelta, ERC20Delta, GlobalUpdate},
+    types::LegMarker,
 };
 
 /// Lazily-initialized ERC20 delta accumulator.
@@ -33,31 +29,18 @@ impl Default for LazyERC20Delta {
 }
 
 impl LazyERC20Delta {
-    pub fn apply_local_update<In>(
+    pub fn apply_global_update<In: LegMarker>(
         &mut self,
-        lot_size_pair: &LotSizePair,
-        local_sender_delta: &LocalSenderDelta,
+        global_update: &GlobalUpdate<In>,
         deposit_amount: DeltaAtoms,
-    ) -> Option<()>
-    where
-        In: LegMarker
-            + PairAccessor<
-                <Base as LegMarker>::LotsPerUnit,
-                <Quote as LegMarker>::LotsPerUnit,
-                Result = In::LotsPerUnit,
-            > + PairAccessor<TakerDelta<Base>, TakerDelta<Quote>, Result = TakerDelta<In>>,
-        In::Opposite:
-            PairAccessor<TakerDelta<Base>, TakerDelta<Quote>, Result = TakerDelta<In::Opposite>>,
-    {
+    ) -> Option<()> {
         if self.init {
             let delta = unsafe { self.inner.assume_init_mut() };
-            delta
-                .common_delta
-                .apply_local_update::<In>(local_sender_delta, lot_size_pair)
+            delta.common_delta.add_global_update(&global_update)
         } else {
             self.init = true;
 
-            let common_delta = CommonDelta::new::<In>(local_sender_delta, lot_size_pair);
+            let common_delta = CommonDelta::new::<In>(&global_update);
             self.inner.write(ERC20Delta {
                 deposit_due: deposit_amount,
                 common_delta,

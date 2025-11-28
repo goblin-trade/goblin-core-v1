@@ -2,7 +2,9 @@ use crate::{
     goblin_error::GoblinError,
     markets::{CommonMarket, MarketVariant},
     settlement::{
-        global_delta::{CommonDelta, ERC20Delta, EthDelta, GlobalDelta, GlobalSenderDelta},
+        global_delta::{
+            CommonDelta, ERC20Delta, EthDelta, GlobalDelta, GlobalSenderDelta, GlobalUpdate,
+        },
         local_delta::LocalDelta,
     },
     types::{Base, LegMarker, Pair, Quote},
@@ -49,22 +51,39 @@ impl PairShape for Pair<ETH, ERC20> {
     {
         let sender_delta = &mut global_delta.global_sender_delta;
 
+        let global_update_base = GlobalUpdate::<Base>::new(
+            &local_delta.local_sender_delta.taker_delta_pair,
+            &common_market.lot_size_pair,
+        );
+
         sender_delta
             .eth_delta
             .common_delta
-            .apply_local_update::<Base>(
-                &local_delta.local_sender_delta,
-                &common_market.lot_size_pair,
-            );
+            .add_global_update(&global_update_base)
+            .ok_or(GoblinError::DeltaOverflow)?;
+
+        // sender_delta
+        //     .eth_delta
+        //     .common_delta
+        //     .apply_local_update::<Base>(
+        //         &local_delta.local_sender_delta,
+        //         &common_market.lot_size_pair,
+        //     );
+
+        let global_update_quote = GlobalUpdate::<Quote>::new(
+            &local_delta.local_sender_delta.taker_delta_pair,
+            &common_market.lot_size_pair,
+        );
 
         let quote_token_index = common_market.token_index_pair;
-
         let lazy_delta = quote_token_index.token_delta_mut(&mut sender_delta.token_deltas);
-        lazy_delta.apply_local_update::<Quote>(
-            &common_market.lot_size_pair,
-            &local_delta.local_sender_delta,
-            local_delta.deposit_pair,
-        );
+        lazy_delta.apply_global_update(&global_update_quote, local_delta.deposit_pair);
+
+        // lazy_delta.apply_local_update::<Quote>(
+        //     &common_market.lot_size_pair,
+        //     &local_delta.local_sender_delta,
+        //     local_delta.deposit_pair,
+        // );
 
         // TODO maker deltas
 

@@ -1,11 +1,7 @@
 use crate::{
-    markets::LotSizePair,
     quantities::{AsUnsided, QuantityOps, UnsidedAtoms},
-    settlement::{
-        global_delta::GlobalUpdate,
-        local_delta::{LocalSenderDelta, TakerDelta},
-    },
-    types::{Base, LegMarker, PairAccessor, Quote},
+    settlement::global_delta::GlobalUpdate,
+    types::LegMarker,
 };
 
 /// Common delta shared by ETHDelta and ERC20Delta
@@ -38,20 +34,7 @@ pub struct CommonDelta {
 }
 
 impl CommonDelta {
-    pub fn new<In>(local_sender_delta: &LocalSenderDelta, lot_size_pair: &LotSizePair) -> Self
-    where
-        In: LegMarker
-            + PairAccessor<
-                <Base as LegMarker>::LotsPerUnit,
-                <Quote as LegMarker>::LotsPerUnit,
-                Result = In::LotsPerUnit,
-            > + PairAccessor<TakerDelta<Base>, TakerDelta<Quote>, Result = TakerDelta<In>>,
-        In::Opposite:
-            PairAccessor<TakerDelta<Base>, TakerDelta<Quote>, Result = TakerDelta<In::Opposite>>,
-    {
-        let global_update =
-            GlobalUpdate::<In>::new(&local_sender_delta.taker_delta_pair, lot_size_pair);
-
+    pub fn new<In: LegMarker>(global_update: &GlobalUpdate<In>) -> Self {
         Self {
             taker_in: global_update.taker_in.unsided(),
             taker_out: global_update.taker_out.unsided(),
@@ -60,24 +43,10 @@ impl CommonDelta {
         }
     }
 
-    pub fn apply_local_update<In>(
+    pub fn add_global_update<In: LegMarker>(
         &mut self,
-        local_sender_delta: &LocalSenderDelta,
-        lot_size_pair: &LotSizePair,
-    ) -> Option<()>
-    where
-        In: LegMarker
-            + PairAccessor<
-                <Base as LegMarker>::LotsPerUnit,
-                <Quote as LegMarker>::LotsPerUnit,
-                Result = In::LotsPerUnit,
-            > + PairAccessor<TakerDelta<Base>, TakerDelta<Quote>, Result = TakerDelta<In>>,
-        In::Opposite:
-            PairAccessor<TakerDelta<Base>, TakerDelta<Quote>, Result = TakerDelta<In::Opposite>>,
-    {
-        let global_update =
-            GlobalUpdate::<In>::new(&local_sender_delta.taker_delta_pair, lot_size_pair);
-
+        global_update: &GlobalUpdate<In>,
+    ) -> Option<()> {
         self.taker_in = self
             .taker_in
             .checked_add(global_update.taker_in.unsided())?;
