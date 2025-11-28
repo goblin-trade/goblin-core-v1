@@ -57,10 +57,7 @@ impl LazyERC20Delta {
         } else {
             self.init = true;
 
-            // Checked addition on empty is wasteful
-            // TODO fix
-            let mut common_delta = CommonDelta::default();
-            common_delta.apply_local_update::<In>(local_sender_delta, lot_size_pair)?;
+            let common_delta = CommonDelta::new::<In>(local_sender_delta, lot_size_pair);
             self.inner.write(ERC20Delta {
                 deposit_due: deposit_amount,
                 common_delta,
