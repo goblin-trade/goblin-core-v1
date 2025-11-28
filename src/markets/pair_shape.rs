@@ -1,7 +1,6 @@
 use crate::{
     goblin_error::GoblinError,
     markets::{CommonMarket, MarketVariant},
-    matching::MatchResult,
     settlement::{
         global_delta::{CommonDelta, ERC20Delta, EthDelta, GlobalDelta, GlobalSenderDelta},
         local_delta::LocalDelta,

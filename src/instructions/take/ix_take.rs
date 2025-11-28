@@ -3,9 +3,9 @@ use crate::{
     input_processor::ArgsBuffer,
     instructions::take::take_packet::TakePacket,
     markets::{CommonMarket, MarketVariant, PairShape},
-    matching::{match_order, MatchResult},
+    matching::match_order,
     quantities::Ticks,
-    settlement::local_delta::{LocalDelta, MakerDelta},
+    settlement::local_delta::{LocalDelta, MakerDelta, TakerDelta},
     state::MarketState,
     types::{Address, Base, LegMarker, PairAccessor, Quote},
 };
@@ -24,7 +24,7 @@ where
     P: PairShape,
     In: LegMarker
         + PairAccessor<MakerDelta<Base>, MakerDelta<Quote>, Result = MakerDelta<In>>
-        + PairAccessor<MatchResult<Base>, MatchResult<Quote>, Result = MatchResult<In>>,
+        + PairAccessor<TakerDelta<Base>, TakerDelta<Quote>, Result = TakerDelta<In>>,
     In::Opposite: PairAccessor<Ticks, Ticks, Result = Ticks>,
 {
     let packet = TakePacket::<In>::decode(payload, len, offset)?;

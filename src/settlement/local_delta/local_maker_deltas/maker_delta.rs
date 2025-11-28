@@ -9,6 +9,9 @@ use crate::types::LegMarker;
 ///
 #[derive(Default, Clone, Copy)]
 pub struct MakerDelta<In: LegMarker> {
-    pub free_matching_lots_in: In::MatchingLots,
-    pub locked_matching_lots_out: <In::Opposite as LegMarker>::MatchingLots,
+    /// Input token gained by maker
+    pub taker_in: In::MatchingLots,
+
+    /// Locked output token released by maker
+    pub taker_out: <In::Opposite as LegMarker>::MatchingLots,
 }

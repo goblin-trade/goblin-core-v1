@@ -30,8 +30,8 @@ impl MakerDeltaPair {
     {
         let deltas_for_side = In::get_leg_mut(self);
 
-        deltas_for_side.free_matching_lots_in += free_matching_lots_in;
-        deltas_for_side.locked_matching_lots_out += locked_matching_lots_out;
+        deltas_for_side.taker_in += free_matching_lots_in;
+        deltas_for_side.taker_out += locked_matching_lots_out;
 
         Ok(())
     }

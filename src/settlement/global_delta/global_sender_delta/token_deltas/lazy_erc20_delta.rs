@@ -2,11 +2,10 @@ use core::mem::MaybeUninit;
 
 use crate::{
     markets::LotSizePair,
-    matching::MatchResult,
     quantities::DeltaAtoms,
     settlement::{
         global_delta::{CommonDelta, ERC20Delta},
-        local_delta::LocalSenderDelta,
+        local_delta::{LocalSenderDelta, TakerDelta},
     },
     types::{Base, LegMarker, PairAccessor, Quote},
 };
@@ -39,49 +38,35 @@ impl LazyERC20Delta {
         lot_size_pair: &LotSizePair,
         local_sender_delta: &LocalSenderDelta,
         deposit_amount: DeltaAtoms,
-    ) where
+    ) -> Option<()>
+    where
         In: LegMarker
             + PairAccessor<
                 <Base as LegMarker>::LotsPerUnit,
                 <Quote as LegMarker>::LotsPerUnit,
                 Result = In::LotsPerUnit,
-            > + PairAccessor<MatchResult<Base>, MatchResult<Quote>, Result = MatchResult<In>>,
+            > + PairAccessor<TakerDelta<Base>, TakerDelta<Quote>, Result = TakerDelta<In>>,
         In::Opposite:
-            PairAccessor<MatchResult<Base>, MatchResult<Quote>, Result = MatchResult<In::Opposite>>,
+            PairAccessor<TakerDelta<Base>, TakerDelta<Quote>, Result = TakerDelta<In::Opposite>>,
     {
         if self.init {
             let delta = unsafe { self.inner.assume_init_mut() };
             delta
                 .common_delta
-                .apply_local_update::<In>(local_sender_delta, lot_size_pair); // TODO pass here
+                .apply_local_update::<In>(local_sender_delta, lot_size_pair)
         } else {
             self.init = true;
+
+            // Checked addition on empty is wasteful
+            // TODO fix
+            let mut common_delta = CommonDelta::default();
+            common_delta.apply_local_update::<In>(local_sender_delta, lot_size_pair)?;
             self.inner.write(ERC20Delta {
                 deposit_due: deposit_amount,
-                common_delta: CommonDelta::default(),
+                common_delta,
             });
-        }
-    }
 
-    /// Accumulate a deposit amount to the delta.
-    ///
-    /// Initializes the delta on first non-zero deposit. The actual deposit
-    /// occurs during the settlement phase.
-    pub fn deposit(&mut self, deposit_amount: DeltaAtoms) -> Option<()> {
-        if deposit_amount == DeltaAtoms::ZERO {
             return Some(());
         }
-
-        if self.init {
-            let delta = unsafe { self.inner.assume_init_mut() };
-            delta.deposit_due = delta.deposit_due.checked_add(deposit_amount)?;
-        } else {
-            self.init = true;
-            self.inner.write(ERC20Delta {
-                deposit_due: deposit_amount,
-                common_delta: CommonDelta::default(),
-            });
-        }
-        Some(())
     }
 }

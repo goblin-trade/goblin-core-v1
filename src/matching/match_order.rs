@@ -1,10 +1,10 @@
 use crate::{
     goblin_error::GoblinError,
     markets::{CommonMarket, MarketVariant, PairShape},
-    matching::{quote_iterator::RestingOrderPositionIterator, MatchResult},
+    matching::quote_iterator::RestingOrderPositionIterator,
     quantities::{QuantityOps, Ticks},
     require,
-    settlement::local_delta::{LocalDelta, MakerDelta},
+    settlement::local_delta::{LocalDelta, MakerDelta, TakerDelta},
     state::{MarketState, RestingOrder, RestingOrderKey, SlotState},
     types::{Address, Base, LegMarker, PairAccessor, Quote},
 };
@@ -23,7 +23,7 @@ where
     P: PairShape,
     In: LegMarker
         + PairAccessor<MakerDelta<Base>, MakerDelta<Quote>, Result = MakerDelta<In>>
-        + PairAccessor<MatchResult<Base>, MatchResult<Quote>, Result = MatchResult<In>>,
+        + PairAccessor<TakerDelta<Base>, TakerDelta<Quote>, Result = TakerDelta<In>>,
     In::Opposite: PairAccessor<Ticks, Ticks, Result = Ticks>,
 {
     let budget = In::matching_lots_taker(num_lots, market.lot_size_pair.base);
@@ -33,13 +33,13 @@ where
     // - The entire budget is matched, or
     // - We reach price_limit, or
     // - We run out of resting orders
-    let mut matched = In::MatchingLots::ZERO;
+    let mut taker_in = In::MatchingLots::ZERO;
 
     // The opposite amount transferred out, i.e. lost by makers and gained by the taker.
-    let mut matched_opposite = <In::Opposite as LegMarker>::MatchingLots::ZERO;
+    let mut taker_out = <In::Opposite as LegMarker>::MatchingLots::ZERO;
 
     // The opposite amount unlocked upon self trade
-    let mut released_by_self_trade = <In::Opposite as LegMarker>::MatchingLots::ZERO;
+    let mut taker_self_trade_unlocked = <In::Opposite as LegMarker>::MatchingLots::ZERO;
 
     // Halt early if best price is further from the centre than the price limit
     let best_opposite_price = In::Opposite::get_leg_mut(&mut market_state.best_prices);
@@ -57,7 +57,7 @@ where
     let mut resting_order_position_iterator =
         RestingOrderPositionIterator::<In::Opposite>::new(best_opposite_price);
 
-    while budget > matched {
+    while budget > taker_in {
         let next_position = resting_order_position_iterator.next();
         match next_position {
             Some(resting_order_position) => {
@@ -85,19 +85,19 @@ where
 
                 // Self trade- close the resting order and mark lots for release
                 if maker == *taker {
-                    released_by_self_trade += quote_opposite;
+                    taker_self_trade_unlocked += quote_opposite;
                     continue;
                 }
 
-                if budget < matched + quote {
+                if budget < taker_in + quote {
                     // Resting order consumes the budget. Part of the resting order remains, write it back.
-                    let surplus = matched + quote - budget;
+                    let surplus = taker_in + quote - budget;
                     let surplus_base_lots =
                         In::base_lots_from_matching(surplus, market.tick_size, price);
                     (*resting_order.as_mut()).size = surplus_base_lots;
                     resting_order.as_mut().store(&resting_order_key);
 
-                    let consumed = budget - matched;
+                    let consumed = budget - taker_in;
                     let consumed_base_lots = resting_order_size - surplus_base_lots;
                     let consumed_opposite = In::Opposite::matching_lots_maker(
                         consumed_base_lots,
@@ -105,14 +105,14 @@ where
                         price,
                     );
 
-                    matched += consumed;
-                    matched_opposite += consumed_opposite;
+                    taker_in += consumed;
+                    taker_out += consumed_opposite;
                 } else {
                     // Resting order is completely consumed. Index to the next resting order/
 
                     // Update taker
-                    matched += quote;
-                    matched_opposite += quote_opposite;
+                    taker_in += quote;
+                    taker_out += quote_opposite;
 
                     // Update maker
                     let pending_maker_update_mut = local_delta
@@ -123,7 +123,7 @@ where
                     pending_maker_update_mut
                         .accumulate_match_result::<In>(quote, quote_opposite)?;
 
-                    if budget == matched + quote {
+                    if budget == taker_in + quote {
                         // Call next to remove resting order from book and index to the next one,
                         // then stop matching
                         resting_order_position_iterator.next();
@@ -138,11 +138,11 @@ where
         }
     }
 
-    let take_result_mut = In::get_leg_mut(&mut local_delta.local_sender_delta.take_result_pair);
-    *take_result_mut = MatchResult::<In> {
-        free_matching_lots_in: matched,
-        locked_matching_lots_out: matched_opposite,
-        released_by_self_trade,
+    let taker_delta_mut = In::get_leg_mut(&mut local_delta.local_sender_delta.taker_delta_pair);
+    *taker_delta_mut = TakerDelta::<In> {
+        taker_in,
+        taker_out,
+        taker_self_trade_unlocked,
     };
 
     Ok(())

@@ -1,8 +1,7 @@
 use crate::{
     markets::LotSizePair,
-    matching::MatchResult,
     quantities::{AsUnsided, QuantityOps, UnsidedAtoms},
-    settlement::local_delta::LocalSenderDelta,
+    settlement::local_delta::{LocalSenderDelta, TakerDelta},
     types::{Base, LegMarker, PairAccessor, Quote},
 };
 
@@ -36,15 +35,22 @@ pub struct CommonDelta {
 }
 
 impl CommonDelta {
-    pub fn free_atoms_out(&self) -> Option<UnsidedAtoms> {
-        self.taker_out
-            .checked_add(self.taker_self_trade_unlocked)?
-            .checked_add(self.cancel_unlocked)
-    }
-
-    pub fn free_atoms_in(&self) -> Option<UnsidedAtoms> {
-        self.taker_in.checked_add(self.maker_locked)
-    }
+    // pub fn new<In>(
+    //     &mut self,
+    //     local_sender_delta: &LocalSenderDelta,
+    //     lot_size_pair: &LotSizePair,
+    // ) -> Self
+    // where
+    //     In: LegMarker
+    //         + PairAccessor<
+    //             <Base as LegMarker>::LotsPerUnit,
+    //             <Quote as LegMarker>::LotsPerUnit,
+    //             Result = In::LotsPerUnit,
+    //         > + PairAccessor<MatchResult<Base>, MatchResult<Quote>, Result = MatchResult<In>>,
+    //     In::Opposite:
+    //         PairAccessor<MatchResult<Base>, MatchResult<Quote>, Result = MatchResult<In::Opposite>>,
+    // {
+    // }
 
     pub fn apply_local_update<In>(
         &mut self,
@@ -57,38 +63,44 @@ impl CommonDelta {
                 <Base as LegMarker>::LotsPerUnit,
                 <Quote as LegMarker>::LotsPerUnit,
                 Result = In::LotsPerUnit,
-            > + PairAccessor<MatchResult<Base>, MatchResult<Quote>, Result = MatchResult<In>>,
+            > + PairAccessor<TakerDelta<Base>, TakerDelta<Quote>, Result = TakerDelta<In>>,
         In::Opposite:
-            PairAccessor<MatchResult<Base>, MatchResult<Quote>, Result = MatchResult<In::Opposite>>,
+            PairAccessor<TakerDelta<Base>, TakerDelta<Quote>, Result = TakerDelta<In::Opposite>>,
     {
         let base_lot_size = lot_size_pair.base;
         let lot_size = *In::get_leg(&lot_size_pair);
         let atoms_per_lot = In::atoms_per_lot(lot_size);
 
-        let delta = In::get_leg(&local_sender_delta.take_result_pair);
-        let delta_opposite = In::Opposite::get_leg(&local_sender_delta.take_result_pair);
+        let delta = In::get_leg(&local_sender_delta.taker_delta_pair);
+        let delta_opposite = In::Opposite::get_leg(&local_sender_delta.taker_delta_pair);
 
-        let free_atoms_in =
-            In::matching_lots_to_atoms(delta.free_matching_lots_in, base_lot_size, atoms_per_lot);
+        let taker_in = In::matching_lots_to_atoms(delta.taker_in, base_lot_size, atoms_per_lot);
 
-        let locked_atoms_out = In::matching_lots_to_atoms(
-            delta_opposite.locked_matching_lots_out,
+        let taker_out =
+            In::matching_lots_to_atoms(delta_opposite.taker_out, base_lot_size, atoms_per_lot);
+
+        let taker_self_trade_unlocked = In::matching_lots_to_atoms(
+            delta_opposite.taker_self_trade_unlocked,
             base_lot_size,
             atoms_per_lot,
         );
 
-        let atoms_released_by_self_trade = In::matching_lots_to_atoms(
-            delta_opposite.released_by_self_trade,
-            base_lot_size,
-            atoms_per_lot,
-        );
-
-        self.taker_in = self.taker_in.checked_add(free_atoms_in.unsided())?;
-        self.taker_out = self.taker_out.checked_add(locked_atoms_out.unsided())?;
+        self.taker_in = self.taker_in.checked_add(taker_in.unsided())?;
+        self.taker_out = self.taker_out.checked_add(taker_out.unsided())?;
         self.taker_self_trade_unlocked = self
             .taker_self_trade_unlocked
-            .checked_add(atoms_released_by_self_trade.unsided())?;
+            .checked_add(taker_self_trade_unlocked.unsided())?;
 
         Some(())
     }
+
+    // pub fn free_atoms_out(&self) -> Option<UnsidedAtoms> {
+    //     self.taker_out
+    //         .checked_add(self.taker_self_trade_unlocked)?
+    //         .checked_add(self.cancel_unlocked)
+    // }
+
+    // pub fn free_atoms_in(&self) -> Option<UnsidedAtoms> {
+    //     self.taker_in.checked_add(self.maker_locked)
+    // }
 }

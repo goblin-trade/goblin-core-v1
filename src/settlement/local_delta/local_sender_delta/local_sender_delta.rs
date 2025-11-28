@@ -1,5 +1,5 @@
 use crate::{
-    matching::MatchResult,
+    settlement::local_delta::TakerDelta,
     types::{Base, Pair, Quote},
 };
 
@@ -10,5 +10,5 @@ use crate::{
 #[derive(Default)]
 pub struct LocalSenderDelta {
     /// The results of matching take orders
-    pub take_result_pair: Pair<MatchResult<Base>, MatchResult<Quote>>,
+    pub taker_delta_pair: Pair<TakerDelta<Base>, TakerDelta<Quote>>,
 }
