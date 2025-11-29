@@ -4,6 +4,7 @@ use crate::{
     settlement::{
         global_delta::{
             CommonDelta, ERC20Delta, EthDelta, GlobalDelta, GlobalSenderDelta, GlobalUpdate,
+            GlobalUpdatePair,
         },
         local_delta::LocalDelta,
     },
@@ -49,12 +50,7 @@ impl PairShape for Pair<ETH, ERC20> {
         M: MarketVariant + Clone + Copy,
         Self: Sized,
     {
-        // Taker updates pair
-        let global_update_base = GlobalUpdate::<Base>::new(
-            &local_delta.local_sender_delta.taker_delta_pair,
-            &common_market.lot_size_pair,
-        );
-        let global_update_quote = GlobalUpdate::<Quote>::new(
+        let global_update_pair = GlobalUpdatePair::new(
             &local_delta.local_sender_delta.taker_delta_pair,
             &common_market.lot_size_pair,
         );
@@ -64,13 +60,13 @@ impl PairShape for Pair<ETH, ERC20> {
         sender_delta
             .eth_delta
             .common_delta
-            .add_global_update(&global_update_base)
+            .add_global_update(&global_update_pair.base)
             .ok_or(GoblinError::DeltaOverflow)?;
 
         // Update quote
         let quote_token_index = common_market.token_index_pair;
         let lazy_delta = quote_token_index.token_delta_mut(&mut sender_delta.token_deltas);
-        lazy_delta.apply_global_update(&global_update_quote, local_delta.deposit_pair);
+        lazy_delta.apply_global_update(&global_update_pair.quote, local_delta.deposit_pair);
 
         // TODO maker deltas
 
