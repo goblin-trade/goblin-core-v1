@@ -1,5 +1,5 @@
 use crate::{
-    settlement::global_delta::{LazyERC20Delta, MAX_CUSTOM_DELTAS},
+    settlement::global_delta::{ERC20Delta, Lazy, MAX_CUSTOM_DELTAS},
     tokens::HARDCODED_TOKENS,
 };
 
@@ -13,7 +13,7 @@ pub struct TokenDeltas {
 }
 
 /// List of hardcoded token deltas. The tokens and their indices are hardcoded in the contract.
-pub type HardcodedTokenDeltas = [LazyERC20Delta; HARDCODED_TOKENS.len()];
+pub type HardcodedTokenDeltas = [Lazy<ERC20Delta>; HARDCODED_TOKENS.len()];
 
 /// List of custom token deltas. Since custom tokens are passed at runtime, the mapping between
 /// token index and token address can vary across contract calls.
@@ -22,4 +22,4 @@ pub type HardcodedTokenDeltas = [LazyERC20Delta; HARDCODED_TOKENS.len()];
 ///
 /// TokenIndex<CustomToken>::new() ensures that index is within MAX_CUSTOM_DELTAS bounds.
 /// Therefore lookups are safe.
-pub type CustomTokenDeltas = [LazyERC20Delta; MAX_CUSTOM_DELTAS];
+pub type CustomTokenDeltas = [Lazy<ERC20Delta>; MAX_CUSTOM_DELTAS];

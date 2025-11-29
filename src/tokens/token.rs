@@ -1,8 +1,12 @@
 use core::marker::PhantomData;
 
 use crate::{
-    erc20, goblin_error::GoblinError, require, settlement::global_delta::LazyERC20Delta,
-    tokens::HARDCODED_TOKENS, types::Address,
+    erc20,
+    goblin_error::GoblinError,
+    require,
+    settlement::global_delta::{ERC20Delta, Lazy},
+    tokens::HARDCODED_TOKENS,
+    types::Address,
 };
 
 #[derive(Clone, Copy)]
@@ -26,17 +30,17 @@ pub trait ERC20Token
 where
     Self: Sized,
 {
-    type DeltaList: AsRef<[LazyERC20Delta]> + AsMut<[LazyERC20Delta]>;
-    fn delta(delta_list: &Self::DeltaList, index: TokenIndex<Self>) -> &LazyERC20Delta;
+    type DeltaList: AsRef<[Lazy<ERC20Delta>]> + AsMut<[Lazy<ERC20Delta>]>;
+    fn delta(delta_list: &Self::DeltaList, index: TokenIndex<Self>) -> &Lazy<ERC20Delta>;
 
     fn address(&self) -> &Address;
     fn decimals(&self) -> Result<u8, GoblinError>;
 }
 
 impl ERC20Token for HardcodedToken {
-    type DeltaList = [LazyERC20Delta; HARDCODED_TOKENS.len()];
+    type DeltaList = [Lazy<ERC20Delta>; HARDCODED_TOKENS.len()];
 
-    fn delta(delta_list: &Self::DeltaList, index: TokenIndex<Self>) -> &LazyERC20Delta {
+    fn delta(delta_list: &Self::DeltaList, index: TokenIndex<Self>) -> &Lazy<ERC20Delta> {
         &delta_list[index.inner as usize]
     }
 
@@ -50,9 +54,9 @@ impl ERC20Token for HardcodedToken {
 }
 
 impl ERC20Token for CustomToken {
-    type DeltaList = [LazyERC20Delta; 8];
+    type DeltaList = [Lazy<ERC20Delta>; 8];
 
-    fn delta(delta_list: &Self::DeltaList, index: TokenIndex<Self>) -> &LazyERC20Delta {
+    fn delta(delta_list: &Self::DeltaList, index: TokenIndex<Self>) -> &Lazy<ERC20Delta> {
         &delta_list[index.inner as usize]
     }
 
