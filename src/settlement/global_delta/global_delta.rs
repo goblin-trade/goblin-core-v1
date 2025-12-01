@@ -16,16 +16,15 @@ use crate::{
 pub struct GlobalDelta {
     /// Delta for msg.sender
     pub global_sender_delta: GlobalSenderDelta,
-
-    /// Deltas for makers of matched orders
-    pub maker_deltas: GlobalMakerDeltas,
+    // /// Deltas for makers of matched orders
+    // pub maker_deltas: GlobalMakerDeltas,
 }
 
 impl GlobalDelta {
-    pub fn new(msg_value: UnsidedAtoms, eth_out_due: UnsidedAtoms) -> Self {
+    pub const fn new() -> Self {
         GlobalDelta {
-            global_sender_delta: GlobalSenderDelta::new(msg_value, eth_out_due),
-            maker_deltas: GlobalMakerDeltas::default(),
+            global_sender_delta: GlobalSenderDelta::new(),
+            // maker_deltas: GlobalMakerDeltas::new(),
         }
     }
 

@@ -3,7 +3,6 @@ use crate::{
     tokens::HARDCODED_TOKENS,
 };
 
-#[derive(Default)]
 pub struct TokenDeltas {
     /// Deltas for hardcoded tokens
     pub hardcoded_token_deltas: HardcodedTokenDeltas,
@@ -13,12 +12,12 @@ pub struct TokenDeltas {
 }
 
 impl TokenDeltas {
-    // pub const fn new() -> Self {
-    //     Self {
-    //         hardcoded_token_deltas: (),
-    //         custom_token_deltas: (),
-    //     }
-    // }
+    pub const fn new() -> Self {
+        Self {
+            hardcoded_token_deltas: [ERC20Delta::new(); HARDCODED_TOKENS.len()],
+            custom_token_deltas: [ERC20Delta::new(); MAX_CUSTOM_DELTAS],
+        }
+    }
 }
 
 /// List of hardcoded token deltas. The tokens and their indices are hardcoded in the contract.

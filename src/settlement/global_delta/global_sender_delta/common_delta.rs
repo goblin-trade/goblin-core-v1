@@ -15,7 +15,7 @@ use crate::{
 /// accumulators here. By definition, `maker_locked` cannot change `taker_out`.
 ///
 /// * Unlocked tokens are credited to free tokens in settlement phase.
-#[derive(Default, Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct CommonDelta {
     /// Tokens transferred into the engine, i.e. lost as taker
     pub taker_in: UnsidedAtoms,
@@ -34,12 +34,13 @@ pub struct CommonDelta {
 }
 
 impl CommonDelta {
-    pub fn new<In: LegMarker>(global_update: &GlobalUpdate<In>) -> Self {
+    pub const fn new() -> Self {
         Self {
-            taker_in: global_update.taker_in.unsided(),
-            taker_out: global_update.taker_out.unsided(),
-            taker_self_trade_unlocked: global_update.taker_self_trade_unlocked.unsided(),
-            ..Default::default()
+            taker_in: UnsidedAtoms::ZERO,
+            taker_out: UnsidedAtoms::ZERO,
+            taker_self_trade_unlocked: UnsidedAtoms::ZERO,
+            maker_locked: UnsidedAtoms::ZERO,
+            cancel_unlocked: UnsidedAtoms::ZERO,
         }
     }
 

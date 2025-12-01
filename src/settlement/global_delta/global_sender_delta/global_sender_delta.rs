@@ -1,7 +1,4 @@
-use crate::{
-    quantities::UnsidedAtoms,
-    settlement::global_delta::{EthDelta, TokenDeltas},
-};
+use crate::settlement::global_delta::{EthDelta, TokenDeltas};
 
 /// The global delta for msg.sender. It stores deltas for ETH and ERC20 tokens.
 pub struct GlobalSenderDelta {
@@ -13,10 +10,10 @@ pub struct GlobalSenderDelta {
 }
 
 impl GlobalSenderDelta {
-    pub fn new(msg_value: UnsidedAtoms, eth_out_due: UnsidedAtoms) -> Self {
+    pub const fn new() -> Self {
         Self {
-            eth_delta: EthDelta::new(msg_value, eth_out_due),
-            token_deltas: TokenDeltas::default(),
+            eth_delta: EthDelta::new(),
+            token_deltas: TokenDeltas::new(),
         }
     }
 }

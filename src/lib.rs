@@ -1,3 +1,4 @@
+#![allow(static_mut_refs)]
 #![cfg_attr(not(test), no_std)]
 #![cfg_attr(not(test), no_main)]
 
@@ -32,7 +33,11 @@ pub const CONTRACT_ADDRESS: [u8; 20] = [
     0x7d, 0x31, 0x61, 0xb0,
 ];
 
-// static mut DELTA: TokenDeltas = TokenDeltas::default();
+/// The global delta
+///
+/// Using `static mut` allows us to take advantage of the fact that lienar memory is zero filled.
+/// We get an empty starting buffer without the cost of zeroing.
+static mut GLOBAL_DELTA: GlobalDelta = GlobalDelta::new();
 
 fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
     // Re-entrancy disabled
@@ -45,8 +50,11 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
     let msg_sender = hostio::msg_sender();
 
     // Initialize deltas
-    let mut global_delta = GlobalDelta::new(args.msg_value, args.eth_out_due);
-    // let mut maker_balance_updates = MakerBalanceUpdates::default();
+    let global_delta = unsafe { &mut GLOBAL_DELTA };
+    global_delta
+        .global_sender_delta
+        .eth_delta
+        .set_eth_values(args.msg_value, args.eth_out_due);
 
     // Iterate markets
     for _ in 0..args.header.market_count {
@@ -58,7 +66,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
                 HardcodedMarket::<Pair<ETH, ERC20>>::process(
                     msg_sender.as_ref(),
                     &market_header,
-                    &mut global_delta,
+                    global_delta,
                     args_buffer.as_ref(),
                     &mut args.offset,
                     len,
@@ -69,7 +77,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
                 HardcodedMarket::<Pair<ERC20, ETH>>::process(
                     msg_sender.as_ref(),
                     &market_header,
-                    &mut global_delta,
+                    global_delta,
                     args_buffer.as_ref(),
                     &mut args.offset,
                     len,
@@ -80,7 +88,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
                 HardcodedMarket::<Pair<ERC20, ERC20>>::process(
                     msg_sender.as_ref(),
                     &market_header,
-                    &mut global_delta,
+                    global_delta,
                     args_buffer.as_ref(),
                     &mut args.offset,
                     len,
@@ -92,7 +100,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
                 DynamicMarket::<Pair<ETH, ERC20>>::process(
                     msg_sender.as_ref(),
                     &market_header,
-                    &mut global_delta,
+                    global_delta,
                     args.custom_erc20_list,
                     args_buffer.as_ref(),
                     &mut args.offset,
@@ -104,7 +112,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
                 DynamicMarket::<Pair<ERC20, ETH>>::process(
                     msg_sender.as_ref(),
                     &market_header,
-                    &mut global_delta,
+                    global_delta,
                     args.custom_erc20_list,
                     args_buffer.as_ref(),
                     &mut args.offset,
@@ -116,7 +124,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
                 DynamicMarket::<Pair<ERC20, ERC20>>::process(
                     msg_sender.as_ref(),
                     &market_header,
-                    &mut global_delta,
+                    global_delta,
                     args.custom_erc20_list,
                     args_buffer.as_ref(),
                     &mut args.offset,

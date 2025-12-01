@@ -25,12 +25,17 @@ pub struct EthDelta {
 }
 
 impl EthDelta {
-    pub fn new(msg_value: UnsidedAtoms, eth_out_due: UnsidedAtoms) -> Self {
+    pub const fn new() -> Self {
         Self {
-            msg_value,
-            eth_out_due,
-            common_delta: CommonDelta::default(),
+            msg_value: UnsidedAtoms::ZERO,
+            eth_out_due: UnsidedAtoms::ZERO,
+            common_delta: CommonDelta::new(),
         }
+    }
+
+    pub fn set_eth_values(&mut self, msg_value: UnsidedAtoms, eth_out_due: UnsidedAtoms) {
+        self.msg_value = msg_value;
+        self.eth_out_due = eth_out_due;
     }
 
     // /// Update locked and free atoms of the store by applying the common delta

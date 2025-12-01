@@ -7,7 +7,7 @@ use crate::{
 };
 
 /// ERC20 atoms due to be deducted, locked or transferred out on settlement
-#[derive(Default, Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct ERC20Delta {
     /// Atoms to be deposited or withdrawn
     pub deposit_due: DeltaAtoms,
@@ -17,6 +17,13 @@ pub struct ERC20Delta {
 }
 
 impl ERC20Delta {
+    pub const fn new() -> Self {
+        Self {
+            deposit_due: DeltaAtoms::ZERO,
+            common_delta: CommonDelta::new(),
+        }
+    }
+
     pub fn apply_global_update<In: LegMarker>(
         &mut self,
         deposit_amount: DeltaAtoms,
