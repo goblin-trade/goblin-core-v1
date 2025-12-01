@@ -7,10 +7,11 @@ use crate::{
     input_processor::{Args, ArgsDecoder, Decodable},
     instructions::ix_take,
     markets::{DynamicMarket, HardcodedMarket, MarketHeader, ERC20, ETH},
+    quantities::{QuantityOps, UnsidedAtoms},
     settlement::global_delta::{GlobalDelta, TokenDeltas},
     state::{MarketState, SlotState},
     tokens::{DynamicIndex, HardcodedIndex, HardcodedToken, TokenIndex},
-    types::{Base, Pair, Quote},
+    types::{Base, Pair, Quote, NATIVE_TOKEN_DECIMALS},
 };
 use goblin_error::*;
 
@@ -47,11 +48,11 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
     let msg_reentrant = hostio::msg_reentrant();
     require!(!msg_reentrant, GoblinError::Reentrant);
 
-    // Read args and sender
-    let args_buffer = hostio::read_args();
+    let ctx = unsafe { &mut HOSTIO_CONTEXT };
+    ctx.load();
 
-    let mut args = Args::new(args_buffer.as_ref(), len)?;
-    let msg_sender = hostio::msg_sender();
+    let offset = &mut 0usize;
+    let args = Args::new(ctx, offset, len)?;
 
     // Initialize deltas
     let global_delta = unsafe { &mut GLOBAL_DELTA };
@@ -62,39 +63,39 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
 
     // Iterate markets
     for _ in 0..args.header.market_count {
-        let market_header = MarketHeader::decode(args_buffer.as_ref(), &mut args.offset, len)?;
+        let market_header = MarketHeader::decode(&ctx.args, offset, len)?;
 
         match market_header.market_type_raw {
             // Hardcoded markets
             HardcodedMarket::<Pair<ETH, ERC20>>::DISCRIMINATOR => {
                 HardcodedMarket::<Pair<ETH, ERC20>>::process(
-                    msg_sender.as_ref(),
+                    &ctx.msg_sender,
                     &market_header,
                     global_delta,
-                    args_buffer.as_ref(),
-                    &mut args.offset,
+                    &ctx.args,
+                    offset,
                     len,
                 )?;
             }
 
             HardcodedMarket::<Pair<ERC20, ETH>>::DISCRIMINATOR => {
                 HardcodedMarket::<Pair<ERC20, ETH>>::process(
-                    msg_sender.as_ref(),
+                    &ctx.msg_sender,
                     &market_header,
                     global_delta,
-                    args_buffer.as_ref(),
-                    &mut args.offset,
+                    &ctx.args,
+                    offset,
                     len,
                 )?;
             }
 
             HardcodedMarket::<Pair<ERC20, ERC20>>::DISCRIMINATOR => {
                 HardcodedMarket::<Pair<ERC20, ERC20>>::process(
-                    msg_sender.as_ref(),
+                    &ctx.msg_sender,
                     &market_header,
                     global_delta,
-                    args_buffer.as_ref(),
-                    &mut args.offset,
+                    &ctx.args,
+                    offset,
                     len,
                 )?;
             }
@@ -102,40 +103,39 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
             // Dynamic markets
             DynamicMarket::<Pair<ETH, ERC20>>::DISCRIMINATOR => {
                 DynamicMarket::<Pair<ETH, ERC20>>::process(
-                    msg_sender.as_ref(),
+                    &ctx.msg_sender,
                     &market_header,
                     global_delta,
                     args.custom_erc20_list,
-                    args_buffer.as_ref(),
-                    &mut args.offset,
+                    &ctx.args,
+                    offset,
                     len,
                 )?;
             }
 
             DynamicMarket::<Pair<ERC20, ETH>>::DISCRIMINATOR => {
                 DynamicMarket::<Pair<ERC20, ETH>>::process(
-                    msg_sender.as_ref(),
+                    &ctx.msg_sender,
                     &market_header,
                     global_delta,
                     args.custom_erc20_list,
-                    args_buffer.as_ref(),
-                    &mut args.offset,
+                    &ctx.args,
+                    offset,
                     len,
                 )?;
             }
 
             DynamicMarket::<Pair<ERC20, ERC20>>::DISCRIMINATOR => {
                 DynamicMarket::<Pair<ERC20, ERC20>>::process(
-                    msg_sender.as_ref(),
+                    &ctx.msg_sender,
                     &market_header,
                     global_delta,
                     args.custom_erc20_list,
-                    args_buffer.as_ref(),
-                    &mut args.offset,
+                    &ctx.args,
+                    offset,
                     len,
                 )?;
             }
-
             _ => {}
         }
     }

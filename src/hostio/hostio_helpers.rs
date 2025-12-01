@@ -1,20 +1,8 @@
 use core::u64;
 
-use crate::{
-    goblin_error::GoblinError, input_processor::ArgsBuffer, quantities::RawAtoms, require,
-    types::Address,
-};
+use crate::{goblin_error::GoblinError, quantities::RawAtoms, require, types::Address};
 
 use super::{hostio_unsafe, HostioBuffer};
-
-// TODO replace these 3 functions- use hostiocontext
-pub fn read_args() -> HostioBuffer<ArgsBuffer> {
-    unsafe { HostioBuffer::<ArgsBuffer>::new(|ptr| hostio_unsafe::read_args(ptr)) }
-}
-
-pub fn msg_sender() -> HostioBuffer<Address> {
-    unsafe { HostioBuffer::<Address>::new(|ptr| hostio_unsafe::msg_sender(ptr)) }
-}
 
 pub fn msg_value() -> HostioBuffer<RawAtoms> {
     unsafe { HostioBuffer::<RawAtoms>::new(|f| hostio_unsafe::msg_value(f)) }
