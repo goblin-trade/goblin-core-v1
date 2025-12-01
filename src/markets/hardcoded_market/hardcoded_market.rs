@@ -1,13 +1,14 @@
 use crate::{
     goblin_error::GoblinError,
-    input_processor::{ArgsBuffer, Decodable},
+    hostio::HostioContext,
+    input_processor::Decodable,
     instructions::ix_take,
     markets::{CommonMarket, HardcodedMarketList, MarketHeader, MarketVariant, PairShape},
     quantities::DeltaAtoms,
     settlement::{global_delta::GlobalDelta, local_delta::LocalDelta},
     state::{HardcodedMarketKey, MarketState, SlotState},
     tokens::HardcodedIndex,
-    types::{Address, Base},
+    types::Base,
 };
 
 /// A market hardcoded within the smart contract. It keccak hash is also hardcoded,
@@ -37,27 +38,25 @@ where
     // TODO define common trait for both market types if they have common arguments
     // Currently HardcodedMarket doesn't require custom_erc20_list
     pub fn process(
-        msg_sender: &Address,
+        ctx: &HostioContext,
         market_header: &MarketHeader,
         global_delta: &mut GlobalDelta,
-        payload: &ArgsBuffer,
         offset: &mut usize,
         len: usize,
     ) -> Result<(), GoblinError> {
-        let market = Self::decode(payload, offset, len)?;
+        let market = Self::decode(&ctx.args, offset, len)?;
         let mut market_state = MarketState::load(&market.keccak_hash).into_inner();
 
         let mut local_delta =
-            LocalDelta::<P>::new(market_header.decode_deposit_amounts, payload, offset, len)?;
+            LocalDelta::<P>::new(market_header.decode_deposit_amounts, &ctx.args, offset, len)?;
 
         // Take bid and take quote
         if market_header.execute_takes.base {
             ix_take::<HardcodedIndex, P, Base>(
+                ctx,
                 &mut local_delta,
-                msg_sender,
                 &market.common,
                 &mut market_state,
-                payload,
                 offset,
                 len,
             )?;

@@ -4,14 +4,10 @@
 
 use crate::{
     hostio::HostioContext,
-    input_processor::{Args, ArgsDecoder, Decodable},
-    instructions::ix_take,
+    input_processor::Args,
     markets::{DynamicMarket, HardcodedMarket, MarketHeader, ERC20, ETH},
-    quantities::{QuantityOps, UnsidedAtoms},
-    settlement::global_delta::{GlobalDelta, TokenDeltas},
-    state::{MarketState, SlotState},
-    tokens::{DynamicIndex, HardcodedIndex, HardcodedToken, TokenIndex},
-    types::{Base, Pair, Quote, NATIVE_TOKEN_DECIMALS},
+    settlement::global_delta::GlobalDelta,
+    types::Pair,
 };
 use goblin_error::*;
 
@@ -69,10 +65,9 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
             // Hardcoded markets
             HardcodedMarket::<Pair<ETH, ERC20>>::DISCRIMINATOR => {
                 HardcodedMarket::<Pair<ETH, ERC20>>::process(
-                    &ctx.msg_sender,
+                    ctx,
                     &market_header,
                     global_delta,
-                    &ctx.args,
                     offset,
                     len,
                 )?;
@@ -80,10 +75,9 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
 
             HardcodedMarket::<Pair<ERC20, ETH>>::DISCRIMINATOR => {
                 HardcodedMarket::<Pair<ERC20, ETH>>::process(
-                    &ctx.msg_sender,
+                    ctx,
                     &market_header,
                     global_delta,
-                    &ctx.args,
                     offset,
                     len,
                 )?;
@@ -91,10 +85,9 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
 
             HardcodedMarket::<Pair<ERC20, ERC20>>::DISCRIMINATOR => {
                 HardcodedMarket::<Pair<ERC20, ERC20>>::process(
-                    &ctx.msg_sender,
+                    ctx,
                     &market_header,
                     global_delta,
-                    &ctx.args,
                     offset,
                     len,
                 )?;
@@ -103,11 +96,10 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
             // Dynamic markets
             DynamicMarket::<Pair<ETH, ERC20>>::DISCRIMINATOR => {
                 DynamicMarket::<Pair<ETH, ERC20>>::process(
-                    &ctx.msg_sender,
+                    ctx,
                     &market_header,
                     global_delta,
                     args.custom_erc20_list,
-                    &ctx.args,
                     offset,
                     len,
                 )?;
@@ -115,11 +107,10 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
 
             DynamicMarket::<Pair<ERC20, ETH>>::DISCRIMINATOR => {
                 DynamicMarket::<Pair<ERC20, ETH>>::process(
-                    &ctx.msg_sender,
+                    ctx,
                     &market_header,
                     global_delta,
                     args.custom_erc20_list,
-                    &ctx.args,
                     offset,
                     len,
                 )?;
@@ -127,11 +118,10 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
 
             DynamicMarket::<Pair<ERC20, ERC20>>::DISCRIMINATOR => {
                 DynamicMarket::<Pair<ERC20, ERC20>>::process(
-                    &ctx.msg_sender,
+                    ctx,
                     &market_header,
                     global_delta,
                     args.custom_erc20_list,
-                    &ctx.args,
                     offset,
                     len,
                 )?;
