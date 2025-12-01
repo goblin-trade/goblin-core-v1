@@ -10,22 +10,22 @@ use crate::{
 
 impl Decodable<<Pair<ETH, ERC20> as PairShape>::ResolvedPair<DynamicIndex>> for Pair<ETH, ERC20> {
     fn decode(
-        payload: &ArgsBuffer,
+        args: &ArgsBuffer,
         offset: &mut usize,
         len: usize,
     ) -> Result<<Pair<ETH, ERC20> as PairShape>::ResolvedPair<DynamicIndex>, GoblinError> {
-        let byte_quote = payload.decode::<u8>(offset, len)?;
+        let byte_quote = args.decode::<u8>(offset, len)?;
         DynamicIndex::new(byte_quote)
     }
 }
 
 impl Decodable<<Pair<ERC20, ETH> as PairShape>::ResolvedPair<DynamicIndex>> for Pair<ERC20, ETH> {
     fn decode(
-        payload: &ArgsBuffer,
+        args: &ArgsBuffer,
         offset: &mut usize,
         len: usize,
     ) -> Result<<Pair<ERC20, ETH> as PairShape>::ResolvedPair<DynamicIndex>, GoblinError> {
-        let byte_quote = payload.decode::<u8>(offset, len)?;
+        let byte_quote = args.decode::<u8>(offset, len)?;
         DynamicIndex::new(byte_quote)
     }
 }
@@ -34,12 +34,12 @@ impl Decodable<<Pair<ERC20, ERC20> as PairShape>::ResolvedPair<DynamicIndex>>
     for Pair<ERC20, ERC20>
 {
     fn decode(
-        payload: &ArgsBuffer,
+        args: &ArgsBuffer,
         offset: &mut usize,
         len: usize,
     ) -> Result<<Pair<ERC20, ERC20> as PairShape>::ResolvedPair<DynamicIndex>, GoblinError> {
-        let byte_base = payload.decode::<u8>(offset, len)?;
-        let byte_quote = payload.decode::<u8>(offset, len)?;
+        let byte_base = args.decode::<u8>(offset, len)?;
+        let byte_quote = args.decode::<u8>(offset, len)?;
 
         require!(byte_base != byte_quote, GoblinError::InvalidTokenPair);
 
@@ -56,33 +56,33 @@ impl Decodable<<Pair<ERC20, ERC20> as PairShape>::ResolvedPair<DynamicIndex>>
 // Reuse the generic and trait to decode deposit and withdraw amounts too
 impl Decodable<<Pair<ETH, ERC20> as PairShape>::ResolvedPair<DeltaAtoms>> for Pair<ETH, ERC20> {
     fn decode(
-        payload: &ArgsBuffer,
+        args: &ArgsBuffer,
         offset: &mut usize,
         len: usize,
     ) -> Result<<Pair<ETH, ERC20> as PairShape>::ResolvedPair<DeltaAtoms>, GoblinError> {
-        payload.decode::<i64>(offset, len).map(DeltaAtoms::new)
+        args.decode::<i64>(offset, len).map(DeltaAtoms::new)
     }
 }
 
 impl Decodable<<Pair<ERC20, ETH> as PairShape>::ResolvedPair<DeltaAtoms>> for Pair<ERC20, ETH> {
     fn decode(
-        payload: &ArgsBuffer,
+        args: &ArgsBuffer,
         offset: &mut usize,
         len: usize,
     ) -> Result<<Pair<ERC20, ETH> as PairShape>::ResolvedPair<DeltaAtoms>, GoblinError> {
-        payload.decode::<i64>(offset, len).map(DeltaAtoms::new)
+        args.decode::<i64>(offset, len).map(DeltaAtoms::new)
     }
 }
 
 impl Decodable<<Pair<ERC20, ERC20> as PairShape>::ResolvedPair<DeltaAtoms>> for Pair<ERC20, ERC20> {
     fn decode(
-        payload: &ArgsBuffer,
+        args: &ArgsBuffer,
         offset: &mut usize,
         len: usize,
     ) -> Result<<Pair<ERC20, ERC20> as PairShape>::ResolvedPair<DeltaAtoms>, GoblinError> {
         Ok(Pair {
-            base: payload.decode::<i64>(offset, len).map(DeltaAtoms::new)?,
-            quote: payload.decode::<i64>(offset, len).map(DeltaAtoms::new)?,
+            base: args.decode::<i64>(offset, len).map(DeltaAtoms::new)?,
+            quote: args.decode::<i64>(offset, len).map(DeltaAtoms::new)?,
         })
     }
 }

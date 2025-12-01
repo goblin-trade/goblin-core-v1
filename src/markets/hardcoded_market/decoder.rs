@@ -11,11 +11,11 @@ where
     Self: HardcodedMarketList<P>,
 {
     fn decode(
-        payload: &ArgsBuffer,
+        args: &ArgsBuffer,
         offset: &mut usize,
         len: usize,
     ) -> Result<&'static HardcodedMarket<P>, GoblinError> {
-        let market_index_raw = payload.decode::<u8>(offset, len)? as usize;
+        let market_index_raw = args.decode::<u8>(offset, len)? as usize;
 
         Self::HARDCODED_MARKET_LIST
             .get(market_index_raw)

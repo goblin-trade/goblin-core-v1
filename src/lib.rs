@@ -47,7 +47,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
     ctx.load();
 
     let offset = &mut 0usize;
-    let global_header = GlobalHeader::new(ctx, offset, len)?;
+    let global_header = GlobalHeader::new(&ctx.args, offset, len)?;
 
     // Initialize deltas
     let global_delta = unsafe { &mut GLOBAL_DELTA };

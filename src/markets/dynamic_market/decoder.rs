@@ -12,16 +12,16 @@ where
     P: PairShape + Decodable<P::ResolvedPair<DynamicIndex>>,
 {
     fn decode(
-        payload: &ArgsBuffer,
+        args: &ArgsBuffer,
         offset: &mut usize,
         len: usize,
     ) -> Result<DynamicMarket<P>, GoblinError> {
-        let token_index_pair = P::decode(payload, offset, len)?;
+        let token_index_pair = P::decode(args, offset, len)?;
 
         require!(len >= *offset + 3, GoblinError::InvalidPayload);
-        let lot_size_pair = *payload.decode_ref_unchecked::<LotSizePair>(offset);
+        let lot_size_pair = *args.decode_ref_unchecked::<LotSizePair>(offset);
 
-        let tick_size = *payload.decode_ref_unchecked::<QuoteLotsPerBaseUnitPerTick>(offset);
+        let tick_size = *args.decode_ref_unchecked::<QuoteLotsPerBaseUnitPerTick>(offset);
 
         Ok(DynamicMarket::<P> {
             common: CommonMarket::<DynamicIndex, P> {

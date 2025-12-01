@@ -25,12 +25,12 @@ where
 {
     pub fn new(
         decode_deposit_amounts: bool,
-        payload: &ArgsBuffer,
+        args: &ArgsBuffer,
         offset: &mut usize,
         len: usize,
     ) -> Result<Self, GoblinError> {
         let deposit_pair = if decode_deposit_amounts {
-            P::decode(payload, offset, len)?
+            P::decode(args, offset, len)?
         } else {
             P::ResolvedPair::<DeltaAtoms>::default()
         };
