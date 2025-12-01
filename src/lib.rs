@@ -4,7 +4,7 @@
 
 use crate::{
     hostio::HostioContext,
-    input_processor::Args,
+    input_processor::GlobalHeader,
     markets::{DynamicMarket, HardcodedMarket, MarketHeader, ERC20, ETH},
     settlement::global_delta::GlobalDelta,
     types::Pair,
@@ -40,7 +40,6 @@ static mut HOSTIO_CONTEXT: HostioContext = HostioContext::new();
 static mut GLOBAL_DELTA: GlobalDelta = GlobalDelta::new();
 
 fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
-    // Re-entrancy disabled
     let msg_reentrant = hostio::msg_reentrant();
     require!(!msg_reentrant, GoblinError::Reentrant);
 
@@ -48,17 +47,17 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
     ctx.load();
 
     let offset = &mut 0usize;
-    let args = Args::new(ctx, offset, len)?;
+    let global_header = GlobalHeader::new(ctx, offset, len)?;
 
     // Initialize deltas
     let global_delta = unsafe { &mut GLOBAL_DELTA };
     global_delta
         .global_sender_delta
         .eth_delta
-        .set_eth_values(args.msg_value, args.eth_out_due);
+        .set_eth_values(global_header.msg_value, global_header.eth_out_due);
 
     // Iterate markets
-    for _ in 0..args.header.market_count {
+    for _ in 0..global_header.flags.market_count {
         let market_header = MarketHeader::decode(&ctx.args, offset, len)?;
 
         match market_header.market_type_raw {
@@ -99,7 +98,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
                     ctx,
                     &market_header,
                     global_delta,
-                    args.custom_erc20_list,
+                    global_header.custom_erc20_list,
                     offset,
                     len,
                 )?;
@@ -110,7 +109,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
                     ctx,
                     &market_header,
                     global_delta,
-                    args.custom_erc20_list,
+                    global_header.custom_erc20_list,
                     offset,
                     len,
                 )?;
@@ -121,7 +120,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
                     ctx,
                     &market_header,
                     global_delta,
-                    args.custom_erc20_list,
+                    global_header.custom_erc20_list,
                     offset,
                     len,
                 )?;
