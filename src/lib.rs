@@ -3,6 +3,7 @@
 #![cfg_attr(not(test), no_main)]
 
 use crate::{
+    hostio::HostioContext,
     input_processor::{Args, ArgsDecoder, Decodable},
     instructions::ix_take,
     markets::{DynamicMarket, HardcodedMarket, MarketHeader, ERC20, ETH},
@@ -33,6 +34,8 @@ pub const CONTRACT_ADDRESS: [u8; 20] = [
     0x7d, 0x31, 0x61, 0xb0,
 ];
 
+static mut HOSTIO_CONTEXT: HostioContext = HostioContext::new();
+
 /// The global delta
 ///
 /// Using `static mut` allows us to take advantage of the fact that lienar memory is zero filled.
@@ -46,6 +49,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
 
     // Read args and sender
     let args_buffer = hostio::read_args();
+
     let mut args = Args::new(args_buffer.as_ref(), len)?;
     let msg_sender = hostio::msg_sender();
 

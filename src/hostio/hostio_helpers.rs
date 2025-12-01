@@ -7,6 +7,7 @@ use crate::{
 
 use super::{hostio_unsafe, HostioBuffer};
 
+// TODO replace these 3 functions- use hostiocontext
 pub fn read_args() -> HostioBuffer<ArgsBuffer> {
     unsafe { HostioBuffer::<ArgsBuffer>::new(|ptr| hostio_unsafe::read_args(ptr)) }
 }
