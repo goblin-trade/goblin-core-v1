@@ -1,7 +1,9 @@
 use crate::{
+    goblin_error::GoblinError,
     quantities::{DeltaAtoms, QuantityOps},
-    settlement::global_delta::CommonDelta,
+    settlement::global_delta::{CommonDelta, GlobalUpdate},
     state::ERC20Store,
+    types::LegMarker,
 };
 
 /// ERC20 atoms due to be deducted, locked or transferred out on settlement
@@ -15,6 +17,20 @@ pub struct ERC20Delta {
 }
 
 impl ERC20Delta {
+    pub fn apply_global_update<In: LegMarker>(
+        &mut self,
+        deposit_amount: DeltaAtoms,
+        global_update: &GlobalUpdate<In>,
+    ) -> Result<(), GoblinError> {
+        self.deposit_due = self
+            .deposit_due
+            .checked_add(deposit_amount)
+            .ok_or(GoblinError::DeltaOverflow)?;
+
+        self.common_delta
+            .add_global_update(global_update)
+            .ok_or(GoblinError::DeltaOverflow)
+    }
     // TODO function to add to deposit_due
 
     // /// Update locked and free atoms of the store by applying the common delta

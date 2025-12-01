@@ -65,8 +65,8 @@ impl PairShape for Pair<ETH, ERC20> {
 
         // Update quote
         let quote_token_index = common_market.token_index_pair;
-        let lazy_delta = quote_token_index.token_delta_mut(&mut sender_delta.token_deltas);
-        lazy_delta.apply_global_update(&global_update_pair.quote, local_delta.deposit_pair);
+        let quote_delta = quote_token_index.token_delta_mut(&mut sender_delta.token_deltas);
+        quote_delta.apply_global_update(local_delta.deposit_pair, &global_update_pair.quote)?;
 
         // TODO maker deltas
 
