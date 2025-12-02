@@ -1,69 +1,21 @@
-use crate::{
-    goblin_error::GoblinError,
-    markets::LotSizePair,
-    quantities::{BaseLotsPerBaseUnit, UnsidedAtoms},
-    tokens::DynamicIndex,
-    types::{Address, Base, LegMarker, PairAccessor, Quote},
-    utils::FixedMap,
-};
+use crate::settlement::global_delta::{ETHMakerDeltas, TokenMakerDeltas};
 
-const GLOBAL_MAKER_DELTA_COUNT: usize = 16;
-pub type GlobalMakerDeltas = FixedMap<MakerTokenPair, MakerUpdate, GLOBAL_MAKER_DELTA_COUNT>;
+/// Top level deltas for makers who matched against take orders made by msg_sender
+pub struct GlobalMakerDeltas {
+    /// Deltas for ETH
+    pub eth_deltas: ETHMakerDeltas,
 
-#[derive(PartialEq, Clone, Copy)]
-pub struct MakerTokenPair {
-    pub maker: Address,
-    pub token_index: DynamicIndex,
+    /// Deltas for ERC20 tokens
+    pub token_deltas: TokenMakerDeltas,
 }
 
-#[derive(Default)]
-pub struct MakerUpdate {
-    pub free_atoms_in: UnsidedAtoms,
-    pub locked_atoms_out: UnsidedAtoms,
-}
+// const GLOBAL_MAKER_DELTA_COUNT: usize = 16;
+// pub type GlobalMakerDeltas = FixedMap<MakerTokenPair, MakerUpdate, GLOBAL_MAKER_DELTA_COUNT>;
 
-// impl MakerUpdate {
-//     fn new<In>(
-//         maker_delta: &MakerDelta,
-//         lot_size_pair: LotSizePair,
-//         base_lot_size: BaseLotsPerBaseUnit,
-//     ) -> Self
-//     where
-//         In: LegMarker
-//             + PairAccessor<
-//                 <Base as LegMarker>::LotsPerUnit,
-//                 <Quote as LegMarker>::LotsPerUnit,
-//                 Result = In::LotsPerUnit,
-//             > + PairAccessor<MakerSideDelta<Base>, MakerSideDelta<Quote>, Result = MakerSideDelta<In>>,
-//         In::Opposite: PairAccessor<
-//             MakerSideDelta<Base>,
-//             MakerSideDelta<Quote>,
-//             Result = MakerSideDelta<In::Opposite>,
-//         >,
-//     {
-//         let lot_size = *In::get_leg(&lot_size_pair);
-//         let atoms_per_lot = In::atoms_per_lot(lot_size);
-
-//         let delta = In::get_leg(maker_delta);
-//         let delta_opposite = In::Opposite::get_leg(maker_delta);
-
-//         let free_atoms_in = In::matching_lots_to_atoms_unsided(
-//             delta.free_matching_lots_in,
-//             base_lot_size,
-//             atoms_per_lot,
-//         );
-
-//         let locked_atoms_out = In::matching_lots_to_atoms_unsided(
-//             delta_opposite.locked_matching_lots_out,
-//             base_lot_size,
-//             atoms_per_lot,
-//         );
-
-//         Self {
-//             locked_atoms_out,
-//             free_atoms_in,
-//         }
-//     }
+// #[derive(PartialEq, Clone, Copy)]
+// pub struct MakerTokenPair {
+//     pub maker: Address,
+//     pub token_index: DynamicIndex,
 // }
 
 // impl GlobalMakerDeltas {
