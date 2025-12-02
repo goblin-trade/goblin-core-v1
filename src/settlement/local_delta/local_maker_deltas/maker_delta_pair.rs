@@ -8,6 +8,13 @@ use crate::{
 pub type MakerDeltaPair = Pair<MakerDelta<Base>, MakerDelta<Quote>>;
 
 impl MakerDeltaPair {
+    pub const fn new() -> Self {
+        Self {
+            base: MakerDelta::<Base>::new(),
+            quote: MakerDelta::<Quote>::new(),
+        }
+    }
+
     /// Accumulate the matched lots for a given maker on a given side.
     ///
     /// # Arguments

@@ -37,7 +37,7 @@ where
 
         Ok(LocalDelta {
             local_sender_delta: LocalSenderDelta::default(),
-            local_maker_deltas: LocalMakerDeltas::default(),
+            local_maker_deltas: LocalMakerDeltas::new(),
             deposit_pair,
         })
     }

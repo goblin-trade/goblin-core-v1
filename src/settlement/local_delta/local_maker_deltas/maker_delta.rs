@@ -1,3 +1,4 @@
+use crate::quantities::QuantityOps;
 use crate::types::LegMarker;
 
 /// Maker delta for taker side In
@@ -14,4 +15,13 @@ pub struct MakerDelta<In: LegMarker> {
 
     /// Locked output token released by maker
     pub taker_out: <In::Opposite as LegMarker>::MatchingLots,
+}
+
+impl<In: LegMarker> MakerDelta<In> {
+    pub const fn new() -> Self {
+        Self {
+            taker_in: In::MatchingLots::ZERO,
+            taker_out: <In::Opposite as LegMarker>::MatchingLots::ZERO,
+        }
+    }
 }

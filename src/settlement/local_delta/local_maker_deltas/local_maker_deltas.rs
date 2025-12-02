@@ -6,3 +6,12 @@ pub const MAX_MAKERS: usize = 16;
 ///
 /// This list tracks deltas generated when resting orders are matched.
 pub type LocalMakerDeltas = FixedMap<Address, MakerDeltaPair, MAX_MAKERS>;
+
+impl LocalMakerDeltas {
+    pub const fn new() -> Self {
+        Self {
+            entries: [([0u8; 20], MakerDeltaPair::new()); MAX_MAKERS],
+            len: 0,
+        }
+    }
+}
