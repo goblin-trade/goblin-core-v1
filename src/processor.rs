@@ -4,7 +4,7 @@ use crate::{
     input_processor::GlobalHeader,
     markets::{DynamicMarket, HardcodedMarket, MarketHeader, ERC20, ETH},
     require,
-    settlement::global_delta::GlobalDelta,
+    settlement::{global_delta::GlobalDelta, Delta},
     types::Pair,
 };
 
@@ -19,8 +19,8 @@ pub const CONTRACT_ADDRESS: [u8; 20] = [
 /// We get an empty starting buffer without the cost of zeroing.
 static mut HOSTIO_CONTEXT: HostioContext = HostioContext::new();
 
-/// The global delta. Initially zero filled.
-static mut GLOBAL_DELTA: GlobalDelta = GlobalDelta::new();
+/// Delta, initially zero filled.
+static mut DELTA: Delta = Delta::new();
 
 pub fn processor(len: usize) -> Result<(), GoblinError> {
     let msg_reentrant = hostio::msg_reentrant();
@@ -33,8 +33,9 @@ pub fn processor(len: usize) -> Result<(), GoblinError> {
     let global_header = GlobalHeader::new(&ctx.args, offset, len)?;
 
     // Initialize deltas
-    let global_delta = unsafe { &mut GLOBAL_DELTA };
-    global_delta
+    let delta = unsafe { &mut DELTA };
+    delta
+        .global
         .global_sender_delta
         .eth_delta
         .set_eth_values(global_header.msg_value, global_header.eth_out_due);
@@ -49,65 +50,65 @@ pub fn processor(len: usize) -> Result<(), GoblinError> {
                 HardcodedMarket::<Pair<ETH, ERC20>>::process(
                     ctx,
                     &market_header,
-                    global_delta,
+                    delta,
                     offset,
                     len,
                 )?;
             }
 
-            HardcodedMarket::<Pair<ERC20, ETH>>::DISCRIMINATOR => {
-                HardcodedMarket::<Pair<ERC20, ETH>>::process(
-                    ctx,
-                    &market_header,
-                    global_delta,
-                    offset,
-                    len,
-                )?;
-            }
+            // HardcodedMarket::<Pair<ERC20, ETH>>::DISCRIMINATOR => {
+            //     HardcodedMarket::<Pair<ERC20, ETH>>::process(
+            //         ctx,
+            //         &market_header,
+            //         global_delta,
+            //         offset,
+            //         len,
+            //     )?;
+            // }
 
-            HardcodedMarket::<Pair<ERC20, ERC20>>::DISCRIMINATOR => {
-                HardcodedMarket::<Pair<ERC20, ERC20>>::process(
-                    ctx,
-                    &market_header,
-                    global_delta,
-                    offset,
-                    len,
-                )?;
-            }
+            // HardcodedMarket::<Pair<ERC20, ERC20>>::DISCRIMINATOR => {
+            //     HardcodedMarket::<Pair<ERC20, ERC20>>::process(
+            //         ctx,
+            //         &market_header,
+            //         global_delta,
+            //         offset,
+            //         len,
+            //     )?;
+            // }
 
-            // Dynamic markets
-            DynamicMarket::<Pair<ETH, ERC20>>::DISCRIMINATOR => {
-                DynamicMarket::<Pair<ETH, ERC20>>::process(
-                    ctx,
-                    &market_header,
-                    global_delta,
-                    global_header.custom_erc20_list,
-                    offset,
-                    len,
-                )?;
-            }
+            // // Dynamic markets
+            // DynamicMarket::<Pair<ETH, ERC20>>::DISCRIMINATOR => {
+            //     DynamicMarket::<Pair<ETH, ERC20>>::process(
+            //         ctx,
+            //         &market_header,
+            //         global_delta,
+            //         global_header.custom_erc20_list,
+            //         offset,
+            //         len,
+            //     )?;
+            // }
 
-            DynamicMarket::<Pair<ERC20, ETH>>::DISCRIMINATOR => {
-                DynamicMarket::<Pair<ERC20, ETH>>::process(
-                    ctx,
-                    &market_header,
-                    global_delta,
-                    global_header.custom_erc20_list,
-                    offset,
-                    len,
-                )?;
-            }
+            // DynamicMarket::<Pair<ERC20, ETH>>::DISCRIMINATOR => {
+            //     DynamicMarket::<Pair<ERC20, ETH>>::process(
+            //         ctx,
+            //         &market_header,
+            //         global_delta,
+            //         global_header.custom_erc20_list,
+            //         offset,
+            //         len,
+            //     )?;
+            // }
 
-            DynamicMarket::<Pair<ERC20, ERC20>>::DISCRIMINATOR => {
-                DynamicMarket::<Pair<ERC20, ERC20>>::process(
-                    ctx,
-                    &market_header,
-                    global_delta,
-                    global_header.custom_erc20_list,
-                    offset,
-                    len,
-                )?;
-            }
+            // DynamicMarket::<Pair<ERC20, ERC20>>::DISCRIMINATOR => {
+            //     DynamicMarket::<Pair<ERC20, ERC20>>::process(
+            //         ctx,
+            //         &market_header,
+            //         global_delta,
+            //         global_header.custom_erc20_list,
+            //         offset,
+            //         len,
+            //     )?;
+            // }
             _ => {}
         }
     }

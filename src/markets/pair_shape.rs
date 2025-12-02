@@ -1,12 +1,13 @@
 use crate::{
     goblin_error::GoblinError,
     markets::{CommonMarket, MarketVariant},
+    quantities::DeltaAtoms,
     settlement::{
         global_delta::{
             CommonDelta, ERC20Delta, EthDelta, GlobalDelta, GlobalSenderDelta, GlobalUpdate,
             GlobalUpdatePair,
         },
-        local_delta::LocalDelta,
+        local_delta::{LocalDelta, LocalDeposits},
     },
     types::{Base, LegMarker, Pair, Quote},
 };
@@ -22,6 +23,8 @@ pub trait PairShape {
     const DISCRIMINATOR: u8;
 
     type ResolvedPair<K>;
+
+    fn deposit_mut(local_deposits: &mut LocalDeposits) -> &mut Self::ResolvedPair<DeltaAtoms>;
 
     // fn common_delta<In: LegMarker>(global_delta: &mut GlobalDelta) -> &mut CommonDelta;
 
@@ -40,6 +43,10 @@ impl PairShape for Pair<ETH, ERC20> {
     const DISCRIMINATOR: u8 = 0;
 
     type ResolvedPair<K> = K;
+
+    fn deposit_mut(local_deposits: &mut LocalDeposits) -> &mut Self::ResolvedPair<DeltaAtoms> {
+        &mut local_deposits.eth_erc20
+    }
 
     fn commit_delta<M>(
         common_market: &CommonMarket<M, Self>,
@@ -79,6 +86,10 @@ impl PairShape for Pair<ERC20, ETH> {
 
     type ResolvedPair<K> = K;
 
+    fn deposit_mut(local_deposits: &mut LocalDeposits) -> &mut Self::ResolvedPair<DeltaAtoms> {
+        &mut local_deposits.erc20_eth
+    }
+
     fn commit_delta<M>(
         common_market: &CommonMarket<M, Self>,
         global_delta: &mut GlobalDelta,
@@ -105,6 +116,10 @@ impl PairShape for Pair<ERC20, ERC20> {
     const DISCRIMINATOR: u8 = 2;
 
     type ResolvedPair<K> = Pair<K, K>;
+
+    fn deposit_mut(local_deposits: &mut LocalDeposits) -> &mut Self::ResolvedPair<DeltaAtoms> {
+        &mut local_deposits.erc20_erc20
+    }
 
     fn commit_delta<M>(
         common_market: &CommonMarket<M, Self>,

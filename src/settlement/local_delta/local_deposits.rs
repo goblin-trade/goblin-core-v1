@@ -5,9 +5,9 @@ use crate::{
 };
 
 pub struct LocalDeposits {
-    eth_erc20: <Pair<ETH, ERC20> as PairShape>::ResolvedPair<DeltaAtoms>,
-    erc20_eth: <Pair<ERC20, ETH> as PairShape>::ResolvedPair<DeltaAtoms>,
-    erc20_erc20: <Pair<ERC20, ERC20> as PairShape>::ResolvedPair<DeltaAtoms>,
+    pub eth_erc20: <Pair<ETH, ERC20> as PairShape>::ResolvedPair<DeltaAtoms>,
+    pub erc20_eth: <Pair<ERC20, ETH> as PairShape>::ResolvedPair<DeltaAtoms>,
+    pub erc20_erc20: <Pair<ERC20, ERC20> as PairShape>::ResolvedPair<DeltaAtoms>,
 }
 
 impl LocalDeposits {
