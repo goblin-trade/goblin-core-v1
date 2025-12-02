@@ -4,7 +4,7 @@ use crate::{
     input_processor::GlobalHeader,
     markets::{DynamicMarket, HardcodedMarket, MarketHeader, ERC20, ETH},
     require,
-    settlement::{global_delta::GlobalDelta, Delta},
+    settlement::Delta,
     types::Pair,
 };
 
@@ -56,59 +56,59 @@ pub fn processor(len: usize) -> Result<(), GoblinError> {
                 )?;
             }
 
-            // HardcodedMarket::<Pair<ERC20, ETH>>::DISCRIMINATOR => {
-            //     HardcodedMarket::<Pair<ERC20, ETH>>::process(
-            //         ctx,
-            //         &market_header,
-            //         global_delta,
-            //         offset,
-            //         len,
-            //     )?;
-            // }
+            HardcodedMarket::<Pair<ERC20, ETH>>::DISCRIMINATOR => {
+                HardcodedMarket::<Pair<ERC20, ETH>>::process(
+                    ctx,
+                    &market_header,
+                    delta,
+                    offset,
+                    len,
+                )?;
+            }
 
-            // HardcodedMarket::<Pair<ERC20, ERC20>>::DISCRIMINATOR => {
-            //     HardcodedMarket::<Pair<ERC20, ERC20>>::process(
-            //         ctx,
-            //         &market_header,
-            //         global_delta,
-            //         offset,
-            //         len,
-            //     )?;
-            // }
+            HardcodedMarket::<Pair<ERC20, ERC20>>::DISCRIMINATOR => {
+                HardcodedMarket::<Pair<ERC20, ERC20>>::process(
+                    ctx,
+                    &market_header,
+                    delta,
+                    offset,
+                    len,
+                )?;
+            }
 
-            // // Dynamic markets
-            // DynamicMarket::<Pair<ETH, ERC20>>::DISCRIMINATOR => {
-            //     DynamicMarket::<Pair<ETH, ERC20>>::process(
-            //         ctx,
-            //         &market_header,
-            //         global_delta,
-            //         global_header.custom_erc20_list,
-            //         offset,
-            //         len,
-            //     )?;
-            // }
+            // Dynamic markets
+            DynamicMarket::<Pair<ETH, ERC20>>::DISCRIMINATOR => {
+                DynamicMarket::<Pair<ETH, ERC20>>::process(
+                    ctx,
+                    &market_header,
+                    delta,
+                    global_header.custom_erc20_list,
+                    offset,
+                    len,
+                )?;
+            }
 
-            // DynamicMarket::<Pair<ERC20, ETH>>::DISCRIMINATOR => {
-            //     DynamicMarket::<Pair<ERC20, ETH>>::process(
-            //         ctx,
-            //         &market_header,
-            //         global_delta,
-            //         global_header.custom_erc20_list,
-            //         offset,
-            //         len,
-            //     )?;
-            // }
+            DynamicMarket::<Pair<ERC20, ETH>>::DISCRIMINATOR => {
+                DynamicMarket::<Pair<ERC20, ETH>>::process(
+                    ctx,
+                    &market_header,
+                    delta,
+                    global_header.custom_erc20_list,
+                    offset,
+                    len,
+                )?;
+            }
 
-            // DynamicMarket::<Pair<ERC20, ERC20>>::DISCRIMINATOR => {
-            //     DynamicMarket::<Pair<ERC20, ERC20>>::process(
-            //         ctx,
-            //         &market_header,
-            //         global_delta,
-            //         global_header.custom_erc20_list,
-            //         offset,
-            //         len,
-            //     )?;
-            // }
+            DynamicMarket::<Pair<ERC20, ERC20>>::DISCRIMINATOR => {
+                DynamicMarket::<Pair<ERC20, ERC20>>::process(
+                    ctx,
+                    &market_header,
+                    delta,
+                    global_header.custom_erc20_list,
+                    offset,
+                    len,
+                )?;
+            }
             _ => {}
         }
     }

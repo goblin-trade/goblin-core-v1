@@ -10,7 +10,7 @@ use crate::{
 };
 
 pub fn match_order<M, P, In>(
-    local_delta: &mut LocalDelta<P>,
+    local_delta: &mut LocalDelta,
     taker: &Address,
     market: &CommonMarket<M, P>,
     market_state: &mut MarketState<M, P>,

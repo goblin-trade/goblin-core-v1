@@ -12,7 +12,7 @@ use crate::{
 
 pub fn ix_take<M, P, In>(
     ctx: &HostioContext,
-    local_delta: &mut LocalDelta<P>,
+    local_delta: &mut LocalDelta,
     market: &CommonMarket<M, P>,
     market_state: &mut MarketState<M, P>,
     offset: &mut usize,

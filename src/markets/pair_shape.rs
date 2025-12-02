@@ -2,14 +2,8 @@ use crate::{
     goblin_error::GoblinError,
     markets::{CommonMarket, MarketVariant},
     quantities::DeltaAtoms,
-    settlement::{
-        global_delta::{
-            CommonDelta, ERC20Delta, EthDelta, GlobalDelta, GlobalSenderDelta, GlobalUpdate,
-            GlobalUpdatePair,
-        },
-        local_delta::{LocalDelta, LocalDeposits},
-    },
-    types::{Base, LegMarker, Pair, Quote},
+    settlement::{global_delta::GlobalUpdatePair, local_delta::LocalDeposits, Delta},
+    types::Pair,
 };
 
 /// Marker type for ETH within a token pair
@@ -24,15 +18,12 @@ pub trait PairShape {
 
     type ResolvedPair<K>;
 
-    fn deposit_mut(local_deposits: &mut LocalDeposits) -> &mut Self::ResolvedPair<DeltaAtoms>;
-
-    // fn common_delta<In: LegMarker>(global_delta: &mut GlobalDelta) -> &mut CommonDelta;
+    fn deposit_pair_mut(local_deposits: &mut LocalDeposits) -> &mut Self::ResolvedPair<DeltaAtoms>;
 
     /// Commit market namespaced delta into the global delta
     fn commit_delta<M>(
         common_market: &CommonMarket<M, Self>,
-        global_delta: &mut GlobalDelta,
-        local_delta: &LocalDelta<Self>,
+        delta: &mut Delta,
     ) -> Result<(), GoblinError>
     where
         M: MarketVariant + Clone + Copy,
@@ -44,26 +35,31 @@ impl PairShape for Pair<ETH, ERC20> {
 
     type ResolvedPair<K> = K;
 
-    fn deposit_mut(local_deposits: &mut LocalDeposits) -> &mut Self::ResolvedPair<DeltaAtoms> {
+    fn deposit_pair_mut(local_deposits: &mut LocalDeposits) -> &mut Self::ResolvedPair<DeltaAtoms> {
         &mut local_deposits.eth_erc20
     }
 
     fn commit_delta<M>(
         common_market: &CommonMarket<M, Self>,
-        global_delta: &mut GlobalDelta,
-        local_delta: &LocalDelta<Self>,
+        delta: &mut Delta,
     ) -> Result<(), GoblinError>
     where
         M: MarketVariant + Clone + Copy,
         Self: Sized,
     {
+        // Code to apply regular deltas is common
+        // Only deposit pairs vary by P: PairShape
+        //
+        // Split up this function
+        // - Common part on Delta itself
+        // - apply_deposits() varies by P
         let global_update_pair = GlobalUpdatePair::new(
-            &local_delta.local_sender_delta.taker_delta_pair,
+            &delta.local.local_sender_delta.taker_delta_pair,
             &common_market.lot_size_pair,
         );
 
         // Update base
-        let sender_delta = &mut global_delta.global_sender_delta;
+        let sender_delta = &mut delta.global.global_sender_delta;
         sender_delta
             .eth_delta
             .common_delta
@@ -73,7 +69,9 @@ impl PairShape for Pair<ETH, ERC20> {
         // Update quote
         let quote_token_index = common_market.token_index_pair;
         let quote_delta = quote_token_index.token_delta_mut(&mut sender_delta.token_deltas);
-        quote_delta.apply_global_update(local_delta.deposit_pair, &global_update_pair.quote)?;
+
+        let deposit_pair = Self::deposit_pair_mut(&mut delta.local.deposits);
+        quote_delta.apply_global_update(*deposit_pair, &global_update_pair.quote)?;
 
         // TODO maker deltas
 
@@ -86,14 +84,13 @@ impl PairShape for Pair<ERC20, ETH> {
 
     type ResolvedPair<K> = K;
 
-    fn deposit_mut(local_deposits: &mut LocalDeposits) -> &mut Self::ResolvedPair<DeltaAtoms> {
+    fn deposit_pair_mut(local_deposits: &mut LocalDeposits) -> &mut Self::ResolvedPair<DeltaAtoms> {
         &mut local_deposits.erc20_eth
     }
 
     fn commit_delta<M>(
         common_market: &CommonMarket<M, Self>,
-        global_delta: &mut GlobalDelta,
-        local_delta: &LocalDelta<Self>,
+        delta: &mut Delta,
     ) -> Result<(), GoblinError>
     where
         M: MarketVariant + Clone + Copy,
@@ -117,14 +114,13 @@ impl PairShape for Pair<ERC20, ERC20> {
 
     type ResolvedPair<K> = Pair<K, K>;
 
-    fn deposit_mut(local_deposits: &mut LocalDeposits) -> &mut Self::ResolvedPair<DeltaAtoms> {
+    fn deposit_pair_mut(local_deposits: &mut LocalDeposits) -> &mut Self::ResolvedPair<DeltaAtoms> {
         &mut local_deposits.erc20_erc20
     }
 
     fn commit_delta<M>(
         common_market: &CommonMarket<M, Self>,
-        global_delta: &mut GlobalDelta,
-        local_delta: &LocalDelta<Self>,
+        delta: &mut Delta,
     ) -> Result<(), GoblinError>
     where
         M: MarketVariant + Clone + Copy,

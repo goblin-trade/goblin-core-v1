@@ -5,7 +5,7 @@ use crate::{
     instructions::ix_take,
     markets::{CommonMarket, MarketHeader, MarketVariant, PairShape},
     quantities::DeltaAtoms,
-    settlement::{local_delta::LocalDelta, Delta},
+    settlement::Delta,
     state::{DynamicMarketHasher, DynamicMarketKey, MarketState, SlotState},
     tokens::{CustomToken, DynamicIndex},
     types::Base,
@@ -45,11 +45,8 @@ where
         let mut market_state = MarketState::load(&market_key).into_inner();
 
         if market_header.decode_deposit_amounts {
-            *P::deposit_mut(&mut delta.local.deposits) = P::decode(&ctx.args, offset, len)?;
+            *P::deposit_pair_mut(&mut delta.local.deposits) = P::decode(&ctx.args, offset, len)?;
         }
-
-        // let mut local_delta =
-        //     LocalDelta::<P>::new(market_header.decode_deposit_amounts, &ctx.args, offset, len)?;
 
         // Take bid and take quote
         if market_header.execute_takes.base {
@@ -63,7 +60,7 @@ where
             )?;
         }
 
-        P::commit_delta(&market.common, global_delta, &local_delta)?;
+        P::commit_delta(&market.common, delta)?;
 
         Ok(())
     }
