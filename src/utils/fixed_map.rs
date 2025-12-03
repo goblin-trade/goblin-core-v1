@@ -1,21 +1,11 @@
-/// A fixed-capacity map with O(N) lookups, no removal, no alloc.
-/// - Uses `MaybeUninit` so keys/values are never zero-initialized.
-/// - Only supports insert/update (no delete).
+/// A fixed-capacity map with O(N) lookups
 pub struct FixedMap<K, V, const N: usize> {
+    /// Fixed size array of the (K, V) tuple
     pub entries: [(K, V); N],
-    pub len: usize,
-    // _marker: PhantomData<(K, V)>,
-}
 
-// impl<K, V, const N: usize> Default for FixedMap<K, V, N> {
-//     fn default() -> Self {
-//         Self {
-//             entries: [const { MaybeUninit::uninit() }; N],
-//             len: 0,
-//             _marker: PhantomData,
-//         }
-//     }
-// }
+    /// Number of active elements
+    pub len: usize,
+}
 
 impl<K, V, const N: usize> FixedMap<K, V, N> {
     /// Inserts a key-value pair into the map, overwriting the existing value if the key is already present.
@@ -74,6 +64,15 @@ impl<K, V, const N: usize> FixedMap<K, V, N> {
 
         let (_, value_mut) = entry;
         Some(value_mut)
+    }
+
+    /// Reset the map
+    ///
+    /// # Gas optimization
+    ///
+    /// Set len = 0 instead of zeroing the array
+    pub fn reset(&mut self) {
+        self.len = 0;
     }
 
     pub fn len(&self) -> usize {

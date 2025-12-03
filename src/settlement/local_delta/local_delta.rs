@@ -1,12 +1,11 @@
 use crate::{
-    goblin_error::GoblinError,
-    input_processor::{ArgsBuffer, Decodable},
     markets::PairShape,
     quantities::DeltaAtoms,
-    settlement::local_delta::{LocalDeposits, LocalMakerDeltas, LocalSenderDelta},
+    settlement::local_delta::{
+        LocalDepositStore, LocalDeposits, LocalMakerDeltas, LocalSenderDelta,
+    },
 };
 
-// #[derive(Default)]
 pub struct LocalDelta {
     /// Delta for msg.sender
     pub local_sender_delta: LocalSenderDelta,
@@ -14,8 +13,7 @@ pub struct LocalDelta {
     /// Deltas for makers of matched resting orders
     pub local_maker_deltas: LocalMakerDeltas,
 
-    pub deposits: LocalDeposits, // /// Atoms to deposit for the market's token pair
-                                 // pub deposit_pair: P::ResolvedPair<DeltaAtoms>,
+    pub deposits: LocalDepositStore,
 }
 
 impl LocalDelta {
@@ -23,8 +21,20 @@ impl LocalDelta {
         Self {
             local_sender_delta: LocalSenderDelta::new(),
             local_maker_deltas: LocalMakerDeltas::new(),
-            deposits: LocalDeposits::new(),
+            deposits: LocalDepositStore::new(),
         }
+    }
+
+    /// Reset the local delta so it can be reused
+    pub fn reset<P>(&mut self)
+    where
+        P: PairShape,
+        P::ResolvedPair<DeltaAtoms>: Default,
+        LocalDepositStore: LocalDeposits<P>,
+    {
+        self.local_sender_delta = LocalSenderDelta::new();
+        self.local_maker_deltas.reset();
+        self.deposits.reset();
     }
 }
 

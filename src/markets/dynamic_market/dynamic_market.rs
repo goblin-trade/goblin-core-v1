@@ -5,7 +5,10 @@ use crate::{
     instructions::ix_take,
     markets::{CommonMarket, MarketHeader, MarketVariant, PairShape},
     quantities::DeltaAtoms,
-    settlement::Delta,
+    settlement::{
+        local_delta::{LocalDepositStore, LocalDeposits},
+        Delta,
+    },
     state::{DynamicMarketHasher, DynamicMarketKey, MarketState, SlotState},
     tokens::{CustomToken, DynamicIndex},
     types::Base,
@@ -29,6 +32,7 @@ where
         + Decodable<P::ResolvedPair<DeltaAtoms>>,
     P::ResolvedPair<DeltaAtoms>: Default,
     DynamicMarketKey<P>: DynamicMarketHasher<P>,
+    LocalDepositStore: LocalDeposits<P>,
 {
     pub const DISCRIMINATOR: u8 = DynamicIndex::DISCRIMINATOR | (P::DISCRIMINATOR << 1);
 
@@ -45,7 +49,8 @@ where
         let mut market_state = MarketState::load(&market_key).into_inner();
 
         if market_header.decode_deposit_amounts {
-            *P::deposit_pair_mut(&mut delta.local.deposits) = P::decode(&ctx.args, offset, len)?;
+            let deposit_pair = delta.local.deposits.deposit_mut();
+            *deposit_pair = P::decode(&ctx.args, offset, len)?;
         }
 
         // Take bid and take quote
@@ -60,7 +65,10 @@ where
             )?;
         }
 
-        P::commit_delta(&market.common, delta)?;
+        P::commit_local_delta(&market.common, delta)?;
+
+        // Reset local delta for reuse
+        delta.local.reset();
 
         Ok(())
     }

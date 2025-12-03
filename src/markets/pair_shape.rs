@@ -2,7 +2,11 @@ use crate::{
     goblin_error::GoblinError,
     markets::{CommonMarket, MarketVariant},
     quantities::DeltaAtoms,
-    settlement::{global_delta::GlobalUpdatePair, local_delta::LocalDeposits, Delta},
+    settlement::{
+        global_delta::GlobalUpdatePair,
+        local_delta::{LocalDepositStore, LocalDeposits},
+        Delta,
+    },
     types::Pair,
 };
 
@@ -18,10 +22,10 @@ pub trait PairShape {
 
     type ResolvedPair<K>;
 
-    fn deposit_pair_mut(local_deposits: &mut LocalDeposits) -> &mut Self::ResolvedPair<DeltaAtoms>;
+    // fn deposit_mut(local_deposits: &mut LocalDeposits) -> &mut Self::ResolvedPair<DeltaAtoms>;
 
-    /// Commit market namespaced delta into the global delta
-    fn commit_delta<M>(
+    /// Commit local delta into the global delta
+    fn commit_local_delta<M>(
         common_market: &CommonMarket<M, Self>,
         delta: &mut Delta,
     ) -> Result<(), GoblinError>
@@ -35,11 +39,7 @@ impl PairShape for Pair<ETH, ERC20> {
 
     type ResolvedPair<K> = K;
 
-    fn deposit_pair_mut(local_deposits: &mut LocalDeposits) -> &mut Self::ResolvedPair<DeltaAtoms> {
-        &mut local_deposits.eth_erc20
-    }
-
-    fn commit_delta<M>(
+    fn commit_local_delta<M>(
         common_market: &CommonMarket<M, Self>,
         delta: &mut Delta,
     ) -> Result<(), GoblinError>
@@ -70,7 +70,7 @@ impl PairShape for Pair<ETH, ERC20> {
         let quote_token_index = common_market.token_index_pair;
         let quote_delta = quote_token_index.token_delta_mut(&mut sender_delta.token_deltas);
 
-        let deposit_pair = Self::deposit_pair_mut(&mut delta.local.deposits);
+        let deposit_pair = LocalDeposits::<Self>::deposit_mut(&mut delta.local.deposits);
         quote_delta.apply_global_update(*deposit_pair, &global_update_pair.quote)?;
 
         // TODO maker deltas
@@ -84,11 +84,7 @@ impl PairShape for Pair<ERC20, ETH> {
 
     type ResolvedPair<K> = K;
 
-    fn deposit_pair_mut(local_deposits: &mut LocalDeposits) -> &mut Self::ResolvedPair<DeltaAtoms> {
-        &mut local_deposits.erc20_eth
-    }
-
-    fn commit_delta<M>(
+    fn commit_local_delta<M>(
         common_market: &CommonMarket<M, Self>,
         delta: &mut Delta,
     ) -> Result<(), GoblinError>
@@ -114,11 +110,7 @@ impl PairShape for Pair<ERC20, ERC20> {
 
     type ResolvedPair<K> = Pair<K, K>;
 
-    fn deposit_pair_mut(local_deposits: &mut LocalDeposits) -> &mut Self::ResolvedPair<DeltaAtoms> {
-        &mut local_deposits.erc20_erc20
-    }
-
-    fn commit_delta<M>(
+    fn commit_local_delta<M>(
         common_market: &CommonMarket<M, Self>,
         delta: &mut Delta,
     ) -> Result<(), GoblinError>
