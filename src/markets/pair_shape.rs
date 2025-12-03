@@ -1,12 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
     markets::{CommonMarket, MarketVariant},
-    quantities::DeltaAtoms,
-    settlement::{
-        global_delta::GlobalUpdatePair,
-        local_delta::{LocalDepositStore, LocalDeposits},
-        Delta,
-    },
+    settlement::{global_delta::GlobalUpdatePair, local_delta::LocalDeposits, Delta},
     types::Pair,
 };
 
@@ -21,8 +16,6 @@ pub trait PairShape {
     const DISCRIMINATOR: u8;
 
     type ResolvedPair<K>;
-
-    // fn deposit_mut(local_deposits: &mut LocalDeposits) -> &mut Self::ResolvedPair<DeltaAtoms>;
 
     /// Commit local delta into the global delta
     fn commit_local_delta<M>(
@@ -47,12 +40,6 @@ impl PairShape for Pair<ETH, ERC20> {
         M: MarketVariant + Clone + Copy,
         Self: Sized,
     {
-        // Code to apply regular deltas is common
-        // Only deposit pairs vary by P: PairShape
-        //
-        // Split up this function
-        // - Common part on Delta itself
-        // - apply_deposits() varies by P
         let global_update_pair = GlobalUpdatePair::new(
             &delta.local.local_sender_delta.taker_delta_pair,
             &common_market.lot_size_pair,
@@ -74,6 +61,16 @@ impl PairShape for Pair<ETH, ERC20> {
         quote_delta.apply_global_update(*deposit_pair, &global_update_pair.quote)?;
 
         // TODO maker deltas
+        // Base is ETH. The makers of In: Quote will populate ETH delta
+        let global_maker_deltas_eth = &mut delta.global.maker_deltas.eth_deltas;
+
+        for local_maker_delta in delta.local.local_maker_deltas.iter() {
+            // Each element has a base and quote branch
+            // One of these can be empty- we need to add if-else now
+            //
+            // Better to have separate lists for base and quote?
+            // if local_maker_delta.1.base.
+        }
 
         Ok(())
     }

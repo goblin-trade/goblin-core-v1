@@ -9,6 +9,15 @@ pub struct GlobalMakerDeltas {
     pub token_deltas: TokenMakerDeltas,
 }
 
+impl GlobalMakerDeltas {
+    pub const fn new() -> Self {
+        Self {
+            eth_deltas: ETHMakerDeltas::new(),
+            token_deltas: TokenMakerDeltas::new(),
+        }
+    }
+}
+
 // const GLOBAL_MAKER_DELTA_COUNT: usize = 16;
 // pub type GlobalMakerDeltas = FixedMap<MakerTokenPair, MakerUpdate, GLOBAL_MAKER_DELTA_COUNT>;
 

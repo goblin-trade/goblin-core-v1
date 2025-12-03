@@ -4,6 +4,7 @@ use crate::quantities::{QuantityOps, UnsidedAtoms};
 ///
 /// Unlike `MakerDelta` which is namespaced by market and tracks state of two tokens,
 /// this delta tracks updates for a single token.
+#[derive(Clone, Copy)]
 pub struct UnsidedMakerDelta {
     pub free_atoms_in: UnsidedAtoms,
     pub locked_atoms_out: UnsidedAtoms,
