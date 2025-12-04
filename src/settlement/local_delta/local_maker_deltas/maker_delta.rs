@@ -8,7 +8,7 @@ use crate::types::LegMarker;
 /// * `In` represents the taker side. Maker side is opposite of `In`.
 /// * If In = Base, then the maker fills the side Quote.
 ///
-#[derive(Default, Clone, Copy)]
+#[derive(Default, Clone, Copy, PartialEq)]
 pub struct MakerDelta<In: LegMarker> {
     /// Input token gained by maker
     pub taker_in: In::MatchingLots,
@@ -23,5 +23,9 @@ impl<In: LegMarker> MakerDelta<In> {
             taker_in: In::MatchingLots::ZERO,
             taker_out: <In::Opposite as LegMarker>::MatchingLots::ZERO,
         }
+    }
+
+    pub fn not_empty(&self) -> bool {
+        *self != Self::new()
     }
 }

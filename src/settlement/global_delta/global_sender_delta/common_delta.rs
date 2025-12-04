@@ -1,6 +1,6 @@
 use crate::{
     quantities::{AsUnsided, QuantityOps, UnsidedAtoms},
-    settlement::global_delta::GlobalUpdate,
+    settlement::global_delta::GlobalSenderUpdate,
     types::LegMarker,
 };
 
@@ -46,7 +46,7 @@ impl CommonDelta {
 
     pub fn add_global_update<In: LegMarker>(
         &mut self,
-        global_update: &GlobalUpdate<In>,
+        global_update: &GlobalSenderUpdate<In>,
     ) -> Option<()> {
         self.taker_in = self
             .taker_in

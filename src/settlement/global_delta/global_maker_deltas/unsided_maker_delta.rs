@@ -1,21 +1,42 @@
-use crate::quantities::{QuantityOps, UnsidedAtoms};
+use crate::{
+    quantities::{AsUnsided, QuantityOps, UnsidedAtoms},
+    settlement::global_delta::GlobalMakerUpdate,
+    types::LegMarker,
+};
 
 /// Maker delta for a token
 ///
 /// Unlike `MakerDelta` which is namespaced by market and tracks state of two tokens,
 /// this delta tracks updates for a single token.
-#[derive(Clone, Copy)]
+#[derive(Default, Clone, Copy, PartialEq)]
 pub struct UnsidedMakerDelta {
-    pub free_atoms_in: UnsidedAtoms,
-    pub locked_atoms_out: UnsidedAtoms,
+    /// Atoms traded in by taker and gained by maker
+    pub taker_in: UnsidedAtoms,
+
+    /// Atoms obtained by taker and lost by maker
+    pub taker_out: UnsidedAtoms,
 }
 
 impl UnsidedMakerDelta {
     pub const fn new() -> Self {
         Self {
-            free_atoms_in: UnsidedAtoms::ZERO,
-            locked_atoms_out: UnsidedAtoms::ZERO,
+            taker_in: UnsidedAtoms::ZERO,
+            taker_out: UnsidedAtoms::ZERO,
         }
+    }
+
+    pub fn add_global_update<In: LegMarker>(
+        &mut self,
+        global_update: &GlobalMakerUpdate<In>,
+    ) -> Option<()> {
+        self.taker_in = self
+            .taker_in
+            .checked_add(global_update.taker_in.unsided())?;
+        self.taker_out = self
+            .taker_out
+            .checked_add(global_update.taker_out.unsided())?;
+
+        Some(())
     }
 }
 

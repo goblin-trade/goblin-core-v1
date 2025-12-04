@@ -1,7 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
     quantities::{DeltaAtoms, QuantityOps},
-    settlement::global_delta::{CommonDelta, GlobalUpdate},
+    settlement::global_delta::{CommonDelta, GlobalSenderUpdate},
     state::ERC20Store,
     types::LegMarker,
 };
@@ -27,7 +27,7 @@ impl ERC20Delta {
     pub fn apply_global_update<In: LegMarker>(
         &mut self,
         deposit_amount: DeltaAtoms,
-        global_update: &GlobalUpdate<In>,
+        global_update: &GlobalSenderUpdate<In>,
     ) -> Result<(), GoblinError> {
         self.deposit_due = self
             .deposit_due

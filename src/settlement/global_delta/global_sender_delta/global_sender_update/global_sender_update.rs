@@ -9,7 +9,7 @@ use crate::{
 /// Unlike TakerDelta which holds updates for tokens on both side,
 /// GlobalUpdate represents balance updates for one token.
 #[derive(Default, PartialEq)]
-pub struct GlobalUpdate<In: LegMarker> {
+pub struct GlobalSenderUpdate<In: LegMarker> {
     /// Atoms traded in by taker
     pub taker_in: In::Atoms,
 
@@ -20,7 +20,7 @@ pub struct GlobalUpdate<In: LegMarker> {
     pub taker_self_trade_unlocked: In::Atoms,
 }
 
-impl<In> GlobalUpdate<In>
+impl<In> GlobalSenderUpdate<In>
 where
     In: LegMarker
         + PairAccessor<

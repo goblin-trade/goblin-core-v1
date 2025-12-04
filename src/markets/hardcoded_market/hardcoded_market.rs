@@ -52,6 +52,7 @@ where
         let mut market_state = MarketState::load(&market.keccak_hash).into_inner();
 
         if market_header.decode_deposit_amounts {
+            // TODO add deposit directly here? It could make P::commit_local_delta() cleaner
             let deposit_pair = delta.local.deposits.deposit_mut();
             *deposit_pair = P::decode(&ctx.args, offset, len)?;
         }

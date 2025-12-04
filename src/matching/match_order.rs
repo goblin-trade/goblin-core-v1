@@ -138,12 +138,10 @@ where
         }
     }
 
-    let taker_delta_mut = In::get_leg_mut(&mut local_delta.local_sender_delta.taker_delta_pair);
-    *taker_delta_mut = TakerDelta::<In> {
-        taker_in,
-        taker_out,
-        taker_self_trade_unlocked,
-    };
+    local_delta
+        .local_sender_delta
+        .taker_delta_pair
+        .set_match_result::<In>(taker_in, taker_out, taker_self_trade_unlocked);
 
     Ok(())
 }

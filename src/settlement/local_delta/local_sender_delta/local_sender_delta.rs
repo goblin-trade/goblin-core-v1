@@ -1,7 +1,4 @@
-use crate::{
-    settlement::local_delta::TakerDelta,
-    types::{Base, Pair, Quote},
-};
+use crate::settlement::local_delta::TakerDeltaPair;
 
 /// The sender delta of local namespace
 ///
@@ -9,16 +6,13 @@ use crate::{
 /// so it can be added to the global delta
 pub struct LocalSenderDelta {
     /// The results of matching take orders
-    pub taker_delta_pair: Pair<TakerDelta<Base>, TakerDelta<Quote>>,
+    pub taker_delta_pair: TakerDeltaPair,
 }
 
 impl LocalSenderDelta {
     pub const fn new() -> Self {
         Self {
-            taker_delta_pair: Pair {
-                base: TakerDelta::<Base>::new(),
-                quote: TakerDelta::<Quote>::new(),
-            },
+            taker_delta_pair: TakerDeltaPair::new(),
         }
     }
 }
