@@ -4,7 +4,7 @@ use crate::{
 };
 
 /// Key to index Maker delta for a given token index
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 pub struct TokenMakerDeltaKey<T: ERC20Token> {
     pub maker: Address,
     pub token_index: TokenIndex<T>,

@@ -1,5 +1,5 @@
 /// A fixed-capacity map with O(N) lookups
-pub struct FixedMap<K, V, const N: usize> {
+pub struct FixedMap<K: PartialEq + Clone + Copy, V: Default, const N: usize> {
     /// Fixed size array of the (K, V) tuple
     pub entries: [(K, V); N],
 
@@ -7,16 +7,13 @@ pub struct FixedMap<K, V, const N: usize> {
     pub len: usize,
 }
 
-impl<K, V, const N: usize> FixedMap<K, V, N> {
+impl<K: PartialEq + Clone + Copy, V: Default, const N: usize> FixedMap<K, V, N> {
     /// Inserts a key-value pair into the map, overwriting the existing value if the key is already present.
     ///
     /// # Returns
     ///
     /// Some(()) if insertion is successful, None if array is full
-    pub fn insert(&mut self, key: K, new_value: V) -> Option<()>
-    where
-        K: PartialEq,
-    {
+    pub fn insert(&mut self, key: K, new_value: V) -> Option<()> {
         // Check if the key already exists.
         for i in 0..self.len {
             let (k, v) = &mut self.entries[i];
@@ -41,11 +38,7 @@ impl<K, V, const N: usize> FixedMap<K, V, N> {
         Some(())
     }
 
-    pub fn get_or_insert_mut(&mut self, key: K) -> Option<&mut V>
-    where
-        K: PartialEq + Clone + Copy,
-        V: Default,
-    {
+    pub fn get_or_insert_mut(&mut self, key: K) -> Option<&mut V> {
         for i in 0..self.len {
             if self.entries[i].0 == key {
                 let (_, value_mut) = &mut self.entries[i];
