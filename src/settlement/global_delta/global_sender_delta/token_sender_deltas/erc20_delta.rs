@@ -1,7 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
     quantities::{DeltaAtoms, QuantityOps},
-    settlement::global_delta::{CommonDelta, GlobalSenderUpdate},
+    settlement::global_delta::{GlobalSenderUpdate, UnsidedSenderDelta},
     state::ERC20Store,
     types::LegMarker,
 };
@@ -13,14 +13,14 @@ pub struct ERC20Delta {
     pub deposit_due: DeltaAtoms,
 
     /// Delta from trading
-    pub common_delta: CommonDelta,
+    pub unsided_sender_delta: UnsidedSenderDelta,
 }
 
 impl ERC20Delta {
     pub const fn new() -> Self {
         Self {
             deposit_due: DeltaAtoms::ZERO,
-            common_delta: CommonDelta::new(),
+            unsided_sender_delta: UnsidedSenderDelta::new(),
         }
     }
 
@@ -34,7 +34,7 @@ impl ERC20Delta {
             .checked_add(deposit_amount)
             .ok_or(GoblinError::DeltaOverflow)?;
 
-        self.common_delta
+        self.unsided_sender_delta
             .add_global_update(global_update)
             .ok_or(GoblinError::DeltaOverflow)
     }

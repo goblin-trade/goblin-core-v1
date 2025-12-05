@@ -1,12 +1,10 @@
 use crate::quantities::QuantityOps;
+use crate::settlement::MatchedLots;
 use crate::types::LegMarker;
 
 pub struct TakerDelta<In: LegMarker> {
-    /// Input token traded in
-    pub taker_in: In::MatchingLots,
-
-    /// Output token obtained
-    pub taker_out: <In::Opposite as LegMarker>::MatchingLots,
+    /// Matched lots
+    pub matched_lots: MatchedLots<In>,
 
     /// Output token released due to taker self-trading
     pub taker_self_trade_unlocked: <In::Opposite as LegMarker>::MatchingLots,
@@ -15,8 +13,7 @@ pub struct TakerDelta<In: LegMarker> {
 impl<In: LegMarker> TakerDelta<In> {
     pub const fn new() -> Self {
         Self {
-            taker_in: In::MatchingLots::ZERO,
-            taker_out: <In::Opposite as LegMarker>::MatchingLots::ZERO,
+            matched_lots: MatchedLots::<In>::new(),
             taker_self_trade_unlocked: <In::Opposite as LegMarker>::MatchingLots::ZERO,
         }
     }

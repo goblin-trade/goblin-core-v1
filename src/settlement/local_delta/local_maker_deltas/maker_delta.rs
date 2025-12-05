@@ -1,4 +1,4 @@
-use crate::quantities::QuantityOps;
+use crate::settlement::MatchedLots;
 use crate::types::LegMarker;
 
 /// Maker delta for taker side In
@@ -10,18 +10,14 @@ use crate::types::LegMarker;
 ///
 #[derive(Default, Clone, Copy, PartialEq)]
 pub struct MakerDelta<In: LegMarker> {
-    /// Input token gained by maker
-    pub taker_in: In::MatchingLots,
-
-    /// Locked output token released by maker
-    pub taker_out: <In::Opposite as LegMarker>::MatchingLots,
+    /// Matched lots
+    pub matched_lots: MatchedLots<In>,
 }
 
 impl<In: LegMarker> MakerDelta<In> {
     pub const fn new() -> Self {
         Self {
-            taker_in: In::MatchingLots::ZERO,
-            taker_out: <In::Opposite as LegMarker>::MatchingLots::ZERO,
+            matched_lots: MatchedLots::<In>::new(),
         }
     }
 

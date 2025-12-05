@@ -1,6 +1,6 @@
 use crate::{
     quantities::{AsUnsided, QuantityOps, UnsidedAtoms},
-    settlement::global_delta::GlobalSenderUpdate,
+    settlement::{global_delta::GlobalSenderUpdate, MatchedUnsidedAtoms},
     types::LegMarker,
 };
 
@@ -16,12 +16,8 @@ use crate::{
 ///
 /// * Unlocked tokens are credited to free tokens in settlement phase.
 #[derive(Clone, Copy)]
-pub struct CommonDelta {
-    /// Tokens transferred into the engine, i.e. lost as taker
-    pub taker_in: UnsidedAtoms,
-
-    /// Tokens transferred out by the engine, i.e. gained as taker
-    pub taker_out: UnsidedAtoms,
+pub struct UnsidedSenderDelta {
+    pub matched_unsided_atoms: MatchedUnsidedAtoms,
 
     /// Locked tokens released from taking a self trade
     pub taker_self_trade_unlocked: UnsidedAtoms,
@@ -33,11 +29,10 @@ pub struct CommonDelta {
     pub cancel_unlocked: UnsidedAtoms,
 }
 
-impl CommonDelta {
+impl UnsidedSenderDelta {
     pub const fn new() -> Self {
         Self {
-            taker_in: UnsidedAtoms::ZERO,
-            taker_out: UnsidedAtoms::ZERO,
+            matched_unsided_atoms: MatchedUnsidedAtoms::new(),
             taker_self_trade_unlocked: UnsidedAtoms::ZERO,
             maker_locked: UnsidedAtoms::ZERO,
             cancel_unlocked: UnsidedAtoms::ZERO,
@@ -48,12 +43,11 @@ impl CommonDelta {
         &mut self,
         global_update: &GlobalSenderUpdate<In>,
     ) -> Option<()> {
-        self.taker_in = self
-            .taker_in
-            .checked_add(global_update.taker_in.unsided())?;
-        self.taker_out = self
-            .taker_out
-            .checked_add(global_update.taker_out.unsided())?;
+        let matched_unsided_atoms = MatchedUnsidedAtoms::from(&global_update.matched_atoms);
+
+        self.matched_unsided_atoms
+            .checked_add(matched_unsided_atoms)?;
+
         self.taker_self_trade_unlocked = self
             .taker_self_trade_unlocked
             .checked_add(global_update.taker_self_trade_unlocked.unsided())?;

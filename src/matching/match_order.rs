@@ -4,7 +4,10 @@ use crate::{
     matching::quote_iterator::RestingOrderPositionIterator,
     quantities::{QuantityOps, Ticks},
     require,
-    settlement::local_delta::{LocalDelta, MakerDelta, TakerDelta},
+    settlement::{
+        local_delta::{LocalDelta, MakerDelta, TakerDelta},
+        MatchedLots,
+    },
     state::{MarketState, RestingOrder, RestingOrderKey, SlotState},
     types::{Address, Base, LegMarker, PairAccessor, Quote},
 };
@@ -115,13 +118,19 @@ where
                     taker_out += quote_opposite;
 
                     // Update maker
-                    let pending_maker_update_mut = local_delta
+                    let maker_delta_pair = local_delta
                         .local_maker_deltas
                         .get_or_insert_mut(maker)
                         .ok_or(GoblinError::MakerListFull)?;
 
-                    pending_maker_update_mut
-                        .accumulate_match_result::<In>(quote, quote_opposite)?;
+                    let maker_delta = In::get_leg_mut(maker_delta_pair);
+                    maker_delta
+                        .matched_lots
+                        .checked_add(MatchedLots {
+                            taker_in: quote,
+                            taker_out: quote_opposite,
+                        })
+                        .ok_or(GoblinError::DeltaOverflow)?;
 
                     if budget == taker_in + quote {
                         // Call next to remove resting order from book and index to the next one,
@@ -137,11 +146,14 @@ where
             None => break,
         }
     }
-
-    local_delta
-        .local_sender_delta
-        .taker_delta_pair
-        .set_match_result::<In>(taker_in, taker_out, taker_self_trade_unlocked);
+    let taker_delta = In::get_leg_mut(&mut local_delta.local_sender_delta.taker_delta_pair);
+    *taker_delta = TakerDelta {
+        matched_lots: MatchedLots {
+            taker_in,
+            taker_out,
+        },
+        taker_self_trade_unlocked,
+    };
 
     Ok(())
 }

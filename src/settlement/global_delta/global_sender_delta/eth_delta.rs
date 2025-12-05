@@ -3,7 +3,7 @@ use crate::{
     goblin_error::GoblinError,
     quantities::{QuantityOps, UnsidedAtoms},
     require,
-    settlement::global_delta::CommonDelta,
+    settlement::global_delta::UnsidedSenderDelta,
     state::{EthStore, EthStoreKey, SlotState},
     types::{Address, NATIVE_TOKEN_DECIMALS},
 };
@@ -21,7 +21,7 @@ pub struct EthDelta {
     /// The amount is transferred out internally (store credit) or externally (transfer call).
     pub eth_out_due: UnsidedAtoms,
 
-    pub common_delta: CommonDelta,
+    pub unsided_sender_delta: UnsidedSenderDelta,
 }
 
 impl EthDelta {
@@ -29,7 +29,7 @@ impl EthDelta {
         Self {
             msg_value: UnsidedAtoms::ZERO,
             eth_out_due: UnsidedAtoms::ZERO,
-            common_delta: CommonDelta::new(),
+            unsided_sender_delta: UnsidedSenderDelta::new(),
         }
     }
 

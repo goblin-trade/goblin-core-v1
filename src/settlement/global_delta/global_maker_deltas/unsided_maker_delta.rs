@@ -1,6 +1,5 @@
 use crate::{
-    quantities::{AsUnsided, QuantityOps, UnsidedAtoms},
-    settlement::global_delta::GlobalMakerUpdate,
+    settlement::{global_delta::GlobalMakerUpdate, MatchedUnsidedAtoms},
     types::LegMarker,
 };
 
@@ -10,18 +9,13 @@ use crate::{
 /// this delta tracks updates for a single token.
 #[derive(Default, Clone, Copy, PartialEq)]
 pub struct UnsidedMakerDelta {
-    /// Atoms traded in by taker and gained by maker
-    pub taker_in: UnsidedAtoms,
-
-    /// Atoms obtained by taker and lost by maker
-    pub taker_out: UnsidedAtoms,
+    pub matched_unsided_atoms: MatchedUnsidedAtoms,
 }
 
 impl UnsidedMakerDelta {
     pub const fn new() -> Self {
         Self {
-            taker_in: UnsidedAtoms::ZERO,
-            taker_out: UnsidedAtoms::ZERO,
+            matched_unsided_atoms: MatchedUnsidedAtoms::new(),
         }
     }
 
@@ -29,14 +23,10 @@ impl UnsidedMakerDelta {
         &mut self,
         global_update: &GlobalMakerUpdate<In>,
     ) -> Option<()> {
-        self.taker_in = self
-            .taker_in
-            .checked_add(global_update.taker_in.unsided())?;
-        self.taker_out = self
-            .taker_out
-            .checked_add(global_update.taker_out.unsided())?;
+        let matched_unsided_atoms = MatchedUnsidedAtoms::from(&global_update.matched_atoms);
 
-        Some(())
+        self.matched_unsided_atoms
+            .checked_add(matched_unsided_atoms)
     }
 }
 

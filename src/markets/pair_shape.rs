@@ -53,7 +53,7 @@ impl PairShape for Pair<ETH, ERC20> {
         let sender_delta = &mut delta.global.global_sender_delta;
         sender_delta
             .eth_delta
-            .common_delta
+            .unsided_sender_delta
             .add_global_update::<Base>(&global_sender_update_pair.base)
             .ok_or(GoblinError::DeltaOverflow)?;
 
