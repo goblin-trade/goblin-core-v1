@@ -3,7 +3,7 @@ use crate::{
     hostio::HostioContext,
     input_processor::Decodable,
     instructions::ix_take,
-    markets::{CommonMarket, MarketHeader, MarketVariant, PairShape},
+    markets::{CommonMarket, MarketHeader, PairShape},
     quantities::DeltaAtoms,
     settlement::{
         local_delta::{LocalDepositStore, LocalDeposits},
@@ -34,8 +34,6 @@ where
     DynamicMarketKey<P>: DynamicMarketHasher<P>,
     LocalDepositStore: LocalDeposits<P>,
 {
-    pub const DISCRIMINATOR: u8 = DynamicIndex::DISCRIMINATOR | (P::DISCRIMINATOR << 1);
-
     pub fn process(
         ctx: &HostioContext,
         market_header: &MarketHeader,

@@ -3,7 +3,7 @@ use crate::{
     hostio::HostioContext,
     input_processor::Decodable,
     instructions::ix_take,
-    markets::{CommonMarket, HardcodedMarketList, MarketHeader, MarketVariant, PairShape},
+    markets::{CommonMarket, HardcodedMarketList, MarketHeader, PairShape},
     quantities::DeltaAtoms,
     settlement::{
         local_delta::{LocalDepositStore, LocalDeposits},
@@ -37,8 +37,6 @@ where
     Self: HardcodedMarketList<P>,
     LocalDepositStore: LocalDeposits<P>,
 {
-    pub const DISCRIMINATOR: u8 = HardcodedIndex::DISCRIMINATOR | (P::DISCRIMINATOR << 1);
-
     // TODO define common trait for both market types if they have common arguments
     // Currently HardcodedMarket doesn't require custom_erc20_list
     pub fn process(

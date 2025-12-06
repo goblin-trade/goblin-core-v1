@@ -6,14 +6,11 @@ use crate::{
     types::Address,
 };
 
-const BYTE_COUNT: usize = 2;
+const BYTE_COUNT: usize = 1;
 
 pub struct HeaderFlags {
     /// Number of custom erc20 token addresses provided, maximum 2^4 - 1 = 15
     pub custom_erc20_count: usize,
-
-    /// The number of markets to process. Max 2^4 - 1 = 15
-    pub market_count: usize,
 
     /// Whether to read recipient address from payload. If false, use msg.sender as recipient.
     pub recipient_provided: bool,
@@ -33,19 +30,17 @@ impl Decodable<Self> for HeaderFlags {
         require!(len >= BYTE_COUNT, GoblinError::InvalidPayload);
 
         let byte_0 = args.decode_unchecked::<u8>(0);
-        let byte_1 = args.decode_unchecked::<u8>(1);
         let header = HeaderFlags {
             // Lists
             custom_erc20_count: (byte_0 & 0b0000_1111) as usize,
-            market_count: (byte_0 >> 4) as usize,
 
             // Optional variables
-            recipient_provided: (byte_1 & 0b0000_0001) != 0,
-            track_msg_value: (byte_1 & 0b0000_0010) != 0,
-            withdraw_eth: (byte_1 & 0b0000_0100) != 0,
+            recipient_provided: (byte_0 & 0b0001_0000) != 0,
+            track_msg_value: (byte_0 & 0b0001_0000) != 0,
+            withdraw_eth: (byte_0 & 0b0001_0000) != 0,
 
             // Settlement flags
-            withdraw_internally: (byte_1 & 0b0000_1000) != 0,
+            withdraw_internally: (byte_0 & 0b0001_0000) != 0,
         };
         *offset += BYTE_COUNT;
 

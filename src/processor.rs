@@ -1,10 +1,11 @@
 use crate::{
     goblin_error::GoblinError,
     hostio::{self, HostioContext},
-    input_processor::GlobalHeader,
-    markets::{DynamicMarket, HardcodedMarket, MarketHeader, ERC20, ETH},
+    input_processor::{GlobalHeader, PairShapeMarkets},
+    markets::{DynamicMarket, HardcodedMarket, MarketHeader, MarketVariantGetter, ERC20, ETH},
     require,
     settlement::Delta,
+    tokens::HardcodedIndex,
     types::Pair,
 };
 
@@ -40,77 +41,21 @@ pub fn processor(len: usize) -> Result<(), GoblinError> {
         .eth_delta
         .set_eth_values(global_header.msg_value, global_header.eth_out_due);
 
-    // Iterate markets
-    for _ in 0..global_header.flags.market_count {
+    for _ in 0..global_header.market_counts.hardcoded.eth_erc20 {
         let market_header = MarketHeader::decode(&ctx.args, offset, len)?;
+        HardcodedMarket::<Pair<ETH, ERC20>>::process(ctx, &market_header, delta, offset, len)?;
+    }
 
-        match market_header.market_type_raw {
-            // Hardcoded markets
-            HardcodedMarket::<Pair<ETH, ERC20>>::DISCRIMINATOR => {
-                HardcodedMarket::<Pair<ETH, ERC20>>::process(
-                    ctx,
-                    &market_header,
-                    delta,
-                    offset,
-                    len,
-                )?;
-            }
-
-            HardcodedMarket::<Pair<ERC20, ETH>>::DISCRIMINATOR => {
-                HardcodedMarket::<Pair<ERC20, ETH>>::process(
-                    ctx,
-                    &market_header,
-                    delta,
-                    offset,
-                    len,
-                )?;
-            }
-
-            HardcodedMarket::<Pair<ERC20, ERC20>>::DISCRIMINATOR => {
-                HardcodedMarket::<Pair<ERC20, ERC20>>::process(
-                    ctx,
-                    &market_header,
-                    delta,
-                    offset,
-                    len,
-                )?;
-            }
-
-            // Dynamic markets
-            DynamicMarket::<Pair<ETH, ERC20>>::DISCRIMINATOR => {
-                DynamicMarket::<Pair<ETH, ERC20>>::process(
-                    ctx,
-                    &market_header,
-                    delta,
-                    global_header.custom_erc20_list,
-                    offset,
-                    len,
-                )?;
-            }
-
-            DynamicMarket::<Pair<ERC20, ETH>>::DISCRIMINATOR => {
-                DynamicMarket::<Pair<ERC20, ETH>>::process(
-                    ctx,
-                    &market_header,
-                    delta,
-                    global_header.custom_erc20_list,
-                    offset,
-                    len,
-                )?;
-            }
-
-            DynamicMarket::<Pair<ERC20, ERC20>>::DISCRIMINATOR => {
-                DynamicMarket::<Pair<ERC20, ERC20>>::process(
-                    ctx,
-                    &market_header,
-                    delta,
-                    global_header.custom_erc20_list,
-                    offset,
-                    len,
-                )?;
-            }
-            _ => {}
-        }
+    for _ in 0..global_header.market_counts.dynamic.eth_erc20 {
+        let market_header = MarketHeader::decode(&ctx.args, offset, len)?;
+        DynamicMarket::<Pair<ETH, ERC20>>::process(
+            ctx,
+            &market_header,
+            delta,
+            global_header.custom_erc20_list,
+            offset,
+            len,
+        )?;
     }
 
     // for market_instructions in args.market_instructions_list {
