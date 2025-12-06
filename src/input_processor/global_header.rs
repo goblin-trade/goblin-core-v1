@@ -33,9 +33,7 @@ impl<'a> GlobalHeader<'a> {
     ///
     /// The API is similar to Decodable trait includes the 'a lifetime that Decodable lacks
     pub fn new(args: &'a ArgsBuffer, offset: &mut usize, len: usize) -> Result<Self, GoblinError> {
-        let flags = HeaderFlags::init(args, len)?;
-        *offset = HeaderFlags::HEADER_BYTE_SIZE;
-
+        let flags = HeaderFlags::decode(args, offset, len)?;
         let market_counts = MarketCounts::decode(args, offset, len)?;
 
         let msg_value = if flags.track_msg_value {

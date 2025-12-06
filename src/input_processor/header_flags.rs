@@ -1,10 +1,12 @@
 use crate::{
     goblin_error::GoblinError,
-    input_processor::{ArgsBuffer, ArgsDecoder},
+    input_processor::{ArgsBuffer, ArgsDecoder, Decodable},
     quantities::UnsidedAtoms,
     require,
     types::Address,
 };
+
+const BYTE_COUNT: usize = 2;
 
 pub struct HeaderFlags {
     /// Number of custom erc20 token addresses provided, maximum 2^4 - 1 = 15
@@ -26,24 +28,13 @@ pub struct HeaderFlags {
     pub withdraw_internally: bool,
 }
 
-impl HeaderFlags {
-    pub const HEADER_BYTE_SIZE: usize = 2;
+impl Decodable<Self> for HeaderFlags {
+    fn decode(args: &ArgsBuffer, offset: &mut usize, len: usize) -> Result<Self, GoblinError> {
+        require!(len >= BYTE_COUNT, GoblinError::InvalidPayload);
 
-    pub fn init(input: &ArgsBuffer, len: usize) -> Result<Self, GoblinError> {
-        require!(
-            len >= HeaderFlags::HEADER_BYTE_SIZE,
-            GoblinError::InvalidPayload
-        );
-        let header = HeaderFlags::init_unchecked(input);
-        require!(len >= header.payload_size(), GoblinError::InvalidPayload);
-
-        Ok(header)
-    }
-
-    fn init_unchecked(input: &ArgsBuffer) -> Self {
-        let byte_0 = input.decode_unchecked::<u8>(0);
-        let byte_1 = input.decode_unchecked::<u8>(1);
-        HeaderFlags {
+        let byte_0 = args.decode_unchecked::<u8>(0);
+        let byte_1 = args.decode_unchecked::<u8>(1);
+        let header = HeaderFlags {
             // Lists
             custom_erc20_count: (byte_0 & 0b0000_1111) as usize,
             market_count: (byte_0 >> 4) as usize,
@@ -55,11 +46,18 @@ impl HeaderFlags {
 
             // Settlement flags
             withdraw_internally: (byte_1 & 0b0000_1000) != 0,
-        }
-    }
+        };
+        *offset += BYTE_COUNT;
 
+        require!(len >= header.payload_size(), GoblinError::InvalidPayload);
+
+        Ok(header)
+    }
+}
+
+impl HeaderFlags {
     pub fn payload_size(&self) -> usize {
-        let size = Self::HEADER_BYTE_SIZE
+        let size = BYTE_COUNT
             + self.recipient_provided as usize * core::mem::size_of::<Address>()
             + self.withdraw_eth as usize * core::mem::size_of::<UnsidedAtoms>()
             // Lists
