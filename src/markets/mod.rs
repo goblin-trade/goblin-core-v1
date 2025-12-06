@@ -3,7 +3,6 @@ pub mod dynamic_market;
 pub mod hardcoded_market;
 pub mod market_header;
 pub mod market_variant;
-pub mod pair_decoder;
 pub mod pair_shape;
 
 pub use common_market::*;
