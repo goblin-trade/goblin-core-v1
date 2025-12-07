@@ -1,4 +1,4 @@
-use crate::settlement::global_delta::{ETHMakerDeltas, TokenMakerDeltas};
+use crate::settlement::global_delta::{ERC20MakerDeltas, ETHMakerDeltas};
 
 /// Top level deltas for makers who matched against take orders made by msg_sender
 pub struct GlobalMakerDeltas {
@@ -6,14 +6,14 @@ pub struct GlobalMakerDeltas {
     pub eth_deltas: ETHMakerDeltas,
 
     /// Deltas for ERC20 tokens
-    pub token_deltas: TokenMakerDeltas,
+    pub erc20_deltas: ERC20MakerDeltas,
 }
 
 impl GlobalMakerDeltas {
     pub const fn new() -> Self {
         Self {
             eth_deltas: ETHMakerDeltas::new(),
-            token_deltas: TokenMakerDeltas::new(),
+            erc20_deltas: ERC20MakerDeltas::new(),
         }
     }
 }

@@ -1,7 +1,7 @@
 use crate::{
     markets::PairShape,
     settlement::global_delta::{
-        ERC20Delta, ERC20DeltaList, TokenMakerDeltaKey, TokenMakerDeltas, TokenSenderDeltas,
+        ERC20Delta, ERC20DeltaList, ERC20MakerDeltaKey, ERC20MakerDeltas, ERC20SenderDeltas,
         UnsidedMakerDelta,
     },
     state::{DynamicMarketKey, HardcodedMarketKey, SlotKey},
@@ -24,13 +24,13 @@ pub trait MarketVariant {
     //
     // Or something like Pair<>
     // ERC20Pair<H, C> { hardcoded: H, custom: C }
-    fn token_sender_delta_mut(self, token_sender_deltas: &mut TokenSenderDeltas)
+    fn token_sender_delta_mut(self, token_sender_deltas: &mut ERC20SenderDeltas)
         -> &mut ERC20Delta;
 
     fn token_maker_delta_mut(
         self,
         maker: Address,
-        token_maker_deltas: &mut TokenMakerDeltas,
+        token_maker_deltas: &mut ERC20MakerDeltas,
     ) -> Option<&mut UnsidedMakerDelta>;
 }
 
@@ -41,7 +41,7 @@ impl MarketVariant for HardcodedIndex {
 
     fn token_sender_delta_mut(
         self,
-        token_sender_deltas: &mut TokenSenderDeltas,
+        token_sender_deltas: &mut ERC20SenderDeltas,
     ) -> &mut ERC20Delta {
         token_sender_deltas
             .hardcoded_token_deltas
@@ -51,9 +51,9 @@ impl MarketVariant for HardcodedIndex {
     fn token_maker_delta_mut(
         self,
         maker: Address,
-        token_maker_deltas: &mut TokenMakerDeltas,
+        token_maker_deltas: &mut ERC20MakerDeltas,
     ) -> Option<&mut UnsidedMakerDelta> {
-        let key = TokenMakerDeltaKey {
+        let key = ERC20MakerDeltaKey {
             maker,
             token_index: self,
         };
@@ -71,7 +71,7 @@ impl MarketVariant for DynamicIndex {
 
     fn token_sender_delta_mut(
         self,
-        token_sender_deltas: &mut TokenSenderDeltas,
+        token_sender_deltas: &mut ERC20SenderDeltas,
     ) -> &mut ERC20Delta {
         match self {
             DynamicIndex::Hardcoded(hardcoded_token_index) => token_sender_deltas
@@ -87,11 +87,11 @@ impl MarketVariant for DynamicIndex {
     fn token_maker_delta_mut(
         self,
         maker: Address,
-        token_maker_deltas: &mut TokenMakerDeltas,
+        token_maker_deltas: &mut ERC20MakerDeltas,
     ) -> Option<&mut UnsidedMakerDelta> {
         match self {
             DynamicIndex::Hardcoded(hardcoded_token_index) => {
-                let key = TokenMakerDeltaKey {
+                let key = ERC20MakerDeltaKey {
                     maker,
                     token_index: hardcoded_token_index,
                 };
@@ -102,7 +102,7 @@ impl MarketVariant for DynamicIndex {
             }
 
             DynamicIndex::Custom(custom_token_index) => {
-                let key = TokenMakerDeltaKey {
+                let key = ERC20MakerDeltaKey {
                     maker,
                     token_index: custom_token_index,
                 };

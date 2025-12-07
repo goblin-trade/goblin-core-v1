@@ -3,7 +3,7 @@ use crate::{
     token::HARDCODED_TOKENS,
 };
 
-pub struct TokenSenderDeltas {
+pub struct ERC20SenderDeltas {
     /// Deltas for hardcoded tokens
     pub hardcoded_token_deltas: HardcodedTokenDeltas,
 
@@ -11,7 +11,7 @@ pub struct TokenSenderDeltas {
     pub custom_token_deltas: CustomTokenDeltas,
 }
 
-impl TokenSenderDeltas {
+impl ERC20SenderDeltas {
     pub const fn new() -> Self {
         Self {
             hardcoded_token_deltas: [ERC20Delta::new(); HARDCODED_TOKENS.len()],

@@ -2,7 +2,7 @@ use crate::{
     goblin_error::GoblinError,
     markets::{CommonMarket, MarketVariant},
     settlement::{
-        global_delta::{GlobalMakerUpdatePair, GlobalSenderUpdatePair, TokenMakerDeltaKey},
+        global_delta::{ERC20MakerDeltaKey, GlobalMakerUpdatePair, GlobalSenderUpdatePair},
         local_delta::LocalDeposits,
         Delta,
     },
@@ -54,7 +54,7 @@ impl PairShape for Pair<ETH, ERC20> {
 
         // Update quote
         let quote_token_index = common_market.token_index_pair;
-        let quote_delta = quote_token_index.token_sender_delta_mut(&mut sender_delta.token_deltas);
+        let quote_delta = quote_token_index.token_sender_delta_mut(&mut sender_delta.erc20_deltas);
 
         let deposit_pair = LocalDeposits::<Self>::deposit_mut(&mut delta.local.deposits);
         quote_delta.apply_global_update::<Quote>(*deposit_pair, &sender_update_pair.quote)?;
@@ -77,7 +77,7 @@ impl PairShape for Pair<ETH, ERC20> {
 
             // Update quote (ERC20)
             let global_maker_delta_erc20_quote = quote_token_index
-                .token_maker_delta_mut(*maker, &mut delta.global.maker_deltas.token_deltas)
+                .token_maker_delta_mut(*maker, &mut delta.global.maker_deltas.erc20_deltas)
                 .ok_or(GoblinError::MakerListFull)?;
 
             global_maker_delta_erc20_quote
