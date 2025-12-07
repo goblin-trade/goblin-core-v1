@@ -1,4 +1,4 @@
-use crate::{goblin_error::GoblinError, tokens::ERC20Token, types::Address};
+use crate::{goblin_error::GoblinError, token::ERC20Token, types::Address};
 
 /// Token hardcoded into the smart contract
 ///

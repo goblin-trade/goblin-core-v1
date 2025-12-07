@@ -6,14 +6,9 @@ use crate::{
         local_delta::LocalDeposits,
         Delta,
     },
+    token::{ERC20, ETH},
     types::{Base, Pair, Quote},
 };
-
-/// Marker type for ETH within a token pair
-pub struct ETH;
-
-/// Marker type for ERC20 within a token pair
-pub struct ERC20;
 
 // every PairShape is a Pair. Can we impose a requirement of Pair?
 pub trait PairShape {

@@ -1,10 +1,11 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::{ArgsBuffer, ArgsDecoder, Decodable},
-    markets::{PairShape, ERC20, ETH},
+    markets::PairShape,
     quantities::DeltaAtoms,
     require,
-    tokens::DynamicIndex,
+    token::DynamicIndex,
+    token::{ERC20, ETH},
     types::Pair,
 };
 

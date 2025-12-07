@@ -1,5 +1,5 @@
 use crate::{
-    tokens::{ERC20Token, TokenIndex},
+    token::{ERC20Token, TokenIndex},
     types::Address,
 };
 

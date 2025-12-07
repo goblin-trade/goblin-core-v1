@@ -1,6 +1,6 @@
 use crate::{
     markets::MarketVariant,
-    tokens::{DynamicIndex, HardcodedIndex},
+    token::{DynamicIndex, HardcodedIndex},
 };
 
 /// Stores one value of `T` for each supported market variant

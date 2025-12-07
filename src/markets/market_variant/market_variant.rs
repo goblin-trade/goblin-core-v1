@@ -5,7 +5,7 @@ use crate::{
         UnsidedMakerDelta,
     },
     state::{DynamicMarketKey, HardcodedMarketKey, SlotKey},
-    tokens::{DynamicIndex, HardcodedIndex},
+    token::{DynamicIndex, HardcodedIndex},
     types::Address,
 };
 

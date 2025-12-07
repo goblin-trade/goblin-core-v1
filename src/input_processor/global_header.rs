@@ -3,7 +3,7 @@ use crate::{
     hostio::{self},
     input_processor::{ArgsBuffer, ArgsDecoder, Decodable, HeaderFlags, MarketCounts},
     quantities::{QuantityOps, UnsidedAtoms},
-    tokens::CustomToken,
+    token::CustomToken,
     types::{Address, NATIVE_TOKEN_DECIMALS},
 };
 

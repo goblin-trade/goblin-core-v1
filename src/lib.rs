@@ -16,7 +16,7 @@ pub mod processor;
 pub mod quantities;
 pub mod settlement;
 pub mod state;
-pub mod tokens;
+pub mod token;
 pub mod types;
 pub mod utils;
 

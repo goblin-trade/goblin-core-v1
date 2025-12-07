@@ -4,7 +4,7 @@ use crate::{
     markets::{CommonMarket, DynamicMarket, LotSizePair, PairShape},
     quantities::QuoteLotsPerBaseUnitPerTick,
     require,
-    tokens::DynamicIndex,
+    token::DynamicIndex,
 };
 
 impl<P> Decodable<DynamicMarket<P>> for DynamicMarket<P>

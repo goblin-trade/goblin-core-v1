@@ -2,10 +2,11 @@ use crate::{
     goblin_error::GoblinError,
     hostio::{self, HostioContext},
     input_processor::{GlobalHeader, PairShapeMarkets},
-    markets::{DynamicMarket, HardcodedMarket, MarketHeader, MarketVariantGetter, ERC20, ETH},
+    markets::{DynamicMarket, HardcodedMarket, MarketHeader, MarketVariantGetter},
     require,
     settlement::Delta,
-    tokens::HardcodedIndex,
+    token::HardcodedIndex,
+    token::{ERC20, ETH},
     types::Pair,
 };
 

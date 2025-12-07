@@ -3,10 +3,11 @@ use core::marker::PhantomData;
 use crate::{
     goblin_error::GoblinError,
     hostio::{self, HostioBuffer},
-    markets::{CommonMarket, MarketVariant, PairShape, ERC20, ETH},
+    markets::{CommonMarket, MarketVariant, PairShape},
     quantities::Ticks,
     state::{SlotKey, SlotState},
-    tokens::{CustomToken, DynamicIndex, HardcodedToken, TokenIndex},
+    token::{CustomToken, DynamicIndex, HardcodedToken, TokenIndex},
+    token::{ERC20, ETH},
     types::Pair,
 };
 

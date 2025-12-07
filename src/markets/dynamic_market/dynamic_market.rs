@@ -10,7 +10,7 @@ use crate::{
         Delta,
     },
     state::{DynamicMarketHasher, DynamicMarketKey, MarketState, SlotState},
-    tokens::{CustomToken, DynamicIndex},
+    token::{CustomToken, DynamicIndex},
     types::{Base, Quote},
 };
 

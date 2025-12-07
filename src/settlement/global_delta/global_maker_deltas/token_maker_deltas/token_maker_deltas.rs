@@ -1,6 +1,6 @@
 use crate::{
     settlement::global_delta::{TokenMakerDeltaKey, UnsidedMakerDelta},
-    tokens::{CustomToken, HardcodedToken},
+    token::{CustomToken, HardcodedToken},
     utils::FixedMap,
 };
 

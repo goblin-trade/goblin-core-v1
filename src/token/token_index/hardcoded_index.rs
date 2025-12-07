@@ -1,4 +1,4 @@
-use crate::tokens::{HardcodedToken, TokenIndex, HARDCODED_TOKENS};
+use crate::token::{HardcodedToken, TokenIndex, HARDCODED_TOKENS};
 
 pub type HardcodedIndex = TokenIndex<HardcodedToken>;
 

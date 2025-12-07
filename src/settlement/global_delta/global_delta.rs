@@ -1,6 +1,6 @@
 use crate::{
     goblin_error::GoblinError,
-    markets::{MarketVariant, PairShape, ERC20, ETH},
+    markets::{MarketVariant, PairShape},
     quantities::UnsidedAtoms,
     settlement::{
         global_delta::{
@@ -8,7 +8,8 @@ use crate::{
         },
         local_delta::LocalDelta,
     },
-    tokens::{HardcodedIndex, HardcodedToken},
+    token::{HardcodedIndex, HardcodedToken},
+    token::{ERC20, ETH},
     types::{LegMarker, Pair},
 };
 

@@ -1,6 +1,6 @@
 use crate::{
     settlement::global_delta::{ERC20Delta, MAX_CUSTOM_DELTAS},
-    tokens::HARDCODED_TOKENS,
+    token::HARDCODED_TOKENS,
 };
 
 pub struct TokenSenderDeltas {

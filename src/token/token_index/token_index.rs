@@ -1,4 +1,4 @@
-use crate::tokens::ERC20Token;
+use crate::token::ERC20Token;
 use core::marker::PhantomData;
 
 /// Index of a token used by the matching engine

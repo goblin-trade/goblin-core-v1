@@ -1,4 +1,4 @@
-use crate::tokens::HardcodedToken;
+use crate::token::HardcodedToken;
 
 pub const HARDCODED_TOKENS: [HardcodedToken; 2] = [
     HardcodedToken {

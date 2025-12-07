@@ -1,5 +1,6 @@
 use crate::{
-    markets::{PairShape, ERC20, ETH},
+    markets::PairShape,
+    token::{ERC20, ETH},
     types::Pair,
 };
 

@@ -1,4 +1,4 @@
-use crate::{erc20, goblin_error::GoblinError, tokens::ERC20Token, types::Address};
+use crate::{erc20, goblin_error::GoblinError, token::ERC20Token, types::Address};
 
 /// A custom token
 ///

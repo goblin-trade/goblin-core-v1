@@ -1,4 +1,4 @@
-use crate::tokens::{CustomToken, TokenIndex};
+use crate::token::{CustomToken, TokenIndex};
 
 pub type CustomIndex = TokenIndex<CustomToken>;
 

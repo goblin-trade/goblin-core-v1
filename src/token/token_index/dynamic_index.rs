@@ -1,7 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
     require,
-    tokens::{CustomIndex, CustomToken, HardcodedIndex, TokenIndex, HARDCODED_TOKENS},
+    token::{CustomIndex, CustomToken, HardcodedIndex, TokenIndex, HARDCODED_TOKENS},
     types::Address,
 };
 

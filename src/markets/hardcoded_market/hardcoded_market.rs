@@ -10,7 +10,7 @@ use crate::{
         Delta,
     },
     state::{HardcodedMarketKey, MarketState, SlotState},
-    tokens::HardcodedIndex,
+    token::HardcodedIndex,
     types::Base,
 };
 

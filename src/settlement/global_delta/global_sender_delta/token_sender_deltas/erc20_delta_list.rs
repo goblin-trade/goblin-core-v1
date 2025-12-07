@@ -1,6 +1,6 @@
 use crate::{
     settlement::global_delta::{CustomTokenDeltas, ERC20Delta, HardcodedTokenDeltas},
-    tokens::{CustomToken, ERC20Token, HardcodedToken, TokenIndex},
+    token::{CustomToken, ERC20Token, HardcodedToken, TokenIndex},
 };
 
 pub const MAX_CUSTOM_DELTAS: usize = 8;
