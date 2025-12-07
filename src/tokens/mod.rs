@@ -1,16 +1,11 @@
-pub mod token;
-pub use token::*;
+pub mod custom_token;
+pub mod erc20_token;
+pub mod hardcoded_token;
+pub mod hardcoded_tokens;
+pub mod token_index;
 
-#[cfg(feature = "localnet")]
-pub mod localnet;
-#[cfg(feature = "mainnet")]
-pub mod mainnet;
-#[cfg(feature = "testnet")]
-pub mod testnet;
-
-#[cfg(feature = "localnet")]
-pub use localnet::*;
-#[cfg(feature = "mainnet")]
-pub use mainnet::*;
-#[cfg(feature = "testnet")]
-pub use testnet::*;
+pub use custom_token::*;
+pub use erc20_token::*;
+pub use hardcoded_token::*;
+pub use hardcoded_tokens::*;
+pub use token_index::*;

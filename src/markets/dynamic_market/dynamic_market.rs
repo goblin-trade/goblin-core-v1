@@ -11,7 +11,7 @@ use crate::{
     },
     state::{DynamicMarketHasher, DynamicMarketKey, MarketState, SlotState},
     tokens::{CustomToken, DynamicIndex},
-    types::Base,
+    types::{Base, Quote},
 };
 
 /// A market whose token indices are dynamically specified at runtime.
@@ -54,6 +54,17 @@ where
         // Take bid and take quote
         if market_header.execute_takes.base {
             ix_take::<DynamicIndex, P, Base>(
+                ctx,
+                &mut delta.local,
+                &market.common,
+                &mut market_state,
+                offset,
+                len,
+            )?;
+        }
+
+        if market_header.execute_takes.quote {
+            ix_take::<DynamicIndex, P, Quote>(
                 ctx,
                 &mut delta.local,
                 &market.common,

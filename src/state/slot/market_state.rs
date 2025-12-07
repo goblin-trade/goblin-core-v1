@@ -64,7 +64,7 @@ impl DynamicMarketHasher<Pair<ETH, ERC20>> for DynamicMarketKey<Pair<ETH, ERC20>
         let mut bytes = [0u8; Self::BYTE_SIZE];
         bytes[0] = Self::DISCRIMINATOR;
 
-        let quote_address = market.token_index_pair.address_bytes(custom_erc20_list)?;
+        let quote_address = market.token_index_pair.address(custom_erc20_list)?;
 
         bytes[1..21].copy_from_slice(&quote_address);
 
@@ -91,7 +91,7 @@ impl DynamicMarketHasher<Pair<ERC20, ETH>> for DynamicMarketKey<Pair<ERC20, ETH>
         let mut bytes = [0u8; Self::BYTE_SIZE];
         bytes[0] = Self::DISCRIMINATOR;
 
-        let quote_address = market.token_index_pair.address_bytes(custom_erc20_list)?;
+        let quote_address = market.token_index_pair.address(custom_erc20_list)?;
 
         bytes[1..21].copy_from_slice(&quote_address);
 
@@ -118,15 +118,9 @@ impl DynamicMarketHasher<Pair<ERC20, ERC20>> for DynamicMarketKey<Pair<ERC20, ER
         let mut bytes = [0u8; Self::BYTE_SIZE];
         bytes[0] = Self::DISCRIMINATOR;
 
-        let base_address = market
-            .token_index_pair
-            .base
-            .address_bytes(custom_erc20_list)?;
+        let base_address = market.token_index_pair.base.address(custom_erc20_list)?;
 
-        let quote_address = market
-            .token_index_pair
-            .base
-            .address_bytes(custom_erc20_list)?;
+        let quote_address = market.token_index_pair.base.address(custom_erc20_list)?;
 
         bytes[1..21].copy_from_slice(&base_address);
         bytes[21..41].copy_from_slice(&quote_address);

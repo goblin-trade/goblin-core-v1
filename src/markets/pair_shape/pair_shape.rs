@@ -44,7 +44,7 @@ impl PairShape for Pair<ETH, ERC20> {
         M: MarketVariant + Clone + Copy,
         Self: Sized,
     {
-        let global_sender_update_pair = GlobalSenderUpdatePair::new(
+        let sender_update_pair = GlobalSenderUpdatePair::new(
             &delta.local.local_sender_delta.taker_delta_pair,
             &common_market.lot_size_pair,
         );
@@ -54,7 +54,7 @@ impl PairShape for Pair<ETH, ERC20> {
         sender_delta
             .eth_delta
             .unsided_sender_delta
-            .add_global_update::<Base>(&global_sender_update_pair.base)
+            .add_global_update::<Base>(&sender_update_pair.base)
             .ok_or(GoblinError::DeltaOverflow)?;
 
         // Update quote
@@ -62,11 +62,10 @@ impl PairShape for Pair<ETH, ERC20> {
         let quote_delta = quote_token_index.token_sender_delta_mut(&mut sender_delta.token_deltas);
 
         let deposit_pair = LocalDeposits::<Self>::deposit_mut(&mut delta.local.deposits);
-        quote_delta
-            .apply_global_update::<Quote>(*deposit_pair, &global_sender_update_pair.quote)?;
+        quote_delta.apply_global_update::<Quote>(*deposit_pair, &sender_update_pair.quote)?;
 
         for (maker, maker_delta_pair) in delta.local.local_maker_deltas.iter() {
-            let global_maker_update_pair =
+            let maker_update_pair =
                 GlobalMakerUpdatePair::new(maker_delta_pair, &common_market.lot_size_pair);
 
             // Update base (ETH)
@@ -78,7 +77,7 @@ impl PairShape for Pair<ETH, ERC20> {
                 .ok_or(GoblinError::MakerListFull)?;
 
             global_maker_delta_eth_base
-                .add_global_update::<Base>(&global_maker_update_pair.base)
+                .add_global_update::<Base>(&maker_update_pair.base)
                 .ok_or(GoblinError::DeltaOverflow)?;
 
             // Update quote (ERC20)
@@ -87,7 +86,7 @@ impl PairShape for Pair<ETH, ERC20> {
                 .ok_or(GoblinError::MakerListFull)?;
 
             global_maker_delta_erc20_quote
-                .add_global_update(&global_maker_update_pair.quote)
+                .add_global_update(&maker_update_pair.quote)
                 .ok_or(GoblinError::DeltaOverflow)?;
         }
 
