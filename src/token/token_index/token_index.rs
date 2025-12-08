@@ -1,4 +1,4 @@
-use crate::token::ERC20Token;
+use crate::token::ERC20Marker;
 use core::marker::PhantomData;
 
 /// Index of a token used by the matching engine
@@ -15,12 +15,12 @@ use core::marker::PhantomData;
 /// both hardcoded and custom token indices.
 ///
 #[derive(Clone, Copy, PartialEq)]
-pub struct TokenIndex<T: ERC20Token> {
+pub struct TokenIndex<T: ERC20Marker> {
     pub inner: u8,
     _marker: PhantomData<T>,
 }
 
-impl<T: ERC20Token> TokenIndex<T> {
+impl<T: ERC20Marker> TokenIndex<T> {
     pub const fn new(inner: u8) -> Self {
         Self {
             inner,

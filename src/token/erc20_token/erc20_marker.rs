@@ -1,7 +1,7 @@
 use crate::{goblin_error::GoblinError, types::Address};
 
 /// Trait for ERC20 tokens
-pub trait ERC20Token
+pub trait ERC20Marker
 where
     Self: Sized,
 {

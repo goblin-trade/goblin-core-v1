@@ -1,4 +1,4 @@
-use crate::{erc20, goblin_error::GoblinError, token::ERC20Token, types::Address};
+use crate::{erc20, goblin_error::GoblinError, token::ERC20Marker, types::Address};
 
 /// A custom token
 ///
@@ -9,7 +9,7 @@ pub struct CustomToken {
     pub address: Address,
 }
 
-impl ERC20Token for CustomToken {
+impl ERC20Marker for CustomToken {
     fn address(&self) -> &Address {
         &self.address
     }

@@ -1,6 +1,6 @@
 use crate::{
     settlement::global_delta::{CustomTokenDeltas, ERC20Delta, HardcodedTokenDeltas},
-    token::{CustomToken, ERC20Token, HardcodedToken, TokenIndex},
+    token::{CustomToken, ERC20Marker, HardcodedToken, TokenIndex},
 };
 
 pub const MAX_CUSTOM_DELTAS: usize = 8;
@@ -9,7 +9,7 @@ pub const MAX_CUSTOM_DELTAS: usize = 8;
 /// the token index.
 ///
 /// This function just maps index to delta. It doesn't deal with the wrapper struct.
-pub trait ERC20DeltaList<T: ERC20Token> {
+pub trait ERC20DeltaList<T: ERC20Marker> {
     /// Get a mutable reference to ERC20Delta for the given token index
     fn get_delta_mut(&mut self, token_index: TokenIndex<T>) -> &mut ERC20Delta;
 }

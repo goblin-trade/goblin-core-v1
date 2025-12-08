@@ -1,4 +1,4 @@
-use crate::{goblin_error::GoblinError, token::ERC20Token, types::Address};
+use crate::{goblin_error::GoblinError, token::ERC20Marker, types::Address};
 
 /// Token hardcoded into the smart contract
 ///
@@ -15,7 +15,7 @@ impl PartialEq for HardcodedToken {
     }
 }
 
-impl ERC20Token for HardcodedToken {
+impl ERC20Marker for HardcodedToken {
     fn address(&self) -> &Address {
         &self.address
     }
