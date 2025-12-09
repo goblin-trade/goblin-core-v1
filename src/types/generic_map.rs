@@ -1,16 +1,27 @@
 use core::marker::PhantomData;
 
 #[repr(C)]
-#[derive(Clone, Copy, Default)]
-pub struct GenericMap<T0: Clone + Copy, T1: Clone + Copy, K>(T0, T1, PhantomData<K>);
+#[derive(Clone, Copy, Default, PartialEq)]
+pub struct GenericMap<T0, T1, K>(T0, T1, PhantomData<K>)
+where
+    T0: Clone + Copy + PartialEq,
+    T1: Clone + Copy + PartialEq;
 
-impl<T0: Clone + Copy, T1: Clone + Copy, K> GenericMap<T0, T1, K> {
+impl<T0, T1, K> GenericMap<T0, T1, K>
+where
+    T0: Clone + Copy + PartialEq,
+    T1: Clone + Copy + PartialEq,
+{
     pub fn new(t0: T0, t1: T1) -> Self {
         Self(t0, t1, PhantomData)
     }
 }
 
-pub trait GenericMapAccessor<T0: Clone + Copy, T1: Clone + Copy, K> {
+pub trait GenericMapAccessor<T0, T1, K>
+where
+    T0: Clone + Copy + PartialEq,
+    T1: Clone + Copy + PartialEq,
+{
     type Result;
 
     fn get(map: &GenericMap<T0, T1, K>) -> Self::Result;
@@ -23,7 +34,11 @@ pub trait GenericMapAccessor<T0: Clone + Copy, T1: Clone + Copy, K> {
 #[derive(Clone, Copy, Default, PartialEq)]
 pub struct Marker<const N: usize, K>(PhantomData<K>);
 
-impl<T0: Clone + Copy, T1: Clone + Copy, K> GenericMapAccessor<T0, T1, K> for Marker<0, K> {
+impl<T0, T1, K> GenericMapAccessor<T0, T1, K> for Marker<0, K>
+where
+    T0: Clone + Copy + PartialEq,
+    T1: Clone + Copy + PartialEq,
+{
     type Result = T0;
 
     fn get(map: &GenericMap<T0, T1, K>) -> Self::Result {
@@ -39,7 +54,11 @@ impl<T0: Clone + Copy, T1: Clone + Copy, K> GenericMapAccessor<T0, T1, K> for Ma
     }
 }
 
-impl<T0: Clone + Copy, T1: Clone + Copy, K> GenericMapAccessor<T0, T1, K> for Marker<1, K> {
+impl<T0, T1, K> GenericMapAccessor<T0, T1, K> for Marker<1, K>
+where
+    T0: Clone + Copy + PartialEq,
+    T1: Clone + Copy + PartialEq,
+{
     type Result = T1;
 
     fn get(map: &GenericMap<T0, T1, K>) -> Self::Result {
@@ -64,8 +83,8 @@ type TokenMap<T0, T1> = GenericMap<T0, T1, ETHERC20Pair>;
 type ETH = Marker<0, ETHERC20Pair>;
 type ERC20 = Marker<1, ETHERC20Pair>;
 
-type Base = Marker<0, BaseQuotePair>;
-type Quote = Marker<1, BaseQuotePair>;
+// pub type Base = Marker<0, BaseQuotePair>;
+// pub type Quote = Marker<1, BaseQuotePair>;
 
 type HardcodedMarker = Marker<0, BaseQuotePair>;
 type CustomMarker = Marker<1, BaseQuotePair>;
@@ -76,8 +95,8 @@ mod tests {
 
     fn process_leg<T0, T1, M>(map: &TokenMap<T0, T1>) -> &M::Result
     where
-        T0: Clone + Copy,
-        T1: Clone + Copy,
+        T0: Clone + Copy + PartialEq,
+        T1: Clone + Copy + PartialEq,
         M: GenericMapAccessor<T0, T1, ETHERC20Pair>,
     {
         M::get_leg(map)
