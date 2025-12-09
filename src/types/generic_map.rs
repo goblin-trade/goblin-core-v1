@@ -2,6 +2,8 @@ use core::marker::PhantomData;
 
 use crate::token::{ERC20, ETH};
 
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
 pub struct GenericMap<T0, T1, K>(T0, T1, PhantomData<K>);
 
 impl<T0, T1, K> GenericMap<T0, T1, K> {
@@ -15,9 +17,6 @@ pub trait GenericMapAccessor<T0, T1, K> {
 
     fn get_leg(map: &GenericMap<T0, T1, K>) -> &Self::Result;
 }
-
-// ETH and ERC20 implement trait TokenMarker
-type TokenMap<T0, T1> = GenericMap<T0, T1, (ETH, ERC20)>;
 
 pub struct Marker<const N: usize, K>(PhantomData<K>);
 
@@ -36,6 +35,8 @@ impl<T0, T1, K> GenericMapAccessor<T0, T1, K> for Marker<1, K> {
         &map.1
     }
 }
+
+type TokenMap<T0, T1> = GenericMap<T0, T1, (ETH, ERC20)>;
 
 #[cfg(test)]
 mod tests {
