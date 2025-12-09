@@ -1,77 +1,108 @@
 use core::marker::PhantomData;
 
-use crate::token::{HardcodedToken, TokenMarker, ERC20, ETH};
+use crate::token::{CustomToken, HardcodedToken, TokenMarker, ERC20, ETH};
 
-// pub struct TokenMap<T0, T1, V>(T0, T1, PhantomData<V>);
+pub struct GenericMap<T0, T1, M0, M1>(T0, T1, PhantomData<(M0, M1)>);
 
-// Looks wrong- there shouldn't be 2 versions of GlobalSenderDelta for each TokenMarker
-// pub type GlobalSenderDeltaV2<TokenMarker> = TokenMap<u8, u8, TokenMarker>;
-// pub type TokenSenderDeltasV2<ERC20Token> = TokenMap<u8, u8, ERC20Token>;
-
-pub struct TokenMap<T0, T1>(pub T0, pub T1);
-pub struct ERC20Map<T0, T1>(pub T0, pub T1);
-
-pub type GlobalSenderDeltaV2 = TokenMap<u8, u8>;
-
-pub trait TokenMapGetter<T0, T1, M> {
-    type MapResult;
-
-    // Problem- we need a composite type if we want a common function
-    // .get_ref::<ETH>()
-    fn get_ref(&self) -> &Self::MapResult;
-}
-
-// Alt design- don't create new trait
-// Just implement for ETH and ERC20
-
-// 1. TokenMarker- ETH and ERC20
-impl<T0, T1> TokenMapGetter<T0, T1, ETH> for TokenMap<T0, T1> {
-    type MapResult = T0;
-
-    fn get_ref(&self) -> &Self::MapResult {
-        &self.0
+impl<T0, T1, M0, M1> GenericMap<T0, T1, M0, M1> {
+    pub fn new(t0: T0, t1: T1) -> Self {
+        Self(t0, t1, PhantomData)
     }
 }
 
-impl<T0, T1> TokenMapGetter<T0, T1, ERC20> for TokenMap<T0, T1> {
-    type MapResult = T1;
+pub trait GenericMapAccessor<T0, T1, M0, M1> {
+    type Result;
 
-    fn get_ref(&self) -> &Self::MapResult {
-        &self.1
+    fn get_leg(map: &GenericMap<T0, T1, M0, M1>) -> &Self::Result;
+}
+
+// ETH and ERC20 implement trait TokenMarker
+type TokenMap<T0, T1> = GenericMap<T0, T1, ETH, ERC20>;
+
+// We have more such pairs like (HardcodedToken and CustomToken)
+// Can we have an abstraction to avoid implementing accessor trait for each pair?
+
+// // Getters for (ETH, ERC20)
+// impl<T0, T1> GenericMapAccessor<T0, T1, ETH, ERC20> for ETH {
+//     type Result = T0;
+
+//     fn get_leg(map: &TokenMap<T0, T1>) -> &Self::Result {
+//         &map.0
+//     }
+// }
+
+// impl<T0, T1> GenericMapAccessor<T0, T1, ETH, ERC20> for ERC20 {
+//     type Result = T1;
+
+//     fn get_leg(map: &TokenMap<T0, T1>) -> &Self::Result {
+//         &map.1
+//     }
+// }
+
+pub struct Marker0;
+pub struct Marker1;
+
+pub trait MapMarker {
+    type Marker;
+}
+
+impl MapMarker for ETH {
+    type Marker = Marker0;
+}
+
+impl MapMarker for ERC20 {
+    type Marker = Marker1;
+}
+
+impl<T0, T1, M0, M1> GenericMapAccessor<T0, T1, M0, M1> for Marker0 {
+    type Result = T0;
+
+    fn get_leg(map: &GenericMap<T0, T1, M0, M1>) -> &Self::Result {
+        &map.0
     }
 }
 
-// 2. ERC20Marker- HardcodedToken and CustomToken
-impl<T0, T1> TokenMapGetter<T0, T1, HardcodedToken> for ERC20Map<T0, T1> {
-    type MapResult = T0;
+impl<T0, T1, M0, M1> GenericMapAccessor<T0, T1, M0, M1> for Marker1 {
+    type Result = T1;
 
-    fn get_ref(&self) -> &Self::MapResult {
-        &self.0
+    fn get_leg(map: &GenericMap<T0, T1, M0, M1>) -> &Self::Result {
+        &map.1
     }
 }
+// problem- trait overlap
+// Even if we set trait bounds M0: First and M1: Second, it is possible for
+// a marker to implement both traits
+// This problem doesn't arise when we use concrete marker structs.
 
-impl<T0, T1> TokenMapGetter<T0, T1, ERC20> for ERC20Map<T0, T1> {
-    type MapResult = T1;
-
-    fn get_ref(&self) -> &Self::MapResult {
-        &self.1
-    }
-}
+// Think from the top
+// In PairShape::update<ETH, ERC20>() we first explicitly set generic to ETH
+// The top level value is known, rest of the inner functions become generic.
+//
+// For a struct of keys <ETH, ERC20>, we could have separate traits to operate on first
+// and second elements because the element is always known at the top level.
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
+    fn get_for_leg<T0, T1, M>(
+        token_map: &TokenMap<T0, T1>,
+    ) -> &<M as GenericMapAccessor<T0, T1, ETH, ERC20>>::Result
+    where
+        M: GenericMapAccessor<T0, T1, ETH, ERC20>,
+    {
+        M::get_leg(token_map)
+    }
+
     #[test]
-    fn test_access() {
-        let global_delta = TokenMap::<u8, u16>(0, 1);
+    fn test_read_from_token_map() {
+        let token_map = TokenMap::<u8, u16>::new(0, 1);
 
-        let eth_value = <TokenMap<u8, u16> as TokenMapGetter<u8, u16, ETH>>::get_ref(&global_delta);
-        let erc20_value =
-            <TokenMap<u8, u16> as TokenMapGetter<u8, u16, ERC20>>::get_ref(&global_delta);
+        let gg = <ETH as MapMarker>::Marker::get_leg(&token_map);
+        // let eth_amount = ETH::get_leg(&token_map);
 
-        // let eth_value = global_delta.get_ref::<u8, u8, ETH>();
+        // let eth_amount_v2 = get_for_leg::<u8, u16, ETH>(&token_map);
 
-        // TODO use get_ref() for ETH
+        // let erc_amount_v2 = get_for_leg::<u8, u16, ERC20>(&token_map);
     }
 }
