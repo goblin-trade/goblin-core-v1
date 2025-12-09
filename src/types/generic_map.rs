@@ -16,6 +16,8 @@ pub trait GenericMapAccessor<T0, T1, K> {
     type Result;
 
     fn get_leg(map: &GenericMap<T0, T1, K>) -> &Self::Result;
+
+    fn get_leg_mut(map: &mut GenericMap<T0, T1, K>) -> &mut Self::Result;
 }
 
 pub struct Marker<const N: usize, K>(PhantomData<K>);
@@ -26,6 +28,10 @@ impl<T0, T1, K> GenericMapAccessor<T0, T1, K> for Marker<0, K> {
     fn get_leg(map: &GenericMap<T0, T1, K>) -> &Self::Result {
         &map.0
     }
+
+    fn get_leg_mut(map: &mut GenericMap<T0, T1, K>) -> &mut Self::Result {
+        &mut map.0
+    }
 }
 
 impl<T0, T1, K> GenericMapAccessor<T0, T1, K> for Marker<1, K> {
@@ -33,6 +39,10 @@ impl<T0, T1, K> GenericMapAccessor<T0, T1, K> for Marker<1, K> {
 
     fn get_leg(map: &GenericMap<T0, T1, K>) -> &Self::Result {
         &map.1
+    }
+
+    fn get_leg_mut(map: &mut GenericMap<T0, T1, K>) -> &mut Self::Result {
+        &mut map.1
     }
 }
 
