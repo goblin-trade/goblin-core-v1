@@ -1,7 +1,5 @@
 use core::marker::PhantomData;
 
-use crate::token::{ERC20, ETH};
-
 #[repr(C)]
 #[derive(Clone, Copy, Default)]
 pub struct GenericMap<T0, T1, K>(T0, T1, PhantomData<K>);
@@ -46,7 +44,20 @@ impl<T0, T1, K> GenericMapAccessor<T0, T1, K> for Marker<1, K> {
     }
 }
 
-type TokenMap<T0, T1> = GenericMap<T0, T1, (ETH, ERC20)>;
+pub struct ETHERC20Pair;
+pub struct BaseQuotePair;
+pub struct HardcodedCustomPair;
+
+type TokenMap<T0, T1> = GenericMap<T0, T1, ETHERC20Pair>;
+
+type ETH = Marker<0, ETHERC20Pair>;
+type ERC20 = Marker<1, ETHERC20Pair>;
+
+type Base = Marker<0, BaseQuotePair>;
+type Quote = Marker<1, BaseQuotePair>;
+
+type HardcodedMarker = Marker<0, BaseQuotePair>;
+type CustomMarker = Marker<1, BaseQuotePair>;
 
 #[cfg(test)]
 mod tests {
@@ -54,14 +65,14 @@ mod tests {
 
     fn process_leg<T0, T1, M>(map: &TokenMap<T0, T1>) -> &M::Result
     where
-        M: GenericMapAccessor<T0, T1, (ETH, ERC20)>,
+        M: GenericMapAccessor<T0, T1, ETHERC20Pair>,
     {
         M::get_leg(map)
     }
 
     fn process_leg_typed<M>(map: &TokenMap<u8, u16>) -> &M::Result
     where
-        M: GenericMapAccessor<u8, u16, (ETH, ERC20)>,
+        M: GenericMapAccessor<u8, u16, ETHERC20Pair>,
     {
         M::get_leg(map)
     }
@@ -70,13 +81,12 @@ mod tests {
     fn test_read_from_token_map() {
         let token_map = TokenMap::<u8, u16>::new(0, 1);
 
-        let eth_amount = Marker::<0, (ETH, ERC20)>::get_leg(&token_map);
+        let eth_amount = Marker::<0, ETHERC20Pair>::get_leg(&token_map);
 
-        let eth_amount_v2 = process_leg::<u8, u16, Marker<0, (ETH, ERC20)>>(&token_map);
+        let eth_amount_v2 = process_leg::<u8, u16, Marker<0, ETHERC20Pair>>(&token_map);
 
-        let eth_amount_v3 = process_leg_typed::<Marker<0, (ETH, ERC20)>>(&token_map);
+        let eth_amount_v3 = process_leg_typed::<Marker<0, ETHERC20Pair>>(&token_map);
 
-        // Alt design where (ETH, ERC20) impl MarkerPair
-        // (ETH, ERC20)::Markers.0::get_leg()
+        let eth_amount_v4 = ETH::get_leg(&token_map);
     }
 }
