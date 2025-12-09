@@ -2,16 +2,18 @@ use core::marker::PhantomData;
 
 #[repr(C)]
 #[derive(Clone, Copy, Default)]
-pub struct GenericMap<T0, T1, K>(T0, T1, PhantomData<K>);
+pub struct GenericMap<T0: Clone + Copy, T1: Clone + Copy, K>(T0, T1, PhantomData<K>);
 
-impl<T0, T1, K> GenericMap<T0, T1, K> {
+impl<T0: Clone + Copy, T1: Clone + Copy, K> GenericMap<T0, T1, K> {
     pub fn new(t0: T0, t1: T1) -> Self {
         Self(t0, t1, PhantomData)
     }
 }
 
-pub trait GenericMapAccessor<T0, T1, K> {
+pub trait GenericMapAccessor<T0: Clone + Copy, T1: Clone + Copy, K> {
     type Result;
+
+    fn get(map: &GenericMap<T0, T1, K>) -> Self::Result;
 
     fn get_leg(map: &GenericMap<T0, T1, K>) -> &Self::Result;
 
@@ -20,8 +22,12 @@ pub trait GenericMapAccessor<T0, T1, K> {
 
 pub struct Marker<const N: usize, K>(PhantomData<K>);
 
-impl<T0, T1, K> GenericMapAccessor<T0, T1, K> for Marker<0, K> {
+impl<T0: Clone + Copy, T1: Clone + Copy, K> GenericMapAccessor<T0, T1, K> for Marker<0, K> {
     type Result = T0;
+
+    fn get(map: &GenericMap<T0, T1, K>) -> Self::Result {
+        map.0
+    }
 
     fn get_leg(map: &GenericMap<T0, T1, K>) -> &Self::Result {
         &map.0
@@ -32,8 +38,12 @@ impl<T0, T1, K> GenericMapAccessor<T0, T1, K> for Marker<0, K> {
     }
 }
 
-impl<T0, T1, K> GenericMapAccessor<T0, T1, K> for Marker<1, K> {
+impl<T0: Clone + Copy, T1: Clone + Copy, K> GenericMapAccessor<T0, T1, K> for Marker<1, K> {
     type Result = T1;
+
+    fn get(map: &GenericMap<T0, T1, K>) -> Self::Result {
+        map.1
+    }
 
     fn get_leg(map: &GenericMap<T0, T1, K>) -> &Self::Result {
         &map.1
@@ -65,6 +75,8 @@ mod tests {
 
     fn process_leg<T0, T1, M>(map: &TokenMap<T0, T1>) -> &M::Result
     where
+        T0: Clone + Copy,
+        T1: Clone + Copy,
         M: GenericMapAccessor<T0, T1, ETHERC20Pair>,
     {
         M::get_leg(map)
