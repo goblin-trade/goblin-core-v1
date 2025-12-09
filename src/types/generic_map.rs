@@ -20,6 +20,7 @@ pub trait GenericMapAccessor<T0: Clone + Copy, T1: Clone + Copy, K> {
     fn get_leg_mut(map: &mut GenericMap<T0, T1, K>) -> &mut Self::Result;
 }
 
+#[derive(Clone, Copy, Default, PartialEq)]
 pub struct Marker<const N: usize, K>(PhantomData<K>);
 
 impl<T0: Clone + Copy, T1: Clone + Copy, K> GenericMapAccessor<T0, T1, K> for Marker<0, K> {
