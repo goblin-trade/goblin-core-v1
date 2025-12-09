@@ -18,7 +18,6 @@ pub mod settlement;
 pub mod state;
 pub mod token;
 pub mod types;
-pub mod utils;
 
 #[no_mangle]
 pub extern "C" fn user_entrypoint(len: usize) -> i32 {

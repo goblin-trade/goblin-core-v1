@@ -1,4 +1,7 @@
-use crate::{settlement::global_delta::UnsidedMakerDelta, types::Address, utils::FixedMap};
+use crate::{
+    settlement::global_delta::UnsidedMakerDelta,
+    types::{Address, FixedMap},
+};
 
 /// Global maker deltas for ETH
 pub type ETHMakerDeltas = FixedMap<Address, UnsidedMakerDelta, 16>;

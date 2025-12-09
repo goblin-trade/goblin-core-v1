@@ -1,4 +1,7 @@
-use crate::{settlement::local_delta::MakerDeltaPair, types::Address, utils::FixedMap};
+use crate::{
+    settlement::local_delta::MakerDeltaPair,
+    types::{Address, FixedMap},
+};
 
 pub const MAX_MAKERS: usize = 16;
 
