@@ -7,9 +7,9 @@ use crate::{
 
 /// Store of deposit amounts for the 3 PairShape variants
 pub struct LocalDepositStore {
-    pub eth_erc20: <Pair<ETH, ERC20> as PairShape>::ResolvedPair<DeltaAtoms>,
-    pub erc20_eth: <Pair<ERC20, ETH> as PairShape>::ResolvedPair<DeltaAtoms>,
-    pub erc20_erc20: <Pair<ERC20, ERC20> as PairShape>::ResolvedPair<DeltaAtoms>,
+    pub eth_erc20: <(ETH, ERC20) as PairShape>::ResolvedPair<DeltaAtoms>,
+    pub erc20_eth: <(ERC20, ETH) as PairShape>::ResolvedPair<DeltaAtoms>,
+    pub erc20_erc20: <(ERC20, ERC20) as PairShape>::ResolvedPair<DeltaAtoms>,
 }
 
 impl LocalDepositStore {
@@ -44,20 +44,20 @@ where
     }
 }
 
-impl LocalDeposits<Pair<ETH, ERC20>> for LocalDepositStore {
-    fn deposit_mut(&mut self) -> &mut <Pair<ETH, ERC20> as PairShape>::ResolvedPair<DeltaAtoms> {
+impl LocalDeposits<(ETH, ERC20)> for LocalDepositStore {
+    fn deposit_mut(&mut self) -> &mut <(ETH, ERC20) as PairShape>::ResolvedPair<DeltaAtoms> {
         &mut self.eth_erc20
     }
 }
 
-impl LocalDeposits<Pair<ERC20, ETH>> for LocalDepositStore {
-    fn deposit_mut(&mut self) -> &mut <Pair<ERC20, ETH> as PairShape>::ResolvedPair<DeltaAtoms> {
+impl LocalDeposits<(ERC20, ETH)> for LocalDepositStore {
+    fn deposit_mut(&mut self) -> &mut <(ERC20, ETH) as PairShape>::ResolvedPair<DeltaAtoms> {
         &mut self.erc20_eth
     }
 }
 
-impl LocalDeposits<Pair<ERC20, ERC20>> for LocalDepositStore {
-    fn deposit_mut(&mut self) -> &mut <Pair<ERC20, ERC20> as PairShape>::ResolvedPair<DeltaAtoms> {
+impl LocalDeposits<(ERC20, ERC20)> for LocalDepositStore {
+    fn deposit_mut(&mut self) -> &mut <(ERC20, ERC20) as PairShape>::ResolvedPair<DeltaAtoms> {
         &mut self.erc20_erc20
     }
 }

@@ -26,7 +26,7 @@ pub trait PairShape {
         Self: Sized;
 }
 
-impl PairShape for Pair<ETH, ERC20> {
+impl PairShape for (ETH, ERC20) {
     const DISCRIMINATOR: u8 = 0;
 
     type ResolvedPair<K> = K;
@@ -89,7 +89,7 @@ impl PairShape for Pair<ETH, ERC20> {
     }
 }
 
-impl PairShape for Pair<ERC20, ETH> {
+impl PairShape for (ERC20, ETH) {
     const DISCRIMINATOR: u8 = 1;
 
     type ResolvedPair<K> = K;
@@ -115,7 +115,7 @@ impl PairShape for Pair<ERC20, ETH> {
 
 /// A pair of two ERC20 tokens.
 /// The decoder guarantees that the two tokens are different.
-impl PairShape for Pair<ERC20, ERC20> {
+impl PairShape for (ERC20, ERC20) {
     const DISCRIMINATOR: u8 = 2;
 
     type ResolvedPair<K> = Pair<K, K>;

@@ -7,7 +7,6 @@ use crate::{
     settlement::Delta,
     token::HardcodedIndex,
     token::{ERC20, ETH},
-    types::Pair,
 };
 
 pub const CONTRACT_ADDRESS: [u8; 20] = [
@@ -44,12 +43,12 @@ pub fn processor(len: usize) -> Result<(), GoblinError> {
 
     for _ in 0..global_header.market_counts.hardcoded.eth_erc20 {
         let market_header = MarketHeader::decode(&ctx.args, offset, len)?;
-        HardcodedMarket::<Pair<ETH, ERC20>>::process(ctx, &market_header, delta, offset, len)?;
+        HardcodedMarket::<(ETH, ERC20)>::process(ctx, &market_header, delta, offset, len)?;
     }
 
     for _ in 0..global_header.market_counts.dynamic.eth_erc20 {
         let market_header = MarketHeader::decode(&ctx.args, offset, len)?;
-        DynamicMarket::<Pair<ETH, ERC20>>::process(
+        DynamicMarket::<(ETH, ERC20)>::process(
             ctx,
             &market_header,
             delta,

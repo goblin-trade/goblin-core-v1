@@ -55,11 +55,11 @@ where
     ) -> Result<Self, GoblinError>;
 }
 
-impl DynamicMarketHasher<Pair<ETH, ERC20>> for DynamicMarketKey<Pair<ETH, ERC20>> {
+impl DynamicMarketHasher<(ETH, ERC20)> for DynamicMarketKey<(ETH, ERC20)> {
     const BYTE_SIZE: usize = 1 + 20 * 1 + 8 * 3;
 
     fn hash(
-        market: &CommonMarket<DynamicIndex, Pair<ETH, ERC20>>,
+        market: &CommonMarket<DynamicIndex, (ETH, ERC20)>,
         custom_erc20_list: &[CustomToken],
     ) -> Result<Self, GoblinError> {
         let mut bytes = [0u8; Self::BYTE_SIZE];
@@ -82,11 +82,11 @@ impl DynamicMarketHasher<Pair<ETH, ERC20>> for DynamicMarketKey<Pair<ETH, ERC20>
     }
 }
 
-impl DynamicMarketHasher<Pair<ERC20, ETH>> for DynamicMarketKey<Pair<ERC20, ETH>> {
+impl DynamicMarketHasher<(ERC20, ETH)> for DynamicMarketKey<(ERC20, ETH)> {
     const BYTE_SIZE: usize = 1 + 20 * 1 + 8 * 3;
 
     fn hash(
-        market: &CommonMarket<DynamicIndex, Pair<ERC20, ETH>>,
+        market: &CommonMarket<DynamicIndex, (ERC20, ETH)>,
         custom_erc20_list: &[CustomToken],
     ) -> Result<Self, GoblinError> {
         let mut bytes = [0u8; Self::BYTE_SIZE];
@@ -109,11 +109,11 @@ impl DynamicMarketHasher<Pair<ERC20, ETH>> for DynamicMarketKey<Pair<ERC20, ETH>
     }
 }
 
-impl DynamicMarketHasher<Pair<ERC20, ERC20>> for DynamicMarketKey<Pair<ERC20, ERC20>> {
+impl DynamicMarketHasher<(ERC20, ERC20)> for DynamicMarketKey<(ERC20, ERC20)> {
     const BYTE_SIZE: usize = 1 + 20 * 2 + 8 * 3;
 
     fn hash(
-        market: &CommonMarket<DynamicIndex, Pair<ERC20, ERC20>>,
+        market: &CommonMarket<DynamicIndex, (ERC20, ERC20)>,
         custom_erc20_list: &[CustomToken],
     ) -> Result<Self, GoblinError> {
         let mut bytes = [0u8; Self::BYTE_SIZE];
