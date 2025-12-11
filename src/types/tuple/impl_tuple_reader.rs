@@ -1,25 +1,7 @@
 use crate::{
     token::{CustomToken, HardcodedToken, ERC20, ETH},
-    types::{Base, Quote},
+    types::{Base, Quote, Tuple, TupleReader},
 };
-use core::marker::PhantomData;
-
-#[derive(Clone, Copy, Default)]
-pub struct Tuple<T0, T1, K>(pub T0, pub T1, PhantomData<K>)
-where
-    T0: Clone + Copy,
-    T1: Clone + Copy;
-
-pub trait TupleReader<T0, T1, K>
-where
-    T0: Clone + Copy,
-    T1: Clone + Copy,
-{
-    type Result;
-    fn get(tuple: &Tuple<T0, T1, K>) -> Self::Result;
-    fn get_leg(tuple: &Tuple<T0, T1, K>) -> &Self::Result;
-    fn get_leg_mut(tuple: &mut Tuple<T0, T1, K>) -> &mut Self::Result;
-}
 
 /// Macro to implement TupleReader for a pair of types
 ///

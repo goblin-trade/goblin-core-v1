@@ -4,6 +4,7 @@ pub mod generic_map;
 pub mod leg;
 pub mod marker;
 pub mod pair;
+pub mod triple;
 pub mod tuple;
 
 pub use address::*;
@@ -12,4 +13,5 @@ pub use generic_map::*;
 pub use leg::*;
 pub use marker::*;
 pub use pair::*;
+pub use triple::*;
 pub use tuple::*;
