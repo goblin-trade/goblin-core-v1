@@ -19,20 +19,32 @@ use crate::types::{Base, Quote};
 /// ```
 #[repr(C)]
 #[derive(Clone, Copy, Default)]
-pub struct Pair<B, Q> {
+pub struct Pair<B, Q>
+where
+    B: Clone + Copy,
+    Q: Clone + Copy,
+{
     pub base: B,
     pub quote: Q,
 }
 
 /// Trait to generically access one leg of the pair given the generic <L: LegMarker>
-pub trait PairAccessor<B, Q> {
+pub trait PairAccessor<B, Q>
+where
+    B: Clone + Copy,
+    Q: Clone + Copy,
+{
     type Result;
 
     fn get_leg(pair: &Pair<B, Q>) -> &Self::Result;
     fn get_leg_mut(pair: &mut Pair<B, Q>) -> &mut Self::Result;
 }
 
-impl<B, Q> PairAccessor<B, Q> for Base {
+impl<B, Q> PairAccessor<B, Q> for Base
+where
+    B: Clone + Copy,
+    Q: Clone + Copy,
+{
     type Result = B;
 
     fn get_leg(pair: &Pair<B, Q>) -> &Self::Result {
@@ -44,7 +56,11 @@ impl<B, Q> PairAccessor<B, Q> for Base {
     }
 }
 
-impl<B, Q> PairAccessor<B, Q> for Quote {
+impl<B, Q> PairAccessor<B, Q> for Quote
+where
+    B: Clone + Copy,
+    Q: Clone + Copy,
+{
     type Result = Q;
 
     fn get_leg(pair: &Pair<B, Q>) -> &Self::Result {

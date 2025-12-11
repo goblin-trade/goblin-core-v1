@@ -13,7 +13,7 @@ use crate::{
 ///
 /// * Hardcoded market- has hardcoded tokens
 /// * Dynamic market- has dynamic tokens that can be either dynamic or custom
-pub trait MarketVariant {
+pub trait MarketVariant: Clone + Copy {
     const DISCRIMINATOR: u8;
 
     /// Key to read market state slot

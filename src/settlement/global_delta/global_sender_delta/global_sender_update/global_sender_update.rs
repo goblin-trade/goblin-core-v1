@@ -11,7 +11,7 @@ use crate::{
 ///
 /// Unlike TakerDelta which holds updates for tokens on both side,
 /// GlobalUpdate represents balance updates for one token.
-#[derive(Default, PartialEq)]
+#[derive(Default, PartialEq, Clone, Copy)]
 pub struct GlobalSenderUpdate<In: LegMarker> {
     /// Matched atoms for the given token
     pub matched_atoms: MatchedAtoms<In>,

@@ -81,6 +81,4 @@ macro_rules! impl_triple_reader {
     };
 }
 
-// Apply the macro to create implementations for the triple of tuples
-// ((ETH, ERC20), (ERC20, ETH), (ERC20, ERC20))
 impl_triple_reader!((ETH, ERC20), (ERC20, ETH), (ERC20, ERC20));

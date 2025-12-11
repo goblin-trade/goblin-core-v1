@@ -2,6 +2,7 @@ use crate::quantities::QuantityOps;
 use crate::settlement::MatchedLots;
 use crate::types::LegMarker;
 
+#[derive(Clone, Copy)]
 pub struct TakerDelta<In: LegMarker> {
     /// Matched lots
     pub matched_lots: MatchedLots<In>,

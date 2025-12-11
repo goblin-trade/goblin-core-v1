@@ -6,6 +6,7 @@ use crate::{
 
 /// Pending update to maker state for the token at In
 /// Eg. for In: Base, these updates will apply on the Base token maker delta
+#[derive(Clone, Copy)]
 pub struct GlobalMakerUpdate<In: LegMarker> {
     /// Matched atoms
     pub matched_atoms: MatchedAtoms<In>,

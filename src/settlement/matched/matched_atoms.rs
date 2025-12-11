@@ -5,7 +5,7 @@ use crate::{
 };
 
 /// Matched atoms for a given token
-#[derive(Default, PartialEq)]
+#[derive(Default, PartialEq, Clone, Copy)]
 pub struct MatchedAtoms<In: LegMarker> {
     /// Atoms traded in by taker and gained by maker
     pub taker_in: In::Atoms,
