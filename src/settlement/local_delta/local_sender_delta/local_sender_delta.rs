@@ -10,9 +10,9 @@ pub struct LocalSenderDelta {
 }
 
 impl LocalSenderDelta {
-    pub const fn new() -> Self {
+    pub const fn zero() -> Self {
         Self {
-            taker_delta_pair: TakerDeltaPair::new(),
+            taker_delta_pair: TakerDeltaPair::zero(),
         }
     }
 }

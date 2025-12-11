@@ -11,7 +11,7 @@ pub struct MatchedLots<In: LegMarker> {
 }
 
 impl<In: LegMarker> MatchedLots<In> {
-    pub const fn new() -> Self {
+    pub const fn zero() -> Self {
         Self {
             taker_in: In::MatchingLots::ZERO,
             taker_out: <In::Opposite as LegMarker>::MatchingLots::ZERO,

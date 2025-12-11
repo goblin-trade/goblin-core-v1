@@ -7,7 +7,7 @@ use crate::{
 pub type MakerDeltaPair = Pair<MakerDelta<Base>, MakerDelta<Quote>>;
 
 impl MakerDeltaPair {
-    pub const fn new() -> Self {
-        Tuple::new2(MakerDelta::<Base>::new(), MakerDelta::<Quote>::new())
+    pub const fn zero() -> Self {
+        Tuple::new2(MakerDelta::<Base>::zero(), MakerDelta::<Quote>::zero())
     }
 }

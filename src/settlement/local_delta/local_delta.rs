@@ -17,11 +17,11 @@ pub struct LocalDelta {
 }
 
 impl LocalDelta {
-    pub const fn new() -> Self {
+    pub const fn zero() -> Self {
         Self {
-            local_sender_delta: LocalSenderDelta::new(),
-            local_maker_deltas: LocalMakerDeltas::new(),
-            deposits: LocalDepositStore::new(),
+            local_sender_delta: LocalSenderDelta::zero(),
+            local_maker_deltas: LocalMakerDeltas::zero(),
+            deposits: LocalDepositStore::zero(),
         }
     }
 
@@ -32,7 +32,7 @@ impl LocalDelta {
         P::ResolvedPair<DeltaAtoms>: Default,
         LocalDepositStore: LocalDeposits<P>,
     {
-        self.local_sender_delta = LocalSenderDelta::new();
+        self.local_sender_delta = LocalSenderDelta::zero();
         self.local_maker_deltas.reset();
         self.deposits.reset();
     }
@@ -43,14 +43,6 @@ impl LocalDelta {
 //     P: PairShape + Decodable<P::ResolvedPair<DeltaAtoms>>,
 //     P::ResolvedPair<DeltaAtoms>: Default,
 // {
-//     pub const fn new() -> Self {
-//         Self {
-//             local_sender_delta: LocalSenderDelta::new(),
-//             local_maker_deltas: LocalMakerDeltas::new(),
-//             // deposit_pair: (),
-//         }
-//     }
-
 //     // pub fn set_deposit_amounts(
 //     //     &mut self,
 //     //     decode_deposit_amounts: bool,

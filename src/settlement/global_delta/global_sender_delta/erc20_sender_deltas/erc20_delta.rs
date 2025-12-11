@@ -17,10 +17,10 @@ pub struct ERC20Delta {
 }
 
 impl ERC20Delta {
-    pub const fn new() -> Self {
+    pub const fn zero() -> Self {
         Self {
             deposit_due: DeltaAtoms::ZERO,
-            unsided_sender_delta: UnsidedSenderDelta::new(),
+            unsided_sender_delta: UnsidedSenderDelta::zero(),
         }
     }
 

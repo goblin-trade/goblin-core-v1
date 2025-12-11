@@ -6,10 +6,10 @@ pub struct Delta {
 }
 
 impl Delta {
-    pub const fn new() -> Self {
+    pub const fn zero() -> Self {
         Self {
-            global: GlobalDelta::new(),
-            local: LocalDelta::new(),
+            global: GlobalDelta::zero(),
+            local: LocalDelta::zero(),
         }
     }
 }

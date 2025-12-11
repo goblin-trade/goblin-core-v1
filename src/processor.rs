@@ -18,10 +18,10 @@ pub const CONTRACT_ADDRESS: [u8; 20] = [
 ///
 /// `static mut` allows us to take advantage of the fact that lienar memory is zero filled.
 /// We get an empty starting buffer without the cost of zeroing.
-static mut HOSTIO_CONTEXT: HostioContext = HostioContext::new();
+static mut HOSTIO_CONTEXT: HostioContext = HostioContext::zero();
 
 /// Delta, initially zero filled.
-static mut DELTA: Delta = Delta::new();
+static mut DELTA: Delta = Delta::zero();
 
 pub fn processor(len: usize) -> Result<(), GoblinError> {
     let msg_reentrant = hostio::msg_reentrant();

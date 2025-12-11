@@ -14,19 +14,19 @@ pub struct ERC20MakerDeltas {
 }
 
 impl ERC20MakerDeltas {
-    pub const fn new() -> Self {
+    pub const fn zero() -> Self {
         Self {
             hardcoded_token_deltas: FixedMap {
                 entries: [(
-                    ERC20MakerDeltaKey::<HardcodedToken>::new(),
-                    UnsidedMakerDelta::new(),
+                    ERC20MakerDeltaKey::<HardcodedToken>::zero(),
+                    UnsidedMakerDelta::zero(),
                 ); 16],
                 len: 0,
             },
             custom_token_deltas: FixedMap {
                 entries: [(
-                    ERC20MakerDeltaKey::<CustomToken>::new(),
-                    UnsidedMakerDelta::new(),
+                    ERC20MakerDeltaKey::<CustomToken>::zero(),
+                    UnsidedMakerDelta::zero(),
                 ); 16],
                 len: 0,
             },

@@ -10,10 +10,10 @@ pub struct GlobalMakerDeltas {
 }
 
 impl GlobalMakerDeltas {
-    pub const fn new() -> Self {
+    pub const fn zero() -> Self {
         Self {
-            eth_deltas: ETHMakerDeltas::new(),
-            erc20_deltas: ERC20MakerDeltas::new(),
+            eth_deltas: ETHMakerDeltas::zero(),
+            erc20_deltas: ERC20MakerDeltas::zero(),
         }
     }
 }

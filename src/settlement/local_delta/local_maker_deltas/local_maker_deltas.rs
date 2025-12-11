@@ -11,9 +11,9 @@ pub const MAX_MAKERS: usize = 16;
 pub type LocalMakerDeltas = FixedMap<Address, MakerDeltaPair, MAX_MAKERS>;
 
 impl LocalMakerDeltas {
-    pub const fn new() -> Self {
+    pub const fn zero() -> Self {
         Self {
-            entries: [([0u8; 20], MakerDeltaPair::new()); MAX_MAKERS],
+            entries: [([0u8; 20], MakerDeltaPair::zero()); MAX_MAKERS],
             len: 0,
         }
     }

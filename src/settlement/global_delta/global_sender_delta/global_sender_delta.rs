@@ -10,10 +10,10 @@ pub struct GlobalSenderDelta {
 }
 
 impl GlobalSenderDelta {
-    pub const fn new() -> Self {
+    pub const fn zero() -> Self {
         Self {
-            eth_delta: EthDelta::new(),
-            erc20_deltas: ERC20SenderDeltas::new(),
+            eth_delta: EthDelta::zero(),
+            erc20_deltas: ERC20SenderDeltas::zero(),
         }
     }
 }

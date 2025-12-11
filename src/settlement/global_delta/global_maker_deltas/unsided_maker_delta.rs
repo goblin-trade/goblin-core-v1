@@ -13,9 +13,9 @@ pub struct UnsidedMakerDelta {
 }
 
 impl UnsidedMakerDelta {
-    pub const fn new() -> Self {
+    pub const fn zero() -> Self {
         Self {
-            matched_unsided_atoms: MatchedUnsidedAtoms::new(),
+            matched_unsided_atoms: MatchedUnsidedAtoms::zero(),
         }
     }
 

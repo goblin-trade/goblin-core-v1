@@ -6,7 +6,7 @@ pub struct HostioContext {
 }
 
 impl HostioContext {
-    pub const fn new() -> Self {
+    pub const fn zero() -> Self {
         Self {
             args: [0u8; 512],
             msg_sender: [0u8; 20],

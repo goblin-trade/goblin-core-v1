@@ -15,7 +15,7 @@ pub struct LocalDepositStore {
 }
 
 impl LocalDepositStore {
-    pub const fn new() -> Self {
+    pub const fn zero() -> Self {
         Self {
             eth_erc20: DeltaAtoms::ZERO,
             erc20_eth: DeltaAtoms::ZERO,

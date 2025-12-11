@@ -12,10 +12,10 @@ pub struct ERC20SenderDeltas {
 }
 
 impl ERC20SenderDeltas {
-    pub const fn new() -> Self {
+    pub const fn zero() -> Self {
         Self {
-            hardcoded_token_deltas: [ERC20Delta::new(); HARDCODED_TOKENS.len()],
-            custom_token_deltas: [ERC20Delta::new(); MAX_CUSTOM_DELTAS],
+            hardcoded_token_deltas: [ERC20Delta::zero(); HARDCODED_TOKENS.len()],
+            custom_token_deltas: [ERC20Delta::zero(); MAX_CUSTOM_DELTAS],
         }
     }
 }

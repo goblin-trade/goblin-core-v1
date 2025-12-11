@@ -23,7 +23,7 @@ impl<In: LegMarker> From<&MatchedAtoms<In>> for MatchedUnsidedAtoms {
 }
 
 impl MatchedUnsidedAtoms {
-    pub const fn new() -> Self {
+    pub const fn zero() -> Self {
         Self {
             taker_in: UnsidedAtoms::ZERO,
             taker_out: UnsidedAtoms::ZERO,

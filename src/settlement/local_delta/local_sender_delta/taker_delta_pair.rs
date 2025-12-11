@@ -7,7 +7,7 @@ use crate::{
 pub type TakerDeltaPair = Pair<TakerDelta<Base>, TakerDelta<Quote>>;
 
 impl TakerDeltaPair {
-    pub const fn new() -> Self {
-        Tuple::new2(TakerDelta::<Base>::new(), TakerDelta::<Quote>::new())
+    pub const fn zero() -> Self {
+        Tuple::new2(TakerDelta::<Base>::zero(), TakerDelta::<Quote>::zero())
     }
 }

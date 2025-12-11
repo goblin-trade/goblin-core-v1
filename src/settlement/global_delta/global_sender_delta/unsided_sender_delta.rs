@@ -30,9 +30,9 @@ pub struct UnsidedSenderDelta {
 }
 
 impl UnsidedSenderDelta {
-    pub const fn new() -> Self {
+    pub const fn zero() -> Self {
         Self {
-            matched_unsided_atoms: MatchedUnsidedAtoms::new(),
+            matched_unsided_atoms: MatchedUnsidedAtoms::zero(),
             taker_self_trade_unlocked: UnsidedAtoms::ZERO,
             maker_locked: UnsidedAtoms::ZERO,
             cancel_unlocked: UnsidedAtoms::ZERO,

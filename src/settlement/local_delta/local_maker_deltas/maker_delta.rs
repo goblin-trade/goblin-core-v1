@@ -15,13 +15,13 @@ pub struct MakerDelta<In: LegMarker> {
 }
 
 impl<In: LegMarker> MakerDelta<In> {
-    pub const fn new() -> Self {
+    pub const fn zero() -> Self {
         Self {
-            matched_lots: MatchedLots::<In>::new(),
+            matched_lots: MatchedLots::<In>::zero(),
         }
     }
 
     pub fn not_empty(&self) -> bool {
-        *self != Self::new()
+        *self != Self::zero()
     }
 }

@@ -11,7 +11,7 @@ pub struct ERC20MakerDeltaKey<T: ERC20Marker> {
 }
 
 impl<T: ERC20Marker> ERC20MakerDeltaKey<T> {
-    pub const fn new() -> Self {
+    pub const fn zero() -> Self {
         Self {
             maker: [0u8; 20],
             token_index: TokenIndex::new(0),

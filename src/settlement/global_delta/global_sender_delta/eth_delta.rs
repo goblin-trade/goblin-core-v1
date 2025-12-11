@@ -25,11 +25,11 @@ pub struct EthDelta {
 }
 
 impl EthDelta {
-    pub const fn new() -> Self {
+    pub const fn zero() -> Self {
         Self {
             msg_value: UnsidedAtoms::ZERO,
             eth_out_due: UnsidedAtoms::ZERO,
-            unsided_sender_delta: UnsidedSenderDelta::new(),
+            unsided_sender_delta: UnsidedSenderDelta::zero(),
         }
     }
 

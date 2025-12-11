@@ -22,10 +22,10 @@ pub struct GlobalDelta {
 }
 
 impl GlobalDelta {
-    pub const fn new() -> Self {
+    pub const fn zero() -> Self {
         GlobalDelta {
-            global_sender_delta: GlobalSenderDelta::new(),
-            maker_deltas: GlobalMakerDeltas::new(),
+            global_sender_delta: GlobalSenderDelta::zero(),
+            maker_deltas: GlobalMakerDeltas::zero(),
         }
     }
 

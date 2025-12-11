@@ -12,9 +12,9 @@ pub struct TakerDelta<In: LegMarker> {
 }
 
 impl<In: LegMarker> TakerDelta<In> {
-    pub const fn new() -> Self {
+    pub const fn zero() -> Self {
         Self {
-            matched_lots: MatchedLots::<In>::new(),
+            matched_lots: MatchedLots::<In>::zero(),
             taker_self_trade_unlocked: <In::Opposite as LegMarker>::MatchingLots::ZERO,
         }
     }
