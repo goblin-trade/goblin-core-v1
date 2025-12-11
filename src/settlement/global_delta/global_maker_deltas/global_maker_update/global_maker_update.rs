@@ -1,7 +1,7 @@
 use crate::{
     markets::LotSizePair,
     settlement::{local_delta::MakerDeltaPair, MatchedAtoms, MatchedLots, MatchedLotsPair},
-    types::{Base, LegMarker, PairAccessor, Quote},
+    types::{Base, LegMarker, Quote, TupleReader},
 };
 
 /// Pending update to maker state for the token at In
@@ -15,13 +15,18 @@ pub struct GlobalMakerUpdate<In: LegMarker> {
 impl<In> GlobalMakerUpdate<In>
 where
     In: LegMarker
-        + PairAccessor<
+        + TupleReader<
             <Base as LegMarker>::LotsPerUnit,
             <Quote as LegMarker>::LotsPerUnit,
+            (Base, Quote),
             Result = In::LotsPerUnit,
-        > + PairAccessor<MatchedLots<Base>, MatchedLots<Quote>, Result = MatchedLots<In>>,
-    In::Opposite:
-        PairAccessor<MatchedLots<Base>, MatchedLots<Quote>, Result = MatchedLots<In::Opposite>>,
+        > + TupleReader<MatchedLots<Base>, MatchedLots<Quote>, (Base, Quote), Result = MatchedLots<In>>,
+    In::Opposite: TupleReader<
+        MatchedLots<Base>,
+        MatchedLots<Quote>,
+        (Base, Quote),
+        Result = MatchedLots<In::Opposite>,
+    >,
 {
     pub fn new(maker_delta_pair: &MakerDeltaPair, lot_size_pair: &LotSizePair) -> Self {
         let matched_lots_pair = MatchedLotsPair::from(maker_delta_pair);

@@ -2,8 +2,10 @@ use crate::{
     markets::PairShape,
     quantities::DeltaAtoms,
     token::{ERC20, ETH},
-    types::Pair,
+    types::Tuple,
 };
+
+// TODO replace with triple
 
 /// Store of deposit amounts for the 3 PairShape variants
 pub struct LocalDepositStore {
@@ -17,10 +19,7 @@ impl LocalDepositStore {
         Self {
             eth_erc20: DeltaAtoms::ZERO,
             erc20_eth: DeltaAtoms::ZERO,
-            erc20_erc20: Pair {
-                base: DeltaAtoms::ZERO,
-                quote: DeltaAtoms::ZERO,
-            },
+            erc20_erc20: Tuple::new2(DeltaAtoms::ZERO, DeltaAtoms::ZERO),
         }
     }
 }

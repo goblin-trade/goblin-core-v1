@@ -4,9 +4,8 @@ use crate::{
     markets::PairShape,
     quantities::DeltaAtoms,
     require,
-    token::DynamicIndex,
-    token::{ERC20, ETH},
-    types::Pair,
+    token::{DynamicIndex, ERC20, ETH},
+    types::Tuple,
 };
 
 impl Decodable<<(ETH, ERC20) as PairShape>::ResolvedPair<DynamicIndex>> for (ETH, ERC20) {
@@ -45,10 +44,7 @@ impl Decodable<<(ERC20, ERC20) as PairShape>::ResolvedPair<DynamicIndex>> for (E
         let base_index = DynamicIndex::new(byte_base)?;
         let quote_index = DynamicIndex::new(byte_quote)?;
 
-        Ok(Pair {
-            base: base_index,
-            quote: quote_index,
-        })
+        Ok(Tuple::new2(base_index, quote_index))
     }
 }
 
@@ -79,9 +75,9 @@ impl Decodable<<(ERC20, ERC20) as PairShape>::ResolvedPair<DeltaAtoms>> for (ERC
         offset: &mut usize,
         len: usize,
     ) -> Result<<(ERC20, ERC20) as PairShape>::ResolvedPair<DeltaAtoms>, GoblinError> {
-        Ok(Pair {
-            base: args.decode::<i64>(offset, len).map(DeltaAtoms::new)?,
-            quote: args.decode::<i64>(offset, len).map(DeltaAtoms::new)?,
-        })
+        Ok(Tuple::new2(
+            args.decode::<i64>(offset, len).map(DeltaAtoms::new)?,
+            args.decode::<i64>(offset, len).map(DeltaAtoms::new)?,
+        ))
     }
 }

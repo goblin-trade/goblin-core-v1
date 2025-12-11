@@ -14,6 +14,16 @@ where
     T0: Clone + Copy,
     T1: Clone + Copy;
 
+impl<T0, T1, K> Tuple<T0, T1, K>
+where
+    T0: Clone + Copy,
+    T1: Clone + Copy,
+{
+    pub const fn new2(t0: T0, t1: T1) -> Self {
+        Self(t0, t1, PhantomData)
+    }
+}
+
 pub trait TupleReader<T0, T1, K>
 where
     T0: Clone + Copy,

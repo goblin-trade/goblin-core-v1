@@ -2,14 +2,14 @@ use crate::{
     goblin_error::GoblinError,
     markets::{CommonMarket, MarketVariant, PairShape},
     matching::quote_iterator::RestingOrderPositionIterator,
-    quantities::{QuantityOps, Ticks},
+    quantities::{BaseLotsPerBaseUnit, QuantityOps, QuoteLotsPerQuoteUnit, Ticks},
     require,
     settlement::{
         local_delta::{LocalDelta, MakerDelta, TakerDelta},
         MatchedLots,
     },
     state::{MarketState, RestingOrder, RestingOrderKey, SlotState},
-    types::{Address, Base, LegMarker, PairAccessor, Quote},
+    types::{Address, Base, LegMarker, Quote, TupleReader},
 };
 
 pub fn match_order<M, P, In>(
@@ -25,11 +25,18 @@ where
     M: MarketVariant,
     P: PairShape,
     In: LegMarker
-        + PairAccessor<MakerDelta<Base>, MakerDelta<Quote>, Result = MakerDelta<In>>
-        + PairAccessor<TakerDelta<Base>, TakerDelta<Quote>, Result = TakerDelta<In>>,
-    In::Opposite: PairAccessor<Ticks, Ticks, Result = Ticks>,
+        + TupleReader<MakerDelta<Base>, MakerDelta<Quote>, (Base, Quote), Result = MakerDelta<In>>
+        + TupleReader<TakerDelta<Base>, TakerDelta<Quote>, (Base, Quote), Result = TakerDelta<In>>
+        + TupleReader<
+            BaseLotsPerBaseUnit,
+            QuoteLotsPerQuoteUnit,
+            (Base, Quote),
+            Result = In::LotsPerUnit,
+        >,
+    In::Opposite: TupleReader<Ticks, Ticks, (Base, Quote), Result = Ticks>,
 {
-    let budget = In::matching_lots_taker(num_lots, market.lot_size_pair.base);
+    let base_lot_size = Base::get(&market.lot_size_pair);
+    let budget = In::matching_lots_taker(num_lots, base_lot_size);
 
     // The amount matched and transferred in, i.e lost by taker and transferred to makers.
     // We keep matching until

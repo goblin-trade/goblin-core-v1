@@ -6,9 +6,8 @@ use crate::{
     markets::{CommonMarket, MarketVariant, PairShape},
     quantities::Ticks,
     state::{SlotKey, SlotState},
-    token::{CustomToken, DynamicIndex, HardcodedToken, TokenIndex},
-    token::{ERC20, ETH},
-    types::Pair,
+    token::{CustomToken, DynamicIndex, HardcodedToken, TokenIndex, ERC20, ETH},
+    types::{Base, Pair, Quote, TupleReader},
 };
 
 /// The hash is hardcoded for hardcoded markets
@@ -69,8 +68,8 @@ impl DynamicMarketHasher<(ETH, ERC20)> for DynamicMarketKey<(ETH, ERC20)> {
 
         bytes[1..21].copy_from_slice(&quote_address);
 
-        bytes[21..29].copy_from_slice(&market.lot_size_pair.base.inner.to_le_bytes());
-        bytes[29..37].copy_from_slice(&market.lot_size_pair.quote.inner.to_le_bytes());
+        bytes[21..29].copy_from_slice(&Base::get(&market.lot_size_pair).inner.to_le_bytes());
+        bytes[29..37].copy_from_slice(&Quote::get(&market.lot_size_pair).inner.to_le_bytes());
         bytes[37..45].copy_from_slice(&market.tick_size.inner.to_le_bytes());
 
         let hash = hostio::native_keccak256(bytes.as_slice());
@@ -96,8 +95,8 @@ impl DynamicMarketHasher<(ERC20, ETH)> for DynamicMarketKey<(ERC20, ETH)> {
 
         bytes[1..21].copy_from_slice(&quote_address);
 
-        bytes[21..29].copy_from_slice(&market.lot_size_pair.base.inner.to_le_bytes());
-        bytes[29..37].copy_from_slice(&market.lot_size_pair.quote.inner.to_le_bytes());
+        bytes[21..29].copy_from_slice(&Base::get(&market.lot_size_pair).inner.to_le_bytes());
+        bytes[29..37].copy_from_slice(&Quote::get(&market.lot_size_pair).inner.to_le_bytes());
         bytes[37..45].copy_from_slice(&market.tick_size.inner.to_le_bytes());
 
         let hash = hostio::native_keccak256(bytes.as_slice());
@@ -119,15 +118,14 @@ impl DynamicMarketHasher<(ERC20, ERC20)> for DynamicMarketKey<(ERC20, ERC20)> {
         let mut bytes = [0u8; Self::BYTE_SIZE];
         bytes[0] = Self::DISCRIMINATOR;
 
-        let base_address = market.token_index_pair.base.address(custom_erc20_list)?;
-
-        let quote_address = market.token_index_pair.base.address(custom_erc20_list)?;
+        let base_address = Base::get(&market.token_index_pair).address(custom_erc20_list)?;
+        let quote_address = Quote::get(&market.token_index_pair).address(custom_erc20_list)?;
 
         bytes[1..21].copy_from_slice(&base_address);
         bytes[21..41].copy_from_slice(&quote_address);
 
-        bytes[41..49].copy_from_slice(&market.lot_size_pair.base.inner.to_le_bytes());
-        bytes[49..57].copy_from_slice(&market.lot_size_pair.quote.inner.to_le_bytes());
+        bytes[41..49].copy_from_slice(&Base::get(&market.lot_size_pair).inner.to_le_bytes());
+        bytes[49..57].copy_from_slice(&Quote::get(&market.lot_size_pair).inner.to_le_bytes());
         bytes[57..65].copy_from_slice(&market.tick_size.inner.to_le_bytes());
 
         let hash = hostio::native_keccak256(bytes.as_slice());

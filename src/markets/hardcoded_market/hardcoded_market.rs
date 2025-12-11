@@ -11,7 +11,7 @@ use crate::{
     },
     state::{HardcodedMarketKey, MarketState, SlotState},
     token::HardcodedIndex,
-    types::Base,
+    types::{Base, TupleReader},
 };
 
 /// A market hardcoded within the smart contract. It keccak hash is also hardcoded,
@@ -56,7 +56,7 @@ where
         }
 
         // Take bid and take quote
-        if market_header.execute_takes.base {
+        if Base::get(&market_header.execute_takes) {
             ix_take::<HardcodedIndex, P, Base>(
                 ctx,
                 &mut delta.local,

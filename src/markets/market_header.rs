@@ -1,7 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::{ArgsBuffer, ArgsDecoder},
-    types::Pair,
+    types::{Pair, Tuple},
 };
 
 pub struct MarketHeader {
@@ -21,10 +21,12 @@ impl MarketHeader {
 
         let decode_deposit_amounts = (byte_0 & 0b0000_0001) != 0;
 
-        let execute_takes = Pair {
-            base: (byte_0 & 0b0000_0010) != 0,
-            quote: (byte_0 & 0b0000_0100) != 0,
-        };
+        let execute_takes = Tuple::new2(
+            // base
+            (byte_0 & 0b0000_0010) != 0,
+            // quote
+            (byte_0 & 0b0000_0100) != 0,
+        );
 
         // 2 bits- max value 3
         // Too less, decipher one more byte

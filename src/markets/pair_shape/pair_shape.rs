@@ -49,7 +49,7 @@ impl PairShape for (ETH, ERC20) {
         sender_delta
             .eth_delta
             .unsided_sender_delta
-            .add_global_update::<Base>(&sender_update_pair.base)
+            .add_global_update::<Base>(&sender_update_pair.0)
             .ok_or(GoblinError::DeltaOverflow)?;
 
         // Update quote
@@ -57,7 +57,7 @@ impl PairShape for (ETH, ERC20) {
         let quote_delta = quote_token_index.token_sender_delta_mut(&mut sender_delta.erc20_deltas);
 
         let deposit_pair = LocalDeposits::<Self>::deposit_mut(&mut delta.local.deposits);
-        quote_delta.apply_global_update::<Quote>(*deposit_pair, &sender_update_pair.quote)?;
+        quote_delta.apply_global_update::<Quote>(*deposit_pair, &sender_update_pair.1)?;
 
         for (maker, maker_delta_pair) in delta.local.local_maker_deltas.iter() {
             let maker_update_pair =
@@ -72,7 +72,7 @@ impl PairShape for (ETH, ERC20) {
                 .ok_or(GoblinError::MakerListFull)?;
 
             global_maker_delta_eth_base
-                .add_global_update::<Base>(&maker_update_pair.base)
+                .add_global_update::<Base>(&maker_update_pair.0)
                 .ok_or(GoblinError::DeltaOverflow)?;
 
             // Update quote (ERC20)
@@ -81,7 +81,7 @@ impl PairShape for (ETH, ERC20) {
                 .ok_or(GoblinError::MakerListFull)?;
 
             global_maker_delta_erc20_quote
-                .add_global_update(&maker_update_pair.quote)
+                .add_global_update(&maker_update_pair.1)
                 .ok_or(GoblinError::DeltaOverflow)?;
         }
 

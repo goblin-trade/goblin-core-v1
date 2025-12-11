@@ -1,5 +1,7 @@
 use core::marker::PhantomData;
 
+// TODO use in LocalDepositStore and input args
+
 /// Three field storage for marker type K. K is a triple of marker structs like
 /// ((ETH, ERC20), (ERC20, ETH), (ERC20, ERC20)).
 ///

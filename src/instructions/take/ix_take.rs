@@ -4,10 +4,10 @@ use crate::{
     instructions::take::take_packet::TakePacket,
     markets::{CommonMarket, MarketVariant, PairShape},
     matching::match_order,
-    quantities::Ticks,
+    quantities::{BaseLotsPerBaseUnit, QuoteLotsPerQuoteUnit, Ticks},
     settlement::local_delta::{LocalDelta, MakerDelta, TakerDelta},
     state::MarketState,
-    types::{Base, LegMarker, PairAccessor, Quote},
+    types::{Base, LegMarker, Quote, TupleReader},
 };
 
 pub fn ix_take<M, P, In>(
@@ -22,9 +22,15 @@ where
     M: MarketVariant,
     P: PairShape,
     In: LegMarker
-        + PairAccessor<MakerDelta<Base>, MakerDelta<Quote>, Result = MakerDelta<In>>
-        + PairAccessor<TakerDelta<Base>, TakerDelta<Quote>, Result = TakerDelta<In>>,
-    In::Opposite: PairAccessor<Ticks, Ticks, Result = Ticks>,
+        + TupleReader<MakerDelta<Base>, MakerDelta<Quote>, (Base, Quote), Result = MakerDelta<In>>
+        + TupleReader<TakerDelta<Base>, TakerDelta<Quote>, (Base, Quote), Result = TakerDelta<In>>
+        + TupleReader<
+            BaseLotsPerBaseUnit,
+            QuoteLotsPerQuoteUnit,
+            (Base, Quote),
+            Result = In::LotsPerUnit,
+        >,
+    In::Opposite: TupleReader<Ticks, Ticks, (Base, Quote), Result = Ticks>,
 {
     let packet = TakePacket::<In>::decode(&ctx.args, len, offset)?;
 

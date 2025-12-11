@@ -1,4 +1,4 @@
-use crate::types::{Base, Quote};
+use crate::types::{Base, Quote, Tuple};
 
 /// A generic container for the base and quote sides of a market.
 ///
@@ -11,63 +11,11 @@ use crate::types::{Base, Quote};
 ///
 /// fn use_lot_size<In>(legs: &LotSizePair)
 /// where
-///     In: LegMarker + PairAccessor<BaseLotsPerBaseUnit, QuoteLotsPerQuoteUnit, Result = In::LotsPerUnit>,
+///     In: LegMarker + TupleReader<BaseLotsPerBaseUnit, QuoteLotsPerQuoteUnit, (Base, Quote), Result = In::LotsPerUnit>,
 /// {
 ///     let lot_size = In::get_leg(legs);
 ///     assert!(In::lots_per_unit_valid(*lot_size));
 /// }
 /// ```
-#[repr(C)]
-#[derive(Clone, Copy, Default)]
-pub struct Pair<B, Q>
-where
-    B: Clone + Copy,
-    Q: Clone + Copy,
-{
-    pub base: B,
-    pub quote: Q,
-}
 
-/// Trait to generically access one leg of the pair given the generic <L: LegMarker>
-pub trait PairAccessor<B, Q>
-where
-    B: Clone + Copy,
-    Q: Clone + Copy,
-{
-    type Result;
-
-    fn get_leg(pair: &Pair<B, Q>) -> &Self::Result;
-    fn get_leg_mut(pair: &mut Pair<B, Q>) -> &mut Self::Result;
-}
-
-impl<B, Q> PairAccessor<B, Q> for Base
-where
-    B: Clone + Copy,
-    Q: Clone + Copy,
-{
-    type Result = B;
-
-    fn get_leg(pair: &Pair<B, Q>) -> &Self::Result {
-        &pair.base
-    }
-
-    fn get_leg_mut(pair: &mut Pair<B, Q>) -> &mut Self::Result {
-        &mut pair.base
-    }
-}
-
-impl<B, Q> PairAccessor<B, Q> for Quote
-where
-    B: Clone + Copy,
-    Q: Clone + Copy,
-{
-    type Result = Q;
-
-    fn get_leg(pair: &Pair<B, Q>) -> &Self::Result {
-        &pair.quote
-    }
-
-    fn get_leg_mut(pair: &mut Pair<B, Q>) -> &mut Self::Result {
-        &mut pair.quote
-    }
-}
+pub type Pair<T0, T1> = Tuple<T0, T1, (Base, Quote)>;
