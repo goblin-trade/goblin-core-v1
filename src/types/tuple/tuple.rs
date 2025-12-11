@@ -19,7 +19,7 @@ where
     T0: Clone + Copy,
     T1: Clone + Copy,
 {
-    pub const fn new2(t0: T0, t1: T1) -> Self {
+    pub const fn new(t0: T0, t1: T1) -> Self {
         Self(t0, t1, PhantomData)
     }
 }

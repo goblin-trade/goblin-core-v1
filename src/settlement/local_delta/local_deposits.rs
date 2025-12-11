@@ -19,7 +19,7 @@ impl LocalDepositStore {
         Self {
             eth_erc20: DeltaAtoms::ZERO,
             erc20_eth: DeltaAtoms::ZERO,
-            erc20_erc20: Tuple::new2(DeltaAtoms::ZERO, DeltaAtoms::ZERO),
+            erc20_erc20: Tuple::new(DeltaAtoms::ZERO, DeltaAtoms::ZERO),
         }
     }
 }

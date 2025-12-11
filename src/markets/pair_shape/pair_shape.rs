@@ -39,7 +39,7 @@ impl PairShape for (ETH, ERC20) {
         M: MarketVariant + Clone + Copy,
         Self: Sized,
     {
-        let sender_update_pair = GlobalSenderUpdatePair::new(
+        let sender_update_pair = GlobalSenderUpdatePair::new_pair(
             &delta.local.local_sender_delta.taker_delta_pair,
             &common_market.lot_size_pair,
         );
@@ -61,7 +61,7 @@ impl PairShape for (ETH, ERC20) {
 
         for (maker, maker_delta_pair) in delta.local.local_maker_deltas.iter() {
             let maker_update_pair =
-                GlobalMakerUpdatePair::new(maker_delta_pair, &common_market.lot_size_pair);
+                GlobalMakerUpdatePair::new_pair(maker_delta_pair, &common_market.lot_size_pair);
 
             // Update base (ETH)
             let global_maker_delta_eth_base = delta

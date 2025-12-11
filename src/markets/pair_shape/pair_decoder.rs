@@ -44,7 +44,7 @@ impl Decodable<<(ERC20, ERC20) as PairShape>::ResolvedPair<DynamicIndex>> for (E
         let base_index = DynamicIndex::new(byte_base)?;
         let quote_index = DynamicIndex::new(byte_quote)?;
 
-        Ok(Tuple::new2(base_index, quote_index))
+        Ok(Tuple::new(base_index, quote_index))
     }
 }
 
@@ -75,7 +75,7 @@ impl Decodable<<(ERC20, ERC20) as PairShape>::ResolvedPair<DeltaAtoms>> for (ERC
         offset: &mut usize,
         len: usize,
     ) -> Result<<(ERC20, ERC20) as PairShape>::ResolvedPair<DeltaAtoms>, GoblinError> {
-        Ok(Tuple::new2(
+        Ok(Tuple::new(
             args.decode::<i64>(offset, len).map(DeltaAtoms::new)?,
             args.decode::<i64>(offset, len).map(DeltaAtoms::new)?,
         ))

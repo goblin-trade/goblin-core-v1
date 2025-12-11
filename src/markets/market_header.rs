@@ -21,7 +21,7 @@ impl MarketHeader {
 
         let decode_deposit_amounts = (byte_0 & 0b0000_0001) != 0;
 
-        let execute_takes = Tuple::new2(
+        let execute_takes = Tuple::new(
             // base
             (byte_0 & 0b0000_0010) != 0,
             // quote
