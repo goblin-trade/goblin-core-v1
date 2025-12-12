@@ -5,13 +5,10 @@ use crate::{
     instructions::ix_take,
     markets::{CommonMarket, HardcodedMarketList, MarketHeader, PairShape},
     quantities::DeltaAtoms,
-    settlement::{
-        local_delta::{LocalDepositStore, LocalDeposits},
-        Delta,
-    },
+    settlement::Delta,
     state::{HardcodedMarketKey, MarketState, SlotState},
-    token::HardcodedIndex,
-    types::{Base, TupleReader},
+    token::{HardcodedIndex, ERC20, ETH},
+    types::{Base, Pair, TripleReader, TupleReader},
 };
 
 /// A market hardcoded within the smart contract. It keccak hash is also hardcoded,
@@ -32,10 +29,18 @@ where
 
 impl<P> HardcodedMarket<P>
 where
-    P: PairShape + 'static + Decodable<P::ResolvedPair<DeltaAtoms>>,
+    P: PairShape
+        + 'static
+        + Decodable<P::ResolvedPair<DeltaAtoms>>
+        + TripleReader<
+            DeltaAtoms,
+            DeltaAtoms,
+            Pair<DeltaAtoms, DeltaAtoms>,
+            ((ETH, ERC20), (ERC20, ETH), (ERC20, ERC20)),
+            Result = P::ResolvedPair<DeltaAtoms>,
+        >,
     P::ResolvedPair<DeltaAtoms>: Default,
     Self: HardcodedMarketList<P>,
-    LocalDepositStore: LocalDeposits<P>,
 {
     // TODO define common trait for both market types if they have common arguments
     // Currently HardcodedMarket doesn't require custom_erc20_list
@@ -51,7 +56,7 @@ where
 
         if market_header.decode_deposit_amounts {
             // TODO add deposit directly here? It could make P::commit_local_delta() cleaner
-            let deposit_pair = delta.local.deposits.deposit_mut();
+            let deposit_pair = P::get_leg_mut(&mut delta.local.deposits);
             *deposit_pair = P::decode(&ctx.args, offset, len)?;
         }
 
@@ -71,7 +76,7 @@ where
         P::commit_local_delta(&market.common, delta)?;
 
         // Reset local delta for reuse
-        delta.local.reset();
+        delta.local.reset::<P>();
 
         Ok(())
     }

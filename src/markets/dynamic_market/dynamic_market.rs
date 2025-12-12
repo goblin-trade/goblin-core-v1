@@ -5,13 +5,10 @@ use crate::{
     instructions::ix_take,
     markets::{CommonMarket, MarketHeader, PairShape},
     quantities::DeltaAtoms,
-    settlement::{
-        local_delta::{LocalDepositStore, LocalDeposits},
-        Delta,
-    },
+    settlement::Delta,
     state::{DynamicMarketHasher, DynamicMarketKey, MarketState, SlotState},
-    token::{CustomToken, DynamicIndex},
-    types::{Base, Quote, TupleReader},
+    token::{CustomToken, DynamicIndex, ERC20, ETH},
+    types::{Base, Pair, Quote, TripleReader, TupleReader},
 };
 
 /// A market whose token indices are dynamically specified at runtime.
@@ -29,10 +26,16 @@ impl<P> DynamicMarket<P>
 where
     P: PairShape
         + Decodable<P::ResolvedPair<DynamicIndex>>
-        + Decodable<P::ResolvedPair<DeltaAtoms>>,
+        + Decodable<P::ResolvedPair<DeltaAtoms>>
+        + TripleReader<
+            DeltaAtoms,
+            DeltaAtoms,
+            Pair<DeltaAtoms, DeltaAtoms>,
+            ((ETH, ERC20), (ERC20, ETH), (ERC20, ERC20)),
+            Result = P::ResolvedPair<DeltaAtoms>,
+        >,
     P::ResolvedPair<DeltaAtoms>: Default,
     DynamicMarketKey<P>: DynamicMarketHasher<P>,
-    LocalDepositStore: LocalDeposits<P>,
 {
     pub fn process(
         ctx: &HostioContext,
@@ -47,7 +50,7 @@ where
         let mut market_state = MarketState::load(&market_key).into_inner();
 
         if market_header.decode_deposit_amounts {
-            let deposit_pair = delta.local.deposits.deposit_mut();
+            let deposit_pair = P::get_leg_mut(&mut delta.local.deposits);
             *deposit_pair = P::decode(&ctx.args, offset, len)?;
         }
 
@@ -77,7 +80,7 @@ where
         P::commit_local_delta(&market.common, delta)?;
 
         // Reset local delta for reuse
-        delta.local.reset();
+        delta.local.reset::<P>();
 
         Ok(())
     }

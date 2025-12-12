@@ -14,6 +14,17 @@ where
     T1: Clone + Copy,
     T2: Clone + Copy;
 
+impl<T0, T1, T2, K> Triple<T0, T1, T2, K>
+where
+    T0: Clone + Copy,
+    T1: Clone + Copy,
+    T2: Clone + Copy,
+{
+    pub const fn new(t0: T0, t1: T1, t2: T2) -> Self {
+        Self(t0, t1, t2, PhantomData)
+    }
+}
+
 pub trait TripleReader<T0, T1, T2, K>
 where
     T0: Clone + Copy,

@@ -3,11 +3,10 @@ use crate::{
     markets::{CommonMarket, MarketVariant},
     settlement::{
         global_delta::{ERC20MakerDeltaKey, GlobalMakerUpdatePair, GlobalSenderUpdatePair},
-        local_delta::LocalDeposits,
         Delta,
     },
     token::{ERC20, ETH},
-    types::{Base, Pair, Quote},
+    types::{Base, Pair, Quote, TripleReader},
 };
 
 // every PairShape is a Pair. Can we impose a requirement of Pair?
@@ -56,7 +55,7 @@ impl PairShape for (ETH, ERC20) {
         let quote_token_index = common_market.token_index_pair;
         let quote_delta = quote_token_index.token_sender_delta_mut(&mut sender_delta.erc20_deltas);
 
-        let deposit_pair = LocalDeposits::<Self>::deposit_mut(&mut delta.local.deposits);
+        let deposit_pair = Self::get_leg_mut(&mut delta.local.deposits);
         quote_delta.apply_global_update::<Quote>(*deposit_pair, &sender_update_pair.1)?;
 
         for (maker, maker_delta_pair) in delta.local.local_maker_deltas.iter() {

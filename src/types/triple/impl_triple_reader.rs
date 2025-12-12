@@ -1,8 +1,3 @@
-use crate::{
-    token::{ERC20, ETH},
-    types::{Triple, TripleReader},
-};
-
 /// Macro to implement TripleReader for a triple of types
 ///
 /// Usage: `impl_triple_reader!(Type0, Type1, Type2);`
@@ -11,6 +6,7 @@ use crate::{
 /// - Type0 reads the first element (triple.0)
 /// - Type1 reads the second element (triple.1)
 /// - Type2 reads the third element (triple.2)
+#[macro_export]
 macro_rules! impl_triple_reader {
     ($t0:ty, $t1:ty, $t2:ty) => {
         // Implementation for the first type (T0)
@@ -80,5 +76,3 @@ macro_rules! impl_triple_reader {
         }
     };
 }
-
-impl_triple_reader!((ETH, ERC20), (ERC20, ETH), (ERC20, ERC20));

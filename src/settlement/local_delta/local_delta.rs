@@ -1,9 +1,9 @@
 use crate::{
     markets::PairShape,
     quantities::DeltaAtoms,
-    settlement::local_delta::{
-        LocalDepositStore, LocalDeposits, LocalMakerDeltas, LocalSenderDelta,
-    },
+    settlement::local_delta::{LocalDepositStore, LocalMakerDeltas, LocalSenderDelta},
+    token::{ERC20, ETH},
+    types::{Pair, TripleReader},
 };
 
 pub struct LocalDelta {
@@ -28,13 +28,22 @@ impl LocalDelta {
     /// Reset the local delta so it can be reused
     pub fn reset<P>(&mut self)
     where
-        P: PairShape,
+        P: PairShape
+            + TripleReader<
+                DeltaAtoms,
+                DeltaAtoms,
+                Pair<DeltaAtoms, DeltaAtoms>,
+                ((ETH, ERC20), (ERC20, ETH), (ERC20, ERC20)),
+                Result = P::ResolvedPair<DeltaAtoms>,
+            >,
         P::ResolvedPair<DeltaAtoms>: Default,
-        LocalDepositStore: LocalDeposits<P>,
+        // LocalDepositStore: LocalDeposits<P>,
     {
         self.local_sender_delta = LocalSenderDelta::zero();
         self.local_maker_deltas.reset();
-        self.deposits.reset();
+
+        self.deposits.reset::<P>();
+        // self.deposits.reset();
     }
 }
 
