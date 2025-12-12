@@ -1,12 +1,12 @@
 use crate::{
     goblin_error::GoblinError,
     hostio::{self, HostioContext},
-    input_processor::{GlobalHeader, PairShapeMarkets},
-    markets::{DynamicMarket, HardcodedMarket, MarketHeader, MarketVariantGetter},
+    input_processor::GlobalHeader,
+    markets::{DynamicMarket, HardcodedMarket, MarketHeader},
     require,
     settlement::Delta,
-    token::HardcodedIndex,
-    token::{ERC20, ETH},
+    token::{DynamicIndex, HardcodedIndex, ERC20, ETH},
+    types::{TripleReader, TupleReader},
 };
 
 pub const CONTRACT_ADDRESS: [u8; 20] = [
@@ -41,12 +41,15 @@ pub fn processor(len: usize) -> Result<(), GoblinError> {
         .eth_delta
         .set_eth_values(global_header.msg_value, global_header.eth_out_due);
 
-    for _ in 0..global_header.market_counts.hardcoded.eth_erc20 {
+    let hardcoded_markets = HardcodedIndex::get_leg(&global_header.market_counts);
+    let dynamic_markets = DynamicIndex::get_leg(&global_header.market_counts);
+
+    for _ in 0..<(ETH, ERC20)>::get(hardcoded_markets) {
         let market_header = MarketHeader::decode(&ctx.args, offset, len)?;
         HardcodedMarket::<(ETH, ERC20)>::process(ctx, &market_header, delta, offset, len)?;
     }
 
-    for _ in 0..global_header.market_counts.dynamic.eth_erc20 {
+    for _ in 0..<(ETH, ERC20)>::get(dynamic_markets) {
         let market_header = MarketHeader::decode(&ctx.args, offset, len)?;
         DynamicMarket::<(ETH, ERC20)>::process(
             ctx,

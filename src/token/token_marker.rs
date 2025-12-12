@@ -1,4 +1,7 @@
+#[derive(Clone, Copy)]
 pub struct ETH;
+
+#[derive(Clone, Copy)]
 pub struct ERC20;
 
 pub trait TokenMarker {}
