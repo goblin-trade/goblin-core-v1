@@ -1,4 +1,11 @@
-use crate::types::{Base, Quote, Tuple};
+use crate::impl_tuple_reader;
+use crate::types::{Base, Quote, Tuple, TupleReader};
+
+// Apply the macro to create implementations for all desired pairs
+
+// impl_tuple_reader!(HardcodedToken, CustomToken);
+
+impl_tuple_reader!(Base, Quote);
 
 /// A generic container for the base and quote sides of a market.
 ///

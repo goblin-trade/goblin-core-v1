@@ -1,8 +1,3 @@
-use crate::{
-    token::{CustomToken, HardcodedToken, ERC20, ETH},
-    types::{Base, Quote, Tuple, TupleReader},
-};
-
 /// Macro to implement TupleReader for a pair of types
 ///
 /// Usage: `impl_tuple_reader!(Type0, Type1);`
@@ -10,6 +5,7 @@ use crate::{
 /// This will create implementations where:
 /// - Type0 reads the first element (tuple.0)
 /// - Type1 reads the second element (tuple.1)
+#[macro_export]
 macro_rules! impl_tuple_reader {
     ($t0:ty, $t1:ty) => {
         // Implementation for the first type (T0)
@@ -55,8 +51,3 @@ macro_rules! impl_tuple_reader {
         }
     };
 }
-
-// Apply the macro to create implementations for all desired pairs
-impl_tuple_reader!(ETH, ERC20);
-impl_tuple_reader!(Base, Quote);
-impl_tuple_reader!(HardcodedToken, CustomToken);
