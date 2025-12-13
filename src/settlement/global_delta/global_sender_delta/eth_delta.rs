@@ -9,6 +9,7 @@ use crate::{
 };
 
 /// ETH atoms due to be deducted, locked or transferred out on settlement
+#[derive(Clone, Copy)]
 pub struct EthDelta {
     /// Atoms credited by msg.value
     pub msg_value: UnsidedAtoms,

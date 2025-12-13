@@ -4,7 +4,8 @@ use crate::{
     quantities::UnsidedAtoms,
     settlement::{
         global_delta::{
-            CustomTokenDeltas, EthDelta, GlobalMakerDeltas, GlobalSenderDelta, HardcodedTokenDeltas,
+            EthDelta, GlobalMakerDeltas, GlobalSenderDelta, SenderCustomDeltas,
+            SenderHardcodedDeltas,
         },
         local_delta::LocalDelta,
     },

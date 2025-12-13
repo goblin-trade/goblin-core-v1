@@ -1,20 +1,14 @@
-use crate::settlement::global_delta::{ERC20MakerDeltas, ETHMakerDeltas};
+use crate::{
+    settlement::global_delta::{ERC20MakerDeltas, ETHMakerDeltas},
+    types::TokenPair,
+};
 
-/// Top level deltas for makers who matched against take orders made by msg_sender
-pub struct GlobalMakerDeltas {
-    /// Deltas for ETH
-    pub eth_deltas: ETHMakerDeltas,
-
-    /// Deltas for ERC20 tokens
-    pub erc20_deltas: ERC20MakerDeltas,
-}
+/// Global deltas of makers that matched against msg.sender
+pub type GlobalMakerDeltas = TokenPair<ETHMakerDeltas, ERC20MakerDeltas>;
 
 impl GlobalMakerDeltas {
     pub const fn zero() -> Self {
-        Self {
-            eth_deltas: ETHMakerDeltas::zero(),
-            erc20_deltas: ERC20MakerDeltas::zero(),
-        }
+        Self::new(ETHMakerDeltas::zero(), ERC20MakerDeltas::zero())
     }
 }
 

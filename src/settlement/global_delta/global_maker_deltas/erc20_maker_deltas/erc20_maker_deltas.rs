@@ -1,35 +1,35 @@
 use crate::{
     settlement::global_delta::{ERC20MakerDeltaKey, UnsidedMakerDelta},
     token::{CustomToken, HardcodedToken},
-    types::FixedMap,
+    types::{ERC20Pair, FixedMap},
 };
 
 /// ERC20 token deltas for makers
-pub struct ERC20MakerDeltas {
-    /// Deltas for hardcoded tokens
-    pub hardcoded_token_deltas: FixedMap<ERC20MakerDeltaKey<HardcodedToken>, UnsidedMakerDelta, 16>,
-
-    /// Deltas for custom tokens
-    pub custom_token_deltas: FixedMap<ERC20MakerDeltaKey<CustomToken>, UnsidedMakerDelta, 16>,
-}
+pub type ERC20MakerDeltas = ERC20Pair<MakerHardcodedDeltas, MakerCustomDeltas>;
 
 impl ERC20MakerDeltas {
     pub const fn zero() -> Self {
-        Self {
-            hardcoded_token_deltas: FixedMap {
+        Self::new(
+            FixedMap {
                 entries: [(
                     ERC20MakerDeltaKey::<HardcodedToken>::zero(),
                     UnsidedMakerDelta::zero(),
                 ); 16],
                 len: 0,
             },
-            custom_token_deltas: FixedMap {
+            FixedMap {
                 entries: [(
                     ERC20MakerDeltaKey::<CustomToken>::zero(),
                     UnsidedMakerDelta::zero(),
                 ); 16],
                 len: 0,
             },
-        }
+        )
     }
 }
+
+/// Deltas of hardcoded tokens for various makers
+pub type MakerHardcodedDeltas = FixedMap<ERC20MakerDeltaKey<HardcodedToken>, UnsidedMakerDelta, 16>;
+
+///Deltas of custom tokens for various makers
+pub type MakerCustomDeltas = FixedMap<ERC20MakerDeltaKey<CustomToken>, UnsidedMakerDelta, 16>;

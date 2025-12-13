@@ -1,4 +1,5 @@
 /// A fixed-capacity map with O(N) lookups
+#[derive(Clone, Copy)]
 pub struct FixedMap<K: PartialEq + Clone + Copy, V: Default, const N: usize> {
     /// Fixed size array of the (K, V) tuple
     pub entries: [(K, V); N],

@@ -5,8 +5,8 @@ use crate::{
         UnsidedMakerDelta,
     },
     state::{DynamicMarketKey, HardcodedMarketKey, SlotKey},
-    token::{DynamicIndex, HardcodedIndex},
-    types::Address,
+    token::{CustomToken, DynamicIndex, HardcodedIndex, HardcodedToken},
+    types::{Address, TupleReader},
 };
 
 /// We have 2 market variants
@@ -43,9 +43,7 @@ impl MarketVariant for HardcodedIndex {
         self,
         token_sender_deltas: &mut ERC20SenderDeltas,
     ) -> &mut ERC20Delta {
-        token_sender_deltas
-            .hardcoded_token_deltas
-            .get_delta_mut(self)
+        HardcodedToken::get_leg_mut(token_sender_deltas).get_delta_mut(self)
     }
 
     fn token_maker_delta_mut(
@@ -58,9 +56,7 @@ impl MarketVariant for HardcodedIndex {
             token_index: self,
         };
 
-        token_maker_deltas
-            .hardcoded_token_deltas
-            .get_or_insert_mut(key)
+        HardcodedToken::get_leg_mut(token_maker_deltas).get_or_insert_mut(key)
     }
 }
 
@@ -74,13 +70,14 @@ impl MarketVariant for DynamicIndex {
         token_sender_deltas: &mut ERC20SenderDeltas,
     ) -> &mut ERC20Delta {
         match self {
-            DynamicIndex::Hardcoded(hardcoded_token_index) => token_sender_deltas
-                .hardcoded_token_deltas
-                .get_delta_mut(hardcoded_token_index),
+            DynamicIndex::Hardcoded(hardcoded_token_index) => {
+                HardcodedToken::get_leg_mut(token_sender_deltas)
+                    .get_delta_mut(hardcoded_token_index)
+            }
 
-            DynamicIndex::Custom(custom_token_index) => token_sender_deltas
-                .custom_token_deltas
-                .get_delta_mut(custom_token_index),
+            DynamicIndex::Custom(custom_token_index) => {
+                CustomToken::get_leg_mut(token_sender_deltas).get_delta_mut(custom_token_index)
+            }
         }
     }
 
@@ -96,9 +93,7 @@ impl MarketVariant for DynamicIndex {
                     token_index: hardcoded_token_index,
                 };
 
-                token_maker_deltas
-                    .hardcoded_token_deltas
-                    .get_or_insert_mut(key)
+                HardcodedToken::get_leg_mut(token_maker_deltas).get_or_insert_mut(key)
             }
 
             DynamicIndex::Custom(custom_token_index) => {
@@ -107,9 +102,7 @@ impl MarketVariant for DynamicIndex {
                     token_index: custom_token_index,
                 };
 
-                token_maker_deltas
-                    .custom_token_deltas
-                    .get_or_insert_mut(key)
+                CustomToken::get_leg_mut(token_maker_deltas).get_or_insert_mut(key)
             }
         }
     }

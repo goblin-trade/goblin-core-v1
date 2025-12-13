@@ -2,11 +2,11 @@ use crate::{
     goblin_error::GoblinError,
     markets::{CommonMarket, MarketVariant},
     settlement::{
-        global_delta::{ERC20MakerDeltaKey, GlobalMakerUpdatePair, GlobalSenderUpdatePair},
+        global_delta::{GlobalMakerUpdatePair, GlobalSenderUpdatePair},
         Delta,
     },
     token::{ERC20, ETH},
-    types::{Base, Pair, Quote, TripleReader},
+    types::{Base, Pair, Quote, TripleReader, TupleReader},
 };
 
 // every PairShape is a Pair. Can we impose a requirement of Pair?
@@ -45,28 +45,28 @@ impl PairShape for (ETH, ERC20) {
 
         // Update base
         let sender_delta = &mut delta.global.global_sender_delta;
-        sender_delta
-            .eth_delta
+        let base_update = Base::get_leg(&sender_update_pair);
+
+        ETH::get_leg_mut(sender_delta)
             .unsided_sender_delta
-            .add_global_update::<Base>(&sender_update_pair.0)
+            .add_global_update::<Base>(base_update)
             .ok_or(GoblinError::DeltaOverflow)?;
 
         // Update quote
         let quote_token_index = common_market.token_index_pair;
-        let quote_delta = quote_token_index.token_sender_delta_mut(&mut sender_delta.erc20_deltas);
+        let quote_delta =
+            quote_token_index.token_sender_delta_mut(ERC20::get_leg_mut(sender_delta));
 
         let deposit_pair = Self::get_leg_mut(&mut delta.local.deposits);
-        quote_delta.apply_global_update::<Quote>(*deposit_pair, &sender_update_pair.1)?;
+        let quote_update = Quote::get_leg(&sender_update_pair);
+        quote_delta.apply_global_update::<Quote>(*deposit_pair, quote_update)?;
 
         for (maker, maker_delta_pair) in delta.local.local_maker_deltas.iter() {
             let maker_update_pair =
                 GlobalMakerUpdatePair::new_pair(maker_delta_pair, &common_market.lot_size_pair);
 
             // Update base (ETH)
-            let global_maker_delta_eth_base = delta
-                .global
-                .maker_deltas
-                .eth_deltas
+            let global_maker_delta_eth_base = ETH::get_leg_mut(&mut delta.global.maker_deltas)
                 .get_or_insert_mut(*maker)
                 .ok_or(GoblinError::MakerListFull)?;
 
@@ -76,7 +76,7 @@ impl PairShape for (ETH, ERC20) {
 
             // Update quote (ERC20)
             let global_maker_delta_erc20_quote = quote_token_index
-                .token_maker_delta_mut(*maker, &mut delta.global.maker_deltas.erc20_deltas)
+                .token_maker_delta_mut(*maker, ERC20::get_leg_mut(&mut delta.global.maker_deltas))
                 .ok_or(GoblinError::MakerListFull)?;
 
             global_maker_delta_erc20_quote
