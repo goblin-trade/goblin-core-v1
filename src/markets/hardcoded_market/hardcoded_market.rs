@@ -73,7 +73,7 @@ where
         }
 
         // Apply market delta updates on global delta
-        P::commit_local_delta(&market.common, delta)?;
+        // P::commit_local_delta(&market.common, delta)?;
 
         // Reset local delta for reuse
         delta.local.reset::<P>();

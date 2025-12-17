@@ -7,16 +7,22 @@ pub struct ETH;
 pub struct ERC20;
 
 pub trait TokenMarker: Clone + Copy {
-    type MarkerAddress;
+    const DISCRIMINATOR: u8;
+
+    type Address;
     type Deposit;
 }
 
 impl TokenMarker for ETH {
-    type MarkerAddress = ();
+    const DISCRIMINATOR: u8 = 0;
+
+    type Address = ();
     type Deposit = ();
 }
 
 impl TokenMarker for ERC20 {
-    type MarkerAddress = Address;
+    const DISCRIMINATOR: u8 = 1;
+
+    type Address = Address;
     type Deposit = DeltaAtoms;
 }
