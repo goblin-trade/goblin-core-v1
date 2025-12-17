@@ -2,12 +2,24 @@ use crate::{
     goblin_error::GoblinError,
     markets::{CommonMarket, MarketVariant},
     settlement::{
-        global_delta::{GlobalMakerUpdatePair, GlobalSenderUpdatePair},
+        global_delta::{
+            ERC20SenderDeltas, EthDelta, GlobalMakerUpdatePair, GlobalSenderUpdatePair,
+        },
         Delta,
     },
-    token::{ERC20, ETH},
+    token::{TokenMarker, ERC20, ETH},
     types::{Base, Pair, Quote, TripleReader, TupleReader},
 };
+
+pub struct PairShapeV2<T0: TokenMarker, T1: TokenMarker>(Pair<T0, T1>);
+
+impl<T0: TokenMarker, T1: TokenMarker> PairShapeV2<T0, T1> {
+    // Improvement- we get a common shape for all 3 forms
+    // Individual complexity goes into TokenMarker
+    //
+    // Revisit old design- should we have an intermediary MarketForm<M: MarketVariant, P: PairShape>?
+    // Currently we treat hardcoded and dynamic market separately
+}
 
 // every PairShape is a Pair. Can we impose a requirement of Pair?
 pub trait PairShape {
@@ -23,6 +35,44 @@ pub trait PairShape {
     where
         M: MarketVariant + Clone + Copy,
         Self: Sized;
+
+    fn commit_local_delta_v2<M>(
+        common_market: &CommonMarket<M, Self>,
+        delta: &mut Delta,
+    ) -> Result<(), GoblinError>
+    where
+        M: MarketVariant + Clone + Copy,
+        Self: Sized + TupleReader<EthDelta, ERC20SenderDeltas, Self, Result = M>,
+    {
+        let sender_update_pair = GlobalSenderUpdatePair::new_pair(
+            &delta.local.local_sender_delta.taker_delta_pair,
+            &common_market.lot_size_pair,
+        );
+        let base_update = Base::get_leg(&sender_update_pair);
+        let quote_update = Quote::get_leg(&sender_update_pair);
+
+        // Apply the base update
+        // It can be appled on ETH or ERC20, depending on token shape
+        //
+        // - ETH: simple
+        // - ERC20: use common_market.token_index_pair to lookup delta from ERC20 list
+        //
+        //
+        // MarketVariant::token_sender_delta_mut() will handle sub cases for hardcoded and dynamic market variants
+
+        // TODO we need Self.0 = ETH and Self.1 = ERC20
+        // Then map individual units to ETHDelta and ERC20Delta
+        //
+        // Options
+        // 1. Reintroduce Pair<ETH, ERC20> and introduce a bound PairShape: Pair<T0: Token, T1: Token>
+        // This allows us to access individual element as .base and .quote
+        //
+        // 2. Implement a tuple of delta types for each variant
+        //
+        // let sender_base_delta = Self::get_leg_mut(&mut delta.global.global_sender_delta);
+
+        Ok(())
+    }
 }
 
 impl PairShape for (ETH, ERC20) {
@@ -30,6 +80,7 @@ impl PairShape for (ETH, ERC20) {
 
     type ResolvedPair<K: Clone + Copy> = K;
 
+    // TODO common function for all 3 shapes
     fn commit_local_delta<M>(
         common_market: &CommonMarket<M, Self>,
         delta: &mut Delta,
