@@ -1,45 +1,11 @@
-use core::marker::PhantomData;
-
 use crate::{
     goblin_error::GoblinError,
-    hostio::{self, HostioBuffer},
-    markets::{CommonMarket, MarketVariant, PairShape},
-    quantities::Ticks,
-    state::{SlotKey, SlotState},
-    token::{CustomToken, DynamicIndex, HardcodedToken, TokenIndex, ERC20, ETH},
-    types::{Base, Pair, Quote, TupleReader},
+    hostio::{self},
+    markets::{CommonMarket, PairShape},
+    state::{DynamicMarketKey, SlotKey},
+    token::{CustomToken, DynamicIndex, ERC20, ETH},
+    types::{Base, Quote, TupleReader},
 };
-
-/// The hash is hardcoded for hardcoded markets
-pub struct HardcodedMarketKey<P: PairShape> {
-    hash: [u8; 32],
-    _marker: PhantomData<P>,
-}
-
-impl<P: PairShape> HardcodedMarketKey<P> {
-    pub const fn new(hash: [u8; 32]) -> Self {
-        Self {
-            hash,
-            _marker: PhantomData,
-        }
-    }
-}
-
-impl<P: PairShape> SlotKey for HardcodedMarketKey<P> {
-    // The PairShape discriminator not used at runtime. But it is used for
-    // pre-computing the hash for hardcoding.
-    const DISCRIMINATOR: u8 = P::DISCRIMINATOR;
-
-    fn hash(&self) -> &[u8; 32] {
-        &self.hash
-    }
-}
-
-/// The key for a custom market
-pub struct DynamicMarketKey<P: PairShape> {
-    hash: HostioBuffer<[u8; 32]>,
-    _marker: PhantomData<P>,
-}
 
 pub trait DynamicMarketHasher<P>
 where
@@ -74,10 +40,7 @@ impl DynamicMarketHasher<(ETH, ERC20)> for DynamicMarketKey<(ETH, ERC20)> {
 
         let hash = hostio::native_keccak256(bytes.as_slice());
 
-        Ok(Self {
-            hash,
-            _marker: PhantomData,
-        })
+        Ok(Self::new(hash))
     }
 }
 
@@ -101,10 +64,7 @@ impl DynamicMarketHasher<(ERC20, ETH)> for DynamicMarketKey<(ERC20, ETH)> {
 
         let hash = hostio::native_keccak256(bytes.as_slice());
 
-        Ok(Self {
-            hash,
-            _marker: PhantomData,
-        })
+        Ok(Self::new(hash))
     }
 }
 
@@ -130,30 +90,6 @@ impl DynamicMarketHasher<(ERC20, ERC20)> for DynamicMarketKey<(ERC20, ERC20)> {
 
         let hash = hostio::native_keccak256(bytes.as_slice());
 
-        Ok(Self {
-            hash,
-            _marker: PhantomData,
-        })
+        Ok(Self::new(hash))
     }
 }
-
-impl<P: PairShape> SlotKey for DynamicMarketKey<P> {
-    const DISCRIMINATOR: u8 = P::DISCRIMINATOR;
-
-    fn hash(&self) -> &[u8; 32] {
-        self.hash.as_ref()
-    }
-}
-
-/// The market state slot
-/// We have 6 possible sub-types based on MarketVariant and PairShape
-#[repr(C)]
-pub struct MarketState<M: MarketVariant, P: PairShape> {
-    pub best_prices: Pair<Ticks, Ticks>,
-    /// Padding to match 32 bits
-    _padding: [u8; 16],
-    _marker: PhantomData<(M, P)>,
-}
-
-impl<P: PairShape> SlotState<HardcodedMarketKey<P>> for MarketState<TokenIndex<HardcodedToken>, P> {}
-impl<P: PairShape> SlotState<DynamicMarketKey<P>> for MarketState<DynamicIndex, P> {}
