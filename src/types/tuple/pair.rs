@@ -28,6 +28,3 @@ impl_tuple_reader!(Base, Quote);
 /// ```
 
 pub type Pair<T0, T1> = Tuple<T0, T1, (Base, Quote)>;
-
-pub type TokenIndexPair<M: MarketVariant, B: TokenMarker, Q: TokenMarker> =
-    Pair<B::TokenIndex<M>, Q::TokenIndex<M>>;

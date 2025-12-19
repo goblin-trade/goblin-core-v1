@@ -1,8 +1,8 @@
 use crate::{
-    markets::MarketVariant,
+    markets::{MarketVariant, TokenIndexPair},
     quantities::QuoteLotsPerBaseUnitPerTick,
     token::TokenMarker,
-    types::{Base, LegMarker, Pair, Quote, TokenIndexPair},
+    types::{Base, LegMarker, Pair, Quote},
 };
 
 pub type LotSizePair = Pair<<Base as LegMarker>::LotsPerUnit, <Quote as LegMarker>::LotsPerUnit>;
