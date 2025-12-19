@@ -1,14 +1,16 @@
 use crate::{
-    markets::{MarketVariant, PairShape},
+    markets::MarketVariant,
     quantities::QuoteLotsPerBaseUnitPerTick,
-    types::{Base, LegMarker, Pair, Quote},
+    token::TokenMarker,
+    types::{Base, LegMarker, Pair, Quote, TokenIndexPair},
 };
 
 pub type LotSizePair = Pair<<Base as LegMarker>::LotsPerUnit, <Quote as LegMarker>::LotsPerUnit>;
 
-pub struct CommonMarket<M: MarketVariant, P: PairShape> {
+// If P needs to be a trait, we need to use T0 and T1 here
+pub struct CommonMarket<M: MarketVariant, B: TokenMarker, Q: TokenMarker> {
     /// The token pair, parameterized by shape and variant.
-    pub token_index_pair: P::ResolvedPair<M>,
+    pub token_index_pair: TokenIndexPair<M, B, Q>,
 
     /// Lot sizes (one per side)
     pub lot_size_pair: LotSizePair,

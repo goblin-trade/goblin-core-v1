@@ -1,3 +1,4 @@
+/// Decode token indices and deposit amounts for various pair shapes
 use crate::{
     goblin_error::GoblinError,
     input_processor::{ArgsBuffer, ArgsDecoder, Decodable},
@@ -47,6 +48,8 @@ impl Decodable<<(ERC20, ERC20) as PairShape>::ResolvedPair<DynamicIndex>> for (E
         Ok(Tuple::new(base_index, quote_index))
     }
 }
+
+// Decode deposit amounts
 
 // Reuse the generic and trait to decode deposit and withdraw amounts too
 impl Decodable<<(ETH, ERC20) as PairShape>::ResolvedPair<DeltaAtoms>> for (ETH, ERC20) {

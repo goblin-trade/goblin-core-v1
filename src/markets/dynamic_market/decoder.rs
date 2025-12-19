@@ -7,6 +7,7 @@ use crate::{
     token::DynamicIndex,
 };
 
+// TODO use B and Q for decoding
 impl<P> Decodable<DynamicMarket<P>> for DynamicMarket<P>
 where
     P: PairShape + Decodable<P::ResolvedPair<DynamicIndex>>,

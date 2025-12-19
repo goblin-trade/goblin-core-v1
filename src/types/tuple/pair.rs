@@ -1,4 +1,6 @@
 use crate::impl_tuple_reader;
+use crate::markets::MarketVariant;
+use crate::token::TokenMarker;
 use crate::types::{Base, Quote, Tuple, TupleReader};
 
 // Apply the macro to create implementations for all desired pairs
@@ -26,3 +28,6 @@ impl_tuple_reader!(Base, Quote);
 /// ```
 
 pub type Pair<T0, T1> = Tuple<T0, T1, (Base, Quote)>;
+
+pub type TokenIndexPair<M: MarketVariant, B: TokenMarker, Q: TokenMarker> =
+    Pair<B::TokenIndex<M>, Q::TokenIndex<M>>;

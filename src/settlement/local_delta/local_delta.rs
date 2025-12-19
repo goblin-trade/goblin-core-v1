@@ -25,26 +25,26 @@ impl LocalDelta {
         }
     }
 
-    /// Reset the local delta so it can be reused
-    pub fn reset<P>(&mut self)
-    where
-        P: PairShape
-            + TripleReader<
-                DeltaAtoms,
-                DeltaAtoms,
-                Pair<DeltaAtoms, DeltaAtoms>,
-                ((ETH, ERC20), (ERC20, ETH), (ERC20, ERC20)),
-                Result = P::ResolvedPair<DeltaAtoms>,
-            >,
-        P::ResolvedPair<DeltaAtoms>: Default,
-        // LocalDepositStore: LocalDeposits<P>,
-    {
-        self.local_sender_delta = LocalSenderDelta::zero();
-        self.local_maker_deltas.reset();
+    // /// Reset the local delta so it can be reused
+    // pub fn reset<P>(&mut self)
+    // where
+    //     P: PairShape
+    //         + TripleReader<
+    //             DeltaAtoms,
+    //             DeltaAtoms,
+    //             Pair<DeltaAtoms, DeltaAtoms>,
+    //             ((ETH, ERC20), (ERC20, ETH), (ERC20, ERC20)),
+    //             Result = P::ResolvedPair<DeltaAtoms>,
+    //         >,
+    //     P::ResolvedPair<DeltaAtoms>: Default,
+    //     // LocalDepositStore: LocalDeposits<P>,
+    // {
+    //     self.local_sender_delta = LocalSenderDelta::zero();
+    //     self.local_maker_deltas.reset();
 
-        self.deposits.reset::<P>();
-        // self.deposits.reset();
-    }
+    //     self.deposits.reset::<P>();
+    //     // self.deposits.reset();
+    // }
 }
 
 // impl<P> LocalDelta<P>

@@ -7,35 +7,38 @@ use crate::{
     quantities::DeltaAtoms,
     settlement::Delta,
     state::{DynamicMarketHasher, DynamicMarketKey, MarketState, SlotState},
-    token::{CustomToken, DynamicIndex, ERC20, ETH},
+    token::{CustomToken, DynamicIndex, TokenMarker, ERC20, ETH},
     types::{Base, Pair, Quote, TripleReader, TupleReader},
 };
 
 /// A market whose token indices are dynamically specified at runtime.
 /// Works with any token pair shape (ETH–ERC20, ERC20–ETH, ERC20–ERC20).
 
-pub struct DynamicMarket<P>
+pub struct DynamicMarket<B, Q>
 where
-    P: PairShape,
+    B: TokenMarker,
+    Q: TokenMarker,
 {
     /// The common market configuration (lot sizes, tick size, token indices).
-    pub common: CommonMarket<DynamicIndex, P>,
+    pub common: CommonMarket<DynamicIndex, B, Q>,
 }
 
-impl<P> DynamicMarket<P>
+impl<B, Q> DynamicMarket<B, Q>
 where
-    P: PairShape
-        + Decodable<P::ResolvedPair<DynamicIndex>>
-        + Decodable<P::ResolvedPair<DeltaAtoms>>
-        + TripleReader<
-            DeltaAtoms,
-            DeltaAtoms,
-            Pair<DeltaAtoms, DeltaAtoms>,
-            ((ETH, ERC20), (ERC20, ETH), (ERC20, ERC20)),
-            Result = P::ResolvedPair<DeltaAtoms>,
-        >,
-    P::ResolvedPair<DeltaAtoms>: Default,
-    DynamicMarketKey<P>: DynamicMarketHasher<P>,
+    B: TokenMarker,
+    Q: TokenMarker,
+    // P: PairShape
+    //     + Decodable<P::ResolvedPair<DynamicIndex>>
+    //     + Decodable<P::ResolvedPair<DeltaAtoms>>
+    //     + TripleReader<
+    //         DeltaAtoms,
+    //         DeltaAtoms,
+    //         Pair<DeltaAtoms, DeltaAtoms>,
+    //         ((ETH, ERC20), (ERC20, ETH), (ERC20, ERC20)),
+    //         Result = P::ResolvedPair<DeltaAtoms>,
+    //     >,
+    // P::ResolvedPair<DeltaAtoms>: Default,
+    // DynamicMarketKey<P>: DynamicMarketHasher<P>,
 {
     pub fn process(
         ctx: &HostioContext,
@@ -50,6 +53,9 @@ where
         let mut market_state = MarketState::load(&market_key).into_inner();
 
         if market_header.decode_deposit_amounts {
+            // Decode and set deposit amounts
+            // New format- decode for base first, then quote?
+            // B::decode()?
             let deposit_pair = P::get_leg_mut(&mut delta.local.deposits);
             *deposit_pair = P::decode(&ctx.args, offset, len)?;
         }
@@ -80,7 +86,7 @@ where
         // P::commit_local_delta(&market.common, delta)?;
 
         // Reset local delta for reuse
-        delta.local.reset::<P>();
+        // delta.local.reset::<P>();
 
         Ok(())
     }
