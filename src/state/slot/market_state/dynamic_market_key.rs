@@ -1,14 +1,14 @@
 use core::marker::PhantomData;
 
-use crate::{hostio::HostioBuffer, markets::PairShape, state::SlotKey};
+use crate::{hostio::HostioBuffer, state::SlotKey, token::TokenMarker};
 
 /// The key for a custom market
-pub struct DynamicMarketKey<P: PairShape> {
+pub struct DynamicMarketKey<B: TokenMarker, Q: TokenMarker> {
     hash: HostioBuffer<[u8; 32]>,
-    _marker: PhantomData<P>,
+    _marker: PhantomData<(B, Q)>,
 }
 
-impl<P: PairShape> DynamicMarketKey<P> {
+impl<B: TokenMarker, Q: TokenMarker> DynamicMarketKey<B, Q> {
     pub fn new(hash: HostioBuffer<[u8; 32]>) -> Self {
         Self {
             hash,
@@ -17,8 +17,8 @@ impl<P: PairShape> DynamicMarketKey<P> {
     }
 }
 
-impl<P: PairShape> SlotKey for DynamicMarketKey<P> {
-    const DISCRIMINATOR: u8 = P::DISCRIMINATOR;
+impl<B: TokenMarker, Q: TokenMarker> SlotKey for DynamicMarketKey<B, Q> {
+    const DISCRIMINATOR: u8 = B::DISCRIMINATOR + Q::DISCRIMINATOR << 1;
 
     fn hash(&self) -> &[u8; 32] {
         self.hash.as_ref()

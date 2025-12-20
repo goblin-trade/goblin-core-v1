@@ -5,7 +5,7 @@ use crate::{
         UnsidedMakerDelta,
     },
     state::{DynamicMarketKey, HardcodedMarketKey, SlotKey},
-    token::{CustomToken, DynamicIndex, HardcodedIndex, HardcodedToken},
+    token::{CustomToken, DynamicIndex, HardcodedIndex, HardcodedToken, TokenMarker},
     types::{Address, TupleReader},
 };
 
@@ -17,7 +17,7 @@ pub trait MarketVariant: Clone + Copy {
     const DISCRIMINATOR: u8;
 
     /// Key to read market state slot
-    type MarketKey<P: PairShape>: SlotKey;
+    type MarketKey<B: TokenMarker, Q: TokenMarker>: SlotKey;
 
     // Both funtions and structs are symmetric. Can we write an abstraction?
     // Maybe I can have a common accessor trait shared by both
@@ -37,7 +37,7 @@ pub trait MarketVariant: Clone + Copy {
 impl MarketVariant for HardcodedIndex {
     const DISCRIMINATOR: u8 = 0;
 
-    type MarketKey<P: PairShape> = HardcodedMarketKey<P>;
+    type MarketKey<B: TokenMarker, Q: TokenMarker> = HardcodedMarketKey<B, Q>;
 
     fn token_sender_delta_mut(
         self,
@@ -63,7 +63,7 @@ impl MarketVariant for HardcodedIndex {
 impl MarketVariant for DynamicIndex {
     const DISCRIMINATOR: u8 = 1;
 
-    type MarketKey<P: PairShape> = DynamicMarketKey<P>;
+    type MarketKey<B: TokenMarker, Q: TokenMarker> = DynamicMarketKey<B, Q>;
 
     fn token_sender_delta_mut(
         self,
