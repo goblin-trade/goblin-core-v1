@@ -1,14 +1,14 @@
 use core::marker::PhantomData;
 
-use crate::{markets::PairShape, state::SlotKey};
+use crate::{state::SlotKey, token::TokenMarker};
 
 /// The hash is hardcoded for hardcoded markets
-pub struct HardcodedMarketKey<P: PairShape> {
+pub struct HardcodedMarketKey<B: TokenMarker, Q: TokenMarker> {
     hash: [u8; 32],
-    _marker: PhantomData<P>,
+    _marker: PhantomData<(B, Q)>,
 }
 
-impl<P: PairShape> HardcodedMarketKey<P> {
+impl<B: TokenMarker, Q: TokenMarker> HardcodedMarketKey<B, Q> {
     pub const fn new(hash: [u8; 32]) -> Self {
         Self {
             hash,
@@ -17,10 +17,10 @@ impl<P: PairShape> HardcodedMarketKey<P> {
     }
 }
 
-impl<P: PairShape> SlotKey for HardcodedMarketKey<P> {
+impl<B: TokenMarker, Q: TokenMarker> SlotKey for HardcodedMarketKey<B, Q> {
     // The PairShape discriminator not used at runtime. But it is used for
     // pre-computing the hash for hardcoding.
-    const DISCRIMINATOR: u8 = P::DISCRIMINATOR;
+    const DISCRIMINATOR: u8 = B::DISCRIMINATOR + Q::DISCRIMINATOR << 1;
 
     fn hash(&self) -> &[u8; 32] {
         &self.hash

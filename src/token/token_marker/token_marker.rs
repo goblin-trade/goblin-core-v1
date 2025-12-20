@@ -9,9 +9,9 @@ pub struct ERC20;
 pub trait TokenMarker: Clone + Copy {
     const DISCRIMINATOR: u8;
 
-    type TokenIndex<M: MarketVariant>;
-    type Address;
-    type Deposit;
+    type TokenIndex<M: MarketVariant>: Clone + Copy;
+    type Address: Clone + Copy;
+    type Deposit: Clone + Copy;
 }
 
 impl TokenMarker for ETH {

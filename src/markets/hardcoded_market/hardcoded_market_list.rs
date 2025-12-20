@@ -1,6 +1,6 @@
-use crate::markets::{HardcodedMarket, PairShape};
+use crate::{markets::HardcodedMarket, token::TokenMarker};
 
 /// Map each PairShape to a hardcoded market list
-pub trait HardcodedMarketList<P: PairShape + 'static> {
-    const HARDCODED_MARKET_LIST: &'static [HardcodedMarket<P>];
+pub trait HardcodedMarketList<B: TokenMarker + 'static, Q: TokenMarker + 'static> {
+    const HARDCODED_MARKET_LIST: &'static [HardcodedMarket<B, Q>];
 }
