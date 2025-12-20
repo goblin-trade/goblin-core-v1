@@ -1,6 +1,6 @@
 use crate::{
     goblin_error::GoblinError,
-    markets::{CommonMarket, MarketVariant, PairShape},
+    markets::{CommonMarket, MarketVariant},
     matching::quote_iterator::RestingOrderPositionIterator,
     quantities::{BaseLotsPerBaseUnit, QuantityOps, QuoteLotsPerQuoteUnit, Ticks},
     require,
@@ -9,21 +9,23 @@ use crate::{
         MatchedLots,
     },
     state::{MarketState, RestingOrder, RestingOrderKey, SlotState},
+    token::TokenMarker,
     types::{Address, Base, LegMarker, Quote, TupleReader},
 };
 
-pub fn match_order<M, P, In>(
+pub fn match_order<M, B, Q, In>(
     local_delta: &mut LocalDelta,
     taker: &Address,
-    market: &CommonMarket<M, P>,
-    market_state: &mut MarketState<M, P>,
+    market: &CommonMarket<M, B, Q>,
+    market_state: &mut MarketState<M, B, Q>,
     num_lots: In::Lots,
     min_lots_to_fill: In::Lots,
     price_limit: Ticks,
 ) -> Result<(), GoblinError>
 where
     M: MarketVariant,
-    P: PairShape,
+    B: TokenMarker,
+    Q: TokenMarker,
     In: LegMarker
         + TupleReader<MakerDelta<Base>, MakerDelta<Quote>, (Base, Quote), Result = MakerDelta<In>>
         + TupleReader<TakerDelta<Base>, TakerDelta<Quote>, (Base, Quote), Result = TakerDelta<In>>

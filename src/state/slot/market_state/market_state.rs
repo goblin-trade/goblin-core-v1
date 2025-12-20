@@ -1,22 +1,28 @@
 use core::marker::PhantomData;
 
 use crate::{
-    markets::{MarketVariant, PairShape},
+    markets::MarketVariant,
     quantities::Ticks,
     state::{DynamicMarketKey, HardcodedMarketKey, SlotState},
-    token::{DynamicIndex, HardcodedToken, TokenIndex},
+    token::{DynamicIndex, HardcodedToken, TokenIndex, TokenMarker},
     types::Pair,
 };
 
 /// The market state slot
 /// We have 6 possible sub-types based on MarketVariant and PairShape
 #[repr(C)]
-pub struct MarketState<M: MarketVariant, P: PairShape> {
+pub struct MarketState<M: MarketVariant, B: TokenMarker, Q: TokenMarker> {
     pub best_prices: Pair<Ticks, Ticks>,
     /// Padding to match 32 bits
     _padding: [u8; 16],
-    _marker: PhantomData<(M, P)>,
+    _marker: PhantomData<(M, B, Q)>,
 }
 
-impl<P: PairShape> SlotState<HardcodedMarketKey<P>> for MarketState<TokenIndex<HardcodedToken>, P> {}
-impl<P: PairShape> SlotState<DynamicMarketKey<P>> for MarketState<DynamicIndex, P> {}
+impl<B: TokenMarker, Q: TokenMarker> SlotState<HardcodedMarketKey<B, Q>>
+    for MarketState<TokenIndex<HardcodedToken>, B, Q>
+{
+}
+impl<B: TokenMarker, Q: TokenMarker> SlotState<DynamicMarketKey<B, Q>>
+    for MarketState<DynamicIndex, B, Q>
+{
+}

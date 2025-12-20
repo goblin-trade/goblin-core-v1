@@ -2,25 +2,27 @@ use crate::{
     goblin_error::GoblinError,
     hostio::HostioContext,
     instructions::take::take_packet::TakePacket,
-    markets::{CommonMarket, MarketVariant, PairShape},
+    markets::{CommonMarket, MarketVariant},
     matching::match_order,
     quantities::{BaseLotsPerBaseUnit, QuoteLotsPerQuoteUnit, Ticks},
     settlement::local_delta::{LocalDelta, MakerDelta, TakerDelta},
     state::MarketState,
+    token::TokenMarker,
     types::{Base, LegMarker, Quote, TupleReader},
 };
 
-pub fn ix_take<M, P, In>(
+pub fn ix_take<M, B, Q, In>(
     ctx: &HostioContext,
     local_delta: &mut LocalDelta,
-    market: &CommonMarket<M, P>,
-    market_state: &mut MarketState<M, P>,
+    market: &CommonMarket<M, B, Q>,
+    market_state: &mut MarketState<M, B, Q>,
     offset: &mut usize,
     len: usize,
 ) -> Result<(), GoblinError>
 where
     M: MarketVariant,
-    P: PairShape,
+    B: TokenMarker,
+    Q: TokenMarker,
     In: LegMarker
         + TupleReader<MakerDelta<Base>, MakerDelta<Quote>, (Base, Quote), Result = MakerDelta<In>>
         + TupleReader<TakerDelta<Base>, TakerDelta<Quote>, (Base, Quote), Result = TakerDelta<In>>
@@ -34,7 +36,7 @@ where
 {
     let packet = TakePacket::<In>::decode(&ctx.args, len, offset)?;
 
-    match_order::<M, P, In>(
+    match_order::<M, B, Q, In>(
         local_delta,
         &ctx.msg_sender,
         market,
