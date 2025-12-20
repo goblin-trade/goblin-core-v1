@@ -1,15 +1,20 @@
 use crate::{
     markets::PairShape,
     quantities::DeltaAtoms,
+    settlement::local_delta::DepositPair,
     token::{TokenMarker, ERC20, ETH},
-    types::{DepositPair, Pair, PairShapeTriple, Triple, TripleReader, Tuple},
+    types::{Base, DepositPerLeg, Pair, PairShapeTriple, Triple, TripleReader, Tuple},
 };
 
-pub type LocalDepositStore = Pair<DepositPair, DepositPair>;
+pub type LocalDepositStore = Pair<DepositPerLeg, DepositPerLeg>;
 
 impl LocalDepositStore {
     pub const fn zero() -> Self {
-        Self::new(DepositPair::zero(), DepositPair::zero())
+        Self::new(DepositPerLeg::zero(), DepositPerLeg::zero())
+    }
+
+    pub fn deposit<B: TokenMarker, Q: TokenMarker>(&mut self, deposit_pair: &DepositPair<B, Q>) {
+        // let base_deposit = Base::get_leg(self);
     }
 }
 

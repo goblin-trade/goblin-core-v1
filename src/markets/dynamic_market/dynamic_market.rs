@@ -5,7 +5,7 @@ use crate::{
     instructions::ix_take,
     markets::{CommonMarket, MarketHeader, PairShape},
     quantities::DeltaAtoms,
-    settlement::Delta,
+    settlement::{local_delta::DepositPair, Delta},
     state::{DynamicMarketHasher, DynamicMarketKey, MarketState, SlotState},
     token::{CustomToken, DynamicIndex, TokenMarker, ERC20, ETH},
     types::{Base, Pair, Quote, TripleReader, TupleReader},
@@ -25,8 +25,8 @@ where
 
 impl<B, Q> DynamicMarket<B, Q>
 where
-    B: TokenMarker,
-    Q: TokenMarker,
+    B: TokenMarker + Decodable<B::Deposit>,
+    Q: TokenMarker + Decodable<Q::Deposit>,
     // P: PairShape
     //     + Decodable<P::ResolvedPair<DynamicIndex>>
     //     + Decodable<P::ResolvedPair<DeltaAtoms>>
@@ -53,35 +53,41 @@ where
         let mut market_state = MarketState::load(&market_key).into_inner();
 
         if market_header.decode_deposit_amounts {
+            let base_deposit = B::decode(&ctx.args, offset, len)?;
+            let quote_deposit = Q::decode(&ctx.args, offset, len)?;
+
+            let deposit_pair = DepositPair::new(base_deposit, quote_deposit);
+
+            // delta.local.deposits;
             // Decode and set deposit amounts
             // New format- decode for base first, then quote?
             // B::decode()?
-            let deposit_pair = P::get_leg_mut(&mut delta.local.deposits);
-            *deposit_pair = P::decode(&ctx.args, offset, len)?;
+            // let deposit_pair = P::get_leg_mut(&mut delta.local.deposits);
+            // *deposit_pair = P::decode(&ctx.args, offset, len)?;
         }
 
         // Take bid and take quote
-        if Base::get(&market_header.execute_takes) {
-            ix_take::<DynamicIndex, P, Base>(
-                ctx,
-                &mut delta.local,
-                &market.common,
-                &mut market_state,
-                offset,
-                len,
-            )?;
-        }
+        // if Base::get(&market_header.execute_takes) {
+        //     ix_take::<DynamicIndex, P, Base>(
+        //         ctx,
+        //         &mut delta.local,
+        //         &market.common,
+        //         &mut market_state,
+        //         offset,
+        //         len,
+        //     )?;
+        // }
 
-        if Quote::get(&market_header.execute_takes) {
-            ix_take::<DynamicIndex, P, Quote>(
-                ctx,
-                &mut delta.local,
-                &market.common,
-                &mut market_state,
-                offset,
-                len,
-            )?;
-        }
+        // if Quote::get(&market_header.execute_takes) {
+        //     ix_take::<DynamicIndex, P, Quote>(
+        //         ctx,
+        //         &mut delta.local,
+        //         &market.common,
+        //         &mut market_state,
+        //         offset,
+        //         len,
+        //     )?;
+        // }
 
         // P::commit_local_delta(&market.common, delta)?;
 
