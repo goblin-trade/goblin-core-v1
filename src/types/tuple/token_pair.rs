@@ -15,7 +15,7 @@ pub type TokenPair<T0, T1> = Tuple<T0, T1, (ETH, ERC20)>;
 pub type DepositPerLeg = TokenPair<<ETH as TokenMarker>::Deposit, <ERC20 as TokenMarker>::Deposit>;
 
 impl DepositPerLeg {
-    pub fn zero() -> Self {
+    pub const fn zero() -> Self {
         Self::new((), DeltaAtoms::ZERO)
     }
 }

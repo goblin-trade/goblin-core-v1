@@ -27,18 +27,19 @@ impl<B, Q> DynamicMarket<B, Q>
 where
     B: TokenMarker + Decodable<B::Deposit>,
     Q: TokenMarker + Decodable<Q::Deposit>,
-    // P: PairShape
-    //     + Decodable<P::ResolvedPair<DynamicIndex>>
-    //     + Decodable<P::ResolvedPair<DeltaAtoms>>
-    //     + TripleReader<
-    //         DeltaAtoms,
-    //         DeltaAtoms,
-    //         Pair<DeltaAtoms, DeltaAtoms>,
-    //         ((ETH, ERC20), (ERC20, ETH), (ERC20, ERC20)),
-    //         Result = P::ResolvedPair<DeltaAtoms>,
-    //     >,
-    // P::ResolvedPair<DeltaAtoms>: Default,
-    // DynamicMarketKey<P>: DynamicMarketHasher<P>,
+    DynamicMarket<B, Q>: Decodable<DynamicMarket<B, Q>>,
+    DynamicMarketKey<B, Q>: DynamicMarketHasher<B, Q>, // P: PairShape
+                                                       //     + Decodable<P::ResolvedPair<DynamicIndex>>
+                                                       //     + Decodable<P::ResolvedPair<DeltaAtoms>>
+                                                       //     + TripleReader<
+                                                       //         DeltaAtoms,
+                                                       //         DeltaAtoms,
+                                                       //         Pair<DeltaAtoms, DeltaAtoms>,
+                                                       //         ((ETH, ERC20), (ERC20, ETH), (ERC20, ERC20)),
+                                                       //         Result = P::ResolvedPair<DeltaAtoms>,
+                                                       //     >,
+                                                       // P::ResolvedPair<DeltaAtoms>: Default,
+                                                       // DynamicMarketKey<P>: DynamicMarketHasher<P>,
 {
     pub fn process(
         ctx: &HostioContext,
@@ -50,21 +51,21 @@ where
     ) -> Result<(), GoblinError> {
         let market = Self::decode(&ctx.args, offset, len)?;
         let market_key = DynamicMarketKey::hash(&market.common, custom_erc20_list)?;
-        let mut market_state = MarketState::load(&market_key).into_inner();
+        // let mut market_state = MarketState::load(&market_key).into_inner();
 
-        if market_header.decode_deposit_amounts {
-            let base_deposit = B::decode(&ctx.args, offset, len)?;
-            let quote_deposit = Q::decode(&ctx.args, offset, len)?;
+        // if market_header.decode_deposit_amounts {
+        //     let base_deposit = B::decode(&ctx.args, offset, len)?;
+        //     let quote_deposit = Q::decode(&ctx.args, offset, len)?;
 
-            let deposit_pair = DepositPair::new(base_deposit, quote_deposit);
+        //     let deposit_pair = DepositPair::new(base_deposit, quote_deposit);
 
-            // delta.local.deposits;
-            // Decode and set deposit amounts
-            // New format- decode for base first, then quote?
-            // B::decode()?
-            // let deposit_pair = P::get_leg_mut(&mut delta.local.deposits);
-            // *deposit_pair = P::decode(&ctx.args, offset, len)?;
-        }
+        //     // delta.local.deposits;
+        //     // Decode and set deposit amounts
+        //     // New format- decode for base first, then quote?
+        //     // B::decode()?
+        //     // let deposit_pair = P::get_leg_mut(&mut delta.local.deposits);
+        //     // *deposit_pair = P::decode(&ctx.args, offset, len)?;
+        // }
 
         // Take bid and take quote
         // if Base::get(&market_header.execute_takes) {

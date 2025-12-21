@@ -54,19 +54,19 @@ where
         offset: &mut usize,
         len: usize,
     ) -> Result<(), GoblinError> {
-        let market = Self::decode(&ctx.args, offset, len)?;
-        let mut market_state = MarketState::load(&market.keccak_hash).into_inner();
+        // let market = Self::decode(&ctx.args, offset, len)?;
+        // let mut market_state = MarketState::load(&market.keccak_hash).into_inner();
 
-        if market_header.decode_deposit_amounts {
-            let base_deposit = B::decode(&ctx.args, offset, len)?;
-            let quote_deposit = Q::decode(&ctx.args, offset, len)?;
+        // if market_header.decode_deposit_amounts {
+        //     let base_deposit = B::decode(&ctx.args, offset, len)?;
+        //     let quote_deposit = Q::decode(&ctx.args, offset, len)?;
 
-            let deposit_pair = DepositPair::new(base_deposit, quote_deposit);
+        //     let deposit_pair = DepositPair::new(base_deposit, quote_deposit);
 
-            // // TODO add deposit directly here? It could make P::commit_local_delta() cleaner
-            // let deposit_pair = P::get_leg_mut(&mut delta.local.deposits);
-            // *deposit_pair = P::decode(&ctx.args, offset, len)?;
-        }
+        //     // // TODO add deposit directly here? It could make P::commit_local_delta() cleaner
+        //     // let deposit_pair = P::get_leg_mut(&mut delta.local.deposits);
+        //     // *deposit_pair = P::decode(&ctx.args, offset, len)?;
+        // }
 
         // // Take bid and take quote
         // if Base::get(&market_header.execute_takes) {

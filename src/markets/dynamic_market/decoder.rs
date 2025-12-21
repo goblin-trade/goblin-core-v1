@@ -20,7 +20,8 @@ where
         let base_token_index = B::decode(args, offset, len)?;
         let quote_token_index = Q::decode(args, offset, len)?;
 
-        let token_index_pair = TokenIndexPair::new(base_token_index, quote_token_index);
+        let token_index_pair =
+            TokenIndexPair::<DynamicIndex, B, Q>::new(base_token_index, quote_token_index);
 
         require!(len >= *offset + 3, GoblinError::InvalidPayload);
         let lot_size_pair = *args.decode_ref_unchecked::<LotSizePair>(offset);

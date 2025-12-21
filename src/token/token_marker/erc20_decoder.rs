@@ -1,6 +1,6 @@
 use crate::{
     goblin_error::GoblinError,
-    input_processor::{ArgsBuffer, Decodable},
+    input_processor::{ArgsBuffer, ArgsDecoder, Decodable},
     quantities::DeltaAtoms,
     token::{DynamicIndex, TokenMarker, ERC20},
 };
@@ -12,7 +12,7 @@ impl Decodable<<ERC20 as TokenMarker>::TokenIndex<DynamicIndex>> for ERC20 {
         len: usize,
     ) -> Result<<ERC20 as TokenMarker>::TokenIndex<DynamicIndex>, GoblinError> {
         let index_raw = args.decode::<u8>(offset, len)?;
-        Ok(DynamicIndex::new(index_raw))
+        DynamicIndex::new(index_raw)
     }
 }
 
