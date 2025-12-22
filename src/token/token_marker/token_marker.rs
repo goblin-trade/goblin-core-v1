@@ -1,9 +1,15 @@
-use crate::{markets::MarketVariant, quantities::DeltaAtoms, types::Address};
+use crate::{
+    goblin_error::GoblinError,
+    markets::MarketVariant,
+    quantities::DeltaAtoms,
+    token::{CustomToken, DynamicIndex},
+    types::Address,
+};
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default)]
 pub struct ETH;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default)]
 pub struct ERC20;
 
 pub trait TokenMarker: Clone + Copy {
@@ -12,8 +18,19 @@ pub trait TokenMarker: Clone + Copy {
     // const ADDRESS_SIZE: usize = core::mem::size_of::<Self::Address>();
 
     type TokenIndex<M: MarketVariant>: Clone + Copy;
-    type Address: Clone + Copy + Sized;
+    type Address: Clone + Copy + Sized + Default;
     type Deposit: Clone + Copy;
+
+    fn set_token_address<const N: usize>(
+        buffer: &mut [u8; N],
+        offset: &mut usize,
+        index: Self::TokenIndex<DynamicIndex>,
+        custom_erc20_list: &[CustomToken],
+    ) -> Result<(), GoblinError>;
+
+    fn update_offset(offset: &mut usize) {
+        *offset += core::mem::size_of::<Self::Address>();
+    }
 }
 
 impl TokenMarker for ETH {
@@ -22,6 +39,17 @@ impl TokenMarker for ETH {
     type TokenIndex<M: MarketVariant> = ();
     type Address = ();
     type Deposit = ();
+
+    fn set_token_address<const N: usize>(
+        buffer: &mut [u8; N],
+        offset: &mut usize,
+        index: Self::TokenIndex<DynamicIndex>,
+        custom_erc20_list: &[CustomToken],
+    ) -> Result<(), GoblinError> {
+        Self::update_offset(offset);
+
+        Ok(())
+    }
 }
 
 impl TokenMarker for ERC20 {
@@ -30,4 +58,25 @@ impl TokenMarker for ERC20 {
     type TokenIndex<M: MarketVariant> = M;
     type Address = Address;
     type Deposit = DeltaAtoms;
+
+    fn set_token_address<const N: usize>(
+        buffer: &mut [u8; N],
+        offset: &mut usize,
+        index: Self::TokenIndex<DynamicIndex>,
+        custom_erc20_list: &[CustomToken],
+    ) -> Result<(), GoblinError> {
+        let address = index.address(custom_erc20_list)?;
+        buffer[*offset..(*offset + 20)].copy_from_slice(&address);
+
+        Self::update_offset(offset);
+        Ok(())
+    }
+
+    // fn get_token_address(
+    //     index: Self::TokenIndex<DynamicIndex>,
+    //     custom_erc20_list: &[CustomToken],
+    // ) -> Result<Self::Address, GoblinError> {
+    //     // problem- this copies the value
+    //     index.address(custom_erc20_list)
+    // }
 }

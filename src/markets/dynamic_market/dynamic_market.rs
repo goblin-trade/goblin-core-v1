@@ -50,7 +50,7 @@ where
         len: usize,
     ) -> Result<(), GoblinError> {
         let market = Self::decode(&ctx.args, offset, len)?;
-        let market_key = DynamicMarketKey::hash(&market.common, custom_erc20_list)?;
+        let market_key = DynamicMarketKey::hash_v2(&market.common, custom_erc20_list)?;
         // let mut market_state = MarketState::load(&market_key).into_inner();
 
         // if market_header.decode_deposit_amounts {
