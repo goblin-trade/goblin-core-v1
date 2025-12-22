@@ -1,25 +1,13 @@
 use core::marker::PhantomData;
 
-use crate::{
-    hostio::HostioBuffer,
-    markets::CommonMarket,
-    state::SlotKey,
-    token::{DynamicIndex, TokenMarker},
-    types::{Base, Quote, TupleReader},
-};
+use crate::{hostio::HostioBuffer, state::SlotKey, token::TokenMarker};
 
-/// The key for a custom market
+/// Slot key for a dynamic market
+///
+/// It is generated with DynamicMarketHasher trait
 pub struct DynamicMarketKey<B: TokenMarker, Q: TokenMarker> {
     hash: HostioBuffer<[u8; 32]>,
     _marker: PhantomData<(B, Q)>,
-}
-
-impl<B: TokenMarker, Q: TokenMarker> SlotKey for DynamicMarketKey<B, Q> {
-    const DISCRIMINATOR: u8 = B::DISCRIMINATOR + Q::DISCRIMINATOR << 1;
-
-    fn hash(&self) -> &[u8; 32] {
-        self.hash.as_ref()
-    }
 }
 
 impl<B: TokenMarker, Q: TokenMarker> DynamicMarketKey<B, Q> {
@@ -29,15 +17,12 @@ impl<B: TokenMarker, Q: TokenMarker> DynamicMarketKey<B, Q> {
             _marker: PhantomData,
         }
     }
+}
 
-    pub fn set_common_fields<const N: usize>(
-        bytes: &mut [u8; N],
-        market: &CommonMarket<DynamicIndex, B, Q>,
-    ) {
-        bytes[0] = Self::DISCRIMINATOR;
+impl<B: TokenMarker, Q: TokenMarker> SlotKey for DynamicMarketKey<B, Q> {
+    const DISCRIMINATOR: u8 = B::DISCRIMINATOR + Q::DISCRIMINATOR << 1;
 
-        bytes[1..9].copy_from_slice(&Base::get(&market.lot_size_pair).inner.to_le_bytes());
-        bytes[9..17].copy_from_slice(&Quote::get(&market.lot_size_pair).inner.to_le_bytes());
-        bytes[17..25].copy_from_slice(&market.tick_size.inner.to_le_bytes());
+    fn hash(&self) -> &[u8; 32] {
+        self.hash.as_ref()
     }
 }
