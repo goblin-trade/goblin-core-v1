@@ -1,10 +1,11 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::{ArgsBuffer, ArgsDecoder, Decodable},
-    markets::{CommonMarket, DynamicMarket, LotSizePair, TokenIndexPair},
+    markets::{CommonMarket, DynamicMarket, LotSizePair},
     quantities::QuoteLotsPerBaseUnitPerTick,
     require,
     token::{DynamicIndex, TokenMarker},
+    types::Pair,
 };
 
 impl<B, Q> Decodable<DynamicMarket<B, Q>> for DynamicMarket<B, Q>
@@ -20,8 +21,7 @@ where
         let base_token_index = B::decode(args, offset, len)?;
         let quote_token_index = Q::decode(args, offset, len)?;
 
-        let token_index_pair =
-            TokenIndexPair::<DynamicIndex, B, Q>::new(base_token_index, quote_token_index);
+        let token_index_pair = Pair::new(base_token_index, quote_token_index);
 
         require!(len >= *offset + 3, GoblinError::InvalidPayload);
         let lot_size_pair = *args.decode_ref_unchecked::<LotSizePair>(offset);
