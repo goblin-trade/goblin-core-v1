@@ -32,18 +32,18 @@ impl<B, Q> HardcodedMarket<B, Q>
 where
     B: TokenMarker + 'static + Decodable<B::Deposit>,
     Q: TokenMarker + 'static + Decodable<Q::Deposit>,
-    // P: PairShape
-    //     + 'static
-    //     + Decodable<P::ResolvedPair<DeltaAtoms>>
-    //     + TripleReader<
-    //         DeltaAtoms,
-    //         DeltaAtoms,
-    //         Pair<DeltaAtoms, DeltaAtoms>,
-    //         ((ETH, ERC20), (ERC20, ETH), (ERC20, ERC20)),
-    //         Result = P::ResolvedPair<DeltaAtoms>,
-    //     >,
-    // P::ResolvedPair<DeltaAtoms>: Default,
-    // Self: HardcodedMarketList<P>,
+    HardcodedMarket<B, Q>: Decodable<&'static HardcodedMarket<B, Q>>, // P: PairShape
+                                                                      //     + 'static
+                                                                      //     + Decodable<P::ResolvedPair<DeltaAtoms>>
+                                                                      //     + TripleReader<
+                                                                      //         DeltaAtoms,
+                                                                      //         DeltaAtoms,
+                                                                      //         Pair<DeltaAtoms, DeltaAtoms>,
+                                                                      //         ((ETH, ERC20), (ERC20, ETH), (ERC20, ERC20)),
+                                                                      //         Result = P::ResolvedPair<DeltaAtoms>,
+                                                                      //     >,
+                                                                      // P::ResolvedPair<DeltaAtoms>: Default,
+                                                                      // Self: HardcodedMarketList<P>,
 {
     // TODO define common trait for both market types if they have common arguments
     // Currently HardcodedMarket doesn't require custom_erc20_list
@@ -54,8 +54,8 @@ where
         offset: &mut usize,
         len: usize,
     ) -> Result<(), GoblinError> {
-        // let market = Self::decode(&ctx.args, offset, len)?;
-        // let mut market_state = MarketState::load(&market.keccak_hash).into_inner();
+        let market = Self::decode(&ctx.args, offset, len)?;
+        let mut market_state = MarketState::load(&market.keccak_hash).into_inner();
 
         // if market_header.decode_deposit_amounts {
         //     let base_deposit = B::decode(&ctx.args, offset, len)?;
