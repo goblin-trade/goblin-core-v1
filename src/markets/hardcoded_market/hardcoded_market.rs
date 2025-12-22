@@ -5,7 +5,7 @@ use crate::{
     instructions::ix_take,
     markets::{CommonMarket, HardcodedMarketList, MarketHeader, PairShape},
     quantities::DeltaAtoms,
-    settlement::{local_delta::DepositPair, Delta},
+    settlement::Delta,
     state::{HardcodedMarketKey, MarketState, SlotState},
     token::{HardcodedIndex, TokenMarker, ERC20, ETH},
     types::{Base, Pair, TripleReader, TupleReader},
@@ -30,8 +30,24 @@ where
 
 impl<B, Q> HardcodedMarket<B, Q>
 where
-    B: TokenMarker + 'static + Decodable<B::Deposit>,
-    Q: TokenMarker + 'static + Decodable<Q::Deposit>,
+    B: TokenMarker
+        + 'static
+        + Decodable<B::Deposit>
+        + TupleReader<
+            <ETH as TokenMarker>::Deposit,
+            <ERC20 as TokenMarker>::Deposit,
+            (ETH, ERC20),
+            Result = <B as TokenMarker>::Deposit,
+        >,
+    Q: TokenMarker
+        + 'static
+        + Decodable<Q::Deposit>
+        + TupleReader<
+            <ETH as TokenMarker>::Deposit,
+            <ERC20 as TokenMarker>::Deposit,
+            (ETH, ERC20),
+            Result = <Q as TokenMarker>::Deposit,
+        >,
     HardcodedMarket<B, Q>: Decodable<&'static HardcodedMarket<B, Q>>, // P: PairShape
                                                                       //     + 'static
                                                                       //     + Decodable<P::ResolvedPair<DeltaAtoms>>
@@ -57,16 +73,13 @@ where
         let market = Self::decode(&ctx.args, offset, len)?;
         let mut market_state = MarketState::load(&market.keccak_hash).into_inner();
 
-        // if market_header.decode_deposit_amounts {
-        //     let base_deposit = B::decode(&ctx.args, offset, len)?;
-        //     let quote_deposit = Q::decode(&ctx.args, offset, len)?;
+        if market_header.decode_deposit_amounts {
+            let base_deposit = B::decode(&ctx.args, offset, len)?;
+            let quote_deposit = Q::decode(&ctx.args, offset, len)?;
+            let deposit_pair = Pair::new(base_deposit, quote_deposit);
 
-        //     let deposit_pair = DepositPair::new(base_deposit, quote_deposit);
-
-        //     // // TODO add deposit directly here? It could make P::commit_local_delta() cleaner
-        //     // let deposit_pair = P::get_leg_mut(&mut delta.local.deposits);
-        //     // *deposit_pair = P::decode(&ctx.args, offset, len)?;
-        // }
+            delta.local.deposits.set_deposits::<B, Q>(&deposit_pair);
+        }
 
         // // Take bid and take quote
         // if Base::get(&market_header.execute_takes) {
@@ -83,8 +96,8 @@ where
         // // Apply market delta updates on global delta
         // // P::commit_local_delta(&market.common, delta)?;
 
-        // // Reset local delta for reuse
-        // delta.local.reset::<P>();
+        // Reset local delta for reuse
+        delta.local.deposits.reset::<B, Q>();
 
         Ok(())
     }

@@ -19,7 +19,7 @@ pub trait TokenMarker: Clone + Copy {
 
     type TokenIndex<M: MarketVariant>: Clone + Copy;
     type Address: Clone + Copy + Sized + Default;
-    type Deposit: Clone + Copy;
+    type Deposit: Clone + Copy + Default;
 
     fn set_token_address<const N: usize>(
         buffer: &mut [u8; N],

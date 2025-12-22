@@ -5,7 +5,7 @@ use crate::{
     instructions::ix_take,
     markets::{CommonMarket, MarketHeader, PairShape},
     quantities::DeltaAtoms,
-    settlement::{local_delta::DepositPair, Delta},
+    settlement::Delta,
     state::{DynamicMarketHasher, DynamicMarketKey, MarketState, SlotState},
     token::{CustomToken, DynamicIndex, TokenMarker, ERC20, ETH},
     types::{Base, Pair, Quote, TripleReader, TupleReader},
@@ -25,8 +25,22 @@ where
 
 impl<B, Q> DynamicMarket<B, Q>
 where
-    B: TokenMarker + Decodable<B::Deposit>,
-    Q: TokenMarker + Decodable<Q::Deposit>,
+    B: TokenMarker
+        + Decodable<B::Deposit>
+        + TupleReader<
+            <ETH as TokenMarker>::Deposit,
+            <ERC20 as TokenMarker>::Deposit,
+            (ETH, ERC20),
+            Result = <B as TokenMarker>::Deposit,
+        >,
+    Q: TokenMarker
+        + Decodable<Q::Deposit>
+        + TupleReader<
+            <ETH as TokenMarker>::Deposit,
+            <ERC20 as TokenMarker>::Deposit,
+            (ETH, ERC20),
+            Result = <Q as TokenMarker>::Deposit,
+        >,
     DynamicMarket<B, Q>: Decodable<DynamicMarket<B, Q>>,
     DynamicMarketKey<B, Q>: DynamicMarketHasher<B, Q>, // P: PairShape
                                                        //     + Decodable<P::ResolvedPair<DynamicIndex>>
@@ -56,15 +70,9 @@ where
         if market_header.decode_deposit_amounts {
             let base_deposit = B::decode(&ctx.args, offset, len)?;
             let quote_deposit = Q::decode(&ctx.args, offset, len)?;
+            let deposit_pair = Pair::new(base_deposit, quote_deposit);
 
-            // let deposit_pair = DepositPair::new(base_deposit, quote_deposit);
-
-            // delta.local.deposits;
-            // Decode and set deposit amounts
-            // New format- decode for base first, then quote?
-            // B::decode()?
-            // let deposit_pair = P::get_leg_mut(&mut delta.local.deposits);
-            // *deposit_pair = P::decode(&ctx.args, offset, len)?;
+            delta.local.deposits.set_deposits::<B, Q>(&deposit_pair);
         }
 
         // Take bid and take quote
@@ -93,7 +101,7 @@ where
         // P::commit_local_delta(&market.common, delta)?;
 
         // Reset local delta for reuse
-        // delta.local.reset::<P>();
+        delta.local.deposits.reset::<B, Q>();
 
         Ok(())
     }
