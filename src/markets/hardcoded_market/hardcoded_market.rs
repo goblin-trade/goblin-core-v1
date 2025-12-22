@@ -82,16 +82,16 @@ where
         }
 
         // // Take bid and take quote
-        // if Base::get(&market_header.execute_takes) {
-        //     ix_take::<HardcodedIndex, P, Base>(
-        //         ctx,
-        //         &mut delta.local,
-        //         &market.common,
-        //         &mut market_state,
-        //         offset,
-        //         len,
-        //     )?;
-        // }
+        if Base::get(&market_header.execute_takes) {
+            ix_take::<HardcodedIndex, B, Q, Base>(
+                ctx,
+                &mut delta.local,
+                &market.common,
+                &mut market_state,
+                offset,
+                len,
+            )?;
+        }
 
         // // Apply market delta updates on global delta
         // // P::commit_local_delta(&market.common, delta)?;

@@ -76,27 +76,27 @@ where
         }
 
         // Take bid and take quote
-        // if Base::get(&market_header.execute_takes) {
-        //     ix_take::<DynamicIndex, P, Base>(
-        //         ctx,
-        //         &mut delta.local,
-        //         &market.common,
-        //         &mut market_state,
-        //         offset,
-        //         len,
-        //     )?;
-        // }
+        if Base::get(&market_header.execute_takes) {
+            ix_take::<DynamicIndex, B, Q, Base>(
+                ctx,
+                &mut delta.local,
+                &market.common,
+                &mut market_state,
+                offset,
+                len,
+            )?;
+        }
 
-        // if Quote::get(&market_header.execute_takes) {
-        //     ix_take::<DynamicIndex, P, Quote>(
-        //         ctx,
-        //         &mut delta.local,
-        //         &market.common,
-        //         &mut market_state,
-        //         offset,
-        //         len,
-        //     )?;
-        // }
+        if Quote::get(&market_header.execute_takes) {
+            ix_take::<DynamicIndex, B, Q, Quote>(
+                ctx,
+                &mut delta.local,
+                &market.common,
+                &mut market_state,
+                offset,
+                len,
+            )?;
+        }
 
         // P::commit_local_delta(&market.common, delta)?;
 
