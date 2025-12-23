@@ -11,7 +11,9 @@ pub trait TokenMarker: Clone + Copy {
     const ADDRESS_SIZE: usize = 1;
     // const ADDRESS_SIZE: usize = core::mem::size_of::<Self::Address>();
 
+    // This is only used in dynamic markets, not hardcoded? We could remove M then
     type TokenIndex<M: MarketVariant>: Clone + Copy;
+
     type Address: Clone + Copy + Sized + Default;
     type Deposit: Clone + Copy + Default;
 }
@@ -27,7 +29,7 @@ impl TokenMarker for ETH {
 impl TokenMarker for ERC20 {
     const DISCRIMINATOR: u8 = 1;
 
-    type TokenIndex<M: MarketVariant> = M;
+    type TokenIndex<M: MarketVariant> = M::TokenIndex;
     type Address = Address;
     type Deposit = DeltaAtoms;
 }

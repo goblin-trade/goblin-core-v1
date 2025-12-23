@@ -1,10 +1,10 @@
 use core::marker::PhantomData;
 
 use crate::{
-    markets::MarketVariant,
+    markets::{Dynamic, Hardcoded, MarketVariant},
     quantities::Ticks,
     state::{DynamicMarketKey, HardcodedMarketKey, SlotState},
-    token::{DynamicIndex, HardcodedToken, TokenIndex, TokenMarker},
+    token::TokenMarker,
     types::Pair,
 };
 
@@ -19,10 +19,10 @@ pub struct MarketState<M: MarketVariant, B: TokenMarker, Q: TokenMarker> {
 }
 
 impl<B: TokenMarker, Q: TokenMarker> SlotState<HardcodedMarketKey<B, Q>>
-    for MarketState<TokenIndex<HardcodedToken>, B, Q>
+    for MarketState<Hardcoded, B, Q>
 {
 }
 impl<B: TokenMarker, Q: TokenMarker> SlotState<DynamicMarketKey<B, Q>>
-    for MarketState<DynamicIndex, B, Q>
+    for MarketState<Dynamic, B, Q>
 {
 }

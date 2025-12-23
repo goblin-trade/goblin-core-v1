@@ -3,7 +3,7 @@ use crate::{
     hostio::HostioContext,
     input_processor::Decodable,
     instructions::ix_take,
-    markets::{CommonMarket, MarketHeader, PairShape},
+    markets::{CommonMarket, Dynamic, MarketHeader, PairShape},
     quantities::DeltaAtoms,
     settlement::Delta,
     state::{DynamicMarketHasher, DynamicMarketKey, MarketState, SlotState},
@@ -20,7 +20,7 @@ where
     Q: TokenMarker,
 {
     /// The common market configuration (lot sizes, tick size, token indices).
-    pub common: CommonMarket<DynamicIndex, B, Q>,
+    pub common: CommonMarket<Dynamic, B, Q>,
 }
 
 impl<B, Q> DynamicMarket<B, Q>
@@ -77,7 +77,7 @@ where
 
         // Take bid and take quote
         if Base::get(&market_header.execute_takes) {
-            ix_take::<DynamicIndex, B, Q, Base>(
+            ix_take::<Dynamic, B, Q, Base>(
                 ctx,
                 &mut delta.local,
                 &market.common,
@@ -88,7 +88,7 @@ where
         }
 
         if Quote::get(&market_header.execute_takes) {
-            ix_take::<DynamicIndex, B, Q, Quote>(
+            ix_take::<Dynamic, B, Q, Quote>(
                 ctx,
                 &mut delta.local,
                 &market.common,

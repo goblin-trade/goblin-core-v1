@@ -1,8 +1,8 @@
 use crate::{
     goblin_error::GoblinError,
-    markets::CommonMarket,
+    markets::{CommonMarket, Dynamic},
     state::SlotKey,
-    token::{CustomToken, DynamicIndex, TokenMarker},
+    token::{CustomToken, TokenMarker},
     types::{Base, Quote, TupleReader},
 };
 
@@ -26,14 +26,14 @@ where
         1 + 8 * 3 + core::mem::size_of::<B::Address>() + core::mem::size_of::<Q::Address>();
 
     fn hash(
-        market: &CommonMarket<DynamicIndex, B, Q>,
+        market: &CommonMarket<Dynamic, B, Q>,
         custom_erc20_list: &[CustomToken],
     ) -> Result<Self, GoblinError>;
 
     /// Set the common fields. Called before setting addresses
     fn set_common_fields<const N: usize>(
         bytes: &mut [u8; N],
-        market: &CommonMarket<DynamicIndex, B, Q>,
+        market: &CommonMarket<Dynamic, B, Q>,
     ) {
         bytes[0] = Self::DISCRIMINATOR;
 

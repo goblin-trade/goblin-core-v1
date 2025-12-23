@@ -1,15 +1,15 @@
 use crate::{
     goblin_error::GoblinError,
     hostio,
-    markets::CommonMarket,
+    markets::{CommonMarket, Dynamic},
     state::{DynamicMarketHasher, DynamicMarketKey},
-    token::{CustomToken, DynamicIndex, ERC20, ETH},
+    token::{CustomToken, ERC20, ETH},
     types::{Quote, TupleReader},
 };
 
 impl DynamicMarketHasher<ETH, ERC20> for DynamicMarketKey<ETH, ERC20> {
     fn hash(
-        market: &CommonMarket<DynamicIndex, ETH, ERC20>,
+        market: &CommonMarket<Dynamic, ETH, ERC20>,
         custom_erc20_list: &[CustomToken],
     ) -> Result<Self, GoblinError> {
         let mut bytes = [0u8; Self::BUFFER_SIZE];

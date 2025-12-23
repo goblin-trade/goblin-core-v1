@@ -3,7 +3,7 @@ use crate::{
     hostio::HostioContext,
     input_processor::Decodable,
     instructions::ix_take,
-    markets::{CommonMarket, HardcodedMarketList, MarketHeader, PairShape},
+    markets::{CommonMarket, Hardcoded, HardcodedMarketList, MarketHeader, PairShape},
     quantities::DeltaAtoms,
     settlement::Delta,
     state::{HardcodedMarketKey, MarketState, SlotState},
@@ -22,7 +22,7 @@ where
     Q: TokenMarker,
 {
     /// The common market configuration (lot sizes, tick size, token indices).
-    pub common: CommonMarket<HardcodedIndex, B, Q>,
+    pub common: CommonMarket<Hardcoded, B, Q>,
 
     /// The hardcoded keccak256 hash.
     pub keccak_hash: HardcodedMarketKey<B, Q>,
@@ -83,7 +83,7 @@ where
 
         // // Take bid and take quote
         if Base::get(&market_header.execute_takes) {
-            ix_take::<HardcodedIndex, B, Q, Base>(
+            ix_take::<Hardcoded, B, Q, Base>(
                 ctx,
                 &mut delta.local,
                 &market.common,
