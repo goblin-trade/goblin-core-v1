@@ -11,7 +11,7 @@ use crate::{
         global_delta::{ERC20Delta, ERC20MakerDeltas, ERC20SenderDeltas, UnsidedMakerDelta},
         Delta,
     },
-    state::{DynamicMarketHasher, DynamicMarketKey, SlotKey},
+    state::{DynamicMarketHasher, DynamicMarketKey, MarketState, SlotKey, SlotState},
     token::{CustomToken, TokenMarker},
     types::Address,
 };
@@ -44,10 +44,12 @@ pub trait MarketVariant: Clone + Copy {
         Q: TokenMarker + Decodable<Q::Deposit>,
         Self::Market<B, Q>: Decodable<Self::Market<B, Q>>,
         DynamicMarketKey<B, Q>: DynamicMarketHasher<B, Q>,
+        MarketState<Self, B, Q>: SlotState<Self::MarketKey<B, Q>>,
     {
         let market_header = MarketHeader::decode(&ctx.args, offset, len)?;
         let market = Self::Market::<B, Q>::decode(&ctx.args, offset, len)?;
         let market_key = Self::get_market_key(&market, custom_erc20_list)?;
+        let mut market_state = MarketState::<Self, B, Q>::load(&market_key).into_inner();
 
         Ok(())
     }
