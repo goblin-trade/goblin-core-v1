@@ -97,6 +97,11 @@ pub trait MarketVariant: Clone + Copy {
             )?;
         }
 
+        // TODO commit local delta into global delta
+
+        // Reset local delta for reuse
+        delta.local.deposits.reset::<B, Q>();
+
         Ok(())
     }
 
