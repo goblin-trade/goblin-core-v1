@@ -3,6 +3,7 @@ use core::marker::PhantomData;
 use crate::{state::SlotKey, token::TokenMarker};
 
 /// The hash is hardcoded for hardcoded markets
+#[derive(Clone, Copy)]
 pub struct HardcodedMarketKey<B: TokenMarker, Q: TokenMarker> {
     hash: [u8; 32],
     _marker: PhantomData<(B, Q)>,

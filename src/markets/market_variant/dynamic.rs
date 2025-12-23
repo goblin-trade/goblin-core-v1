@@ -1,16 +1,11 @@
 use crate::{
     goblin_error::GoblinError,
-    hostio::HostioContext,
-    input_processor::Decodable,
-    markets::{Dynamic, DynamicMarket, MarketHeader, MarketVariant},
-    settlement::{
-        global_delta::{
-            ERC20Delta, ERC20DeltaList, ERC20MakerDeltaKey, ERC20MakerDeltas, ERC20SenderDeltas,
-            UnsidedMakerDelta,
-        },
-        Delta,
+    markets::{Dynamic, DynamicMarket, MarketVariant},
+    settlement::global_delta::{
+        ERC20Delta, ERC20DeltaList, ERC20MakerDeltaKey, ERC20MakerDeltas, ERC20SenderDeltas,
+        UnsidedMakerDelta,
     },
-    state::DynamicMarketKey,
+    state::{DynamicMarketHasher, DynamicMarketKey},
     token::{CustomToken, DynamicIndex, HardcodedToken, TokenMarker},
     types::{Address, TupleReader},
 };
@@ -24,20 +19,16 @@ impl MarketVariant for Dynamic {
 
     type Market<B: TokenMarker, Q: TokenMarker> = DynamicMarket<B, Q>;
 
-    fn decode_market<B, Q>(
-        ctx: &HostioContext,
-        offset: &mut usize,
-        len: usize,
-        delta: &mut Delta,
+    fn get_market_key<B, Q>(
+        market: &Self::Market<B, Q>,
         custom_erc20_list: &[CustomToken],
-        market_header: &MarketHeader,
-    ) -> Result<Self::Market<B, Q>, GoblinError>
+    ) -> Result<Self::MarketKey<B, Q>, GoblinError>
     where
-        B: TokenMarker + Decodable<B::Deposit>,
-        Q: TokenMarker + Decodable<Q::Deposit>,
-        Self::Market<B, Q>: Decodable<Self::Market<B, Q>>, // DynamicMarket<B, Q>: Decodable<DynamicMarket<B, Q>>,
+        B: TokenMarker,
+        Q: TokenMarker,
+        DynamicMarketKey<B, Q>: DynamicMarketHasher<B, Q>,
     {
-        Self::Market::<B, Q>::decode(&ctx.args, offset, len)
+        DynamicMarketKey::hash(&market.common, custom_erc20_list)
     }
 
     fn token_sender_delta_mut(

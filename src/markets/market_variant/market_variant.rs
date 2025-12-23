@@ -11,7 +11,7 @@ use crate::{
         global_delta::{ERC20Delta, ERC20MakerDeltas, ERC20SenderDeltas, UnsidedMakerDelta},
         Delta,
     },
-    state::SlotKey,
+    state::{DynamicMarketHasher, DynamicMarketKey, SlotKey},
     token::{CustomToken, TokenMarker},
     types::Address,
 };
@@ -43,25 +43,24 @@ pub trait MarketVariant: Clone + Copy {
         B: TokenMarker + Decodable<B::Deposit>,
         Q: TokenMarker + Decodable<Q::Deposit>,
         Self::Market<B, Q>: Decodable<Self::Market<B, Q>>,
+        DynamicMarketKey<B, Q>: DynamicMarketHasher<B, Q>,
     {
         let market_header = MarketHeader::decode(&ctx.args, offset, len)?;
         let market = Self::Market::<B, Q>::decode(&ctx.args, offset, len)?;
+        let market_key = Self::get_market_key(&market, custom_erc20_list)?;
 
         Ok(())
     }
 
-    fn decode_market<B, Q>(
-        ctx: &HostioContext,
-        offset: &mut usize,
-        len: usize,
-        delta: &mut Delta,
+    /// Get the market key. This key is used to read market state from slot.
+    fn get_market_key<B, Q>(
+        market: &Self::Market<B, Q>,
         custom_erc20_list: &[CustomToken],
-        market_header: &MarketHeader,
-    ) -> Result<Self::Market<B, Q>, GoblinError>
+    ) -> Result<Self::MarketKey<B, Q>, GoblinError>
     where
-        B: TokenMarker + Decodable<B::Deposit>,
-        Q: TokenMarker + Decodable<Q::Deposit>,
-        Self::Market<B, Q>: Decodable<Self::Market<B, Q>>;
+        B: TokenMarker,
+        Q: TokenMarker,
+        DynamicMarketKey<B, Q>: DynamicMarketHasher<B, Q>;
 
     fn token_sender_delta_mut(
         token_index: Self::TokenIndex,

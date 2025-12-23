@@ -1,14 +1,9 @@
 use crate::{
     goblin_error::GoblinError,
-    hostio::HostioContext,
-    input_processor::Decodable,
-    markets::{Hardcoded, HardcodedMarket, MarketHeader, MarketVariant},
-    settlement::{
-        global_delta::{
-            ERC20Delta, ERC20DeltaList, ERC20MakerDeltaKey, ERC20MakerDeltas, ERC20SenderDeltas,
-            UnsidedMakerDelta,
-        },
-        Delta,
+    markets::{Hardcoded, HardcodedMarket, MarketVariant},
+    settlement::global_delta::{
+        ERC20Delta, ERC20DeltaList, ERC20MakerDeltaKey, ERC20MakerDeltas, ERC20SenderDeltas,
+        UnsidedMakerDelta,
     },
     state::HardcodedMarketKey,
     token::{CustomToken, HardcodedIndex, HardcodedToken, TokenMarker},
@@ -24,20 +19,16 @@ impl MarketVariant for Hardcoded {
 
     type MarketKey<B: TokenMarker, Q: TokenMarker> = HardcodedMarketKey<B, Q>;
 
-    fn decode_market<B, Q>(
-        ctx: &HostioContext,
-        offset: &mut usize,
-        len: usize,
-        delta: &mut Delta,
-        custom_erc20_list: &[CustomToken],
-        market_header: &MarketHeader,
-    ) -> Result<Self::Market<B, Q>, GoblinError>
+    /// custom_erc20_list and DynamicMarketHasher trait bound are unused in harcoded version
+    fn get_market_key<B, Q>(
+        market: &Self::Market<B, Q>,
+        _custom_erc20_list: &[CustomToken],
+    ) -> Result<Self::MarketKey<B, Q>, GoblinError>
     where
-        B: TokenMarker + Decodable<B::Deposit>,
-        Q: TokenMarker + Decodable<Q::Deposit>,
-        Self::Market<B, Q>: Decodable<Self::Market<B, Q>>,
+        B: TokenMarker,
+        Q: TokenMarker,
     {
-        Self::Market::<B, Q>::decode(&ctx.args, offset, len)
+        Ok(market.keccak_hash)
     }
 
     fn token_sender_delta_mut(
