@@ -13,11 +13,11 @@ use crate::{
 
 pub fn ix_take<M, B, Q, In>(
     ctx: &HostioContext,
+    offset: &mut usize,
+    len: usize,
     local_delta: &mut LocalDelta,
     market: &CommonMarket<M, B, Q>,
     market_state: &mut MarketState<M, B, Q>,
-    offset: &mut usize,
-    len: usize,
 ) -> Result<(), GoblinError>
 where
     M: MarketVariant,

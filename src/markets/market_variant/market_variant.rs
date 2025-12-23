@@ -6,14 +6,15 @@ use crate::{
     goblin_error::GoblinError,
     hostio::HostioContext,
     input_processor::Decodable,
-    markets::MarketHeader,
+    instructions::ix_take,
+    markets::{CommonMarket, MarketHeader},
     settlement::{
         global_delta::{ERC20Delta, ERC20MakerDeltas, ERC20SenderDeltas, UnsidedMakerDelta},
         Delta,
     },
     state::{DynamicMarketHasher, DynamicMarketKey, MarketState, SlotKey, SlotState},
     token::{CustomToken, TokenMarker, ERC20, ETH},
-    types::{Address, Pair, TupleReader},
+    types::{Address, Base, Pair, Quote, TupleReader},
 };
 
 #[derive(Clone, Copy, Default)]
@@ -73,6 +74,29 @@ pub trait MarketVariant: Clone + Copy {
             delta.local.deposits.set_deposits::<B, Q>(&deposit_pair);
         }
 
+        // Take bid and take quote
+        if Base::get(&market_header.execute_takes) {
+            ix_take::<Self, B, Q, Base>(
+                ctx,
+                offset,
+                len,
+                &mut delta.local,
+                Self::common_market(&market),
+                &mut market_state,
+            )?;
+        }
+
+        if Quote::get(&market_header.execute_takes) {
+            ix_take::<Self, B, Q, Quote>(
+                ctx,
+                offset,
+                len,
+                &mut delta.local,
+                Self::common_market(&market),
+                &mut market_state,
+            )?;
+        }
+
         Ok(())
     }
 
@@ -85,6 +109,11 @@ pub trait MarketVariant: Clone + Copy {
         B: TokenMarker,
         Q: TokenMarker,
         DynamicMarketKey<B, Q>: DynamicMarketHasher<B, Q>;
+
+    fn common_market<B, Q>(market: &Self::Market<B, Q>) -> &CommonMarket<Self, B, Q>
+    where
+        B: TokenMarker,
+        Q: TokenMarker;
 
     fn token_sender_delta_mut(
         token_index: Self::TokenIndex,

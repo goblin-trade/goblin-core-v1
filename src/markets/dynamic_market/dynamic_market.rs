@@ -79,22 +79,22 @@ where
         if Base::get(&market_header.execute_takes) {
             ix_take::<Dynamic, B, Q, Base>(
                 ctx,
+                offset,
+                len,
                 &mut delta.local,
                 &market.common,
                 &mut market_state,
-                offset,
-                len,
             )?;
         }
 
         if Quote::get(&market_header.execute_takes) {
             ix_take::<Dynamic, B, Q, Quote>(
                 ctx,
+                offset,
+                len,
                 &mut delta.local,
                 &market.common,
                 &mut market_state,
-                offset,
-                len,
             )?;
         }
 

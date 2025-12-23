@@ -1,6 +1,6 @@
 use crate::{
     goblin_error::GoblinError,
-    markets::{Hardcoded, HardcodedMarket, MarketVariant},
+    markets::{CommonMarket, Hardcoded, HardcodedMarket, MarketVariant},
     settlement::global_delta::{
         ERC20Delta, ERC20DeltaList, ERC20MakerDeltaKey, ERC20MakerDeltas, ERC20SenderDeltas,
         UnsidedMakerDelta,
@@ -29,6 +29,14 @@ impl MarketVariant for Hardcoded {
         Q: TokenMarker,
     {
         Ok(market.keccak_hash)
+    }
+
+    fn common_market<B, Q>(market: &Self::Market<B, Q>) -> &CommonMarket<Self, B, Q>
+    where
+        B: TokenMarker,
+        Q: TokenMarker,
+    {
+        &market.common
     }
 
     fn token_sender_delta_mut(

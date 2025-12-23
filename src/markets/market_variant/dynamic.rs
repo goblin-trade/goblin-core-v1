@@ -1,6 +1,6 @@
 use crate::{
     goblin_error::GoblinError,
-    markets::{Dynamic, DynamicMarket, MarketVariant},
+    markets::{CommonMarket, Dynamic, DynamicMarket, MarketVariant},
     settlement::global_delta::{
         ERC20Delta, ERC20DeltaList, ERC20MakerDeltaKey, ERC20MakerDeltas, ERC20SenderDeltas,
         UnsidedMakerDelta,
@@ -29,6 +29,14 @@ impl MarketVariant for Dynamic {
         DynamicMarketKey<B, Q>: DynamicMarketHasher<B, Q>,
     {
         DynamicMarketKey::hash(&market.common, custom_erc20_list)
+    }
+
+    fn common_market<B, Q>(market: &Self::Market<B, Q>) -> &CommonMarket<Self, B, Q>
+    where
+        B: TokenMarker,
+        Q: TokenMarker,
+    {
+        &market.common
     }
 
     fn token_sender_delta_mut(

@@ -85,11 +85,11 @@ where
         if Base::get(&market_header.execute_takes) {
             ix_take::<Hardcoded, B, Q, Base>(
                 ctx,
+                offset,
+                len,
                 &mut delta.local,
                 &market.common,
                 &mut market_state,
-                offset,
-                len,
             )?;
         }
 
