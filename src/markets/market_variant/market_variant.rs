@@ -7,7 +7,7 @@ use crate::{
     hostio::HostioContext,
     input_processor::Decodable,
     instructions::ix_take,
-    markets::{CommonMarket, MarketHeader},
+    markets::{CommonMarket, HardcodedMarket, HardcodedMarketList, MarketHeader, MarketWithKeyRef},
     settlement::{
         global_delta::{ERC20Delta, ERC20MakerDeltas, ERC20SenderDeltas, UnsidedMakerDelta},
         Delta,
@@ -28,10 +28,20 @@ pub trait MarketVariant: Clone + Copy {
 
     type TokenIndex: Clone + Copy;
 
-    type Market<B: TokenMarker, Q: TokenMarker>;
-
     /// Key to read market state slot
     type MarketKey<B: TokenMarker, Q: TokenMarker>: SlotKey;
+
+    type BlackBox<B: TokenMarker, Q: TokenMarker>;
+
+    type Market<B: TokenMarker, Q: TokenMarker>;
+
+    fn get_market_with_key_ref<'a, B, Q>(
+        black_box: &'a Self::BlackBox<B, Q>,
+    ) -> Result<MarketWithKeyRef<'a, Self, B, Q>, GoblinError>
+    where
+        B: TokenMarker + 'static,
+        Q: TokenMarker + 'static,
+        HardcodedMarket<B, Q>: HardcodedMarketList<B, Q>;
 
     fn process<B, Q>(
         ctx: &HostioContext,
@@ -62,45 +72,47 @@ pub trait MarketVariant: Clone + Copy {
         MarketState<Self, B, Q>: SlotState<Self::MarketKey<B, Q>>,
     {
         let market_header = MarketHeader::decode(&ctx.args, offset, len)?;
+
         let market = Self::Market::<B, Q>::decode(&ctx.args, offset, len)?;
         let market_key = Self::get_market_key(&market, custom_erc20_list)?;
-        let mut market_state = MarketState::<Self, B, Q>::load(&market_key).into_inner();
 
-        if market_header.decode_deposit_amounts {
-            let base_deposit = B::decode(&ctx.args, offset, len)?;
-            let quote_deposit = Q::decode(&ctx.args, offset, len)?;
-            let deposit_pair = Pair::new(base_deposit, quote_deposit);
+        // let mut market_state = MarketState::<Self, B, Q>::load(&market_key).into_inner();
 
-            delta.local.deposits.set_deposits::<B, Q>(&deposit_pair);
-        }
+        // if market_header.decode_deposit_amounts {
+        //     let base_deposit = B::decode(&ctx.args, offset, len)?;
+        //     let quote_deposit = Q::decode(&ctx.args, offset, len)?;
+        //     let deposit_pair = Pair::new(base_deposit, quote_deposit);
 
-        // Take bid and take quote
-        if Base::get(&market_header.execute_takes) {
-            ix_take::<Self, B, Q, Base>(
-                ctx,
-                offset,
-                len,
-                &mut delta.local,
-                Self::common_market(&market),
-                &mut market_state,
-            )?;
-        }
+        //     delta.local.deposits.set_deposits::<B, Q>(&deposit_pair);
+        // }
 
-        if Quote::get(&market_header.execute_takes) {
-            ix_take::<Self, B, Q, Quote>(
-                ctx,
-                offset,
-                len,
-                &mut delta.local,
-                Self::common_market(&market),
-                &mut market_state,
-            )?;
-        }
+        // // Take bid and take quote
+        // if Base::get(&market_header.execute_takes) {
+        //     ix_take::<Self, B, Q, Base>(
+        //         ctx,
+        //         offset,
+        //         len,
+        //         &mut delta.local,
+        //         Self::common_market(&market),
+        //         &mut market_state,
+        //     )?;
+        // }
 
-        // TODO commit local delta into global delta
+        // if Quote::get(&market_header.execute_takes) {
+        //     ix_take::<Self, B, Q, Quote>(
+        //         ctx,
+        //         offset,
+        //         len,
+        //         &mut delta.local,
+        //         Self::common_market(&market),
+        //         &mut market_state,
+        //     )?;
+        // }
 
-        // Reset local delta for reuse
-        delta.local.deposits.reset::<B, Q>();
+        // // TODO commit local delta into global delta
+
+        // // Reset local delta for reuse
+        // delta.local.deposits.reset::<B, Q>();
 
         Ok(())
     }
