@@ -22,8 +22,6 @@ impl MarketVariant for Dynamic {
 
     type MarketKey<B: TokenMarker, Q: TokenMarker> = DynamicMarketKey<B, Q>;
 
-    type Market<B: TokenMarker, Q: TokenMarker> = DynamicMarket<B, Q>;
-
     fn get_black_box<B, Q>(
         args: &ArgsBuffer,
         offset: &mut usize,
@@ -53,26 +51,6 @@ impl MarketVariant for Dynamic {
             common_market: &black_box.common_market,
             key: &black_box.key,
         })
-    }
-
-    fn get_market_key<B, Q>(
-        market: &Self::Market<B, Q>,
-        custom_erc20_list: &[CustomToken],
-    ) -> Result<Self::MarketKey<B, Q>, GoblinError>
-    where
-        B: TokenMarker,
-        Q: TokenMarker,
-        DynamicMarketKey<B, Q>: DynamicMarketHasher<B, Q>,
-    {
-        DynamicMarketKey::hash(&market.common, custom_erc20_list)
-    }
-
-    fn common_market<B, Q>(market: &Self::Market<B, Q>) -> &CommonMarket<Self, B, Q>
-    where
-        B: TokenMarker,
-        Q: TokenMarker,
-    {
-        &market.common
     }
 
     fn token_sender_delta_mut(

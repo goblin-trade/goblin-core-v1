@@ -7,7 +7,7 @@ use crate::{
     hostio::HostioContext,
     input_processor::{ArgsBuffer, Decodable},
     instructions::ix_take,
-    markets::{CommonMarket, HardcodedMarket, HardcodedMarketList, MarketHeader, MarketWithKeyRef},
+    markets::{HardcodedMarket, HardcodedMarketList, MarketHeader, MarketWithKeyRef},
     settlement::{
         global_delta::{ERC20Delta, ERC20MakerDeltas, ERC20SenderDeltas, UnsidedMakerDelta},
         Delta,
@@ -32,8 +32,6 @@ pub trait MarketVariant: Clone + Copy {
     type MarketKey<B: TokenMarker, Q: TokenMarker>: SlotKey;
 
     type BlackBox<B: TokenMarker, Q: TokenMarker>;
-
-    type Market<B: TokenMarker, Q: TokenMarker>;
 
     fn get_black_box<B, Q>(
         args: &ArgsBuffer,
@@ -132,21 +130,6 @@ pub trait MarketVariant: Clone + Copy {
 
         Ok(())
     }
-
-    /// Get the market key. This key is used to read market state from slot.
-    fn get_market_key<B, Q>(
-        market: &Self::Market<B, Q>,
-        custom_erc20_list: &[CustomToken],
-    ) -> Result<Self::MarketKey<B, Q>, GoblinError>
-    where
-        B: TokenMarker,
-        Q: TokenMarker,
-        DynamicMarketKey<B, Q>: DynamicMarketHasher<B, Q>;
-
-    fn common_market<B, Q>(market: &Self::Market<B, Q>) -> &CommonMarket<Self, B, Q>
-    where
-        B: TokenMarker,
-        Q: TokenMarker;
 
     fn token_sender_delta_mut(
         token_index: Self::TokenIndex,

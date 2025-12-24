@@ -24,8 +24,6 @@ impl MarketVariant for Hardcoded {
 
     type MarketKey<B: TokenMarker, Q: TokenMarker> = HardcodedMarketKey<B, Q>;
 
-    type Market<B: TokenMarker, Q: TokenMarker> = HardcodedMarket<B, Q>;
-
     fn get_black_box<B, Q>(
         args: &ArgsBuffer,
         offset: &mut usize,
@@ -56,26 +54,6 @@ impl MarketVariant for Hardcoded {
             common_market: &market_ref.common,
             key: &market_ref.keccak_hash,
         })
-    }
-
-    /// custom_erc20_list and DynamicMarketHasher trait bound are unused in harcoded version
-    fn get_market_key<B, Q>(
-        market: &Self::Market<B, Q>,
-        _custom_erc20_list: &[CustomToken],
-    ) -> Result<Self::MarketKey<B, Q>, GoblinError>
-    where
-        B: TokenMarker,
-        Q: TokenMarker,
-    {
-        Ok(market.keccak_hash)
-    }
-
-    fn common_market<B, Q>(market: &Self::Market<B, Q>) -> &CommonMarket<Self, B, Q>
-    where
-        B: TokenMarker,
-        Q: TokenMarker,
-    {
-        &market.common
     }
 
     fn token_sender_delta_mut(
