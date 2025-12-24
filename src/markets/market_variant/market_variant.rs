@@ -62,30 +62,37 @@ pub trait MarketVariant: Clone + Copy {
         custom_erc20_list: &[CustomToken],
     ) -> Result<(), GoblinError>
     where
-        B: TokenMarker
-            + Decodable<B::Deposit>
-            + TupleReader<
-                <ETH as TokenMarker>::Deposit,
-                <ERC20 as TokenMarker>::Deposit,
-                (ETH, ERC20),
-                Result = <B as TokenMarker>::Deposit,
-            >,
-        Q: TokenMarker
-            + Decodable<Q::Deposit>
-            + TupleReader<
-                <ETH as TokenMarker>::Deposit,
-                <ERC20 as TokenMarker>::Deposit,
-                (ETH, ERC20),
-                Result = <Q as TokenMarker>::Deposit,
-            >,
-        Self::Market<B, Q>: Decodable<Self::Market<B, Q>>,
+        B: TokenMarker + Decodable<B::TokenIndex<Dynamic>>,
+        Q: TokenMarker + Decodable<Q::TokenIndex<Dynamic>>,
         DynamicMarketKey<B, Q>: DynamicMarketHasher<B, Q>,
-        MarketState<Self, B, Q>: SlotState<Self::MarketKey<B, Q>>,
+        // B: TokenMarker
+        //     + Decodable<B::Deposit>
+        //     + TupleReader<
+        //         <ETH as TokenMarker>::Deposit,
+        //         <ERC20 as TokenMarker>::Deposit,
+        //         (ETH, ERC20),
+        //         Result = <B as TokenMarker>::Deposit,
+        //     >,
+        // Q: TokenMarker
+        //     + Decodable<Q::Deposit>
+        //     + TupleReader<
+        //         <ETH as TokenMarker>::Deposit,
+        //         <ERC20 as TokenMarker>::Deposit,
+        //         (ETH, ERC20),
+        //         Result = <Q as TokenMarker>::Deposit,
+        //     >,
+        // Self::Market<B, Q>: Decodable<Self::Market<B, Q>>,
+        // DynamicMarketKey<B, Q>: DynamicMarketHasher<B, Q>,
+        // MarketState<Self, B, Q>: SlotState<Self::MarketKey<B, Q>>,
     {
         let market_header = MarketHeader::decode(&ctx.args, offset, len)?;
 
-        let market = Self::Market::<B, Q>::decode(&ctx.args, offset, len)?;
-        let market_key = Self::get_market_key(&market, custom_erc20_list)?;
+        let black_box = Self::get_black_box(&ctx.args, offset, len, custom_erc20_list)?;
+
+        // let market_with_key_ref = Self::get_market_with_key_ref(&black_box)?;
+
+        // let market = Self::Market::<B, Q>::decode(&ctx.args, offset, len)?;
+        // let market_key = Self::get_market_key(&market, custom_erc20_list)?;
 
         // let mut market_state = MarketState::<Self, B, Q>::load(&market_key).into_inner();
 

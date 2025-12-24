@@ -43,7 +43,7 @@ pub fn processor(len: usize) -> Result<(), GoblinError> {
     let dynamic_markets = DynamicIndex::get_leg(&global_header.market_counts);
 
     for _ in 0..<(ETH, ERC20)>::get(hardcoded_markets) {
-        // Hardcoded::process::<ETH, ERC20>(ctx, offset, len, delta, global_header.custom_erc20_list)?;
+        Hardcoded::process::<ETH, ERC20>(ctx, offset, len, delta, global_header.custom_erc20_list)?;
 
         // let market_header = MarketHeader::decode(&ctx.args, offset, len)?;
         // HardcodedMarket::<ETH, ERC20>::process(ctx, &market_header, delta, offset, len)?;
