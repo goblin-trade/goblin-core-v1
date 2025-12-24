@@ -1,5 +1,6 @@
 use crate::{
     goblin_error::GoblinError,
+    input_processor::{ArgsBuffer, Decodable},
     markets::{
         CommonMarket, Dynamic, DynamicMarket, MarketVariant, MarketWithKey, MarketWithKeyRef,
     },
@@ -22,6 +23,24 @@ impl MarketVariant for Dynamic {
     type MarketKey<B: TokenMarker, Q: TokenMarker> = DynamicMarketKey<B, Q>;
 
     type Market<B: TokenMarker, Q: TokenMarker> = DynamicMarket<B, Q>;
+
+    fn get_black_box<B, Q>(
+        args: &ArgsBuffer,
+        offset: &mut usize,
+        len: usize,
+        custom_erc20_list: &[CustomToken],
+    ) -> Result<Self::BlackBox<B, Q>, GoblinError>
+    where
+        B: TokenMarker + Decodable<B::TokenIndex<Dynamic>>,
+        Q: TokenMarker + Decodable<Q::TokenIndex<Dynamic>>,
+        DynamicMarketKey<B, Q>: DynamicMarketHasher<B, Q>,
+        CommonMarket<Dynamic, B, Q>: Decodable<CommonMarket<Dynamic, B, Q>>,
+    {
+        let common_market = CommonMarket::<Self, B, Q>::decode(args, offset, len)?;
+        let key = DynamicMarketKey::hash(&common_market, custom_erc20_list)?;
+
+        Ok(MarketWithKey { common_market, key })
+    }
 
     fn get_market_with_key_ref<'a, B, Q>(
         black_box: &'a Self::BlackBox<B, Q>,

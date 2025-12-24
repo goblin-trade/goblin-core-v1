@@ -1,5 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
+    hostio::HostioContext,
+    input_processor::{ArgsBuffer, Decodable},
     markets::{
         CommonMarket, Hardcoded, HardcodedMarket, HardcodedMarketIndex, HardcodedMarketList,
         MarketVariant, MarketWithKeyRef,
@@ -23,6 +25,19 @@ impl MarketVariant for Hardcoded {
     type MarketKey<B: TokenMarker, Q: TokenMarker> = HardcodedMarketKey<B, Q>;
 
     type Market<B: TokenMarker, Q: TokenMarker> = HardcodedMarket<B, Q>;
+
+    fn get_black_box<B, Q>(
+        args: &ArgsBuffer,
+        offset: &mut usize,
+        len: usize,
+        _custom_erc20_list: &[CustomToken],
+    ) -> Result<Self::BlackBox<B, Q>, GoblinError>
+    where
+        B: TokenMarker,
+        Q: TokenMarker,
+    {
+        <HardcodedMarketIndex as Decodable<HardcodedMarketIndex>>::decode(args, offset, len)
+    }
 
     fn get_market_with_key_ref<'a, B, Q>(
         black_box: &'a Self::BlackBox<B, Q>,

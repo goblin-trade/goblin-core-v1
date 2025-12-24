@@ -5,7 +5,7 @@
 use crate::{
     goblin_error::GoblinError,
     hostio::HostioContext,
-    input_processor::Decodable,
+    input_processor::{ArgsBuffer, Decodable},
     instructions::ix_take,
     markets::{CommonMarket, HardcodedMarket, HardcodedMarketList, MarketHeader, MarketWithKeyRef},
     settlement::{
@@ -34,6 +34,17 @@ pub trait MarketVariant: Clone + Copy {
     type BlackBox<B: TokenMarker, Q: TokenMarker>;
 
     type Market<B: TokenMarker, Q: TokenMarker>;
+
+    fn get_black_box<B, Q>(
+        args: &ArgsBuffer,
+        offset: &mut usize,
+        len: usize,
+        custom_erc20_list: &[CustomToken],
+    ) -> Result<Self::BlackBox<B, Q>, GoblinError>
+    where
+        B: TokenMarker + Decodable<B::TokenIndex<Dynamic>>,
+        Q: TokenMarker + Decodable<Q::TokenIndex<Dynamic>>,
+        DynamicMarketKey<B, Q>: DynamicMarketHasher<B, Q>;
 
     fn get_market_with_key_ref<'a, B, Q>(
         black_box: &'a Self::BlackBox<B, Q>,
