@@ -7,7 +7,7 @@ use crate::{
     hostio::HostioContext,
     input_processor::{ArgsBuffer, Decodable},
     instructions::ix_take,
-    markets::{HardcodedMarket, HardcodedMarketList, MarketHeader, MarketWithKeyRef},
+    markets::{HardcodedMarketList, MarketHeader, MarketWithKey, MarketWithKeyRef},
     settlement::{
         global_delta::{ERC20Delta, ERC20MakerDeltas, ERC20SenderDeltas, UnsidedMakerDelta},
         Delta,
@@ -50,7 +50,7 @@ pub trait MarketVariant: Clone + Copy {
     where
         B: TokenMarker + 'static,
         Q: TokenMarker + 'static,
-        HardcodedMarket<B, Q>: HardcodedMarketList<B, Q>;
+        MarketWithKey<Hardcoded, B, Q>: HardcodedMarketList<B, Q>;
 
     fn process<B, Q>(
         ctx: &HostioContext,
@@ -81,7 +81,7 @@ pub trait MarketVariant: Clone + Copy {
                 Result = <Q as TokenMarker>::Deposit,
             >,
         DynamicMarketKey<B, Q>: DynamicMarketHasher<B, Q>,
-        HardcodedMarket<B, Q>: HardcodedMarketList<B, Q>,
+        MarketWithKey<Hardcoded, B, Q>: HardcodedMarketList<B, Q>,
         MarketState<Self, B, Q>: SlotState<Self::MarketKey<B, Q>>,
     {
         let market_header = MarketHeader::decode(&ctx.args, offset, len)?;

@@ -1,1 +1,1 @@
-pub mod decode_dynamic_common_market;
+pub mod decode;

@@ -3,7 +3,6 @@ use crate::{
     input_processor::{ArgsBuffer, ArgsDecoder, Decodable},
 };
 
-// TODO store B, Q as PhantomData?
 pub struct HardcodedMarketIndex(pub usize);
 
 impl Decodable<HardcodedMarketIndex> for HardcodedMarketIndex {

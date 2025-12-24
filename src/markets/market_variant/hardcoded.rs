@@ -2,7 +2,7 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::{ArgsBuffer, Decodable},
     markets::{
-        Hardcoded, HardcodedMarket, HardcodedMarketIndex, HardcodedMarketList, MarketVariant,
+        Hardcoded, HardcodedMarketIndex, HardcodedMarketList, MarketVariant, MarketWithKey,
         MarketWithKeyRef,
     },
     settlement::global_delta::{
@@ -42,16 +42,15 @@ impl MarketVariant for Hardcoded {
     where
         B: TokenMarker + 'static,
         Q: TokenMarker + 'static,
-        HardcodedMarket<B, Q>: HardcodedMarketList<B, Q>,
+        MarketWithKey<Hardcoded, B, Q>: HardcodedMarketList<B, Q>,
     {
-        // TODO map HardcodedMarketIndex to market
-        let market_ref = HardcodedMarket::<B, Q>::HARDCODED_MARKET_LIST
+        let market_ref = MarketWithKey::<Hardcoded, B, Q>::HARDCODED_MARKET_LIST
             .get(black_box.0)
             .ok_or(GoblinError::InvalidHardcodedMarket)?;
 
         Ok(MarketWithKeyRef {
-            common_market: &market_ref.common,
-            key: &market_ref.keccak_hash,
+            common_market: &market_ref.common_market,
+            key: &market_ref.key,
         })
     }
 

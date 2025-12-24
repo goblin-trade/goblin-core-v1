@@ -1,14 +1,14 @@
 use crate::{
-    markets::{CommonMarket, HardcodedMarket, HardcodedMarketList},
+    markets::{CommonMarket, Hardcoded, HardcodedMarketList, MarketWithKey},
     quantities::{BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit},
     state::HardcodedMarketKey,
     token::{HardcodedToken, TokenIndex, ERC20, ETH},
     types::{Pair, Tuple},
 };
 
-impl HardcodedMarketList<ETH, ERC20> for HardcodedMarket<ETH, ERC20> {
-    const HARDCODED_MARKET_LIST: &'static [HardcodedMarket<ETH, ERC20>] = &[HardcodedMarket {
-        common: CommonMarket {
+impl HardcodedMarketList<ETH, ERC20> for MarketWithKey<Hardcoded, ETH, ERC20> {
+    const HARDCODED_MARKET_LIST: &'static [Self] = &[MarketWithKey {
+        common_market: CommonMarket {
             token_index_pair: Pair::new((), TokenIndex::<HardcodedToken>::new(0)),
             lot_size_pair: Tuple::new(
                 BaseLotsPerBaseUnit::new(100),
@@ -16,13 +16,13 @@ impl HardcodedMarketList<ETH, ERC20> for HardcodedMarket<ETH, ERC20> {
             ),
             tick_size: QuoteLotsPerBaseUnitPerTick::new(1),
         },
-        keccak_hash: HardcodedMarketKey::new([0u8; 32]),
+        key: HardcodedMarketKey::new([0u8; 32]),
     }];
 }
 
-impl HardcodedMarketList<ERC20, ETH> for HardcodedMarket<ERC20, ETH> {
-    const HARDCODED_MARKET_LIST: &'static [HardcodedMarket<ERC20, ETH>] = &[HardcodedMarket {
-        common: CommonMarket {
+impl HardcodedMarketList<ERC20, ETH> for MarketWithKey<Hardcoded, ERC20, ETH> {
+    const HARDCODED_MARKET_LIST: &'static [Self] = &[MarketWithKey {
+        common_market: CommonMarket {
             token_index_pair: Pair::new(TokenIndex::<HardcodedToken>::new(1), ()),
             lot_size_pair: Tuple::new(
                 BaseLotsPerBaseUnit::new(200),
@@ -30,13 +30,13 @@ impl HardcodedMarketList<ERC20, ETH> for HardcodedMarket<ERC20, ETH> {
             ),
             tick_size: QuoteLotsPerBaseUnitPerTick::new(1),
         },
-        keccak_hash: HardcodedMarketKey::new([0u8; 32]),
+        key: HardcodedMarketKey::new([0u8; 32]),
     }];
 }
 
-impl HardcodedMarketList<ERC20, ERC20> for HardcodedMarket<ERC20, ERC20> {
-    const HARDCODED_MARKET_LIST: &'static [HardcodedMarket<ERC20, ERC20>] = &[HardcodedMarket {
-        common: CommonMarket {
+impl HardcodedMarketList<ERC20, ERC20> for MarketWithKey<Hardcoded, ERC20, ERC20> {
+    const HARDCODED_MARKET_LIST: &'static [Self] = &[MarketWithKey {
+        common_market: CommonMarket {
             token_index_pair: Pair::new(
                 TokenIndex::<HardcodedToken>::new(0),
                 TokenIndex::<HardcodedToken>::new(1),
@@ -47,6 +47,6 @@ impl HardcodedMarketList<ERC20, ERC20> for HardcodedMarket<ERC20, ERC20> {
             ),
             tick_size: QuoteLotsPerBaseUnitPerTick::new(1),
         },
-        keccak_hash: HardcodedMarketKey::new([0u8; 32]),
+        key: HardcodedMarketKey::new([0u8; 32]),
     }];
 }

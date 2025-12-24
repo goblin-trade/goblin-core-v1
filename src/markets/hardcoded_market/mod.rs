@@ -12,11 +12,8 @@ pub use mainnet::*;
 #[cfg(feature = "testnet")]
 pub use testnet::*;
 
-mod decoder;
-pub mod hardcoded_market;
 pub mod hardcoded_market_index;
 pub mod hardcoded_market_list;
 
-pub use hardcoded_market::*;
 pub use hardcoded_market_index::*;
 pub use hardcoded_market_list::*;
