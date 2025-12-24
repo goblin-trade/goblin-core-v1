@@ -2,7 +2,7 @@ use crate::{
     goblin_error::GoblinError,
     hostio::{self, HostioContext},
     input_processor::GlobalHeader,
-    markets::{Dynamic, DynamicMarket, Hardcoded, HardcodedMarket, MarketHeader, MarketVariant},
+    markets::{Dynamic, Hardcoded, HardcodedMarket, MarketHeader, MarketVariant},
     require,
     settlement::Delta,
     token::{DynamicIndex, HardcodedIndex, ERC20, ETH},

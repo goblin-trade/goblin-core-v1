@@ -1,10 +1,9 @@
 use crate::{
     goblin_error::GoblinError,
-    hostio::HostioContext,
     input_processor::{ArgsBuffer, Decodable},
     markets::{
-        CommonMarket, Hardcoded, HardcodedMarket, HardcodedMarketIndex, HardcodedMarketList,
-        MarketVariant, MarketWithKeyRef,
+        Hardcoded, HardcodedMarket, HardcodedMarketIndex, HardcodedMarketList, MarketVariant,
+        MarketWithKeyRef,
     },
     settlement::global_delta::{
         ERC20Delta, ERC20DeltaList, ERC20MakerDeltaKey, ERC20MakerDeltas, ERC20SenderDeltas,
