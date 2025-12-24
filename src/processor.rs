@@ -44,35 +44,14 @@ pub fn processor(len: usize) -> Result<(), GoblinError> {
 
     for _ in 0..<(ETH, ERC20)>::get(hardcoded_markets) {
         Hardcoded::process::<ETH, ERC20>(ctx, offset, len, delta, global_header.custom_erc20_list)?;
-
-        // let market_header = MarketHeader::decode(&ctx.args, offset, len)?;
-        // HardcodedMarket::<ETH, ERC20>::process(ctx, &market_header, delta, offset, len)?;
     }
 
     for _ in 0..<(ETH, ERC20)>::get(dynamic_markets) {
         Dynamic::process::<ETH, ERC20>(ctx, offset, len, delta, global_header.custom_erc20_list)?;
-
-        // let market_header = MarketHeader::decode(&ctx.args, offset, len)?;
-        // DynamicMarket::<ETH, ERC20>::process(
-        //     ctx,
-        //     &market_header,
-        //     delta,
-        //     global_header.custom_erc20_list,
-        //     offset,
-        //     len,
-        // )?;
     }
 
     for _ in 0..<(ERC20, ETH)>::get(dynamic_markets) {
-        let market_header = MarketHeader::decode(&ctx.args, offset, len)?;
-        DynamicMarket::<ERC20, ETH>::process(
-            ctx,
-            &market_header,
-            delta,
-            global_header.custom_erc20_list,
-            offset,
-            len,
-        )?;
+        Dynamic::process::<ERC20, ETH>(ctx, offset, len, delta, global_header.custom_erc20_list)?;
     }
 
     // for market_instructions in args.market_instructions_list {

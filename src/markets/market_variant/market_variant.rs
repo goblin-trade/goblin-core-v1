@@ -62,75 +62,73 @@ pub trait MarketVariant: Clone + Copy {
         custom_erc20_list: &[CustomToken],
     ) -> Result<(), GoblinError>
     where
-        B: TokenMarker + 'static + Decodable<B::TokenIndex<Dynamic>>,
-        Q: TokenMarker + 'static + Decodable<Q::TokenIndex<Dynamic>>,
+        B: TokenMarker
+            + 'static
+            + Decodable<B::TokenIndex<Dynamic>>
+            + Decodable<B::Deposit>
+            + TupleReader<
+                <ETH as TokenMarker>::Deposit,
+                <ERC20 as TokenMarker>::Deposit,
+                (ETH, ERC20),
+                Result = <B as TokenMarker>::Deposit,
+            >,
+        Q: TokenMarker
+            + 'static
+            + Decodable<Q::TokenIndex<Dynamic>>
+            + Decodable<Q::Deposit>
+            + TupleReader<
+                <ETH as TokenMarker>::Deposit,
+                <ERC20 as TokenMarker>::Deposit,
+                (ETH, ERC20),
+                Result = <Q as TokenMarker>::Deposit,
+            >,
         DynamicMarketKey<B, Q>: DynamicMarketHasher<B, Q>,
-        HardcodedMarket<B, Q>: HardcodedMarketList<B, Q>, // B: TokenMarker
-                                                          //     + Decodable<B::Deposit>
-                                                          //     + TupleReader<
-                                                          //         <ETH as TokenMarker>::Deposit,
-                                                          //         <ERC20 as TokenMarker>::Deposit,
-                                                          //         (ETH, ERC20),
-                                                          //         Result = <B as TokenMarker>::Deposit,
-                                                          //     >,
-                                                          // Q: TokenMarker
-                                                          //     + Decodable<Q::Deposit>
-                                                          //     + TupleReader<
-                                                          //         <ETH as TokenMarker>::Deposit,
-                                                          //         <ERC20 as TokenMarker>::Deposit,
-                                                          //         (ETH, ERC20),
-                                                          //         Result = <Q as TokenMarker>::Deposit,
-                                                          //     >,
-                                                          // Self::Market<B, Q>: Decodable<Self::Market<B, Q>>,
-                                                          // DynamicMarketKey<B, Q>: DynamicMarketHasher<B, Q>,
-                                                          // MarketState<Self, B, Q>: SlotState<Self::MarketKey<B, Q>>,
+        HardcodedMarket<B, Q>: HardcodedMarketList<B, Q>,
+        MarketState<Self, B, Q>: SlotState<Self::MarketKey<B, Q>>,
     {
         let market_header = MarketHeader::decode(&ctx.args, offset, len)?;
 
         let black_box = Self::get_black_box(&ctx.args, offset, len, custom_erc20_list)?;
-
         let market_with_key_ref = Self::get_market_with_key_ref(&black_box)?;
 
-        // let market = Self::Market::<B, Q>::decode(&ctx.args, offset, len)?;
-        // let market_key = Self::get_market_key(&market, custom_erc20_list)?;
+        let mut market_state =
+            MarketState::<Self, B, Q>::load(market_with_key_ref.key).into_inner();
 
-        // let mut market_state = MarketState::<Self, B, Q>::load(&market_key).into_inner();
+        if market_header.decode_deposit_amounts {
+            let base_deposit = B::decode(&ctx.args, offset, len)?;
+            let quote_deposit = Q::decode(&ctx.args, offset, len)?;
+            let deposit_pair = Pair::new(base_deposit, quote_deposit);
 
-        // if market_header.decode_deposit_amounts {
-        //     let base_deposit = B::decode(&ctx.args, offset, len)?;
-        //     let quote_deposit = Q::decode(&ctx.args, offset, len)?;
-        //     let deposit_pair = Pair::new(base_deposit, quote_deposit);
+            delta.local.deposits.set_deposits::<B, Q>(&deposit_pair);
+        }
 
-        //     delta.local.deposits.set_deposits::<B, Q>(&deposit_pair);
-        // }
+        // Take bid and take quote
+        if Base::get(&market_header.execute_takes) {
+            ix_take::<Self, B, Q, Base>(
+                ctx,
+                offset,
+                len,
+                &mut delta.local,
+                market_with_key_ref.common_market,
+                &mut market_state,
+            )?;
+        }
 
-        // // Take bid and take quote
-        // if Base::get(&market_header.execute_takes) {
-        //     ix_take::<Self, B, Q, Base>(
-        //         ctx,
-        //         offset,
-        //         len,
-        //         &mut delta.local,
-        //         Self::common_market(&market),
-        //         &mut market_state,
-        //     )?;
-        // }
-
-        // if Quote::get(&market_header.execute_takes) {
-        //     ix_take::<Self, B, Q, Quote>(
-        //         ctx,
-        //         offset,
-        //         len,
-        //         &mut delta.local,
-        //         Self::common_market(&market),
-        //         &mut market_state,
-        //     )?;
-        // }
+        if Quote::get(&market_header.execute_takes) {
+            ix_take::<Self, B, Q, Quote>(
+                ctx,
+                offset,
+                len,
+                &mut delta.local,
+                market_with_key_ref.common_market,
+                &mut market_state,
+            )?;
+        }
 
         // // TODO commit local delta into global delta
 
-        // // Reset local delta for reuse
-        // delta.local.deposits.reset::<B, Q>();
+        // Reset local delta for reuse
+        delta.local.deposits.reset::<B, Q>();
 
         Ok(())
     }
