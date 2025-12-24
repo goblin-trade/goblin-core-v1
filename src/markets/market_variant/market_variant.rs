@@ -62,34 +62,34 @@ pub trait MarketVariant: Clone + Copy {
         custom_erc20_list: &[CustomToken],
     ) -> Result<(), GoblinError>
     where
-        B: TokenMarker + Decodable<B::TokenIndex<Dynamic>>,
-        Q: TokenMarker + Decodable<Q::TokenIndex<Dynamic>>,
+        B: TokenMarker + 'static + Decodable<B::TokenIndex<Dynamic>>,
+        Q: TokenMarker + 'static + Decodable<Q::TokenIndex<Dynamic>>,
         DynamicMarketKey<B, Q>: DynamicMarketHasher<B, Q>,
-        // B: TokenMarker
-        //     + Decodable<B::Deposit>
-        //     + TupleReader<
-        //         <ETH as TokenMarker>::Deposit,
-        //         <ERC20 as TokenMarker>::Deposit,
-        //         (ETH, ERC20),
-        //         Result = <B as TokenMarker>::Deposit,
-        //     >,
-        // Q: TokenMarker
-        //     + Decodable<Q::Deposit>
-        //     + TupleReader<
-        //         <ETH as TokenMarker>::Deposit,
-        //         <ERC20 as TokenMarker>::Deposit,
-        //         (ETH, ERC20),
-        //         Result = <Q as TokenMarker>::Deposit,
-        //     >,
-        // Self::Market<B, Q>: Decodable<Self::Market<B, Q>>,
-        // DynamicMarketKey<B, Q>: DynamicMarketHasher<B, Q>,
-        // MarketState<Self, B, Q>: SlotState<Self::MarketKey<B, Q>>,
+        HardcodedMarket<B, Q>: HardcodedMarketList<B, Q>, // B: TokenMarker
+                                                          //     + Decodable<B::Deposit>
+                                                          //     + TupleReader<
+                                                          //         <ETH as TokenMarker>::Deposit,
+                                                          //         <ERC20 as TokenMarker>::Deposit,
+                                                          //         (ETH, ERC20),
+                                                          //         Result = <B as TokenMarker>::Deposit,
+                                                          //     >,
+                                                          // Q: TokenMarker
+                                                          //     + Decodable<Q::Deposit>
+                                                          //     + TupleReader<
+                                                          //         <ETH as TokenMarker>::Deposit,
+                                                          //         <ERC20 as TokenMarker>::Deposit,
+                                                          //         (ETH, ERC20),
+                                                          //         Result = <Q as TokenMarker>::Deposit,
+                                                          //     >,
+                                                          // Self::Market<B, Q>: Decodable<Self::Market<B, Q>>,
+                                                          // DynamicMarketKey<B, Q>: DynamicMarketHasher<B, Q>,
+                                                          // MarketState<Self, B, Q>: SlotState<Self::MarketKey<B, Q>>,
     {
         let market_header = MarketHeader::decode(&ctx.args, offset, len)?;
 
         let black_box = Self::get_black_box(&ctx.args, offset, len, custom_erc20_list)?;
 
-        // let market_with_key_ref = Self::get_market_with_key_ref(&black_box)?;
+        let market_with_key_ref = Self::get_market_with_key_ref(&black_box)?;
 
         // let market = Self::Market::<B, Q>::decode(&ctx.args, offset, len)?;
         // let market_key = Self::get_market_key(&market, custom_erc20_list)?;
