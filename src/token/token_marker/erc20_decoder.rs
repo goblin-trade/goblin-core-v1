@@ -6,6 +6,12 @@ use crate::{
     token::{DynamicIndex, TokenMarker, ERC20},
 };
 
+// TODO ideally we should do
+//  <ERC20 as TokenMarker>::TokenIndex<Dynamic>::decode() instead of
+// ERC20::decode()
+//
+// Similarly for ETH decoder. However we have 2 () forms for
+// ETH::Address and ETH::Deposit
 impl Decodable<<ERC20 as TokenMarker>::TokenIndex<Dynamic>> for ERC20 {
     fn decode(
         args: &ArgsBuffer,
