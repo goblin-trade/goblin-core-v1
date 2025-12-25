@@ -7,7 +7,7 @@ use crate::{
     hostio::HostioContext,
     input_processor::{ArgsBuffer, Decodable},
     instructions::ix_take,
-    markets::{HardcodedMarketList, MarketAndKey, MarketHeader},
+    markets::{Dynamic, Hardcoded, HardcodedMarketList, MarketAndKey, MarketHeader},
     settlement::{
         global_delta::{ERC20Delta, ERC20MakerDeltas, ERC20SenderDeltas, UnsidedMakerDelta},
         Delta,
@@ -16,12 +16,6 @@ use crate::{
     token::{CustomToken, TokenMarker, ERC20, ETH},
     types::{Address, Base, Pair, Quote, TupleReader},
 };
-
-#[derive(Clone, Copy, Default)]
-pub struct Hardcoded;
-
-#[derive(Clone, Copy, Default)]
-pub struct Dynamic;
 
 pub trait MarketVariant: Clone + Copy {
     /// Discriminator used to hash the market key

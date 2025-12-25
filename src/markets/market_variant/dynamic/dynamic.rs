@@ -1,7 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::{ArgsBuffer, Decodable},
-    markets::{CommonMarket, Dynamic, MarketAndKey, MarketVariant},
+    markets::{CommonMarket, MarketAndKey, MarketVariant},
     settlement::global_delta::{
         ERC20Delta, ERC20DeltaList, ERC20MakerDeltaKey, ERC20MakerDeltas, ERC20SenderDeltas,
         UnsidedMakerDelta,
@@ -10,6 +10,9 @@ use crate::{
     token::{CustomToken, DynamicIndex, HardcodedToken, TokenMarker},
     types::{Address, TupleReader},
 };
+
+#[derive(Clone, Copy, Default)]
+pub struct Dynamic;
 
 impl MarketVariant for Dynamic {
     const DISCRIMINATOR: u8 = 1;
