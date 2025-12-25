@@ -1,14 +1,14 @@
 use crate::{
-    markets::{CommonMarket, Hardcoded, HardcodedMarketList, MarketWithKey},
+    markets::{CommonMarket, Hardcoded, HardcodedMarketList, MarketAndKey},
     quantities::{BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit},
     state::HardcodedMarketKey,
     token::{HardcodedToken, TokenIndex, ERC20, ETH},
     types::{Pair, Tuple},
 };
 
-impl HardcodedMarketList<ETH, ERC20> for MarketWithKey<Hardcoded, ETH, ERC20> {
-    const HARDCODED_MARKET_LIST: &'static [Self] = &[MarketWithKey {
-        common_market: CommonMarket {
+impl HardcodedMarketList<ETH, ERC20> for MarketAndKey<Hardcoded, ETH, ERC20> {
+    const HARDCODED_MARKET_LIST: &'static [Self] = &[MarketAndKey {
+        market: CommonMarket {
             token_index_pair: Pair::new((), TokenIndex::<HardcodedToken>::new(0)),
             lot_size_pair: Tuple::new(
                 BaseLotsPerBaseUnit::new(100),
@@ -20,9 +20,9 @@ impl HardcodedMarketList<ETH, ERC20> for MarketWithKey<Hardcoded, ETH, ERC20> {
     }];
 }
 
-impl HardcodedMarketList<ERC20, ETH> for MarketWithKey<Hardcoded, ERC20, ETH> {
-    const HARDCODED_MARKET_LIST: &'static [Self] = &[MarketWithKey {
-        common_market: CommonMarket {
+impl HardcodedMarketList<ERC20, ETH> for MarketAndKey<Hardcoded, ERC20, ETH> {
+    const HARDCODED_MARKET_LIST: &'static [Self] = &[MarketAndKey {
+        market: CommonMarket {
             token_index_pair: Pair::new(TokenIndex::<HardcodedToken>::new(1), ()),
             lot_size_pair: Tuple::new(
                 BaseLotsPerBaseUnit::new(200),
@@ -34,9 +34,9 @@ impl HardcodedMarketList<ERC20, ETH> for MarketWithKey<Hardcoded, ERC20, ETH> {
     }];
 }
 
-impl HardcodedMarketList<ERC20, ERC20> for MarketWithKey<Hardcoded, ERC20, ERC20> {
-    const HARDCODED_MARKET_LIST: &'static [Self] = &[MarketWithKey {
-        common_market: CommonMarket {
+impl HardcodedMarketList<ERC20, ERC20> for MarketAndKey<Hardcoded, ERC20, ERC20> {
+    const HARDCODED_MARKET_LIST: &'static [Self] = &[MarketAndKey {
+        market: CommonMarket {
             token_index_pair: Pair::new(
                 TokenIndex::<HardcodedToken>::new(0),
                 TokenIndex::<HardcodedToken>::new(1),

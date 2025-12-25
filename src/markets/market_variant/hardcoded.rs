@@ -1,10 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::{ArgsBuffer, Decodable},
-    markets::{
-        Hardcoded, HardcodedMarketIndex, HardcodedMarketList, MarketVariant, MarketWithKey,
-        MarketWithKeyRef,
-    },
+    markets::{Hardcoded, HardcodedMarketIndex, HardcodedMarketList, MarketAndKey, MarketVariant},
     settlement::global_delta::{
         ERC20Delta, ERC20DeltaList, ERC20MakerDeltaKey, ERC20MakerDeltas, ERC20SenderDeltas,
         UnsidedMakerDelta,
@@ -36,22 +33,17 @@ impl MarketVariant for Hardcoded {
         <HardcodedMarketIndex as Decodable<HardcodedMarketIndex>>::decode(args, offset, len)
     }
 
-    fn get_market_with_key_ref<'a, B, Q>(
-        black_box: &'a Self::DecodedMarket<B, Q>,
-    ) -> Result<MarketWithKeyRef<'a, Self, B, Q>, GoblinError>
+    fn market_and_key_ref<'a, B, Q>(
+        decoded_market: &'a Self::DecodedMarket<B, Q>,
+    ) -> Result<&'a MarketAndKey<Self, B, Q>, GoblinError>
     where
         B: TokenMarker + 'static,
         Q: TokenMarker + 'static,
-        MarketWithKey<Hardcoded, B, Q>: HardcodedMarketList<B, Q>,
+        MarketAndKey<Hardcoded, B, Q>: HardcodedMarketList<B, Q>,
     {
-        let market_ref = MarketWithKey::<Hardcoded, B, Q>::HARDCODED_MARKET_LIST
-            .get(black_box.0)
-            .ok_or(GoblinError::InvalidHardcodedMarket)?;
-
-        Ok(MarketWithKeyRef {
-            common_market: &market_ref.common_market,
-            key: &market_ref.key,
-        })
+        MarketAndKey::<Hardcoded, B, Q>::HARDCODED_MARKET_LIST
+            .get(decoded_market.0)
+            .ok_or(GoblinError::InvalidHardcodedMarket)
     }
 
     fn token_sender_delta_mut(

@@ -1,7 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::{ArgsBuffer, Decodable},
-    markets::{CommonMarket, Dynamic, MarketVariant, MarketWithKey, MarketWithKeyRef},
+    markets::{CommonMarket, Dynamic, MarketAndKey, MarketVariant},
     settlement::global_delta::{
         ERC20Delta, ERC20DeltaList, ERC20MakerDeltaKey, ERC20MakerDeltas, ERC20SenderDeltas,
         UnsidedMakerDelta,
@@ -16,7 +16,7 @@ impl MarketVariant for Dynamic {
 
     type TokenIndex = DynamicIndex;
 
-    type DecodedMarket<B: TokenMarker, Q: TokenMarker> = MarketWithKey<Self, B, Q>;
+    type DecodedMarket<B: TokenMarker, Q: TokenMarker> = MarketAndKey<Self, B, Q>;
 
     type MarketKey<B: TokenMarker, Q: TokenMarker> = DynamicMarketKey<B, Q>;
 
@@ -35,20 +35,20 @@ impl MarketVariant for Dynamic {
         let common_market = CommonMarket::<Self, B, Q>::decode(args, offset, len)?;
         let key = DynamicMarketKey::hash(&common_market, custom_erc20_list)?;
 
-        Ok(MarketWithKey { common_market, key })
+        Ok(MarketAndKey {
+            market: common_market,
+            key,
+        })
     }
 
-    fn get_market_with_key_ref<'a, B, Q>(
-        black_box: &'a Self::DecodedMarket<B, Q>,
-    ) -> Result<MarketWithKeyRef<'a, Self, B, Q>, GoblinError>
+    fn market_and_key_ref<'a, B, Q>(
+        decoded_market: &'a Self::DecodedMarket<B, Q>,
+    ) -> Result<&'a MarketAndKey<Self, B, Q>, GoblinError>
     where
         B: TokenMarker,
         Q: TokenMarker,
     {
-        Ok(MarketWithKeyRef {
-            common_market: &black_box.common_market,
-            key: &black_box.key,
-        })
+        Ok(decoded_market)
     }
 
     fn token_sender_delta_mut(

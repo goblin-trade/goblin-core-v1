@@ -7,7 +7,7 @@ use crate::{
     hostio::HostioContext,
     input_processor::{ArgsBuffer, Decodable},
     instructions::ix_take,
-    markets::{HardcodedMarketList, MarketHeader, MarketWithKey, MarketWithKeyRef},
+    markets::{HardcodedMarketList, MarketAndKey, MarketHeader},
     settlement::{
         global_delta::{ERC20Delta, ERC20MakerDeltas, ERC20SenderDeltas, UnsidedMakerDelta},
         Delta,
@@ -58,13 +58,22 @@ pub trait MarketVariant: Clone + Copy {
         Q: TokenMarker + Decodable<Q::TokenIndex<Dynamic>>,
         DynamicMarketKey<B, Q>: DynamicMarketHasher<B, Q>;
 
-    fn get_market_with_key_ref<'a, B, Q>(
-        black_box: &'a Self::DecodedMarket<B, Q>,
-    ) -> Result<MarketWithKeyRef<'a, Self, B, Q>, GoblinError>
+    /// Obtain reference to the market and key
+    ///
+    /// # Variants
+    ///
+    /// * Hardcoded: Use market key to obtain static lifetime market,
+    /// then cast it to local lifetime.
+    ///
+    /// * Dynamic: DecodedMarket is MarketAndKey. Obtain a reference.
+    ///
+    fn market_and_key_ref<'a, B, Q>(
+        decoded_market: &'a Self::DecodedMarket<B, Q>,
+    ) -> Result<&'a MarketAndKey<Self, B, Q>, GoblinError>
     where
         B: TokenMarker + 'static,
         Q: TokenMarker + 'static,
-        MarketWithKey<Hardcoded, B, Q>: HardcodedMarketList<B, Q>;
+        MarketAndKey<Hardcoded, B, Q>: HardcodedMarketList<B, Q>;
 
     fn process<B, Q>(
         ctx: &HostioContext,
@@ -95,16 +104,15 @@ pub trait MarketVariant: Clone + Copy {
                 Result = <Q as TokenMarker>::Deposit,
             >,
         DynamicMarketKey<B, Q>: DynamicMarketHasher<B, Q>,
-        MarketWithKey<Hardcoded, B, Q>: HardcodedMarketList<B, Q>,
+        MarketAndKey<Hardcoded, B, Q>: HardcodedMarketList<B, Q>,
         MarketState<Self, B, Q>: SlotState<Self::MarketKey<B, Q>>,
     {
         let market_header = MarketHeader::decode(&ctx.args, offset, len)?;
 
-        let black_box = Self::decode(&ctx.args, offset, len, custom_erc20_list)?;
-        let market_with_key_ref = Self::get_market_with_key_ref(&black_box)?;
+        let decoded_market = Self::decode(&ctx.args, offset, len, custom_erc20_list)?;
+        let market_and_key = Self::market_and_key_ref(&decoded_market)?;
 
-        let mut market_state =
-            MarketState::<Self, B, Q>::load(market_with_key_ref.key).into_inner();
+        let mut market_state = MarketState::<Self, B, Q>::load(&market_and_key.key).into_inner();
 
         if market_header.decode_deposit_amounts {
             let base_deposit = B::decode(&ctx.args, offset, len)?;
@@ -121,7 +129,7 @@ pub trait MarketVariant: Clone + Copy {
                 offset,
                 len,
                 &mut delta.local,
-                market_with_key_ref.common_market,
+                &market_and_key.market,
                 &mut market_state,
             )?;
         }
@@ -132,7 +140,7 @@ pub trait MarketVariant: Clone + Copy {
                 offset,
                 len,
                 &mut delta.local,
-                market_with_key_ref.common_market,
+                &market_and_key.market,
                 &mut market_state,
             )?;
         }
