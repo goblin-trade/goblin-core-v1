@@ -1,7 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
     hostio::{self, HostioContext},
-    input_processor::GlobalHeader,
+    input_processor::{Decodable, GlobalHeader, ZeroCopyHeader},
     market::{process_market, Dynamic, Hardcoded},
     require,
     settlement::Delta,
@@ -31,7 +31,8 @@ pub fn processor(len: usize) -> Result<(), GoblinError> {
     ctx.load();
 
     let offset = &mut 0usize;
-    let global_header = GlobalHeader::new(&ctx.args, offset, len)?;
+    let global_header = GlobalHeader::decode(&ctx.args, offset, len)?;
+    let zero_copy_header = ZeroCopyHeader::new(&global_header, &ctx.args, offset);
 
     // Initialize deltas
     let delta = unsafe { &mut DELTA };
@@ -48,7 +49,7 @@ pub fn processor(len: usize) -> Result<(), GoblinError> {
             offset,
             len,
             delta,
-            global_header.custom_erc20_list,
+            zero_copy_header.custom_erc20_list,
         )?;
     }
 
@@ -58,7 +59,7 @@ pub fn processor(len: usize) -> Result<(), GoblinError> {
             offset,
             len,
             delta,
-            global_header.custom_erc20_list,
+            zero_copy_header.custom_erc20_list,
         )?;
     }
 
@@ -68,7 +69,7 @@ pub fn processor(len: usize) -> Result<(), GoblinError> {
             offset,
             len,
             delta,
-            global_header.custom_erc20_list,
+            zero_copy_header.custom_erc20_list,
         )?;
     }
 
