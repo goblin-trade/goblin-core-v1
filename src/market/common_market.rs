@@ -1,5 +1,5 @@
 use crate::{
-    markets::MarketVariant,
+    market::MarketVariant,
     quantities::QuoteLotsPerBaseUnitPerTick,
     token::TokenMarker,
     types::{Base, LegMarker, Pair, Quote},

@@ -1,5 +1,5 @@
 use crate::{
-    markets::LotSizePair,
+    market::LotSizePair,
     settlement::{global_delta::GlobalSenderUpdate, local_delta::TakerDelta},
     types::{Base, Pair, Quote},
 };

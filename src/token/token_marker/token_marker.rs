@@ -1,4 +1,4 @@
-use crate::{markets::MarketVariant, quantities::DeltaAtoms, types::Address};
+use crate::{market::MarketVariant, quantities::DeltaAtoms, types::Address};
 
 #[derive(Clone, Copy, Default)]
 pub struct ETH;

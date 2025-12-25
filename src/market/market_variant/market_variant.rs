@@ -7,7 +7,7 @@ use crate::{
     hostio::HostioContext,
     input_processor::{ArgsBuffer, Decodable},
     instructions::ix_take,
-    markets::{Dynamic, Hardcoded, HardcodedMarketList, MarketAndKey, MarketHeader},
+    market::{Dynamic, Hardcoded, HardcodedMarketList, MarketAndKey, MarketHeader},
     settlement::{
         global_delta::{ERC20Delta, ERC20MakerDeltas, ERC20SenderDeltas, UnsidedMakerDelta},
         Delta,

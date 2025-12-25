@@ -1,5 +1,5 @@
 use crate::{
-    markets::LotSizePair,
+    market::LotSizePair,
     settlement::{
         local_delta::{TakerDelta, TakerDeltaPair},
         MatchedAtoms, MatchedLots, MatchedLotsPair,

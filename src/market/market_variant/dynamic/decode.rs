@@ -1,7 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::{ArgsBuffer, ArgsDecoder, Decodable},
-    markets::{CommonMarket, Dynamic, LotSizePair},
+    market::{CommonMarket, Dynamic, LotSizePair},
     quantities::QuoteLotsPerBaseUnitPerTick,
     require,
     token::TokenMarker,

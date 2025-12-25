@@ -1,7 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::{ArgsBuffer, Decodable},
-    markets::{HardcodedMarketIndex, HardcodedMarketList, MarketAndKey, MarketVariant},
+    market::{HardcodedMarketIndex, HardcodedMarketList, MarketAndKey, MarketVariant},
     settlement::global_delta::{
         ERC20Delta, ERC20DeltaList, ERC20MakerDeltaKey, ERC20MakerDeltas, ERC20SenderDeltas,
         UnsidedMakerDelta,

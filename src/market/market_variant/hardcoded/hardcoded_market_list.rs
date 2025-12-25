@@ -1,5 +1,5 @@
 use crate::{
-    markets::{Hardcoded, MarketAndKey},
+    market::{Hardcoded, MarketAndKey},
     token::TokenMarker,
 };
 

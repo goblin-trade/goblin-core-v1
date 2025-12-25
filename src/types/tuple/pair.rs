@@ -1,5 +1,5 @@
 use crate::impl_tuple_reader;
-use crate::markets::MarketVariant;
+use crate::market::MarketVariant;
 use crate::token::TokenMarker;
 use crate::types::{Base, Quote, Tuple, TupleReader};
 

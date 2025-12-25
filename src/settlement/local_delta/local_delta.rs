@@ -1,5 +1,5 @@
 use crate::{
-    markets::PairShape,
+    market::PairShape,
     quantities::DeltaAtoms,
     settlement::local_delta::{LocalDepositStore, LocalMakerDeltas, LocalSenderDelta},
     token::{ERC20, ETH},

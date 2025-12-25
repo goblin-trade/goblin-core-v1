@@ -1,6 +1,6 @@
 use crate::{
     goblin_error::GoblinError,
-    markets::{CommonMarket, Dynamic},
+    market::{CommonMarket, Dynamic},
     state::SlotKey,
     token::{CustomToken, TokenMarker},
     types::{Base, Quote, TupleReader},

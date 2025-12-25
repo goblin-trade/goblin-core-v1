@@ -2,7 +2,7 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::{ArgsBuffer, ArgsDecoder, Decodable},
-    markets::PairShape,
+    market::PairShape,
     quantities::DeltaAtoms,
     require,
     token::{DynamicIndex, ERC20, ETH},

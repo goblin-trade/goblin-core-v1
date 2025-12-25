@@ -1,7 +1,7 @@
 use core::marker::PhantomData;
 
 use crate::{
-    markets::{Dynamic, Hardcoded, MarketVariant},
+    market::{Dynamic, Hardcoded, MarketVariant},
     quantities::Ticks,
     state::{DynamicMarketKey, HardcodedMarketKey, SlotState},
     token::TokenMarker,

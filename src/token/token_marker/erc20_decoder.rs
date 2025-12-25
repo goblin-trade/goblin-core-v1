@@ -1,7 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::{ArgsBuffer, ArgsDecoder, Decodable},
-    markets::Dynamic,
+    market::Dynamic,
     quantities::DeltaAtoms,
     token::{DynamicIndex, TokenMarker, ERC20},
 };

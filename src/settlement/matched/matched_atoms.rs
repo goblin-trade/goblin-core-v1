@@ -1,5 +1,5 @@
 use crate::{
-    markets::LotSizePair,
+    market::LotSizePair,
     settlement::{MatchedLots, MatchedLotsPair},
     types::{Base, LegMarker, Quote, TupleReader},
 };

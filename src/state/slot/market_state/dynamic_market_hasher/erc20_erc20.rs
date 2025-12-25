@@ -1,7 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
     hostio,
-    markets::{CommonMarket, Dynamic},
+    market::{CommonMarket, Dynamic},
     state::{DynamicMarketHasher, DynamicMarketKey},
     token::{CustomToken, ERC20},
     types::{Base, Quote, TupleReader},
