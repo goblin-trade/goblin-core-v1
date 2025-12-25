@@ -14,7 +14,7 @@ impl MarketVariant for Hardcoded {
 
     type TokenIndex = HardcodedIndex;
 
-    type DecodedMarket<B: TokenMarker, Q: TokenMarker> = HardcodedMarketIndex;
+    type DecodedMarket<B: TokenMarker, Q: TokenMarker> = HardcodedMarketIndex<B, Q>;
 
     type MarketKey<B: TokenMarker, Q: TokenMarker> = HardcodedMarketKey<B, Q>;
 
@@ -28,7 +28,9 @@ impl MarketVariant for Hardcoded {
         B: TokenMarker,
         Q: TokenMarker,
     {
-        <HardcodedMarketIndex as Decodable<HardcodedMarketIndex>>::decode(args, offset, len)
+        <HardcodedMarketIndex<B, Q> as Decodable<HardcodedMarketIndex<B, Q>>>::decode(
+            args, offset, len,
+        )
     }
 
     fn market_and_key_ref<'a, B, Q>(
@@ -40,7 +42,7 @@ impl MarketVariant for Hardcoded {
         MarketAndKey<Hardcoded, B, Q>: HardcodedMarketList<B, Q>,
     {
         MarketAndKey::<Hardcoded, B, Q>::HARDCODED_MARKET_LIST
-            .get(decoded_market.0)
+            .get(decoded_market.inner)
             .ok_or(GoblinError::InvalidHardcodedMarket)
     }
 }
