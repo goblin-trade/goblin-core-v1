@@ -6,12 +6,8 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::{ArgsBuffer, Decodable},
     market::{Dynamic, Hardcoded, HardcodedMarketList, MarketAndKey},
-    settlement::global_delta::{
-        ERC20Delta, ERC20MakerDeltas, ERC20SenderDeltas, UnsidedMakerDelta,
-    },
     state::{DynamicMarketHasher, DynamicMarketKey, SlotKey},
     token::{CustomToken, TokenMarker},
-    types::Address,
 };
 
 pub trait MarketVariant: Clone + Copy {
@@ -65,17 +61,4 @@ pub trait MarketVariant: Clone + Copy {
         B: TokenMarker + 'static,
         Q: TokenMarker + 'static,
         MarketAndKey<Hardcoded, B, Q>: HardcodedMarketList<B, Q>;
-
-    // TODO move to separate trait for 60 line rule
-
-    fn token_sender_delta_mut(
-        token_index: Self::TokenIndex,
-        token_sender_deltas: &mut ERC20SenderDeltas,
-    ) -> &mut ERC20Delta;
-
-    fn token_maker_delta_mut(
-        token_index: Self::TokenIndex,
-        maker: Address,
-        token_maker_deltas: &mut ERC20MakerDeltas,
-    ) -> Option<&mut UnsidedMakerDelta>;
 }
