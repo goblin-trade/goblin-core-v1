@@ -21,8 +21,6 @@ where
     M: MarketVariant,
     B: TokenMarker
         + 'static
-        + Decodable<B::TokenIndex<Dynamic>>
-        + Decodable<B::Deposit>
         + TupleReader<
             <ETH as TokenMarker>::Deposit,
             <ERC20 as TokenMarker>::Deposit,
@@ -31,14 +29,18 @@ where
         >,
     Q: TokenMarker
         + 'static
-        + Decodable<Q::TokenIndex<Dynamic>>
-        + Decodable<Q::Deposit>
         + TupleReader<
             <ETH as TokenMarker>::Deposit,
             <ERC20 as TokenMarker>::Deposit,
             (ETH, ERC20),
             Result = <Q as TokenMarker>::Deposit,
         >,
+    B::TokenIndex<Dynamic>: Decodable<B::TokenIndex<Dynamic>>,
+    B::Deposit: Decodable<B::Deposit>,
+
+    Q::TokenIndex<Dynamic>: Decodable<Q::TokenIndex<Dynamic>>,
+    Q::Deposit: Decodable<Q::Deposit>,
+
     DynamicMarketKey<B, Q>: DynamicMarketHasher<B, Q>,
     MarketAndKey<Hardcoded, B, Q>: HardcodedMarketList<B, Q>,
     MarketState<M, B, Q>: SlotState<M::MarketKey<B, Q>>,
@@ -51,8 +53,8 @@ where
     let mut market_state = MarketState::<M, B, Q>::load(&market_and_key.key).into_inner();
 
     if market_header.decode_deposit_amounts {
-        let base_deposit = B::decode(&ctx.args, offset, len)?;
-        let quote_deposit = Q::decode(&ctx.args, offset, len)?;
+        let base_deposit = B::Deposit::decode(&ctx.args, offset, len)?;
+        let quote_deposit = Q::Deposit::decode(&ctx.args, offset, len)?;
         let deposit_pair = Pair::new(base_deposit, quote_deposit);
 
         delta.local.deposits.set_deposits::<B, Q>(&deposit_pair);

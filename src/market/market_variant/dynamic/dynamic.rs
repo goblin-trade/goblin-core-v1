@@ -25,10 +25,11 @@ impl MarketVariant for Dynamic {
         custom_erc20_list: &[CustomToken],
     ) -> Result<Self::DecodedMarket<B, Q>, GoblinError>
     where
-        B: TokenMarker + Decodable<B::TokenIndex<Dynamic>>,
-        Q: TokenMarker + Decodable<Q::TokenIndex<Dynamic>>,
+        B: TokenMarker,
+        Q: TokenMarker,
+        B::TokenIndex<Dynamic>: Decodable<B::TokenIndex<Dynamic>>,
+        Q::TokenIndex<Dynamic>: Decodable<Q::TokenIndex<Dynamic>>,
         DynamicMarketKey<B, Q>: DynamicMarketHasher<B, Q>,
-        CommonMarket<Dynamic, B, Q>: Decodable<CommonMarket<Dynamic, B, Q>>,
     {
         let common_market = CommonMarket::<Self, B, Q>::decode(args, offset, len)?;
         let key = DynamicMarketKey::hash(&common_market, custom_erc20_list)?;

@@ -8,8 +8,6 @@ pub struct ERC20;
 
 pub trait TokenMarker: Clone + Copy {
     const DISCRIMINATOR: u8;
-    const ADDRESS_SIZE: usize = 1;
-    // const ADDRESS_SIZE: usize = core::mem::size_of::<Self::Address>();
 
     // This is only used in dynamic markets, not hardcoded? We could remove M then
     type TokenIndex<M: MarketVariant>: Clone + Copy;

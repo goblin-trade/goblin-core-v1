@@ -41,8 +41,10 @@ pub trait MarketVariant: Clone + Copy {
         custom_erc20_list: &[CustomToken],
     ) -> Result<Self::DecodedMarket<B, Q>, GoblinError>
     where
-        B: TokenMarker + Decodable<B::TokenIndex<Dynamic>>,
-        Q: TokenMarker + Decodable<Q::TokenIndex<Dynamic>>,
+        B: TokenMarker,
+        Q: TokenMarker,
+        B::TokenIndex<Dynamic>: Decodable<B::TokenIndex<Dynamic>>,
+        Q::TokenIndex<Dynamic>: Decodable<Q::TokenIndex<Dynamic>>,
         DynamicMarketKey<B, Q>: DynamicMarketHasher<B, Q>;
 
     /// Obtain reference to the market and key
