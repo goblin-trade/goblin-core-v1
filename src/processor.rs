@@ -2,7 +2,7 @@ use crate::{
     goblin_error::GoblinError,
     hostio::{self, HostioContext},
     input_processor::GlobalHeader,
-    market::{Dynamic, Hardcoded, MarketHeader, MarketVariant},
+    market::{process_market, Dynamic, Hardcoded},
     require,
     settlement::Delta,
     token::{DynamicIndex, HardcodedIndex, ERC20, ETH},
@@ -43,15 +43,33 @@ pub fn processor(len: usize) -> Result<(), GoblinError> {
     let dynamic_markets = DynamicIndex::get_leg(&global_header.market_counts);
 
     for _ in 0..<(ETH, ERC20)>::get(hardcoded_markets) {
-        Hardcoded::process::<ETH, ERC20>(ctx, offset, len, delta, global_header.custom_erc20_list)?;
+        process_market::<Hardcoded, ETH, ERC20>(
+            ctx,
+            offset,
+            len,
+            delta,
+            global_header.custom_erc20_list,
+        )?;
     }
 
     for _ in 0..<(ETH, ERC20)>::get(dynamic_markets) {
-        Dynamic::process::<ETH, ERC20>(ctx, offset, len, delta, global_header.custom_erc20_list)?;
+        process_market::<Dynamic, ETH, ERC20>(
+            ctx,
+            offset,
+            len,
+            delta,
+            global_header.custom_erc20_list,
+        )?;
     }
 
     for _ in 0..<(ERC20, ETH)>::get(dynamic_markets) {
-        Dynamic::process::<ERC20, ETH>(ctx, offset, len, delta, global_header.custom_erc20_list)?;
+        process_market::<Dynamic, ERC20, ETH>(
+            ctx,
+            offset,
+            len,
+            delta,
+            global_header.custom_erc20_list,
+        )?;
     }
 
     // for market_instructions in args.market_instructions_list {
