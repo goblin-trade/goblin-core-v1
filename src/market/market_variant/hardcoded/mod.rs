@@ -12,10 +12,10 @@ pub use mainnet::*;
 #[cfg(feature = "testnet")]
 pub use testnet::*;
 
+pub mod dangerous_market_index;
 pub mod hardcoded;
-pub mod hardcoded_market_index;
 pub mod hardcoded_market_list;
 
+pub use dangerous_market_index::*;
 pub use hardcoded::*;
-pub use hardcoded_market_index::*;
 pub use hardcoded_market_list::*;

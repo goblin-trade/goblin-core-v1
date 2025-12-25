@@ -1,0 +1,48 @@
+use core::marker::PhantomData;
+
+use crate::{
+    goblin_error::GoblinError,
+    input_processor::{ArgsBuffer, ArgsDecoder, Decodable},
+    token::TokenMarker,
+};
+
+/// Index to read a hardcoded market from the static list.
+/// This index has NOT been validated for bounds. Bound check happens when reading
+/// the market.
+#[derive(Clone, Copy)]
+pub struct DangerousMarketIndex<B, Q>
+where
+    B: TokenMarker,
+    Q: TokenMarker,
+{
+    pub inner: usize,
+    _marker: PhantomData<(B, Q)>,
+}
+
+impl<B, Q> DangerousMarketIndex<B, Q>
+where
+    B: TokenMarker,
+    Q: TokenMarker,
+{
+    pub fn new(inner: usize) -> Self {
+        Self {
+            inner,
+            _marker: PhantomData,
+        }
+    }
+}
+
+impl<B, Q> Decodable<DangerousMarketIndex<B, Q>> for DangerousMarketIndex<B, Q>
+where
+    B: TokenMarker,
+    Q: TokenMarker,
+{
+    fn decode(
+        args: &ArgsBuffer,
+        offset: &mut usize,
+        len: usize,
+    ) -> Result<DangerousMarketIndex<B, Q>, GoblinError> {
+        let market_index_raw = args.decode::<u8>(offset, len)? as usize;
+        Ok(DangerousMarketIndex::<B, Q>::new(market_index_raw))
+    }
+}

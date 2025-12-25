@@ -1,7 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::{ArgsBuffer, Decodable},
-    market::{HardcodedMarketIndex, HardcodedMarketList, MarketAndKey, MarketVariant},
+    market::{DangerousMarketIndex, HardcodedMarketList, MarketAndKey, MarketVariant},
     state::HardcodedMarketKey,
     token::{CustomToken, HardcodedIndex, TokenMarker},
 };
@@ -14,7 +14,7 @@ impl MarketVariant for Hardcoded {
 
     type TokenIndex = HardcodedIndex;
 
-    type DecodedMarket<B: TokenMarker, Q: TokenMarker> = HardcodedMarketIndex<B, Q>;
+    type DecodedMarket<B: TokenMarker, Q: TokenMarker> = DangerousMarketIndex<B, Q>;
 
     type MarketKey<B: TokenMarker, Q: TokenMarker> = HardcodedMarketKey<B, Q>;
 
@@ -27,10 +27,9 @@ impl MarketVariant for Hardcoded {
     where
         B: TokenMarker,
         Q: TokenMarker,
+        DangerousMarketIndex<B, Q>: Decodable<DangerousMarketIndex<B, Q>>,
     {
-        <HardcodedMarketIndex<B, Q> as Decodable<HardcodedMarketIndex<B, Q>>>::decode(
-            args, offset, len,
-        )
+        DangerousMarketIndex::<B, Q>::decode(args, offset, len)
     }
 
     fn market_and_key_ref<'a, B, Q>(
@@ -41,8 +40,6 @@ impl MarketVariant for Hardcoded {
         Q: TokenMarker + 'static,
         MarketAndKey<Hardcoded, B, Q>: HardcodedMarketList<B, Q>,
     {
-        MarketAndKey::<Hardcoded, B, Q>::HARDCODED_MARKET_LIST
-            .get(decoded_market.inner)
-            .ok_or(GoblinError::InvalidHardcodedMarket)
+        MarketAndKey::<Hardcoded, B, Q>::get_market(*decoded_market)
     }
 }
