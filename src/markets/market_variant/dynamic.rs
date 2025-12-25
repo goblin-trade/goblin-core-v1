@@ -16,16 +16,16 @@ impl MarketVariant for Dynamic {
 
     type TokenIndex = DynamicIndex;
 
-    type BlackBox<B: TokenMarker, Q: TokenMarker> = MarketWithKey<Self, B, Q>;
+    type DecodedMarket<B: TokenMarker, Q: TokenMarker> = MarketWithKey<Self, B, Q>;
 
     type MarketKey<B: TokenMarker, Q: TokenMarker> = DynamicMarketKey<B, Q>;
 
-    fn get_black_box<B, Q>(
+    fn decode<B, Q>(
         args: &ArgsBuffer,
         offset: &mut usize,
         len: usize,
         custom_erc20_list: &[CustomToken],
-    ) -> Result<Self::BlackBox<B, Q>, GoblinError>
+    ) -> Result<Self::DecodedMarket<B, Q>, GoblinError>
     where
         B: TokenMarker + Decodable<B::TokenIndex<Dynamic>>,
         Q: TokenMarker + Decodable<Q::TokenIndex<Dynamic>>,
@@ -39,7 +39,7 @@ impl MarketVariant for Dynamic {
     }
 
     fn get_market_with_key_ref<'a, B, Q>(
-        black_box: &'a Self::BlackBox<B, Q>,
+        black_box: &'a Self::DecodedMarket<B, Q>,
     ) -> Result<MarketWithKeyRef<'a, Self, B, Q>, GoblinError>
     where
         B: TokenMarker,

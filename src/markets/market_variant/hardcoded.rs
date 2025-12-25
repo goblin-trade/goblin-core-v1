@@ -19,16 +19,16 @@ impl MarketVariant for Hardcoded {
 
     type TokenIndex = HardcodedIndex;
 
-    type BlackBox<B: TokenMarker, Q: TokenMarker> = HardcodedMarketIndex;
+    type DecodedMarket<B: TokenMarker, Q: TokenMarker> = HardcodedMarketIndex;
 
     type MarketKey<B: TokenMarker, Q: TokenMarker> = HardcodedMarketKey<B, Q>;
 
-    fn get_black_box<B, Q>(
+    fn decode<B, Q>(
         args: &ArgsBuffer,
         offset: &mut usize,
         len: usize,
         _custom_erc20_list: &[CustomToken],
-    ) -> Result<Self::BlackBox<B, Q>, GoblinError>
+    ) -> Result<Self::DecodedMarket<B, Q>, GoblinError>
     where
         B: TokenMarker,
         Q: TokenMarker,
@@ -37,7 +37,7 @@ impl MarketVariant for Hardcoded {
     }
 
     fn get_market_with_key_ref<'a, B, Q>(
-        black_box: &'a Self::BlackBox<B, Q>,
+        black_box: &'a Self::DecodedMarket<B, Q>,
     ) -> Result<MarketWithKeyRef<'a, Self, B, Q>, GoblinError>
     where
         B: TokenMarker + 'static,

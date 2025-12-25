@@ -24,28 +24,42 @@ pub struct Hardcoded;
 pub struct Dynamic;
 
 pub trait MarketVariant: Clone + Copy {
+    /// Discriminator used to hash the market key
     const DISCRIMINATOR: u8;
 
+    /// The token index type for this market variant
+    ///
+    /// Hardcoded variant uses hardcoded token index whereas the dynamic
+    /// variant uses an enum of hardcoded and custom token index
     type TokenIndex: Clone + Copy;
 
     /// Key to read market state slot
     type MarketKey<B: TokenMarker, Q: TokenMarker>: SlotKey;
 
-    type BlackBox<B: TokenMarker, Q: TokenMarker>;
+    /// The decoded market as read from args
+    ///
+    /// # Variants
+    ///
+    /// * Hardcoded: This is simply the MarketIndex, used for looking up the
+    /// market from static list.
+    ///
+    /// * Dynamic: The market params are decoded from args and the key is hashed.
+    type DecodedMarket<B: TokenMarker, Q: TokenMarker>;
 
-    fn get_black_box<B, Q>(
+    /// Get DecodedMarket from args
+    fn decode<B, Q>(
         args: &ArgsBuffer,
         offset: &mut usize,
         len: usize,
         custom_erc20_list: &[CustomToken],
-    ) -> Result<Self::BlackBox<B, Q>, GoblinError>
+    ) -> Result<Self::DecodedMarket<B, Q>, GoblinError>
     where
         B: TokenMarker + Decodable<B::TokenIndex<Dynamic>>,
         Q: TokenMarker + Decodable<Q::TokenIndex<Dynamic>>,
         DynamicMarketKey<B, Q>: DynamicMarketHasher<B, Q>;
 
     fn get_market_with_key_ref<'a, B, Q>(
-        black_box: &'a Self::BlackBox<B, Q>,
+        black_box: &'a Self::DecodedMarket<B, Q>,
     ) -> Result<MarketWithKeyRef<'a, Self, B, Q>, GoblinError>
     where
         B: TokenMarker + 'static,
@@ -86,7 +100,7 @@ pub trait MarketVariant: Clone + Copy {
     {
         let market_header = MarketHeader::decode(&ctx.args, offset, len)?;
 
-        let black_box = Self::get_black_box(&ctx.args, offset, len, custom_erc20_list)?;
+        let black_box = Self::decode(&ctx.args, offset, len, custom_erc20_list)?;
         let market_with_key_ref = Self::get_market_with_key_ref(&black_box)?;
 
         let mut market_state =
