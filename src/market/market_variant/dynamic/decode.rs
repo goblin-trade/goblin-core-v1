@@ -8,12 +8,12 @@ use crate::{
     types::Pair,
 };
 
-impl<B, Q> Decodable<Self> for CommonMarket<Dynamic, B, Q>
+impl<B, Q> Decodable for CommonMarket<Dynamic, B, Q>
 where
     B: TokenMarker,
     Q: TokenMarker,
-    B::TokenIndex<Dynamic>: Decodable<B::TokenIndex<Dynamic>>,
-    Q::TokenIndex<Dynamic>: Decodable<Q::TokenIndex<Dynamic>>,
+    B::TokenIndex<Dynamic>: Decodable,
+    Q::TokenIndex<Dynamic>: Decodable,
 {
     fn decode(args: &ArgsBuffer, offset: &mut usize, len: usize) -> Result<Self, GoblinError> {
         let base_token_index = B::TokenIndex::<Dynamic>::decode(args, offset, len)?;

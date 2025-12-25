@@ -6,7 +6,7 @@ use crate::{
     token::{DynamicIndex, TokenMarker, ERC20},
 };
 
-impl Decodable<Self> for <ERC20 as TokenMarker>::TokenIndex<Dynamic>
+impl Decodable for <ERC20 as TokenMarker>::TokenIndex<Dynamic>
 where
     ERC20: TokenMarker,
 {
@@ -16,7 +16,7 @@ where
     }
 }
 
-impl Decodable<Self> for <ERC20 as TokenMarker>::Deposit {
+impl Decodable for <ERC20 as TokenMarker>::Deposit {
     fn decode(args: &ArgsBuffer, offset: &mut usize, len: usize) -> Result<Self, GoblinError> {
         args.decode::<i64>(offset, len).map(DeltaAtoms::new)
     }

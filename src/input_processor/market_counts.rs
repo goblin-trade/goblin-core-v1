@@ -13,7 +13,7 @@ pub type MarketCounts = MarketVariantPair<MarketPairShapeCounts, MarketPairShape
 /// Market counts per pair shape
 type MarketPairShapeCounts = PairShapeTriple<u8, u8, u8>;
 
-impl Decodable<Self> for MarketCounts {
+impl Decodable for MarketCounts {
     fn decode(
         args: &super::ArgsBuffer,
         offset: &mut usize,

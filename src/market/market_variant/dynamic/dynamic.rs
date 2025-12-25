@@ -27,8 +27,8 @@ impl MarketVariant for Dynamic {
     where
         B: TokenMarker,
         Q: TokenMarker,
-        B::TokenIndex<Dynamic>: Decodable<B::TokenIndex<Dynamic>>,
-        Q::TokenIndex<Dynamic>: Decodable<Q::TokenIndex<Dynamic>>,
+        B::TokenIndex<Dynamic>: Decodable,
+        Q::TokenIndex<Dynamic>: Decodable,
         DynamicMarketKey<B, Q>: DynamicMarketHasher<B, Q>,
     {
         let common_market = CommonMarket::<Self, B, Q>::decode(args, offset, len)?;

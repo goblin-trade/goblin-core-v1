@@ -27,7 +27,7 @@ impl MarketVariant for Hardcoded {
     where
         B: TokenMarker,
         Q: TokenMarker,
-        DangerousMarketIndex<B, Q>: Decodable<DangerousMarketIndex<B, Q>>,
+        DangerousMarketIndex<B, Q>: Decodable,
     {
         DangerousMarketIndex::<B, Q>::decode(args, offset, len)
     }

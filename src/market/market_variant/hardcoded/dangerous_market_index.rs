@@ -32,7 +32,7 @@ where
     }
 }
 
-impl<B, Q> Decodable<Self> for DangerousMarketIndex<B, Q>
+impl<B, Q> Decodable for DangerousMarketIndex<B, Q>
 where
     B: TokenMarker,
     Q: TokenMarker,
