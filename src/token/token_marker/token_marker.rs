@@ -9,10 +9,13 @@ pub struct ERC20;
 pub trait TokenMarker: Clone + Copy {
     const DISCRIMINATOR: u8;
 
-    // This is only used in dynamic markets, not hardcoded? We could remove M then
+    /// Index to lookup token address
     type TokenIndex<M: MarketVariant>: Clone + Copy;
 
+    /// Token address
     type Address: Clone + Copy + Sized + Default;
+
+    /// Data type representing pending deposit amount
     type Deposit: Clone + Copy + Default;
 }
 
