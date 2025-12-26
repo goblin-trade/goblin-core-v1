@@ -3,7 +3,6 @@ use crate::{
     quantities::DeltaAtoms,
     settlement::local_delta::{LocalDepositStore, LocalMakerDeltas, LocalSenderDelta},
     token::{ERC20, ETH},
-    types::{Pair, TripleReader},
 };
 
 pub struct LocalDelta {

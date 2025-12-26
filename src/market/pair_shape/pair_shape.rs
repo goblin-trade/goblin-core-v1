@@ -8,7 +8,7 @@ use crate::{
         Delta,
     },
     token::{TokenMarker, ERC20, ETH},
-    types::{Base, Pair, Quote, TripleReader, TupleReader},
+    types::{Base, Pair, Quote, TupleReader},
 };
 
 // Get rid of this completely?
