@@ -2,12 +2,11 @@ use crate::{
     goblin_error::GoblinError,
     hostio::HostioContext,
     input_processor::Decodable,
-    instructions::ix_take,
     market::{Dynamic, Hardcoded, HardcodedMarketList, MarketAndKey, MarketHeader, MarketVariant},
     settlement::Delta,
     state::{DynamicMarketHasher, DynamicMarketKey, MarketState, SlotState},
     token::{CustomToken, TokenMarker, ERC20, ETH},
-    types::{Base, Pair, Quote, TupleReader},
+    types::TupleReader,
 };
 
 pub fn process_market<M, B, Q>(
@@ -50,32 +49,17 @@ where
     let decoded_market = M::decode(&ctx.args, offset, len, custom_erc20_list)?;
     let market_and_key = M::market_and_key_ref(&decoded_market)?;
 
-    let mut market_state = MarketState::<M, B, Q>::load(&market_and_key.key).into_inner();
+    let mut market_state = MarketState::<M, B, Q>::load(&market_and_key.key);
 
     market_header.set_deposits(&ctx.args, offset, len, delta)?;
-
-    // // Take bid and take quote
-    // if Base::get(&market_header.execute_takes) {
-    //     ix_take::<M, B, Q, Base>(
-    //         ctx,
-    //         offset,
-    //         len,
-    //         &mut delta.local,
-    //         &market_and_key.market,
-    //         &mut market_state,
-    //     )?;
-    // }
-
-    // if Quote::get(&market_header.execute_takes) {
-    //     ix_take::<M, B, Q, Quote>(
-    //         ctx,
-    //         offset,
-    //         len,
-    //         &mut delta.local,
-    //         &market_and_key.market,
-    //         &mut market_state,
-    //     )?;
-    // }
+    market_header.execute_takes(
+        ctx,
+        offset,
+        len,
+        &mut delta.local,
+        &market_and_key.market,
+        market_state.as_mut(),
+    )?;
 
     // // // TODO commit local delta into global delta
 
