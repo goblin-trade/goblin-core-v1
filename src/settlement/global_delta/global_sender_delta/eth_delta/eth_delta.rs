@@ -1,42 +1,20 @@
-use crate::{
-    eth,
-    goblin_error::GoblinError,
-    quantities::{QuantityOps, UnsidedAtoms},
-    require,
-    settlement::global_delta::UnsidedSenderDelta,
-    state::{EthStore, EthStoreKey, SlotState},
-    types::{Address, NATIVE_TOKEN_DECIMALS},
-};
+use crate::settlement::global_delta::UnsidedSenderDelta;
 
 /// ETH atoms due to be deducted, locked or transferred out on settlement
+///
+/// msg_value and eth_out_due are stored in global_header.eth_transfers.
+/// Use this struct during settlement.
 #[derive(Clone, Copy)]
 pub struct EthDelta {
-    /// Atoms credited by msg.value
-    pub msg_value: UnsidedAtoms,
-
-    /// Amount of ETH atoms pending withdrawal, as read from global namespace header
-    ///
-    /// The actual amount withdrawn is MIN(available, widthdrawal_due)
-    /// This allows us to withdraw max available amount by passing u64::MAX
-    ///
-    /// The amount is transferred out internally (store credit) or externally (transfer call).
-    pub eth_out_due: UnsidedAtoms,
-
+    /// Delta from trading
     pub unsided_sender_delta: UnsidedSenderDelta,
 }
 
 impl EthDelta {
     pub const fn zero() -> Self {
         Self {
-            msg_value: UnsidedAtoms::ZERO,
-            eth_out_due: UnsidedAtoms::ZERO,
             unsided_sender_delta: UnsidedSenderDelta::zero(),
         }
-    }
-
-    pub fn set_eth_values(&mut self, msg_value: UnsidedAtoms, eth_out_due: UnsidedAtoms) {
-        self.msg_value = msg_value;
-        self.eth_out_due = eth_out_due;
     }
 
     // /// Update locked and free atoms of the store by applying the common delta

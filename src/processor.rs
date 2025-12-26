@@ -37,9 +37,6 @@ pub fn processor(len: usize) -> Result<(), GoblinError> {
     // Initialize deltas
     let delta = unsafe { &mut DELTA };
 
-    ETH::get_leg_mut(&mut delta.global.global_sender_delta)
-        .set_eth_values(global_header.msg_value, global_header.eth_out_due);
-
     let hardcoded_markets = HardcodedIndex::get_leg(&global_header.market_counts);
     let dynamic_markets = DynamicIndex::get_leg(&global_header.market_counts);
 

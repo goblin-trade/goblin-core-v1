@@ -1,8 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
-    quantities::{DeltaAtoms, QuantityOps},
+    quantities::DeltaAtoms,
     settlement::global_delta::{GlobalSenderUpdate, UnsidedSenderDelta},
-    state::ERC20Store,
     types::LegMarker,
 };
 
