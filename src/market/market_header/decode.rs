@@ -1,22 +1,12 @@
 use crate::{
     goblin_error::GoblinError,
-    input_processor::{ArgsBuffer, ArgsDecoder},
-    types::{Pair, Tuple},
+    input_processor::{ArgsBuffer, ArgsDecoder, Decodable},
+    market::MarketHeader,
+    types::Tuple,
 };
 
-pub struct MarketHeader {
-    /// Whether to read decode deposit amounts
-    pub decode_deposit_amounts: bool,
-
-    /// Whether to execute base-in and quote-in take orders
-    pub execute_takes: Pair<bool, bool>,
-
-    /// Number of outer bitmap indices
-    pub outer_bitmap_indices: u8,
-}
-
-impl MarketHeader {
-    pub fn decode(args: &ArgsBuffer, offset: &mut usize, len: usize) -> Result<Self, GoblinError> {
+impl Decodable for MarketHeader {
+    fn decode(args: &ArgsBuffer, offset: &mut usize, len: usize) -> Result<Self, GoblinError> {
         let byte_0 = args.decode::<u8>(offset, len)?;
 
         let decode_deposit_amounts = (byte_0 & 0b0000_0001) != 0;
