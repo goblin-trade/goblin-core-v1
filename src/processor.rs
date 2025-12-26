@@ -37,38 +37,38 @@ pub fn processor(len: usize) -> Result<(), GoblinError> {
     // Initialize deltas
     let delta = unsafe { &mut DELTA };
 
-    let hardcoded_markets = HardcodedIndex::get_leg(&global_header.market_counts);
-    let dynamic_markets = DynamicIndex::get_leg(&global_header.market_counts);
+    // let hardcoded_markets = HardcodedIndex::get_leg(&global_header.market_counts);
+    // let dynamic_markets = DynamicIndex::get_leg(&global_header.market_counts);
 
-    for _ in 0..<(ETH, ERC20)>::get(hardcoded_markets) {
-        process_market::<Hardcoded, ETH, ERC20>(
-            ctx,
-            offset,
-            len,
-            delta,
-            zero_copy_header.custom_erc20_list,
-        )?;
-    }
+    // for _ in 0..<(ETH, ERC20)>::get(hardcoded_markets) {
+    //     process_market::<Hardcoded, ETH, ERC20>(
+    //         ctx,
+    //         offset,
+    //         len,
+    //         delta,
+    //         zero_copy_header.custom_erc20_list,
+    //     )?;
+    // }
 
-    for _ in 0..<(ETH, ERC20)>::get(dynamic_markets) {
-        process_market::<Dynamic, ETH, ERC20>(
-            ctx,
-            offset,
-            len,
-            delta,
-            zero_copy_header.custom_erc20_list,
-        )?;
-    }
+    // for _ in 0..<(ETH, ERC20)>::get(dynamic_markets) {
+    //     process_market::<Dynamic, ETH, ERC20>(
+    //         ctx,
+    //         offset,
+    //         len,
+    //         delta,
+    //         zero_copy_header.custom_erc20_list,
+    //     )?;
+    // }
 
-    for _ in 0..<(ERC20, ETH)>::get(dynamic_markets) {
-        process_market::<Dynamic, ERC20, ETH>(
-            ctx,
-            offset,
-            len,
-            delta,
-            zero_copy_header.custom_erc20_list,
-        )?;
-    }
+    // for _ in 0..<(ERC20, ETH)>::get(dynamic_markets) {
+    //     process_market::<Dynamic, ERC20, ETH>(
+    //         ctx,
+    //         offset,
+    //         len,
+    //         delta,
+    //         zero_copy_header.custom_erc20_list,
+    //     )?;
+    // }
 
     // for market_instructions in args.market_instructions_list {
     //     let indexed_market = market_instructions
