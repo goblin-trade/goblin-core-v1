@@ -52,13 +52,7 @@ where
 
     let mut market_state = MarketState::<M, B, Q>::load(&market_and_key.key).into_inner();
 
-    if market_header.decode_deposit_amounts {
-        let base_deposit = B::Deposit::decode(&ctx.args, offset, len)?;
-        let quote_deposit = Q::Deposit::decode(&ctx.args, offset, len)?;
-        let deposit_pair = Pair::new(base_deposit, quote_deposit);
-
-        delta.local.deposits.set_deposits::<B, Q>(&deposit_pair);
-    }
+    market_header.set_deposits::<M, B, Q>(&ctx.args, offset, len, delta)?;
 
     // Take bid and take quote
     if Base::get(&market_header.execute_takes) {

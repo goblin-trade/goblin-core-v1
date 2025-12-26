@@ -10,7 +10,3 @@ pub struct MarketHeader {
     /// Number of outer bitmap indices
     pub outer_bitmap_indices: u8,
 }
-
-impl MarketHeader {
-    pub fn set_deposits<M, B, Q>() {}
-}
