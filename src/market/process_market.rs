@@ -45,42 +45,42 @@ where
     MarketAndKey<Hardcoded, B, Q>: HardcodedMarketList<B, Q>,
     MarketState<M, B, Q>: SlotState<M::MarketKey<B, Q>>,
 {
-    let market_header = MarketHeader::decode(&ctx.args, offset, len)?;
+    let market_header = MarketHeader::<M, B, Q>::decode(&ctx.args, offset, len)?;
 
     let decoded_market = M::decode(&ctx.args, offset, len, custom_erc20_list)?;
     let market_and_key = M::market_and_key_ref(&decoded_market)?;
 
     let mut market_state = MarketState::<M, B, Q>::load(&market_and_key.key).into_inner();
 
-    market_header.set_deposits::<M, B, Q>(&ctx.args, offset, len, delta)?;
+    market_header.set_deposits(&ctx.args, offset, len, delta)?;
 
-    // Take bid and take quote
-    if Base::get(&market_header.execute_takes) {
-        ix_take::<M, B, Q, Base>(
-            ctx,
-            offset,
-            len,
-            &mut delta.local,
-            &market_and_key.market,
-            &mut market_state,
-        )?;
-    }
+    // // Take bid and take quote
+    // if Base::get(&market_header.execute_takes) {
+    //     ix_take::<M, B, Q, Base>(
+    //         ctx,
+    //         offset,
+    //         len,
+    //         &mut delta.local,
+    //         &market_and_key.market,
+    //         &mut market_state,
+    //     )?;
+    // }
 
-    if Quote::get(&market_header.execute_takes) {
-        ix_take::<M, B, Q, Quote>(
-            ctx,
-            offset,
-            len,
-            &mut delta.local,
-            &market_and_key.market,
-            &mut market_state,
-        )?;
-    }
+    // if Quote::get(&market_header.execute_takes) {
+    //     ix_take::<M, B, Q, Quote>(
+    //         ctx,
+    //         offset,
+    //         len,
+    //         &mut delta.local,
+    //         &market_and_key.market,
+    //         &mut market_state,
+    //     )?;
+    // }
 
-    // // TODO commit local delta into global delta
+    // // // TODO commit local delta into global delta
 
-    // Reset local delta for reuse
-    delta.local.deposits.reset::<B, Q>();
+    // // Reset local delta for reuse
+    // delta.local.deposits.reset::<B, Q>();
 
     Ok(())
 }

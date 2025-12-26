@@ -1,6 +1,13 @@
-use crate::types::Pair;
+use core::marker::PhantomData;
 
-pub struct MarketHeader {
+use crate::{market::MarketVariant, token::TokenMarker, types::Pair};
+
+pub struct MarketHeader<M, B, Q>
+where
+    M: MarketVariant,
+    B: TokenMarker,
+    Q: TokenMarker,
+{
     /// Whether to read decode deposit amounts
     pub decode_deposit_amounts: bool,
 
@@ -9,4 +16,26 @@ pub struct MarketHeader {
 
     /// Number of outer bitmap indices
     pub outer_bitmap_indices: u8,
+
+    _marker: PhantomData<(M, B, Q)>,
+}
+
+impl<M, B, Q> MarketHeader<M, B, Q>
+where
+    M: MarketVariant,
+    B: TokenMarker,
+    Q: TokenMarker,
+{
+    pub fn new(
+        decode_deposit_amounts: bool,
+        execute_takes: Pair<bool, bool>,
+        outer_bitmap_indices: u8,
+    ) -> Self {
+        Self {
+            decode_deposit_amounts,
+            execute_takes,
+            outer_bitmap_indices,
+            _marker: PhantomData,
+        }
+    }
 }

@@ -1,11 +1,17 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::{ArgsBuffer, ArgsDecoder, Decodable},
-    market::MarketHeader,
+    market::{MarketHeader, MarketVariant},
+    token::TokenMarker,
     types::Tuple,
 };
 
-impl Decodable for MarketHeader {
+impl<M, B, Q> Decodable for MarketHeader<M, B, Q>
+where
+    M: MarketVariant,
+    B: TokenMarker,
+    Q: TokenMarker,
+{
     fn decode(args: &ArgsBuffer, offset: &mut usize, len: usize) -> Result<Self, GoblinError> {
         let byte_0 = args.decode::<u8>(offset, len)?;
 
@@ -23,10 +29,10 @@ impl Decodable for MarketHeader {
         // This field is currently unused. Increase the amount if needed by reading a new byte.
         let outer_bitmap_indices = (byte_0 & 0b0001_1000) >> 3;
 
-        Ok(Self {
+        Ok(Self::new(
             decode_deposit_amounts,
             execute_takes,
             outer_bitmap_indices,
-        })
+        ))
     }
 }

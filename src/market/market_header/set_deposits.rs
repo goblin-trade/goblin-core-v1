@@ -7,33 +7,33 @@ use crate::{
     types::{Pair, TupleReader},
 };
 
-impl MarketHeader {
-    pub fn set_deposits<M, B, Q>(
+impl<M, B, Q> MarketHeader<M, B, Q>
+where
+    M: MarketVariant,
+    B: TokenMarker
+        + TupleReader<
+            <ETH as TokenMarker>::Deposit,
+            <ERC20 as TokenMarker>::Deposit,
+            (ETH, ERC20),
+            Result = <B as TokenMarker>::Deposit,
+        >,
+    Q: TokenMarker
+        + TupleReader<
+            <ETH as TokenMarker>::Deposit,
+            <ERC20 as TokenMarker>::Deposit,
+            (ETH, ERC20),
+            Result = <Q as TokenMarker>::Deposit,
+        >,
+    B::Deposit: Decodable,
+    Q::Deposit: Decodable,
+{
+    pub fn set_deposits(
         &self,
         args: &ArgsBuffer,
         offset: &mut usize,
         len: usize,
         delta: &mut Delta,
-    ) -> Result<(), GoblinError>
-    where
-        M: MarketVariant,
-        B: TokenMarker
-            + TupleReader<
-                <ETH as TokenMarker>::Deposit,
-                <ERC20 as TokenMarker>::Deposit,
-                (ETH, ERC20),
-                Result = <B as TokenMarker>::Deposit,
-            >,
-        Q: TokenMarker
-            + TupleReader<
-                <ETH as TokenMarker>::Deposit,
-                <ERC20 as TokenMarker>::Deposit,
-                (ETH, ERC20),
-                Result = <Q as TokenMarker>::Deposit,
-            >,
-        B::Deposit: Decodable,
-        Q::Deposit: Decodable,
-    {
+    ) -> Result<(), GoblinError> {
         if self.decode_deposit_amounts {
             let base_deposit = B::Deposit::decode(args, offset, len)?;
             let quote_deposit = Q::Deposit::decode(args, offset, len)?;
