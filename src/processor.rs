@@ -1,7 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
     hostio::{self, HostioContext},
-    input_processor::{Decodable, GlobalHeader, ZeroCopyHeader},
+    input_processor::{Decodable, DecodeCtx, GlobalHeader, ZeroCopyHeader},
     require,
     settlement::Delta,
 };
@@ -28,6 +28,11 @@ pub fn processor(len: usize) -> Result<(), GoblinError> {
     ctx.load();
 
     let offset = &mut 0usize;
+    let decode_ctx = DecodeCtx {
+        args: &ctx.args,
+        offset,
+        len,
+    };
     let global_header = GlobalHeader::decode(&ctx.args, offset, len)?;
     let zero_copy_header = ZeroCopyHeader::new(&global_header, &ctx.args, offset);
 
