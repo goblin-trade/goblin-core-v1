@@ -1,12 +1,14 @@
 pub mod bitmap;
+pub mod delta_atoms;
 mod macros;
-pub mod quantities;
+pub mod quantity;
 pub mod raw_atoms;
 pub mod ticks;
 pub mod unsided_atoms;
 
 pub use bitmap::*;
-pub use quantities::*;
+pub use delta_atoms::*;
+pub use quantity::*;
 pub use raw_atoms::*;
 pub use ticks::*;
 pub use unsided_atoms::*;
