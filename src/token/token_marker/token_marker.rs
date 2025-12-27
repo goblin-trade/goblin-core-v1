@@ -1,4 +1,6 @@
-use crate::{market::MarketVariant, quantities::DeltaAtoms, types::Address};
+use crate::{
+    input_processor::Decodable, market::MarketVariant, quantities::DeltaAtoms, types::Address,
+};
 
 #[derive(Clone, Copy, Default)]
 pub struct ETH;
@@ -16,7 +18,7 @@ pub trait TokenMarker: Clone + Copy {
     type Address: Clone + Copy + Sized + Default;
 
     /// Data type representing pending deposit amount
-    type Deposit: Clone + Copy + Default;
+    type Deposit: Clone + Copy + Default + Decodable;
 }
 
 impl TokenMarker for ETH {

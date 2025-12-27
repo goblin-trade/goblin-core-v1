@@ -24,8 +24,6 @@ where
             (ETH, ERC20),
             Result = <Q as TokenMarker>::Deposit,
         >,
-    B::Deposit: Decodable,
-    Q::Deposit: Decodable,
 {
     pub fn set_deposits(
         &self,

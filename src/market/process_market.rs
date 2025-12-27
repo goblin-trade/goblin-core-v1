@@ -35,10 +35,7 @@ where
             Result = <Q as TokenMarker>::Deposit,
         >,
     B::TokenIndex<Dynamic>: Decodable,
-    B::Deposit: Decodable,
-
     Q::TokenIndex<Dynamic>: Decodable,
-    Q::Deposit: Decodable,
 
     DynamicMarketKey<B, Q>: DynamicMarketHasher<B, Q>,
     MarketAndKey<Hardcoded, B, Q>: HardcodedMarketList<B, Q>,
