@@ -1,5 +1,5 @@
-use crate::{goblin_error::GoblinError, input_processor::ArgsBuffer};
+use crate::{goblin_error::GoblinError, input_processor::DecodeCtx};
 
-pub trait Decodable: Sized {
-    fn decode(args: &ArgsBuffer, offset: &mut usize, len: usize) -> Result<Self, GoblinError>;
+pub trait Decodable<'a>: Sized {
+    fn decode(ctx: &DecodeCtx<'a>) -> Result<Self, GoblinError>;
 }

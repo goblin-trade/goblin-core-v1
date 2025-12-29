@@ -24,20 +24,20 @@ pub fn processor(len: usize) -> Result<(), GoblinError> {
     let msg_reentrant = hostio::msg_reentrant();
     require!(!msg_reentrant, GoblinError::Reentrant);
 
-    let ctx = unsafe { &mut HOSTIO_CONTEXT };
-    ctx.load();
+    let hostio_ctx = unsafe { &mut HOSTIO_CONTEXT };
+    hostio_ctx.load();
 
     let offset = &mut 0usize;
-    let decode_ctx = DecodeCtx::new(&ctx.args, len);
+    let decode_ctx = &mut DecodeCtx::new(&hostio_ctx.args, len);
 
-    let global_header = GlobalHeader::decode(&ctx.args, offset, len)?;
-    let zero_copy_header = ZeroCopyHeader::new(&global_header, &ctx.args, offset);
+    let global_header = GlobalHeader::decode(decode_ctx)?;
+    let zero_copy_header = ZeroCopyHeader::new(&global_header, &hostio_ctx.args, offset);
 
     // Initialize deltas
     let delta = unsafe { &mut DELTA };
 
     global_header.market_counts.process_markets(
-        ctx,
+        hostio_ctx,
         offset,
         len,
         delta,

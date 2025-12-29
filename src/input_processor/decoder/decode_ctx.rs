@@ -21,8 +21,13 @@ impl<'a> DecodeCtx<'a> {
         self.args.len()
     }
 
+    pub fn advance_offset(&self, increment: usize) {
+        let current_offset = self.offset.get();
+        self.offset.set(current_offset + increment);
+    }
+
     // Zero copy decode
-    fn decode_ref_unchecked<T>(&self) -> &T {
+    pub fn decode_ref_unchecked<T>(&self) -> &T {
         let start = self.offset.get();
         let end = start + core::mem::size_of::<T>();
         self.offset.set(end);
@@ -30,7 +35,7 @@ impl<'a> DecodeCtx<'a> {
         unsafe { &*(self.args[start..end].as_ptr() as *const T) }
     }
 
-    fn decode_slice_unchecked<T>(&self, slice_len: usize) -> &[T] {
+    pub fn decode_slice_unchecked<T>(&self, slice_len: usize) -> &[T] {
         let start = self.offset.get();
         let end = start + slice_len * core::mem::size_of::<T>();
         self.offset.set(end);
@@ -40,7 +45,7 @@ impl<'a> DecodeCtx<'a> {
         }
     }
 
-    fn decode<T: DecodePrimitive>(&self) -> Result<T, GoblinError> {
+    pub fn decode<T: DecodePrimitive>(&self) -> Result<T, GoblinError> {
         let offset = self.offset.get();
         let size = core::mem::size_of::<T>();
         crate::require!(
@@ -48,17 +53,27 @@ impl<'a> DecodeCtx<'a> {
             crate::goblin_error::GoblinError::InvalidPayload
         );
 
-        let value = Self::decode_unchecked::<T>(self);
+        let value = Self::decode_unchecked_no_advance::<T>(self);
         self.offset.set(offset + size);
 
         Ok(value)
+    }
+
+    // TODO use in place of decode_ref_unchecked where we still need to advance offset
+    pub fn decode_unchecked<T: DecodePrimitive>(&self) -> T {
+        let offset = self.offset.get();
+        let size = core::mem::size_of::<T>();
+        let value = Self::decode_unchecked_no_advance::<T>(self);
+        self.offset.set(offset + size);
+
+        value
     }
 
     // TODO improvements
     //
     // - This is just a proxy to DecodePrimitive. Can we replace with common Decodable trait?
     // - Does not advance offset unlike the zero copy versions
-    fn decode_unchecked<T: DecodePrimitive>(&self) -> T {
+    pub fn decode_unchecked_no_advance<T: DecodePrimitive>(&self) -> T {
         T::from_le_bytes_at(self.args, self.args.len())
     }
 }

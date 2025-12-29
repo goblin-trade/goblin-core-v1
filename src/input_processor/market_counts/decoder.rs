@@ -1,19 +1,22 @@
 use crate::{
     goblin_error::GoblinError,
-    input_processor::{ArgsBuffer, ArgsDecoder, Decodable, MarketCounts},
+    input_processor::{Decodable, DecodeCtx, MarketCounts},
     require,
 };
 
 const BYTE_COUNT: usize = 3;
 
-impl Decodable for MarketCounts {
-    fn decode(args: &ArgsBuffer, offset: &mut usize, len: usize) -> Result<Self, GoblinError> {
-        require!(len >= *offset + BYTE_COUNT, GoblinError::InvalidPayload);
+impl<'a> Decodable<'a> for MarketCounts {
+    fn decode(ctx: &DecodeCtx) -> Result<Self, GoblinError> {
+        require!(
+            ctx.len() >= ctx.offset.get() + BYTE_COUNT,
+            GoblinError::InvalidPayload
+        );
 
-        let byte_0 = args.decode_unchecked::<u8>(*offset);
-        let byte_1 = args.decode_unchecked::<u8>(*offset);
-        let byte_2 = args.decode_unchecked::<u8>(*offset);
-        *offset += BYTE_COUNT;
+        let byte_0 = ctx.decode_unchecked_no_advance::<u8>();
+        let byte_1 = ctx.decode_unchecked_no_advance::<u8>();
+        let byte_2 = ctx.decode_unchecked_no_advance::<u8>();
+        ctx.advance_offset(BYTE_COUNT);
 
         Ok(Self::new([
             byte_0 & 0b0000_1111,

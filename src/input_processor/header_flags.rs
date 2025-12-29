@@ -1,6 +1,6 @@
 use crate::{
     goblin_error::GoblinError,
-    input_processor::{ArgsBuffer, ArgsDecoder, Decodable},
+    input_processor::{Decodable, DecodeCtx},
     quantities::UnsidedAtoms,
     require,
     types::Address,
@@ -25,11 +25,11 @@ pub struct HeaderFlags {
     pub withdraw_internally: bool,
 }
 
-impl Decodable for HeaderFlags {
-    fn decode(args: &ArgsBuffer, offset: &mut usize, len: usize) -> Result<Self, GoblinError> {
-        require!(len >= BYTE_COUNT, GoblinError::InvalidPayload);
+impl<'a> Decodable<'a> for HeaderFlags {
+    fn decode(ctx: &DecodeCtx) -> Result<Self, GoblinError> {
+        require!(ctx.len() >= BYTE_COUNT, GoblinError::InvalidPayload);
 
-        let byte_0 = args.decode_unchecked::<u8>(0);
+        let byte_0 = ctx.decode_unchecked_no_advance::<u8>();
         let header = HeaderFlags {
             // Lists
             custom_erc20_count: (byte_0 & 0b0000_1111) as usize,
@@ -42,9 +42,12 @@ impl Decodable for HeaderFlags {
             // Settlement flags
             withdraw_internally: (byte_0 & 0b0001_0000) != 0,
         };
-        *offset += BYTE_COUNT;
+        ctx.advance_offset(BYTE_COUNT);
 
-        require!(len >= header.payload_size(), GoblinError::InvalidPayload);
+        require!(
+            ctx.len() >= header.payload_size(),
+            GoblinError::InvalidPayload
+        );
 
         Ok(header)
     }

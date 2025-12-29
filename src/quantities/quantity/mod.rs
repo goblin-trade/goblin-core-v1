@@ -1,5 +1,6 @@
 pub mod alias;
 pub mod constants;
+pub mod decode;
 pub mod dim;
 pub mod exp;
 pub mod quantity;

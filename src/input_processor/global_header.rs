@@ -1,6 +1,6 @@
 use crate::{
     goblin_error::GoblinError,
-    input_processor::{ArgsBuffer, Decodable, EthTransfers, HeaderFlags, MarketCounts},
+    input_processor::{Decodable, DecodeCtx, EthTransfers, HeaderFlags, MarketCounts},
 };
 
 /// Arguments read from calldata
@@ -15,11 +15,11 @@ pub struct GlobalHeader {
     pub eth_transfers: EthTransfers,
 }
 
-impl Decodable for GlobalHeader {
-    fn decode(args: &ArgsBuffer, offset: &mut usize, len: usize) -> Result<Self, GoblinError> {
-        let flags = HeaderFlags::decode(args, offset, len)?;
-        let market_counts = MarketCounts::decode(args, offset, len)?;
-        let eth_transfers = EthTransfers::new(&flags, args, offset)?;
+impl<'a> Decodable<'a> for GlobalHeader {
+    fn decode(ctx: &DecodeCtx) -> Result<Self, GoblinError> {
+        let flags = HeaderFlags::decode(ctx)?;
+        let market_counts = MarketCounts::decode(ctx)?;
+        let eth_transfers = EthTransfers::new(ctx, &flags)?;
 
         Ok(Self {
             flags,
