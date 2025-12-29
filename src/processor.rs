@@ -28,11 +28,8 @@ pub fn processor(len: usize) -> Result<(), GoblinError> {
     ctx.load();
 
     let offset = &mut 0usize;
-    let decode_ctx = DecodeCtx {
-        args: &ctx.args,
-        offset,
-        len,
-    };
+    let decode_ctx = DecodeCtx::new(&ctx.args, len);
+
     let global_header = GlobalHeader::decode(&ctx.args, offset, len)?;
     let zero_copy_header = ZeroCopyHeader::new(&global_header, &ctx.args, offset);
 
