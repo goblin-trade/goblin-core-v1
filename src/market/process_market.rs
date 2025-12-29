@@ -35,6 +35,8 @@ where
         >,
     B::TokenIndex<Dynamic>: Decodable<'a>,
     Q::TokenIndex<Dynamic>: Decodable<'a>,
+    B::Deposit: Decodable<'a>,
+    Q::Deposit: Decodable<'a>,
 
     DynamicMarketKey<B, Q>: DynamicMarketHasher<B, Q>,
     MarketAndKey<Hardcoded, B, Q>: HardcodedMarketList<B, Q>,
