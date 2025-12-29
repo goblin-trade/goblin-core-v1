@@ -30,12 +30,13 @@ impl<'a> Decodable<'a> for GlobalHeader<'a> {
         let eth_transfers = EthTransfers::new(ctx, &flags)?;
 
         let recipient = if flags.recipient_provided {
-            Some(ctx.decode_ref_unchecked::<Address>())
+            Some(ctx.zero_copy_unchecked::<Address>())
         } else {
             None
         };
 
-        let custom_erc20_list = ctx.decode_slice_unchecked::<CustomToken>(flags.custom_erc20_count);
+        let custom_erc20_list =
+            ctx.zero_copy_slice_unchecked::<CustomToken>(flags.custom_erc20_count);
 
         Ok(Self {
             flags,

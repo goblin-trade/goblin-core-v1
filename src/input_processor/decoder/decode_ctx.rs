@@ -27,7 +27,7 @@ impl<'a> DecodeCtx<'a> {
     }
 
     // Zero copy decode
-    pub fn decode_ref_unchecked<T>(&self) -> &T {
+    pub fn zero_copy_unchecked<T>(&self) -> &T {
         let start = self.offset.get();
         let end = start + core::mem::size_of::<T>();
         self.offset.set(end);
@@ -35,7 +35,7 @@ impl<'a> DecodeCtx<'a> {
         unsafe { &*(self.args[start..end].as_ptr() as *const T) }
     }
 
-    pub fn decode_slice_unchecked<T>(&self, slice_len: usize) -> &[T] {
+    pub fn zero_copy_slice_unchecked<T>(&self, slice_len: usize) -> &[T] {
         let start = self.offset.get();
         let end = start + slice_len * core::mem::size_of::<T>();
         self.offset.set(end);
@@ -74,6 +74,6 @@ impl<'a> DecodeCtx<'a> {
     // - This is just a proxy to DecodePrimitive. Can we replace with common Decodable trait?
     // - Does not advance offset unlike the zero copy versions
     pub fn decode_unchecked_no_advance<T: DecodePrimitive>(&self) -> T {
-        T::from_le_bytes_at(self.args, self.args.len())
+        T::from_le_bytes_at(self.args, self.offset.get())
     }
 }
