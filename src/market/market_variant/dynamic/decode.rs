@@ -1,30 +1,38 @@
 use crate::{
     goblin_error::GoblinError,
-    input_processor::{ArgsBuffer, ArgsDecoder, Decodable},
-    market::{CommonMarket, Dynamic, LotSizePair},
-    quantities::QuoteLotsPerBaseUnitPerTick,
+    input_processor::{Decodable, DecodeCtx},
+    market::{CommonMarket, Dynamic},
+    quantities::{BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit},
     require,
     token::TokenMarker,
     types::Pair,
 };
 
-impl<B, Q> Decodable for CommonMarket<Dynamic, B, Q>
+impl<'a, B, Q> Decodable<'a> for CommonMarket<Dynamic, B, Q>
 where
     B: TokenMarker,
     Q: TokenMarker,
-    B::TokenIndex<Dynamic>: Decodable,
-    Q::TokenIndex<Dynamic>: Decodable,
+    B::TokenIndex<Dynamic>: Decodable<'a>,
+    Q::TokenIndex<Dynamic>: Decodable<'a>,
 {
-    fn decode(args: &ArgsBuffer, offset: &mut usize, len: usize) -> Result<Self, GoblinError> {
-        let base_token_index = B::TokenIndex::<Dynamic>::decode(args, offset, len)?;
-        let quote_token_index = Q::TokenIndex::<Dynamic>::decode(args, offset, len)?;
+    fn decode(ctx: &DecodeCtx<'a>) -> Result<Self, GoblinError> {
+        let base_token_index = B::TokenIndex::<Dynamic>::decode(ctx)?;
+        let quote_token_index = Q::TokenIndex::<Dynamic>::decode(ctx)?;
 
         let token_index_pair = Pair::new(base_token_index, quote_token_index);
 
-        require!(len >= *offset + 3, GoblinError::InvalidPayload);
-        let lot_size_pair = *args.decode_ref_unchecked::<LotSizePair>(offset);
+        require!(
+            ctx.len() >= ctx.offset.get() + 3,
+            GoblinError::InvalidPayload
+        );
 
-        let tick_size = *args.decode_ref_unchecked::<QuoteLotsPerBaseUnitPerTick>(offset);
+        let lot_size_pair = Pair::new(
+            ctx.decode_unchecked_no_advance::<BaseLotsPerBaseUnit>(),
+            ctx.decode_unchecked_no_advance::<QuoteLotsPerQuoteUnit>(),
+        );
+        let tick_size = ctx.decode_unchecked_no_advance::<QuoteLotsPerBaseUnitPerTick>();
+
+        ctx.advance_offset(3);
 
         Ok(CommonMarket::<Dynamic, B, Q> {
             token_index_pair,

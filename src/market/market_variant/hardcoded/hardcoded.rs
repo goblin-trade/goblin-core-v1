@@ -1,6 +1,6 @@
 use crate::{
     goblin_error::GoblinError,
-    input_processor::{ArgsBuffer, Decodable},
+    input_processor::{Decodable, DecodeCtx},
     market::{DangerousMarketIndex, HardcodedMarketList, MarketAndKey, MarketVariant},
     state::HardcodedMarketKey,
     token::{CustomToken, HardcodedIndex, TokenMarker},
@@ -18,18 +18,16 @@ impl MarketVariant for Hardcoded {
 
     type MarketKey<B: TokenMarker, Q: TokenMarker> = HardcodedMarketKey<B, Q>;
 
-    fn decode<B, Q>(
-        args: &ArgsBuffer,
-        offset: &mut usize,
-        len: usize,
+    fn decode<'a, B, Q>(
+        ctx: &DecodeCtx<'a>,
         _custom_erc20_list: &[CustomToken],
     ) -> Result<Self::DecodedMarket<B, Q>, GoblinError>
     where
         B: TokenMarker,
         Q: TokenMarker,
-        DangerousMarketIndex<B, Q>: Decodable,
+        DangerousMarketIndex<B, Q>: Decodable<'a>,
     {
-        DangerousMarketIndex::<B, Q>::decode(args, offset, len)
+        DangerousMarketIndex::<B, Q>::decode(ctx)
     }
 
     fn market_and_key_ref<'a, B, Q>(

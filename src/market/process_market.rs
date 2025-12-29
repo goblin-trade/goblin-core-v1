@@ -42,7 +42,7 @@ where
 {
     let market_header = MarketHeader::<M, B, Q>::decode(ctx)?;
 
-    // let decoded_market = M::decode(&ctx.args, offset, len, custom_erc20_list)?;
+    let decoded_market = M::decode(ctx, custom_erc20_list)?;
     // let market_and_key = M::market_and_key_ref(&decoded_market)?;
 
     // let mut market_state = MarketState::<M, B, Q>::load(&market_and_key.key);

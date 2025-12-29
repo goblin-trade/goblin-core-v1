@@ -2,7 +2,7 @@ use core::marker::PhantomData;
 
 use crate::{
     goblin_error::GoblinError,
-    input_processor::{ArgsBuffer, ArgsDecoder, Decodable},
+    input_processor::{Decodable, DecodeCtx},
     token::TokenMarker,
 };
 
@@ -32,13 +32,13 @@ where
     }
 }
 
-impl<B, Q> Decodable for DangerousMarketIndex<B, Q>
+impl<'a, B, Q> Decodable<'a> for DangerousMarketIndex<B, Q>
 where
     B: TokenMarker,
     Q: TokenMarker,
 {
-    fn decode(args: &ArgsBuffer, offset: &mut usize, len: usize) -> Result<Self, GoblinError> {
-        let market_index_raw = args.decode::<u8>(offset, len)? as usize;
+    fn decode(ctx: &DecodeCtx<'a>) -> Result<Self, GoblinError> {
+        let market_index_raw = ctx.decode::<u8>()? as usize;
         Ok(DangerousMarketIndex::<B, Q>::new(market_index_raw))
     }
 }

@@ -4,7 +4,7 @@
 ///! * Dynamic market- has dynamic tokens that can be either dynamic or custom
 use crate::{
     goblin_error::GoblinError,
-    input_processor::{ArgsBuffer, Decodable},
+    input_processor::{ArgsBuffer, Decodable, DecodeCtx},
     market::{Dynamic, Hardcoded, HardcodedMarketList, MarketAndKey},
     state::{DynamicMarketHasher, DynamicMarketKey, SlotKey},
     token::{CustomToken, TokenMarker},
@@ -34,17 +34,15 @@ pub trait MarketVariant: Clone + Copy {
     type DecodedMarket<B: TokenMarker, Q: TokenMarker>;
 
     /// Get DecodedMarket from args
-    fn decode<B, Q>(
-        args: &ArgsBuffer,
-        offset: &mut usize,
-        len: usize,
+    fn decode<'a, B, Q>(
+        ctx: &DecodeCtx<'a>,
         custom_erc20_list: &[CustomToken],
     ) -> Result<Self::DecodedMarket<B, Q>, GoblinError>
     where
         B: TokenMarker,
         Q: TokenMarker,
-        B::TokenIndex<Dynamic>: Decodable,
-        Q::TokenIndex<Dynamic>: Decodable,
+        B::TokenIndex<Dynamic>: Decodable<'a>,
+        Q::TokenIndex<Dynamic>: Decodable<'a>,
         DynamicMarketKey<B, Q>: DynamicMarketHasher<B, Q>;
 
     /// Obtain reference to the market and key
