@@ -1,6 +1,6 @@
 use crate::{
     goblin_error::GoblinError,
-    input_processor::{ArgsBuffer, Decodable},
+    input_processor::{Decodable, DecodeCtx},
     market::{MarketHeader, MarketVariant},
     settlement::Delta,
     token::{TokenMarker, ERC20, ETH},
@@ -25,16 +25,14 @@ where
             Result = <Q as TokenMarker>::Deposit,
         >,
 {
-    pub fn set_deposits(
+    pub fn set_deposits<'a>(
         &self,
-        args: &ArgsBuffer,
-        offset: &mut usize,
-        len: usize,
+        ctx: &DecodeCtx<'a>,
         delta: &mut Delta,
     ) -> Result<(), GoblinError> {
         if self.decode_deposit_amounts {
-            let base_deposit = B::Deposit::decode(args, offset, len)?;
-            let quote_deposit = Q::Deposit::decode(args, offset, len)?;
+            let base_deposit = B::Deposit::decode(ctx)?;
+            let quote_deposit = Q::Deposit::decode(ctx)?;
             let deposit_pair = Pair::new(base_deposit, quote_deposit);
 
             delta.local.deposits.set_deposits::<B, Q>(&deposit_pair);
