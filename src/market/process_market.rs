@@ -48,13 +48,13 @@ where
     let mut market_state = MarketState::<M, B, Q>::load(&market_and_key.key);
 
     market_header.set_deposits(ctx, delta)?;
-    // market_header.execute_takes(
-    //     ctx,
-    //     msg_sender,
-    //     &mut delta.local,
-    //     &market_and_key.market,
-    //     market_state.as_mut(),
-    // )?;
+    market_header.execute_takes(
+        ctx,
+        msg_sender,
+        &mut delta.local,
+        &market_and_key.market,
+        market_state.as_mut(),
+    )?;
 
     // // // TODO commit local delta into global delta
 

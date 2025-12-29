@@ -1,6 +1,6 @@
 use crate::{
     goblin_error::GoblinError,
-    input_processor::{ArgsBuffer, ArgsDecoder},
+    input_processor::{Decodable, DecodeCtx},
     quantities::Ticks,
     require,
     types::LegMarker,
@@ -23,25 +23,21 @@ pub struct TakePacket<In: LegMarker> {
     pub price_limit: Ticks,
 }
 
-impl<In: LegMarker> TakePacket<In> {
-    pub fn decode(
-        payload: &ArgsBuffer,
-        len: usize,
-        offset: &mut usize,
-    ) -> Result<Self, GoblinError> {
-        let byte = payload.decode::<u64>(offset, len)?;
+impl<'a, In: LegMarker> Decodable<'a> for TakePacket<In> {
+    fn decode(ctx: &DecodeCtx<'a>) -> Result<Self, GoblinError> {
+        let byte = ctx.decode::<u64>()?;
         let read_min_lots_to_fill = byte & 0b01 != 0;
         let read_price_limit = byte & 0b10 != 0;
 
         let num_lots = In::Lots::from(byte >> 2);
 
         let min_lots_to_fill = In::Lots::from(match read_min_lots_to_fill {
-            true => payload.decode::<u64>(offset, len)?,
+            true => ctx.decode::<u64>()?,
             false => 0,
         });
 
         let price_limit = match read_price_limit {
-            true => Ticks::new(payload.decode::<u32>(offset, len)? as u64),
+            true => Ticks::new(ctx.decode::<u32>()? as u64),
             false => In::DEFAULT_PRICE_LIMIT,
         };
 

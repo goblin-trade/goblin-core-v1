@@ -1,12 +1,12 @@
 use crate::{
     goblin_error::GoblinError,
-    input_processor::{ArgsBuffer, Decodable},
+    input_processor::{Decodable, DecodeCtx},
 };
 
 /// Decoder for ETH::TokenIndex<M> and ETH::Deposit
 /// The value of both is `()`, so we simply return `()`
-impl Decodable for () {
-    fn decode(_args: &ArgsBuffer, _offset: &mut usize, _len: usize) -> Result<(), GoblinError> {
+impl<'a> Decodable<'a> for () {
+    fn decode(_ctx: &DecodeCtx<'a>) -> Result<(), GoblinError> {
         Ok(())
     }
 }

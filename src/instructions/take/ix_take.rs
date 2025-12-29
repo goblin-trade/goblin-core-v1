@@ -1,6 +1,6 @@
 use crate::{
     goblin_error::GoblinError,
-    hostio::HostioContext,
+    input_processor::{Decodable, DecodeCtx},
     instructions::take::take_packet::TakePacket,
     market::{CommonMarket, MarketVariant},
     matching::match_order,
@@ -8,13 +8,12 @@ use crate::{
     settlement::local_delta::{LocalDelta, MakerDelta, TakerDelta},
     state::MarketState,
     token::TokenMarker,
-    types::{Base, LegMarker, Quote, TupleReader},
+    types::{Address, Base, LegMarker, Quote, TupleReader},
 };
 
-pub fn ix_take<M, B, Q, In>(
-    ctx: &HostioContext,
-    offset: &mut usize,
-    len: usize,
+pub fn ix_take<'a, M, B, Q, In>(
+    ctx: &DecodeCtx<'a>,
+    msg_sender: &Address,
     local_delta: &mut LocalDelta,
     market: &CommonMarket<M, B, Q>,
     market_state: &mut MarketState<M, B, Q>,
@@ -34,11 +33,11 @@ where
         >,
     In::Opposite: TupleReader<Ticks, Ticks, (Base, Quote), Result = Ticks>,
 {
-    let packet = TakePacket::<In>::decode(&ctx.args, len, offset)?;
+    let packet = TakePacket::<In>::decode(ctx)?;
 
     match_order::<M, B, Q, In>(
         local_delta,
-        &ctx.msg_sender,
+        msg_sender,
         market,
         market_state,
         packet.num_lots,
