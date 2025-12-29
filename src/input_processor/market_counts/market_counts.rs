@@ -21,7 +21,7 @@ impl MarketCounts {
     /// Process legal combinations of market types
     pub fn process_markets<'a>(
         &self,
-        ctx: &DecodeCtx<'a>,
+        ctx: &'a DecodeCtx<'a>,
         msg_sender: &Address,
         custom_erc20_list: &[CustomToken],
         delta: &mut Delta,

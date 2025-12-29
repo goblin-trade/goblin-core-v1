@@ -17,7 +17,7 @@ where
 {
     pub fn execute_takes<'a>(
         &self,
-        ctx: &DecodeCtx<'a>,
+        ctx: &'a DecodeCtx<'a>,
         msg_sender: &Address,
         local_delta: &mut LocalDelta,
         common_market: &CommonMarket<M, B, Q>,

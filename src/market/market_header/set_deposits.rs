@@ -28,7 +28,11 @@ where
     B::Deposit: Decodable<'a>,
     Q::Deposit: Decodable<'a>,
 {
-    pub fn set_deposits(&self, ctx: &DecodeCtx<'a>, delta: &mut Delta) -> Result<(), GoblinError> {
+    pub fn set_deposits(
+        &self,
+        ctx: &'a DecodeCtx<'a>,
+        delta: &mut Delta,
+    ) -> Result<(), GoblinError> {
         if self.decode_deposit_amounts {
             let base_deposit = B::Deposit::decode(ctx)?;
             let quote_deposit = Q::Deposit::decode(ctx)?;

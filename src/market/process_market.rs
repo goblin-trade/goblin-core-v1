@@ -10,7 +10,7 @@ use crate::{
 };
 
 pub fn process_market<'a, M, B, Q>(
-    ctx: &DecodeCtx<'a>,
+    ctx: &'a DecodeCtx<'a>,
     msg_sender: &Address,
     custom_erc20_list: &[CustomToken],
     delta: &mut Delta,

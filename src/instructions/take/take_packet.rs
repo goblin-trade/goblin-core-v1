@@ -24,7 +24,7 @@ pub struct TakePacket<In: LegMarker> {
 }
 
 impl<'a, In: LegMarker> Decodable<'a> for TakePacket<In> {
-    fn decode(ctx: &DecodeCtx<'a>) -> Result<Self, GoblinError> {
+    fn decode(ctx: &'a DecodeCtx<'a>) -> Result<Self, GoblinError> {
         let byte = ctx.decode::<u64>()?;
         let read_min_lots_to_fill = byte & 0b01 != 0;
         let read_price_limit = byte & 0b10 != 0;

@@ -19,7 +19,7 @@ impl MarketVariant for Hardcoded {
     type MarketKey<B: TokenMarker, Q: TokenMarker> = HardcodedMarketKey<B, Q>;
 
     fn decode<'a, B, Q>(
-        ctx: &DecodeCtx<'a>,
+        ctx: &'a DecodeCtx<'a>,
         _custom_erc20_list: &[CustomToken],
     ) -> Result<Self::DecodedMarket<B, Q>, GoblinError>
     where

@@ -12,7 +12,7 @@ use crate::{
 };
 
 pub fn ix_take<'a, M, B, Q, In>(
-    ctx: &DecodeCtx<'a>,
+    ctx: &'a DecodeCtx<'a>,
     msg_sender: &Address,
     local_delta: &mut LocalDelta,
     market: &CommonMarket<M, B, Q>,

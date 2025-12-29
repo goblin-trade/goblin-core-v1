@@ -27,15 +27,12 @@ pub fn processor(len: usize) -> Result<(), GoblinError> {
     let hostio_ctx = unsafe { &mut HOSTIO_CONTEXT };
     hostio_ctx.load();
 
-    let decode_ctx = &mut DecodeCtx::new(&hostio_ctx.args, len);
-
-    let global_header = GlobalHeader::decode(decode_ctx)?;
-
-    // Initialize deltas
+    let ctx = &mut DecodeCtx::new(&hostio_ctx.args, len);
+    let global_header = GlobalHeader::decode(ctx)?;
     let delta = unsafe { &mut DELTA };
 
     global_header.market_counts.process_markets(
-        decode_ctx,
+        ctx,
         &hostio_ctx.msg_sender,
         global_header.custom_erc20_list,
         delta,

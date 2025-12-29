@@ -35,7 +35,7 @@ pub trait MarketVariant: Clone + Copy {
 
     /// Get DecodedMarket from args
     fn decode<'a, B, Q>(
-        ctx: &DecodeCtx<'a>,
+        ctx: &'a DecodeCtx<'a>,
         custom_erc20_list: &[CustomToken],
     ) -> Result<Self::DecodedMarket<B, Q>, GoblinError>
     where

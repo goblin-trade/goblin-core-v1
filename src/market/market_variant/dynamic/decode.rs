@@ -15,7 +15,7 @@ where
     B::TokenIndex<Dynamic>: Decodable<'a>,
     Q::TokenIndex<Dynamic>: Decodable<'a>,
 {
-    fn decode(ctx: &DecodeCtx<'a>) -> Result<Self, GoblinError> {
+    fn decode(ctx: &'a DecodeCtx<'a>) -> Result<Self, GoblinError> {
         let base_token_index = B::TokenIndex::<Dynamic>::decode(ctx)?;
         let quote_token_index = Q::TokenIndex::<Dynamic>::decode(ctx)?;
 

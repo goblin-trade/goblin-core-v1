@@ -12,7 +12,7 @@ where
     B: TokenMarker,
     Q: TokenMarker,
 {
-    fn decode(ctx: &DecodeCtx<'a>) -> Result<Self, GoblinError> {
+    fn decode(ctx: &'a DecodeCtx<'a>) -> Result<Self, GoblinError> {
         let byte_0 = ctx.decode::<u8>()?;
 
         let decode_deposit_amounts = (byte_0 & 0b0000_0001) != 0;
