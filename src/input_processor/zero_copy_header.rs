@@ -1,5 +1,5 @@
 use crate::{
-    input_processor::{ArgsBuffer, ArgsDecoder, GlobalHeader},
+    input_processor::{DecodeCtx, GlobalHeader},
     token::CustomToken,
     types::Address,
 };
@@ -14,15 +14,15 @@ pub struct ZeroCopyHeader<'a> {
 }
 
 impl<'a> ZeroCopyHeader<'a> {
-    pub fn new(global_header: &GlobalHeader, args: &'a ArgsBuffer, offset: &mut usize) -> Self {
+    pub fn new(ctx: &'a DecodeCtx, global_header: &GlobalHeader) -> Self {
         let recipient = if global_header.flags.recipient_provided {
-            Some(args.decode_ref_unchecked::<Address>(offset))
+            Some(ctx.decode_ref_unchecked::<Address>())
         } else {
             None
         };
 
-        let custom_erc20_list = args
-            .decode_slice_unchecked::<CustomToken>(offset, global_header.flags.custom_erc20_count);
+        let custom_erc20_list =
+            ctx.decode_slice_unchecked::<CustomToken>(global_header.flags.custom_erc20_count);
 
         Self {
             recipient,

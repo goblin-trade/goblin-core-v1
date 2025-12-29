@@ -30,8 +30,9 @@ pub fn processor(len: usize) -> Result<(), GoblinError> {
     let offset = &mut 0usize;
     let decode_ctx = &mut DecodeCtx::new(&hostio_ctx.args, len);
 
+    // TODO move ZeroCopyHeader back into GlobalHeader
     let global_header = GlobalHeader::decode(decode_ctx)?;
-    let zero_copy_header = ZeroCopyHeader::new(&global_header, &hostio_ctx.args, offset);
+    let zero_copy_header = ZeroCopyHeader::new(decode_ctx, &global_header);
 
     // Initialize deltas
     let delta = unsafe { &mut DELTA };
