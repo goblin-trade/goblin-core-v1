@@ -1,10 +1,10 @@
 use crate::{
-    input_processor::DecodePrimitive,
+    input_processor::{DecodeCtx, DecodablePrimitive},
     quantities::{Exp, Quantity},
 };
 
-impl<D: Exp> DecodePrimitive for Quantity<D> {
-    fn from_le_bytes_at(buffer: &[u8], offset: usize) -> Self {
-        Self::new(u64::from_le_bytes_at(buffer, offset))
+impl<'a, D: Exp> DecodablePrimitive<'a> for Quantity<D> {
+    fn decode_unchecked_no_advance(ctx: &'a DecodeCtx<'a>) -> Self {
+        Self::new(u64::decode_unchecked_no_advance(ctx))
     }
 }

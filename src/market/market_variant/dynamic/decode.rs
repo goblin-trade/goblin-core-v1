@@ -1,6 +1,6 @@
 use crate::{
     goblin_error::GoblinError,
-    input_processor::{Decodable, DecodeCtx},
+    input_processor::{Decodable, DecodablePrimitive, DecodeCtx},
     market::{CommonMarket, Dynamic},
     quantities::{BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit},
     require,
@@ -15,9 +15,9 @@ where
     B::TokenIndex<Dynamic>: Decodable<'a>,
     Q::TokenIndex<Dynamic>: Decodable<'a>,
 {
-    fn decode(ctx: &'a DecodeCtx<'a>) -> Result<Self, GoblinError> {
-        let base_token_index = B::TokenIndex::<Dynamic>::decode(ctx)?;
-        let quote_token_index = Q::TokenIndex::<Dynamic>::decode(ctx)?;
+    fn try_decode(ctx: &'a DecodeCtx<'a>) -> Result<Self, GoblinError> {
+        let base_token_index = B::TokenIndex::<Dynamic>::try_decode(ctx)?;
+        let quote_token_index = Q::TokenIndex::<Dynamic>::try_decode(ctx)?;
 
         let token_index_pair = Pair::new(base_token_index, quote_token_index);
 
@@ -27,10 +27,10 @@ where
         );
 
         let lot_size_pair = Pair::new(
-            ctx.decode_unchecked_no_advance::<BaseLotsPerBaseUnit>(),
-            ctx.decode_unchecked_no_advance::<QuoteLotsPerQuoteUnit>(),
+            BaseLotsPerBaseUnit::decode_unchecked_no_advance(ctx),
+            QuoteLotsPerQuoteUnit::decode_unchecked_no_advance(ctx),
         );
-        let tick_size = ctx.decode_unchecked_no_advance::<QuoteLotsPerBaseUnitPerTick>();
+        let tick_size = QuoteLotsPerBaseUnitPerTick::decode_unchecked_no_advance(ctx);
 
         ctx.advance_offset(3);
 

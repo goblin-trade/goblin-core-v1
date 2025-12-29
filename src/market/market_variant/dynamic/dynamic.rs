@@ -29,7 +29,7 @@ impl MarketVariant for Dynamic {
         Q::TokenIndex<Dynamic>: Decodable<'a>,
         DynamicMarketKey<B, Q>: DynamicMarketHasher<B, Q>,
     {
-        let common_market = CommonMarket::<Self, B, Q>::decode(ctx)?;
+        let common_market = CommonMarket::<Self, B, Q>::try_decode(ctx)?;
         let key = DynamicMarketKey::hash(&common_market, custom_erc20_list)?;
 
         Ok(MarketAndKey {

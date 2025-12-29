@@ -34,8 +34,8 @@ where
         delta: &mut Delta,
     ) -> Result<(), GoblinError> {
         if self.decode_deposit_amounts {
-            let base_deposit = B::Deposit::decode(ctx)?;
-            let quote_deposit = Q::Deposit::decode(ctx)?;
+            let base_deposit = B::Deposit::try_decode(ctx)?;
+            let quote_deposit = Q::Deposit::try_decode(ctx)?;
             let deposit_pair = Pair::new(base_deposit, quote_deposit);
 
             delta.local.deposits.set_deposits::<B, Q>(&deposit_pair);

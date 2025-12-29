@@ -1,7 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
     hostio,
-    input_processor::{DecodeCtx, HeaderFlags},
+    input_processor::{DecodeCtx, DecodablePrimitive, HeaderFlags},
     quantities::{QuantityOps, UnsidedAtoms},
     types::NATIVE_TOKEN_DECIMALS,
 };
@@ -35,7 +35,7 @@ impl EthTransfers {
         };
 
         let eth_out_due = if flags.withdraw_eth {
-            ctx.decode_unchecked::<UnsidedAtoms>()
+            UnsidedAtoms::decode_unchecked_no_advance(ctx)
         } else {
             UnsidedAtoms::ZERO
         };

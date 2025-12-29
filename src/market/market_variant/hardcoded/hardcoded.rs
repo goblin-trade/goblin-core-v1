@@ -27,7 +27,7 @@ impl MarketVariant for Hardcoded {
         Q: TokenMarker,
         DangerousMarketIndex<B, Q>: Decodable<'a>,
     {
-        DangerousMarketIndex::<B, Q>::decode(ctx)
+        DangerousMarketIndex::<B, Q>::try_decode(ctx)
     }
 
     fn market_and_key_ref<'a, B, Q>(

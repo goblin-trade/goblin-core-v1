@@ -37,8 +37,8 @@ where
     B: TokenMarker,
     Q: TokenMarker,
 {
-    fn decode(ctx: &'a DecodeCtx<'a>) -> Result<Self, GoblinError> {
-        let market_index_raw = ctx.decode::<u8>()? as usize;
+    fn try_decode(ctx: &'a DecodeCtx<'a>) -> Result<Self, GoblinError> {
+        let market_index_raw = u8::try_decode(ctx)? as usize;
         Ok(DangerousMarketIndex::<B, Q>::new(market_index_raw))
     }
 }

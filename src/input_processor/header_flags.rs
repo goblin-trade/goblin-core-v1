@@ -1,6 +1,6 @@
 use crate::{
     goblin_error::GoblinError,
-    input_processor::{Decodable, DecodeCtx},
+    input_processor::{Decodable, DecodablePrimitive, DecodeCtx},
     quantities::UnsidedAtoms,
     require,
     types::Address,
@@ -26,10 +26,10 @@ pub struct HeaderFlags {
 }
 
 impl<'a> Decodable<'a> for HeaderFlags {
-    fn decode(ctx: &DecodeCtx) -> Result<Self, GoblinError> {
+    fn try_decode(ctx: &DecodeCtx) -> Result<Self, GoblinError> {
         require!(ctx.len() >= BYTE_COUNT, GoblinError::InvalidPayload);
 
-        let byte_0 = ctx.decode_unchecked_no_advance::<u8>();
+        let byte_0 = u8::decode_unchecked_no_advance(ctx);
         let header = HeaderFlags {
             // Lists
             custom_erc20_count: (byte_0 & 0b0000_1111) as usize,

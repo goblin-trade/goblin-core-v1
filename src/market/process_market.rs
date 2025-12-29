@@ -42,7 +42,7 @@ where
     MarketAndKey<Hardcoded, B, Q>: HardcodedMarketList<B, Q>,
     MarketState<M, B, Q>: SlotState<M::MarketKey<B, Q>>,
 {
-    let market_header = MarketHeader::<M, B, Q>::decode(ctx)?;
+    let market_header = MarketHeader::<M, B, Q>::try_decode(ctx)?;
 
     let decoded_market = M::decode(ctx, custom_erc20_list)?;
     let market_and_key = M::market_and_key_ref(&decoded_market)?;

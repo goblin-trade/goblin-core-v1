@@ -33,7 +33,7 @@ where
         >,
     In::Opposite: TupleReader<Ticks, Ticks, (Base, Quote), Result = Ticks>,
 {
-    let packet = TakePacket::<In>::decode(ctx)?;
+    let packet = TakePacket::<In>::try_decode(ctx)?;
 
     match_order::<M, B, Q, In>(
         local_delta,

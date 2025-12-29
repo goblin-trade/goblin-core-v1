@@ -10,13 +10,13 @@ impl<'a> Decodable<'a> for <ERC20 as TokenMarker>::TokenIndex<Dynamic>
 where
     ERC20: TokenMarker,
 {
-    fn decode(ctx: &'a DecodeCtx<'a>) -> Result<Self, GoblinError> {
-        ctx.decode::<u8>().map(DynamicIndex::new)?
+    fn try_decode(ctx: &'a DecodeCtx<'a>) -> Result<Self, GoblinError> {
+        u8::try_decode(ctx).map(DynamicIndex::new)?
     }
 }
 
 impl<'a> Decodable<'a> for <ERC20 as TokenMarker>::Deposit {
-    fn decode(ctx: &'a DecodeCtx<'a>) -> Result<Self, GoblinError> {
-        ctx.decode::<i64>().map(DeltaAtoms::new)
+    fn try_decode(ctx: &'a DecodeCtx<'a>) -> Result<Self, GoblinError> {
+        i64::try_decode(ctx).map(DeltaAtoms::new)
     }
 }

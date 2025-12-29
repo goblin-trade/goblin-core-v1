@@ -24,20 +24,22 @@ pub struct TakePacket<In: LegMarker> {
 }
 
 impl<'a, In: LegMarker> Decodable<'a> for TakePacket<In> {
-    fn decode(ctx: &'a DecodeCtx<'a>) -> Result<Self, GoblinError> {
-        let byte = ctx.decode::<u64>()?;
-        let read_min_lots_to_fill = byte & 0b01 != 0;
-        let read_price_limit = byte & 0b10 != 0;
+    fn try_decode(ctx: &'a DecodeCtx<'a>) -> Result<Self, GoblinError> {
+        // 2 bits for flags and rest 62 bits for num_lots
+        let flags_and_num_lots_raw = u64::try_decode(ctx)?;
 
-        let num_lots = In::Lots::from(byte >> 2);
+        let read_min_lots_to_fill = flags_and_num_lots_raw & 0b01 != 0;
+        let read_price_limit = flags_and_num_lots_raw & 0b10 != 0;
+
+        let num_lots = In::Lots::from(flags_and_num_lots_raw >> 2);
 
         let min_lots_to_fill = In::Lots::from(match read_min_lots_to_fill {
-            true => ctx.decode::<u64>()?,
+            true => u64::try_decode(ctx)?,
             false => 0,
         });
 
         let price_limit = match read_price_limit {
-            true => Ticks::new(ctx.decode::<u32>()? as u64),
+            true => Ticks::new(u32::try_decode(ctx)? as u64),
             false => In::DEFAULT_PRICE_LIMIT,
         };
 

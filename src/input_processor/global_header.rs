@@ -24,9 +24,9 @@ pub struct GlobalHeader<'a> {
 }
 
 impl<'a> Decodable<'a> for GlobalHeader<'a> {
-    fn decode(ctx: &'a DecodeCtx<'a>) -> Result<Self, GoblinError> {
-        let flags = HeaderFlags::decode(ctx)?;
-        let market_counts = MarketCounts::decode(ctx)?;
+    fn try_decode(ctx: &'a DecodeCtx<'a>) -> Result<Self, GoblinError> {
+        let flags = HeaderFlags::try_decode(ctx)?;
+        let market_counts = MarketCounts::try_decode(ctx)?;
         let eth_transfers = EthTransfers::new(ctx, &flags)?;
 
         let recipient = if flags.recipient_provided {

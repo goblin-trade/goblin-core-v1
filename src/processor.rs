@@ -28,7 +28,7 @@ pub fn processor(len: usize) -> Result<(), GoblinError> {
     hostio_ctx.load();
 
     let ctx = &mut DecodeCtx::new(&hostio_ctx.args, len);
-    let global_header = GlobalHeader::decode(ctx)?;
+    let global_header = GlobalHeader::try_decode(ctx)?;
     let delta = unsafe { &mut DELTA };
 
     global_header.market_counts.process_markets(
