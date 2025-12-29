@@ -1,7 +1,7 @@
 /// Decode token indices and deposit amounts for various pair shapes
 use crate::{
     goblin_error::GoblinError,
-    input_processor::{ArgsBuffer, ArgsDecoder, Decodable},
+    input_processor::{ArgsBuffer, Decodable},
     market::PairShape,
     quantities::DeltaAtoms,
     require,
