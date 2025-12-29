@@ -1,19 +1,19 @@
 use crate::{
     goblin_error::GoblinError,
-    input_processor::{ArgsBuffer, ArgsDecoder, Decodable},
+    input_processor::{Decodable, DecodeCtx},
     market::{MarketHeader, MarketVariant},
     token::TokenMarker,
     types::Tuple,
 };
 
-impl<M, B, Q> Decodable for MarketHeader<M, B, Q>
+impl<'a, M, B, Q> Decodable<'a> for MarketHeader<M, B, Q>
 where
     M: MarketVariant,
     B: TokenMarker,
     Q: TokenMarker,
 {
-    fn decode(args: &ArgsBuffer, offset: &mut usize, len: usize) -> Result<Self, GoblinError> {
-        let byte_0 = args.decode::<u8>(offset, len)?;
+    fn decode(ctx: &DecodeCtx<'a>) -> Result<Self, GoblinError> {
+        let byte_0 = ctx.decode::<u8>()?;
 
         let decode_deposit_amounts = (byte_0 & 0b0000_0001) != 0;
 
