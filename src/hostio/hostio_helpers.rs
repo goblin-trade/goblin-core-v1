@@ -1,13 +1,15 @@
-use core::u64;
-
-use crate::{goblin_error::GoblinError, quantities::RawAtoms, require, types::Address};
-
+///! Safe helpers for hostio interaction
 use super::{hostio_unsafe, HostioBuffer};
+use crate::quantities::RawAtoms;
 
 pub fn msg_value() -> HostioBuffer<RawAtoms> {
     unsafe { HostioBuffer::<RawAtoms>::new(|f| hostio_unsafe::msg_value(f)) }
 }
 
+// Find keccak hash for a slice of bytes
+//
+// # Gas cost
+//
 // keccak is charged by the number of words. Eg. hashing a 16 bit costs the same as 256 bits.
 // Padding is done by the VM so we do not have to worry.
 //
@@ -46,59 +48,4 @@ pub fn msg_reentrant() -> bool {
 
 pub fn storage_flush_cache(clear: bool) {
     unsafe { hostio_unsafe::storage_flush_cache(clear) }
-}
-
-pub fn call_contract(
-    contract: &Address,
-    calldata: &[u8],
-    eth: &RawAtoms,
-) -> Result<(), GoblinError> {
-    // Use max gas to follow EVM's CALL 63/64 rule. The VM will decide how much gas to use
-    let gas = u64::MAX;
-
-    // Return data length is statically known. No need to pass the value up.
-    let return_data_len = &mut 0usize;
-
-    let result = unsafe {
-        hostio_unsafe::call_contract(
-            contract.as_ptr(),
-            calldata.as_ptr(),
-            calldata.len(),
-            eth.0.as_ptr(),
-            gas,
-            return_data_len,
-        )
-    };
-
-    // The return status indicates whether the call succeeded, and is 'nonzero' on failure.
-    // https://github.com/OffchainLabs/stylus-sdk-rs/blob/856597767d2d24d7d93a58a970a155c5979e7903/stylus-sdk/src/hostio.rs#L161
-    require!(result == 0, GoblinError::CallFail);
-
-    Ok(())
-}
-
-pub fn static_call_contract(contract: &Address, calldata: &[u8]) -> Result<(), GoblinError> {
-    let gas = u64::MAX;
-    let return_data_len = &mut 0usize;
-
-    let result = unsafe {
-        hostio_unsafe::static_call_contract(
-            contract.as_ptr(),
-            calldata.as_ptr(),
-            calldata.len(),
-            gas,
-            return_data_len,
-        )
-    };
-    require!(result == 0, GoblinError::StaticCallFail);
-
-    Ok(())
-}
-
-pub fn read_return_data<T>(offset: usize) -> HostioBuffer<T> {
-    unsafe {
-        HostioBuffer::<T>::new(|f| {
-            hostio_unsafe::read_return_data(f, offset, core::mem::size_of::<T>());
-        })
-    }
 }

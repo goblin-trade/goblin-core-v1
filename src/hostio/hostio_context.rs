@@ -1,5 +1,14 @@
 use crate::{hostio::hostio_unsafe, input_processor::ArgsBuffer, types::Address};
 
+/// Global static storage for args and msg_sender.
+///
+/// Global statics are zero filled for free. This saves zero fill cost without
+/// the need to introduce MaybeUninit boilerplate.
+///
+/// # Question- turn it back into a local struct?
+///
+/// Using global static here is a pure cosmetic decision, unlike delta where
+/// we actually use the zero filled values.
 pub struct HostioContext {
     pub args: ArgsBuffer,
     pub msg_sender: Address,
