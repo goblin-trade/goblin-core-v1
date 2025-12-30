@@ -1,5 +1,5 @@
-pub mod hostio_unsafe;
-pub use hostio_unsafe::*;
+pub mod vm_hooks;
+pub use vm_hooks::*;
 
 // #[cfg(test)]
 // mod test_hooks;
