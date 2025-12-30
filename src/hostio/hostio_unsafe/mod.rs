@@ -1,11 +1,9 @@
+pub mod debug_hooks;
+
+#[cfg(not(test))]
 pub mod vm_hooks;
+#[cfg(not(test))]
 pub use vm_hooks::*;
-
-// #[cfg(test)]
-// mod test_hooks;
-
-// #[cfg(test)]
-// pub use test_hooks::*;
 
 #[cfg(test)]
 mod tests;
