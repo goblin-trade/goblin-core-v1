@@ -1,4 +1,4 @@
-mod hostio_unsafe;
+pub mod hostio_unsafe;
 
 pub mod call_helpers;
 pub mod hostio_buffer;
