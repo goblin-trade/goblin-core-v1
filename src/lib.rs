@@ -36,6 +36,6 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
 #[cfg(all(not(test), target_arch = "wasm32"))]
 #[no_mangle]
 pub unsafe extern "C" fn mark_used() {
-    pay_for_memory_grow(0);
+    crate::hostio::hostio_unsafe::pay_for_memory_grow(0);
     panic!();
 }

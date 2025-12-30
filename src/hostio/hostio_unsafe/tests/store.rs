@@ -5,6 +5,7 @@ use std::collections::HashMap;
 
 use crate::types::Address;
 
+// TODO get rid of thread_local and RefCell
 thread_local! {
     // Store the input args that will be read by read_args
     pub static TEST_ARGS: RefCell<Vec<u8>> = RefCell::new(Vec::new());
