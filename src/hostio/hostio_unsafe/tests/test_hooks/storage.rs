@@ -20,17 +20,15 @@ pub unsafe extern "C" fn storage_load_bytes32(key: *const u8, dest: *mut u8) {
 
 #[no_mangle]
 pub unsafe extern "C" fn storage_cache_bytes32(key: *const u8, value: *const u8) {
-    STORAGE.with(|storage| {
-        let key_slice = core::slice::from_raw_parts(key, 32);
-        let mut key_array = [0u8; 32];
-        key_array.copy_from_slice(key_slice);
+    let key_slice = core::slice::from_raw_parts(key, 32);
+    let mut key_array = [0u8; 32];
+    key_array.copy_from_slice(key_slice);
 
-        let value_slice = core::slice::from_raw_parts(value, 32);
-        let mut value_array = [0u8; 32];
-        value_array.copy_from_slice(value_slice);
+    let value_slice = core::slice::from_raw_parts(value, 32);
+    let mut value_array = [0u8; 32];
+    value_array.copy_from_slice(value_slice);
 
-        storage.borrow_mut().insert(key_array, value_array);
-    });
+    vm_ctx().storage.insert(key_array, value_array);
 }
 
 #[no_mangle]

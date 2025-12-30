@@ -1,47 +1,39 @@
 extern crate alloc;
-use super::store::*;
 use alloc::vec::Vec;
 
+use super::vm_context::vm_ctx;
 use crate::types::Address;
 
 pub fn set_test_args(args: Vec<u8>) {
-    TEST_ARGS.with(|test_args| {
-        *test_args.borrow_mut() = args;
-    });
+    vm_ctx().test_args = args;
 }
 
 pub fn get_test_result() -> Vec<u8> {
-    TEST_RESULT.with(|test_result| test_result.borrow().clone())
+    vm_ctx().test_result.clone()
 }
 
 pub fn get_storage_value(key: &[u8; 32]) -> Option<[u8; 32]> {
-    STORAGE.with(|storage| storage.borrow().get(key).cloned())
+    vm_ctx().storage.get(key).cloned()
 }
 
 pub fn set_msg_value(value: [u8; 32]) {
-    MSG_VALUE.with(|msg_value| {
-        *msg_value.borrow_mut() = value;
-    });
+    vm_ctx().msg_value = value;
 }
 
 pub fn get_msg_value() -> [u8; 32] {
-    MSG_VALUE.with(|msg_value| *msg_value.borrow())
+    vm_ctx().msg_value
 }
 
-// Function to set the test sender address
 pub fn set_msg_sender(sender: Address) {
-    MSG_SENDER.with(|addr| {
-        *addr.borrow_mut() = sender;
-    });
+    vm_ctx().msg_sender = sender;
 }
 
 pub fn set_return_data(data: Vec<Vec<u8>>) {
-    RETURN_DATA.with(|return_data| {
-        *return_data.borrow_mut() = data;
-    });
-    RETURN_DATA_INDEX.with(|i| *i.borrow_mut() = 0);
+    let vm_ctx = vm_ctx();
+    vm_ctx.return_data = data;
+    vm_ctx.return_data_index = 0;
 }
 
 pub fn set_msg_reentrant(value: bool) {
-    MSG_REENTRANT.with(|flag| *flag.borrow_mut() = value);
+    vm_ctx().msg_reentrant = value;
 }
