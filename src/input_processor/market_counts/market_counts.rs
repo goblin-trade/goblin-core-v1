@@ -1,6 +1,6 @@
 use crate::{
     goblin_error::GoblinError,
-    hostio::HostioContext,
+    hostio::Calldata,
     input_processor::DecodeCtx,
     market::{process_market, Dynamic, Hardcoded},
     settlement::Delta,

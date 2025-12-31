@@ -2,12 +2,10 @@ pub mod hostio_unsafe;
 
 pub mod call_helpers;
 pub mod hostio_buffer;
-pub mod hostio_context;
 pub mod hostio_helpers;
 
 pub use call_helpers::*;
 pub use hostio_buffer::*;
-pub use hostio_context::*;
 pub use hostio_helpers::*;
 
 #[cfg(all(not(test), not(target_arch = "wasm32")))]
