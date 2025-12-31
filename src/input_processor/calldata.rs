@@ -1,6 +1,12 @@
 use core::mem::MaybeUninit;
 
-use crate::{hostio::hostio_unsafe, input_processor::ArgsBuffer, types::Address};
+use crate::{
+    goblin_error::GoblinError,
+    hostio::{self, hostio_unsafe},
+    input_processor::ArgsBuffer,
+    require,
+    types::Address,
+};
 
 pub struct Calldata {
     pub args: ArgsBuffer,
@@ -8,7 +14,10 @@ pub struct Calldata {
 }
 
 impl Calldata {
-    pub fn new() -> Self {
+    pub fn load() -> Result<Self, GoblinError> {
+        let msg_reentrant = hostio::msg_reentrant();
+        require!(!msg_reentrant, GoblinError::Reentrant);
+
         // Allocate uninitialized stack memory
         let mut args = MaybeUninit::<ArgsBuffer>::uninit();
         let mut msg_sender = MaybeUninit::<Address>::uninit();
@@ -17,10 +26,10 @@ impl Calldata {
             hostio_unsafe::read_args(args.as_mut_ptr() as *mut u8);
             hostio_unsafe::msg_sender(msg_sender.as_mut_ptr() as *mut u8);
 
-            Self {
+            Ok(Self {
                 args: args.assume_init(),
                 msg_sender: msg_sender.assume_init(),
-            }
+            })
         }
     }
 }

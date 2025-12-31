@@ -2,7 +2,6 @@ use crate::{
     goblin_error::GoblinError,
     hostio::{self},
     input_processor::{Calldata, Decodable, DecodeCtx, GlobalHeader},
-    require,
     settlement::Delta,
 };
 
@@ -12,15 +11,12 @@ pub const CONTRACT_ADDRESS: [u8; 20] = [
 ];
 
 pub fn processor(len: usize) -> Result<(), GoblinError> {
-    let msg_reentrant = hostio::msg_reentrant();
-    require!(!msg_reentrant, GoblinError::Reentrant);
-
-    let calldata = Calldata::new();
-
-    let ctx = &mut DecodeCtx::new(&calldata.args, len);
-    let global_header = GlobalHeader::try_decode(ctx)?;
+    let calldata = Calldata::load()?;
     let delta = Delta::get_static();
 
+    let ctx = &mut DecodeCtx::new(&calldata.args, len);
+
+    let global_header = GlobalHeader::try_decode(ctx)?;
     global_header.market_counts.process_markets(
         ctx,
         &calldata.msg_sender,
