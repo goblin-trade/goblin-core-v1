@@ -11,12 +11,6 @@ pub const CONTRACT_ADDRESS: [u8; 20] = [
     0x7d, 0x31, 0x61, 0xb0,
 ];
 
-/// Delta, initially zero filled.
-///
-/// `static mut` allows us to take advantage of the fact that lienar memory is zero filled.
-/// We get an empty starting buffer without the cost of zeroing.
-static mut DELTA: Delta = Delta::zero();
-
 pub fn processor(len: usize) -> Result<(), GoblinError> {
     let msg_reentrant = hostio::msg_reentrant();
     require!(!msg_reentrant, GoblinError::Reentrant);
@@ -25,7 +19,7 @@ pub fn processor(len: usize) -> Result<(), GoblinError> {
 
     let ctx = &mut DecodeCtx::new(&calldata.args, len);
     let global_header = GlobalHeader::try_decode(ctx)?;
-    let delta = unsafe { &mut DELTA };
+    let delta = Delta::get_static();
 
     global_header.market_counts.process_markets(
         ctx,

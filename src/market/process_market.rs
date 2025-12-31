@@ -1,6 +1,5 @@
 use crate::{
     goblin_error::GoblinError,
-    hostio::Calldata,
     input_processor::{Decodable, DecodeCtx},
     market::{Dynamic, Hardcoded, HardcodedMarketList, MarketAndKey, MarketHeader, MarketVariant},
     settlement::Delta,
