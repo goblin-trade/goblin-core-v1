@@ -4,7 +4,7 @@ use crate::{
         local_delta::{TakerDelta, TakerDeltaPair},
         MatchedAtoms, MatchedLots, MatchedLotsPair,
     },
-    types::{Base, LegMarker, LegQuantities, Quote, TupleReader},
+    types::{Base, LegMarker, LegQuantities, LegValidator, Quote, TupleReader},
 };
 
 /// A balance update in the global token level namespace
@@ -23,6 +23,7 @@ pub struct GlobalSenderUpdate<In: LegMarker> {
 impl<In> GlobalSenderUpdate<In>
 where
     In: LegMarker
+        + LegValidator
         + TupleReader<
             <Base as LegQuantities>::LotsPerUnit,
             <Quote as LegQuantities>::LotsPerUnit,

@@ -1,7 +1,7 @@
 use crate::{
     market::LotSizePair,
     settlement::{MatchedLots, MatchedLotsPair},
-    types::{Base, LegMarker, LegQuantities, Quote, TupleReader},
+    types::{Base, LegMarker, LegQuantities, LegValidator, Quote, TupleReader},
 };
 
 /// Matched atoms for a given token
@@ -17,6 +17,7 @@ pub struct MatchedAtoms<In: LegMarker> {
 impl<In> MatchedAtoms<In>
 where
     In: LegMarker
+        + LegValidator
         + TupleReader<
             <Base as LegQuantities>::LotsPerUnit,
             <Quote as LegQuantities>::LotsPerUnit,
