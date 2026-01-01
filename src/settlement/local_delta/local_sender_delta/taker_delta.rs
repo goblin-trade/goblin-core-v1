@@ -1,21 +1,21 @@
 use crate::quantities::QuantityOps;
 use crate::settlement::MatchedLots;
-use crate::types::LegMarker;
+use crate::types::LegMatcher;
 
 #[derive(Clone, Copy)]
-pub struct TakerDelta<In: LegMarker> {
+pub struct TakerDelta<In: LegMatcher> {
     /// Matched lots
     pub matched_lots: MatchedLots<In>,
 
     /// Output token released due to taker self-trading
-    pub taker_self_trade_unlocked: <In::Opposite as LegMarker>::MatchingLots,
+    pub taker_self_trade_unlocked: <In::Opposite as LegMatcher>::MatchingLots,
 }
 
-impl<In: LegMarker> TakerDelta<In> {
+impl<In: LegMatcher> TakerDelta<In> {
     pub const fn zero() -> Self {
         Self {
             matched_lots: MatchedLots::<In>::zero(),
-            taker_self_trade_unlocked: <In::Opposite as LegMarker>::MatchingLots::ZERO,
+            taker_self_trade_unlocked: <In::Opposite as LegMatcher>::MatchingLots::ZERO,
         }
     }
 }

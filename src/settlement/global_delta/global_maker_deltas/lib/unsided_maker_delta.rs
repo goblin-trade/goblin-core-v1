@@ -1,6 +1,6 @@
 use crate::{
     settlement::{global_delta::GlobalMakerUpdate, MatchedUnsidedAtoms},
-    types::LegMarker,
+    types::LegMatcher,
 };
 
 /// Maker delta for a token
@@ -19,7 +19,7 @@ impl UnsidedMakerDelta {
         }
     }
 
-    pub fn add_global_update<In: LegMarker>(
+    pub fn add_global_update<In: LegMatcher>(
         &mut self,
         global_update: &GlobalMakerUpdate<In>,
     ) -> Option<()> {

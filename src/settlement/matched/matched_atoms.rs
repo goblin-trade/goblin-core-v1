@@ -1,12 +1,12 @@
 use crate::{
     market::LotSizePair,
     settlement::{MatchedLots, MatchedLotsPair},
-    types::{Base, LegMarker, LegQuantities, LegValidator, Quote, TupleReader},
+    types::{Base, LegMatcher, LegQuantities, LegValidator, Quote, TupleReader},
 };
 
 /// Matched atoms for a given token
 #[derive(Default, PartialEq, Clone, Copy)]
-pub struct MatchedAtoms<In: LegMarker> {
+pub struct MatchedAtoms<In: LegMatcher> {
     /// Atoms traded in by taker and gained by maker
     pub taker_in: In::Atoms,
 
@@ -16,7 +16,7 @@ pub struct MatchedAtoms<In: LegMarker> {
 
 impl<In> MatchedAtoms<In>
 where
-    In: LegMarker
+    In: LegMatcher
         + LegValidator
         + TupleReader<
             <Base as LegQuantities>::LotsPerUnit,

@@ -1,7 +1,7 @@
 use crate::{
     quantities::{AsUnsided, QuantityOps, UnsidedAtoms},
     settlement::MatchedAtoms,
-    types::LegMarker,
+    types::LegMatcher,
 };
 
 #[derive(Default, Clone, Copy, PartialEq)]
@@ -13,7 +13,7 @@ pub struct MatchedUnsidedAtoms {
     pub taker_out: UnsidedAtoms,
 }
 
-impl<In: LegMarker> From<&MatchedAtoms<In>> for MatchedUnsidedAtoms {
+impl<In: LegMatcher> From<&MatchedAtoms<In>> for MatchedUnsidedAtoms {
     fn from(value: &MatchedAtoms<In>) -> Self {
         Self {
             taker_in: value.taker_in.unsided(),

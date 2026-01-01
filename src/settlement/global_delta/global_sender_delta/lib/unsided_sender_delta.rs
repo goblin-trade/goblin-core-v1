@@ -1,7 +1,7 @@
 use crate::{
     quantities::{AsUnsided, QuantityOps, UnsidedAtoms},
     settlement::{global_delta::GlobalSenderUpdate, MatchedUnsidedAtoms},
-    types::LegMarker,
+    types::LegMatcher,
 };
 
 /// Common delta shared by ETHDelta and ERC20Delta
@@ -39,7 +39,7 @@ impl UnsidedSenderDelta {
         }
     }
 
-    pub fn add_global_update<In: LegMarker>(
+    pub fn add_global_update<In: LegMatcher>(
         &mut self,
         global_update: &GlobalSenderUpdate<In>,
     ) -> Option<()> {

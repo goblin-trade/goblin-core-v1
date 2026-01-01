@@ -1,20 +1,20 @@
 use crate::{
     market::LotSizePair,
     settlement::{local_delta::MakerDeltaPair, MatchedAtoms, MatchedLots, MatchedLotsPair},
-    types::{Base, LegMarker, LegQuantities, LegValidator, Quote, TupleReader},
+    types::{Base, LegMatcher, LegQuantities, LegValidator, Quote, TupleReader},
 };
 
 /// Pending update to maker state for the token at In
 /// Eg. for In: Base, these updates will apply on the Base token maker delta
 #[derive(Clone, Copy)]
-pub struct GlobalMakerUpdate<In: LegMarker> {
+pub struct GlobalMakerUpdate<In: LegMatcher> {
     /// Matched atoms
     pub matched_atoms: MatchedAtoms<In>,
 }
 
 impl<In> GlobalMakerUpdate<In>
 where
-    In: LegMarker
+    In: LegMatcher
         + LegValidator
         + TupleReader<
             <Base as LegQuantities>::LotsPerUnit,

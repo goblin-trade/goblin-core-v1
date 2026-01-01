@@ -10,7 +10,7 @@ use crate::{
     },
     state::{MarketState, RestingOrder, RestingOrderKey, SlotState},
     token::TokenMarker,
-    types::{Address, Base, LegMarker, Quote, TupleReader},
+    types::{Address, Base, LegMatcher, Quote, TupleReader},
 };
 
 pub fn match_order<M, B, Q, In>(
@@ -26,7 +26,7 @@ where
     M: MarketVariant,
     B: TokenMarker,
     Q: TokenMarker,
-    In: LegMarker
+    In: LegMatcher
         + TupleReader<MakerDelta<Base>, MakerDelta<Quote>, (Base, Quote), Result = MakerDelta<In>>
         + TupleReader<TakerDelta<Base>, TakerDelta<Quote>, (Base, Quote), Result = TakerDelta<In>>
         + TupleReader<
@@ -48,10 +48,10 @@ where
     let mut taker_in = In::MatchingLots::ZERO;
 
     // The opposite amount transferred out, i.e. lost by makers and gained by the taker.
-    let mut taker_out = <In::Opposite as LegMarker>::MatchingLots::ZERO;
+    let mut taker_out = <In::Opposite as LegMatcher>::MatchingLots::ZERO;
 
     // The opposite amount unlocked upon self trade
-    let mut taker_self_trade_unlocked = <In::Opposite as LegMarker>::MatchingLots::ZERO;
+    let mut taker_self_trade_unlocked = <In::Opposite as LegMatcher>::MatchingLots::ZERO;
 
     // Halt early if best price is further from the centre than the price limit
     let best_opposite_price = In::Opposite::get_leg_mut(&mut market_state.best_prices);

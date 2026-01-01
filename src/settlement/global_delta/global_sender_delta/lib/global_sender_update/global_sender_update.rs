@@ -4,7 +4,7 @@ use crate::{
         local_delta::{TakerDelta, TakerDeltaPair},
         MatchedAtoms, MatchedLots, MatchedLotsPair,
     },
-    types::{Base, LegMarker, LegQuantities, LegValidator, Quote, TupleReader},
+    types::{Base, LegMatcher, LegQuantities, LegValidator, Quote, TupleReader},
 };
 
 /// A balance update in the global token level namespace
@@ -12,7 +12,7 @@ use crate::{
 /// Unlike TakerDelta which holds updates for tokens on both side,
 /// GlobalUpdate represents balance updates for one token.
 #[derive(Default, PartialEq, Clone, Copy)]
-pub struct GlobalSenderUpdate<In: LegMarker> {
+pub struct GlobalSenderUpdate<In: LegMatcher> {
     /// Matched atoms for the given token
     pub matched_atoms: MatchedAtoms<In>,
 
@@ -22,7 +22,7 @@ pub struct GlobalSenderUpdate<In: LegMarker> {
 
 impl<In> GlobalSenderUpdate<In>
 where
-    In: LegMarker
+    In: LegMatcher
         + LegValidator
         + TupleReader<
             <Base as LegQuantities>::LotsPerUnit,

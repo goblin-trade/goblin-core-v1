@@ -11,7 +11,7 @@ use crate::{
     },
     token::{HardcodedIndex, HardcodedToken},
     token::{ERC20, ETH},
-    types::{LegMarker, Pair},
+    types::{LegMatcher, Pair},
 };
 
 /// The top level delta. Tracks pending token balance updates.
@@ -32,7 +32,7 @@ impl GlobalDelta {
 
     fn apply_side_updates<In>() -> Result<(), GoblinError>
     where
-        In: LegMarker,
+        In: LegMatcher,
     {
         Ok(())
     }

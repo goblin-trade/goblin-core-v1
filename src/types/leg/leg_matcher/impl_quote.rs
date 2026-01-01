@@ -3,10 +3,10 @@ use crate::{
     quantities::{
         AdjustedQuoteLots, BaseLots, BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, Ticks,
     },
-    types::{Base, LegMarker, Quote},
+    types::{Base, LegMatcher, Quote},
 };
 
-impl LegMarker for Quote {
+impl LegMatcher for Quote {
     type Opposite = Base;
 
     type MatchingLots = AdjustedQuoteLots;

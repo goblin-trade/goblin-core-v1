@@ -1,7 +1,7 @@
 use crate::{
     settlement::local_delta::DepositForSide,
     token::{TokenMarker, ERC20, ETH},
-    types::{Base, LegMarker, Pair, Quote, TupleReader},
+    types::{Base, LegMatcher, Pair, Quote, TupleReader},
 };
 
 pub type LocalDepositStore = Pair<DepositForSide, DepositForSide>;
@@ -20,7 +20,7 @@ impl LocalDepositStore {
                 (ETH, ERC20),
                 Result = <T as TokenMarker>::Deposit,
             >,
-        In: LegMarker
+        In: LegMatcher
             + TupleReader<DepositForSide, DepositForSide, (Base, Quote), Result = DepositForSide>,
     {
         let deposit_for_leg_marker = In::get_leg_mut(self);

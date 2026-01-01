@@ -4,10 +4,10 @@ use crate::{
 };
 
 /// Conversions for matching orders
-pub trait LegMarker: Default + Clone + Copy + PartialEq + LegQuantities {
+pub trait LegMatcher: Default + Clone + Copy + PartialEq + LegQuantities {
     /// The opposite side
     /// Opposite of opposite is Self
-    type Opposite: LegMarker<Opposite = Self>;
+    type Opposite: LegMatcher<Opposite = Self>;
 
     /// The intermediary unit used for matching
     ///

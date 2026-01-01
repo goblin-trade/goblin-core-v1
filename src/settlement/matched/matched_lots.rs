@@ -1,20 +1,20 @@
 use crate::quantities::QuantityOps;
-use crate::types::LegMarker;
+use crate::types::LegMatcher;
 
 #[derive(Default, Clone, Copy, PartialEq)]
-pub struct MatchedLots<In: LegMarker> {
+pub struct MatchedLots<In: LegMatcher> {
     /// Input token gained by maker
     pub taker_in: In::MatchingLots,
 
     /// Locked output token released by maker
-    pub taker_out: <In::Opposite as LegMarker>::MatchingLots,
+    pub taker_out: <In::Opposite as LegMatcher>::MatchingLots,
 }
 
-impl<In: LegMarker> MatchedLots<In> {
+impl<In: LegMatcher> MatchedLots<In> {
     pub const fn zero() -> Self {
         Self {
             taker_in: In::MatchingLots::ZERO,
-            taker_out: <In::Opposite as LegMarker>::MatchingLots::ZERO,
+            taker_out: <In::Opposite as LegMatcher>::MatchingLots::ZERO,
         }
     }
 

@@ -2,7 +2,7 @@ use crate::{
     goblin_error::GoblinError,
     quantities::DeltaAtoms,
     settlement::global_delta::{GlobalSenderUpdate, UnsidedSenderDelta},
-    types::LegMarker,
+    types::LegMatcher,
 };
 
 /// ERC20 atoms due to be deducted, locked or transferred out on settlement
@@ -23,7 +23,7 @@ impl ERC20Delta {
         }
     }
 
-    pub fn apply_global_update<In: LegMarker>(
+    pub fn apply_global_update<In: LegMatcher>(
         &mut self,
         deposit_amount: DeltaAtoms,
         global_update: &GlobalSenderUpdate<In>,

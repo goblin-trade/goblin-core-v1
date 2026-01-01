@@ -1,11 +1,11 @@
 ///! LegMarker for input base, also known as ask / sell
 use crate::{
     quantities::{BaseLots, BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, Ticks},
-    types::{Base, LegMarker, Quote},
+    types::{Base, LegMatcher, Quote},
 };
 
 // Input Base = side Ask (sell)
-impl LegMarker for Base {
+impl LegMatcher for Base {
     type Opposite = Quote;
 
     type MatchingLots = BaseLots;
