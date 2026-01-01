@@ -8,7 +8,7 @@ use crate::{
     settlement::local_delta::{LocalDelta, MakerDelta, TakerDelta},
     state::MarketState,
     token::TokenMarker,
-    types::{Address, Base, LegMarker, Quote, TupleReader},
+    types::{Address, Base, LegMarker, LegValidator, Quote, TupleReader},
 };
 
 pub fn ix_take<'a, M, B, Q, In>(
@@ -23,6 +23,7 @@ where
     B: TokenMarker,
     Q: TokenMarker,
     In: LegMarker
+        + LegValidator
         + TupleReader<MakerDelta<Base>, MakerDelta<Quote>, (Base, Quote), Result = MakerDelta<In>>
         + TupleReader<TakerDelta<Base>, TakerDelta<Quote>, (Base, Quote), Result = TakerDelta<In>>
         + TupleReader<

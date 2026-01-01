@@ -29,17 +29,6 @@ pub trait LegMarker: Default + Clone + Copy + PartialEq {
 
     const ATOMS_PER_UNIT: Self::AtomsPerUnit;
 
-    /// Ensure that market has an integer number of atoms per lot
-    ///
-    /// As ATOMS_PER_UNIT is hardcoded to 10^6 for base and quote, this is effectively
-    ///
-    ///  **10^6 % Lot size == 0**
-    ///
-    /// lots_per_unit is also called lot_size
-    fn lots_per_unit_valid(lots_per_unit: Self::LotsPerUnit) -> bool {
-        Self::ATOMS_PER_UNIT % lots_per_unit == Self::AtomsPerUnit::ZERO
-    }
-
     /// The number of atoms per lot
     ///
     /// Since we have validated the modulo invariant, this will give a whole number
@@ -49,8 +38,6 @@ pub trait LegMarker: Default + Clone + Copy + PartialEq {
 
     // Trade inputs
     const DEFAULT_PRICE_LIMIT: Ticks;
-
-    fn price_limit_valid(_price_limit: Ticks) -> bool;
 
     // Match function
 
@@ -120,10 +107,6 @@ impl LegMarker for Base {
 
     const DEFAULT_PRICE_LIMIT: Ticks = Ticks::ZERO;
 
-    fn price_limit_valid(_price_limit: Ticks) -> bool {
-        true
-    }
-
     type MatchingLots = BaseLots;
 
     fn matching_lots_taker(
@@ -176,10 +159,6 @@ impl LegMarker for Quote {
     const ATOMS_PER_UNIT: Self::AtomsPerUnit = QUOTE_ATOMS_PER_QUOTE_UNIT;
 
     const DEFAULT_PRICE_LIMIT: Ticks = Ticks::MAX;
-
-    fn price_limit_valid(price_limit: Ticks) -> bool {
-        price_limit > Ticks::ZERO
-    }
 
     type MatchingLots = AdjustedQuoteLots;
 
