@@ -1,8 +1,12 @@
-use crate::quantities::{
-    AdjustedQuoteLots, AsUnsided, BaseAtoms, BaseAtomsPerBaseLot, BaseAtomsPerBaseUnit, BaseLots,
-    BaseLotsPerBaseUnit, BaseUnits, Exp, QuantityOps, QuoteAtoms, QuoteAtomsPerQuoteLot,
-    QuoteAtomsPerQuoteUnit, QuoteLots, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit,
-    QuoteUnits, Ticks, UnsidedAtoms, BASE_ATOMS_PER_BASE_UNIT, P1, QUOTE_ATOMS_PER_QUOTE_UNIT, Z0,
+use crate::{
+    quantities::{
+        AdjustedQuoteLots, AsUnsided, BaseAtoms, BaseAtomsPerBaseLot, BaseAtomsPerBaseUnit,
+        BaseLots, BaseLotsPerBaseUnit, BaseUnits, Exp, QuantityOps, QuoteAtoms,
+        QuoteAtomsPerQuoteLot, QuoteAtomsPerQuoteUnit, QuoteLots, QuoteLotsPerBaseUnitPerTick,
+        QuoteLotsPerQuoteUnit, QuoteUnits, Ticks, UnsidedAtoms, BASE_ATOMS_PER_BASE_UNIT, P1,
+        QUOTE_ATOMS_PER_QUOTE_UNIT, Z0,
+    },
+    types::LegQuantities,
 };
 use core::ops::{Div, Mul, Rem};
 
@@ -12,20 +16,8 @@ pub struct Base;
 #[derive(Default, Clone, Copy, PartialEq)]
 pub struct Quote;
 
-pub trait LegMarker: Default + Clone + Copy + PartialEq {
+pub trait LegMarker: Default + Clone + Copy + PartialEq + LegQuantities {
     type Opposite: LegMarker<Opposite = Self>;
-
-    // Basic quantities
-    type Lots: QuantityOps + From<u64> + PartialOrd + Mul<Self::AtomsPerLot, Output = Self::Atoms>;
-    type Units: QuantityOps;
-    type Atoms: QuantityOps + AsUnsided<Self, Z0, Z0, P1>;
-
-    // Ratios
-    type LotsPerUnit: QuantityOps;
-    type AtomsPerUnit: QuantityOps
-        + Rem<Self::LotsPerUnit, Output = Self::AtomsPerUnit>
-        + Div<Self::LotsPerUnit, Output = Self::AtomsPerLot>;
-    type AtomsPerLot: QuantityOps;
 
     const ATOMS_PER_UNIT: Self::AtomsPerUnit;
 
@@ -50,6 +42,12 @@ pub trait LegMarker: Default + Clone + Copy + PartialEq {
     //
     // Use Self::MatchingLots to track amount consumed and Opposite::MatchingLots to get the output
     type MatchingLots: QuantityOps + PartialOrd;
+
+    // 5 functions related to matching
+    // But they are tightly coupled with quantities
+    //
+    // Hack- move units into LegUnits trait
+    // LegMarker holds matching
 
     // Obtain MatchingLots from taker amount in
     fn matching_lots_taker(
@@ -95,14 +93,6 @@ pub trait LegMarker: Default + Clone + Copy + PartialEq {
 impl LegMarker for Base {
     type Opposite = Quote;
 
-    type Lots = BaseLots;
-    type Units = BaseUnits;
-    type Atoms = BaseAtoms;
-
-    type LotsPerUnit = BaseLotsPerBaseUnit;
-    type AtomsPerUnit = BaseAtomsPerBaseUnit;
-    type AtomsPerLot = BaseAtomsPerBaseLot;
-
     const ATOMS_PER_UNIT: Self::AtomsPerUnit = BASE_ATOMS_PER_BASE_UNIT;
 
     const DEFAULT_PRICE_LIMIT: Ticks = Ticks::ZERO;
@@ -147,14 +137,6 @@ impl LegMarker for Base {
 // Input Quote = side Bid (buy)
 impl LegMarker for Quote {
     type Opposite = Base;
-
-    type Lots = QuoteLots;
-    type Units = QuoteUnits;
-    type Atoms = QuoteAtoms;
-
-    type LotsPerUnit = QuoteLotsPerQuoteUnit;
-    type AtomsPerUnit = QuoteAtomsPerQuoteUnit;
-    type AtomsPerLot = QuoteAtomsPerQuoteLot;
 
     const ATOMS_PER_UNIT: Self::AtomsPerUnit = QUOTE_ATOMS_PER_QUOTE_UNIT;
 

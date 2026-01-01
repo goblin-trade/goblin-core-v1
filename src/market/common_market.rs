@@ -2,10 +2,11 @@ use crate::{
     market::MarketVariant,
     quantities::QuoteLotsPerBaseUnitPerTick,
     token::TokenMarker,
-    types::{Base, LegMarker, Pair, Quote},
+    types::{Base, LegQuantities, Pair, Quote},
 };
 
-pub type LotSizePair = Pair<<Base as LegMarker>::LotsPerUnit, <Quote as LegMarker>::LotsPerUnit>;
+pub type LotSizePair =
+    Pair<<Base as LegQuantities>::LotsPerUnit, <Quote as LegQuantities>::LotsPerUnit>;
 
 // If P needs to be a trait, we need to use T0 and T1 here
 pub struct CommonMarket<M: MarketVariant, B: TokenMarker, Q: TokenMarker> {

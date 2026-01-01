@@ -4,7 +4,7 @@ use crate::{
         local_delta::{TakerDelta, TakerDeltaPair},
         MatchedAtoms, MatchedLots, MatchedLotsPair,
     },
-    types::{Base, LegMarker, Quote, TupleReader},
+    types::{Base, LegMarker, LegQuantities, Quote, TupleReader},
 };
 
 /// A balance update in the global token level namespace
@@ -24,8 +24,8 @@ impl<In> GlobalSenderUpdate<In>
 where
     In: LegMarker
         + TupleReader<
-            <Base as LegMarker>::LotsPerUnit,
-            <Quote as LegMarker>::LotsPerUnit,
+            <Base as LegQuantities>::LotsPerUnit,
+            <Quote as LegQuantities>::LotsPerUnit,
             (Base, Quote),
             Result = In::LotsPerUnit,
         > + TupleReader<MatchedLots<Base>, MatchedLots<Quote>, (Base, Quote), Result = MatchedLots<In>>,
