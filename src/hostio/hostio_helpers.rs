@@ -15,16 +15,20 @@ pub fn msg_value() -> HostioBuffer<RawAtoms> {
 //
 // https://docs.arbitrum.io/stylus/reference/opcode-hostio-pricing#host-io-costs
 //
-pub fn native_keccak256(bytes: &[u8]) -> HostioBuffer<[u8; 32]> {
+pub fn native_keccak256(bytes: &[u8]) -> [u8; 32] {
     unsafe {
         HostioBuffer::<[u8; 32]>::new(|f| {
             hostio_unsafe::native_keccak256(bytes.as_ptr(), bytes.len(), f)
         })
+        .into_inner()
     }
 }
 
-pub fn storage_load_bytes32<T>(key: &[u8; 32]) -> HostioBuffer<T> {
-    unsafe { HostioBuffer::<T>::new(|f| hostio_unsafe::storage_load_bytes32(key.as_ptr(), f)) }
+pub fn storage_load_bytes32<T>(key: &[u8; 32]) -> T {
+    unsafe {
+        HostioBuffer::<T>::new(|f| hostio_unsafe::storage_load_bytes32(key.as_ptr(), f))
+            .into_inner()
+    }
 }
 
 pub fn storage_cache_bytes32<T>(key: &[u8; 32], value: &T) {

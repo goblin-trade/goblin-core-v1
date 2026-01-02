@@ -3,7 +3,7 @@ use core::marker::PhantomData;
 use crate::{
     market::{Dynamic, Hardcoded, MarketVariant},
     quantities::Ticks,
-    state::{DynamicMarketKey, HardcodedMarketKey, SlotState},
+    state::{DynamicMarketKey, HardcodedMarketKey, SlotKey},
     token::TokenMarker,
     types::Pair,
 };
@@ -18,11 +18,11 @@ pub struct MarketState<M: MarketVariant, B: TokenMarker, Q: TokenMarker> {
     _marker: PhantomData<(M, B, Q)>,
 }
 
-impl<B: TokenMarker, Q: TokenMarker> SlotState<HardcodedMarketKey<B, Q>>
-    for MarketState<Hardcoded, B, Q>
-{
-}
-impl<B: TokenMarker, Q: TokenMarker> SlotState<DynamicMarketKey<B, Q>>
-    for MarketState<Dynamic, B, Q>
-{
-}
+// impl<B: TokenMarker, Q: TokenMarker> SlotState<HardcodedMarketKey<B, Q>>
+//     for MarketState<Hardcoded, B, Q>
+// {
+// }
+// impl<B: TokenMarker, Q: TokenMarker> SlotState<DynamicMarketKey<B, Q>>
+//     for MarketState<Dynamic, B, Q>
+// {
+// }

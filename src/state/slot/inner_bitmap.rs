@@ -1,20 +1,21 @@
-use crate::{
-    hostio::{self, HostioBuffer},
-    quantities::InnerBitmapIndex,
-    state::{SlotKey, SlotState},
-};
+use crate::state::SlotKey;
 
-pub struct InnerBitmapKey {
-    hash: HostioBuffer<[u8; 32]>,
-}
+#[repr(C)]
+pub struct InnerBitmap(pub [u8; 32]);
 
-impl SlotKey for InnerBitmapKey {
-    const DISCRIMINATOR: u8 = 4;
+impl SlotKey<InnerBitmap, 4> {}
 
-    fn hash(&self) -> &[u8; 32] {
-        self.hash.as_ref()
-    }
-}
+// pub struct InnerBitmapKey {
+//     hash: HostioBuffer<[u8; 32]>,
+// }
+
+// impl SlotKey for InnerBitmapKey {
+//     const DISCRIMINATOR: u8 = 4;
+
+//     fn hash(&self) -> &[u8; 32] {
+//         self.hash.as_ref()
+//     }
+// }
 
 // impl InnerBitmapKey {
 //     pub fn new(market_key: &MarketKey, inner_bitmap_index: InnerBitmapIndex) -> Self {
@@ -29,7 +30,7 @@ impl SlotKey for InnerBitmapKey {
 //     }
 // }
 
-#[repr(C)]
-pub struct InnerBitmap(pub [u8; 32]);
+// #[repr(C)]
+// pub struct InnerBitmap(pub [u8; 32]);
 
-impl SlotState<InnerBitmapKey> for InnerBitmap {}
+// impl SlotState<InnerBitmapKey> for InnerBitmap {}

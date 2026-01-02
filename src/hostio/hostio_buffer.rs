@@ -28,7 +28,7 @@ impl<T> HostioBuffer<T> {
         unsafe { self.inner.assume_init_mut() }
     }
 
-    /// Consume the buffer and return the owned initialized value.
+    /// Transmute the buffer into the inner value
     ///
     /// # Safety
     /// Caller must ensure the buffer is fully initialized (as guaranteed by the hostio call).
