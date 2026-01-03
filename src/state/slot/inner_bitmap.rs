@@ -1,9 +1,13 @@
-use crate::state::SlotKey;
+use crate::state::{SlotKey, SlotState};
 
 #[repr(C)]
 pub struct InnerBitmap(pub [u8; 32]);
 
-impl SlotKey<InnerBitmap, 4> {}
+impl SlotState for InnerBitmap {
+    const DISCRIMINATOR: u8 = 4;
+}
+
+impl SlotKey<InnerBitmap> {}
 
 // pub struct InnerBitmapKey {
 //     hash: HostioBuffer<[u8; 32]>,

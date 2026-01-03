@@ -2,23 +2,23 @@ use core::marker::PhantomData;
 
 use crate::hostio::{self, storage_cache_bytes32, storage_load_bytes32, HostioBuffer};
 
-// pub trait SlotState: Sized {
-//     // Ensure that size equals 32 bytes at compile time
-//     const ASSERT: () = assert!(core::mem::size_of::<Self>() == 32);
+pub trait SlotState: Sized {
+    // Ensure that size equals 32 bytes at compile time
+    const ASSERT: () = assert!(core::mem::size_of::<Self>() == 32);
 
-//     /// Unique 1 byte discriminator
-//     const DISCRIMINATOR: u8;
-// }
+    /// Unique 1 byte discriminator
+    const DISCRIMINATOR: u8;
+}
 
-pub struct SlotKey<S, const D: u8> {
+pub struct SlotKey<S: SlotState> {
     hash: [u8; 32],
     _marker: PhantomData<S>,
 }
 
-impl<S, const D: u8> SlotKey<S, D> {
-    const SIZE_CHECK: () = assert!(core::mem::size_of::<S>() == 32);
+impl<S: SlotState> SlotKey<S> {
+    // const SIZE_CHECK: () = assert!(core::mem::size_of::<S>() == 32);
 
-    pub const DISCRIMINATOR: u8 = D;
+    // pub const DISCRIMINATOR: u8 = D;
 
     // pub fn hash(&self) -> &[u8; 32] {
     //     self.hash()

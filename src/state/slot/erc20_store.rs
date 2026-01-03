@@ -1,4 +1,8 @@
-use crate::{quantities::UnsidedAtoms, state::SlotKey, types::Address};
+use crate::{
+    quantities::UnsidedAtoms,
+    state::{SlotKey, SlotState},
+    types::Address,
+};
 
 #[repr(C)]
 pub struct ERC20Store {
@@ -8,10 +12,14 @@ pub struct ERC20Store {
     _padding: [u8; 15],
 }
 
-impl SlotKey<ERC20Store, 2> {
+impl SlotState for ERC20Store {
+    const DISCRIMINATOR: u8 = 2;
+}
+
+impl SlotKey<ERC20Store> {
     pub fn new(trader: &Address, token: &Address) -> Self {
         let mut bytes = [0u8; (1 + 20 + 20)];
-        bytes[0] = Self::DISCRIMINATOR;
+        bytes[0] = ERC20Store::DISCRIMINATOR;
         bytes[1..21].copy_from_slice(trader.as_slice());
         bytes[21..41].copy_from_slice(token.as_slice());
 

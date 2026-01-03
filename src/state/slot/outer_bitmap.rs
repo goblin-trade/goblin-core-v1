@@ -1,13 +1,17 @@
 use crate::{
     hostio::{self, HostioBuffer},
     quantities::OuterBitmapIndex,
-    state::SlotKey,
+    state::{SlotKey, SlotState},
 };
 
 #[repr(C)]
 pub struct OuterBitmap(pub [u8; 32]);
 
-impl SlotKey<OuterBitmap, 6> {}
+impl SlotState for OuterBitmap {
+    const DISCRIMINATOR: u8 = 6;
+}
+
+impl SlotKey<OuterBitmap> {}
 
 // pub struct OuterBitmapKey {
 //     hash: HostioBuffer<[u8; 32]>,
