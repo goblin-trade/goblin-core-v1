@@ -1,17 +1,16 @@
 use crate::{
     goblin_error::GoblinError,
-    hostio,
     market::{CommonMarket, Dynamic},
-    state::{DynamicMarketHasher, DynamicMarketKey},
+    state::{DynamicMarketHasher, MarketState, SlotKey},
     token::{CustomToken, ERC20},
     types::{Base, Quote, TupleReader},
 };
 
-impl DynamicMarketHasher<ERC20, ERC20> for DynamicMarketKey<ERC20, ERC20> {
-    fn hash(
+impl DynamicMarketHasher<ERC20, ERC20> for MarketState<Dynamic, ERC20, ERC20> {
+    fn compute_slot_key(
         market: &CommonMarket<Dynamic, ERC20, ERC20>,
         custom_erc20_list: &[CustomToken],
-    ) -> Result<Self, GoblinError> {
+    ) -> Result<SlotKey<Self>, GoblinError> {
         let mut bytes = [0u8; Self::BUFFER_SIZE];
         Self::set_common_fields(&mut bytes, market);
 
@@ -23,7 +22,6 @@ impl DynamicMarketHasher<ERC20, ERC20> for DynamicMarketKey<ERC20, ERC20> {
         let quote_address = quote_token_index.address(custom_erc20_list)?;
         bytes[45..65].copy_from_slice(&quote_address);
 
-        let hash = hostio::native_keccak256(bytes.as_slice());
-        Ok(Self::new(hash))
+        Ok(SlotKey::generate(bytes.as_slice()))
     }
 }

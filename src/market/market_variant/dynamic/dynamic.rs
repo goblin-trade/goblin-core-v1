@@ -2,7 +2,7 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
     market::{CommonMarket, MarketAndKey, MarketVariant},
-    state::{DynamicMarketHasher, DynamicMarketKey},
+    state::{DynamicMarketHasher, MarketState},
     token::{CustomToken, DynamicIndex, TokenMarker},
 };
 
@@ -16,8 +16,6 @@ impl MarketVariant for Dynamic {
 
     type DecodedMarket<B: TokenMarker, Q: TokenMarker> = MarketAndKey<Self, B, Q>;
 
-    type MarketKey<B: TokenMarker, Q: TokenMarker> = DynamicMarketKey<B, Q>;
-
     fn decode<'a, B, Q>(
         ctx: &'a DecodeCtx<'a>,
         custom_erc20_list: &[CustomToken],
@@ -27,10 +25,12 @@ impl MarketVariant for Dynamic {
         Q: TokenMarker,
         B::TokenIndex<Dynamic>: Decodable<'a>,
         Q::TokenIndex<Dynamic>: Decodable<'a>,
-        DynamicMarketKey<B, Q>: DynamicMarketHasher<B, Q>,
+        MarketState<Dynamic, B, Q>: DynamicMarketHasher<B, Q>,
     {
         let common_market = CommonMarket::<Self, B, Q>::try_decode(ctx)?;
-        let key = DynamicMarketKey::hash(&common_market, custom_erc20_list)?;
+
+        let key =
+            MarketState::<Dynamic, B, Q>::compute_slot_key(&common_market, custom_erc20_list)?;
 
         Ok(MarketAndKey {
             market: common_market,

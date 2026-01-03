@@ -8,7 +8,7 @@ use crate::{
         local_delta::{LocalDelta, MakerDelta, TakerDelta},
         MatchedLots,
     },
-    state::{MarketState, RestingOrder, RestingOrderKey, SlotState},
+    state::{MarketState, RestingOrder, SlotKey},
     token::TokenMarker,
     types::{Address, Base, LegMatcher, Quote, TupleReader},
 };
@@ -81,15 +81,15 @@ where
                 }
 
                 // Read resting order amount
-                let resting_order_key = RestingOrderKey::new(
+                let resting_order_key = SlotKey::<RestingOrder>::new(
                     &resting_order_position.inner_bitmap_key,
                     resting_order_position.inner_index,
                 );
-                let mut resting_order = RestingOrder::load(&resting_order_key);
+                let mut resting_order = resting_order_key.load();
                 let RestingOrder {
                     maker,
                     size: resting_order_size,
-                } = *resting_order.as_ref();
+                } = resting_order;
 
                 let quote = In::matching_lots_maker(resting_order_size, market.tick_size, price);
                 let quote_opposite =
@@ -106,8 +106,8 @@ where
                     let surplus = taker_in + quote - budget;
                     let surplus_base_lots =
                         In::base_lots_from_matching(surplus, market.tick_size, price);
-                    (*resting_order.as_mut()).size = surplus_base_lots;
-                    resting_order.as_mut().store(&resting_order_key);
+                    resting_order.size = surplus_base_lots;
+                    resting_order_key.store(&resting_order);
 
                     let consumed = budget - taker_in;
                     let consumed_base_lots = resting_order_size - surplus_base_lots;

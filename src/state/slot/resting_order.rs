@@ -1,7 +1,7 @@
 use crate::{
     hostio::{self, HostioBuffer},
     quantities::{BaseLots, InnerIndex},
-    state::SlotKey,
+    state::{InnerBitmap, SlotKey, SlotState},
     types::Address,
 };
 
@@ -30,7 +30,20 @@ pub struct RestingOrder {
     pub size: BaseLots,
 }
 
-impl SlotKey<RestingOrder, 5> {}
+impl SlotState for RestingOrder {
+    const DISCRIMINATOR: u8 = 5;
+}
+
+impl SlotKey<RestingOrder> {
+    pub fn new(inner_bitmap_key: &SlotKey<InnerBitmap>, inner_index: InnerIndex) -> Self {
+        let mut bytes = [0u8; (1 + 32 + 1)];
+        bytes[0] = RestingOrder::DISCRIMINATOR;
+        bytes[1..33].copy_from_slice(inner_bitmap_key.hash());
+        bytes[33] = inner_index.0;
+
+        Self::generate(bytes.as_slice())
+    }
+}
 
 // pub struct RestingOrderKey {
 //     hash: HostioBuffer<[u8; 32]>,

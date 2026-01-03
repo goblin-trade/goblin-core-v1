@@ -20,9 +20,9 @@ impl<S: SlotState> SlotKey<S> {
 
     // pub const DISCRIMINATOR: u8 = D;
 
-    // pub fn hash(&self) -> &[u8; 32] {
-    //     self.hash()
-    // }
+    pub fn hash(&self) -> &[u8; 32] {
+        self.hash()
+    }
 
     pub const fn new_inner(hash: [u8; 32]) -> Self {
         Self {

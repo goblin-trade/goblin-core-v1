@@ -1,7 +1,7 @@
 use crate::{
     market::{CommonMarket, Hardcoded, HardcodedMarketList, MarketAndKey},
     quantities::{BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit},
-    state::HardcodedMarketKey,
+    state::SlotKey,
     token::{HardcodedToken, TokenIndex, ERC20, ETH},
     types::{Pair, Tuple},
 };
@@ -16,7 +16,7 @@ impl HardcodedMarketList<ETH, ERC20> for MarketAndKey<Hardcoded, ETH, ERC20> {
             ),
             tick_size: QuoteLotsPerBaseUnitPerTick::new(1),
         },
-        key: HardcodedMarketKey::new([0u8; 32]),
+        key: SlotKey::new_inner([0u8; 32]),
     }];
 }
 
@@ -30,7 +30,7 @@ impl HardcodedMarketList<ERC20, ETH> for MarketAndKey<Hardcoded, ERC20, ETH> {
             ),
             tick_size: QuoteLotsPerBaseUnitPerTick::new(1),
         },
-        key: HardcodedMarketKey::new([0u8; 32]),
+        key: SlotKey::new_inner([0u8; 32]),
     }];
 }
 
@@ -47,6 +47,6 @@ impl HardcodedMarketList<ERC20, ERC20> for MarketAndKey<Hardcoded, ERC20, ERC20>
             ),
             tick_size: QuoteLotsPerBaseUnitPerTick::new(1),
         },
-        key: HardcodedMarketKey::new([0u8; 32]),
+        key: SlotKey::new_inner([0u8; 32]),
     }];
 }

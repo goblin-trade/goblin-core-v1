@@ -1,6 +1,6 @@
 use crate::{
     quantities::{InnerBitmapIndex, InnerIndex, Ticks},
-    state::InnerBitmapKey,
+    state::{InnerBitmap, SlotKey},
     types::LegMatcher,
 };
 
@@ -22,7 +22,7 @@ impl<'a, In: LegMatcher> RestingOrderPositionIterator<'a, In> {
 pub struct RestingOrderPosition {
     pub inner_bitmap_index: InnerBitmapIndex,
     pub inner_index: InnerIndex,
-    pub inner_bitmap_key: InnerBitmapKey,
+    pub inner_bitmap_key: SlotKey<InnerBitmap>,
 }
 
 impl RestingOrderPosition {

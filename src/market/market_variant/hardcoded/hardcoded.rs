@@ -2,7 +2,6 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
     market::{DangerousMarketIndex, HardcodedMarketList, MarketAndKey, MarketVariant},
-    state::HardcodedMarketKey,
     token::{CustomToken, HardcodedIndex, TokenMarker},
 };
 
@@ -15,8 +14,6 @@ impl MarketVariant for Hardcoded {
     type TokenIndex = HardcodedIndex;
 
     type DecodedMarket<B: TokenMarker, Q: TokenMarker> = DangerousMarketIndex<B, Q>;
-
-    type MarketKey<B: TokenMarker, Q: TokenMarker> = HardcodedMarketKey<B, Q>;
 
     fn decode<'a, B, Q>(
         ctx: &'a DecodeCtx<'a>,

@@ -1,12 +1,12 @@
 use crate::{
     goblin_error::GoblinError,
     market::{CommonMarket, Dynamic},
-    state::SlotKey,
+    state::{SlotKey, SlotState},
     token::{CustomToken, TokenMarker},
     types::{Base, Quote, TupleReader},
 };
 
-/// Trait to generate DynamicMarketKey
+/// Trait to generate slot key for dynamic markets
 ///
 /// # Stable rust limitation
 ///
@@ -19,16 +19,16 @@ pub trait DynamicMarketHasher<B, Q>
 where
     B: TokenMarker,
     Q: TokenMarker,
-    Self: Sized + SlotKey,
+    Self: SlotState,
 {
     /// Size of the hash buffer
     const BUFFER_SIZE: usize =
         1 + 8 * 3 + core::mem::size_of::<B::Address>() + core::mem::size_of::<Q::Address>();
 
-    fn hash(
+    fn compute_slot_key(
         market: &CommonMarket<Dynamic, B, Q>,
         custom_erc20_list: &[CustomToken],
-    ) -> Result<Self, GoblinError>;
+    ) -> Result<SlotKey<Self>, GoblinError>;
 
     /// Set the common fields. Called before setting addresses
     fn set_common_fields<const N: usize>(

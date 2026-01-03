@@ -3,7 +3,7 @@ use core::marker::PhantomData;
 use crate::{
     market::{Dynamic, Hardcoded, MarketVariant},
     quantities::Ticks,
-    state::{DynamicMarketKey, HardcodedMarketKey, SlotKey, SlotState},
+    state::{SlotKey, SlotState},
     token::TokenMarker,
     types::Pair,
 };
