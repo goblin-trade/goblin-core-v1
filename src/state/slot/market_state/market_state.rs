@@ -1,11 +1,7 @@
 use core::marker::PhantomData;
 
 use crate::{
-    market::{Dynamic, Hardcoded, MarketVariant},
-    quantities::Ticks,
-    state::{SlotKey, SlotState},
-    token::TokenMarker,
-    types::Pair,
+    market::MarketVariant, quantities::Ticks, state::SlotState, token::TokenMarker, types::Pair,
 };
 
 /// The market state slot
@@ -21,14 +17,3 @@ pub struct MarketState<M: MarketVariant, B: TokenMarker, Q: TokenMarker> {
 impl<M: MarketVariant, B: TokenMarker, Q: TokenMarker> SlotState for MarketState<M, B, Q> {
     const DISCRIMINATOR: u8 = M::DISCRIMINATOR + B::DISCRIMINATOR << 1 + Q::DISCRIMINATOR << 2;
 }
-
-impl<M: MarketVariant, B: TokenMarker, Q: TokenMarker> SlotKey<MarketState<M, B, Q>> {}
-
-// impl<B: TokenMarker, Q: TokenMarker> SlotState<HardcodedMarketKey<B, Q>>
-//     for MarketState<Hardcoded, B, Q>
-// {
-// }
-// impl<B: TokenMarker, Q: TokenMarker> SlotState<DynamicMarketKey<B, Q>>
-//     for MarketState<Dynamic, B, Q>
-// {
-// }

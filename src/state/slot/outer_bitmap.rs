@@ -1,8 +1,4 @@
-use crate::{
-    hostio::{self, HostioBuffer},
-    quantities::OuterBitmapIndex,
-    state::{SlotKey, SlotState},
-};
+use crate::state::{SlotKey, SlotState};
 
 #[repr(C)]
 pub struct OuterBitmap(pub [u8; 32]);
@@ -12,18 +8,6 @@ impl SlotState for OuterBitmap {
 }
 
 impl SlotKey<OuterBitmap> {}
-
-// pub struct OuterBitmapKey {
-//     hash: HostioBuffer<[u8; 32]>,
-// }
-
-// impl SlotKey for OuterBitmapKey {
-//     const DISCRIMINATOR: u8 = 6;
-
-//     fn hash(&self) -> &[u8; 32] {
-//         self.hash.as_ref()
-//     }
-// }
 
 // impl OuterBitmapKey {
 //     pub fn new(market_key: &MarketKey, outer_bitmap_index: OuterBitmapIndex) -> Self {
@@ -37,8 +21,3 @@ impl SlotKey<OuterBitmap> {}
 //         Self { hash }
 //     }
 // }
-
-// #[repr(C)]
-// pub struct OuterBitmap(pub [u8; 32]);
-
-// impl SlotState<OuterBitmapKey> for OuterBitmap {}

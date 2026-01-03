@@ -30,7 +30,7 @@ where
         custom_erc20_list: &[CustomToken],
     ) -> Result<SlotKey<Self>, GoblinError>;
 
-    /// Set the common fields. Called before setting addresses
+    /// Set the common fields- discriminator, lot sizes and tick size
     fn set_common_fields<const N: usize>(
         bytes: &mut [u8; N],
         market: &CommonMarket<Dynamic, B, Q>,
