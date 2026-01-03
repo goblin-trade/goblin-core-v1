@@ -10,7 +10,7 @@ use crate::{
 pub struct Dynamic;
 
 impl MarketVariant for Dynamic {
-    const DISCRIMINATOR: u8 = 1;
+    const DISCRIMINATOR: u8 = 4;
 
     type TokenIndex = DynamicIndex;
 

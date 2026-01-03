@@ -9,7 +9,7 @@ use crate::{
 pub struct Hardcoded;
 
 impl MarketVariant for Hardcoded {
-    const DISCRIMINATOR: u8 = 0;
+    const DISCRIMINATOR: u8 = 3;
 
     type TokenIndex = HardcodedIndex;
 

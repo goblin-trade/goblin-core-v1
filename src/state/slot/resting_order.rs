@@ -29,7 +29,7 @@ pub struct RestingOrder {
 }
 
 impl SlotState for RestingOrder {
-    const SLOT_DISCRIMINATOR: u8 = 5;
+    const SLOT_DISCRIMINATOR: u8 = 7;
 }
 
 impl SlotKey<RestingOrder> {

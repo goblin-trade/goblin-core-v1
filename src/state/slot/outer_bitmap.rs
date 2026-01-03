@@ -4,7 +4,7 @@ use crate::state::{SlotKey, SlotState};
 pub struct OuterBitmap(pub [u8; 32]);
 
 impl SlotState for OuterBitmap {
-    const SLOT_DISCRIMINATOR: u8 = 6;
+    const SLOT_DISCRIMINATOR: u8 = 5;
 }
 
 impl SlotKey<OuterBitmap> {}

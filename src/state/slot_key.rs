@@ -6,7 +6,18 @@ pub trait SlotState: Sized {
     /// Ensure that size equals 32 bytes at compile time
     const ASSERT: () = assert!(core::mem::size_of::<Self>() == 32);
 
-    /// Unique 1 byte discriminator
+    /// Unique 1 byte slot discriminator
+    ///
+    /// Discriminators can be standalone or derived from sub-discriminators.
+    ///
+    /// # Avoiding collisions
+    ///
+    /// * Standalone: Use 3 bits, i.e. values in [0, 7].
+    ///
+    /// * Derived discriminator
+    ///   - First sub-discriminator takes 3 bits
+    ///   - Left shift and add the other ones.
+    ///   - Eg. Market discriminator = MarketVariant::D + Base::D << 3 + Quote::D << 4.
     const SLOT_DISCRIMINATOR: u8;
 }
 

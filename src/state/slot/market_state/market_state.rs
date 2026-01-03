@@ -15,5 +15,6 @@ pub struct MarketState<M: MarketVariant, B: TokenMarker, Q: TokenMarker> {
 }
 
 impl<M: MarketVariant, B: TokenMarker, Q: TokenMarker> SlotState for MarketState<M, B, Q> {
-    const SLOT_DISCRIMINATOR: u8 = M::DISCRIMINATOR + B::DISCRIMINATOR << 1 + Q::DISCRIMINATOR << 2;
+    /// Derived discriminator. Left shift by 3 bits to avoid collision.
+    const SLOT_DISCRIMINATOR: u8 = M::DISCRIMINATOR + B::DISCRIMINATOR << 3 + Q::DISCRIMINATOR << 4;
 }
