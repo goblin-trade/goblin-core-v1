@@ -1,4 +1,3 @@
-#[cfg(all(not(test), not(target_arch = "wasm32")))]
 extern "C" {
     // Have a single TraderTokenState update event instead
     // The amount deposited or withdrawn can be reconstructed using SQL

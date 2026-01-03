@@ -1,6 +1,11 @@
 ///! Safe helpers for contract calls
-use super::{hostio_unsafe, HostioBuffer};
-use crate::{goblin_error::GoblinError, quantities::RawAtoms, require, types::Address};
+use crate::{
+    goblin_error::GoblinError,
+    hostio::{hostio_helpers::buffered_call, hostio_unsafe},
+    quantities::RawAtoms,
+    require,
+    types::Address,
+};
 
 pub fn call_contract(
     contract: &Address,
@@ -52,9 +57,9 @@ pub fn static_call_contract(contract: &Address, calldata: &[u8]) -> Result<(), G
 /// Read data returned from a contract call
 ///
 /// Stylus splits calls into 2 hostios- first perform the call, then read the result
-pub fn read_return_data<T>(offset: usize) -> HostioBuffer<T> {
+pub fn read_return_data<T>(offset: usize) -> T {
     unsafe {
-        HostioBuffer::<T>::new(|f| {
+        buffered_call(|f| {
             hostio_unsafe::read_return_data(f, offset, core::mem::size_of::<T>());
         })
     }

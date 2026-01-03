@@ -1,7 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
     hostio,
-    input_processor::{DecodeCtx, DecodablePrimitive, HeaderFlags},
+    input_processor::{DecodablePrimitive, DecodeCtx, HeaderFlags},
     quantities::{QuantityOps, UnsidedAtoms},
     types::NATIVE_TOKEN_DECIMALS,
 };
@@ -29,7 +29,7 @@ impl EthTransfers {
     pub fn new(ctx: &DecodeCtx, flags: &HeaderFlags) -> Result<Self, GoblinError> {
         let msg_value = if flags.track_msg_value {
             let msg_value_raw = hostio::msg_value();
-            UnsidedAtoms::from_raw_atoms(msg_value_raw.as_ref(), NATIVE_TOKEN_DECIMALS)?
+            UnsidedAtoms::from_raw_atoms(&msg_value_raw, NATIVE_TOKEN_DECIMALS)?
         } else {
             UnsidedAtoms::ZERO
         };

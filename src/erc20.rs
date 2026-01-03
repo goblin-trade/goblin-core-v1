@@ -15,7 +15,7 @@ pub fn decimals(contract: &Address) -> Result<u8, GoblinError> {
 
     // Result is padded to 32 bytes in big endian. We need to extract a single byte.
     let decimals = hostio::read_return_data::<u8>(31);
-    Ok(decimals.into_inner())
+    Ok(decimals)
 }
 
 pub fn transfer(
@@ -69,10 +69,7 @@ fn call_and_check(contract: &Address, calldata: &[u8]) -> Result<(), GoblinError
 
     // Ensure call succeeded
     let result_byte = hostio::read_return_data::<u8>(31);
-    require!(
-        result_byte.into_inner() == true.into(),
-        GoblinError::CallResultInvalid
-    );
+    require!(result_byte == true.into(), GoblinError::CallResultInvalid);
 
     Ok(())
 }

@@ -1,10 +1,8 @@
 ///! Safe helpers for hostio interaction
-use super::{hostio_unsafe, HostioBuffer};
-use crate::quantities::RawAtoms;
-
-pub fn msg_value() -> HostioBuffer<RawAtoms> {
-    unsafe { HostioBuffer::<RawAtoms>::new(|f| hostio_unsafe::msg_value(f)) }
-}
+use crate::{
+    hostio::{hostio_helpers::buffered_call, hostio_unsafe},
+    quantities::RawAtoms,
+};
 
 // Find keccak hash for a slice of bytes
 //
@@ -16,19 +14,15 @@ pub fn msg_value() -> HostioBuffer<RawAtoms> {
 // https://docs.arbitrum.io/stylus/reference/opcode-hostio-pricing#host-io-costs
 //
 pub fn native_keccak256(bytes: &[u8]) -> [u8; 32] {
-    unsafe {
-        HostioBuffer::<[u8; 32]>::new(|f| {
-            hostio_unsafe::native_keccak256(bytes.as_ptr(), bytes.len(), f)
-        })
-        .into_inner()
-    }
+    unsafe { buffered_call(|f| hostio_unsafe::native_keccak256(bytes.as_ptr(), bytes.len(), f)) }
+}
+
+pub fn msg_value() -> RawAtoms {
+    unsafe { buffered_call(|f| hostio_unsafe::msg_value(f)) }
 }
 
 pub fn storage_load_bytes32<T>(key: &[u8; 32]) -> T {
-    unsafe {
-        HostioBuffer::<T>::new(|f| hostio_unsafe::storage_load_bytes32(key.as_ptr(), f))
-            .into_inner()
-    }
+    unsafe { buffered_call(|f| hostio_unsafe::storage_load_bytes32(key.as_ptr(), f)) }
 }
 
 pub fn storage_cache_bytes32<T>(key: &[u8; 32], value: &T) {
