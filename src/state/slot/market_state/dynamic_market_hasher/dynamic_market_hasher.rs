@@ -35,7 +35,7 @@ where
         bytes: &mut [u8; N],
         market: &CommonMarket<Dynamic, B, Q>,
     ) {
-        bytes[0] = Self::DISCRIMINATOR;
+        bytes[0] = Self::SLOT_DISCRIMINATOR;
 
         bytes[1..9].copy_from_slice(&Base::get(&market.lot_size_pair).inner.to_le_bytes());
         bytes[9..17].copy_from_slice(&Quote::get(&market.lot_size_pair).inner.to_le_bytes());

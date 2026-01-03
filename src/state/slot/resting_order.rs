@@ -29,13 +29,13 @@ pub struct RestingOrder {
 }
 
 impl SlotState for RestingOrder {
-    const DISCRIMINATOR: u8 = 5;
+    const SLOT_DISCRIMINATOR: u8 = 5;
 }
 
 impl SlotKey<RestingOrder> {
     pub fn new(inner_bitmap_key: &SlotKey<InnerBitmap>, inner_index: InnerIndex) -> Self {
         let mut bytes = [0u8; (1 + 32 + 1)];
-        bytes[0] = RestingOrder::DISCRIMINATOR;
+        bytes[0] = RestingOrder::SLOT_DISCRIMINATOR;
         bytes[1..33].copy_from_slice(inner_bitmap_key.hash());
         bytes[33] = inner_index.0;
 

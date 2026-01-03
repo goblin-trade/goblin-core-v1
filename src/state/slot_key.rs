@@ -7,7 +7,7 @@ pub trait SlotState: Sized {
     const ASSERT: () = assert!(core::mem::size_of::<Self>() == 32);
 
     /// Unique 1 byte discriminator
-    const DISCRIMINATOR: u8;
+    const SLOT_DISCRIMINATOR: u8;
 }
 
 pub struct SlotKey<S: SlotState> {

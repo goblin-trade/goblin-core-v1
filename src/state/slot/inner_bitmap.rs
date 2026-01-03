@@ -4,7 +4,7 @@ use crate::state::{SlotKey, SlotState};
 pub struct InnerBitmap(pub [u8; 32]);
 
 impl SlotState for InnerBitmap {
-    const DISCRIMINATOR: u8 = 4;
+    const SLOT_DISCRIMINATOR: u8 = 4;
 }
 
 impl SlotKey<InnerBitmap> {}
