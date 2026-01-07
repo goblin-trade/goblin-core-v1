@@ -2,12 +2,16 @@ use core::marker::PhantomData;
 
 use crate::{
     market::{LotSizePair, MarketVariant},
-    quantities::{BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick},
+    quantities::QuoteLotsPerBaseUnitPerTick,
     state::{MarketState, Preimage},
     token::TokenMarker,
     types::Pair,
 };
 
+/// Key preimage to read MarketState from slot
+///
+/// This is similar to MarketState, but instead of token index pair we have
+/// a pair of token addresses
 #[repr(C)]
 pub struct MarketPreimage<M: MarketVariant, B: TokenMarker, Q: TokenMarker> {
     lot_size_pair: LotSizePair,
