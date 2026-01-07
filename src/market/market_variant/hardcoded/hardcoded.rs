@@ -3,6 +3,7 @@ use crate::{
     input_processor::{Decodable, DecodeCtx},
     market::{DangerousMarketIndex, HardcodedMarketList, MarketAndKey, MarketVariant},
     token::{CustomToken, HardcodedIndex, TokenMarker},
+    types::Address,
 };
 
 #[derive(Clone, Copy, Default)]
@@ -14,6 +15,13 @@ impl MarketVariant for Hardcoded {
     type TokenIndex = HardcodedIndex;
 
     type DecodedMarket<B: TokenMarker, Q: TokenMarker> = DangerousMarketIndex<B, Q>;
+
+    fn token_index_to_address_inner(
+        index: Self::TokenIndex,
+        _custom_erc20_list: &[CustomToken],
+    ) -> Result<Address, GoblinError> {
+        Ok(index.get_token().address)
+    }
 
     fn decode<'a, B, Q>(
         ctx: &'a DecodeCtx<'a>,

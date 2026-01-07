@@ -8,6 +8,7 @@ use crate::{
     market::{Dynamic, Hardcoded, HardcodedMarketList, MarketAndKey},
     state::MarketState,
     token::{CustomToken, TokenMarker},
+    types::Address,
 };
 
 pub trait MarketVariant: Clone + Copy {
@@ -29,6 +30,11 @@ pub trait MarketVariant: Clone + Copy {
     ///
     /// * Dynamic: The market params are decoded from args and the key is hashed.
     type DecodedMarket<B: TokenMarker, Q: TokenMarker>;
+
+    fn token_index_to_address_inner(
+        index: Self::TokenIndex,
+        custom_erc20_list: &[CustomToken],
+    ) -> Result<Address, GoblinError>;
 
     /// Get DecodedMarket from args
     fn decode<'a, B, Q>(

@@ -1,5 +1,6 @@
 use crate::{
-    input_processor::Decodable, market::MarketVariant, quantities::DeltaAtoms, types::Address,
+    goblin_error::GoblinError, input_processor::Decodable, market::MarketVariant,
+    quantities::DeltaAtoms, token::CustomToken, types::Address,
 };
 
 #[derive(Clone, Copy, Default)]
@@ -19,6 +20,11 @@ pub trait TokenMarker: Clone + Copy {
 
     /// Data type representing pending deposit amount
     type Deposit: Clone + Copy + Default;
+
+    fn token_index_to_address_outer<M: MarketVariant>(
+        token_index: Self::TokenIndex<M>,
+        custom_erc20_list: &[CustomToken],
+    ) -> Result<Self::Address, GoblinError>;
 }
 
 impl TokenMarker for ETH {
@@ -27,6 +33,13 @@ impl TokenMarker for ETH {
     type TokenIndex<M: MarketVariant> = ();
     type Address = ();
     type Deposit = ();
+
+    fn token_index_to_address_outer<M: MarketVariant>(
+        _token_index: Self::TokenIndex<M>,
+        _custom_erc20_list: &[CustomToken],
+    ) -> Result<Self::Address, GoblinError> {
+        Ok(())
+    }
 }
 
 impl TokenMarker for ERC20 {
@@ -35,4 +48,11 @@ impl TokenMarker for ERC20 {
     type TokenIndex<M: MarketVariant> = M::TokenIndex;
     type Address = Address;
     type Deposit = DeltaAtoms;
+
+    fn token_index_to_address_outer<M: MarketVariant>(
+        token_index: Self::TokenIndex<M>,
+        custom_erc20_list: &[CustomToken],
+    ) -> Result<Self::Address, GoblinError> {
+        M::token_index_to_address_inner(token_index, custom_erc20_list)
+    }
 }
