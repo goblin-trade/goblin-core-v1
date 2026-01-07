@@ -1,32 +1,32 @@
 use core::marker::PhantomData;
 
-use crate::hostio::{self, storage_cache_bytes32, storage_load_bytes32};
+use crate::{
+    hostio::{self, hostio_helpers, storage_cache_bytes32, storage_load_bytes32},
+    state::{Preimage, PreimageSerializer},
+};
 
-pub trait SlotState: Sized {
-    /// Ensure that size equals 32 bytes at compile time
-    const ASSERT: () = assert!(core::mem::size_of::<Self>() == 32);
+// pub trait SlotState: Sized {
+//     /// Unique 1 byte slot discriminator
+//     ///
+//     /// Discriminators can be standalone or derived from sub-discriminators.
+//     ///
+//     /// # Avoiding collisions
+//     ///
+//     /// * Standalone: Use 3 bits, i.e. values in [0, 7].
+//     ///
+//     /// * Derived discriminator
+//     ///   - First sub-discriminator takes 3 bits
+//     ///   - Left shift and add the other ones.
+//     ///   - Eg. Market discriminator = MarketVariant::D + Base::D << 3 + Quote::D << 4.
+//     const SLOT_DISCRIMINATOR: u8;
+// }
 
-    /// Unique 1 byte slot discriminator
-    ///
-    /// Discriminators can be standalone or derived from sub-discriminators.
-    ///
-    /// # Avoiding collisions
-    ///
-    /// * Standalone: Use 3 bits, i.e. values in [0, 7].
-    ///
-    /// * Derived discriminator
-    ///   - First sub-discriminator takes 3 bits
-    ///   - Left shift and add the other ones.
-    ///   - Eg. Market discriminator = MarketVariant::D + Base::D << 3 + Quote::D << 4.
-    const SLOT_DISCRIMINATOR: u8;
-}
-
-pub struct SlotKey<S: SlotState> {
+pub struct SlotKey<P: Preimage> {
     hash: [u8; 32],
-    _marker: PhantomData<S>,
+    _marker: PhantomData<P>,
 }
 
-impl<S: SlotState> SlotKey<S> {
+impl<P: Preimage> SlotKey<P> {
     pub fn hash(&self) -> &[u8; 32] {
         &self.hash
     }
@@ -38,16 +38,24 @@ impl<S: SlotState> SlotKey<S> {
         }
     }
 
-    pub fn generate(bytes: &[u8]) -> Self {
-        let hash = hostio::native_keccak256(bytes);
+    pub fn generate(preimage: P) -> Self {
+        let buffer = PreimageSerializer::new(preimage);
+        let bytes = buffer.serialize();
+
+        let hash = hostio_helpers::native_keccak256(bytes);
         Self::new_inner(hash)
     }
 
-    pub fn load(&self) -> S {
-        storage_load_bytes32(&self.hash)
+    // pub fn generate(bytes: &[u8]) -> Self {
+    //     let hash = hostio_helpers::native_keccak256(bytes);
+    //     Self::new_inner(hash)
+    // }
+
+    pub fn load(&self) -> P::SlotState {
+        storage_load_bytes32::<P::SlotState>(&self.hash)
     }
 
-    pub fn store(&self, value: &S) {
-        storage_cache_bytes32::<S>(&self.hash, value)
+    pub fn store(&self, value: &P::SlotState) {
+        storage_cache_bytes32::<P::SlotState>(&self.hash, value)
     }
 }

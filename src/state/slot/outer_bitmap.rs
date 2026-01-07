@@ -1,13 +1,26 @@
-use crate::state::{SlotKey, SlotState};
+use crate::{
+    quantities::OuterBitmapIndex,
+    state::{Preimage, SlotKey},
+};
+
+pub struct OuterBitmapPreimage {
+    market_key: SlotKey,
+    outer_bitmap_index: OuterBitmapIndex,
+}
+
+impl Preimage for OuterBitmapPreimage {
+    const SLOT_DISCRIMINATOR: u8 = 5;
+    type SlotState = OuterBitmap;
+}
 
 #[repr(C)]
 pub struct OuterBitmap(pub [u8; 32]);
 
-impl SlotState for OuterBitmap {
-    const SLOT_DISCRIMINATOR: u8 = 5;
-}
+// impl SlotState for OuterBitmap {
+//     const SLOT_DISCRIMINATOR: u8 = 5;
+// }
 
-impl SlotKey<OuterBitmap> {}
+// impl SlotKey<OuterBitmap> {}
 
 // impl OuterBitmapKey {
 //     pub fn new(market_key: &MarketKey, outer_bitmap_index: OuterBitmapIndex) -> Self {
