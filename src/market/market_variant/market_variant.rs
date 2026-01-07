@@ -6,7 +6,6 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
     market::{Dynamic, Hardcoded, HardcodedMarketList, MarketAndKey},
-    state::MarketState,
     token::{CustomToken, TokenMarker},
     types::Address,
 };
@@ -31,8 +30,17 @@ pub trait MarketVariant: Clone + Copy {
     /// * Dynamic: The market params are decoded from args and the key is hashed.
     type DecodedMarket<B: TokenMarker, Q: TokenMarker>;
 
-    fn token_index_to_address_inner(
-        index: Self::TokenIndex,
+    /// Map the token index to address
+    ///
+    /// This function has 2 variations for TokenMarker and MarketVariant traits
+    ///
+    /// 1. TokenMarker (ETH / ERC20): Maps ETH to (). If token is ERC20 then
+    /// calls MarketVariant::token_index_to_address()
+    ///
+    /// 2. MarketVariant (Hardcoded / Dynamic): Reads token address from
+    /// hardcoded or custom token list
+    fn token_index_to_address(
+        token_index: Self::TokenIndex,
         custom_erc20_list: &[CustomToken],
     ) -> Result<Address, GoblinError>;
 
@@ -46,7 +54,6 @@ pub trait MarketVariant: Clone + Copy {
         Q: TokenMarker,
         B::TokenIndex<Dynamic>: Decodable<'a>,
         Q::TokenIndex<Dynamic>: Decodable<'a>;
-    // MarketState<Dynamic, B, Q>: DynamicMarketHasher<B, Q>;
 
     /// Obtain reference to the market and key
     ///

@@ -17,7 +17,7 @@ impl MarketVariant for Dynamic {
 
     type DecodedMarket<B: TokenMarker, Q: TokenMarker> = MarketAndKey<Self, B, Q>;
 
-    fn token_index_to_address_inner(
+    fn token_index_to_address(
         token_index: Self::TokenIndex,
         custom_erc20_list: &[CustomToken],
     ) -> Result<Address, GoblinError> {
@@ -36,7 +36,7 @@ impl MarketVariant for Dynamic {
     {
         let common_market = CommonMarket::<Self, B, Q>::try_decode(ctx)?;
         let preimage = common_market.get_preimage(custom_erc20_list)?;
-        let key = preimage.generate();
+        let key = preimage.hash();
 
         Ok(MarketAndKey {
             market: common_market,

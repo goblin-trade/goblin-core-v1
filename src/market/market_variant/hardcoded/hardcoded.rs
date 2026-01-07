@@ -16,11 +16,12 @@ impl MarketVariant for Hardcoded {
 
     type DecodedMarket<B: TokenMarker, Q: TokenMarker> = DangerousMarketIndex<B, Q>;
 
-    fn token_index_to_address_inner(
-        index: Self::TokenIndex,
+    fn token_index_to_address(
+        token_index: Self::TokenIndex,
         _custom_erc20_list: &[CustomToken],
     ) -> Result<Address, GoblinError> {
-        Ok(index.get_token().address)
+        // TODO simplify when we use dedicated marker types for Hardcoded and Custom
+        Ok(token_index.get_token().address)
     }
 
     fn decode<'a, B, Q>(

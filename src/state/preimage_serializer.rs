@@ -1,5 +1,9 @@
-use crate::state::{Preimage, SlotKey};
+use crate::state::Preimage;
 
+/// Efficient serializer for preimages
+///
+/// Assigns the preimage disciminator at index 0 and returns a serialized byte slice.
+/// Serialization is zero-copy and avoids `mut` and zero fills.
 #[repr(C)]
 pub struct PreimageSerializer<P: Preimage> {
     discriminator: u8,
@@ -7,7 +11,7 @@ pub struct PreimageSerializer<P: Preimage> {
 }
 
 impl<P: Preimage> PreimageSerializer<P> {
-    pub fn new(preimage: P) -> Self {
+    pub const fn new(preimage: P) -> Self {
         Self {
             discriminator: P::SLOT_DISCRIMINATOR,
             preimage,
@@ -22,6 +26,4 @@ impl<P: Preimage> PreimageSerializer<P> {
             )
         }
     }
-
-    // pub fn key(&self) -> SlotKey<P> {}
 }

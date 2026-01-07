@@ -85,7 +85,7 @@ where
                     inner_bitmap_key: resting_order_position.inner_bitmap_key,
                     inner_index: resting_order_position.inner_index,
                 };
-                let resting_order_key = resting_order_preimage.generate();
+                let resting_order_key = resting_order_preimage.hash();
                 // let resting_order_key = SlotKey::<RestingOrder>::new(
                 //     &resting_order_position.inner_bitmap_key,
                 //     resting_order_position.inner_index,
