@@ -1,8 +1,19 @@
 use crate::{
     quantities::{BaseLots, InnerIndex},
-    state::{InnerBitmap, SlotKey, SlotState},
+    state::{InnerBitmap, Preimage, SlotKey},
     types::Address,
 };
+
+pub struct RestingOrderPreimage {
+    // TODO replace with SlotKey<InnerBitmapPreimage>
+    pub inner_bitmap_key: [u8; 32],
+    pub inner_index: InnerIndex,
+}
+
+impl Preimage for RestingOrderPreimage {
+    const SLOT_DISCRIMINATOR: u8 = 7;
+    type SlotState = RestingOrder;
+}
 
 /// A resting order stored in slot
 /// Total size = 24 + 8 = 32. 20 byte address is padded to 24.
@@ -28,17 +39,17 @@ pub struct RestingOrder {
     pub size: BaseLots,
 }
 
-impl SlotState for RestingOrder {
-    const SLOT_DISCRIMINATOR: u8 = 7;
-}
+// impl SlotState for RestingOrder {
+//     const SLOT_DISCRIMINATOR: u8 = 7;
+// }
 
-impl SlotKey<RestingOrder> {
-    pub fn new(inner_bitmap_key: &SlotKey<InnerBitmap>, inner_index: InnerIndex) -> Self {
-        let mut bytes = [0u8; (1 + 32 + 1)];
-        bytes[0] = RestingOrder::SLOT_DISCRIMINATOR;
-        bytes[1..33].copy_from_slice(inner_bitmap_key.hash());
-        bytes[33] = inner_index.0;
+// impl SlotKey<RestingOrder> {
+//     pub fn new(inner_bitmap_key: &SlotKey<InnerBitmap>, inner_index: InnerIndex) -> Self {
+//         let mut bytes = [0u8; (1 + 32 + 1)];
+//         bytes[0] = RestingOrder::SLOT_DISCRIMINATOR;
+//         bytes[1..33].copy_from_slice(inner_bitmap_key.hash());
+//         bytes[33] = inner_index.0;
 
-        Self::generate(bytes.as_slice())
-    }
-}
+//         Self::generate(bytes.as_slice())
+//     }
+// }

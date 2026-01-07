@@ -4,7 +4,8 @@ use crate::{
 };
 
 pub struct OuterBitmapPreimage {
-    market_key: SlotKey,
+    // market_key: SlotKey,
+    market_key: [u8; 32],
     outer_bitmap_index: OuterBitmapIndex,
 }
 

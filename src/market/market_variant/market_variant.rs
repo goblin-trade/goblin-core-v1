@@ -6,7 +6,7 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
     market::{Dynamic, Hardcoded, HardcodedMarketList, MarketAndKey},
-    state::{DynamicMarketHasher, MarketState},
+    state::MarketState,
     token::{CustomToken, TokenMarker},
 };
 
@@ -39,8 +39,8 @@ pub trait MarketVariant: Clone + Copy {
         B: TokenMarker,
         Q: TokenMarker,
         B::TokenIndex<Dynamic>: Decodable<'a>,
-        Q::TokenIndex<Dynamic>: Decodable<'a>,
-        MarketState<Dynamic, B, Q>: DynamicMarketHasher<B, Q>;
+        Q::TokenIndex<Dynamic>: Decodable<'a>;
+    // MarketState<Dynamic, B, Q>: DynamicMarketHasher<B, Q>;
 
     /// Obtain reference to the market and key
     ///

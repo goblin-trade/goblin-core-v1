@@ -3,7 +3,7 @@ use crate::{
     input_processor::{Decodable, DecodeCtx},
     market::{Dynamic, Hardcoded, HardcodedMarketList, MarketAndKey, MarketHeader, MarketVariant},
     settlement::Delta,
-    state::{DynamicMarketHasher, MarketState},
+    state::MarketState,
     token::{CustomToken, TokenMarker, ERC20, ETH},
     types::{Address, TupleReader},
 };
@@ -37,7 +37,7 @@ where
     B::Deposit: Decodable<'a>,
     Q::Deposit: Decodable<'a>,
     MarketAndKey<Hardcoded, B, Q>: HardcodedMarketList<B, Q>,
-    MarketState<Dynamic, B, Q>: DynamicMarketHasher<B, Q>,
+    // MarketState<Dynamic, B, Q>: DynamicMarketHasher<B, Q>,
 {
     let market_header = MarketHeader::<M, B, Q>::try_decode(ctx)?;
 

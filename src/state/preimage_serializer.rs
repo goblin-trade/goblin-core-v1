@@ -1,4 +1,4 @@
-use crate::state::Preimage;
+use crate::state::{Preimage, SlotKey};
 
 #[repr(C)]
 pub struct PreimageSerializer<P: Preimage> {
@@ -18,8 +18,10 @@ impl<P: Preimage> PreimageSerializer<P> {
         unsafe {
             core::slice::from_raw_parts(
                 self as *const _ as *const u8,
-                core::mem::size_of::<Self<P>>(),
+                core::mem::size_of::<PreimageSerializer<P>>(),
             )
         }
     }
+
+    // pub fn key(&self) -> SlotKey<P> {}
 }

@@ -22,7 +22,7 @@ impl<'a, In: LegMatcher> RestingOrderPositionIterator<'a, In> {
 pub struct RestingOrderPosition {
     pub inner_bitmap_index: InnerBitmapIndex,
     pub inner_index: InnerIndex,
-    pub inner_bitmap_key: SlotKey<InnerBitmap>,
+    pub inner_bitmap_key: [u8; 32], // pub inner_bitmap_key: SlotKey<InnerBitmap>,
 }
 
 impl RestingOrderPosition {

@@ -8,7 +8,7 @@ use crate::{
         local_delta::{LocalDelta, MakerDelta, TakerDelta},
         MatchedLots,
     },
-    state::{MarketState, RestingOrder, SlotKey},
+    state::{MarketState, Preimage, RestingOrder, RestingOrderPreimage, SlotKey},
     token::TokenMarker,
     types::{Address, Base, LegMatcher, Quote, TupleReader},
 };
@@ -81,10 +81,15 @@ where
                 }
 
                 // Read resting order amount
-                let resting_order_key = SlotKey::<RestingOrder>::new(
-                    &resting_order_position.inner_bitmap_key,
-                    resting_order_position.inner_index,
-                );
+                let resting_order_preimage = RestingOrderPreimage {
+                    inner_bitmap_key: resting_order_position.inner_bitmap_key,
+                    inner_index: resting_order_position.inner_index,
+                };
+                let resting_order_key = resting_order_preimage.generate();
+                // let resting_order_key = SlotKey::<RestingOrder>::new(
+                //     &resting_order_position.inner_bitmap_key,
+                //     resting_order_position.inner_index,
+                // );
                 let mut resting_order = resting_order_key.load();
                 let RestingOrder {
                     maker,

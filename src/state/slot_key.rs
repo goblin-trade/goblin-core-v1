@@ -38,13 +38,13 @@ impl<P: Preimage> SlotKey<P> {
         }
     }
 
-    pub fn generate(preimage: P) -> Self {
-        let buffer = PreimageSerializer::new(preimage);
-        let bytes = buffer.serialize();
+    // pub fn generate(preimage: P) -> Self {
+    //     let buffer = PreimageSerializer::new(preimage);
+    //     let bytes = buffer.serialize();
 
-        let hash = hostio_helpers::native_keccak256(bytes);
-        Self::new_inner(hash)
-    }
+    //     let hash = hostio_helpers::native_keccak256(bytes);
+    //     Self::new_inner(hash)
+    // }
 
     // pub fn generate(bytes: &[u8]) -> Self {
     //     let hash = hostio_helpers::native_keccak256(bytes);

@@ -16,3 +16,6 @@ pub struct MarketState<M: MarketVariant, B: TokenMarker, Q: TokenMarker> {
 //     /// Derived discriminator. Left shift by 3 bits to avoid collision.
 //     const SLOT_DISCRIMINATOR: u8 = M::DISCRIMINATOR + B::DISCRIMINATOR << 3 + Q::DISCRIMINATOR << 4;
 // }
+
+// DynamicMarketHasher is gone
+// Each market type gets a pre-image
