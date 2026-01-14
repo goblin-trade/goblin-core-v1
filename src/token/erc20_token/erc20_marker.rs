@@ -1,13 +1,20 @@
-use crate::{goblin_error::GoblinError, types::Address};
-
+use crate::{
+    goblin_error::GoblinError,
+    token::{CustomERC20Store, TokenIndex},
+    types::Address,
+};
 /// Trait for ERC20 tokens
-pub trait ERC20Marker
-where
-    Self: Sized,
-{
+pub trait ERC20Marker: Sized {
+    type Store;
+
+    fn get_token(
+        token_index: TokenIndex<Self>,
+        custom_erc20_list: &[CustomERC20Store],
+    ) -> Result<&Self::Store, GoblinError>;
+
     /// Token address
-    fn address(&self) -> &Address;
+    fn address(store: &Self::Store) -> &Address;
 
     /// Token decimals
-    fn decimals(&self) -> Result<u8, GoblinError>;
+    fn decimals(store: &Self::Store) -> Result<u8, GoblinError>;
 }

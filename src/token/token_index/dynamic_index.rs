@@ -1,7 +1,9 @@
 use crate::{
     goblin_error::GoblinError,
     require,
-    token::{CustomIndex, CustomToken, HardcodedIndex, TokenIndex, HARDCODED_TOKENS},
+    token::{
+        CustomERC20, CustomERC20Store, ERC20Marker, HardcodedERC20, TokenIndex, HARDCODED_TOKENS,
+    },
     types::Address,
 };
 
@@ -10,8 +12,8 @@ use crate::{
 /// Allows custom markets to use both hardcoded and custom tokens
 #[derive(Clone, Copy, PartialEq)]
 pub enum DynamicIndex {
-    Hardcoded(HardcodedIndex),
-    Custom(CustomIndex),
+    Hardcoded(TokenIndex<HardcodedERC20>),
+    Custom(TokenIndex<CustomERC20>),
 }
 
 impl DynamicIndex {
@@ -42,17 +44,19 @@ impl DynamicIndex {
 
     /// Get the token address corresponding to the index. If it is a custom token, this
     /// address is read from the custom token list
-    pub fn address(&self, custom_erc20_list: &[CustomToken]) -> Result<Address, GoblinError> {
+    pub fn address(self, custom_erc20_list: &[CustomERC20Store]) -> Result<&Address, GoblinError> {
         let address = match self {
             DynamicIndex::Hardcoded(hardcoded_token_index) => {
-                let token = hardcoded_token_index.get_token();
-                token.address
+                let token = <HardcodedERC20 as ERC20Marker>::get_token(
+                    hardcoded_token_index,
+                    custom_erc20_list,
+                )?;
+                <HardcodedERC20 as ERC20Marker>::address(token)
             }
             DynamicIndex::Custom(custom_token_index) => {
-                let token = custom_token_index
-                    .get_token(custom_erc20_list)
-                    .ok_or(GoblinError::InvalidCustomTokenIndex)?;
-                token.address
+                let token =
+                    <CustomERC20 as ERC20Marker>::get_token(custom_token_index, custom_erc20_list)?;
+                <CustomERC20 as ERC20Marker>::address(token)
             }
         };
 
