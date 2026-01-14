@@ -6,7 +6,7 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
     market::{Dynamic, Hardcoded, HardcodedMarketList, MarketAndKey},
-    token::{CustomToken, TokenMarker},
+    token::{CustomERC20Store, TokenMarker},
     types::Address,
 };
 
@@ -41,13 +41,13 @@ pub trait MarketVariant: Clone + Copy {
     /// hardcoded or custom token list
     fn token_index_to_address(
         token_index: Self::TokenIndex,
-        custom_erc20_list: &[CustomToken],
+        custom_erc20_list: &[CustomERC20Store],
     ) -> Result<Address, GoblinError>;
 
     /// Get DecodedMarket from args
     fn decode<'a, B, Q>(
         ctx: &'a DecodeCtx<'a>,
-        custom_erc20_list: &[CustomToken],
+        custom_erc20_list: &[CustomERC20Store],
     ) -> Result<Self::DecodedMarket<B, Q>, GoblinError>
     where
         B: TokenMarker,

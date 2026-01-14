@@ -2,7 +2,7 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
     market::{DangerousMarketIndex, HardcodedMarketList, MarketAndKey, MarketVariant},
-    token::{CustomToken, HardcodedIndex, TokenMarker},
+    token::{CustomERC20Store, HardcodedERC20, TokenIndex, TokenMarker},
     types::Address,
 };
 
@@ -12,13 +12,13 @@ pub struct Hardcoded;
 impl MarketVariant for Hardcoded {
     const DISCRIMINATOR: u8 = 3;
 
-    type TokenIndex = HardcodedIndex;
+    type TokenIndex = TokenIndex<HardcodedERC20>;
 
     type DecodedMarket<B: TokenMarker, Q: TokenMarker> = DangerousMarketIndex<B, Q>;
 
     fn token_index_to_address(
         token_index: Self::TokenIndex,
-        _custom_erc20_list: &[CustomToken],
+        _custom_erc20_list: &[CustomERC20Store],
     ) -> Result<Address, GoblinError> {
         // TODO simplify when we use dedicated marker types for Hardcoded and Custom
         Ok(token_index.get_token().address)
@@ -26,7 +26,7 @@ impl MarketVariant for Hardcoded {
 
     fn decode<'a, B, Q>(
         ctx: &'a DecodeCtx<'a>,
-        _custom_erc20_list: &[CustomToken],
+        _custom_erc20_list: &[CustomERC20Store],
     ) -> Result<Self::DecodedMarket<B, Q>, GoblinError>
     where
         B: TokenMarker,

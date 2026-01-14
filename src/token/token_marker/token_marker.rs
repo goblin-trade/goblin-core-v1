@@ -1,13 +1,4 @@
-use crate::{
-    goblin_error::GoblinError, market::MarketVariant, quantities::DeltaAtoms, token::CustomToken,
-    types::Address,
-};
-
-#[derive(Clone, Copy, Default)]
-pub struct ETH;
-
-#[derive(Clone, Copy, Default)]
-pub struct ERC20;
+use crate::{goblin_error::GoblinError, market::MarketVariant, token::CustomERC20Store};
 
 pub trait TokenMarker: Clone + Copy {
     const DISCRIMINATOR: u8;
@@ -32,36 +23,6 @@ pub trait TokenMarker: Clone + Copy {
     /// hardcoded or custom token list
     fn token_index_to_address<M: MarketVariant>(
         token_index: Self::TokenIndex<M>,
-        custom_erc20_list: &[CustomToken],
+        custom_erc20_list: &[CustomERC20Store],
     ) -> Result<Self::Address, GoblinError>;
-}
-
-impl TokenMarker for ETH {
-    const DISCRIMINATOR: u8 = 0;
-
-    type TokenIndex<M: MarketVariant> = ();
-    type Address = ();
-    type Deposit = ();
-
-    fn token_index_to_address<M: MarketVariant>(
-        _token_index: Self::TokenIndex<M>,
-        _custom_erc20_list: &[CustomToken],
-    ) -> Result<Self::Address, GoblinError> {
-        Ok(())
-    }
-}
-
-impl TokenMarker for ERC20 {
-    const DISCRIMINATOR: u8 = 1;
-
-    type TokenIndex<M: MarketVariant> = M::TokenIndex;
-    type Address = Address;
-    type Deposit = DeltaAtoms;
-
-    fn token_index_to_address<M: MarketVariant>(
-        token_index: Self::TokenIndex<M>,
-        custom_erc20_list: &[CustomToken],
-    ) -> Result<Self::Address, GoblinError> {
-        M::token_index_to_address(token_index, custom_erc20_list)
-    }
 }
