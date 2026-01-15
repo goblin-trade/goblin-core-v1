@@ -4,7 +4,7 @@ use crate::{
         ERC20Delta, ERC20DeltaList, ERC20MakerDeltaKey, ERC20MakerDeltas, ERC20SenderDeltas,
         UnsidedMakerDelta,
     },
-    token::HardcodedToken,
+    token::HardcodedERC20,
     types::{Address, TupleReader},
 };
 
@@ -13,7 +13,7 @@ impl DeltaGetter for Hardcoded {
         token_index: Self::TokenIndex,
         token_sender_deltas: &mut ERC20SenderDeltas,
     ) -> &mut ERC20Delta {
-        HardcodedToken::get_leg_mut(token_sender_deltas).get_delta_mut(token_index)
+        HardcodedERC20::get_leg_mut(token_sender_deltas).get_delta_mut(token_index)
     }
 
     fn token_maker_delta_mut(
@@ -23,6 +23,6 @@ impl DeltaGetter for Hardcoded {
     ) -> Option<&mut UnsidedMakerDelta> {
         let key = ERC20MakerDeltaKey { maker, token_index };
 
-        HardcodedToken::get_leg_mut(token_maker_deltas).get_or_insert_mut(key)
+        HardcodedERC20::get_leg_mut(token_maker_deltas).get_or_insert_mut(key)
     }
 }

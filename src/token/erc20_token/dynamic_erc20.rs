@@ -2,14 +2,18 @@ use crate::{
     goblin_error::GoblinError,
     require,
     token::{
-        CustomERC20, CustomERC20Store, ERC20Data, ERC20Marker, HardcodedERC20, HardcodedERC20Store,
-        TokenIndex, HARDCODED_TOKENS,
+        CustomERC20, CustomERC20Store, DynamicIndex, ERC20Data, ERC20Marker, HardcodedERC20,
+        HardcodedERC20Store, TokenIndex, HARDCODED_TOKENS,
     },
     types::Address,
 };
 
-#[derive(Clone, Copy, PartialEq)]
-pub struct DynamicERC20;
+// #[derive(Clone, Copy, PartialEq)]
+// pub struct DynamicERC20;
+
+// if we don't use enum, we need to check bits manually in places
+// where we split between custom and hardcoded. Eg. in settlement delta stores.
+// Not using enum is inconvenient.
 
 // pub enum DynamicERC20Store {
 //     Hardcoded(HardcodedERC20Store),
@@ -32,7 +36,7 @@ pub struct DynamicERC20;
 //     }
 // }
 
-impl ERC20Marker for DynamicERC20 {
+impl ERC20Marker for DynamicIndex {
     type Store = Address;
 
     fn get_token(

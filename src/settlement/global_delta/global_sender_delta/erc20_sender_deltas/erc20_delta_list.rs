@@ -1,6 +1,6 @@
 use crate::{
     settlement::global_delta::{ERC20Delta, SenderCustomDeltas, SenderHardcodedDeltas},
-    token::{CustomToken, ERC20Marker, HardcodedToken, TokenIndex},
+    token::{CustomERC20, ERC20Marker, HardcodedERC20, TokenIndex},
 };
 
 pub const MAX_CUSTOM_DELTAS: usize = 8;
@@ -14,14 +14,14 @@ pub trait ERC20DeltaList<T: ERC20Marker> {
     fn get_delta_mut(&mut self, token_index: TokenIndex<T>) -> &mut ERC20Delta;
 }
 
-impl ERC20DeltaList<HardcodedToken> for SenderHardcodedDeltas {
-    fn get_delta_mut(&mut self, token_index: TokenIndex<HardcodedToken>) -> &mut ERC20Delta {
+impl ERC20DeltaList<HardcodedERC20> for SenderHardcodedDeltas {
+    fn get_delta_mut(&mut self, token_index: TokenIndex<HardcodedERC20>) -> &mut ERC20Delta {
         &mut self[token_index.inner as usize]
     }
 }
 
-impl ERC20DeltaList<CustomToken> for SenderCustomDeltas {
-    fn get_delta_mut(&mut self, token_index: TokenIndex<CustomToken>) -> &mut ERC20Delta {
+impl ERC20DeltaList<CustomERC20> for SenderCustomDeltas {
+    fn get_delta_mut(&mut self, token_index: TokenIndex<CustomERC20>) -> &mut ERC20Delta {
         &mut self[token_index.inner as usize]
     }
 }

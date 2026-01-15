@@ -9,7 +9,6 @@ use crate::{
         },
         local_delta::LocalDelta,
     },
-    token::{HardcodedIndex, HardcodedToken},
     token::{ERC20, ETH},
     types::{LegMatcher, Pair},
 };

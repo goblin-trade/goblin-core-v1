@@ -4,7 +4,7 @@ use crate::{
         ERC20Delta, ERC20DeltaList, ERC20MakerDeltaKey, ERC20MakerDeltas, ERC20SenderDeltas,
         UnsidedMakerDelta,
     },
-    token::DynamicIndex,
+    token::{CustomERC20, DynamicIndex, HardcodedERC20},
     types::{Address, TupleReader},
 };
 
@@ -15,12 +15,12 @@ impl DeltaGetter for Dynamic {
     ) -> &mut ERC20Delta {
         match token_index {
             DynamicIndex::Hardcoded(hardcoded_token_index) => {
-                HardcodedToken::get_leg_mut(token_sender_deltas)
+                HardcodedERC20::get_leg_mut(token_sender_deltas)
                     .get_delta_mut(hardcoded_token_index)
             }
 
             DynamicIndex::Custom(custom_token_index) => {
-                CustomToken::get_leg_mut(token_sender_deltas).get_delta_mut(custom_token_index)
+                CustomERC20::get_leg_mut(token_sender_deltas).get_delta_mut(custom_token_index)
             }
         }
     }
@@ -37,7 +37,7 @@ impl DeltaGetter for Dynamic {
                     token_index: hardcoded_token_index,
                 };
 
-                HardcodedToken::get_leg_mut(token_maker_deltas).get_or_insert_mut(key)
+                HardcodedERC20::get_leg_mut(token_maker_deltas).get_or_insert_mut(key)
             }
 
             DynamicIndex::Custom(custom_token_index) => {
@@ -46,7 +46,7 @@ impl DeltaGetter for Dynamic {
                     token_index: custom_token_index,
                 };
 
-                CustomToken::get_leg_mut(token_maker_deltas).get_or_insert_mut(key)
+                CustomERC20::get_leg_mut(token_maker_deltas).get_or_insert_mut(key)
             }
         }
     }

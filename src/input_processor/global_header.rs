@@ -1,7 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx, EthTransfers, HeaderFlags, MarketCounts},
-    token::CustomToken,
+    token::CustomERC20Store,
     types::Address,
 };
 
@@ -20,7 +20,7 @@ pub struct GlobalHeader<'a> {
     pub recipient: Option<&'a Address>,
 
     /// Addresses of custom erc20 tokens to use
-    pub custom_erc20_list: &'a [CustomToken],
+    pub custom_erc20_list: &'a [CustomERC20Store],
 }
 
 impl<'a> Decodable<'a> for GlobalHeader<'a> {
@@ -36,7 +36,7 @@ impl<'a> Decodable<'a> for GlobalHeader<'a> {
         };
 
         let custom_erc20_list =
-            ctx.zero_copy_slice_unchecked::<CustomToken>(flags.custom_erc20_count);
+            ctx.zero_copy_slice_unchecked::<CustomERC20Store>(flags.custom_erc20_count);
 
         Ok(Self {
             flags,
