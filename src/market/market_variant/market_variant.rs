@@ -6,7 +6,7 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
     market::{Dynamic, Hardcoded, HardcodedMarketList, MarketAndKey},
-    token::{CustomERC20Store, TokenMarker},
+    token::{AddressGetter, CustomERC20Store, TokenMarker},
     types::Address,
 };
 
@@ -18,7 +18,7 @@ pub trait MarketVariant: Clone + Copy {
     ///
     /// Hardcoded variant uses hardcoded token index whereas the dynamic
     /// variant uses an enum of hardcoded and custom token index
-    type TokenIndex: Clone + Copy;
+    type TokenIndex: Clone + Copy + AddressGetter;
 
     /// The decoded market as read from args
     ///

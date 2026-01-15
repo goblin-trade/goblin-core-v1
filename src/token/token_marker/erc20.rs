@@ -2,7 +2,7 @@ use crate::{
     goblin_error::GoblinError,
     market::MarketVariant,
     quantities::DeltaAtoms,
-    token::{CustomERC20Store, TokenMarker},
+    token::{AddressGetter, CustomERC20Store, TokenMarker},
     types::Address,
 };
 
@@ -20,11 +20,7 @@ impl TokenMarker for ERC20 {
         token_index: Self::TokenIndex<M>,
         custom_erc20_list: &[CustomERC20Store],
     ) -> Result<Self::Address, GoblinError> {
-        // TODO resolve multiple levels
-        // Turn Self::TokenIndex into a traited type, then call
-        // token_index.get_address()
-        //
-        // Important- this results in a copy
-        M::token_index_to_address(token_index, custom_erc20_list)
+        // Get address from hardcoded or custom erc20 list depending on token index
+        token_index.address(custom_erc20_list)
     }
 }
