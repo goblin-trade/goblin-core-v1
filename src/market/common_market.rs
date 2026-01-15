@@ -3,7 +3,7 @@ use crate::{
     market::MarketVariant,
     quantities::QuoteLotsPerBaseUnitPerTick,
     state::MarketPreimage,
-    token::{CustomERC20Store, TokenMarker},
+    token::{CustomERC20Data, TokenMarker},
     types::{Base, LegQuantities, Pair, Quote, Tuple, TupleReader},
 };
 
@@ -26,7 +26,7 @@ impl<M: MarketVariant, B: TokenMarker, Q: TokenMarker> CommonMarket<M, B, Q> {
     /// Map to market preimage which is used to read market state
     pub fn get_preimage(
         &self,
-        custom_erc20_list: &[CustomERC20Store],
+        custom_erc20_list: &[CustomERC20Data],
     ) -> Result<MarketPreimage<M, B, Q>, GoblinError> {
         let base_token_index = Base::get(&self.token_index_pair);
         let quote_token_index = Quote::get(&self.token_index_pair);

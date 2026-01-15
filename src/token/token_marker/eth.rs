@@ -1,7 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
     market::MarketVariant,
-    token::{CustomERC20Store, TokenMarker},
+    token::{CustomERC20Data, TokenMarker},
 };
 
 #[derive(Clone, Copy, Default)]
@@ -16,7 +16,7 @@ impl TokenMarker for ETH {
 
     fn token_index_to_address<M: MarketVariant>(
         _token_index: Self::TokenIndex<M>,
-        _custom_erc20_list: &[CustomERC20Store],
+        _custom_erc20_list: &[CustomERC20Data],
     ) -> Result<Self::Address, GoblinError> {
         Ok(())
     }

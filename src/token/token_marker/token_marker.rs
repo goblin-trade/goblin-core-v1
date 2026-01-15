@@ -1,4 +1,4 @@
-use crate::{goblin_error::GoblinError, market::MarketVariant, token::CustomERC20Store};
+use crate::{goblin_error::GoblinError, market::MarketVariant, token::CustomERC20Data};
 
 pub trait TokenMarker: Clone + Copy {
     const DISCRIMINATOR: u8;
@@ -23,6 +23,6 @@ pub trait TokenMarker: Clone + Copy {
     /// hardcoded or custom token list
     fn token_index_to_address<M: MarketVariant>(
         token_index: Self::TokenIndex<M>,
-        custom_erc20_list: &[CustomERC20Store],
+        custom_erc20_list: &[CustomERC20Data],
     ) -> Result<Self::Address, GoblinError>;
 }

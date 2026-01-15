@@ -1,6 +1,6 @@
 use crate::{
     market::{CommonMarket, MarketVariant},
-    state::{MarketPreimage, MarketState, SlotKey},
+    state::{MarketPreimage, SlotKey},
     token::TokenMarker,
 };
 

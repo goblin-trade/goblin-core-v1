@@ -1,3 +1,6 @@
+pub mod hardcoded_erc20_data;
+pub use hardcoded_erc20_data::*;
+
 #[cfg(feature = "localnet")]
 pub mod localnet;
 

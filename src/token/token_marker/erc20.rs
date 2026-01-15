@@ -2,7 +2,7 @@ use crate::{
     goblin_error::GoblinError,
     market::MarketVariant,
     quantities::DeltaAtoms,
-    token::{AddressGetter, CustomERC20Store, TokenMarker},
+    token::{AddressMapper, CustomERC20Data, TokenMarker},
     types::Address,
 };
 
@@ -18,7 +18,7 @@ impl TokenMarker for ERC20 {
 
     fn token_index_to_address<M: MarketVariant>(
         token_index: Self::TokenIndex<M>,
-        custom_erc20_list: &[CustomERC20Store],
+        custom_erc20_list: &[CustomERC20Data],
     ) -> Result<Self::Address, GoblinError> {
         // Get address from hardcoded or custom erc20 list depending on token index
         token_index.address(custom_erc20_list)

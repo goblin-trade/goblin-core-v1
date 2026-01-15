@@ -3,8 +3,7 @@ use crate::{
     input_processor::{Decodable, DecodeCtx},
     market::{CommonMarket, MarketAndKey, MarketVariant},
     state::Preimage,
-    token::{CustomERC20Store, DynamicIndex, TokenMarker},
-    types::Address,
+    token::{CustomERC20Data, DynamicIndex, TokenMarker},
 };
 
 #[derive(Clone, Copy, Default)]
@@ -17,16 +16,9 @@ impl MarketVariant for Dynamic {
 
     type DecodedMarket<B: TokenMarker, Q: TokenMarker> = MarketAndKey<Self, B, Q>;
 
-    // fn token_index_to_address(
-    //     token_index: Self::TokenIndex,
-    //     custom_erc20_list: &[CustomERC20Store],
-    // ) -> Result<Address, GoblinError> {
-    //     token_index.address(custom_erc20_list)
-    // }
-
     fn decode<'a, B, Q>(
         ctx: &'a DecodeCtx<'a>,
-        custom_erc20_list: &[CustomERC20Store],
+        custom_erc20_list: &[CustomERC20Data],
     ) -> Result<Self::DecodedMarket<B, Q>, GoblinError>
     where
         B: TokenMarker,

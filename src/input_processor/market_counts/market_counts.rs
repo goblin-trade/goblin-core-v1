@@ -3,7 +3,7 @@ use crate::{
     input_processor::DecodeCtx,
     market::{process_market, Dynamic, Hardcoded},
     settlement::Delta,
-    token::{CustomERC20Store, ERC20, ETH},
+    token::{CustomERC20Data, ERC20, ETH},
     types::Address,
 };
 
@@ -22,7 +22,7 @@ impl MarketCounts {
         &self,
         ctx: &'a DecodeCtx<'a>,
         msg_sender: &Address,
-        custom_erc20_list: &[CustomERC20Store],
+        custom_erc20_list: &[CustomERC20Data],
         delta: &mut Delta,
     ) -> Result<(), GoblinError> {
         // Hardcoded
