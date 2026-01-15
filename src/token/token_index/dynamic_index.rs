@@ -37,6 +37,7 @@ impl DynamicIndex {
             Ok(Self::Hardcoded(TokenIndex::new(index)))
         } else {
             // Custom token
+            // inconsistency- we check bounds of hardcoded but not custom
             let index = byte & !CUSTOM_FLAG; // remove the flag
             Ok(Self::Custom(TokenIndex::new(index)))
         }

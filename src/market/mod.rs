@@ -1,3 +1,4 @@
+pub mod address_getter;
 pub mod common_market;
 pub mod market_and_key;
 pub mod market_header;
@@ -5,6 +6,7 @@ pub mod market_variant;
 pub mod pair_shape;
 pub mod process_market;
 
+pub use address_getter::*;
 pub use common_market::*;
 pub use market_and_key::*;
 pub use market_header::*;
