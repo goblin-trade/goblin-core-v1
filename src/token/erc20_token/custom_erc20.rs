@@ -1,7 +1,7 @@
 use crate::{
     erc20,
     goblin_error::GoblinError,
-    token::{ERC20Marker, TokenIndex},
+    token::{ERC20Data, ERC20Marker, TokenIndex},
     types::Address,
 };
 
@@ -10,6 +10,16 @@ pub struct CustomERC20;
 
 pub struct CustomERC20Store {
     pub address: Address,
+}
+
+impl ERC20Data for CustomERC20Store {
+    fn address(&self) -> &Address {
+        &self.address
+    }
+
+    fn decimals(&self) -> Result<u8, GoblinError> {
+        erc20::decimals(&self.address)
+    }
 }
 
 impl PartialEq for CustomERC20Store {
@@ -28,13 +38,5 @@ impl ERC20Marker for CustomERC20 {
         custom_erc20_list
             .get(token_index.inner as usize)
             .ok_or(GoblinError::InvalidHardcodedTokenIndex)
-    }
-
-    fn address(store: &Self::Store) -> &Address {
-        &store.address
-    }
-
-    fn decimals(store: &Self::Store) -> Result<u8, GoblinError> {
-        erc20::decimals(&store.address)
     }
 }

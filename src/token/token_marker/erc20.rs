@@ -21,6 +21,10 @@ impl TokenMarker for ERC20 {
         custom_erc20_list: &[CustomERC20Store],
     ) -> Result<Self::Address, GoblinError> {
         // TODO resolve multiple levels
+        // Turn Self::TokenIndex into a traited type, then call
+        // token_index.get_address()
+        //
+        // Important- this results in a copy
         M::token_index_to_address(token_index, custom_erc20_list)
     }
 }

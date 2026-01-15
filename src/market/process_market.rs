@@ -3,14 +3,14 @@ use crate::{
     input_processor::{Decodable, DecodeCtx},
     market::{Dynamic, Hardcoded, HardcodedMarketList, MarketAndKey, MarketHeader, MarketVariant},
     settlement::Delta,
-    token::{CustomToken, TokenMarker, ERC20, ETH},
+    token::{CustomERC20Store, TokenMarker, ERC20, ETH},
     types::{Address, TupleReader},
 };
 
 pub fn process_market<'a, M, B, Q>(
     ctx: &'a DecodeCtx<'a>,
     msg_sender: &Address,
-    custom_erc20_list: &[CustomToken],
+    custom_erc20_list: &[CustomERC20Store],
     delta: &mut Delta,
 ) -> Result<(), GoblinError>
 where

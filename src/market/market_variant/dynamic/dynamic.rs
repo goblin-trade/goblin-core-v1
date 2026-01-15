@@ -17,12 +17,12 @@ impl MarketVariant for Dynamic {
 
     type DecodedMarket<B: TokenMarker, Q: TokenMarker> = MarketAndKey<Self, B, Q>;
 
-    fn token_index_to_address(
-        token_index: Self::TokenIndex,
-        custom_erc20_list: &[CustomERC20Store],
-    ) -> Result<Address, GoblinError> {
-        token_index.address(custom_erc20_list)
-    }
+    // fn token_index_to_address(
+    //     token_index: Self::TokenIndex,
+    //     custom_erc20_list: &[CustomERC20Store],
+    // ) -> Result<Address, GoblinError> {
+    //     token_index.address(custom_erc20_list)
+    // }
 
     fn decode<'a, B, Q>(
         ctx: &'a DecodeCtx<'a>,

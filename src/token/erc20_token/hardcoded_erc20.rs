@@ -1,6 +1,6 @@
 use crate::{
     goblin_error::GoblinError,
-    token::{CustomERC20Store, ERC20Marker, TokenIndex, HARDCODED_TOKENS},
+    token::{CustomERC20Store, ERC20Data, ERC20Marker, TokenIndex, HARDCODED_TOKENS},
     types::Address,
 };
 
@@ -10,6 +10,16 @@ pub struct HardcodedERC20;
 pub struct HardcodedERC20Store {
     pub address: Address,
     pub decimals: u8,
+}
+
+impl ERC20Data for HardcodedERC20Store {
+    fn address(&self) -> &Address {
+        &self.address
+    }
+
+    fn decimals(&self) -> Result<u8, GoblinError> {
+        Ok(self.decimals)
+    }
 }
 
 impl ERC20Marker for HardcodedERC20 {
@@ -22,13 +32,5 @@ impl ERC20Marker for HardcodedERC20 {
         // Safe because hardcoded index is validated
         let store = unsafe { HARDCODED_TOKENS.get_unchecked(token_index.inner as usize) };
         Ok(store)
-    }
-
-    fn address(store: &Self::Store) -> &Address {
-        &store.address
-    }
-
-    fn decimals(store: &Self::Store) -> Result<u8, GoblinError> {
-        Ok(store.decimals)
     }
 }

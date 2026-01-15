@@ -30,19 +30,19 @@ pub trait MarketVariant: Clone + Copy {
     /// * Dynamic: The market params are decoded from args and the key is hashed.
     type DecodedMarket<B: TokenMarker, Q: TokenMarker>;
 
-    /// Map the token index to address
-    ///
-    /// This function has 2 variations for TokenMarker and MarketVariant traits
-    ///
-    /// 1. TokenMarker (ETH / ERC20): Maps ETH to (). If token is ERC20 then
-    /// calls MarketVariant::token_index_to_address()
-    ///
-    /// 2. MarketVariant (Hardcoded / Dynamic): Reads token address from
-    /// hardcoded or custom token list
-    fn token_index_to_address(
-        token_index: Self::TokenIndex,
-        custom_erc20_list: &[CustomERC20Store],
-    ) -> Result<Address, GoblinError>;
+    // /// Map the token index to address
+    // ///
+    // /// This function has 2 variations for TokenMarker and MarketVariant traits
+    // ///
+    // /// 1. TokenMarker (ETH / ERC20): Maps ETH to (). If token is ERC20 then
+    // /// calls MarketVariant::token_index_to_address()
+    // ///
+    // /// 2. MarketVariant (Hardcoded / Dynamic): Reads token address from
+    // /// hardcoded or custom token list
+    // fn token_index_to_address(
+    //     token_index: Self::TokenIndex,
+    //     custom_erc20_list: &[CustomERC20Store],
+    // ) -> Result<Address, GoblinError>;
 
     /// Get DecodedMarket from args
     fn decode<'a, B, Q>(

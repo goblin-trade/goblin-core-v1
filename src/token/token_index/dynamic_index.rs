@@ -42,24 +42,30 @@ impl DynamicIndex {
         }
     }
 
-    /// Get the token address corresponding to the index. If it is a custom token, this
-    /// address is read from the custom token list
-    pub fn address(self, custom_erc20_list: &[CustomERC20Store]) -> Result<&Address, GoblinError> {
-        let address = match self {
-            DynamicIndex::Hardcoded(hardcoded_token_index) => {
-                let token = <HardcodedERC20 as ERC20Marker>::get_token(
-                    hardcoded_token_index,
-                    custom_erc20_list,
-                )?;
-                <HardcodedERC20 as ERC20Marker>::address(token)
-            }
-            DynamicIndex::Custom(custom_token_index) => {
-                let token =
-                    <CustomERC20 as ERC20Marker>::get_token(custom_token_index, custom_erc20_list)?;
-                <CustomERC20 as ERC20Marker>::address(token)
-            }
-        };
+    // /// Get the token address corresponding to the index. If it is a custom token, this
+    // /// address is read from the custom token list
+    // ///
+    // /// Problem- different APIs
+    // ///
+    // /// 1. <HardcodedERC20 as ERC20Marker>::get_token(hardcoded_token_index, custom_erc20_list) -> ERC20Store
+    // ///
+    // /// 2. dynamic_token_index.address(custom_erc20_list)
+    // pub fn address(self, custom_erc20_list: &[CustomERC20Store]) -> Result<&Address, GoblinError> {
+    //     let address = match self {
+    //         DynamicIndex::Hardcoded(hardcoded_token_index) => {
+    //             let token = <HardcodedERC20 as ERC20Marker>::get_token(
+    //                 hardcoded_token_index,
+    //                 custom_erc20_list,
+    //             )?;
+    //             <HardcodedERC20 as ERC20Marker>::address(token)
+    //         }
+    //         DynamicIndex::Custom(custom_token_index) => {
+    //             let token =
+    //                 <CustomERC20 as ERC20Marker>::get_token(custom_token_index, custom_erc20_list)?;
+    //             <CustomERC20 as ERC20Marker>::address(token)
+    //         }
+    //     };
 
-        Ok(address)
-    }
+    //     Ok(address)
+    // }
 }

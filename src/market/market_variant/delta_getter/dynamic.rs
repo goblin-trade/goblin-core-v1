@@ -4,7 +4,7 @@ use crate::{
         ERC20Delta, ERC20DeltaList, ERC20MakerDeltaKey, ERC20MakerDeltas, ERC20SenderDeltas,
         UnsidedMakerDelta,
     },
-    token::{CustomToken, DynamicIndex, HardcodedToken},
+    token::DynamicIndex,
     types::{Address, TupleReader},
 };
 
