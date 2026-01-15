@@ -1,6 +1,6 @@
 use crate::{
     goblin_error::GoblinError,
-    token::{CustomERC20Data, ERC20Marker, ERC20Index},
+    token::{CustomERC20Data, ERC20Index, ERC20Marker},
 };
 
 #[derive(Clone, Copy, PartialEq)]
@@ -10,11 +10,11 @@ impl ERC20Marker for CustomERC20 {
     type Data = CustomERC20Data;
 
     fn get_data(
-        token_index: ERC20Index<Self>,
+        erc20_index: ERC20Index<Self>,
         custom_erc20_list: &[CustomERC20Data],
     ) -> Result<&Self::Data, GoblinError> {
         custom_erc20_list
-            .get(token_index.inner as usize)
+            .get(erc20_index.inner as usize)
             .ok_or(GoblinError::InvalidCustomTokenIndex)
     }
 }

@@ -13,7 +13,7 @@ pub trait ERC20Marker: Sized {
     type Data: ERC20Data;
 
     fn get_data(
-        token_index: ERC20Index<Self>,
+        erc20_index: ERC20Index<Self>,
         custom_erc20_list: &[CustomERC20Data],
     ) -> Result<&Self::Data, GoblinError>;
 }

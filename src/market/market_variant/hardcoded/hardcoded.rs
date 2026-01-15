@@ -11,7 +11,7 @@ pub struct Hardcoded;
 impl MarketVariant for Hardcoded {
     const DISCRIMINATOR: u8 = 3;
 
-    type TokenIndex = ERC20Index<HardcodedERC20>;
+    type MarketERC20Index = ERC20Index<HardcodedERC20>;
 
     type DecodedMarket<B: TokenMarker, Q: TokenMarker> = DangerousMarketIndex<B, Q>;
 

@@ -19,7 +19,7 @@ pub trait MarketVariant: Clone + Copy {
     /// variant uses an enum of hardcoded and custom token index
     ///
     /// The toke index is mappable to address
-    type TokenIndex: Clone + Copy + AddressMapper;
+    type MarketERC20Index: Clone + Copy + AddressMapper;
 
     /// The decoded market as read from args
     ///

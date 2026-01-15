@@ -10,18 +10,21 @@ use crate::{
 
 impl DeltaGetter for Hardcoded {
     fn token_sender_delta_mut(
-        token_index: Self::TokenIndex,
+        market_erc20_index: Self::MarketERC20Index,
         token_sender_deltas: &mut ERC20SenderDeltas,
     ) -> &mut ERC20Delta {
-        HardcodedERC20::get_leg_mut(token_sender_deltas).get_delta_mut(token_index)
+        HardcodedERC20::get_leg_mut(token_sender_deltas).get_delta_mut(market_erc20_index)
     }
 
     fn token_maker_delta_mut(
-        token_index: Self::TokenIndex,
+        market_erc20_index: Self::MarketERC20Index,
         maker: Address,
         token_maker_deltas: &mut ERC20MakerDeltas,
     ) -> Option<&mut UnsidedMakerDelta> {
-        let key = ERC20MakerDeltaKey { maker, token_index };
+        let key = ERC20MakerDeltaKey {
+            maker,
+            erc20_index: market_erc20_index,
+        };
 
         HardcodedERC20::get_leg_mut(token_maker_deltas).get_or_insert_mut(key)
     }
