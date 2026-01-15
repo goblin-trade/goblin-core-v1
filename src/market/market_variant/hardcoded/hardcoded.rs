@@ -2,7 +2,7 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
     market::{DangerousMarketIndex, HardcodedMarketList, MarketAndKey, MarketVariant},
-    token::{CustomERC20Data, HardcodedERC20, TokenIndex, TokenMarker},
+    token::{CustomERC20Data, ERC20Index, HardcodedERC20, TokenMarker},
 };
 
 #[derive(Clone, Copy, Default)]
@@ -11,7 +11,7 @@ pub struct Hardcoded;
 impl MarketVariant for Hardcoded {
     const DISCRIMINATOR: u8 = 3;
 
-    type TokenIndex = TokenIndex<HardcodedERC20>;
+    type TokenIndex = ERC20Index<HardcodedERC20>;
 
     type DecodedMarket<B: TokenMarker, Q: TokenMarker> = DangerousMarketIndex<B, Q>;
 

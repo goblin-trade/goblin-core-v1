@@ -1,5 +1,5 @@
 use crate::{
-    token::{ERC20Marker, TokenIndex},
+    token::{ERC20Marker, ERC20Index},
     types::Address,
 };
 
@@ -7,14 +7,14 @@ use crate::{
 #[derive(Clone, Copy, PartialEq)]
 pub struct ERC20MakerDeltaKey<T: ERC20Marker> {
     pub maker: Address,
-    pub token_index: TokenIndex<T>,
+    pub token_index: ERC20Index<T>,
 }
 
 impl<T: ERC20Marker> ERC20MakerDeltaKey<T> {
     pub const fn zero() -> Self {
         Self {
             maker: [0u8; 20],
-            token_index: TokenIndex::new(0),
+            token_index: ERC20Index::new(0),
         }
     }
 }

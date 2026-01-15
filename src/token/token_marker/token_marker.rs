@@ -1,5 +1,9 @@
 use crate::{goblin_error::GoblinError, market::MarketVariant, token::CustomERC20Data};
 
+/// Marker class for 'Token'. We have 2 tokens
+///
+/// 1. ETH
+/// 2. ERC20- this has sub variants hardcoded and custom, covered by ERC20Marker
 pub trait TokenMarker: Clone + Copy {
     const DISCRIMINATOR: u8;
 
