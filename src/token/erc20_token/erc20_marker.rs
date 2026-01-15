@@ -4,7 +4,7 @@ use crate::{
 };
 /// Trait for ERC20 tokens
 pub trait ERC20Marker: Sized {
-    type Store;
+    type Store: ERC20Data;
 
     fn get_token(
         token_index: TokenIndex<Self>,

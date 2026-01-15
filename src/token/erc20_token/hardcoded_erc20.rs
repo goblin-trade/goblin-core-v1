@@ -29,8 +29,8 @@ impl ERC20Marker for HardcodedERC20 {
         token_index: TokenIndex<Self>,
         _custom_erc20_list: &[CustomERC20Store],
     ) -> Result<&Self::Store, GoblinError> {
-        // Safe because hardcoded index is validated
-        let store = unsafe { HARDCODED_TOKENS.get_unchecked(token_index.inner as usize) };
-        Ok(store)
+        HARDCODED_TOKENS
+            .get(token_index.inner as usize)
+            .ok_or(GoblinError::InvalidHardcodedTokenIndex)
     }
 }

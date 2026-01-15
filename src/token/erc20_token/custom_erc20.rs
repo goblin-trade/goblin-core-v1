@@ -37,6 +37,6 @@ impl ERC20Marker for CustomERC20 {
     ) -> Result<&Self::Store, GoblinError> {
         custom_erc20_list
             .get(token_index.inner as usize)
-            .ok_or(GoblinError::InvalidHardcodedTokenIndex)
+            .ok_or(GoblinError::InvalidCustomTokenIndex)
     }
 }

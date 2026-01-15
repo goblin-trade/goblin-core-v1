@@ -18,28 +18,29 @@ pub enum DynamicIndex {
 
 impl DynamicIndex {
     /// Decode a token index byte into either a hardcoded or custom token index.
-    /// Hardcoded token indices are validated. Therefore we can do `TokenIndex<HardcodedToken>::get_token()`
-    /// without safety checks.
+    /// Token indices are lazily validated when mapping to address.
     ///
     /// Convention:
     /// - If the MSB (bit 7) is 0 → Hardcoded token index (0–127)
     /// - If the MSB (bit 7) is 1 → Custom token index (0–127, but stored as 128–255)
-    pub fn new(byte: u8) -> Result<Self, GoblinError> {
+    pub fn new(byte: u8) -> Self {
         const CUSTOM_FLAG: u8 = 0b1000_0000;
         if (byte & CUSTOM_FLAG) == 0 {
             // Hardcoded token
-            let index = byte;
-            require!(
-                (index as usize) < HARDCODED_TOKENS.len(),
-                GoblinError::InvalidHardcodedTokenIndex
-            );
+            // let index = byte;
+            // require!(
+            //     (index as usize) < HARDCODED_TOKENS.len(),
+            //     GoblinError::InvalidHardcodedTokenIndex
+            // );
 
-            Ok(Self::Hardcoded(TokenIndex::new(index)))
+            Self::Hardcoded(TokenIndex::new(byte))
+            // Ok(Self::Hardcoded(TokenIndex::new(index)))
         } else {
             // Custom token
             // inconsistency- we check bounds of hardcoded but not custom
             let index = byte & !CUSTOM_FLAG; // remove the flag
-            Ok(Self::Custom(TokenIndex::new(index)))
+            Self::Custom(TokenIndex::new(index))
+            // Ok(Self::Custom(TokenIndex::new(index)))
         }
     }
 
