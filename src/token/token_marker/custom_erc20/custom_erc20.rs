@@ -1,12 +1,13 @@
 use crate::{
     goblin_error::GoblinError,
     quantities::DeltaAtoms,
-    token::{CustomERC20, CustomERC20Data, ERC20Index, ERC20Marker, TokenMarker},
+    token::{CustomERC20, CustomERC20Data, ERC20Index, ERC20Marker, TokenMarker, ERC20},
     types::Address,
 };
 
 impl TokenMarker for CustomERC20 {
-    const DISCRIMINATOR: u8 = 1;
+    const DISCRIMINATOR: u8 = 2;
+    type TupleMarker = ERC20;
 
     type TokenIndex = ERC20Index<Self>;
 

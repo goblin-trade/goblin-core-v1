@@ -1,6 +1,5 @@
 use crate::{
     goblin_error::GoblinError,
-    market::MarketVariant,
     token::{CustomERC20Data, TokenMarker},
 };
 
@@ -9,13 +8,14 @@ pub struct ETH;
 
 impl TokenMarker for ETH {
     const DISCRIMINATOR: u8 = 0;
+    type TupleMarker = Self;
 
-    type TokenIndex<M: MarketVariant> = ();
+    type TokenIndex = ();
     type Address = ();
     type Deposit = ();
 
-    fn token_index_to_address<M: MarketVariant>(
-        _token_index: Self::TokenIndex<M>,
+    fn token_index_to_address(
+        _token_index: Self::TokenIndex,
         _custom_erc20_list: &[CustomERC20Data],
     ) -> Result<Self::Address, GoblinError> {
         Ok(())

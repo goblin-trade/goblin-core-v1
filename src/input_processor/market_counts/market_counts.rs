@@ -3,7 +3,7 @@ use crate::{
     input_processor::DecodeCtx,
     market::{process_market, Dynamic, Hardcoded},
     settlement::Delta,
-    token::{CustomERC20Data, ERC20, ETH},
+    token::{CustomERC20Data, HardcodedERC20, ERC20, ETH},
     types::Address,
 };
 
@@ -27,31 +27,36 @@ impl MarketCounts {
     ) -> Result<(), GoblinError> {
         // Hardcoded- 3
         for _ in 0..self.inner[0] {
-            process_market::<Hardcoded, ETH, ERC20>(ctx, msg_sender, custom_erc20_list, delta)?;
+            process_market::<Hardcoded, ETH, HardcodedERC20>(
+                ctx,
+                msg_sender,
+                custom_erc20_list,
+                delta,
+            )?;
         }
 
-        for _ in 0..self.inner[1] {
-            process_market::<Hardcoded, ERC20, ETH>(ctx, msg_sender, custom_erc20_list, delta)?;
-        }
+        // for _ in 0..self.inner[1] {
+        //     process_market::<Hardcoded, ERC20, ETH>(ctx, msg_sender, custom_erc20_list, delta)?;
+        // }
 
-        for _ in 0..self.inner[2] {
-            process_market::<Hardcoded, ERC20, ERC20>(ctx, msg_sender, custom_erc20_list, delta)?;
-        }
+        // for _ in 0..self.inner[2] {
+        //     process_market::<Hardcoded, ERC20, ERC20>(ctx, msg_sender, custom_erc20_list, delta)?;
+        // }
 
         // TODO 8 dynamic variants
         // 3- with hardcoded tokens
         // 5- with hardcoded and custom mixed
 
         // Dynamic
-        for _ in 0..self.inner[3] {
-            process_market::<Dynamic, ETH, ERC20>(ctx, msg_sender, custom_erc20_list, delta)?;
-        }
-        for _ in 0..self.inner[4] {
-            process_market::<Dynamic, ERC20, ETH>(ctx, msg_sender, custom_erc20_list, delta)?;
-        }
-        for _ in 0..self.inner[5] {
-            process_market::<Dynamic, ERC20, ERC20>(ctx, msg_sender, custom_erc20_list, delta)?;
-        }
+        // for _ in 0..self.inner[3] {
+        //     process_market::<Dynamic, ETH, ERC20>(ctx, msg_sender, custom_erc20_list, delta)?;
+        // }
+        // for _ in 0..self.inner[4] {
+        //     process_market::<Dynamic, ERC20, ETH>(ctx, msg_sender, custom_erc20_list, delta)?;
+        // }
+        // for _ in 0..self.inner[5] {
+        //     process_market::<Dynamic, ERC20, ERC20>(ctx, msg_sender, custom_erc20_list, delta)?;
+        // }
 
         Ok(())
     }

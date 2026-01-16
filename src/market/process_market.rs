@@ -3,10 +3,12 @@ use crate::{
     input_processor::{Decodable, DecodeCtx},
     market::{Dynamic, Hardcoded, HardcodedMarketList, MarketAndKey, MarketHeader, MarketVariant},
     settlement::Delta,
-    token::{CustomERC20Data, TokenMarker, ERC20, ETH},
+    token::{CustomERC20Data, HardcodedERC20, TokenMarker, ERC20, ETH},
     types::{Address, TupleReader},
 };
 
+// problem- ERC20 doesn't implement TokenMarker now
+// We must use HardcodedERC20 or CustomERC20
 pub fn process_market<'a, M, B, Q>(
     ctx: &'a DecodeCtx<'a>,
     msg_sender: &Address,
@@ -15,24 +17,27 @@ pub fn process_market<'a, M, B, Q>(
 ) -> Result<(), GoblinError>
 where
     M: MarketVariant,
-    B: TokenMarker
-        + 'static
-        + TupleReader<
-            <ETH as TokenMarker>::Deposit,
-            <ERC20 as TokenMarker>::Deposit,
-            (ETH, ERC20),
-            Result = <B as TokenMarker>::Deposit,
-        >,
-    Q: TokenMarker
-        + 'static
-        + TupleReader<
-            <ETH as TokenMarker>::Deposit,
-            <ERC20 as TokenMarker>::Deposit,
-            (ETH, ERC20),
-            Result = <Q as TokenMarker>::Deposit,
-        >,
-    B::TokenIndex<Dynamic>: Decodable<'a>,
-    Q::TokenIndex<Dynamic>: Decodable<'a>,
+    B: TokenMarker + 'static,
+    Q: TokenMarker + 'static,
+    // B: TokenMarker
+    //     + 'static
+    //     + TupleReader<
+    //         <ETH as TokenMarker>::Deposit,
+    //         <HardcodedERC20 as TokenMarker>::Deposit,
+    //         (ETH, ERC20), // problem- TupleReader uses ERC20 not HardcodedERC20
+    //         // how to make tuple reader work with new system?
+    //         Result = <B as TokenMarker>::Deposit,
+    //     >,
+    // Q: TokenMarker
+    //     + 'static
+    //     + TupleReader<
+    //         <ETH as TokenMarker>::Deposit,
+    //         <HardcodedERC20 as TokenMarker>::Deposit,
+    //         (ETH, ERC20),
+    //         Result = <Q as TokenMarker>::Deposit,
+    //     >,
+    B::TokenIndex: Decodable<'a>,
+    Q::TokenIndex: Decodable<'a>,
     B::Deposit: Decodable<'a>,
     Q::Deposit: Decodable<'a>,
     MarketAndKey<Hardcoded, B, Q>: HardcodedMarketList<B, Q>,
@@ -45,13 +50,13 @@ where
     let mut market_state = market_and_key.key.load();
 
     market_header.set_deposits(ctx, delta)?;
-    market_header.execute_takes(
-        ctx,
-        msg_sender,
-        &mut delta.local,
-        &market_and_key.market,
-        &mut market_state,
-    )?;
+    // market_header.execute_takes(
+    //     ctx,
+    //     msg_sender,
+    //     &mut delta.local,
+    //     &market_and_key.market,
+    //     &mut market_state,
+    // )?;
 
     // // // TODO commit local delta into global delta
 

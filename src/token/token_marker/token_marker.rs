@@ -7,6 +7,8 @@ use crate::{goblin_error::GoblinError, token::CustomERC20Data};
 pub trait TokenMarker: Clone + Copy {
     const DISCRIMINATOR: u8;
 
+    type TupleMarker;
+
     /// Index to lookup token address
     type TokenIndex: Clone + Copy;
 

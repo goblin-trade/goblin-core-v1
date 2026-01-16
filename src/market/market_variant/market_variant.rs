@@ -39,8 +39,8 @@ pub trait MarketVariant: Clone + Copy {
     where
         B: TokenMarker,
         Q: TokenMarker,
-        B::TokenIndex<Dynamic>: Decodable<'a>,
-        Q::TokenIndex<Dynamic>: Decodable<'a>;
+        B::TokenIndex: Decodable<'a>,
+        Q::TokenIndex: Decodable<'a>;
 
     /// Obtain reference to the market and key
     ///

@@ -12,12 +12,12 @@ impl<'a, B, Q> Decodable<'a> for CommonMarket<Dynamic, B, Q>
 where
     B: TokenMarker,
     Q: TokenMarker,
-    B::TokenIndex<Dynamic>: Decodable<'a>,
-    Q::TokenIndex<Dynamic>: Decodable<'a>,
+    B::TokenIndex: Decodable<'a>,
+    Q::TokenIndex: Decodable<'a>,
 {
     fn try_decode(ctx: &'a DecodeCtx<'a>) -> Result<Self, GoblinError> {
-        let base_token_index = B::TokenIndex::<Dynamic>::try_decode(ctx)?;
-        let quote_token_index = Q::TokenIndex::<Dynamic>::try_decode(ctx)?;
+        let base_token_index = B::TokenIndex::try_decode(ctx)?;
+        let quote_token_index = Q::TokenIndex::try_decode(ctx)?;
 
         let token_index_pair = Pair::new(base_token_index, quote_token_index);
 

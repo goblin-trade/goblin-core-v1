@@ -3,7 +3,7 @@ use crate::{
     input_processor::{Decodable, DecodeCtx},
     market::{MarketHeader, MarketVariant},
     settlement::Delta,
-    token::{TokenMarker, ERC20, ETH},
+    token::{HardcodedERC20, TokenMarker, ERC20, ETH},
     types::{Pair, TupleReader},
 };
 
@@ -13,14 +13,14 @@ where
     B: TokenMarker
         + TupleReader<
             <ETH as TokenMarker>::Deposit,
-            <ERC20 as TokenMarker>::Deposit,
+            <HardcodedERC20 as TokenMarker>::Deposit,
             (ETH, ERC20),
             Result = <B as TokenMarker>::Deposit,
         >,
     Q: TokenMarker
         + TupleReader<
             <ETH as TokenMarker>::Deposit,
-            <ERC20 as TokenMarker>::Deposit,
+            <HardcodedERC20 as TokenMarker>::Deposit,
             (ETH, ERC20),
             Result = <Q as TokenMarker>::Deposit,
         >,
@@ -38,7 +38,7 @@ where
             let quote_deposit = Q::Deposit::try_decode(ctx)?;
             let deposit_pair = Pair::new(base_deposit, quote_deposit);
 
-            delta.local.deposits.set_deposits::<B, Q>(&deposit_pair);
+            // delta.local.deposits.set_deposits::<B, Q>(&deposit_pair);
         }
 
         Ok(())

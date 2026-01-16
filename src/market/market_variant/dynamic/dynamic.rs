@@ -3,7 +3,7 @@ use crate::{
     input_processor::{Decodable, DecodeCtx},
     market::{CommonMarket, MarketAndKey, MarketVariant},
     state::Preimage,
-    token::{CustomERC20Data, DynamicIndex, TokenMarker},
+    token::{CustomERC20Data, TokenMarker},
 };
 
 #[derive(Clone, Copy, Default)]
@@ -23,8 +23,8 @@ impl MarketVariant for Dynamic {
     where
         B: TokenMarker,
         Q: TokenMarker,
-        B::TokenIndex<Dynamic>: Decodable<'a>,
-        Q::TokenIndex<Dynamic>: Decodable<'a>,
+        B::TokenIndex: Decodable<'a>,
+        Q::TokenIndex: Decodable<'a>,
     {
         let common_market = CommonMarket::<Self, B, Q>::try_decode(ctx)?;
         let preimage = common_market.get_preimage(custom_erc20_list)?;

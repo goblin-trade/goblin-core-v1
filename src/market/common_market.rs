@@ -1,3 +1,5 @@
+use core::marker::PhantomData;
+
 use crate::{
     goblin_error::GoblinError,
     market::MarketVariant,
@@ -19,7 +21,9 @@ pub struct CommonMarket<M: MarketVariant, B: TokenMarker, Q: TokenMarker> {
     pub tick_size: QuoteLotsPerBaseUnitPerTick,
 
     /// The token pair, parameterized by shape and variant.
-    pub token_index_pair: Pair<B::TokenIndex<M>, Q::TokenIndex<M>>,
+    pub token_index_pair: Pair<B::TokenIndex, Q::TokenIndex>,
+
+    _marker: PhantomData<M>,
 }
 
 impl<M: MarketVariant, B: TokenMarker, Q: TokenMarker> CommonMarket<M, B, Q> {

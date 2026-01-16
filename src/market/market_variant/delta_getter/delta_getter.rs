@@ -6,6 +6,9 @@ use crate::{
     types::Address,
 };
 
+/// TODO change- we need the ERC20 type (hardcoded or custom) for getting the delta
+/// Move the delta getter on TokenMarker. Remove it from MarketVariant
+
 /// Get deltas for a market variant
 pub trait DeltaGetter: MarketVariant {
     fn token_sender_delta_mut(
