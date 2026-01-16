@@ -4,7 +4,7 @@ use crate::{
     require,
 };
 
-const BYTE_COUNT: usize = 3;
+const BYTE_COUNT: usize = 6;
 
 impl<'a> Decodable<'a> for MarketCounts {
     fn try_decode(ctx: &DecodeCtx) -> Result<Self, GoblinError> {
@@ -16,6 +16,9 @@ impl<'a> Decodable<'a> for MarketCounts {
         let byte_0 = u8::decode_unchecked_no_advance(ctx);
         let byte_1 = u8::decode_unchecked_no_advance(ctx);
         let byte_2 = u8::decode_unchecked_no_advance(ctx);
+        let byte_3 = u8::decode_unchecked_no_advance(ctx);
+        let byte_4 = u8::decode_unchecked_no_advance(ctx);
+        let byte_5 = u8::decode_unchecked_no_advance(ctx);
 
         ctx.advance_offset(BYTE_COUNT);
 
@@ -26,6 +29,11 @@ impl<'a> Decodable<'a> for MarketCounts {
             byte_1 >> 4,
             byte_2 & 0b0000_1111,
             byte_2 >> 4,
+            byte_3 & 0b0000_1111,
+            byte_3 >> 4,
+            byte_4 & 0b0000_1111,
+            byte_4 >> 4,
+            byte_5 & 0b0000_1111,
         ]))
     }
 }

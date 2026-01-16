@@ -9,11 +9,11 @@ use crate::{
 
 /// The number of markets of each type
 pub struct MarketCounts {
-    inner: [u8; 6],
+    inner: [u8; 11],
 }
 
 impl MarketCounts {
-    pub fn new(inner: [u8; 6]) -> Self {
+    pub fn new(inner: [u8; 11]) -> Self {
         Self { inner }
     }
 
@@ -25,7 +25,7 @@ impl MarketCounts {
         custom_erc20_list: &[CustomERC20Data],
         delta: &mut Delta,
     ) -> Result<(), GoblinError> {
-        // Hardcoded
+        // Hardcoded- 3
         for _ in 0..self.inner[0] {
             process_market::<Hardcoded, ETH, ERC20>(ctx, msg_sender, custom_erc20_list, delta)?;
         }
@@ -37,6 +37,10 @@ impl MarketCounts {
         for _ in 0..self.inner[2] {
             process_market::<Hardcoded, ERC20, ERC20>(ctx, msg_sender, custom_erc20_list, delta)?;
         }
+
+        // TODO 8 dynamic variants
+        // 3- with hardcoded tokens
+        // 5- with hardcoded and custom mixed
 
         // Dynamic
         for _ in 0..self.inner[3] {
