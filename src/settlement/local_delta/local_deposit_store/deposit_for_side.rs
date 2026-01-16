@@ -1,9 +1,12 @@
 use crate::quantities::DeltaAtoms;
-use crate::token::{TokenMarker, ERC20, ETH};
 use crate::types::TokenPair;
 
-/// Track deposit amount for ETH and ERC20, for a given leg side
-pub type DepositForSide = TokenPair<<ETH as TokenMarker>::Deposit, <ERC20 as TokenMarker>::Deposit>;
+/// Track deposit amounts for a given side
+///
+/// * The first limb (ETH) is `()` because ETH does not support deposits
+/// * The second limb (ERC20) is `DeltaAtoms`. It is shared by HardcodedERC20 and
+/// CustomERC20
+pub type DepositForSide = TokenPair<(), DeltaAtoms>;
 
 impl DepositForSide {
     pub const fn zero() -> Self {

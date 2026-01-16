@@ -1,4 +1,5 @@
 use crate::{
+    quantities::DeltaAtoms,
     settlement::local_delta::DepositForSide,
     token::{TokenMarker, ERC20, ETH},
     types::{Base, LegMatcher, Pair, Quote, TupleReader},
@@ -14,12 +15,7 @@ impl LocalDepositStore {
     fn deposit_for_side<T, In>(&mut self, deposit: T::Deposit)
     where
         T: TokenMarker
-            + TupleReader<
-                <ETH as TokenMarker>::Deposit,
-                <ERC20 as TokenMarker>::Deposit,
-                (ETH, ERC20),
-                Result = <T as TokenMarker>::Deposit,
-            >,
+            + TupleReader<(), DeltaAtoms, (ETH, ERC20), Result = <T as TokenMarker>::Deposit>,
         In: LegMatcher
             + TupleReader<DepositForSide, DepositForSide, (Base, Quote), Result = DepositForSide>,
     {
@@ -32,19 +28,9 @@ impl LocalDepositStore {
     pub fn set_deposits<B, Q>(&mut self, deposit_pair: &Pair<B::Deposit, Q::Deposit>)
     where
         B: TokenMarker
-            + TupleReader<
-                <ETH as TokenMarker>::Deposit,
-                <ERC20 as TokenMarker>::Deposit,
-                (ETH, ERC20),
-                Result = <B as TokenMarker>::Deposit,
-            >,
+            + TupleReader<(), DeltaAtoms, (ETH, ERC20), Result = <B as TokenMarker>::Deposit>,
         Q: TokenMarker
-            + TupleReader<
-                <ETH as TokenMarker>::Deposit,
-                <ERC20 as TokenMarker>::Deposit,
-                (ETH, ERC20),
-                Result = <Q as TokenMarker>::Deposit,
-            >,
+            + TupleReader<(), DeltaAtoms, (ETH, ERC20), Result = <Q as TokenMarker>::Deposit>,
     {
         // Map B to Base and Q to Quote
         // Rust limitation- we need to explicitly map the generic to its correct side
@@ -55,19 +41,9 @@ impl LocalDepositStore {
     pub fn reset<B, Q>(&mut self)
     where
         B: TokenMarker
-            + TupleReader<
-                <ETH as TokenMarker>::Deposit,
-                <ERC20 as TokenMarker>::Deposit,
-                (ETH, ERC20),
-                Result = <B as TokenMarker>::Deposit,
-            >,
+            + TupleReader<(), DeltaAtoms, (ETH, ERC20), Result = <B as TokenMarker>::Deposit>,
         Q: TokenMarker
-            + TupleReader<
-                <ETH as TokenMarker>::Deposit,
-                <ERC20 as TokenMarker>::Deposit,
-                (ETH, ERC20),
-                Result = <Q as TokenMarker>::Deposit,
-            >,
+            + TupleReader<(), DeltaAtoms, (ETH, ERC20), Result = <Q as TokenMarker>::Deposit>,
     {
         let deposit_pair = Pair::<B::Deposit, Q::Deposit>::default();
         self.set_deposits::<B, Q>(&deposit_pair);
