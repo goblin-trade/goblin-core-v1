@@ -12,7 +12,7 @@ pub struct Dynamic;
 impl MarketVariant for Dynamic {
     const DISCRIMINATOR: u8 = 4;
 
-    type MarketERC20Index = DynamicIndex;
+    // type MarketERC20Index = DynamicIndex;
 
     type DecodedMarket<B: TokenMarker, Q: TokenMarker> = MarketAndKey<Self, B, Q>;
 

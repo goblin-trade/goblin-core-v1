@@ -13,13 +13,13 @@ pub trait MarketVariant: Clone + Copy {
     /// Discriminator used to hash the market key
     const DISCRIMINATOR: u8;
 
-    /// The token index type for this market variant
-    ///
-    /// Hardcoded variant uses hardcoded token index whereas the dynamic
-    /// variant uses an enum of hardcoded and custom token index
-    ///
-    /// The toke index is mappable to address
-    type MarketERC20Index: Clone + Copy + AddressMapper;
+    // /// The token index type for this market variant
+    // ///
+    // /// Hardcoded variant uses hardcoded token index whereas the dynamic
+    // /// variant uses an enum of hardcoded and custom token index
+    // ///
+    // /// The toke index is mappable to address
+    // type MarketERC20Index: Clone + Copy + AddressMapper;
 
     /// The decoded market as read from args
     ///

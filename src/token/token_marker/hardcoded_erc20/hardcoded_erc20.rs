@@ -1,0 +1,24 @@
+use crate::{
+    goblin_error::GoblinError,
+    quantities::DeltaAtoms,
+    token::{CustomERC20Data, ERC20Index, ERC20Marker, HardcodedERC20, TokenMarker},
+    types::Address,
+};
+
+impl TokenMarker for HardcodedERC20 {
+    const DISCRIMINATOR: u8 = 1;
+
+    type TokenIndex = ERC20Index<Self>;
+
+    type Address = Address;
+
+    type Deposit = DeltaAtoms;
+
+    fn token_index_to_address(
+        token_index: Self::TokenIndex,
+        custom_erc20_list: &[CustomERC20Data],
+    ) -> Result<Self::Address, GoblinError> {
+        let data = HardcodedERC20::get_data(token_index, custom_erc20_list)?;
+        Ok(data.address)
+    }
+}

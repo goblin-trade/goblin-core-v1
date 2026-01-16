@@ -1,4 +1,4 @@
-use crate::{goblin_error::GoblinError, market::MarketVariant, token::CustomERC20Data};
+use crate::{goblin_error::GoblinError, token::CustomERC20Data};
 
 /// Marker class for 'Token'. We have 2 tokens
 ///
@@ -8,7 +8,7 @@ pub trait TokenMarker: Clone + Copy {
     const DISCRIMINATOR: u8;
 
     /// Index to lookup token address
-    type TokenIndex<M: MarketVariant>: Clone + Copy;
+    type TokenIndex: Clone + Copy;
 
     /// Token address
     type Address: Clone + Copy + Sized + Default;
@@ -25,8 +25,8 @@ pub trait TokenMarker: Clone + Copy {
     ///
     /// 2. MarketVariant (Hardcoded / Dynamic): Reads token address from
     /// hardcoded or custom token list
-    fn token_index_to_address<M: MarketVariant>(
-        token_index: Self::TokenIndex<M>,
+    fn token_index_to_address(
+        token_index: Self::TokenIndex,
         custom_erc20_list: &[CustomERC20Data],
     ) -> Result<Self::Address, GoblinError>;
 }
