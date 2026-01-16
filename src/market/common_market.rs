@@ -14,19 +14,32 @@ pub type LotSizePair =
 
 // If P needs to be a trait, we need to use T0 and T1 here
 pub struct CommonMarket<M: MarketVariant, B: TokenMarker, Q: TokenMarker> {
+    /// The token pair, parameterized by shape and variant.
+    pub token_index_pair: Pair<B::TokenIndex, Q::TokenIndex>,
+
     /// Lot sizes (one per side)
     pub lot_size_pair: LotSizePair,
 
     /// Tick size (quote lots per base unit per tick)
     pub tick_size: QuoteLotsPerBaseUnitPerTick,
 
-    /// The token pair, parameterized by shape and variant.
-    pub token_index_pair: Pair<B::TokenIndex, Q::TokenIndex>,
-
     _marker: PhantomData<M>,
 }
 
 impl<M: MarketVariant, B: TokenMarker, Q: TokenMarker> CommonMarket<M, B, Q> {
+    pub const fn new(
+        token_index_pair: Pair<B::TokenIndex, Q::TokenIndex>,
+        lot_size_pair: LotSizePair,
+        tick_size: QuoteLotsPerBaseUnitPerTick,
+    ) -> Self {
+        Self {
+            lot_size_pair,
+            tick_size,
+            token_index_pair,
+            _marker: PhantomData,
+        }
+    }
+
     /// Map to market preimage which is used to read market state
     pub fn get_preimage(
         &self,
