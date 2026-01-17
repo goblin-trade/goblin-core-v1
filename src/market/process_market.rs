@@ -34,34 +34,29 @@ where
     Q::TokenIndex: Decodable<'a>,
     B::Deposit: Decodable<'a>,
     Q::Deposit: Decodable<'a>,
-    // MarketAndKey<Hardcoded, B, Q>: HardcodedMarketList<B, Q>,
+    MarketAndKey<Hardcoded, B, Q>: HardcodedMarketList<B, Q>,
 {
     let market_header = MarketHeader::<M, B, Q>::try_decode(ctx)?;
 
     let decoded_market: <M as MarketVariant>::DecodedMarket<B, Q> =
         M::decode(ctx, custom_erc20_list)?;
-
-    // this needs the problematic trait for <Dynamic, ETH, CustomERC20>
-    // because it tries to impose illegal trait bound
-    // MarketAndKey<Hardcoded, ETH, CustomERC20>: HardcodedMarketList<B, Q>
-    // We need more refinement
     let market_and_key = M::market_and_key_ref(&decoded_market)?;
 
-    // let mut market_state = market_and_key.key.load();
+    let mut market_state = market_and_key.key.load();
 
-    // market_header.set_deposits(ctx, delta)?;
-    // market_header.execute_takes(
-    //     ctx,
-    //     msg_sender,
-    //     &mut delta.local,
-    //     &market_and_key.market,
-    //     &mut market_state,
-    // )?;
+    market_header.set_deposits(ctx, delta)?;
+    market_header.execute_takes(
+        ctx,
+        msg_sender,
+        &mut delta.local,
+        &market_and_key.market,
+        &mut market_state,
+    )?;
 
-    // // // TODO commit local delta into global delta
+    // // TODO commit local delta into global delta
 
-    // // Reset local delta for reuse
-    // delta.local.deposits.reset::<B, Q>();
+    // Reset local delta for reuse
+    delta.local.deposits.reset::<B, Q>();
 
     Ok(())
 }
