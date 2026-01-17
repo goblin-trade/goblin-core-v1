@@ -16,6 +16,7 @@ pub trait TokenMarker: Clone + Copy {
     type Address: Clone + Copy + Sized + Default;
 
     /// Data type representing pending deposit amount
+    // type Deposit = <Self::TupleMarker as TupleMarker>::Deposit;
     type Deposit: Clone + Copy + Default;
 
     /// Map the token index to address

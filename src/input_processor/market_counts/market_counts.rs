@@ -35,13 +35,23 @@ impl MarketCounts {
             )?;
         }
 
-        // for _ in 0..self.inner[1] {
-        //     process_market::<Hardcoded, ERC20, ETH>(ctx, msg_sender, custom_erc20_list, delta)?;
-        // }
+        for _ in 0..self.inner[1] {
+            process_market::<Hardcoded, HardcodedERC20, ETH>(
+                ctx,
+                msg_sender,
+                custom_erc20_list,
+                delta,
+            )?;
+        }
 
-        // for _ in 0..self.inner[2] {
-        //     process_market::<Hardcoded, ERC20, ERC20>(ctx, msg_sender, custom_erc20_list, delta)?;
-        // }
+        for _ in 0..self.inner[2] {
+            process_market::<Hardcoded, HardcodedERC20, HardcodedERC20>(
+                ctx,
+                msg_sender,
+                custom_erc20_list,
+                delta,
+            )?;
+        }
 
         // TODO 8 dynamic variants
         // 3- with hardcoded tokens

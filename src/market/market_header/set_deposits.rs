@@ -2,28 +2,29 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
     market::{MarketHeader, MarketVariant},
+    quantities::DeltaAtoms,
     settlement::Delta,
     token::{HardcodedERC20, TokenMarker, ERC20, ETH},
-    types::{Pair, TupleReader},
+    types::{Pair, TupleMarker, TupleReader},
 };
 
 impl<'a, M, B, Q> MarketHeader<M, B, Q>
 where
     M: MarketVariant,
-    B: TokenMarker
-        + TupleReader<
-            <ETH as TokenMarker>::Deposit,
-            <HardcodedERC20 as TokenMarker>::Deposit,
-            (ETH, ERC20),
-            Result = <B as TokenMarker>::Deposit,
-        >,
-    Q: TokenMarker
-        + TupleReader<
-            <ETH as TokenMarker>::Deposit,
-            <HardcodedERC20 as TokenMarker>::Deposit,
-            (ETH, ERC20),
-            Result = <Q as TokenMarker>::Deposit,
-        >,
+    B: TokenMarker + 'static,
+    B::TupleMarker: TupleReader<
+        (),
+        DeltaAtoms,
+        (ETH, ERC20),
+        Result = <B::TupleMarker as TupleMarker>::Deposit,
+    >,
+    Q: TokenMarker + 'static,
+    Q::TupleMarker: TupleReader<
+        (),
+        DeltaAtoms,
+        (ETH, ERC20),
+        Result = <Q::TupleMarker as TupleMarker>::Deposit,
+    >,
 
     B::Deposit: Decodable<'a>,
     Q::Deposit: Decodable<'a>,

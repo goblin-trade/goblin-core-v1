@@ -2,7 +2,7 @@ use crate::{
     goblin_error::GoblinError,
     quantities::DeltaAtoms,
     token::{CustomERC20Data, ERC20Index, ERC20Marker, HardcodedERC20, TokenMarker, ERC20},
-    types::Address,
+    types::{Address, TupleMarker},
 };
 
 impl TokenMarker for HardcodedERC20 {
@@ -13,7 +13,8 @@ impl TokenMarker for HardcodedERC20 {
 
     type Address = Address;
 
-    type Deposit = DeltaAtoms;
+    type Deposit = <Self::TupleMarker as TupleMarker>::Deposit;
+    // type Deposit = DeltaAtoms;
 
     fn token_index_to_address(
         token_index: Self::TokenIndex,

@@ -5,7 +5,7 @@ use crate::{
     quantities::DeltaAtoms,
     settlement::Delta,
     token::{CustomERC20Data, HardcodedERC20, TokenMarker, ERC20, ETH},
-    types::{Address, TupleReader},
+    types::{Address, TupleMarker, TupleReader},
 };
 
 // problem- ERC20 doesn't implement TokenMarker now
@@ -18,24 +18,20 @@ pub fn process_market<'a, M, B, Q>(
 ) -> Result<(), GoblinError>
 where
     M: MarketVariant,
-    // B: TokenMarker + 'static,
-    // Q: TokenMarker + 'static,
-    B: TokenMarker
-        + 'static
-        + TupleReader<
-            (),
-            DeltaAtoms,
-            (ETH, ERC20), // problem- TupleReader uses ERC20 not HardcodedERC20
-            // how to make tuple reader work with new system?
-            Result = <B as TokenMarker>::Deposit,
-        >,
-    // Deposit is either `()` for ETH or `DeltaAtoms` for ERC20 (hardcoded or custom)
-    // problem- TupleReader uses (ETH, ERC20)
-    //
-    // Hack: use trait bound on tupleMarker that gives Deposit
-    Q: TokenMarker
-        + 'static
-        + TupleReader<(), DeltaAtoms, (ETH, ERC20), Result = <Q as TokenMarker>::Deposit>,
+    B: TokenMarker + 'static,
+    B::TupleMarker: TupleReader<
+        (),
+        DeltaAtoms,
+        (ETH, ERC20),
+        Result = <B::TupleMarker as TupleMarker>::Deposit,
+    >,
+    Q: TokenMarker + 'static,
+    Q::TupleMarker: TupleReader<
+        (),
+        DeltaAtoms,
+        (ETH, ERC20),
+        Result = <Q::TupleMarker as TupleMarker>::Deposit,
+    >,
     B::TokenIndex: Decodable<'a>,
     Q::TokenIndex: Decodable<'a>,
     B::Deposit: Decodable<'a>,
