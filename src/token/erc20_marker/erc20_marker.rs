@@ -1,6 +1,10 @@
 use crate::{
     goblin_error::GoblinError,
+    settlement::global_delta::{
+        ERC20Delta, ERC20MakerDeltas, ERC20SenderDeltas, UnsidedMakerDelta,
+    },
     token::{CustomERC20Data, ERC20Data, ERC20Index},
+    types::Address,
 };
 
 /// Marker trait for ERC20 tokens
@@ -16,4 +20,17 @@ pub trait ERC20Marker: Sized {
         erc20_index: ERC20Index<Self>,
         custom_erc20_list: &[CustomERC20Data],
     ) -> Result<&Self::Data, GoblinError>;
+
+    // No need, use markers directly
+    // HardcodedERC20::get_leg_mut(token_sender_deltas).get_delta_mut(market_erc20_index)
+    // fn sender_delta_mut(
+    //     erc20_index: ERC20Index<Self>,
+    //     erc20_sender_deltas: &mut ERC20SenderDeltas,
+    // ) -> &mut ERC20Delta;
+
+    // fn maker_delta_mut(
+    //     erc20_index: ERC20Index<Self>,
+    //     maker: Address,
+    //     token_maker_deltas: &mut ERC20MakerDeltas,
+    // ) -> Option<&mut UnsidedMakerDelta>;
 }

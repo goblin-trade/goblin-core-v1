@@ -2,7 +2,7 @@ use crate::{
     goblin_error::GoblinError,
     market::MarketVariant,
     quantities::DeltaAtoms,
-    token::{AddressMapper, CustomERC20Data, TokenMarker},
+    token::{CustomERC20Data, TokenMarker},
     types::Address,
 };
 

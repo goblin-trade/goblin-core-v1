@@ -6,7 +6,7 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
     market::{Dynamic, Hardcoded, HardcodedMarketList, MarketAndKey},
-    token::{AddressMapper, CustomERC20Data, TokenMarker},
+    token::{CustomERC20Data, TokenMarker},
 };
 
 pub trait MarketVariant: Clone + Copy {

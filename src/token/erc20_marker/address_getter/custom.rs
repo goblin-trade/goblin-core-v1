@@ -1,12 +1,12 @@
-use crate::{
-    goblin_error::GoblinError,
-    token::{AddressMapper, CustomERC20, CustomERC20Data, ERC20Marker, ERC20Index},
-    types::Address,
-};
+// use crate::{
+//     goblin_error::GoblinError,
+//     token::{AddressMapper, CustomERC20, CustomERC20Data, ERC20Marker, ERC20Index},
+//     types::Address,
+// };
 
-impl AddressMapper for ERC20Index<CustomERC20> {
-    fn address(self, custom_erc20_list: &[CustomERC20Data]) -> Result<Address, GoblinError> {
-        let store = CustomERC20::get_data(self, custom_erc20_list)?;
-        Ok(store.address)
-    }
-}
+// impl AddressMapper for ERC20Index<CustomERC20> {
+//     fn address(self, custom_erc20_list: &[CustomERC20Data]) -> Result<Address, GoblinError> {
+//         let store = CustomERC20::get_data(self, custom_erc20_list)?;
+//         Ok(store.address)
+//     }
+// }

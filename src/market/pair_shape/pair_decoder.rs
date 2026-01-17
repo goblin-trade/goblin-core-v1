@@ -5,7 +5,7 @@ use crate::{
     market::PairShape,
     quantities::DeltaAtoms,
     require,
-    token::{DynamicIndex, ERC20, ETH},
+    token::{ERC20, ETH},
     types::Tuple,
 };
 
