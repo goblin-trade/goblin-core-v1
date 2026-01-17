@@ -6,8 +6,9 @@ use crate::{
     types::Address,
 };
 
-/// TODO change- we need the ERC20 type (hardcoded or custom) for getting the delta
-/// Move the delta getter on TokenMarker. Remove it from MarketVariant
+/// Need 2 getters
+/// * hardcoded and custom
+/// * Replace MarketERC20Index with ERC20Index for hardcoded and custom
 
 /// Get deltas for a market variant
 pub trait DeltaGetter: MarketVariant {
