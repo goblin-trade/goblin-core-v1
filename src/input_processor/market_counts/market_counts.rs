@@ -3,7 +3,7 @@ use crate::{
     input_processor::DecodeCtx,
     market::{process_market, Dynamic, Hardcoded},
     settlement::Delta,
-    token::{CustomERC20Data, HardcodedERC20, ERC20, ETH},
+    token::{CustomERC20, CustomERC20Data, HardcodedERC20, ERC20, ETH},
     types::Address,
 };
 
@@ -54,8 +54,39 @@ impl MarketCounts {
         }
 
         // TODO 8 dynamic variants
+
         // 3- with hardcoded tokens
+        for _ in 0..self.inner[3] {
+            process_market::<Dynamic, ETH, HardcodedERC20>(
+                ctx,
+                msg_sender,
+                custom_erc20_list,
+                delta,
+            )?;
+        }
+
+        for _ in 0..self.inner[4] {
+            process_market::<Dynamic, HardcodedERC20, ETH>(
+                ctx,
+                msg_sender,
+                custom_erc20_list,
+                delta,
+            )?;
+        }
+
+        for _ in 0..self.inner[5] {
+            process_market::<Dynamic, HardcodedERC20, HardcodedERC20>(
+                ctx,
+                msg_sender,
+                custom_erc20_list,
+                delta,
+            )?;
+        }
         // 5- with hardcoded and custom mixed
+
+        // for _ in 0..self.inner[6] {
+        //     process_market::<Dynamic, ETH, CustomERC20>(ctx, msg_sender, custom_erc20_list, delta)?;
+        // }
 
         // Dynamic
         // for _ in 0..self.inner[3] {

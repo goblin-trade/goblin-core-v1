@@ -1,15 +1,13 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
-    market::{Dynamic, Hardcoded, HardcodedMarketList, MarketAndKey, MarketHeader, MarketVariant},
+    market::{Hardcoded, HardcodedMarketList, MarketAndKey, MarketHeader, MarketVariant},
     quantities::DeltaAtoms,
     settlement::Delta,
-    token::{CustomERC20Data, HardcodedERC20, TokenMarker, ERC20, ETH},
+    token::{CustomERC20Data, TokenMarker, ERC20, ETH},
     types::{Address, TupleMarker, TupleReader},
 };
 
-// problem- ERC20 doesn't implement TokenMarker now
-// We must use HardcodedERC20 or CustomERC20
 pub fn process_market<'a, M, B, Q>(
     ctx: &'a DecodeCtx<'a>,
     msg_sender: &Address,
