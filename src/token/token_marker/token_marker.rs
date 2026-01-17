@@ -1,4 +1,4 @@
-use crate::{goblin_error::GoblinError, token::CustomERC20Data};
+use crate::{goblin_error::GoblinError, token::CustomERC20Data, types::TupleMarker};
 
 /// Marker class for 'Token'. We have 2 tokens
 ///
@@ -7,7 +7,7 @@ use crate::{goblin_error::GoblinError, token::CustomERC20Data};
 pub trait TokenMarker: Clone + Copy {
     const DISCRIMINATOR: u8;
 
-    type TupleMarker;
+    type TupleMarker: TupleMarker;
 
     /// Index to lookup token address
     type TokenIndex: Clone + Copy;

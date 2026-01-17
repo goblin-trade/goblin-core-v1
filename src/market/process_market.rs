@@ -29,6 +29,10 @@ where
             // how to make tuple reader work with new system?
             Result = <B as TokenMarker>::Deposit,
         >,
+    // Deposit is either `()` for ETH or `DeltaAtoms` for ERC20 (hardcoded or custom)
+    // problem- TupleReader uses (ETH, ERC20)
+    //
+    // Hack: use trait bound on tupleMarker that gives Deposit
     Q: TokenMarker
         + 'static
         + TupleReader<(), DeltaAtoms, (ETH, ERC20), Result = <Q as TokenMarker>::Deposit>,
