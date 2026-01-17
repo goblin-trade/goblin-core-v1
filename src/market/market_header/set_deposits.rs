@@ -11,21 +11,20 @@ use crate::{
 impl<'a, M, B, Q> MarketHeader<M, B, Q>
 where
     M: MarketVariant,
-    B: TokenMarker + 'static,
+    B: TokenMarker,
     B::TupleMarker: TupleReader<
         (),
         DeltaAtoms,
         (ETH, ERC20),
         Result = <B::TupleMarker as TupleMarker>::Deposit,
     >,
-    Q: TokenMarker + 'static,
+    Q: TokenMarker,
     Q::TupleMarker: TupleReader<
         (),
         DeltaAtoms,
         (ETH, ERC20),
         Result = <Q::TupleMarker as TupleMarker>::Deposit,
     >,
-
     B::Deposit: Decodable<'a>,
     Q::Deposit: Decodable<'a>,
 {

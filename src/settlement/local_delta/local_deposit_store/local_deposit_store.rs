@@ -2,7 +2,7 @@ use crate::{
     quantities::DeltaAtoms,
     settlement::local_delta::DepositForSide,
     token::{TokenMarker, ERC20, ETH},
-    types::{Base, LegMatcher, Pair, Quote, TupleReader},
+    types::{Base, LegMatcher, Pair, Quote, TupleMarker, TupleReader},
 };
 
 pub type LocalDepositStore = Pair<DepositForSide, DepositForSide>;
@@ -12,25 +12,45 @@ impl LocalDepositStore {
         Self::new(DepositForSide::zero(), DepositForSide::zero())
     }
 
-    fn deposit_for_side<T, In>(&mut self, deposit: T::Deposit)
+    fn deposit_for_side<T, In>(&mut self, deposit: <T::TupleMarker as TupleMarker>::Deposit)
     where
-        T: TokenMarker
-            + TupleReader<(), DeltaAtoms, (ETH, ERC20), Result = <T as TokenMarker>::Deposit>,
+        T: TokenMarker,
+        T::TupleMarker: TupleReader<
+            (),
+            DeltaAtoms,
+            (ETH, ERC20),
+            Result = <T::TupleMarker as TupleMarker>::Deposit,
+        >,
         In: LegMatcher
             + TupleReader<DepositForSide, DepositForSide, (Base, Quote), Result = DepositForSide>,
     {
         let deposit_for_leg_marker = In::get_leg_mut(self);
-        let deposit_for_token_marker = T::get_leg_mut(deposit_for_leg_marker);
+        let deposit_for_token_marker = T::TupleMarker::get_leg_mut(deposit_for_leg_marker);
 
         *deposit_for_token_marker = deposit;
     }
 
-    pub fn set_deposits<B, Q>(&mut self, deposit_pair: &Pair<B::Deposit, Q::Deposit>)
-    where
-        B: TokenMarker
-            + TupleReader<(), DeltaAtoms, (ETH, ERC20), Result = <B as TokenMarker>::Deposit>,
-        Q: TokenMarker
-            + TupleReader<(), DeltaAtoms, (ETH, ERC20), Result = <Q as TokenMarker>::Deposit>,
+    pub fn set_deposits<B, Q>(
+        &mut self,
+        deposit_pair: &Pair<
+            <B::TupleMarker as TupleMarker>::Deposit,
+            <Q::TupleMarker as TupleMarker>::Deposit,
+        >,
+    ) where
+        B: TokenMarker,
+        B::TupleMarker: TupleReader<
+            (),
+            DeltaAtoms,
+            (ETH, ERC20),
+            Result = <B::TupleMarker as TupleMarker>::Deposit,
+        >,
+        Q: TokenMarker,
+        Q::TupleMarker: TupleReader<
+            (),
+            DeltaAtoms,
+            (ETH, ERC20),
+            Result = <Q::TupleMarker as TupleMarker>::Deposit,
+        >,
     {
         // Map B to Base and Q to Quote
         // Rust limitation- we need to explicitly map the generic to its correct side
@@ -40,12 +60,25 @@ impl LocalDepositStore {
 
     pub fn reset<B, Q>(&mut self)
     where
-        B: TokenMarker
-            + TupleReader<(), DeltaAtoms, (ETH, ERC20), Result = <B as TokenMarker>::Deposit>,
-        Q: TokenMarker
-            + TupleReader<(), DeltaAtoms, (ETH, ERC20), Result = <Q as TokenMarker>::Deposit>,
+        B: TokenMarker,
+        B::TupleMarker: TupleReader<
+            (),
+            DeltaAtoms,
+            (ETH, ERC20),
+            Result = <B::TupleMarker as TupleMarker>::Deposit,
+        >,
+        Q: TokenMarker,
+        Q::TupleMarker: TupleReader<
+            (),
+            DeltaAtoms,
+            (ETH, ERC20),
+            Result = <Q::TupleMarker as TupleMarker>::Deposit,
+        >,
     {
-        let deposit_pair = Pair::<B::Deposit, Q::Deposit>::default();
+        let deposit_pair = Pair::<
+            <B::TupleMarker as TupleMarker>::Deposit,
+            <Q::TupleMarker as TupleMarker>::Deposit,
+        >::default();
         self.set_deposits::<B, Q>(&deposit_pair);
     }
 }

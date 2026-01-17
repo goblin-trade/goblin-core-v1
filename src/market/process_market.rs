@@ -54,10 +54,10 @@ where
         &mut market_state,
     )?;
 
-    // // // TODO commit local delta into global delta
+    // // TODO commit local delta into global delta
 
-    // // Reset local delta for reuse
-    // delta.local.deposits.reset::<B, Q>();
+    // Reset local delta for reuse
+    delta.local.deposits.reset::<B, Q>();
 
     Ok(())
 }
