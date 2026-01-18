@@ -1,10 +1,6 @@
 use crate::{
     goblin_error::GoblinError,
-    settlement::global_delta::{
-        ERC20Delta, ERC20MakerDeltas, ERC20SenderDeltas, UnsidedMakerDelta,
-    },
     token::{CustomERC20Data, ERC20Data, ERC20Index},
-    types::Address,
 };
 
 /// Marker trait for ERC20 tokens
