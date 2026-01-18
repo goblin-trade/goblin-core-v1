@@ -44,7 +44,10 @@ where
 
     let mut market_state = market_and_key.key.load();
 
-    market_header.set_deposits(ctx, delta)?;
+    if market_header.decode_deposit_amounts {
+        delta.local.deposits.set_deposits::<B, Q>(ctx)?;
+    }
+
     market_header.execute_takes(
         ctx,
         msg_sender,

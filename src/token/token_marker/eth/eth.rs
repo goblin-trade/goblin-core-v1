@@ -1,7 +1,8 @@
 use crate::{
     goblin_error::GoblinError,
+    settlement::local_delta::Deposits,
     token::{CustomERC20Data, TokenMarker},
-    types::TupleMarker,
+    types::{LegMatcher, TupleMarker},
 };
 
 #[derive(Clone, Copy, Default)]
@@ -22,4 +23,7 @@ impl TokenMarker for ETH {
     ) -> Result<Self::Address, GoblinError> {
         Ok(())
     }
+
+    // Stub. ETH cannot be deposited.
+    fn set_deposit<In: LegMatcher>(_deposits: &mut Deposits, _deposit_amount: Self::Deposit) {}
 }

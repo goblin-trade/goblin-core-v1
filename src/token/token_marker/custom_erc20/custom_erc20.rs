@@ -1,8 +1,9 @@
 use crate::{
     goblin_error::GoblinError,
     quantities::DeltaAtoms,
+    settlement::local_delta::Deposits,
     token::{CustomERC20, CustomERC20Data, ERC20Index, ERC20Marker, TokenMarker, ERC20},
-    types::{Address, TupleMarker},
+    types::{Address, Base, LegMatcher, Quote, TupleMarker, TupleReader},
 };
 
 impl TokenMarker for CustomERC20 {
@@ -22,5 +23,12 @@ impl TokenMarker for CustomERC20 {
     ) -> Result<Self::Address, GoblinError> {
         let data = CustomERC20::get_data(token_index, custom_erc20_list)?;
         Ok(data.address)
+    }
+
+    fn set_deposit<In>(deposits: &mut Deposits, deposit_amount: Self::Deposit)
+    where
+        In: LegMatcher + TupleReader<DeltaAtoms, DeltaAtoms, (Base, Quote), Result = DeltaAtoms>,
+    {
+        *In::get_leg_mut(deposits) = deposit_amount;
     }
 }

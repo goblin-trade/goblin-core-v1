@@ -1,8 +1,9 @@
 use crate::{
     market::PairShape,
     quantities::DeltaAtoms,
-    settlement::local_delta::{LocalDepositStore, LocalMakerDeltas, LocalSenderDelta},
+    settlement::local_delta::{Deposits, LocalMakerDeltas, LocalSenderDelta},
     token::{ERC20, ETH},
+    types::Pair,
 };
 
 pub struct LocalDelta {
@@ -12,7 +13,7 @@ pub struct LocalDelta {
     /// Deltas for makers of matched resting orders
     pub local_maker_deltas: LocalMakerDeltas,
 
-    pub deposits: LocalDepositStore,
+    pub deposits: Deposits,
 }
 
 impl LocalDelta {
@@ -20,7 +21,7 @@ impl LocalDelta {
         Self {
             local_sender_delta: LocalSenderDelta::zero(),
             local_maker_deltas: LocalMakerDeltas::zero(),
-            deposits: LocalDepositStore::zero(),
+            deposits: Pair::new(DeltaAtoms::ZERO, DeltaAtoms::ZERO),
         }
     }
 

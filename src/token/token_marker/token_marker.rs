@@ -1,4 +1,10 @@
-use crate::{goblin_error::GoblinError, token::CustomERC20Data, types::TupleMarker};
+use crate::{
+    goblin_error::GoblinError,
+    quantities::DeltaAtoms,
+    settlement::local_delta::Deposits,
+    token::CustomERC20Data,
+    types::{Base, LegMatcher, Quote, TupleMarker, TupleReader},
+};
 
 /// Marker class for 'Token'. We have 2 tokens
 ///
@@ -16,7 +22,6 @@ pub trait TokenMarker: Clone + Copy {
     type Address: Clone + Copy + Sized + Default;
 
     /// Data type representing pending deposit amount
-    // type Deposit = <Self::TupleMarker as TupleMarker>::Deposit;
     type Deposit: Clone + Copy + Default;
 
     /// Map the token index to address
@@ -32,4 +37,9 @@ pub trait TokenMarker: Clone + Copy {
         token_index: Self::TokenIndex,
         custom_erc20_list: &[CustomERC20Data],
     ) -> Result<Self::Address, GoblinError>;
+
+    /// Save deposit amount in deposit store
+    fn set_deposit<In>(deposits: &mut Deposits, deposit_amount: Self::Deposit)
+    where
+        In: LegMatcher + TupleReader<DeltaAtoms, DeltaAtoms, (Base, Quote), Result = DeltaAtoms>;
 }
