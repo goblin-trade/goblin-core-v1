@@ -2,26 +2,29 @@ use crate::{
     goblin_error::GoblinError,
     quantities::DeltaAtoms,
     settlement::local_delta::Deposits,
-    token::{CustomERC20Data, ERC20Index, ERC20Marker, HardcodedERC20, TokenMarker, ERC20},
-    types::{Address, Base, LegMatcher, Quote, TupleMarker, TupleReader},
+    token::{CustomERC20Data, HardcodedERC20, HardcodedERC20Index, TokenMarker, HARDCODED_TOKENS},
+    types::{Address, Base, LegMatcher, Quote, TupleReader},
 };
 
 impl TokenMarker for HardcodedERC20 {
     const DISCRIMINATOR: u8 = 1;
-    type TupleMarker = ERC20;
+    // type TupleMarker = ERC20;
 
-    type TokenIndex = ERC20Index<Self>;
+    type TokenIndex = HardcodedERC20Index;
 
     type Address = Address;
 
-    type Deposit = <Self::TupleMarker as TupleMarker>::Deposit;
+    type Deposit = DeltaAtoms;
     // type Deposit = DeltaAtoms;
 
     fn token_index_to_address(
         token_index: Self::TokenIndex,
         custom_erc20_list: &[CustomERC20Data],
     ) -> Result<Self::Address, GoblinError> {
-        let data = HardcodedERC20::get_data(token_index, custom_erc20_list)?;
+        let data = HARDCODED_TOKENS
+            .get(token_index.0)
+            .ok_or(GoblinError::InvalidHardcodedTokenIndex)?;
+
         Ok(data.address)
     }
 

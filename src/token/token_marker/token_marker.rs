@@ -3,7 +3,7 @@ use crate::{
     quantities::DeltaAtoms,
     settlement::local_delta::Deposits,
     token::CustomERC20Data,
-    types::{Base, LegMatcher, Quote, TupleMarker, TupleReader},
+    types::{Base, LegMatcher, Quote, TupleReader},
 };
 
 /// Marker class for 'Token'. We have 2 tokens
@@ -13,7 +13,7 @@ use crate::{
 pub trait TokenMarker: Clone + Copy {
     const DISCRIMINATOR: u8;
 
-    type TupleMarker: TupleMarker;
+    // type TupleMarker: TupleMarker;
 
     /// Index to lookup token address
     type TokenIndex: Clone + Copy;

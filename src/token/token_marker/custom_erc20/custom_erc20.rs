@@ -2,15 +2,15 @@ use crate::{
     goblin_error::GoblinError,
     quantities::DeltaAtoms,
     settlement::local_delta::Deposits,
-    token::{CustomERC20, CustomERC20Data, ERC20Index, ERC20Marker, TokenMarker, ERC20},
+    token::{CustomERC20, CustomERC20Data, CustomERC20Index, TokenMarker, ERC20},
     types::{Address, Base, LegMatcher, Quote, TupleMarker, TupleReader},
 };
 
 impl TokenMarker for CustomERC20 {
     const DISCRIMINATOR: u8 = 2;
-    type TupleMarker = ERC20;
+    // type TupleMarker = ERC20;
 
-    type TokenIndex = ERC20Index<Self>;
+    type TokenIndex = CustomERC20Index;
 
     type Address = Address;
 
@@ -21,7 +21,9 @@ impl TokenMarker for CustomERC20 {
         token_index: Self::TokenIndex,
         custom_erc20_list: &[CustomERC20Data],
     ) -> Result<Self::Address, GoblinError> {
-        let data = CustomERC20::get_data(token_index, custom_erc20_list)?;
+        let data = custom_erc20_list
+            .get(token_index.0)
+            .ok_or(GoblinError::InvalidCustomTokenIndex)?;
         Ok(data.address)
     }
 
