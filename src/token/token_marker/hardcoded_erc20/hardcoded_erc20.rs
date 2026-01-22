@@ -2,9 +2,11 @@ use crate::{
     goblin_error::GoblinError,
     quantities::DeltaAtoms,
     settlement::local_delta::Deposits,
-    token::{CustomERC20Data, HardcodedERC20, HardcodedERC20Index, TokenMarker, HARDCODED_TOKENS},
+    token::{CustomERC20Data, HardcodedERC20Index, TokenMarker, HARDCODED_TOKENS},
     types::{Address, Base, LegMatcher, Quote, TupleReader},
 };
+
+pub struct HardcodedERC20;
 
 impl TokenMarker for HardcodedERC20 {
     const DISCRIMINATOR: u8 = 1;

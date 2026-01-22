@@ -10,7 +10,7 @@ pub struct ETH;
 
 impl TokenMarker for ETH {
     const DISCRIMINATOR: u8 = 0;
-    type TupleMarker = Self;
+    // type TupleMarker = Self;
 
     type TokenIndex = ();
     type Address = ();

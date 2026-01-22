@@ -1,11 +1,12 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
-    token::{ERC20Index, HardcodedERC20, TokenMarker},
+    token::HardcodedERC20Index,
 };
 
-impl<'a> Decodable<'a> for <HardcodedERC20 as TokenMarker>::TokenIndex {
+impl<'a> Decodable<'a> for HardcodedERC20Index {
     fn try_decode(ctx: &'a DecodeCtx<'a>) -> Result<Self, GoblinError> {
-        u8::try_decode(ctx).map(ERC20Index::new)
+        let index_raw = u8::try_decode(ctx)? as usize;
+        Ok(HardcodedERC20Index(index_raw))
     }
 }
