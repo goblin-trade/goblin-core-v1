@@ -5,7 +5,7 @@ use crate::{
     types::LegMatcher,
 };
 
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Default, PartialEq)]
 pub struct ETH;
 
 impl TokenMarker for ETH {

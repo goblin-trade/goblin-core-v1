@@ -1,12 +1,40 @@
-use crate::settlement::global_delta::{ERC20MakerDeltas, ETHMakerDeltas};
-// TODO convert to triple, TokenTriple
+use crate::{
+    settlement::global_delta::{
+        maker_custom_deltas::MakerCustomDeltas, maker_hardcoded_deltas::MakerHardcodedDeltas,
+        ETHMakerDeltas, MakerDeltaKey, UnsidedMakerDelta,
+    },
+    token::{CustomERC20Index, HardcodedERC20Index},
+    types::{FixedMap, TokenTriple},
+};
 
 /// Global deltas of makers that matched against msg.sender
-pub type GlobalMakerDeltas = TokenPair<ETHMakerDeltas, ERC20MakerDeltas>;
+pub type GlobalMakerDeltas = TokenTriple<ETHMakerDeltas, MakerHardcodedDeltas, MakerCustomDeltas>;
 
 impl GlobalMakerDeltas {
     pub const fn zero() -> Self {
-        Self::new(ETHMakerDeltas::zero(), ERC20MakerDeltas::zero())
+        Self::new(
+            ETHMakerDeltas::zero(),
+            FixedMap {
+                entries: [(
+                    MakerDeltaKey {
+                        maker: [0u8; 20],
+                        token_index: HardcodedERC20Index(0),
+                    },
+                    UnsidedMakerDelta::zero(),
+                ); 16],
+                len: 0,
+            },
+            FixedMap {
+                entries: [(
+                    MakerDeltaKey {
+                        maker: [0u8; 20],
+                        token_index: CustomERC20Index(0),
+                    },
+                    UnsidedMakerDelta::zero(),
+                ); 16],
+                len: 0,
+            },
+        )
     }
 }
 

@@ -6,7 +6,7 @@ use crate::{
     types::{Address, Base, LegMatcher, Quote, TupleReader},
 };
 
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Default, PartialEq)]
 pub struct CustomERC20;
 
 impl TokenMarker for CustomERC20 {

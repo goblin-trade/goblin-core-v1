@@ -5,7 +5,7 @@ use crate::{
     token::{CustomERC20Data, HardcodedERC20Index, TokenMarker, HARDCODED_TOKENS},
     types::{Address, Base, LegMatcher, Quote, TupleReader},
 };
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Default, PartialEq)]
 pub struct HardcodedERC20;
 
 impl TokenMarker for HardcodedERC20 {
