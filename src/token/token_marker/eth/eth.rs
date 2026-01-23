@@ -2,7 +2,7 @@ use crate::{
     goblin_error::GoblinError,
     settlement::local_delta::Deposits,
     token::{CustomERC20Data, TokenMarker},
-    types::{LegMatcher, TupleMarker},
+    types::LegMatcher,
 };
 
 #[derive(Clone, Copy, Default)]
@@ -14,8 +14,7 @@ impl TokenMarker for ETH {
 
     type TokenIndex = ();
     type Address = ();
-    type Deposit = <Self::TupleMarker as TupleMarker>::Deposit;
-    // type Deposit = ();
+    type Deposit = ();
 
     fn token_index_to_address(
         _token_index: Self::TokenIndex,

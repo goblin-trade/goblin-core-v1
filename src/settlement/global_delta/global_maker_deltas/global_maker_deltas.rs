@@ -1,7 +1,5 @@
-use crate::{
-    settlement::global_delta::{ERC20MakerDeltas, ETHMakerDeltas},
-    types::TokenPair,
-};
+use crate::settlement::global_delta::{ERC20MakerDeltas, ETHMakerDeltas};
+// TODO convert to triple, TokenTriple
 
 /// Global deltas of makers that matched against msg.sender
 pub type GlobalMakerDeltas = TokenPair<ETHMakerDeltas, ERC20MakerDeltas>;

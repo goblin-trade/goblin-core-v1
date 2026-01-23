@@ -1,9 +1,9 @@
 pub mod decoder;
 pub mod hardcoded_erc20;
-
 pub mod hardcoded_erc20_data;
 pub mod hardcoded_erc20_index;
 
+pub use hardcoded_erc20::*;
 pub use hardcoded_erc20_data::*;
 pub use hardcoded_erc20_index::*;
 

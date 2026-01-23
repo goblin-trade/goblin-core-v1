@@ -5,19 +5,15 @@ use crate::{
     token::{CustomERC20Data, HardcodedERC20Index, TokenMarker, HARDCODED_TOKENS},
     types::{Address, Base, LegMatcher, Quote, TupleReader},
 };
-
+#[derive(Clone, Copy, Default)]
 pub struct HardcodedERC20;
 
 impl TokenMarker for HardcodedERC20 {
     const DISCRIMINATOR: u8 = 1;
-    // type TupleMarker = ERC20;
 
     type TokenIndex = HardcodedERC20Index;
-
     type Address = Address;
-
     type Deposit = DeltaAtoms;
-    // type Deposit = DeltaAtoms;
 
     fn token_index_to_address(
         token_index: Self::TokenIndex,

@@ -2,7 +2,6 @@ use crate::{
     market::PairShape,
     quantities::DeltaAtoms,
     settlement::local_delta::{Deposits, LocalMakerDeltas, LocalSenderDelta},
-    token::{ERC20, ETH},
     types::Pair,
 };
 

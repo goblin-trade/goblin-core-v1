@@ -2,22 +2,19 @@ use crate::{
     goblin_error::GoblinError,
     quantities::DeltaAtoms,
     settlement::local_delta::Deposits,
-    token::{CustomERC20Data, CustomERC20Index, TokenMarker, ERC20},
-    types::{Address, Base, LegMatcher, Quote, TupleMarker, TupleReader},
+    token::{CustomERC20Data, CustomERC20Index, TokenMarker},
+    types::{Address, Base, LegMatcher, Quote, TupleReader},
 };
 
+#[derive(Clone, Copy, Default)]
 pub struct CustomERC20;
 
 impl TokenMarker for CustomERC20 {
     const DISCRIMINATOR: u8 = 2;
-    // type TupleMarker = ERC20;
 
     type TokenIndex = CustomERC20Index;
-
     type Address = Address;
-
-    type Deposit = <Self::TupleMarker as TupleMarker>::Deposit;
-    // type Deposit = DeltaAtoms;
+    type Deposit = DeltaAtoms;
 
     fn token_index_to_address(
         token_index: Self::TokenIndex,
