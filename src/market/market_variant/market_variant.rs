@@ -32,15 +32,13 @@ pub trait MarketVariant: Clone + Copy {
     type DecodedMarket<B: TokenMarker, Q: TokenMarker>;
 
     /// Get DecodedMarket from args
-    fn decode<'a, B, Q>(
-        ctx: &'a DecodeCtx<'a>,
+    fn decode<B, Q>(
+        ctx: &DecodeCtx,
         custom_erc20_list: &[CustomERC20Data],
     ) -> Result<Self::DecodedMarket<B, Q>, GoblinError>
     where
         B: TokenMarker,
-        Q: TokenMarker,
-        B::TokenIndex: Decodable<'a>,
-        Q::TokenIndex: Decodable<'a>;
+        Q: TokenMarker;
 
     /// Obtain reference to the market and key
     ///

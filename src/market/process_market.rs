@@ -7,8 +7,8 @@ use crate::{
     types::Address,
 };
 
-pub fn process_market<'a, M, B, Q>(
-    ctx: &'a DecodeCtx<'a>,
+pub fn process_market<M, B, Q>(
+    ctx: &DecodeCtx,
     msg_sender: &Address,
     custom_erc20_list: &[CustomERC20Data],
     delta: &mut Delta,
@@ -17,10 +17,6 @@ where
     M: MarketVariant,
     B: TokenMarker + 'static,
     Q: TokenMarker + 'static,
-    B::TokenIndex: Decodable<'a>,
-    Q::TokenIndex: Decodable<'a>,
-    B::Deposit: Decodable<'a>,
-    Q::Deposit: Decodable<'a>,
     MarketAndKey<Hardcoded, B, Q>: HardcodedMarketList<B, Q>,
 {
     let market_header = MarketHeader::<M, B, Q>::try_decode(ctx)?;

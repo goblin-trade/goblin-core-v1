@@ -13,12 +13,10 @@ use crate::{
 pub type Deposits = Pair<DeltaAtoms, DeltaAtoms>;
 
 impl Deposits {
-    pub fn set_deposits<'a, B, Q>(&mut self, ctx: &'a DecodeCtx<'a>) -> Result<(), GoblinError>
+    pub fn set_deposits<'a, B, Q>(&mut self, ctx: &DecodeCtx) -> Result<(), GoblinError>
     where
         B: TokenMarker,
         Q: TokenMarker,
-        B::Deposit: Decodable<'a>,
-        Q::Deposit: Decodable<'a>,
     {
         let base_deposit = B::Deposit::try_decode(ctx)?;
         let quote_deposit = Q::Deposit::try_decode(ctx)?;

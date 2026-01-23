@@ -1,8 +1,12 @@
+use core::mem::MaybeUninit;
+
 use crate::{
     goblin_error::GoblinError,
-    hostio::{self},
-    input_processor::{Calldata, Decodable, DecodeCtx, GlobalHeader},
+    hostio::{self, hostio_unsafe},
+    input_processor::{DecodeCtx, GlobalHeader},
+    require,
     settlement::Delta,
+    types::Address,
 };
 
 pub const CONTRACT_ADDRESS: [u8; 20] = [
@@ -11,15 +15,23 @@ pub const CONTRACT_ADDRESS: [u8; 20] = [
 ];
 
 pub fn processor(len: usize) -> Result<(), GoblinError> {
-    let calldata = Calldata::load()?;
+    let msg_reentrant = hostio::msg_reentrant();
+    require!(!msg_reentrant, GoblinError::Reentrant);
+
+    let mut msg_sender_buffer = MaybeUninit::<Address>::uninit();
+    let msg_sender = unsafe {
+        hostio_unsafe::msg_sender(msg_sender_buffer.as_mut_ptr() as *mut u8);
+        msg_sender_buffer.assume_init_ref()
+    };
+
     let delta = Delta::get_static();
 
-    let ctx = &mut DecodeCtx::new(&calldata.args, len);
+    let ctx = &mut DecodeCtx::new(len);
 
-    let global_header = GlobalHeader::try_decode(ctx)?;
+    let global_header = GlobalHeader::new(ctx)?;
     global_header.market_counts.process_markets(
         ctx,
-        &calldata.msg_sender,
+        msg_sender,
         global_header.custom_erc20_list,
         delta,
     )?;

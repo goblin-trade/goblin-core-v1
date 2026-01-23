@@ -4,8 +4,8 @@ use crate::{
     token::CustomERC20Index,
 };
 
-impl<'a> Decodable<'a> for CustomERC20Index {
-    fn try_decode(ctx: &'a DecodeCtx<'a>) -> Result<Self, GoblinError> {
+impl Decodable for CustomERC20Index {
+    fn try_decode(ctx: &DecodeCtx) -> Result<Self, GoblinError> {
         let index_raw = u8::try_decode(ctx)? as usize;
         Ok(CustomERC20Index(index_raw))
     }

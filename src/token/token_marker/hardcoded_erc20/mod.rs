@@ -1,4 +1,4 @@
-pub mod decoder;
+mod decoder;
 pub mod hardcoded_erc20;
 pub mod hardcoded_erc20_data;
 pub mod hardcoded_erc20_index;

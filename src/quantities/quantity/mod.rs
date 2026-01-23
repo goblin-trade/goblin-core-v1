@@ -1,5 +1,5 @@
 pub mod alias;
-pub mod decode;
+mod decode;
 pub mod dim;
 pub mod exp;
 pub mod quantity;

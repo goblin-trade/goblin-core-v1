@@ -23,8 +23,8 @@ pub struct TakePacket<In: LegMatcher + LegValidator> {
     pub price_limit: Ticks,
 }
 
-impl<'a, In: LegMatcher + LegValidator> Decodable<'a> for TakePacket<In> {
-    fn try_decode(ctx: &'a DecodeCtx<'a>) -> Result<Self, GoblinError> {
+impl<In: LegMatcher + LegValidator> Decodable for TakePacket<In> {
+    fn try_decode(ctx: &DecodeCtx) -> Result<Self, GoblinError> {
         // 2 bits for flags and rest 62 bits for num_lots
         let flags_and_num_lots_raw = u64::try_decode(ctx)?;
 

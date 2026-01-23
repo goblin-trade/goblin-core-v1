@@ -6,13 +6,13 @@ use crate::{
     types::Tuple,
 };
 
-impl<'a, M, B, Q> Decodable<'a> for MarketHeader<M, B, Q>
+impl<M, B, Q> Decodable for MarketHeader<M, B, Q>
 where
     M: MarketVariant,
     B: TokenMarker,
     Q: TokenMarker,
 {
-    fn try_decode(ctx: &'a DecodeCtx<'a>) -> Result<Self, GoblinError> {
+    fn try_decode(ctx: &DecodeCtx) -> Result<Self, GoblinError> {
         let byte_0 = u8::try_decode(ctx)?;
 
         let decode_deposit_amounts = (byte_0 & 0b0000_0001) != 0;

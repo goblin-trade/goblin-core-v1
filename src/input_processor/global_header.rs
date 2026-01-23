@@ -23,8 +23,8 @@ pub struct GlobalHeader<'a> {
     pub custom_erc20_list: &'a [CustomERC20Data],
 }
 
-impl<'a> Decodable<'a> for GlobalHeader<'a> {
-    fn try_decode(ctx: &'a DecodeCtx<'a>) -> Result<Self, GoblinError> {
+impl<'a> GlobalHeader<'a> {
+    pub fn new(ctx: &'a DecodeCtx) -> Result<Self, GoblinError> {
         let flags = HeaderFlags::try_decode(ctx)?;
         let market_counts = MarketCounts::try_decode(ctx)?;
         let eth_transfers = EthTransfers::new(ctx, &flags)?;

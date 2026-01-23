@@ -15,9 +15,9 @@ where
     B: TokenMarker,
     Q: TokenMarker,
 {
-    pub fn execute_takes<'a>(
+    pub fn execute_takes(
         &self,
-        ctx: &'a DecodeCtx<'a>,
+        ctx: &DecodeCtx,
         msg_sender: &Address,
         local_delta: &mut LocalDelta,
         common_market: &CommonMarket<M, B, Q>,

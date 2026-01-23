@@ -8,14 +8,12 @@ use crate::{
     types::Pair,
 };
 
-impl<'a, B, Q> Decodable<'a> for CommonMarket<Dynamic, B, Q>
+impl<B, Q> Decodable for CommonMarket<Dynamic, B, Q>
 where
     B: TokenMarker,
     Q: TokenMarker,
-    B::TokenIndex: Decodable<'a>,
-    Q::TokenIndex: Decodable<'a>,
 {
-    fn try_decode(ctx: &'a DecodeCtx<'a>) -> Result<Self, GoblinError> {
+    fn try_decode(ctx: &DecodeCtx) -> Result<Self, GoblinError> {
         let base_token_index = B::TokenIndex::try_decode(ctx)?;
         let quote_token_index = Q::TokenIndex::try_decode(ctx)?;
 

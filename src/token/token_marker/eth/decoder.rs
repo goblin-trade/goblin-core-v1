@@ -5,8 +5,8 @@ use crate::{
 
 /// Decoder for ETH::TokenIndex<M> and ETH::Deposit
 /// The value of both is `()`, so we simply return `()`
-impl<'a> Decodable<'a> for () {
-    fn try_decode(_ctx: &'a DecodeCtx<'a>) -> Result<(), GoblinError> {
+impl Decodable for () {
+    fn try_decode(_ctx: &DecodeCtx) -> Result<(), GoblinError> {
         Ok(())
     }
 }

@@ -11,8 +11,8 @@ use crate::{
     types::{Address, Base, LegMatcher, LegValidator, Quote, TupleReader},
 };
 
-pub fn ix_take<'a, M, B, Q, In>(
-    ctx: &'a DecodeCtx<'a>,
+pub fn ix_take<M, B, Q, In>(
+    ctx: &DecodeCtx,
     msg_sender: &Address,
     local_delta: &mut LocalDelta,
     market: &CommonMarket<M, B, Q>,

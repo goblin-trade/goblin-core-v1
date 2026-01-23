@@ -13,14 +13,14 @@ impl MarketVariant for Hardcoded {
 
     type DecodedMarket<B: TokenMarker, Q: TokenMarker> = DangerousMarketIndex<B, Q>;
 
-    fn decode<'a, B, Q>(
-        ctx: &'a DecodeCtx<'a>,
+    fn decode<B, Q>(
+        ctx: &DecodeCtx,
         _custom_erc20_list: &[CustomERC20Data],
     ) -> Result<Self::DecodedMarket<B, Q>, GoblinError>
     where
         B: TokenMarker,
         Q: TokenMarker,
-        DangerousMarketIndex<B, Q>: Decodable<'a>,
+        DangerousMarketIndex<B, Q>: Decodable,
     {
         DangerousMarketIndex::<B, Q>::try_decode(ctx)
     }

@@ -20,8 +20,8 @@ impl DeltaAtoms {
     }
 }
 
-impl<'a> Decodable<'a> for DeltaAtoms {
-    fn try_decode(ctx: &'a DecodeCtx<'a>) -> Result<Self, GoblinError> {
+impl Decodable for DeltaAtoms {
+    fn try_decode(ctx: &DecodeCtx) -> Result<Self, GoblinError> {
         i64::try_decode(ctx).map(DeltaAtoms::new)
     }
 }

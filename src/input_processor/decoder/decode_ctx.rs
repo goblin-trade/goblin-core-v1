@@ -1,21 +1,37 @@
+use crate::hostio::hostio_unsafe;
 use crate::input_processor::ArgsBuffer;
 use core::cell::Cell;
+use core::mem::MaybeUninit;
 
-pub struct DecodeCtx<'a> {
-    pub args: &'a [u8],
+pub struct DecodeCtx {
+    pub args: ArgsBuffer,
+    pub len: usize,
     pub offset: Cell<usize>,
 }
 
-impl<'a> DecodeCtx<'a> {
-    pub fn new(args_buffer: &'a ArgsBuffer, len: usize) -> Self {
+impl DecodeCtx {
+    pub fn new(len: usize) -> Self {
+        let mut args_buffer = MaybeUninit::<ArgsBuffer>::uninit();
+        let args = unsafe {
+            hostio_unsafe::read_args(args_buffer.as_mut_ptr() as *mut u8);
+            args_buffer.assume_init()
+        };
+
         Self {
-            args: &args_buffer[..len],
+            args,
+            len,
             offset: Cell::<usize>::default(),
         }
     }
+    // pub fn new(args_buffer: &'a ArgsBuffer, len: usize) -> Self {
+    //     Self {
+    //         args: &args_buffer[..len],
+    //         offset: Cell::<usize>::default(),
+    //     }
+    // }
 
     pub fn len(&self) -> usize {
-        self.args.len()
+        self.len
     }
 
     pub fn advance_offset(&self, increment: usize) {

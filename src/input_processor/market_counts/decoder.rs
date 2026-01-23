@@ -6,7 +6,7 @@ use crate::{
 
 const BYTE_COUNT: usize = 6;
 
-impl<'a> Decodable<'a> for MarketCounts {
+impl Decodable for MarketCounts {
     fn try_decode(ctx: &DecodeCtx) -> Result<Self, GoblinError> {
         require!(
             ctx.len() >= ctx.offset.get() + BYTE_COUNT,

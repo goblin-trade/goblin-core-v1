@@ -25,7 +25,7 @@ pub struct HeaderFlags {
     pub withdraw_internally: bool,
 }
 
-impl<'a> Decodable<'a> for HeaderFlags {
+impl Decodable for HeaderFlags {
     fn try_decode(ctx: &DecodeCtx) -> Result<Self, GoblinError> {
         require!(ctx.len() >= BYTE_COUNT, GoblinError::InvalidPayload);
 

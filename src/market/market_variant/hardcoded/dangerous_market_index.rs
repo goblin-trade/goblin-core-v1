@@ -32,12 +32,12 @@ where
     }
 }
 
-impl<'a, B, Q> Decodable<'a> for DangerousMarketIndex<B, Q>
+impl<B, Q> Decodable for DangerousMarketIndex<B, Q>
 where
     B: TokenMarker,
     Q: TokenMarker,
 {
-    fn try_decode(ctx: &'a DecodeCtx<'a>) -> Result<Self, GoblinError> {
+    fn try_decode(ctx: &DecodeCtx) -> Result<Self, GoblinError> {
         let market_index_raw = u8::try_decode(ctx)? as usize;
         Ok(DangerousMarketIndex::<B, Q>::new(market_index_raw))
     }

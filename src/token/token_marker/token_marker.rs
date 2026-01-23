@@ -1,38 +1,25 @@
 use crate::{
     goblin_error::GoblinError,
+    input_processor::Decodable,
     quantities::DeltaAtoms,
     settlement::local_delta::Deposits,
     token::CustomERC20Data,
     types::{Base, LegMatcher, Quote, TupleReader},
 };
 
-/// Marker class for 'Token'. We have 2 tokens
-///
-/// 1. ETH
-/// 2. ERC20- this has sub variants hardcoded and custom, covered by ERC20Marker
+/// Marker class for 'Token'. We have 3 variants- ETH, HardcodedERC20 and CustomERC20
 pub trait TokenMarker: Clone + Copy {
     const DISCRIMINATOR: u8;
 
-    // type TupleMarker: TupleMarker;
-
     /// Index to lookup token address
-    type TokenIndex: Clone + Copy;
+    type TokenIndex: Clone + Copy + Decodable;
 
     /// Token address
     type Address: Clone + Copy + Sized + Default;
 
     /// Data type representing pending deposit amount
-    type Deposit: Clone + Copy + Default;
+    type Deposit: Clone + Copy + Default + Decodable;
 
-    /// Map the token index to address
-    ///
-    /// This function has 2 variations for TokenMarker and MarketVariant traits
-    ///
-    /// 1. TokenMarker (ETH / ERC20): Maps ETH to (). If token is ERC20 then
-    /// calls MarketVariant::token_index_to_address()
-    ///
-    /// 2. MarketVariant (Hardcoded / Dynamic): Reads token address from
-    /// hardcoded or custom token list
     fn token_index_to_address(
         token_index: Self::TokenIndex,
         custom_erc20_list: &[CustomERC20Data],

@@ -1,4 +1,4 @@
-pub mod decode;
+mod decode;
 pub mod dynamic;
 
 pub use dynamic::*;

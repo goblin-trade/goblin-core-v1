@@ -1,4 +1,4 @@
-pub mod decode;
+mod decode;
 pub mod execute_takes;
 pub mod market_header;
 
