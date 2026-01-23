@@ -1,6 +1,6 @@
 use crate::{
     goblin_error::GoblinError,
-    market::{MarketVariant, PairShape},
+    market::MarketVariant,
     quantities::UnsidedAtoms,
     settlement::{
         global_delta::{

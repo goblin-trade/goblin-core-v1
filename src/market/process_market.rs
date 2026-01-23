@@ -2,10 +2,9 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
     market::{Hardcoded, HardcodedMarketList, MarketAndKey, MarketHeader, MarketVariant},
-    quantities::DeltaAtoms,
     settlement::Delta,
-    token::{CustomERC20Data, TokenMarker, ERC20, ETH},
-    types::{Address, TupleMarker, TupleReader},
+    token::{CustomERC20Data, TokenMarker},
+    types::Address,
 };
 
 pub fn process_market<'a, M, B, Q>(
@@ -17,19 +16,7 @@ pub fn process_market<'a, M, B, Q>(
 where
     M: MarketVariant,
     B: TokenMarker + 'static,
-    B::TupleMarker: TupleReader<
-        (),
-        DeltaAtoms,
-        (ETH, ERC20),
-        Result = <B::TupleMarker as TupleMarker>::Deposit,
-    >,
     Q: TokenMarker + 'static,
-    Q::TupleMarker: TupleReader<
-        (),
-        DeltaAtoms,
-        (ETH, ERC20),
-        Result = <Q::TupleMarker as TupleMarker>::Deposit,
-    >,
     B::TokenIndex: Decodable<'a>,
     Q::TokenIndex: Decodable<'a>,
     B::Deposit: Decodable<'a>,

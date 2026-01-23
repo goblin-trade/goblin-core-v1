@@ -1,5 +1,5 @@
 use crate::{
-    input_processor::{DecodeCtx, DecodablePrimitive},
+    input_processor::{DecodablePrimitive, DecodeCtx},
     quantities::{Exp, Quantity},
 };
 
