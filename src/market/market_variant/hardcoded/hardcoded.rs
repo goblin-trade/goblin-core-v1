@@ -29,8 +29,8 @@ impl MarketVariant for Hardcoded {
         decoded_market: &'a Self::DecodedMarket<B, Q>,
     ) -> Result<&'a MarketAndKey<Self, B, Q>, GoblinError>
     where
-        B: TokenMarker + 'static,
-        Q: TokenMarker + 'static,
+        B: TokenMarker,
+        Q: TokenMarker,
         MarketAndKey<Hardcoded, B, Q>: HardcodedMarketList<B, Q>,
     {
         MarketAndKey::<Hardcoded, B, Q>::get_market(*decoded_market)

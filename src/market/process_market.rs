@@ -15,8 +15,8 @@ pub fn process_market<M, B, Q>(
 ) -> Result<(), GoblinError>
 where
     M: MarketVariant,
-    B: TokenMarker + 'static,
-    Q: TokenMarker + 'static,
+    B: TokenMarker,
+    Q: TokenMarker,
     MarketAndKey<Hardcoded, B, Q>: HardcodedMarketList<B, Q>,
 {
     let market_header = MarketHeader::<M, B, Q>::try_decode(ctx)?;

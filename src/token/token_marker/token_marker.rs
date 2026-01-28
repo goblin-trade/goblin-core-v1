@@ -8,7 +8,7 @@ use crate::{
 };
 
 /// Marker class for 'Token'. We have 3 variants- ETH, HardcodedERC20 and CustomERC20
-pub trait TokenMarker: Clone + Copy {
+pub trait TokenMarker: Clone + Copy + 'static {
     const DISCRIMINATOR: u8;
 
     /// Index to lookup token address
