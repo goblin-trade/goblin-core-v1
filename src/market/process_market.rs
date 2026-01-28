@@ -21,8 +21,8 @@ where
 {
     let market_header = MarketHeader::<M, B, Q>::try_decode(ctx)?;
 
-    let decoded_market = M::decode(ctx, custom_erc20_list)?;
-    let market_and_key = M::market_and_key_ref(&decoded_market)?;
+    let market_locator = M::decode_locator(ctx, custom_erc20_list)?;
+    let market_and_key = M::locate_market(&market_locator)?;
 
     let mut market_state = market_and_key.key.load();
 

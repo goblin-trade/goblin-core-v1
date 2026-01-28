@@ -15,20 +15,20 @@ where
 {
     const DISCRIMINATOR: u8 = 3;
 
-    type DecodedMarket = DangerousMarketIndex<B, Q>;
+    type MarketLocator = DangerousMarketIndex<B, Q>;
 
-    fn decode(
+    fn decode_locator(
         ctx: &DecodeCtx,
         _custom_erc20_list: &[CustomERC20Data],
-    ) -> Result<Self::DecodedMarket, GoblinError>
+    ) -> Result<Self::MarketLocator, GoblinError>
     where
         DangerousMarketIndex<B, Q>: Decodable,
     {
         DangerousMarketIndex::<B, Q>::try_decode(ctx)
     }
 
-    fn market_and_key_ref<'a>(
-        decoded_market: &'a Self::DecodedMarket,
+    fn locate_market<'a>(
+        decoded_market: &'a Self::MarketLocator,
     ) -> Result<&'a MarketAndKey<Self, B, Q>, GoblinError>
     where
         B: TokenMarker,

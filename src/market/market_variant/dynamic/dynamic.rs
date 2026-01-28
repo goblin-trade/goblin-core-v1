@@ -16,12 +16,12 @@ where
 {
     const DISCRIMINATOR: u8 = 4;
 
-    type DecodedMarket = MarketAndKey<Self, B, Q>;
+    type MarketLocator = MarketAndKey<Self, B, Q>;
 
-    fn decode(
+    fn decode_locator(
         ctx: &DecodeCtx,
         custom_erc20_list: &[CustomERC20Data],
-    ) -> Result<Self::DecodedMarket, GoblinError>
+    ) -> Result<Self::MarketLocator, GoblinError>
     where
         B: TokenMarker,
         Q: TokenMarker,
@@ -36,8 +36,8 @@ where
         })
     }
 
-    fn market_and_key_ref<'a>(
-        decoded_market: &'a Self::DecodedMarket,
+    fn locate_market<'a>(
+        decoded_market: &'a Self::MarketLocator,
     ) -> Result<&'a MarketAndKey<Self, B, Q>, GoblinError>
     where
         B: TokenMarker,

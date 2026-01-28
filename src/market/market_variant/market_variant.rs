@@ -20,33 +20,27 @@ where
     /// Discriminator used to hash the market key
     const DISCRIMINATOR: u8;
 
-    /// The decoded market as read from args
+    /// The intermediate representation used to locate a market.
     ///
-    /// # Variants
-    ///
-    /// * Hardcoded: This is simply the MarketIndex, used for looking up the
-    /// market from static list.
-    ///
-    /// * Dynamic: The market params are decoded from args and the key is hashed.
-    type DecodedMarket;
+    /// - Hardcoded: A market index for lookup
+    /// - Dynamic: The complete MarketAndKey (acts as its own locator)
+    type MarketLocator;
 
-    /// Get DecodedMarket from args
-    fn decode(
+    /// Decode market locator from input args.
+    ///
+    /// - Hardcoded: Reads and returns just the market index
+    /// - Dynamic: Reads all parameters, constructs full MarketAndKey
+    fn decode_locator(
         ctx: &DecodeCtx,
         custom_erc20_list: &[CustomERC20Data],
-    ) -> Result<Self::DecodedMarket, GoblinError>;
+    ) -> Result<Self::MarketLocator, GoblinError>;
 
-    /// Obtain reference to the market and key
+    /// Resolve the locator to obtain a reference to the market and its slot key.
     ///
-    /// # Variants
-    ///
-    /// * Hardcoded: Use market key to obtain static lifetime market,
-    /// then cast it to local lifetime.
-    ///
-    /// * Dynamic: DecodedMarket is MarketAndKey. Obtain a reference.
-    ///
-    fn market_and_key_ref<'a>(
-        decoded_market: &'a Self::DecodedMarket,
+    /// - Hardcoded: Looks up market in static list using index
+    /// - Dynamic: Returns reference to the already-constructed market
+    fn locate_market<'a>(
+        decoded_market: &'a Self::MarketLocator,
     ) -> Result<&'a MarketAndKey<Self, B, Q>, GoblinError>
     where
         B: TokenMarker,
