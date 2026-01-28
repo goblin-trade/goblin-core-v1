@@ -23,7 +23,7 @@ pub fn match_order<M, B, Q, In>(
     price_limit: Ticks,
 ) -> Result<(), GoblinError>
 where
-    M: MarketVariant,
+    M: MarketVariant<B, Q>,
     B: TokenMarker,
     Q: TokenMarker,
     In: LegMatcher

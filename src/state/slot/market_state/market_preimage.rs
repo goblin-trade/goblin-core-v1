@@ -13,14 +13,24 @@ use crate::{
 /// This is similar to MarketState, but instead of token index pair we have
 /// a pair of token addresses
 #[repr(C)]
-pub struct MarketPreimage<M: MarketVariant, B: TokenMarker, Q: TokenMarker> {
+pub struct MarketPreimage<M, B, Q>
+where
+    M: MarketVariant<B, Q>,
+    B: TokenMarker,
+    Q: TokenMarker,
+{
     lot_size_pair: LotSizePair,
     tick_size: QuoteLotsPerBaseUnitPerTick,
     token_address_pair: Pair<B::Address, Q::Address>,
     _marker: PhantomData<M>,
 }
 
-impl<M: MarketVariant, B: TokenMarker, Q: TokenMarker> MarketPreimage<M, B, Q> {
+impl<M, B, Q> MarketPreimage<M, B, Q>
+where
+    M: MarketVariant<B, Q>,
+    B: TokenMarker,
+    Q: TokenMarker,
+{
     pub fn new(
         lot_size_pair: LotSizePair,
         tick_size: QuoteLotsPerBaseUnitPerTick,
@@ -35,7 +45,12 @@ impl<M: MarketVariant, B: TokenMarker, Q: TokenMarker> MarketPreimage<M, B, Q> {
     }
 }
 
-impl<M: MarketVariant, B: TokenMarker, Q: TokenMarker> Preimage for MarketPreimage<M, B, Q> {
+impl<M, B, Q> Preimage for MarketPreimage<M, B, Q>
+where
+    M: MarketVariant<B, Q>,
+    B: TokenMarker,
+    Q: TokenMarker,
+{
     const SLOT_DISCRIMINATOR: u8 = M::DISCRIMINATOR + B::DISCRIMINATOR << 3 + Q::DISCRIMINATOR << 4;
 
     type SlotState = MarketState<M, B, Q>;

@@ -13,7 +13,7 @@ pub type LotSizePair =
     Pair<<Base as LegQuantities>::LotsPerUnit, <Quote as LegQuantities>::LotsPerUnit>;
 
 // If P needs to be a trait, we need to use T0 and T1 here
-pub struct CommonMarket<M: MarketVariant, B: TokenMarker, Q: TokenMarker> {
+pub struct CommonMarket<M: MarketVariant<B, Q>, B: TokenMarker, Q: TokenMarker> {
     /// The token pair, parameterized by shape and variant.
     pub token_index_pair: Pair<B::TokenIndex, Q::TokenIndex>,
 
@@ -26,7 +26,7 @@ pub struct CommonMarket<M: MarketVariant, B: TokenMarker, Q: TokenMarker> {
     _marker: PhantomData<M>,
 }
 
-impl<M: MarketVariant, B: TokenMarker, Q: TokenMarker> CommonMarket<M, B, Q> {
+impl<M: MarketVariant<B, Q>, B: TokenMarker, Q: TokenMarker> CommonMarket<M, B, Q> {
     pub const fn new(
         token_index_pair: Pair<B::TokenIndex, Q::TokenIndex>,
         lot_size_pair: LotSizePair,

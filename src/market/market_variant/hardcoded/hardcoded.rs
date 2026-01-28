@@ -8,25 +8,27 @@ use crate::{
 #[derive(Clone, Copy, Default)]
 pub struct Hardcoded;
 
-impl MarketVariant for Hardcoded {
+impl<B, Q> MarketVariant<B, Q> for Hardcoded
+where
+    B: TokenMarker,
+    Q: TokenMarker,
+{
     const DISCRIMINATOR: u8 = 3;
 
-    type DecodedMarket<B: TokenMarker, Q: TokenMarker> = DangerousMarketIndex<B, Q>;
+    type DecodedMarket = DangerousMarketIndex<B, Q>;
 
-    fn decode<B, Q>(
+    fn decode(
         ctx: &DecodeCtx,
         _custom_erc20_list: &[CustomERC20Data],
-    ) -> Result<Self::DecodedMarket<B, Q>, GoblinError>
+    ) -> Result<Self::DecodedMarket, GoblinError>
     where
-        B: TokenMarker,
-        Q: TokenMarker,
         DangerousMarketIndex<B, Q>: Decodable,
     {
         DangerousMarketIndex::<B, Q>::try_decode(ctx)
     }
 
-    fn market_and_key_ref<'a, B, Q>(
-        decoded_market: &'a Self::DecodedMarket<B, Q>,
+    fn market_and_key_ref<'a>(
+        decoded_market: &'a Self::DecodedMarket,
     ) -> Result<&'a MarketAndKey<Self, B, Q>, GoblinError>
     where
         B: TokenMarker,

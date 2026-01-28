@@ -4,7 +4,7 @@ use crate::{market::MarketVariant, token::TokenMarker, types::Pair};
 
 pub struct MarketHeader<M, B, Q>
 where
-    M: MarketVariant,
+    M: MarketVariant<B, Q>,
     B: TokenMarker,
     Q: TokenMarker,
 {
@@ -22,7 +22,7 @@ where
 
 impl<M, B, Q> MarketHeader<M, B, Q>
 where
-    M: MarketVariant,
+    M: MarketVariant<B, Q>,
     B: TokenMarker,
     Q: TokenMarker,
 {

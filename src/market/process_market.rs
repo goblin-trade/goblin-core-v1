@@ -14,15 +14,14 @@ pub fn process_market<M, B, Q>(
     delta: &mut Delta,
 ) -> Result<(), GoblinError>
 where
-    M: MarketVariant,
     B: TokenMarker,
     Q: TokenMarker,
+    M: MarketVariant<B, Q>,
     MarketAndKey<Hardcoded, B, Q>: HardcodedMarketList<B, Q>,
 {
     let market_header = MarketHeader::<M, B, Q>::try_decode(ctx)?;
 
-    let decoded_market: <M as MarketVariant>::DecodedMarket<B, Q> =
-        M::decode(ctx, custom_erc20_list)?;
+    let decoded_market = M::decode(ctx, custom_erc20_list)?;
     let market_and_key = M::market_and_key_ref(&decoded_market)?;
 
     let mut market_state = market_and_key.key.load();

@@ -9,15 +9,19 @@ use crate::{
 #[derive(Clone, Copy, Default)]
 pub struct Dynamic;
 
-impl MarketVariant for Dynamic {
+impl<B, Q> MarketVariant<B, Q> for Dynamic
+where
+    B: TokenMarker,
+    Q: TokenMarker,
+{
     const DISCRIMINATOR: u8 = 4;
 
-    type DecodedMarket<B: TokenMarker, Q: TokenMarker> = MarketAndKey<Self, B, Q>;
+    type DecodedMarket = MarketAndKey<Self, B, Q>;
 
-    fn decode<B, Q>(
+    fn decode(
         ctx: &DecodeCtx,
         custom_erc20_list: &[CustomERC20Data],
-    ) -> Result<Self::DecodedMarket<B, Q>, GoblinError>
+    ) -> Result<Self::DecodedMarket, GoblinError>
     where
         B: TokenMarker,
         Q: TokenMarker,
@@ -32,8 +36,8 @@ impl MarketVariant for Dynamic {
         })
     }
 
-    fn market_and_key_ref<'a, B, Q>(
-        decoded_market: &'a Self::DecodedMarket<B, Q>,
+    fn market_and_key_ref<'a>(
+        decoded_market: &'a Self::DecodedMarket,
     ) -> Result<&'a MarketAndKey<Self, B, Q>, GoblinError>
     where
         B: TokenMarker,
