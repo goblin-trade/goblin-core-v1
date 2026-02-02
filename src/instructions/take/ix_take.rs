@@ -19,7 +19,7 @@ pub fn ix_take<M, B, Q, In>(
     market_state: &mut MarketState<M, B, Q>,
 ) -> Result<(), GoblinError>
 where
-    M: MarketVariant<B, Q>,
+    M: MarketVariant,
     B: TokenMarker,
     Q: TokenMarker,
     In: LegMatcher

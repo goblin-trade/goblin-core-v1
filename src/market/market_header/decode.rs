@@ -8,7 +8,7 @@ use crate::{
 
 impl<M, B, Q> Decodable for MarketHeader<M, B, Q>
 where
-    M: MarketVariant<B, Q>,
+    M: MarketVariant,
     B: TokenMarker,
     Q: TokenMarker,
 {

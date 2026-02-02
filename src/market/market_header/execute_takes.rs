@@ -11,7 +11,7 @@ use crate::{
 
 impl<M, B, Q> MarketHeader<M, B, Q>
 where
-    M: MarketVariant<B, Q>,
+    M: MarketVariant,
     B: TokenMarker,
     Q: TokenMarker,
 {

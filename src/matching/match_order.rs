@@ -8,7 +8,7 @@ use crate::{
         local_delta::{LocalDelta, MakerDelta, TakerDelta},
         MatchedLots,
     },
-    state::{MarketState, Preimage, RestingOrder, RestingOrderPreimage, SlotKey},
+    state::{MarketState, Preimage, RestingOrder, RestingOrderPreimage},
     token::TokenMarker,
     types::{Address, Base, LegMatcher, Quote, TupleReader},
 };
@@ -23,7 +23,7 @@ pub fn match_order<M, B, Q, In>(
     price_limit: Ticks,
 ) -> Result<(), GoblinError>
 where
-    M: MarketVariant<B, Q>,
+    M: MarketVariant,
     B: TokenMarker,
     Q: TokenMarker,
     In: LegMatcher

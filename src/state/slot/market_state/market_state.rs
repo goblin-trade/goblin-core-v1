@@ -7,7 +7,7 @@ use crate::{market::MarketVariant, quantities::Ticks, token::TokenMarker, types:
 #[repr(C)]
 pub struct MarketState<M, B, Q>
 where
-    M: MarketVariant<B, Q>,
+    M: MarketVariant,
     B: TokenMarker,
     Q: TokenMarker,
 {
