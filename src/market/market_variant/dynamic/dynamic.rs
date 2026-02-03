@@ -9,5 +9,9 @@ pub struct Dynamic;
 impl MarketVariant for Dynamic {
     const DISCRIMINATOR: u8 = 4;
 
-    type MarketLocator<B: TokenMarker, Q: TokenMarker> = MarketAndKey<Self, B, Q>;
+    type MarketLocator<B, Q>
+        = MarketAndKey<Self, B, Q>
+    where
+        B: TokenMarker,
+        Q: TokenMarker;
 }

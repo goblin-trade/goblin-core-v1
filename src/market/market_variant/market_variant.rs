@@ -15,5 +15,8 @@ pub trait MarketVariant: Sized {
     ///
     /// - Hardcoded: A market index for lookup
     /// - Dynamic: The complete MarketAndKey (acts as its own locator)
-    type MarketLocator<B: TokenMarker, Q: TokenMarker>: MarketLocator<Self, B, Q>;
+    type MarketLocator<B, Q>: MarketLocator<Self, B, Q>
+    where
+        B: TokenMarker,
+        Q: TokenMarker;
 }

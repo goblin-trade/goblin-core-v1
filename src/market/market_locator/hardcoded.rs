@@ -17,12 +17,12 @@ where
         DangerousMarketIndex::<B, Q>::try_decode(ctx)
     }
 
-    fn locate_market<'a>(
-        decoded_market: &'a Self,
-    ) -> Result<&'a MarketAndKey<Hardcoded, B, Q>, GoblinError>
+    fn locate_market(&self) -> Result<&MarketAndKey<Hardcoded, B, Q>, GoblinError>
     where
-        MarketAndKey<Hardcoded, B, Q>: HardcodedMarketList<B, Q>,
+        Self: HardcodedMarketList<B, Q>,
     {
-        MarketAndKey::<Hardcoded, B, Q>::get_market(*decoded_market)
+        Self::HARDCODED_MARKET_LIST
+            .get(self.inner)
+            .ok_or(GoblinError::InvalidHardcodedMarket)
     }
 }

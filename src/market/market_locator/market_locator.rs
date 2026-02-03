@@ -1,7 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::DecodeCtx,
-    market::{Hardcoded, HardcodedMarketList, MarketAndKey, MarketVariant},
+    market::{DangerousMarketIndex, HardcodedMarketList, MarketAndKey, MarketVariant},
     token::{CustomERC20Data, TokenMarker},
 };
 
@@ -29,9 +29,7 @@ where
     ///
     /// - Hardcoded: Looks up market in static list using index
     /// - Dynamic: Returns reference to the already-constructed market
-    fn locate_market<'a>(
-        decoded_market: &'a Self,
-    ) -> Result<&'a MarketAndKey<M, B, Q>, GoblinError>
+    fn locate_market(&self) -> Result<&MarketAndKey<M, B, Q>, GoblinError>
     where
-        MarketAndKey<Hardcoded, B, Q>: HardcodedMarketList<B, Q>;
+        DangerousMarketIndex<B, Q>: HardcodedMarketList<B, Q>;
 }
