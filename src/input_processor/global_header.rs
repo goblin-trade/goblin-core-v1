@@ -18,9 +18,8 @@ pub struct GlobalHeader<'a> {
 
     /// Optional custom recipient
     pub recipient: Option<&'a Address>,
-
-    /// Addresses of custom erc20 tokens to use
-    pub custom_erc20_list: &'a [CustomERC20Data],
+    // /// Addresses of custom erc20 tokens to use
+    // pub custom_erc20_list: &'a [CustomERC20Data],
 }
 
 impl<'a> GlobalHeader<'a> {
@@ -35,15 +34,15 @@ impl<'a> GlobalHeader<'a> {
             None
         };
 
-        let custom_erc20_list =
-            ctx.zero_copy_slice_unchecked::<CustomERC20Data>(flags.custom_erc20_count);
+        // let custom_erc20_list =
+        //     ctx.zero_copy_slice_unchecked::<CustomERC20Data>(flags.custom_erc20_count);
 
         Ok(Self {
             flags,
             market_counts,
             eth_transfers,
             recipient,
-            custom_erc20_list,
+            // custom_erc20_list,
         })
     }
 }
