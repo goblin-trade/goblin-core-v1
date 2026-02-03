@@ -29,10 +29,13 @@ pub fn processor(len: usize) -> Result<(), GoblinError> {
     let ctx = &mut DecodeCtx::new(len);
 
     let global_header = GlobalHeader::new(ctx)?;
-    global_header.market_counts.process_markets(
+
+    // custom_erc20_list is option type now
+    // We must update traits so that hardcoded markets don't accept this field
+    global_header.hardcoded_market_header.process_markets(
         ctx,
         msg_sender,
-        global_header.custom_erc20_list,
+        global_header.dynamic_market_header.custom_erc20_list,
         delta,
     )?;
 

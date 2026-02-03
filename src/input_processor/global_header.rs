@@ -1,7 +1,8 @@
 use crate::{
     goblin_error::GoblinError,
-    input_processor::{Decodable, DecodeCtx, EthTransfers, HeaderFlags, MarketCounts},
-    token::CustomERC20Data,
+    input_processor::{
+        Decodable, DecodeCtx, DynamicMarketHeader, EthTransfers, HardcodedMarketHeader, HeaderFlags,
+    },
     types::Address,
 };
 
@@ -10,11 +11,14 @@ pub struct GlobalHeader<'a> {
     /// Flags and counts. Tells whether optional values should be read.
     pub flags: HeaderFlags,
 
-    /// Number of markets to decode, namespaced by type
-    pub market_counts: MarketCounts,
-
     /// Amount of ETH transferred in and due to be transferred out
     pub eth_transfers: EthTransfers,
+
+    /// Hardcoded market header
+    pub hardcoded_market_header: HardcodedMarketHeader,
+
+    /// Dynamic market header
+    pub dynamic_market_header: Option<DynamicMarketHeader<'a>>,
 
     /// Optional custom recipient
     pub recipient: Option<&'a Address>,
@@ -25,8 +29,14 @@ pub struct GlobalHeader<'a> {
 impl<'a> GlobalHeader<'a> {
     pub fn new(ctx: &'a DecodeCtx) -> Result<Self, GoblinError> {
         let flags = HeaderFlags::try_decode(ctx)?;
-        let market_counts = MarketCounts::try_decode(ctx)?;
         let eth_transfers = EthTransfers::new(ctx, &flags)?;
+
+        let hardcoded_market_header = HardcodedMarketHeader::try_decode(ctx)?;
+        let dynamic_market_header = if flags.process_dynamic_markets {
+            Some(DynamicMarketHeader::new(ctx)?)
+        } else {
+            None
+        };
 
         let recipient = if flags.recipient_provided {
             Some(ctx.zero_copy_unchecked::<Address>())
@@ -39,7 +49,8 @@ impl<'a> GlobalHeader<'a> {
 
         Ok(Self {
             flags,
-            market_counts,
+            hardcoded_market_header,
+            dynamic_market_header,
             eth_transfers,
             recipient,
             // custom_erc20_list,

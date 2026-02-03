@@ -5,9 +5,8 @@ use crate::{
     token::CustomERC20Data,
 };
 
-const BYTE_COUNT: usize = 8 + 1;
+const BYTE_COUNT: usize = 5;
 
-#[derive(Default)]
 pub struct DynamicMarketHeader<'a> {
     pub market_counts: [u8; 8],
 
