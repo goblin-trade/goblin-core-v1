@@ -30,11 +30,15 @@ pub fn processor(len: usize) -> Result<(), GoblinError> {
 
     let global_header = GlobalHeader::new(ctx)?;
 
-    // custom_erc20_list is option type now
-    // We must update traits so that hardcoded markets don't accept this field
+    // Process hardcoded markets
     global_header
         .hardcoded_market_header
         .process_markets(ctx, msg_sender, delta)?;
+
+    // Process dynamic markets
+    if let Some(dynamic_market_header) = global_header.dynamic_market_header {
+        dynamic_market_header.process_markets(ctx, msg_sender, delta)?;
+    }
 
     // Write cache to trie
     // https://github.com/OffchainLabs/stylus-sdk-rs/blob/2c709a5a1a620ed7585c7d8af64fefabe3a0fc9a/stylus-sdk/src/storage/mod.rs#L81
