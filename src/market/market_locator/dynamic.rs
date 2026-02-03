@@ -11,12 +11,12 @@ where
     B: TokenMarker,
     Q: TokenMarker,
 {
-    fn decode_locator(
+    fn decode_locator<'a>(
         ctx: &DecodeCtx,
-        custom_erc20_list: &[CustomERC20Data],
+        erc20_list: &'a [CustomERC20Data],
     ) -> Result<Self, GoblinError> {
         let common_market = CommonMarket::<Dynamic, B, Q>::try_decode(ctx)?;
-        let preimage = common_market.get_preimage(custom_erc20_list)?;
+        let preimage = common_market.get_preimage(erc20_list)?;
         let key = preimage.hash();
 
         Ok(MarketAndKey {

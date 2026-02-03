@@ -32,12 +32,9 @@ pub fn processor(len: usize) -> Result<(), GoblinError> {
 
     // custom_erc20_list is option type now
     // We must update traits so that hardcoded markets don't accept this field
-    global_header.hardcoded_market_header.process_markets(
-        ctx,
-        msg_sender,
-        global_header.dynamic_market_header.custom_erc20_list,
-        delta,
-    )?;
+    global_header
+        .hardcoded_market_header
+        .process_markets(ctx, msg_sender, delta)?;
 
     // Write cache to trie
     // https://github.com/OffchainLabs/stylus-sdk-rs/blob/2c709a5a1a620ed7585c7d8af64fefabe3a0fc9a/stylus-sdk/src/storage/mod.rs#L81

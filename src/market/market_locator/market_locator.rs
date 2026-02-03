@@ -20,9 +20,9 @@ where
     ///
     /// - Hardcoded: Reads and returns just the market index
     /// - Dynamic: Reads all parameters, constructs full MarketAndKey
-    fn decode_locator(
+    fn decode_locator<'a>(
         ctx: &DecodeCtx,
-        custom_erc20_list: &[CustomERC20Data],
+        erc20_list: M::ERC20List<'a>,
     ) -> Result<Self, GoblinError>;
 
     /// Resolve the locator to obtain a reference to the market and its slot key.
