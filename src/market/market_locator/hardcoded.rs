@@ -1,7 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
-    market::{Hardcoded, HardcodedMarketIndex, HardcodedMarketList, MarketAndKey, MarketLocator},
+    market::{Hardcoded, HardcodedMarketIndex, HardcodedMarkets, MarketAndKey, MarketLocator},
     token::{CustomERC20Data, TokenMarker},
 };
 
@@ -19,9 +19,9 @@ where
 
     fn locate_market(&self) -> Result<&MarketAndKey<Hardcoded, B, Q>, GoblinError>
     where
-        Self: HardcodedMarketList<B, Q>,
+        Self: HardcodedMarkets<B, Q>,
     {
-        Self::HARDCODED_MARKET_LIST
+        Self::HARDCODED_MARKETS
             .get(self.inner)
             .ok_or(GoblinError::InvalidHardcodedMarket)
     }
