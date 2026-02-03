@@ -1,5 +1,5 @@
 use crate::{
-    market::{DangerousMarketIndex, MarketVariant},
+    market::{HardcodedMarketIndex, MarketVariant},
     token::TokenMarker,
 };
 
@@ -10,7 +10,7 @@ impl MarketVariant for Hardcoded {
     const DISCRIMINATOR: u8 = 3;
 
     type MarketLocator<B, Q>
-        = DangerousMarketIndex<B, Q>
+        = HardcodedMarketIndex<B, Q>
     where
         B: TokenMarker,
         Q: TokenMarker;

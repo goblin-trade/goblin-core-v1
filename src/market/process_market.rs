@@ -2,7 +2,7 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
     market::{
-        DangerousMarketIndex, HardcodedMarketList, MarketHeader, MarketLocator, MarketVariant,
+        HardcodedMarketIndex, HardcodedMarketList, MarketHeader, MarketLocator, MarketVariant,
     },
     settlement::Delta,
     token::{CustomERC20Data, TokenMarker},
@@ -19,7 +19,7 @@ where
     B: TokenMarker,
     Q: TokenMarker,
     M: MarketVariant,
-    DangerousMarketIndex<B, Q>: HardcodedMarketList<B, Q>,
+    HardcodedMarketIndex<B, Q>: HardcodedMarketList<B, Q>,
 {
     let market_header = MarketHeader::<M, B, Q>::try_decode(ctx)?;
 

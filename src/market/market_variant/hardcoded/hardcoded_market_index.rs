@@ -10,7 +10,7 @@ use crate::{
 /// This index has NOT been validated for bounds. Bound check happens when reading
 /// the market.
 #[derive(Clone, Copy)]
-pub struct DangerousMarketIndex<B, Q>
+pub struct HardcodedMarketIndex<B, Q>
 where
     B: TokenMarker,
     Q: TokenMarker,
@@ -19,7 +19,7 @@ where
     _marker: PhantomData<(B, Q)>,
 }
 
-impl<B, Q> DangerousMarketIndex<B, Q>
+impl<B, Q> HardcodedMarketIndex<B, Q>
 where
     B: TokenMarker,
     Q: TokenMarker,
@@ -32,13 +32,13 @@ where
     }
 }
 
-impl<B, Q> Decodable for DangerousMarketIndex<B, Q>
+impl<B, Q> Decodable for HardcodedMarketIndex<B, Q>
 where
     B: TokenMarker,
     Q: TokenMarker,
 {
     fn try_decode(ctx: &DecodeCtx) -> Result<Self, GoblinError> {
         let market_index_raw = u8::try_decode(ctx)? as usize;
-        Ok(DangerousMarketIndex::<B, Q>::new(market_index_raw))
+        Ok(HardcodedMarketIndex::<B, Q>::new(market_index_raw))
     }
 }

@@ -1,11 +1,11 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
-    market::{DangerousMarketIndex, Hardcoded, HardcodedMarketList, MarketAndKey, MarketLocator},
+    market::{Hardcoded, HardcodedMarketIndex, HardcodedMarketList, MarketAndKey, MarketLocator},
     token::{CustomERC20Data, TokenMarker},
 };
 
-impl<B, Q> MarketLocator<Hardcoded, B, Q> for DangerousMarketIndex<B, Q>
+impl<B, Q> MarketLocator<Hardcoded, B, Q> for HardcodedMarketIndex<B, Q>
 where
     B: TokenMarker,
     Q: TokenMarker,
@@ -14,7 +14,7 @@ where
         ctx: &DecodeCtx,
         _custom_erc20_list: &[CustomERC20Data],
     ) -> Result<Self, GoblinError> {
-        DangerousMarketIndex::<B, Q>::try_decode(ctx)
+        HardcodedMarketIndex::<B, Q>::try_decode(ctx)
     }
 
     fn locate_market(&self) -> Result<&MarketAndKey<Hardcoded, B, Q>, GoblinError>
