@@ -13,17 +13,23 @@ pub struct GlobalHeader<'a> {
     /// Amount of ETH transferred in and due to be transferred out
     pub eth_transfers: EthTransfers,
 
-    /// Number of hardcoded and dynamic markets to process
-    pub market_counts: MarketVariantPair<HardcodedCounts, Option<DynamicCounts<'a>>>,
-
     /// Optional custom recipient
     pub recipient: Option<&'a Address>,
+
+    /// Number of hardcoded and dynamic markets to process
+    pub market_counts: MarketVariantPair<HardcodedCounts, Option<DynamicCounts<'a>>>,
 }
 
 impl<'a> GlobalHeader<'a> {
     pub fn new(ctx: &'a DecodeCtx) -> Result<Self, GoblinError> {
         let flags = HeaderFlags::try_decode(ctx)?;
         let eth_transfers = EthTransfers::new(ctx, &flags)?;
+
+        let recipient = if flags.recipient_provided {
+            Some(ctx.zero_copy_unchecked::<Address>())
+        } else {
+            None
+        };
 
         let hardcoded_counts = HardcodedCounts::try_decode(ctx)?;
         let dynamic_counts = if flags.process_dynamic_markets {
@@ -33,12 +39,6 @@ impl<'a> GlobalHeader<'a> {
         };
 
         let market_counts = Tuple::new(hardcoded_counts, dynamic_counts);
-
-        let recipient = if flags.recipient_provided {
-            Some(ctx.zero_copy_unchecked::<Address>())
-        } else {
-            None
-        };
 
         Ok(Self {
             flags,

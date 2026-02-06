@@ -3,6 +3,7 @@ use crate::{
     input_processor::{DecodablePrimitive, DecodeCtx},
     require,
     token::CustomERC20Data,
+    types::Address,
 };
 
 const BYTE_COUNT: usize = 5;
@@ -43,6 +44,12 @@ impl<'a> DynamicCounts<'a> {
         let custom_erc20_count = byte_4 as usize;
 
         ctx.advance_offset(BYTE_COUNT);
+
+        let custom_erc20_list_len = custom_erc20_count * core::mem::size_of::<Address>();
+        require!(
+            ctx.len() >= ctx.offset.get() + custom_erc20_list_len,
+            GoblinError::InvalidPayload
+        );
 
         let custom_erc20_list =
             ctx.zero_copy_slice_unchecked::<CustomERC20Data>(custom_erc20_count);

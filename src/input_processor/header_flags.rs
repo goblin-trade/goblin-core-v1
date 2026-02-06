@@ -9,8 +9,6 @@ use crate::{
 const BYTE_COUNT: usize = 1;
 
 pub struct HeaderFlags {
-    // /// Number of custom erc20 token addresses provided, maximum 2^4 - 1 = 15
-    // pub custom_erc20_count: usize,
     /// Whether to read recipient address from payload. If false, use msg.sender as recipient.
     pub recipient_provided: bool,
 
@@ -33,9 +31,6 @@ impl Decodable for HeaderFlags {
 
         let byte_0 = u8::decode_unchecked_no_advance(ctx);
         let header = HeaderFlags {
-            // // Lists
-            // custom_erc20_count: (byte_0 & 0b0000_1111) as usize,
-
             // Optional variables
             recipient_provided: (byte_0 & 0b0000_0001) != 0,
             track_msg_value: (byte_0 & 0b0000_0010) != 0,
@@ -62,9 +57,6 @@ impl HeaderFlags {
         let size = BYTE_COUNT
             + self.recipient_provided as usize * core::mem::size_of::<Address>()
             + self.withdraw_eth as usize * core::mem::size_of::<UnsidedAtoms>();
-        // Lists
-        // + self.custom_erc20_count * core::mem::size_of::<Address>();
-
         size
     }
 }

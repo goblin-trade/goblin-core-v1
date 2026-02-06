@@ -2,7 +2,7 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::DecodeCtx,
     market::{HardcodedMarketIndex, HardcodedMarkets, MarketAndKey, MarketVariant},
-    token::{CustomERC20Data, TokenMarker},
+    token::TokenMarker,
 };
 
 /// The intermediate representation used to locate a market.
