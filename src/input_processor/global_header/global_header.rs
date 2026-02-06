@@ -1,9 +1,8 @@
 use crate::{
     goblin_error::GoblinError,
-    input_processor::{
-        Decodable, DecodeCtx, DynamicMarketHeader, EthTransfers, HardcodedMarketHeader, HeaderFlags,
-    },
-    types::Address,
+    input_processor::{Decodable, DecodeCtx, EthTransfers, HeaderFlags},
+    market::{DynamicCounts, HardcodedCounts},
+    types::{Address, MarketVariantPair, Tuple},
 };
 
 /// Arguments read from calldata
@@ -14,16 +13,11 @@ pub struct GlobalHeader<'a> {
     /// Amount of ETH transferred in and due to be transferred out
     pub eth_transfers: EthTransfers,
 
-    /// Hardcoded market header
-    pub hardcoded_market_header: HardcodedMarketHeader,
-
-    /// Dynamic market header
-    pub dynamic_market_header: Option<DynamicMarketHeader<'a>>,
+    /// Number of hardcoded and dynamic markets to process
+    pub market_counts: MarketVariantPair<HardcodedCounts, Option<DynamicCounts<'a>>>,
 
     /// Optional custom recipient
     pub recipient: Option<&'a Address>,
-    // /// Addresses of custom erc20 tokens to use
-    // pub custom_erc20_list: &'a [CustomERC20Data],
 }
 
 impl<'a> GlobalHeader<'a> {
@@ -31,12 +25,14 @@ impl<'a> GlobalHeader<'a> {
         let flags = HeaderFlags::try_decode(ctx)?;
         let eth_transfers = EthTransfers::new(ctx, &flags)?;
 
-        let hardcoded_market_header = HardcodedMarketHeader::try_decode(ctx)?;
-        let dynamic_market_header = if flags.process_dynamic_markets {
-            Some(DynamicMarketHeader::new(ctx)?)
+        let hardcoded_counts = HardcodedCounts::try_decode(ctx)?;
+        let dynamic_counts = if flags.process_dynamic_markets {
+            Some(DynamicCounts::new(ctx)?)
         } else {
             None
         };
+
+        let market_counts = Tuple::new(hardcoded_counts, dynamic_counts);
 
         let recipient = if flags.recipient_provided {
             Some(ctx.zero_copy_unchecked::<Address>())
@@ -44,16 +40,11 @@ impl<'a> GlobalHeader<'a> {
             None
         };
 
-        // let custom_erc20_list =
-        //     ctx.zero_copy_slice_unchecked::<CustomERC20Data>(flags.custom_erc20_count);
-
         Ok(Self {
             flags,
-            hardcoded_market_header,
-            dynamic_market_header,
+            market_counts,
             eth_transfers,
             recipient,
-            // custom_erc20_list,
         })
     }
 }

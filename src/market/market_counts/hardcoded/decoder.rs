@@ -1,12 +1,13 @@
 use crate::{
     goblin_error::GoblinError,
-    input_processor::{Decodable, DecodablePrimitive, DecodeCtx, HardcodedMarketHeader},
+    input_processor::{Decodable, DecodablePrimitive, DecodeCtx},
+    market::HardcodedCounts,
     require,
 };
 
 const BYTE_COUNT: usize = 2;
 
-impl Decodable for HardcodedMarketHeader {
+impl Decodable for HardcodedCounts {
     fn try_decode(ctx: &DecodeCtx) -> Result<Self, GoblinError> {
         require!(
             ctx.len() >= ctx.offset.get() + BYTE_COUNT,

@@ -4,6 +4,7 @@ use crate::{
     goblin_error::GoblinError,
     hostio::{self, hostio_unsafe},
     input_processor::{DecodeCtx, GlobalHeader},
+    market::MarketCounts,
     require,
     settlement::Delta,
     types::Address,
@@ -25,20 +26,10 @@ pub fn processor(len: usize) -> Result<(), GoblinError> {
     };
 
     let delta = Delta::get_static();
-
     let ctx = &mut DecodeCtx::new(len);
 
     let global_header = GlobalHeader::new(ctx)?;
-
-    // Process hardcoded markets
-    global_header
-        .hardcoded_market_header
-        .process_markets(ctx, msg_sender, delta)?;
-
-    // Process dynamic markets
-    if let Some(dynamic_market_header) = global_header.dynamic_market_header {
-        dynamic_market_header.process_markets(ctx, msg_sender, delta)?;
-    }
+    global_header.process(ctx, msg_sender, delta)?;
 
     // Write cache to trie
     // https://github.com/OffchainLabs/stylus-sdk-rs/blob/2c709a5a1a620ed7585c7d8af64fefabe3a0fc9a/stylus-sdk/src/storage/mod.rs#L81

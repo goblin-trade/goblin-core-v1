@@ -1,30 +1,19 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::DecodeCtx,
-    market::{process_market, Hardcoded},
+    market::{process_market, Hardcoded, HardcodedCounts, MarketCounts},
     settlement::Delta,
     token::{HardcodedERC20, ETH},
     types::Address,
 };
 
-/// The number of markets of each type
-pub struct HardcodedMarketHeader {
-    inner: [u8; 3],
-}
-
-impl HardcodedMarketHeader {
-    pub fn new(inner: [u8; 3]) -> Self {
-        Self { inner }
-    }
-
-    /// Process legal combinations of market types
-    pub fn process_markets(
+impl MarketCounts for HardcodedCounts {
+    fn process(
         &self,
         ctx: &DecodeCtx,
         msg_sender: &Address,
         delta: &mut Delta,
     ) -> Result<(), GoblinError> {
-        // Hardcoded (3)
         for _ in 0..self.inner[0] {
             process_market::<Hardcoded, ETH, HardcodedERC20>(ctx, msg_sender, (), delta)?;
         }
