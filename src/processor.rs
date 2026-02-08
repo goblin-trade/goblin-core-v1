@@ -1,13 +1,10 @@
-use core::mem::MaybeUninit;
-
 use crate::{
     goblin_error::GoblinError,
-    hostio::{self, hostio_unsafe},
+    hostio::{self},
     input_processor::{DecodeCtx, GlobalHeader},
     market::MarketCounts,
     require,
     settlement::Delta,
-    types::Address,
 };
 
 pub const CONTRACT_ADDRESS: [u8; 20] = [
@@ -19,17 +16,12 @@ pub fn processor(len: usize) -> Result<(), GoblinError> {
     let msg_reentrant = hostio::msg_reentrant();
     require!(!msg_reentrant, GoblinError::Reentrant);
 
-    let mut msg_sender_buffer = MaybeUninit::<Address>::uninit();
-    let msg_sender = unsafe {
-        hostio_unsafe::msg_sender(msg_sender_buffer.as_mut_ptr() as *mut u8);
-        msg_sender_buffer.assume_init_ref()
-    };
-
+    let msg_sender = hostio::msg_sender();
     let delta = Delta::get_static();
     let ctx = &mut DecodeCtx::new(len);
 
     let global_header = GlobalHeader::new(ctx)?;
-    global_header.process(ctx, msg_sender, delta)?;
+    global_header.process(ctx, &msg_sender, delta)?;
 
     // Write cache to trie
     // https://github.com/OffchainLabs/stylus-sdk-rs/blob/2c709a5a1a620ed7585c7d8af64fefabe3a0fc9a/stylus-sdk/src/storage/mod.rs#L81

@@ -21,6 +21,10 @@ pub fn msg_value() -> RawAtoms {
     unsafe { buffered_call(|f| hostio_unsafe::msg_value(f)) }
 }
 
+pub fn msg_sender() -> [u8; 20] {
+    unsafe { buffered_call(|f| hostio_unsafe::msg_sender(f)) }
+}
+
 pub fn storage_load_bytes32<T>(key: &[u8; 32]) -> T {
     unsafe { buffered_call(|f| hostio_unsafe::storage_load_bytes32(key.as_ptr(), f)) }
 }
