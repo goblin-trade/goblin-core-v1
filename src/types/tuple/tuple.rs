@@ -1,6 +1,6 @@
 use core::marker::PhantomData;
 
-/// Two field storage for marker type K. K is a tuple of like marker structs
+/// Two field storage for marker type K. K is a tuple of marker structs like
 /// (Base, Quote). The markers are used with `TupleReader` trait to
 /// zero-cost access the elements at compile time.
 ///
