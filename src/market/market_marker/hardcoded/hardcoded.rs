@@ -1,12 +1,12 @@
 use crate::{
-    market::{HardcodedMarketIndex, MarketVariant},
+    market::{HardcodedMarketIndex, MarketMarker},
     token::TokenMarker,
 };
 
 #[derive(Clone, Copy, Default)]
 pub struct Hardcoded;
 
-impl MarketVariant for Hardcoded {
+impl MarketMarker for Hardcoded {
     const DISCRIMINATOR: u8 = 3;
 
     type ERC20List<'a> = ();

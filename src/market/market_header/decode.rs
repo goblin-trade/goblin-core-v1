@@ -1,14 +1,14 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
-    market::{MarketHeader, MarketVariant},
+    market::{MarketHeader, MarketMarker},
     token::TokenMarker,
     types::Tuple,
 };
 
 impl<M, B, Q> Decodable for MarketHeader<M, B, Q>
 where
-    M: MarketVariant,
+    M: MarketMarker,
     B: TokenMarker,
     Q: TokenMarker,
 {

@@ -7,7 +7,7 @@
 ///! markets with custom tokens.
 use crate::{market::MarketLocator, token::TokenMarker};
 
-pub trait MarketVariant: Sized {
+pub trait MarketMarker: Sized {
     /// Discriminator used to hash the market key
     const DISCRIMINATOR: u8;
 

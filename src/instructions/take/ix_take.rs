@@ -2,7 +2,7 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
     instructions::take::take_packet::TakePacket,
-    market::{CommonMarket, MarketVariant},
+    market::{CommonMarket, MarketMarker},
     matching::match_order,
     quantities::{BaseLotsPerBaseUnit, QuoteLotsPerQuoteUnit, Ticks},
     settlement::local_delta::{LocalDelta, MakerDelta, TakerDelta},
@@ -19,7 +19,7 @@ pub fn ix_take<M, B, Q, In>(
     market_state: &mut MarketState<M, B, Q>,
 ) -> Result<(), GoblinError>
 where
-    M: MarketVariant,
+    M: MarketMarker,
     B: TokenMarker,
     Q: TokenMarker,
     In: LegMatcher

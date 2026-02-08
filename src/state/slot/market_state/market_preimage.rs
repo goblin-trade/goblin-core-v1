@@ -1,7 +1,7 @@
 use core::marker::PhantomData;
 
 use crate::{
-    market::{LotSizePair, MarketVariant},
+    market::{LotSizePair, MarketMarker},
     quantities::QuoteLotsPerBaseUnitPerTick,
     state::{MarketState, Preimage},
     token::TokenMarker,
@@ -15,7 +15,7 @@ use crate::{
 #[repr(C)]
 pub struct MarketPreimage<M, B, Q>
 where
-    M: MarketVariant,
+    M: MarketMarker,
     B: TokenMarker,
     Q: TokenMarker,
 {
@@ -27,7 +27,7 @@ where
 
 impl<M, B, Q> MarketPreimage<M, B, Q>
 where
-    M: MarketVariant,
+    M: MarketMarker,
     B: TokenMarker,
     Q: TokenMarker,
 {
@@ -47,7 +47,7 @@ where
 
 impl<M, B, Q> Preimage for MarketPreimage<M, B, Q>
 where
-    M: MarketVariant,
+    M: MarketMarker,
     B: TokenMarker,
     Q: TokenMarker,
 {

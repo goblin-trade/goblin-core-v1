@@ -1,7 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::DecodeCtx,
-    market::{HardcodedMarketIndex, HardcodedMarkets, MarketAndKey, MarketVariant},
+    market::{HardcodedMarketIndex, HardcodedMarkets, MarketAndKey, MarketMarker},
     token::TokenMarker,
 };
 
@@ -12,7 +12,7 @@ use crate::{
 pub trait MarketLocator<M, B, Q>
 where
     Self: Sized,
-    M: MarketVariant,
+    M: MarketMarker,
     B: TokenMarker,
     Q: TokenMarker,
 {

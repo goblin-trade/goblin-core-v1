@@ -2,7 +2,7 @@ use core::marker::PhantomData;
 
 use crate::{
     goblin_error::GoblinError,
-    market::MarketVariant,
+    market::MarketMarker,
     quantities::QuoteLotsPerBaseUnitPerTick,
     state::MarketPreimage,
     token::{CustomERC20Data, TokenMarker},
@@ -12,9 +12,8 @@ use crate::{
 pub type LotSizePair =
     Pair<<Base as LegQuantities>::LotsPerUnit, <Quote as LegQuantities>::LotsPerUnit>;
 
-// If P needs to be a trait, we need to use T0 and T1 here
-pub struct CommonMarket<M: MarketVariant, B: TokenMarker, Q: TokenMarker> {
-    /// The token pair, parameterized by shape and variant.
+pub struct CommonMarket<M: MarketMarker, B: TokenMarker, Q: TokenMarker> {
+    /// The token pair
     pub token_index_pair: Pair<B::TokenIndex, Q::TokenIndex>,
 
     /// Lot sizes (one per side)
@@ -26,7 +25,7 @@ pub struct CommonMarket<M: MarketVariant, B: TokenMarker, Q: TokenMarker> {
     _marker: PhantomData<M>,
 }
 
-impl<M: MarketVariant, B: TokenMarker, Q: TokenMarker> CommonMarket<M, B, Q> {
+impl<M: MarketMarker, B: TokenMarker, Q: TokenMarker> CommonMarket<M, B, Q> {
     pub const fn new(
         token_index_pair: Pair<B::TokenIndex, Q::TokenIndex>,
         lot_size_pair: LotSizePair,

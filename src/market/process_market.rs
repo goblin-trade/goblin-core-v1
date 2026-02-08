@@ -1,7 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
-    market::{HardcodedMarketIndex, HardcodedMarkets, MarketHeader, MarketLocator, MarketVariant},
+    market::{HardcodedMarketIndex, HardcodedMarkets, MarketHeader, MarketLocator, MarketMarker},
     settlement::Delta,
     token::TokenMarker,
     types::Address,
@@ -16,7 +16,7 @@ pub fn process_market<'a, M, B, Q>(
 where
     B: TokenMarker,
     Q: TokenMarker,
-    M: MarketVariant,
+    M: MarketMarker,
     HardcodedMarketIndex<B, Q>: HardcodedMarkets<B, Q>,
 {
     let market_header = MarketHeader::<M, B, Q>::try_decode(ctx)?;

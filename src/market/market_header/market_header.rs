@@ -1,10 +1,10 @@
 use core::marker::PhantomData;
 
-use crate::{market::MarketVariant, token::TokenMarker, types::Pair};
+use crate::{market::MarketMarker, token::TokenMarker, types::Pair};
 
 pub struct MarketHeader<M, B, Q>
 where
-    M: MarketVariant,
+    M: MarketMarker,
     B: TokenMarker,
     Q: TokenMarker,
 {
@@ -22,7 +22,7 @@ where
 
 impl<M, B, Q> MarketHeader<M, B, Q>
 where
-    M: MarketVariant,
+    M: MarketMarker,
     B: TokenMarker,
     Q: TokenMarker,
 {

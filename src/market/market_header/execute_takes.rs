@@ -2,7 +2,7 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::DecodeCtx,
     instructions::ix_take,
-    market::{CommonMarket, MarketHeader, MarketVariant},
+    market::{CommonMarket, MarketHeader, MarketMarker},
     settlement::local_delta::LocalDelta,
     state::MarketState,
     token::TokenMarker,
@@ -11,7 +11,7 @@ use crate::{
 
 impl<M, B, Q> MarketHeader<M, B, Q>
 where
-    M: MarketVariant,
+    M: MarketMarker,
     B: TokenMarker,
     Q: TokenMarker,
 {

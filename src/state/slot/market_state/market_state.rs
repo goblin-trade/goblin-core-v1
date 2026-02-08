@@ -1,13 +1,13 @@
 use core::marker::PhantomData;
 
-use crate::{market::MarketVariant, quantities::Ticks, token::TokenMarker, types::Pair};
+use crate::{market::MarketMarker, quantities::Ticks, token::TokenMarker, types::Pair};
 
 /// The market state slot
 /// We have 6 possible sub-types based on MarketVariant and PairShape
 #[repr(C)]
 pub struct MarketState<M, B, Q>
 where
-    M: MarketVariant,
+    M: MarketMarker,
     B: TokenMarker,
     Q: TokenMarker,
 {

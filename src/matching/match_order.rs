@@ -1,6 +1,6 @@
 use crate::{
     goblin_error::GoblinError,
-    market::{CommonMarket, MarketVariant},
+    market::{CommonMarket, MarketMarker},
     matching::quote_iterator::RestingOrderPositionIterator,
     quantities::{BaseLotsPerBaseUnit, QuantityOps, QuoteLotsPerQuoteUnit, Ticks},
     require,
@@ -23,7 +23,7 @@ pub fn match_order<M, B, Q, In>(
     price_limit: Ticks,
 ) -> Result<(), GoblinError>
 where
-    M: MarketVariant,
+    M: MarketMarker,
     B: TokenMarker,
     Q: TokenMarker,
     In: LegMatcher
