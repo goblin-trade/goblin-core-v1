@@ -1,7 +1,4 @@
-use crate::{
-    market::{Hardcoded, MarketAndKey},
-    token::TokenMarker,
-};
+use crate::{market::MarketAndKey, token::TokenMarker, types::Hardcoded};
 
 /// Trait to store hardcoded market lists for each B, Q combination.
 /// Used with MarketLocator trait

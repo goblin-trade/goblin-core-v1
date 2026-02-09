@@ -1,11 +1,11 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodablePrimitive, DecodeCtx},
-    market::{CommonMarket, Dynamic},
+    market::CommonMarket,
     quantities::{BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit},
     require,
     token::TokenMarker,
-    types::Pair,
+    types::{Dynamic, Pair},
 };
 
 impl<B, Q> Decodable for CommonMarket<Dynamic, B, Q>

@@ -1,8 +1,9 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
-    market::{Hardcoded, HardcodedMarketIndex, HardcodedMarkets, MarketAndKey, MarketLocator},
+    market::{HardcodedMarketIndex, HardcodedMarkets, MarketAndKey, MarketLocator},
     token::TokenMarker,
+    types::Hardcoded,
 };
 
 impl<B, Q> MarketLocator<Hardcoded, B, Q> for HardcodedMarketIndex<B, Q>

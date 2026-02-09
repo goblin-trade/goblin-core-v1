@@ -3,10 +3,13 @@
 ///! then implement its respective trait.
 
 /// Leg axis- Base or Quote leg
+#[derive(Default, Clone, Copy, PartialEq)]
 pub struct Leg;
 
 /// Market axis- Hardcoded, Custom
+#[derive(Default, Clone, Copy, PartialEq)]
 pub struct Market;
 
 /// Token axis- ETH, HardcodedERC20, CustomERC20
+#[derive(Default, Clone, Copy, PartialEq)]
 pub struct Token;

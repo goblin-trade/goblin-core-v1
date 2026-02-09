@@ -1,10 +1,8 @@
 use crate::{
     market::{HardcodedMarketIndex, MarketMarker},
     token::TokenMarker,
+    types::Hardcoded,
 };
-
-#[derive(Clone, Copy, Default)]
-pub struct Hardcoded;
 
 impl MarketMarker for Hardcoded {
     const DISCRIMINATOR: u8 = 3;

@@ -4,7 +4,7 @@ use crate::{
         local_delta::{TakerDelta, TakerDeltaPair},
         MatchedAtoms, MatchedLots, MatchedLotsPair,
     },
-    types::{Base, LegMatcher, LegQuantities, LegValidator, Quote, TupleReader},
+    types::{Base, Leg, LegMatcher, LegQuantities, LegValidator, Quote, StoreReader, Tuple},
 };
 
 /// A balance update in the global token level namespace
@@ -24,21 +24,15 @@ impl<In> GlobalSenderUpdate<In>
 where
     In: LegMatcher
         + LegValidator
-        + TupleReader<
-            <Base as LegQuantities>::LotsPerUnit,
-            <Quote as LegQuantities>::LotsPerUnit,
-            (Base, Quote),
+        + StoreReader<
+            Tuple<<Base as LegQuantities>::LotsPerUnit, <Quote as LegQuantities>::LotsPerUnit, Leg>,
             Result = In::LotsPerUnit,
-        > + TupleReader<MatchedLots<Base>, MatchedLots<Quote>, (Base, Quote), Result = MatchedLots<In>>,
-    In::Opposite: TupleReader<
-            MatchedLots<Base>,
-            MatchedLots<Quote>,
-            (Base, Quote),
+        > + StoreReader<Tuple<MatchedLots<Base>, MatchedLots<Quote>, Leg>, Result = MatchedLots<In>>,
+    In::Opposite: StoreReader<
+            Tuple<MatchedLots<Base>, MatchedLots<Quote>, Leg>,
             Result = MatchedLots<In::Opposite>,
-        > + TupleReader<
-            TakerDelta<Base>,
-            TakerDelta<Quote>,
-            (Base, Quote),
+        > + StoreReader<
+            Tuple<TakerDelta<Base>, TakerDelta<Quote>, Leg>,
             Result = TakerDelta<In::Opposite>,
         >,
 {
@@ -47,7 +41,7 @@ where
         let matched_atoms = MatchedAtoms::new(&matched_lots_pair, lot_size_pair);
 
         let base_lot_size = Base::get(lot_size_pair);
-        let lot_size = *In::get_leg(&lot_size_pair);
+        let lot_size = *In::get_leg(lot_size_pair);
         let atoms_per_lot = In::atoms_per_lot(lot_size);
 
         let delta_opposite = In::Opposite::get_leg(taker_delta_pair);

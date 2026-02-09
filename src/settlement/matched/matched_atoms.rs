@@ -1,7 +1,7 @@
 use crate::{
     market::LotSizePair,
     settlement::{MatchedLots, MatchedLotsPair},
-    types::{Base, LegMatcher, LegQuantities, LegValidator, Quote, TupleReader},
+    types::{Base, Leg, LegMatcher, LegQuantities, LegValidator, Quote, StoreReader, Tuple},
 };
 
 /// Matched atoms for a given token
@@ -18,22 +18,18 @@ impl<In> MatchedAtoms<In>
 where
     In: LegMatcher
         + LegValidator
-        + TupleReader<
-            <Base as LegQuantities>::LotsPerUnit,
-            <Quote as LegQuantities>::LotsPerUnit,
-            (Base, Quote),
+        + StoreReader<
+            Tuple<<Base as LegQuantities>::LotsPerUnit, <Quote as LegQuantities>::LotsPerUnit, Leg>,
             Result = In::LotsPerUnit,
-        > + TupleReader<MatchedLots<Base>, MatchedLots<Quote>, (Base, Quote), Result = MatchedLots<In>>,
-    In::Opposite: TupleReader<
-        MatchedLots<Base>,
-        MatchedLots<Quote>,
-        (Base, Quote),
+        > + StoreReader<Tuple<MatchedLots<Base>, MatchedLots<Quote>, Leg>, Result = MatchedLots<In>>,
+    In::Opposite: StoreReader<
+        Tuple<MatchedLots<Base>, MatchedLots<Quote>, Leg>,
         Result = MatchedLots<In::Opposite>,
     >,
 {
     pub fn new(matched_lots_pair: &MatchedLotsPair, lot_size_pair: &LotSizePair) -> Self {
-        let base_lot_size = Base::get(&lot_size_pair);
-        let lot_size = *In::get_leg(&lot_size_pair);
+        let base_lot_size = Base::get(lot_size_pair);
+        let lot_size = *In::get_leg(lot_size_pair);
         let atoms_per_lot = In::atoms_per_lot(lot_size);
 
         let matched_lots = In::get_leg(matched_lots_pair);

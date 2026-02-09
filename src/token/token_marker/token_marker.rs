@@ -4,7 +4,7 @@ use crate::{
     quantities::DeltaAtoms,
     settlement::local_delta::Deposits,
     token::CustomERC20Data,
-    types::{Base, LegMatcher, Quote, TupleReader},
+    types::{Leg, LegMatcher, StoreReader, Tuple},
 };
 
 /// Marker class for 'Token'. We have 3 variants- ETH, HardcodedERC20 and CustomERC20
@@ -28,5 +28,5 @@ pub trait TokenMarker: Clone + Copy + 'static {
     /// Save deposit amount in deposit store
     fn set_deposit<In>(deposits: &mut Deposits, deposit_amount: Self::Deposit)
     where
-        In: LegMatcher + TupleReader<DeltaAtoms, DeltaAtoms, (Base, Quote), Result = DeltaAtoms>;
+        In: LegMatcher + StoreReader<Tuple<DeltaAtoms, DeltaAtoms, Leg>, Result = DeltaAtoms>;
 }

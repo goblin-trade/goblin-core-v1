@@ -8,7 +8,7 @@ use crate::{
     settlement::local_delta::{LocalDelta, MakerDelta, TakerDelta},
     state::MarketState,
     token::TokenMarker,
-    types::{Address, Base, LegMatcher, LegValidator, Quote, TupleReader},
+    types::{Address, Base, Leg, LegMatcher, LegValidator, Quote, StoreReader, Tuple},
 };
 
 pub fn ix_take<M, B, Q, In>(
@@ -24,15 +24,13 @@ where
     Q: TokenMarker,
     In: LegMatcher
         + LegValidator
-        + TupleReader<MakerDelta<Base>, MakerDelta<Quote>, (Base, Quote), Result = MakerDelta<In>>
-        + TupleReader<TakerDelta<Base>, TakerDelta<Quote>, (Base, Quote), Result = TakerDelta<In>>
-        + TupleReader<
-            BaseLotsPerBaseUnit,
-            QuoteLotsPerQuoteUnit,
-            (Base, Quote),
+        + StoreReader<Tuple<MakerDelta<Base>, MakerDelta<Quote>, Leg>, Result = MakerDelta<In>>
+        + StoreReader<Tuple<TakerDelta<Base>, TakerDelta<Quote>, Leg>, Result = TakerDelta<In>>
+        + StoreReader<
+            Tuple<BaseLotsPerBaseUnit, QuoteLotsPerQuoteUnit, Leg>,
             Result = In::LotsPerUnit,
         >,
-    In::Opposite: TupleReader<Ticks, Ticks, (Base, Quote), Result = Ticks>,
+    In::Opposite: StoreReader<Tuple<Ticks, Ticks, Leg>, Result = Ticks>,
 {
     let packet = TakePacket::<In>::try_decode(ctx)?;
 

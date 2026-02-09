@@ -1,10 +1,8 @@
 use crate::{
     market::{MarketAndKey, MarketMarker},
     token::{CustomERC20Data, TokenMarker},
+    types::Dynamic,
 };
-
-#[derive(Clone, Copy, Default)]
-pub struct Dynamic;
 
 impl MarketMarker for Dynamic {
     const DISCRIMINATOR: u8 = 4;

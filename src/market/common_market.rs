@@ -6,7 +6,7 @@ use crate::{
     quantities::QuoteLotsPerBaseUnitPerTick,
     state::MarketPreimage,
     token::{CustomERC20Data, TokenMarker},
-    types::{Base, LegQuantities, Pair, Quote, Tuple, TupleReader},
+    types::{Base, LegQuantities, Pair, Quote, StoreReader, Tuple},
 };
 
 pub type LotSizePair =

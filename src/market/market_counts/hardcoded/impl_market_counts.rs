@@ -1,10 +1,9 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::DecodeCtx,
-    market::{process_market, Hardcoded, HardcodedCounts, MarketCounts},
+    market::{process_market, HardcodedCounts, MarketCounts},
     settlement::Delta,
-    token::{HardcodedERC20, ETH},
-    types::Address,
+    types::{Address, Hardcoded, HardcodedERC20, ETH},
 };
 
 impl MarketCounts for HardcodedCounts {

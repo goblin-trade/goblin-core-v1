@@ -1,7 +1,6 @@
 use crate::{
     settlement::global_delta::{MakerDeltaKey, UnsidedMakerDelta},
-    token::CustomERC20,
-    types::FixedMap,
+    types::{CustomERC20, FixedMap},
 };
 
 ///Deltas of custom tokens for various makers

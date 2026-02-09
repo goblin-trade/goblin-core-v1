@@ -4,11 +4,11 @@ use crate::{
         ETHMakerDeltas, MakerDeltaKey, UnsidedMakerDelta,
     },
     token::{CustomERC20Index, HardcodedERC20Index},
-    types::{FixedMap, TokenTriple},
+    types::{FixedMap, Token, Triple},
 };
 
 /// Global deltas of makers that matched against msg.sender
-pub type GlobalMakerDeltas = TokenTriple<ETHMakerDeltas, MakerHardcodedDeltas, MakerCustomDeltas>;
+pub type GlobalMakerDeltas = Triple<ETHMakerDeltas, MakerHardcodedDeltas, MakerCustomDeltas, Token>;
 
 impl GlobalMakerDeltas {
     pub const fn zero() -> Self {

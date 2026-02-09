@@ -1,7 +1,6 @@
 use crate::{
     settlement::global_delta::{MakerDeltaKey, UnsidedMakerDelta},
-    token::ETH,
-    types::FixedMap,
+    types::{FixedMap, ETH},
 };
 
 /// Global maker deltas for ETH

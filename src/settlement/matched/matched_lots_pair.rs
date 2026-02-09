@@ -3,7 +3,7 @@ use crate::{
         local_delta::{MakerDeltaPair, TakerDeltaPair},
         MatchedLots,
     },
-    types::{Base, Pair, Quote, Tuple, TupleReader},
+    types::{Base, Pair, Quote, StoreReader, Tuple},
 };
 
 pub type MatchedLotsPair = Pair<MatchedLots<Base>, MatchedLots<Quote>>;

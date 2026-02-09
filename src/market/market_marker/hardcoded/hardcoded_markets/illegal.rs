@@ -3,8 +3,8 @@
 ///!
 ///! Hardcoded markets only have HardcodedERC20. They cannot have CustomERC20.
 use crate::{
-    market::{Hardcoded, HardcodedMarketIndex, HardcodedMarkets, MarketAndKey},
-    token::{CustomERC20, HardcodedERC20, ETH},
+    market::{HardcodedMarketIndex, HardcodedMarkets, MarketAndKey},
+    types::{CustomERC20, Hardcoded, HardcodedERC20, ETH},
 };
 
 impl HardcodedMarkets<ETH, CustomERC20> for HardcodedMarketIndex<ETH, CustomERC20> {

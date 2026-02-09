@@ -1,6 +1,5 @@
 use crate::{
     quantities::{InnerBitmapIndex, InnerIndex, Ticks},
-    state::{InnerBitmap, SlotKey},
     types::LegMatcher,
 };
 

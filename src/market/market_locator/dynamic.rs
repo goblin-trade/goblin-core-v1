@@ -1,9 +1,10 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
-    market::{CommonMarket, Dynamic, MarketAndKey, MarketLocator},
+    market::{CommonMarket, MarketAndKey, MarketLocator},
     state::Preimage,
     token::{CustomERC20Data, TokenMarker},
+    types::Dynamic,
 };
 
 impl<B, Q> MarketLocator<Dynamic, B, Q> for MarketAndKey<Dynamic, B, Q>

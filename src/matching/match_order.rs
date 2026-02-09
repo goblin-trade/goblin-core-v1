@@ -10,7 +10,7 @@ use crate::{
     },
     state::{MarketState, Preimage, RestingOrder, RestingOrderPreimage},
     token::TokenMarker,
-    types::{Address, Base, LegMatcher, Quote, TupleReader},
+    types::{Address, Base, Leg, LegMatcher, Quote, StoreReader, Tuple},
 };
 
 pub fn match_order<M, B, Q, In>(
@@ -27,15 +27,13 @@ where
     B: TokenMarker,
     Q: TokenMarker,
     In: LegMatcher
-        + TupleReader<MakerDelta<Base>, MakerDelta<Quote>, (Base, Quote), Result = MakerDelta<In>>
-        + TupleReader<TakerDelta<Base>, TakerDelta<Quote>, (Base, Quote), Result = TakerDelta<In>>
-        + TupleReader<
-            BaseLotsPerBaseUnit,
-            QuoteLotsPerQuoteUnit,
-            (Base, Quote),
+        + StoreReader<Tuple<MakerDelta<Base>, MakerDelta<Quote>, Leg>, Result = MakerDelta<In>>
+        + StoreReader<Tuple<TakerDelta<Base>, TakerDelta<Quote>, Leg>, Result = TakerDelta<In>>
+        + StoreReader<
+            Tuple<BaseLotsPerBaseUnit, QuoteLotsPerQuoteUnit, Leg>,
             Result = In::LotsPerUnit,
         >,
-    In::Opposite: TupleReader<Ticks, Ticks, (Base, Quote), Result = Ticks>,
+    In::Opposite: StoreReader<Tuple<Ticks, Ticks, Leg>, Result = Ticks>,
 {
     let base_lot_size = Base::get(&market.lot_size_pair);
     let budget = In::matching_lots_taker(num_lots, base_lot_size);

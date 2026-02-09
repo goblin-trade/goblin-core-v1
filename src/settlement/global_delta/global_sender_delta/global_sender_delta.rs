@@ -3,11 +3,11 @@ use crate::{
         ERC20Delta, EthDelta, SenderCustomDeltas, SenderHardcodedDeltas, MAX_CUSTOM_DELTAS,
     },
     token::HARDCODED_TOKENS,
-    types::TokenTriple,
+    types::{Token, Triple},
 };
 
 /// The global delta for msg.sender. Stores deltas of ETH and ERC20 tokens.
-pub type GlobalSenderDelta = TokenTriple<EthDelta, SenderHardcodedDeltas, SenderCustomDeltas>;
+pub type GlobalSenderDelta = Triple<EthDelta, SenderHardcodedDeltas, SenderCustomDeltas, Token>;
 
 impl GlobalSenderDelta {
     pub const fn zero() -> Self {

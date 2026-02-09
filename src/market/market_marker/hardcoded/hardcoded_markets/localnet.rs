@@ -1,9 +1,9 @@
 use crate::{
-    market::{CommonMarket, Hardcoded, HardcodedMarketIndex, HardcodedMarkets, MarketAndKey},
+    market::{CommonMarket, HardcodedMarketIndex, HardcodedMarkets, MarketAndKey},
     quantities::{BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit},
     state::SlotKey,
-    token::{HardcodedERC20, HardcodedERC20Index, ETH},
-    types::{Pair, Tuple},
+    token::HardcodedERC20Index,
+    types::{Hardcoded, HardcodedERC20, Pair, Tuple, ETH},
 };
 
 impl HardcodedMarkets<ETH, HardcodedERC20> for HardcodedMarketIndex<ETH, HardcodedERC20> {

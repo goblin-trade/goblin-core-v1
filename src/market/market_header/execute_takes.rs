@@ -6,7 +6,7 @@ use crate::{
     settlement::local_delta::LocalDelta,
     state::MarketState,
     token::TokenMarker,
-    types::{Address, Base, Quote, TupleReader},
+    types::{Address, Base, Quote, StoreReader},
 };
 
 impl<M, B, Q> MarketHeader<M, B, Q>

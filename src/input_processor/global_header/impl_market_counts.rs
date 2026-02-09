@@ -1,9 +1,9 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::{DecodeCtx, GlobalHeader},
-    market::{Dynamic, Hardcoded, MarketCounts},
+    market::MarketCounts,
     settlement::Delta,
-    types::{Address, TupleReader},
+    types::{Address, Dynamic, Hardcoded, StoreReader},
 };
 
 impl<'a> MarketCounts for GlobalHeader<'a> {

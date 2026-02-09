@@ -2,11 +2,8 @@ use crate::{
     goblin_error::GoblinError,
     settlement::local_delta::Deposits,
     token::{CustomERC20Data, TokenMarker},
-    types::LegMatcher,
+    types::{LegMatcher, ETH},
 };
-
-#[derive(Clone, Copy, Default, PartialEq)]
-pub struct ETH;
 
 impl TokenMarker for ETH {
     const DISCRIMINATOR: u8 = 0;

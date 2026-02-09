@@ -3,11 +3,8 @@ use crate::{
     quantities::DeltaAtoms,
     settlement::local_delta::Deposits,
     token::{CustomERC20Data, CustomERC20Index, TokenMarker},
-    types::{Address, Base, LegMatcher, Quote, TupleReader},
+    types::{Address, CustomERC20, Leg, LegMatcher, StoreReader, Tuple},
 };
-
-#[derive(Clone, Copy, Default, PartialEq)]
-pub struct CustomERC20;
 
 impl TokenMarker for CustomERC20 {
     const DISCRIMINATOR: u8 = 2;
@@ -28,7 +25,8 @@ impl TokenMarker for CustomERC20 {
 
     fn set_deposit<In>(deposits: &mut Deposits, deposit_amount: Self::Deposit)
     where
-        In: LegMatcher + TupleReader<DeltaAtoms, DeltaAtoms, (Base, Quote), Result = DeltaAtoms>,
+        // In: LegMatcher + TupleReader<DeltaAtoms, DeltaAtoms, (Base, Quote), Result = DeltaAtoms>,
+        In: LegMatcher + StoreReader<Tuple<DeltaAtoms, DeltaAtoms, Leg>, Result = DeltaAtoms>,
     {
         *In::get_leg_mut(deposits) = deposit_amount;
     }
