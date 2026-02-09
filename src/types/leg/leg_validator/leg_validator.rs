@@ -1,6 +1,6 @@
 use crate::{
     quantities::{QuantityOps, Ticks},
-    types::{Base, LegConstants, Quote},
+    types::LegConstants,
 };
 
 pub trait LegValidator: LegConstants {
@@ -23,16 +23,4 @@ pub trait LegValidator: LegConstants {
     }
 
     fn price_limit_valid(_price_limit: Ticks) -> bool;
-}
-
-impl LegValidator for Base {
-    fn price_limit_valid(_price_limit: Ticks) -> bool {
-        true
-    }
-}
-
-impl LegValidator for Quote {
-    fn price_limit_valid(price_limit: Ticks) -> bool {
-        price_limit > Ticks::ZERO
-    }
 }
