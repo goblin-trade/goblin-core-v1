@@ -1,7 +1,7 @@
 use crate::{
+    axis::leg::leg_matcher::LegMatcher,
     quantities::{AsUnsided, QuantityOps, UnsidedAtoms},
     settlement::{global_delta::GlobalSenderUpdate, MatchedUnsidedAtoms},
-    types::LegMatcher,
 };
 
 /// Common delta shared by ETHDelta and ERC20Delta

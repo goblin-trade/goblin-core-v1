@@ -1,5 +1,4 @@
-use crate::settlement::MatchedLots;
-use crate::types::LegMatcher;
+use crate::{axis::leg::leg_matcher::LegMatcher, settlement::MatchedLots};
 
 /// Maker delta for taker side In
 ///

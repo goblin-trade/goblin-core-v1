@@ -1,9 +1,9 @@
 use crate::{
+    axis::leg::{leg_matcher::LegMatcher, leg_validator::LegValidator},
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
     quantities::Ticks,
     require,
-    types::{LegMatcher, LegValidator},
 };
 
 /// Instructions for a limit order. Limit orders are also known as market orders or immediate or cancel (IOC).

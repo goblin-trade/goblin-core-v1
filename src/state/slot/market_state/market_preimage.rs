@@ -1,11 +1,13 @@
 use core::marker::PhantomData;
 
 use crate::{
-    market::{market_marker::MarketMarker, LotSizePair},
+    axis::{
+        leg::Pair,
+        market::{market_marker::MarketMarker, LotSizePair},
+        token::token_marker::TokenMarker,
+    },
     quantities::QuoteLotsPerBaseUnitPerTick,
     state::{MarketState, Preimage},
-    token::TokenMarker,
-    types::Pair,
 };
 
 /// Key preimage to read MarketState from slot

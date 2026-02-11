@@ -1,6 +1,6 @@
 use crate::{
+    axis::leg::leg_matcher::LegMatcher,
     quantities::{InnerBitmapIndex, InnerIndex, Ticks},
-    types::LegMatcher,
 };
 
 pub struct RestingOrderPositionIterator<'a, In: LegMatcher> {

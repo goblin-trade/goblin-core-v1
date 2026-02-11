@@ -2,6 +2,7 @@ use crate::{
     axis::{
         market::{
             market_header::MarketHeader,
+            market_locator::MarketLocator,
             market_marker::{
                 hardcoded::{
                     hardcoded_market_index::HardcodedMarketIndex,

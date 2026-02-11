@@ -1,8 +1,8 @@
 use crate::{
+    axis::leg::leg_matcher::LegMatcher,
     goblin_error::GoblinError,
     quantities::DeltaAtoms,
     settlement::global_delta::{GlobalSenderUpdate, UnsidedSenderDelta},
-    types::LegMatcher,
 };
 
 /// ERC20 atoms due to be deducted, locked or transferred out on settlement

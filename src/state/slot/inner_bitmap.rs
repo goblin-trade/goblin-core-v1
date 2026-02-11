@@ -1,7 +1,4 @@
-use crate::{
-    quantities::InnerBitmapIndex,
-    state::{MarketPreimage, Preimage, SlotKey},
-};
+use crate::{quantities::InnerBitmapIndex, state::Preimage};
 
 #[repr(C)]
 pub struct InnerBitmapPreimage {

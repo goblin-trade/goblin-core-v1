@@ -1,5 +1,4 @@
-use crate::quantities::QuantityOps;
-use crate::types::LegMatcher;
+use crate::{axis::leg::leg_matcher::LegMatcher, quantities::QuantityOps};
 
 #[derive(Default, Clone, Copy, PartialEq)]
 pub struct MatchedLots<In: LegMatcher> {

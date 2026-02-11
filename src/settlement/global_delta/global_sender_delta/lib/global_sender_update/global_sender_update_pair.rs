@@ -1,7 +1,9 @@
 use crate::{
-    market::LotSizePair,
+    axis::{
+        leg::{Base, Pair, Quote},
+        market::LotSizePair,
+    },
     settlement::{global_delta::GlobalSenderUpdate, local_delta::TakerDelta},
-    types::{Base, Pair, Quote},
 };
 
 pub type GlobalSenderUpdatePair = Pair<GlobalSenderUpdate<Base>, GlobalSenderUpdate<Quote>>;

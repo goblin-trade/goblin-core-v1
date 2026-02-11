@@ -1,10 +1,16 @@
 use crate::{
+    axis::token::{
+        token_marker::{
+            custom_erc20::custom_erc20_index::CustomERC20Index,
+            hardcoded_erc20::hardcoded_erc20_index::HardcodedERC20Index,
+        },
+        Token,
+    },
     settlement::global_delta::{
         maker_custom_deltas::MakerCustomDeltas, maker_hardcoded_deltas::MakerHardcodedDeltas,
         ETHMakerDeltas, MakerDeltaKey, UnsidedMakerDelta,
     },
-    token::{CustomERC20Index, HardcodedERC20Index},
-    types::{FixedMap, Token, Triple},
+    types::{FixedMap, Triple},
 };
 
 /// Global deltas of makers that matched against msg.sender

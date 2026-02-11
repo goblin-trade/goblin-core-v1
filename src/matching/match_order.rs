@@ -1,6 +1,10 @@
 use crate::{
+    axis::{
+        leg::{leg_matcher::LegMatcher, Base, Leg, Quote},
+        market::{market_marker::MarketMarker, CommonMarket},
+        token::token_marker::TokenMarker,
+    },
     goblin_error::GoblinError,
-    market::{market_marker::MarketMarker, CommonMarket},
     matching::quote_iterator::RestingOrderPositionIterator,
     quantities::{BaseLotsPerBaseUnit, QuantityOps, QuoteLotsPerQuoteUnit, Ticks},
     require,
@@ -9,8 +13,7 @@ use crate::{
         MatchedLots,
     },
     state::{MarketState, Preimage, RestingOrder, RestingOrderPreimage},
-    token::TokenMarker,
-    types::{Address, Base, Leg, LegMatcher, Quote, StoreReader, Tuple},
+    types::{Address, StoreReader, Tuple},
 };
 
 pub fn match_order<M, B, Q, In>(

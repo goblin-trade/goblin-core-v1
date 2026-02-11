@@ -1,7 +1,8 @@
 use core::marker::PhantomData;
 
 use crate::{
-    market::market_marker::MarketMarker, quantities::Ticks, token::TokenMarker, types::Pair,
+    axis::{leg::Pair, market::market_marker::MarketMarker, token::token_marker::TokenMarker},
+    quantities::Ticks,
 };
 
 /// The market state slot

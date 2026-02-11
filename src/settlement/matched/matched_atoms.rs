@@ -1,7 +1,13 @@
 use crate::{
-    market::LotSizePair,
+    axis::{
+        leg::{
+            leg_matcher::LegMatcher, leg_quantities::LegQuantities, leg_validator::LegValidator,
+            Base, Leg, Quote,
+        },
+        market::LotSizePair,
+    },
     settlement::{MatchedLots, MatchedLotsPair},
-    types::{Base, Leg, LegMatcher, LegQuantities, LegValidator, Quote, StoreReader, Tuple},
+    types::{StoreReader, Tuple},
 };
 
 /// Matched atoms for a given token

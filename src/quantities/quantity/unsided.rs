@@ -1,7 +1,7 @@
 ///! Unsided atoms are used in the global delta where there is no notion of side
 use crate::{
+    axis::leg::{leg_quantities::LegQuantities, Base, Quote},
     quantities::{BaseDim, Dim, Exp, Quantity, QuoteDim, SidedDim, P1, Z0},
-    types::{Base, LegQuantities, Quote},
 };
 
 pub type Unsided<L, U, A> = Quantity<SidedDim<L, U, A>>;

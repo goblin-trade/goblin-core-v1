@@ -1,14 +1,7 @@
 use crate::{
+    axis::leg::leg_matcher::LegMatcher,
     goblin_error::GoblinError,
-    quantities::UnsidedAtoms,
-    settlement::{
-        global_delta::{
-            EthDelta, GlobalMakerDeltas, GlobalSenderDelta, SenderCustomDeltas,
-            SenderHardcodedDeltas,
-        },
-        local_delta::LocalDelta,
-    },
-    types::{LegMatcher, Pair},
+    settlement::global_delta::{GlobalMakerDeltas, GlobalSenderDelta},
 };
 
 /// The top level delta. Tracks pending token balance updates.

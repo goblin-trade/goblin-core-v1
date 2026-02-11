@@ -1,9 +1,10 @@
 use crate::{
+    axis::leg::{Base, Pair, Quote},
     settlement::{
         local_delta::{MakerDeltaPair, TakerDeltaPair},
         MatchedLots,
     },
-    types::{Base, Pair, Quote, StoreReader, Tuple},
+    types::{StoreReader, Tuple},
 };
 
 pub type MatchedLotsPair = Pair<MatchedLots<Base>, MatchedLots<Quote>>;

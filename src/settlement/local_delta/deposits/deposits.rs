@@ -1,9 +1,11 @@
 use crate::{
+    axis::{
+        leg::{Base, Pair, Quote},
+        token::token_marker::TokenMarker,
+    },
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
     quantities::DeltaAtoms,
-    token::TokenMarker,
-    types::{Base, Pair, Quote},
 };
 
 /// ERC20 deposits for base and quote token for a given market.

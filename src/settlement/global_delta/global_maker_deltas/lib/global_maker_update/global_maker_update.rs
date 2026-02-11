@@ -1,7 +1,13 @@
 use crate::{
-    market::LotSizePair,
+    axis::{
+        leg::{
+            leg_matcher::LegMatcher, leg_quantities::LegQuantities, leg_validator::LegValidator,
+            Base, Leg, Quote,
+        },
+        market::LotSizePair,
+    },
     settlement::{local_delta::MakerDeltaPair, MatchedAtoms, MatchedLots, MatchedLotsPair},
-    types::{Base, Leg, LegMatcher, LegQuantities, LegValidator, Quote, StoreReader, Tuple},
+    types::{StoreReader, Tuple},
 };
 
 /// Pending update to maker state for the token at In

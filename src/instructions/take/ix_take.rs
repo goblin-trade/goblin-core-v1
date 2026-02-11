@@ -1,14 +1,17 @@
 use crate::{
+    axis::{
+        leg::{leg_matcher::LegMatcher, leg_validator::LegValidator, Base, Leg, Quote},
+        market::{market_marker::MarketMarker, CommonMarket},
+        token::token_marker::TokenMarker,
+    },
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
     instructions::take::take_packet::TakePacket,
-    market::{market_marker::MarketMarker, CommonMarket},
     matching::match_order,
     quantities::{BaseLotsPerBaseUnit, QuoteLotsPerQuoteUnit, Ticks},
     settlement::local_delta::{LocalDelta, MakerDelta, TakerDelta},
     state::MarketState,
-    token::TokenMarker,
-    types::{Address, Base, Leg, LegMatcher, LegValidator, Quote, StoreReader, Tuple},
+    types::{Address, StoreReader, Tuple},
 };
 
 pub fn ix_take<M, B, Q, In>(

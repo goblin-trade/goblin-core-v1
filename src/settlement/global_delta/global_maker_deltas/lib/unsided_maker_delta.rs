@@ -1,6 +1,6 @@
 use crate::{
+    axis::leg::leg_matcher::LegMatcher,
     settlement::{global_delta::GlobalMakerUpdate, MatchedUnsidedAtoms},
-    types::LegMatcher,
 };
 
 /// Maker delta for a token

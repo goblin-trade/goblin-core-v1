@@ -1,9 +1,9 @@
 use crate::{
+    axis::token::{token_marker::hardcoded_erc20::HARDCODED_TOKENS, Token},
     settlement::global_delta::{
         ERC20Delta, EthDelta, SenderCustomDeltas, SenderHardcodedDeltas, MAX_CUSTOM_DELTAS,
     },
-    token::HARDCODED_TOKENS,
-    types::{Token, Triple},
+    types::Triple,
 };
 
 /// The global delta for msg.sender. Stores deltas of ETH and ERC20 tokens.

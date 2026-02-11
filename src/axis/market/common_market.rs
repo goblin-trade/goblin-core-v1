@@ -9,7 +9,7 @@ use crate::{
     goblin_error::GoblinError,
     quantities::QuoteLotsPerBaseUnitPerTick,
     state::MarketPreimage,
-    types::Tuple,
+    types::{StoreReader, Tuple},
 };
 
 pub type LotSizePair =

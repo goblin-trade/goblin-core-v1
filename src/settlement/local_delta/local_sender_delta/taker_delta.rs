@@ -1,6 +1,6 @@
+use crate::axis::leg::leg_matcher::LegMatcher;
 use crate::quantities::QuantityOps;
 use crate::settlement::MatchedLots;
-use crate::types::LegMatcher;
 
 #[derive(Clone, Copy)]
 pub struct TakerDelta<In: LegMatcher> {

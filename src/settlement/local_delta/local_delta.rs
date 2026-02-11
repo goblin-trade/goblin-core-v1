@@ -1,7 +1,7 @@
 use crate::{
+    axis::leg::Pair,
     quantities::DeltaAtoms,
     settlement::local_delta::{Deposits, LocalMakerDeltas, LocalSenderDelta},
-    types::Pair,
 };
 
 pub struct LocalDelta {

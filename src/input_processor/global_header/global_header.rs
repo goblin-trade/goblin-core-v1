@@ -1,8 +1,11 @@
 use crate::{
+    axis::market::{
+        market_counts::{dynamic::DynamicCounts, hardcoded::HardcodedCounts},
+        MarketVariantPair,
+    },
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx, EthTransfers, HeaderFlags},
-    market::market_counts::{dynamic::DynamicCounts, hardcoded::HardcodedCounts},
-    types::{Address, MarketVariantPair, Tuple},
+    types::{Address, Tuple},
 };
 
 /// Arguments read from calldata

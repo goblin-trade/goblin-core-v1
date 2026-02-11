@@ -1,6 +1,6 @@
 use crate::{
+    axis::leg::{Base, Pair, Quote},
     settlement::local_delta::MakerDelta,
-    types::{Base, Pair, Quote},
 };
 
 /// Maker deltas for base and quote sides

@@ -1,9 +1,9 @@
 use crate::{
+    axis::market::{market_counts::MarketCounts, Dynamic, Hardcoded},
     goblin_error::GoblinError,
     input_processor::{DecodeCtx, GlobalHeader},
-    market::market_counts::MarketCounts,
     settlement::Delta,
-    types::{Address, Dynamic, Hardcoded, StoreReader},
+    types::{Address, StoreReader},
 };
 
 impl<'a> MarketCounts for GlobalHeader<'a> {

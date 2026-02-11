@@ -1,6 +1,6 @@
 use crate::{
+    axis::leg::{Base, Pair, Quote},
     settlement::local_delta::TakerDelta,
-    types::{Base, Pair, Quote},
 };
 
 /// The results of matching take orders

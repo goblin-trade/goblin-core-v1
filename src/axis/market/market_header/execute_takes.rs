@@ -9,7 +9,7 @@ use crate::{
     instructions::ix_take,
     settlement::local_delta::LocalDelta,
     state::MarketState,
-    types::Address,
+    types::{Address, StoreReader},
 };
 
 impl<M, B, Q> MarketHeader<M, B, Q>
