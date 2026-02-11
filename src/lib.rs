@@ -11,13 +11,11 @@ pub mod goblin_error;
 pub mod hostio;
 pub mod input_processor;
 pub mod instructions;
-pub mod market;
 pub mod matching;
 pub mod processor;
 pub mod quantities;
 pub mod settlement;
 pub mod state;
-pub mod token;
 pub mod types;
 
 #[no_mangle]

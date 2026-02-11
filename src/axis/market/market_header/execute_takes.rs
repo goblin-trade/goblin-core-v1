@@ -1,0 +1,38 @@
+use crate::{
+    axis::{
+        leg::{Base, Quote},
+        market::{market_header::MarketHeader, market_marker::MarketMarker, CommonMarket},
+        token::token_marker::TokenMarker,
+    },
+    goblin_error::GoblinError,
+    input_processor::DecodeCtx,
+    instructions::ix_take,
+    settlement::local_delta::LocalDelta,
+    state::MarketState,
+    types::Address,
+};
+
+impl<M, B, Q> MarketHeader<M, B, Q>
+where
+    M: MarketMarker,
+    B: TokenMarker,
+    Q: TokenMarker,
+{
+    pub fn execute_takes(
+        &self,
+        ctx: &DecodeCtx,
+        msg_sender: &Address,
+        local_delta: &mut LocalDelta,
+        common_market: &CommonMarket<M, B, Q>,
+        market_state: &mut MarketState<M, B, Q>,
+    ) -> Result<(), GoblinError> {
+        if Base::get(&self.execute_takes) {
+            ix_take::<M, B, Q, Base>(ctx, msg_sender, local_delta, common_market, market_state)?;
+        }
+        if Quote::get(&self.execute_takes) {
+            ix_take::<M, B, Q, Quote>(ctx, msg_sender, local_delta, common_market, market_state)?;
+        }
+
+        Ok(())
+    }
+}
