@@ -7,6 +7,9 @@ use crate::{
 };
 
 /// The global delta for msg.sender. Stores deltas of ETH and ERC20 tokens.
+///
+/// TODO remove deposit?
+/// Deposit is handled elsewhere. Can we use UnsidedSenderDelta directly?
 pub type GlobalSenderDelta = Triple<EthDelta, SenderHardcodedDeltas, SenderCustomDeltas, Token>;
 
 impl GlobalSenderDelta {

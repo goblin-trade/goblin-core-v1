@@ -10,10 +10,10 @@ where
     B: TokenMarker,
     Q: TokenMarker,
 {
-    /// Whether to read decode deposit amounts
+    /// Whether to decode deposit amounts
     pub decode_deposit_amounts: bool,
 
-    /// Whether to execute base-in and quote-in take orders
+    /// Whether to execute take orders for sides In=Base and In=Quote
     pub execute_takes: Pair<bool, bool>,
 
     /// Number of outer bitmap indices
