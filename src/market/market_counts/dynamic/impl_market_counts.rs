@@ -1,7 +1,8 @@
+use super::DynamicCounts;
 use crate::{
     goblin_error::GoblinError,
     input_processor::DecodeCtx,
-    market::{process_market, DynamicCounts, MarketCounts},
+    market::{market_counts::MarketCounts, process_market},
     settlement::Delta,
     types::{Address, CustomERC20, Dynamic, HardcodedERC20, ETH},
 };

@@ -1,5 +1,5 @@
 use crate::{
-    market::{MarketAndKey, MarketMarker},
+    market::{market_marker::MarketMarker, MarketAndKey},
     token::{CustomERC20Data, TokenMarker},
     types::Dynamic,
 };

@@ -2,7 +2,7 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::DecodeCtx,
     instructions::ix_take,
-    market::{CommonMarket, MarketHeader, MarketMarker},
+    market::{market_marker::MarketMarker, CommonMarket, MarketHeader},
     settlement::local_delta::LocalDelta,
     state::MarketState,
     token::TokenMarker,

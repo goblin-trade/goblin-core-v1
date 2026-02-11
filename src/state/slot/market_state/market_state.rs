@@ -1,6 +1,8 @@
 use core::marker::PhantomData;
 
-use crate::{market::MarketMarker, quantities::Ticks, token::TokenMarker, types::Pair};
+use crate::{
+    market::market_marker::MarketMarker, quantities::Ticks, token::TokenMarker, types::Pair,
+};
 
 /// The market state slot
 /// We have 6 possible sub-types based on MarketVariant and PairShape

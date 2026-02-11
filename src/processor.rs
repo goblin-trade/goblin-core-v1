@@ -2,7 +2,7 @@ use crate::{
     goblin_error::GoblinError,
     hostio::{self},
     input_processor::{DecodeCtx, GlobalHeader},
-    market::MarketCounts,
+    market::market_counts::MarketCounts,
     require,
     settlement::Delta,
 };

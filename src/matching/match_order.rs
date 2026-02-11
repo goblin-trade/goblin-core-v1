@@ -1,6 +1,6 @@
 use crate::{
     goblin_error::GoblinError,
-    market::{CommonMarket, MarketMarker},
+    market::{market_marker::MarketMarker, CommonMarket},
     matching::quote_iterator::RestingOrderPositionIterator,
     quantities::{BaseLotsPerBaseUnit, QuantityOps, QuoteLotsPerQuoteUnit, Ticks},
     require,

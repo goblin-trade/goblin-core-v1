@@ -2,7 +2,7 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
     instructions::take::take_packet::TakePacket,
-    market::{CommonMarket, MarketMarker},
+    market::{market_marker::MarketMarker, CommonMarket},
     matching::match_order,
     quantities::{BaseLotsPerBaseUnit, QuoteLotsPerQuoteUnit, Ticks},
     settlement::local_delta::{LocalDelta, MakerDelta, TakerDelta},

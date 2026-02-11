@@ -1,7 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
-    market::{MarketHeader, MarketMarker},
+    market::{market_marker::MarketMarker, MarketHeader},
     token::TokenMarker,
     types::Tuple,
 };

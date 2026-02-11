@@ -1,7 +1,13 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
-    market::{HardcodedMarketIndex, HardcodedMarkets, MarketHeader, MarketLocator, MarketMarker},
+    market::{
+        market_marker::{
+            hardcoded::{HardcodedMarketIndex, HardcodedMarkets},
+            MarketMarker,
+        },
+        MarketHeader, MarketLocator,
+    },
     settlement::Delta,
     token::TokenMarker,
     types::Address,

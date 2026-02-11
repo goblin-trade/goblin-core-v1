@@ -2,7 +2,7 @@ use core::marker::PhantomData;
 
 use crate::{
     goblin_error::GoblinError,
-    market::MarketMarker,
+    market::market_marker::MarketMarker,
     quantities::QuoteLotsPerBaseUnitPerTick,
     state::MarketPreimage,
     token::{CustomERC20Data, TokenMarker},

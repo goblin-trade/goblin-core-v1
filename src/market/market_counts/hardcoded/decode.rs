@@ -1,7 +1,7 @@
+use super::HardcodedCounts;
 use crate::{
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodablePrimitive, DecodeCtx},
-    market::HardcodedCounts,
     require,
 };
 

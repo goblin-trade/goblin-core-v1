@@ -1,7 +1,8 @@
+use super::HardcodedCounts;
 use crate::{
     goblin_error::GoblinError,
     input_processor::DecodeCtx,
-    market::{process_market, HardcodedCounts, MarketCounts},
+    market::{market_counts::MarketCounts, process_market},
     settlement::Delta,
     types::{Address, Hardcoded, HardcodedERC20, ETH},
 };

@@ -1,7 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx, EthTransfers, HeaderFlags},
-    market::{DynamicCounts, HardcodedCounts},
+    market::market_counts::{dynamic::DynamicCounts, hardcoded::HardcodedCounts},
     types::{Address, MarketVariantPair, Tuple},
 };
 

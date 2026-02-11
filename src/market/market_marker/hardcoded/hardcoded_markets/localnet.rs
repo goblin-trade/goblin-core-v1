@@ -1,5 +1,6 @@
+use super::HardcodedMarkets;
 use crate::{
-    market::{CommonMarket, HardcodedMarketIndex, HardcodedMarkets, MarketAndKey},
+    market::{market_marker::hardcoded::HardcodedMarketIndex, CommonMarket, MarketAndKey},
     quantities::{BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit},
     state::SlotKey,
     token::HardcodedERC20Index,

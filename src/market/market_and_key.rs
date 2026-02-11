@@ -1,5 +1,5 @@
 use crate::{
-    market::{CommonMarket, MarketMarker},
+    market::{market_marker::MarketMarker, CommonMarket},
     state::{MarketPreimage, SlotKey},
     token::TokenMarker,
 };

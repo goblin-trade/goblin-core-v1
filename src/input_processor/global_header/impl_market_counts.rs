@@ -1,7 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::{DecodeCtx, GlobalHeader},
-    market::MarketCounts,
+    market::market_counts::MarketCounts,
     settlement::Delta,
     types::{Address, Dynamic, Hardcoded, StoreReader},
 };

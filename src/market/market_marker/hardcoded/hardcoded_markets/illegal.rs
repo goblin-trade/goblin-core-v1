@@ -2,8 +2,9 @@
 ///! They are never used, but are needed for satisfying the compiler.
 ///!
 ///! Hardcoded markets only have HardcodedERC20. They cannot have CustomERC20.
+use super::HardcodedMarkets;
 use crate::{
-    market::{HardcodedMarketIndex, HardcodedMarkets, MarketAndKey},
+    market::{market_marker::hardcoded::HardcodedMarketIndex, MarketAndKey},
     types::{CustomERC20, Hardcoded, HardcodedERC20, ETH},
 };
 

@@ -1,7 +1,7 @@
 use core::marker::PhantomData;
 
 use crate::{
-    market::{LotSizePair, MarketMarker},
+    market::{market_marker::MarketMarker, LotSizePair},
     quantities::QuoteLotsPerBaseUnitPerTick,
     state::{MarketState, Preimage},
     token::TokenMarker,

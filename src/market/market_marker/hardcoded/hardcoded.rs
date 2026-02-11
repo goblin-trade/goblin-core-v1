@@ -1,8 +1,5 @@
-use crate::{
-    market::{HardcodedMarketIndex, MarketMarker},
-    token::TokenMarker,
-    types::Hardcoded,
-};
+use super::HardcodedMarketIndex;
+use crate::{market::market_marker::MarketMarker, token::TokenMarker, types::Hardcoded};
 
 impl MarketMarker for Hardcoded {
     const DISCRIMINATOR: u8 = 3;
