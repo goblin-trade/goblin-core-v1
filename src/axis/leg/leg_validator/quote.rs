@@ -1,6 +1,6 @@
 use crate::{
+    axis::leg::{leg_validator::LegValidator, Quote},
     quantities::{QuantityOps, Ticks},
-    types::{LegValidator, Quote},
 };
 
 impl LegValidator for Quote {

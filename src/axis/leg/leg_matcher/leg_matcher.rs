@@ -1,6 +1,6 @@
 use crate::{
+    axis::leg::leg_quantities::LegQuantities,
     quantities::{BaseLots, BaseLotsPerBaseUnit, QuantityOps, QuoteLotsPerBaseUnitPerTick, Ticks},
-    types::LegQuantities,
 };
 
 /// Conversions for matching orders

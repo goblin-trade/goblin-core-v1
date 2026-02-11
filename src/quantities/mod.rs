@@ -10,5 +10,3 @@ pub use bitmap::*;
 pub use delta_atoms::*;
 pub use quantity::*;
 pub use raw_atoms::*;
-pub use ticks::*;
-pub use unsided_atoms::*;

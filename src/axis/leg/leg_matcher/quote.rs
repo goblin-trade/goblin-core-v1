@@ -1,9 +1,9 @@
 ///! LegMarker for input quote, also known as bid / buy
 use crate::{
+    axis::leg::{leg_matcher::LegMatcher, Base, Quote},
     quantities::{
         AdjustedQuoteLots, BaseLots, BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, Ticks,
     },
-    types::{Base, LegMatcher, Quote},
 };
 
 impl LegMatcher for Quote {

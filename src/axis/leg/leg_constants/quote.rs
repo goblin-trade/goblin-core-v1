@@ -1,6 +1,6 @@
 use crate::{
+    axis::leg::{leg_constants::LegConstants, Quote},
     quantities::{QuantityOps, QuoteAtomsPerQuoteUnit, Ticks},
-    types::{LegConstants, Quote},
 };
 
 impl LegConstants for Quote {

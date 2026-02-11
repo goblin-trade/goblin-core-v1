@@ -1,6 +1,6 @@
 use crate::{
+    axis::leg::leg_constants::LegConstants,
     quantities::{QuantityOps, Ticks},
-    types::LegConstants,
 };
 
 pub trait LegValidator: LegConstants {

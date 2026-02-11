@@ -1,9 +1,9 @@
 use crate::{
+    axis::leg::{leg_quantities::LegQuantities, Quote},
     quantities::{
         QuoteAtoms, QuoteAtomsPerQuoteLot, QuoteAtomsPerQuoteUnit, QuoteLots,
         QuoteLotsPerQuoteUnit, QuoteUnits,
     },
-    types::{LegQuantities, Quote},
 };
 
 impl LegQuantities for Quote {
