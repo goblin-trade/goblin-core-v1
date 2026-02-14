@@ -1,12 +1,26 @@
-use crate::{matching::bitmap::OuterBitmapIndex, state::Preimage};
+use crate::{
+    axis::{market::market_marker::MarketMarker, token::token_marker::TokenMarker},
+    matching::bitmap::OuterBitmapIndex,
+    state::{MarketPreimage, Preimage, SlotKey},
+};
 
-pub struct OuterBitmapPreimage {
-    // market_key: SlotKey,
-    market_key: [u8; 32],
+#[repr(C)]
+pub struct OuterBitmapPreimage<M, B, Q>
+where
+    M: MarketMarker,
+    B: TokenMarker,
+    Q: TokenMarker,
+{
+    market_key: SlotKey<MarketPreimage<M, B, Q>>,
     outer_bitmap_index: OuterBitmapIndex,
 }
 
-impl Preimage for OuterBitmapPreimage {
+impl<M, B, Q> Preimage for OuterBitmapPreimage<M, B, Q>
+where
+    M: MarketMarker,
+    B: TokenMarker,
+    Q: TokenMarker,
+{
     const SLOT_DISCRIMINATOR: u8 = 5;
     type SlotState = OuterBitmap;
 }

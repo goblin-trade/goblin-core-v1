@@ -1,5 +1,7 @@
 use crate::{matching::bitmap::InnerBitmapIndex, state::Preimage};
 
+// TODO remove InnerBitmapIndex
+// Instead use SlotKey of outer bitmap + outer pos
 #[repr(C)]
 pub struct InnerBitmapPreimage {
     // market_key: SlotKey<MarketPreimage>,
