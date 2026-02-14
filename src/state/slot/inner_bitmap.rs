@@ -1,15 +1,26 @@
-use crate::{matching::bitmap::InnerBitmapIndex, state::Preimage};
+use crate::{
+    axis::{market::market_marker::MarketMarker, token::token_marker::TokenMarker},
+    matching::bitmap::OuterPos,
+    state::{OuterBitmapPreimage, Preimage, SlotKey},
+};
 
-// TODO remove InnerBitmapIndex
-// Instead use SlotKey of outer bitmap + outer pos
 #[repr(C)]
-pub struct InnerBitmapPreimage {
-    // market_key: SlotKey<MarketPreimage>,
-    market_key: [u8; 32],
-    inner_bitmap_index: InnerBitmapIndex,
+pub struct InnerBitmapPreimage<M, B, Q>
+where
+    M: MarketMarker,
+    B: TokenMarker,
+    Q: TokenMarker,
+{
+    outer_bitmap_key: SlotKey<OuterBitmapPreimage<M, B, Q>>,
+    outer_pos: OuterPos,
 }
 
-impl Preimage for InnerBitmapPreimage {
+impl<M, B, Q> Preimage for InnerBitmapPreimage<M, B, Q>
+where
+    M: MarketMarker,
+    B: TokenMarker,
+    Q: TokenMarker,
+{
     const SLOT_DISCRIMINATOR: u8 = 6;
     type SlotState = InnerBitmap;
 }
