@@ -1,5 +1,6 @@
 use crate::{
-    quantities::{BaseLots, InnerPos},
+    matching::bitmap::InnerPos,
+    quantities::BaseLots,
     state::{InnerBitmap, Preimage, SlotKey},
     types::Address,
 };

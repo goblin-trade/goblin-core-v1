@@ -1,5 +1,6 @@
 use crate::{
-    quantities::{InnerBitmapIndex, InnerPos, Ticks},
+    matching::bitmap::{InnerBitmapIndex, InnerPos},
+    quantities::Ticks,
     state::{Preimage, RestingOrderPreimage, SlotKey},
 };
 
@@ -11,7 +12,7 @@ pub struct RestingOrderPosition {
 
 impl RestingOrderPosition {
     pub fn price(&self) -> Ticks {
-        Ticks::from_inner_bitmap_index_row(self.inner_bitmap_index, self.inner_pos.row())
+        Ticks::from_inner_bitmap(self.inner_bitmap_index, self.inner_pos.row())
     }
 
     pub fn hash(&self) -> SlotKey<RestingOrderPreimage> {

@@ -1,4 +1,7 @@
-use crate::quantities::{InnerBitmapIndex, Row, Ticks};
+use crate::{
+    matching::bitmap::{InnerBitmapIndex, Row},
+    quantities::Ticks,
+};
 
 impl Ticks {
     pub fn inner_bitmap_index(&self) -> InnerBitmapIndex {
@@ -11,7 +14,7 @@ impl Ticks {
         Row((self.inner & 0b11111) as u8)
     }
 
-    pub fn from_inner_bitmap_index_row(inner_bitmap_index: InnerBitmapIndex, row: Row) -> Self {
+    pub fn from_inner_bitmap(inner_bitmap_index: InnerBitmapIndex, row: Row) -> Self {
         // inner_bitmap_index * 32 + row
         Self::new((inner_bitmap_index.0 << 5) | row.0 as u64)
     }

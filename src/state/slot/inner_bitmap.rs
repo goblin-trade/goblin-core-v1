@@ -1,4 +1,4 @@
-use crate::{quantities::InnerBitmapIndex, state::Preimage};
+use crate::{matching::bitmap::InnerBitmapIndex, state::Preimage};
 
 #[repr(C)]
 pub struct InnerBitmapPreimage {

@@ -1,4 +1,4 @@
-use crate::{quantities::OuterBitmapIndex, state::Preimage};
+use crate::{matching::bitmap::OuterBitmapIndex, state::Preimage};
 
 pub struct OuterBitmapPreimage {
     // market_key: SlotKey,

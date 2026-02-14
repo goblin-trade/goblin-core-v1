@@ -1,14 +1,13 @@
-use crate::define_custom_type;
+use crate::{
+    define_custom_type,
+    matching::bitmap::{OuterBitmapIndex, OuterPos},
+};
 
 // Inner bitmap
 define_custom_type!(InnerBitmapIndex<u64>);
 define_custom_type!(InnerPos<u8>);
 define_custom_type!(Row<u8>);
 define_custom_type!(Column<u8>);
-
-// Outer bitmap
-define_custom_type!(OuterBitmapIndex<u64>);
-define_custom_type!(OuterPos<u8>);
 
 impl InnerPos {
     pub fn row(&self) -> Row {
