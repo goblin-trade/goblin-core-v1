@@ -1,5 +1,9 @@
 use crate::{
-    axis::leg::{leg_matcher::LegMatcher, Leg, Pair},
+    axis::{
+        leg::{leg_matcher::LegMatcher, Leg, Pair},
+        market::market_marker::MarketMarker,
+        token::token_marker::TokenMarker,
+    },
     goblin_error::GoblinError,
     matching::resting_order_iterator::resting_order_position::RestingOrderPosition,
     quantities::{QuantityOps, Ticks},
@@ -10,12 +14,24 @@ use crate::{
 /// Iterator for resting order positions
 ///
 /// In: LegMatcher denotes the taker side.
-pub struct RestingOrderIterator<'a, In: LegMatcher> {
+pub struct RestingOrderIterator<'a, M, B, Q, In>
+where
+    M: MarketMarker,
+    B: TokenMarker,
+    Q: TokenMarker,
+    In: LegMatcher,
+{
     pub best_opposite_price: &'a mut Ticks,
-    _marker: core::marker::PhantomData<In>,
+    _marker: core::marker::PhantomData<(M, B, Q, In)>,
 }
 
-impl<'a, In: LegMatcher> RestingOrderIterator<'a, In> {
+impl<'a, M, B, Q, In> RestingOrderIterator<'a, M, B, Q, In>
+where
+    M: MarketMarker,
+    B: TokenMarker,
+    Q: TokenMarker,
+    In: LegMatcher,
+{
     /// Create a new RestingOrderIterator. Fail if best price crosses price limit.
     pub fn new(
         best_prices: &'a mut Pair<Ticks, Ticks>,
@@ -40,8 +56,14 @@ impl<'a, In: LegMatcher> RestingOrderIterator<'a, In> {
     }
 }
 
-impl<'a, In: LegMatcher> Iterator for RestingOrderIterator<'a, In> {
-    type Item = RestingOrderPosition;
+impl<'a, M, B, Q, In> Iterator for RestingOrderIterator<'a, M, B, Q, In>
+where
+    M: MarketMarker,
+    B: TokenMarker,
+    Q: TokenMarker,
+    In: LegMatcher,
+{
+    type Item = RestingOrderPosition<M, B, Q>;
 
     fn next(&mut self) -> Option<Self::Item> {
         None

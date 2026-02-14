@@ -11,7 +11,7 @@ use crate::{
         local_delta::{LocalDelta, MakerDelta, TakerDelta},
         MatchedLots,
     },
-    state::{resting_order::RestingOrder, MarketState},
+    state::{resting_order::RestingOrder, MarketState, Preimage},
     types::{Address, StoreReader, Tuple},
 };
 
@@ -48,7 +48,7 @@ where
     let budget = In::matching_lots_taker(num_lots, base_lot_size);
 
     let mut taker_delta = TakerDelta::<In>::zero();
-    let mut resting_order_iterator = RestingOrderIterator::<In>::new(
+    let mut resting_order_iterator = RestingOrderIterator::<M, B, Q, In>::new(
         &mut market_state.best_prices,
         price_limit,
         min_lots_to_fill,
@@ -64,7 +64,8 @@ where
             }
 
             // Read resting order amount
-            let resting_order_key = resting_order_position.hash();
+            let resting_order_key = resting_order_position.preimage.hash();
+            // let resting_order_key = resting_order_position.hash();
             let mut resting_order = resting_order_key.load();
 
             let RestingOrder {
