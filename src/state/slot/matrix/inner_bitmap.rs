@@ -1,7 +1,7 @@
 use crate::{
     axis::{market::market_marker::MarketMarker, token::token_marker::TokenMarker},
     matching::bitmap::OuterPos,
-    state::{OuterBitmapPreimage, Preimage, SlotKey},
+    state::{outer_bitmap::OuterBitmapPreimage, Preimage, SlotKey},
 };
 
 #[repr(C)]

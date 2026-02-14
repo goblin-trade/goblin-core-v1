@@ -1,7 +1,7 @@
 use crate::{
     matching::bitmap::{InnerBitmapIndex, InnerPos},
     quantities::Ticks,
-    state::{Preimage, RestingOrderPreimage, SlotKey},
+    state::{resting_order::RestingOrderPreimage, Preimage, SlotKey},
 };
 
 pub struct RestingOrderPosition {

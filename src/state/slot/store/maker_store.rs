@@ -1,6 +1,6 @@
 use crate::{
     quantities::UnsidedAtoms,
-    state::{ERC20Store, EthStore},
+    state::{erc20_store::ERC20Store, eth_store::EthStore},
 };
 
 pub trait MakerStore {

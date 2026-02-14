@@ -11,7 +11,7 @@ use crate::{
         local_delta::{LocalDelta, MakerDelta, TakerDelta},
         MatchedLots,
     },
-    state::{MarketState, RestingOrder},
+    state::{resting_order::RestingOrder, MarketState},
     types::{Address, StoreReader, Tuple},
 };
 
