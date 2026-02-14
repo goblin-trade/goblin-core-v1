@@ -2,15 +2,15 @@ use crate::define_custom_type;
 
 // Inner bitmap
 define_custom_type!(InnerBitmapIndex<u64>);
-define_custom_type!(InnerIndex<u8>);
+define_custom_type!(InnerPos<u8>);
 define_custom_type!(Row<u8>);
 define_custom_type!(Column<u8>);
 
 // Outer bitmap
 define_custom_type!(OuterBitmapIndex<u64>);
-define_custom_type!(OuterIndex<u8>);
+define_custom_type!(OuterPos<u8>);
 
-impl InnerIndex {
+impl InnerPos {
     pub fn row(&self) -> Row {
         // divide by 8 → right shift 3 bits
         Row(self.0 >> 3)
@@ -33,8 +33,8 @@ impl InnerBitmapIndex {
         OuterBitmapIndex(self.0 >> 8)
     }
 
-    pub fn outer_index(&self) -> OuterIndex {
+    pub fn outer_pos(&self) -> OuterPos {
         // modulo 256 → mask lowest 8 bits
-        OuterIndex((self.0 & 0b1111_1111) as u8)
+        OuterPos((self.0 & 0b1111_1111) as u8)
     }
 }

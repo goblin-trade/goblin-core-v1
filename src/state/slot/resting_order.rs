@@ -1,5 +1,5 @@
 use crate::{
-    quantities::{BaseLots, InnerIndex},
+    quantities::{BaseLots, InnerPos},
     state::{InnerBitmap, Preimage, SlotKey},
     types::Address,
 };
@@ -7,7 +7,7 @@ use crate::{
 pub struct RestingOrderPreimage {
     // TODO replace with SlotKey<InnerBitmapPreimage>
     pub inner_bitmap_key: [u8; 32],
-    pub inner_index: InnerIndex,
+    pub inner_pos: InnerPos,
 }
 
 impl Preimage for RestingOrderPreimage {
@@ -38,6 +38,8 @@ pub struct RestingOrder {
     pub maker: Address,
     pub size: BaseLots,
 }
+
+impl RestingOrder {}
 
 // impl SlotState for RestingOrder {
 //     const SLOT_DISCRIMINATOR: u8 = 7;
