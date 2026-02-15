@@ -1,7 +1,7 @@
 use crate::{
     axis::{
         leg::{leg_matcher::LegMatcher, leg_validator::LegValidator, Base, Leg, Quote},
-        market::{market_marker::MarketMarker, CommonMarket},
+        market::{market_marker::MarketMarker, MarketAndKey},
         token::token_marker::TokenMarker,
     },
     goblin_error::GoblinError,
@@ -18,7 +18,7 @@ pub fn ix_take<M, B, Q, In>(
     ctx: &DecodeCtx,
     msg_sender: &Address,
     local_delta: &mut LocalDelta,
-    market: &CommonMarket<M, B, Q>,
+    market_and_key: &MarketAndKey<M, B, Q>,
     market_state: &mut MarketState<M, B, Q>,
 ) -> Result<(), GoblinError>
 where
@@ -40,7 +40,7 @@ where
     match_order::<M, B, Q, In>(
         msg_sender,
         local_delta,
-        market,
+        market_and_key,
         market_state,
         packet.num_lots,
         packet.min_lots_to_fill,

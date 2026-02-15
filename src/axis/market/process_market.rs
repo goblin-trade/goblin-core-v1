@@ -46,7 +46,7 @@ where
         ctx,
         msg_sender,
         &mut delta.local,
-        &market_and_key.market,
+        market_and_key,
         &mut market_state,
     )?;
 

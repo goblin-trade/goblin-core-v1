@@ -5,7 +5,6 @@ use crate::{
         token::token_marker::TokenMarker,
     },
     goblin_error::GoblinError,
-    matching::resting_order_iterator::resting_order_position::RestingOrderPosition,
     quantities::{QuantityOps, Ticks},
     require,
     types::{StoreReader, Tuple},
@@ -53,19 +52,5 @@ where
             best_opposite_price,
             _marker: core::marker::PhantomData,
         })
-    }
-}
-
-impl<'a, M, B, Q, In> Iterator for RestingOrderIterator<'a, M, B, Q, In>
-where
-    M: MarketMarker,
-    B: TokenMarker,
-    Q: TokenMarker,
-    In: LegMatcher,
-{
-    type Item = RestingOrderPosition<M, B, Q>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        None
     }
 }

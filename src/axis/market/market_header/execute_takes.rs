@@ -1,7 +1,7 @@
 use crate::{
     axis::{
         leg::{Base, Quote},
-        market::{market_header::MarketHeader, market_marker::MarketMarker, CommonMarket},
+        market::{market_header::MarketHeader, market_marker::MarketMarker, MarketAndKey},
         token::token_marker::TokenMarker,
     },
     goblin_error::GoblinError,
@@ -23,14 +23,14 @@ where
         ctx: &DecodeCtx,
         msg_sender: &Address,
         local_delta: &mut LocalDelta,
-        common_market: &CommonMarket<M, B, Q>,
+        market_and_key: &MarketAndKey<M, B, Q>,
         market_state: &mut MarketState<M, B, Q>,
     ) -> Result<(), GoblinError> {
         if Base::get(&self.execute_takes) {
-            ix_take::<M, B, Q, Base>(ctx, msg_sender, local_delta, common_market, market_state)?;
+            ix_take::<M, B, Q, Base>(ctx, msg_sender, local_delta, market_and_key, market_state)?;
         }
         if Quote::get(&self.execute_takes) {
-            ix_take::<M, B, Q, Quote>(ctx, msg_sender, local_delta, common_market, market_state)?;
+            ix_take::<M, B, Q, Quote>(ctx, msg_sender, local_delta, market_and_key, market_state)?;
         }
 
         Ok(())

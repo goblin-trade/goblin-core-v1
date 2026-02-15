@@ -1,7 +1,7 @@
 use crate::{
     axis::{
         leg::{leg_matcher::LegMatcher, Base, Leg, Quote},
-        market::{market_marker::MarketMarker, CommonMarket},
+        market::{market_marker::MarketMarker, CommonMarket, MarketAndKey},
         token::token_marker::TokenMarker,
     },
     goblin_error::GoblinError,
@@ -25,7 +25,7 @@ use crate::{
 pub fn match_order<M, B, Q, In>(
     taker: &Address,
     local_delta: &mut LocalDelta,
-    market: &CommonMarket<M, B, Q>,
+    market_and_key: &MarketAndKey<M, B, Q>,
     market_state: &mut MarketState<M, B, Q>,
     num_lots: In::Lots,
     min_lots_to_fill: In::Lots,
@@ -44,6 +44,11 @@ where
         >,
     In::Opposite: StoreReader<Tuple<Ticks, Ticks, Leg>, Result = Ticks>,
 {
+    let MarketAndKey {
+        market,
+        key: market_key,
+    } = market_and_key;
+
     let base_lot_size = Base::get(&market.lot_size_pair);
     let budget = In::matching_lots_taker(num_lots, base_lot_size);
 
