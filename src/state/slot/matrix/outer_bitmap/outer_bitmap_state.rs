@@ -1,14 +1,10 @@
-use crate::{
-    axis::{market::market_marker::MarketMarker, token::token_marker::TokenMarker},
-    matching::bitmap::OuterBitmapIndex,
-    state::{outer_bitmap::OuterBitmap, MarketPreimage, Preimage, SlotKey},
-};
+use crate::state::outer_bitmap::{active_outer_bitmap::ActiveOuterBitmap, OuterBitmap};
 
 pub const CLOSED_SENTINEL: OuterBitmap = OuterBitmap([0xFF; 32]);
 
 pub enum OuterBitmapState {
     Closed,
-    Active([u8; 32]),
+    Active(ActiveOuterBitmap),
 }
 
 impl From<OuterBitmap> for OuterBitmapState {
@@ -16,7 +12,7 @@ impl From<OuterBitmap> for OuterBitmapState {
         if value == CLOSED_SENTINEL {
             OuterBitmapState::Closed
         } else {
-            OuterBitmapState::Active(value.0)
+            OuterBitmapState::Active(ActiveOuterBitmap(value.0))
         }
     }
 }

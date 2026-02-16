@@ -9,7 +9,10 @@ use crate::{
             resting_order_position::RestingOrderPosition, RestingOrderIterator,
         },
     },
-    state::{outer_bitmap::preimage::OuterBitmapPreimage, Preimage},
+    state::{
+        outer_bitmap::{outer_bitmap_state::OuterBitmapState, preimage::OuterBitmapPreimage},
+        Preimage,
+    },
 };
 
 impl<'a, M, B, Q, In> Iterator for RestingOrderIterator<'a, M, B, Q, In>
@@ -40,6 +43,13 @@ where
         };
         let outer_bitmap_key = outer_bitmap_preimage.hash();
         let outer_bitmap = outer_bitmap_key.load();
+
+        match OuterBitmapState::from(outer_bitmap) {
+            OuterBitmapState::Closed => {
+                // TODO read next
+            }
+            OuterBitmapState::Active(_) => todo!(),
+        };
 
         None
     }
