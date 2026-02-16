@@ -14,7 +14,9 @@ where
     B: TokenMarker,
     Q: TokenMarker,
 {
-    pub best_prices: Pair<Ticks, Ticks>,
+    /// The last known prices at the centre
+    /// The best price is equal to or worse than the last price.
+    pub last_prices: Pair<Ticks, Ticks>,
     /// Padding to match 32 bits
     _padding: [u8; 16],
     _marker: PhantomData<(M, B, Q)>,

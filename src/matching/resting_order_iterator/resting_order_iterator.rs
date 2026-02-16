@@ -22,7 +22,7 @@ where
     In: LegMatcher,
 {
     market_key: &'a SlotKey<MarketPreimage<M, B, Q>>,
-    pub best_opposite_price: &'a mut Ticks,
+    pub last_opposite_price: &'a mut Ticks,
     _marker: core::marker::PhantomData<(M, B, Q, In)>,
 }
 
@@ -53,7 +53,7 @@ where
 
         Ok(Self {
             market_key,
-            best_opposite_price,
+            last_opposite_price: best_opposite_price,
             _marker: core::marker::PhantomData,
         })
     }
