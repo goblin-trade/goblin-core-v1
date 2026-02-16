@@ -1,6 +1,6 @@
 use crate::{
     axis::{market::market_marker::MarketMarker, token::token_marker::TokenMarker},
-    matching::bitmap::{OuterBitmapIndex, OuterPos},
+    matching::bitmap::{coordinates::Coordinates, OuterBitmapIndex, OuterPos},
     quantities::Ticks,
     state::resting_order::RestingOrderPreimage,
 };
@@ -24,11 +24,11 @@ where
     Q: TokenMarker,
 {
     pub fn price(&self) -> Ticks {
-        Ticks::from_coordinates(
-            self.outer_bitmap_index,
-            self.outer_pos,
-            self.preimage.inner_pos,
-        )
-        // Ticks::from_inner_bitmap(self.inner_bitmap_index, self.preimage.inner_pos.row())
+        Coordinates {
+            outer_bitmap_index: self.outer_bitmap_index,
+            outer_pos: self.outer_pos,
+            row: self.preimage.inner_pos.row(),
+        }
+        .into()
     }
 }
