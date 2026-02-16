@@ -2,7 +2,7 @@ use crate::{
     axis::{market::market_marker::MarketMarker, token::token_marker::TokenMarker},
     matching::bitmap::{price_coordinates::PriceCoordinates, OuterBitmapIndex, OuterPos},
     quantities::Ticks,
-    state::resting_order::RestingOrderPreimage,
+    state::resting_order::preimage::RestingOrderPreimage,
 };
 
 pub struct RestingOrderPosition<M, B, Q>

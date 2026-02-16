@@ -9,7 +9,7 @@ use crate::{
             resting_order_position::RestingOrderPosition, RestingOrderIterator,
         },
     },
-    state::{outer_bitmap::OuterBitmapPreimage, Preimage},
+    state::{outer_bitmap::preimage::OuterBitmapPreimage, Preimage},
 };
 
 impl<'a, M, B, Q, In> Iterator for RestingOrderIterator<'a, M, B, Q, In>
