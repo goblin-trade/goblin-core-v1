@@ -1,6 +1,7 @@
 use crate::{quantities::UnsidedAtoms, state::Preimage, types::Address};
 
 #[repr(C)]
+#[derive(Clone, Copy)]
 pub struct ERC20StorePreimage {
     trader: Address,
     token: Address,

@@ -6,6 +6,7 @@ use crate::{
     types::Address,
 };
 
+#[derive(Clone, Copy)]
 pub struct RestingOrderPreimage<M, B, Q>
 where
     M: MarketMarker,

@@ -4,7 +4,7 @@ use crate::{
 };
 /// Preimage used to derive slot key. The slot key is then used
 /// to read SlotState
-pub trait Preimage: Sized {
+pub trait Preimage: Sized + Clone + Copy {
     /// Unique discriminator for each Preimage implementation
     ///
     /// Discriminators can be standalone or derived from sub-discriminators.

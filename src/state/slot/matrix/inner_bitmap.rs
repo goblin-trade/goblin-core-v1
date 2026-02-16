@@ -5,6 +5,7 @@ use crate::{
 };
 
 #[repr(C)]
+#[derive(Clone, Copy)]
 pub struct InnerBitmapPreimage<M, B, Q>
 where
     M: MarketMarker,

@@ -5,14 +5,15 @@ use crate::{
 };
 
 #[repr(C)]
+#[derive(Clone, Copy)]
 pub struct OuterBitmapPreimage<M, B, Q>
 where
     M: MarketMarker,
     B: TokenMarker,
     Q: TokenMarker,
 {
-    market_key: SlotKey<MarketPreimage<M, B, Q>>,
-    outer_bitmap_index: OuterBitmapIndex,
+    pub market_key: SlotKey<MarketPreimage<M, B, Q>>,
+    pub outer_bitmap_index: OuterBitmapIndex,
 }
 
 impl<M, B, Q> Preimage for OuterBitmapPreimage<M, B, Q>

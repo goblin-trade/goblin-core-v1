@@ -3,9 +3,13 @@ use crate::{
         leg::leg_matcher::LegMatcher, market::market_marker::MarketMarker,
         token::token_marker::TokenMarker,
     },
-    matching::resting_order_iterator::{
-        resting_order_position::RestingOrderPosition, RestingOrderIterator,
+    matching::{
+        bitmap::OuterBitmapIndex,
+        resting_order_iterator::{
+            resting_order_position::RestingOrderPosition, RestingOrderIterator,
+        },
     },
+    state::{outer_bitmap::OuterBitmapPreimage, Preimage},
 };
 
 impl<'a, M, B, Q, In> Iterator for RestingOrderIterator<'a, M, B, Q, In>
@@ -28,6 +32,15 @@ where
         //
         // Question
         // - Do we need to store outer index count?
+
+        let last_outer_bitmap_index = OuterBitmapIndex::from(*self.last_opposite_price);
+        let outer_bitmap_preimage = OuterBitmapPreimage {
+            market_key: *self.market_key,
+            outer_bitmap_index: last_outer_bitmap_index,
+        };
+        let outer_bitmap_key = outer_bitmap_preimage.hash();
+        let outer_bitmap = outer_bitmap_key.load();
+
         None
     }
 }

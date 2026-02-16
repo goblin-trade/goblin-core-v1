@@ -8,7 +8,7 @@ use crate::axis::{market::market_locator::MarketLocator, token::token_marker::To
 ///! However since we use generics, all combinations must be implented. Even hardcoded
 ///! markets with custom tokens.
 
-pub trait MarketMarker: Sized {
+pub trait MarketMarker: Sized + Clone + Copy {
     /// Discriminator used to hash the market key
     const DISCRIMINATOR: u8;
 

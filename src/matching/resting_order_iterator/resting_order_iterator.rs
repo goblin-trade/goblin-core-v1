@@ -21,7 +21,7 @@ where
     Q: TokenMarker,
     In: LegMatcher,
 {
-    market_key: &'a SlotKey<MarketPreimage<M, B, Q>>,
+    pub market_key: &'a SlotKey<MarketPreimage<M, B, Q>>,
     pub last_opposite_price: &'a mut Ticks,
     _marker: core::marker::PhantomData<(M, B, Q, In)>,
 }

@@ -15,6 +15,7 @@ use crate::{
 /// This is similar to MarketState, but instead of token index pair we have
 /// a pair of token addresses
 #[repr(C)]
+#[derive(Clone, Copy)]
 pub struct MarketPreimage<M, B, Q>
 where
     M: MarketMarker,
