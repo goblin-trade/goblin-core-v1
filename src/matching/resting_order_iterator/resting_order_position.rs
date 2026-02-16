@@ -24,7 +24,7 @@ where
     Q: TokenMarker,
 {
     pub fn price(&self) -> Ticks {
-        Ticks::from_matrix(
+        Ticks::from_coordinates(
             self.outer_bitmap_index,
             self.outer_pos,
             self.preimage.inner_pos,

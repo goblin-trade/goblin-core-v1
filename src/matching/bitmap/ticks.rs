@@ -3,6 +3,24 @@ use crate::{
     quantities::Ticks,
 };
 
+impl From<Ticks> for OuterBitmapIndex {
+    fn from(value: Ticks) -> Self {
+        Self(value.inner / (256 * 32))
+    }
+}
+
+impl From<Ticks> for OuterPos {
+    fn from(value: Ticks) -> Self {
+        Self(((value.inner / 32) % 256) as u8)
+    }
+}
+
+impl From<Ticks> for Row {
+    fn from(value: Ticks) -> Self {
+        Self((value.inner % 32) as u8)
+    }
+}
+
 impl Ticks {
     pub fn inner_bitmap_index(&self) -> InnerBitmapIndex {
         // divide by 32 → right shift 5 bits
@@ -14,10 +32,10 @@ impl Ticks {
         Row((self.inner & 0b11111) as u8)
     }
 
-    pub fn from_matrix(
+    pub fn from_coordinates(
         outer_bitmap_index: OuterBitmapIndex,
         outer_pos: OuterPos,
-        inner_pos: InnerPos,
+        inner_pos: InnerPos, // TODO just use row
     ) -> Self {
         let ticks_raw =
             outer_bitmap_index.0 * 256 + outer_pos.0 as u64 * 32 + inner_pos.0 as u64 / 8;
