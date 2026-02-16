@@ -18,6 +18,16 @@ where
     type Item = RestingOrderPosition<M, B, Q>;
 
     fn next(&mut self) -> Option<Self::Item> {
+        // Rudimentary implementation
+        // Loop through outer bitmaps
+        //
+        // Steps
+        // - Exit if market_state.outer_index_count is 0
+        // - Derive outer_bitmap_index from best price (coordinates() function)
+        // - Read slot
+        //
+        // Question
+        // - Do we need to store outer index count?
         None
     }
 }

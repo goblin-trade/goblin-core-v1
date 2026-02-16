@@ -7,6 +7,7 @@ use crate::{
     goblin_error::GoblinError,
     quantities::{QuantityOps, Ticks},
     require,
+    state::{MarketPreimage, SlotKey},
     types::{StoreReader, Tuple},
 };
 
@@ -20,6 +21,7 @@ where
     Q: TokenMarker,
     In: LegMatcher,
 {
+    market_key: &'a SlotKey<MarketPreimage<M, B, Q>>,
     pub best_opposite_price: &'a mut Ticks,
     _marker: core::marker::PhantomData<(M, B, Q, In)>,
 }
@@ -33,6 +35,7 @@ where
 {
     /// Create a new RestingOrderIterator. Fail if best price crosses price limit.
     pub fn new(
+        market_key: &'a SlotKey<MarketPreimage<M, B, Q>>,
         best_prices: &'a mut Pair<Ticks, Ticks>,
         price_limit: Ticks,
         min_lots_to_fill: In::Lots,
@@ -49,6 +52,7 @@ where
         );
 
         Ok(Self {
+            market_key,
             best_opposite_price,
             _marker: core::marker::PhantomData,
         })

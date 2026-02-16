@@ -54,6 +54,7 @@ where
 
     let mut taker_delta = TakerDelta::<In>::zero();
     let mut resting_order_iterator = RestingOrderIterator::<M, B, Q, In>::new(
+        market_key,
         &mut market_state.best_prices,
         price_limit,
         min_lots_to_fill,
