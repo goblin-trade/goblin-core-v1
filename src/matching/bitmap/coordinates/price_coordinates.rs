@@ -4,14 +4,14 @@ use crate::{
 };
 
 /// Coordinate representation of a price tick
-pub struct Coordinates {
+pub struct PriceCoordinates {
     pub outer_bitmap_index: OuterBitmapIndex,
     pub outer_pos: OuterPos,
     pub row: Row,
 }
 
-impl From<Coordinates> for Ticks {
-    fn from(value: Coordinates) -> Self {
+impl From<PriceCoordinates> for Ticks {
+    fn from(value: PriceCoordinates) -> Self {
         let outer_bitmap_index = value.outer_bitmap_index.0;
         let outer_pos = value.outer_pos.0 as u64;
         let row = value.row.0 as u64;
