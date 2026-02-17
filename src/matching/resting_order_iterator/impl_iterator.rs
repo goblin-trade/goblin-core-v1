@@ -36,7 +36,7 @@ where
         // Question
         // - Do we need to store outer index count?
 
-        let last_outer_bitmap_index = OuterBitmapIndex::from(*self.last_opposite_price);
+        let last_outer_bitmap_index = self.coordinates.price_coordinates.outer_bitmap_index;
         let outer_bitmap_preimage = OuterBitmapPreimage {
             market_key: *self.market_key,
             outer_bitmap_index: last_outer_bitmap_index,

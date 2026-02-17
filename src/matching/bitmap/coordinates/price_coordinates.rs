@@ -10,6 +10,16 @@ pub struct PriceCoordinates {
     pub row: Row,
 }
 
+impl From<Ticks> for PriceCoordinates {
+    fn from(value: Ticks) -> Self {
+        Self {
+            outer_bitmap_index: value.into(),
+            outer_pos: value.into(),
+            row: value.into(),
+        }
+    }
+}
+
 impl From<PriceCoordinates> for Ticks {
     fn from(value: PriceCoordinates) -> Self {
         let outer_bitmap_index = value.outer_bitmap_index.0;
