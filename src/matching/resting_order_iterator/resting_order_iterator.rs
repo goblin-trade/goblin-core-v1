@@ -8,7 +8,13 @@ use crate::{
     matching::bitmap::{Column, Coordinates},
     quantities::{QuantityOps, Ticks},
     require,
-    state::{MarketPreimage, SlotKey},
+    state::{
+        outer_bitmap::{
+            outer_bitmap, outer_bitmap_state::OuterBitmapState, preimage::OuterBitmapPreimage,
+            OuterBitmap,
+        },
+        MarketPreimage, Preimage, SlotKey,
+    },
     types::{StoreReader, Tuple},
 };
 
@@ -24,7 +30,10 @@ where
 {
     pub market_key: &'a SlotKey<MarketPreimage<M, B, Q>>,
     pub coordinates: Coordinates,
+    pub outer_bitmap_key: SlotKey<OuterBitmapPreimage<M, B, Q>>,
+    pub outer_bitmap_state: OuterBitmapState,
 
+    // TODO add price limit
     pub _marker: core::marker::PhantomData<In>,
 }
 
@@ -53,15 +62,56 @@ where
             GoblinError::TakerPriceLimitReached
         );
 
-        let coordinates = Coordinates {
+        let mut coordinates = Coordinates {
             price_coordinates: last_opposite_price.into(),
             column: Column::ZERO,
         };
 
-        Ok(Self {
-            market_key,
-            coordinates,
-            _marker: core::marker::PhantomData,
-        })
+        loop {
+            let outer_bitmap_preimage = OuterBitmapPreimage {
+                market_key: *market_key,
+                outer_bitmap_index: coordinates.price_coordinates.outer_bitmap_index,
+            };
+            let outer_bitmap_key = outer_bitmap_preimage.hash();
+            let outer_bitmap = outer_bitmap_key.load();
+            let outer_bitmap_state = OuterBitmapState::from(outer_bitmap);
+
+            match outer_bitmap_state {
+                OuterBitmapState::Closed => {
+                    // TODO advance the OuterBitmapIndex
+                    // Ask- increase, bid- decrease
+                    // Attach generic?
+
+                    continue;
+                }
+                OuterBitmapState::Active(active_outer_bitmap) => {
+                    return Ok(Self {
+                        market_key,
+                        coordinates,
+                        outer_bitmap_key,
+                        outer_bitmap_state: OuterBitmapState::Active(active_outer_bitmap),
+                        _marker: core::marker::PhantomData,
+                    });
+                }
+            }
+        }
+
+        // We store outer bitmap and inner bitmap keys here. This way we don't have
+        // to derive hash each time next() is called
+        //
+        // Problem with InnerBitmap
+        // * If outer_bitmap_state is empty or if OuterPos is inactive, we need to
+        // iterate to the next position
+        //
+        // We end up duplicating logic from next() in new()
+        // Keep on iterating till the first position is found
+        //
+        // Alt design- Use Option<> or MaybeUninit<>
     }
+
+    // fn outer_bitmap_preimage(&self) -> OuterBitmapPreimage<M, B, Q> {
+    //     Self {
+    //         market_key: *&self.market_key,
+    //     }
+    // }
 }
