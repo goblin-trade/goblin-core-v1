@@ -1,27 +1,35 @@
 use crate::{
-    axis::{market::market_marker::MarketMarker, token::token_marker::TokenMarker},
-    matching::bitmap::{price_coordinates::PriceCoordinates, OuterBitmapIndex, OuterPos},
+    axis::{
+        leg::leg_matcher::LegMatcher, market::market_marker::MarketMarker,
+        token::token_marker::TokenMarker,
+    },
+    matching::bitmap::{
+        outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos,
+        price_coordinates::PriceCoordinates,
+    },
     quantities::Ticks,
     state::resting_order::preimage::RestingOrderPreimage,
 };
 
-pub struct RestingOrderPosition<M, B, Q>
+pub struct RestingOrderPosition<M, B, Q, In>
 where
     M: MarketMarker,
     B: TokenMarker,
     Q: TokenMarker,
+    In: LegMatcher,
 {
-    pub outer_bitmap_index: OuterBitmapIndex,
-    pub outer_pos: OuterPos,
+    pub outer_bitmap_index: OuterBitmapIndex<In>,
+    pub outer_pos: OuterPos<In>,
 
-    pub preimage: RestingOrderPreimage<M, B, Q>,
+    pub preimage: RestingOrderPreimage<M, B, Q, In>,
 }
 
-impl<M, B, Q> RestingOrderPosition<M, B, Q>
+impl<M, B, Q, In> RestingOrderPosition<M, B, Q, In>
 where
     M: MarketMarker,
     B: TokenMarker,
     Q: TokenMarker,
+    In: LegMatcher,
 {
     pub fn price(&self) -> Ticks {
         PriceCoordinates {

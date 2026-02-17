@@ -5,7 +5,7 @@ use crate::{
         token::token_marker::TokenMarker,
     },
     goblin_error::GoblinError,
-    matching::bitmap::{Column, Coordinates},
+    matching::bitmap::{column::Column, Coordinates},
     quantities::{QuantityOps, Ticks},
     require,
     state::{
@@ -29,8 +29,8 @@ where
     In: LegMatcher,
 {
     pub market_key: &'a SlotKey<MarketPreimage<M, B, Q>>,
-    pub coordinates: Coordinates,
-    pub outer_bitmap_key: SlotKey<OuterBitmapPreimage<M, B, Q>>,
+    pub coordinates: Coordinates<In>,
+    pub outer_bitmap_key: SlotKey<OuterBitmapPreimage<M, B, Q, In>>,
     pub outer_bitmap_state: OuterBitmapState<M, B, Q>,
 
     // TODO add price limit
@@ -64,7 +64,7 @@ where
 
         let mut coordinates = Coordinates {
             price_coordinates: last_opposite_price.into(),
-            column: Column::ZERO,
+            column: Column::new(0),
         };
 
         loop {

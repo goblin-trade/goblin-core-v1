@@ -3,11 +3,8 @@ use crate::{
         leg::leg_matcher::LegMatcher, market::market_marker::MarketMarker,
         token::token_marker::TokenMarker,
     },
-    matching::{
-        bitmap::OuterBitmapIndex,
-        resting_order_iterator::{
-            resting_order_position::RestingOrderPosition, RestingOrderIterator,
-        },
+    matching::resting_order_iterator::{
+        resting_order_position::RestingOrderPosition, RestingOrderIterator,
     },
     state::{
         outer_bitmap::{outer_bitmap_state::OuterBitmapState, preimage::OuterBitmapPreimage},
@@ -22,7 +19,7 @@ where
     Q: TokenMarker,
     In: LegMatcher,
 {
-    type Item = RestingOrderPosition<M, B, Q>;
+    type Item = RestingOrderPosition<M, B, Q, In>;
 
     fn next(&mut self) -> Option<Self::Item> {
         // Rudimentary implementation
