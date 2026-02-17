@@ -24,5 +24,5 @@ where
     Q: TokenMarker,
 {
     const SLOT_DISCRIMINATOR: u8 = 7;
-    type SlotState = RestingOrder;
+    type SlotState = RestingOrder<M, B, Q>;
 }

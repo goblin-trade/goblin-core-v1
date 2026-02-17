@@ -31,7 +31,7 @@ where
     pub market_key: &'a SlotKey<MarketPreimage<M, B, Q>>,
     pub coordinates: Coordinates,
     pub outer_bitmap_key: SlotKey<OuterBitmapPreimage<M, B, Q>>,
-    pub outer_bitmap_state: OuterBitmapState,
+    pub outer_bitmap_state: OuterBitmapState<M, B, Q>,
 
     // TODO add price limit
     pub _marker: core::marker::PhantomData<In>,
@@ -77,7 +77,7 @@ where
             let outer_bitmap_state = OuterBitmapState::from(outer_bitmap);
 
             match outer_bitmap_state {
-                OuterBitmapState::Closed => {
+                OuterBitmapState::Closed(_) => {
                     // TODO advance the OuterBitmapIndex
                     // Ask- increase, bid- decrease
                     // Attach generic?

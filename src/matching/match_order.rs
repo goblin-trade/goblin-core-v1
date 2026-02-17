@@ -71,20 +71,14 @@ where
 
             // Read resting order amount
             let resting_order_key = resting_order_position.preimage.hash();
-            // let resting_order_key = resting_order_position.hash();
             let mut resting_order = resting_order_key.load();
 
-            let RestingOrder {
-                maker,
-                size: resting_order_size,
-            } = resting_order;
-
-            let quote = In::matching_lots_maker(resting_order_size, market.tick_size, price);
+            let quote = In::matching_lots_maker(resting_order.size, market.tick_size, price);
             let quote_opposite =
-                In::Opposite::matching_lots_maker(resting_order_size, market.tick_size, price);
+                In::Opposite::matching_lots_maker(resting_order.size, market.tick_size, price);
 
             // Self trade- close the resting order and mark lots for release
-            if maker == *taker {
+            if resting_order.maker == *taker {
                 taker_delta.taker_self_trade_unlocked += quote_opposite;
                 continue;
             }
@@ -98,7 +92,7 @@ where
                 resting_order_key.store(&resting_order);
 
                 let consumed = budget - taker_delta.matched_lots.taker_in;
-                let consumed_base_lots = resting_order_size - surplus_base_lots;
+                let consumed_base_lots = resting_order.size - surplus_base_lots;
                 let consumed_opposite =
                     In::Opposite::matching_lots_maker(consumed_base_lots, market.tick_size, price);
 
@@ -116,7 +110,7 @@ where
                 // Update maker
                 let maker_delta_pair = local_delta
                     .local_maker_deltas
-                    .get_or_insert_mut(maker)
+                    .get_or_insert_mut(resting_order.maker)
                     .ok_or(GoblinError::MakerListFull)?;
 
                 let maker_delta = In::get_leg_mut(maker_delta_pair);

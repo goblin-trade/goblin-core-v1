@@ -1,4 +1,10 @@
-use crate::{quantities::BaseLots, types::Address};
+use core::marker::PhantomData;
+
+use crate::{
+    axis::{market::market_marker::MarketMarker, token::token_marker::TokenMarker},
+    quantities::BaseLots,
+    types::Address,
+};
 
 /// A resting order stored in slot
 /// Total size = 24 + 8 = 32. 20 byte address is padded to 24.
@@ -19,24 +25,28 @@ use crate::{quantities::BaseLots, types::Address};
 /// * If quote in case (bid), we use adjustedQuoteLots = quote lots * BaseLotsPerBaseUnit
 /// * Base in taker (ask) is matched against quote in maker (bid).
 #[repr(C)]
-pub struct RestingOrder {
+pub struct RestingOrder<M, B, Q>
+where
+    M: MarketMarker,
+    B: TokenMarker,
+    Q: TokenMarker,
+{
     pub maker: Address,
     pub size: BaseLots,
+    _marker: PhantomData<(M, B, Q)>,
 }
 
-impl RestingOrder {}
-
-// impl SlotState for RestingOrder {
-//     const SLOT_DISCRIMINATOR: u8 = 7;
-// }
-
-// impl SlotKey<RestingOrder> {
-//     pub fn new(inner_bitmap_key: &SlotKey<InnerBitmap>, inner_index: InnerIndex) -> Self {
-//         let mut bytes = [0u8; (1 + 32 + 1)];
-//         bytes[0] = RestingOrder::SLOT_DISCRIMINATOR;
-//         bytes[1..33].copy_from_slice(inner_bitmap_key.hash());
-//         bytes[33] = inner_index.0;
-
-//         Self::generate(bytes.as_slice())
-//     }
-// }
+impl<M, B, Q> RestingOrder<M, B, Q>
+where
+    M: MarketMarker,
+    B: TokenMarker,
+    Q: TokenMarker,
+{
+    pub const fn new(maker: Address, size: BaseLots) -> Self {
+        Self {
+            maker,
+            size,
+            _marker: PhantomData,
+        }
+    }
+}
