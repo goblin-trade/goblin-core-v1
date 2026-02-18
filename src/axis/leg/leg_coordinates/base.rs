@@ -4,7 +4,7 @@ use crate::{
 };
 
 impl LegCoordinates for Base {
-    fn next_outer_bitmap_index(item: OuterBitmapIndex<Self>) -> Option<OuterBitmapIndex<Self>> {
-        item.inner.checked_sub(1).map(OuterBitmapIndex::new)
+    fn get_iter(item: OuterBitmapIndex<Self>) -> impl Iterator<Item = OuterBitmapIndex<Self>> {
+        (0..=item.inner).rev().map(OuterBitmapIndex::<Self>::new)
     }
 }

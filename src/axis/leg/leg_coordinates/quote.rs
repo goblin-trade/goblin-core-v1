@@ -4,7 +4,7 @@ use crate::{
 };
 
 impl LegCoordinates for Quote {
-    fn next_outer_bitmap_index(item: OuterBitmapIndex<Self>) -> Option<OuterBitmapIndex<Self>> {
-        item.inner.checked_add(1).map(OuterBitmapIndex::new)
+    fn get_iter(item: OuterBitmapIndex<Self>) -> impl Iterator<Item = OuterBitmapIndex<Self>> {
+        (item.inner..=u64::MAX).map(OuterBitmapIndex::<Self>::new)
     }
 }

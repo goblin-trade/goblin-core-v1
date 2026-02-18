@@ -4,5 +4,5 @@ use crate::{
 };
 
 pub trait LegCoordinates: LegQuantities {
-    fn next_outer_bitmap_index(item: OuterBitmapIndex<Self>) -> Option<OuterBitmapIndex<Self>>;
+    fn get_iter(item: OuterBitmapIndex<Self>) -> impl Iterator<Item = OuterBitmapIndex<Self>>;
 }
