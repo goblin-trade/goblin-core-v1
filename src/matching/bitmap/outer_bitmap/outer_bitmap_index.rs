@@ -1,6 +1,9 @@
 use core::marker::PhantomData;
+use core::u64;
 
-use crate::{axis::leg::leg_coordinates::LegCoordinates, quantities::Ticks};
+use crate::{
+    axis::leg::leg_coordinates::LegCoordinates, matching::bitmap::Coordinate, quantities::Ticks,
+};
 
 #[derive(Clone, Copy)]
 pub struct OuterBitmapIndex<In>
@@ -21,8 +24,16 @@ where
             _marker: PhantomData,
         }
     }
+}
 
-    pub fn iter(self) -> impl Iterator<Item = Self> {
+impl<In> Coordinate for OuterBitmapIndex<In>
+where
+    In: LegCoordinates,
+{
+    const MIN: Self = OuterBitmapIndex::new(0);
+    const MAX: Self = OuterBitmapIndex::new(u64::MAX);
+
+    fn iter(self) -> impl Iterator<Item = Self> {
         In::outer_bitmap_index_iter(self)
     }
 }

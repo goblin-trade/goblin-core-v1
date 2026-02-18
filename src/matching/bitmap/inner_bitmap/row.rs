@@ -1,7 +1,8 @@
 use core::marker::PhantomData;
 
 use crate::{
-    axis::leg::leg_coordinates::LegCoordinates, matching::bitmap::inner_pos::InnerPos,
+    axis::leg::leg_coordinates::LegCoordinates,
+    matching::bitmap::{inner_pos::InnerPos, Coordinate},
     quantities::Ticks,
 };
 
@@ -22,6 +23,18 @@ where
             inner,
             _marker: PhantomData,
         }
+    }
+}
+
+impl<In> Coordinate for Row<In>
+where
+    In: LegCoordinates,
+{
+    const MIN: Self = Row::new(0);
+    const MAX: Self = Row::new(31);
+
+    fn iter(self) -> impl Iterator<Item = Self> {
+        In::row_iter(self)
     }
 }
 
