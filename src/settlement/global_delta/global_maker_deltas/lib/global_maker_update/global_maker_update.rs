@@ -21,7 +21,6 @@ pub struct GlobalMakerUpdate<In: LegMatcher> {
 impl<In> GlobalMakerUpdate<In>
 where
     In: LegMatcher
-        + LegValidator
         + StoreReader<
             Tuple<<Base as LegQuantities>::LotsPerUnit, <Quote as LegQuantities>::LotsPerUnit, Leg>,
             Result = In::LotsPerUnit,

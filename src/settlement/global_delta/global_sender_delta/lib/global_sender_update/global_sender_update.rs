@@ -29,7 +29,6 @@ pub struct GlobalSenderUpdate<In: LegMatcher> {
 impl<In> GlobalSenderUpdate<In>
 where
     In: LegMatcher
-        + LegValidator
         + StoreReader<
             Tuple<<Base as LegQuantities>::LotsPerUnit, <Quote as LegQuantities>::LotsPerUnit, Leg>,
             Result = In::LotsPerUnit,

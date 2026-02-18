@@ -26,7 +26,6 @@ where
     B: TokenMarker,
     Q: TokenMarker,
     In: LegMatcher
-        + LegValidator
         + StoreReader<Tuple<MakerDelta<Base>, MakerDelta<Quote>, Leg>, Result = MakerDelta<In>>
         + StoreReader<Tuple<TakerDelta<Base>, TakerDelta<Quote>, Leg>, Result = TakerDelta<In>>
         + StoreReader<

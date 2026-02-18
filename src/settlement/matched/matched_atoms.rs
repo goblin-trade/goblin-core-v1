@@ -1,9 +1,6 @@
 use crate::{
     axis::{
-        leg::{
-            leg_matcher::LegMatcher, leg_quantities::LegQuantities, leg_validator::LegValidator,
-            Base, Leg, Quote,
-        },
+        leg::{leg_matcher::LegMatcher, leg_quantities::LegQuantities, Base, Leg, Quote},
         market::LotSizePair,
     },
     settlement::{MatchedLots, MatchedLotsPair},
@@ -23,7 +20,6 @@ pub struct MatchedAtoms<In: LegMatcher> {
 impl<In> MatchedAtoms<In>
 where
     In: LegMatcher
-        + LegValidator
         + StoreReader<
             Tuple<<Base as LegQuantities>::LotsPerUnit, <Quote as LegQuantities>::LotsPerUnit, Leg>,
             Result = In::LotsPerUnit,
