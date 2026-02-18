@@ -77,6 +77,7 @@ where
             let outer_bitmap_state = OuterBitmapState::from(outer_bitmap);
 
             match outer_bitmap_state {
+                OuterBitmapState::Empty(_) => {}
                 OuterBitmapState::Closed(_) => {
                     // TODO advance the OuterBitmapIndex
                     // Ask- increase, bid- decrease

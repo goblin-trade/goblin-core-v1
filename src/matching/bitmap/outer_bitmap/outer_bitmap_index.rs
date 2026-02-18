@@ -5,7 +5,7 @@ use crate::{
     axis::leg::leg_coordinates::LegCoordinates, matching::bitmap::Coordinate, quantities::Ticks,
 };
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 pub struct OuterBitmapIndex<In>
 where
     In: LegCoordinates,

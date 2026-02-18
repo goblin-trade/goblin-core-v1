@@ -5,7 +5,8 @@ use crate::{
     state::outer_bitmap::{active_outer_bitmap::ActiveOuterBitmap, OuterBitmap},
 };
 
-pub const CLOSED_SENTINEL: [u8; 32] = [0xFF; 32];
+const EMPTY_VALUE: [u8; 32] = [0; 32];
+const CLOSED_SENTINEL: [u8; 32] = [0xFF; 32];
 
 pub enum OuterBitmapState<M, B, Q>
 where
@@ -13,6 +14,7 @@ where
     B: TokenMarker,
     Q: TokenMarker,
 {
+    Empty(PhantomData<(M, B, Q)>),
     Closed(PhantomData<(M, B, Q)>),
     Active(ActiveOuterBitmap<M, B, Q>),
 }
@@ -24,10 +26,16 @@ where
     Q: TokenMarker,
 {
     fn from(value: OuterBitmap<M, B, Q>) -> Self {
-        if value.inner == CLOSED_SENTINEL {
-            OuterBitmapState::Closed(PhantomData)
-        } else {
-            OuterBitmapState::Active(ActiveOuterBitmap::new(value.inner))
+        match value.inner {
+            EMPTY_VALUE => OuterBitmapState::Empty(PhantomData),
+            CLOSED_SENTINEL => OuterBitmapState::Closed(PhantomData),
+            _ => OuterBitmapState::Active(ActiveOuterBitmap::new(value.inner)),
         }
+
+        // if value.inner == CLOSED_SENTINEL {
+        //     OuterBitmapState::Closed(PhantomData)
+        // } else {
+        //     OuterBitmapState::Active(ActiveOuterBitmap::new(value.inner))
+        // }
     }
 }

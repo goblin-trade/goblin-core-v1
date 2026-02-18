@@ -41,12 +41,12 @@ where
         let outer_bitmap_key = outer_bitmap_preimage.hash();
         let outer_bitmap = outer_bitmap_key.load();
 
-        match OuterBitmapState::from(outer_bitmap) {
-            OuterBitmapState::Closed(_) => {
-                // TODO read next
-            }
-            OuterBitmapState::Active(_) => todo!(),
-        };
+        // match OuterBitmapState::from(outer_bitmap) {
+        //     OuterBitmapState::Closed(_) => {
+        //         // TODO read next
+        //     }
+        //     OuterBitmapState::Active(_) => todo!(),
+        // };
 
         None
     }
