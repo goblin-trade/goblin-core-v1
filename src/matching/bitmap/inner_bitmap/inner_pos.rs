@@ -1,11 +1,11 @@
 use core::marker::PhantomData;
 
-use crate::axis::leg::leg_matcher::LegMatcher;
+use crate::axis::leg::leg_coordinates::LegCoordinates;
 
 #[derive(Clone, Copy)]
 pub struct InnerPos<In>
 where
-    In: LegMatcher,
+    In: LegCoordinates,
 {
     pub inner: u8,
     _marker: PhantomData<In>,
@@ -13,7 +13,7 @@ where
 
 impl<In> InnerPos<In>
 where
-    In: LegMatcher,
+    In: LegCoordinates,
 {
     pub const fn new(inner: u8) -> Self {
         Self {

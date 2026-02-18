@@ -1,12 +1,13 @@
 use core::marker::PhantomData;
 
 use crate::{
-    axis::leg::leg_matcher::LegMatcher, matching::bitmap::inner_pos::InnerPos, quantities::Ticks,
+    axis::leg::leg_coordinates::LegCoordinates, matching::bitmap::inner_pos::InnerPos,
+    quantities::Ticks,
 };
 
 pub struct Row<In>
 where
-    In: LegMatcher,
+    In: LegCoordinates,
 {
     pub inner: u8,
     _marker: PhantomData<In>,
@@ -14,7 +15,7 @@ where
 
 impl<In> Row<In>
 where
-    In: LegMatcher,
+    In: LegCoordinates,
 {
     pub const fn new(inner: u8) -> Self {
         Self {
@@ -26,7 +27,7 @@ where
 
 impl<In> From<InnerPos<In>> for Row<In>
 where
-    In: LegMatcher,
+    In: LegCoordinates,
 {
     fn from(value: InnerPos<In>) -> Self {
         Row::new(value.inner / 8)
@@ -35,7 +36,7 @@ where
 
 impl<In> From<Ticks> for Row<In>
 where
-    In: LegMatcher,
+    In: LegCoordinates,
 {
     fn from(value: Ticks) -> Self {
         Self::new((value.inner % 32) as u8)

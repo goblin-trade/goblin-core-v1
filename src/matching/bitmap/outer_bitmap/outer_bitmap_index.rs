@@ -23,7 +23,7 @@ where
     }
 
     pub fn iter(self) -> impl Iterator<Item = Self> {
-        In::get_iter(self)
+        In::outer_bitmap_index_iter(self)
     }
 }
 
