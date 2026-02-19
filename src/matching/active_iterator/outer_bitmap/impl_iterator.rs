@@ -30,6 +30,13 @@ where
             let mut linear_iterator = outer_bitmap_index.iter();
 
             while let Some(outer_bitmap_index) = linear_iterator.next() {
+                if self
+                    .limit
+                    .outer_bitmap_index
+                    .closer_to_centre(outer_bitmap_index)
+                {
+                    return None;
+                }
                 let preimage = OuterBitmapPreimage {
                     market_key: *self.market_key,
                     outer_bitmap_index,
@@ -42,14 +49,10 @@ where
                     // Move the cursor and return the current value
                     self.outer_bitmap_index = linear_iterator.next();
                     return Some((outer_bitmap_index, active_outer_bitmap));
-                } else if outer_bitmap_index == self.limit.outer_bitmap_index {
-                    return None;
                 }
             }
-
-            None
-        } else {
-            None
         }
+
+        None
     }
 }
