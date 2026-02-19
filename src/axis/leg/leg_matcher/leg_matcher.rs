@@ -61,5 +61,8 @@ pub trait LegMatcher:
     ) -> BaseLots;
 
     /// Whether price_0 is closer to centre than price_1
+    /// TODO remove. Replace with v2
+    /// This is being used as In::Opposite::closer_to_centre()
+    /// As per convention, we will use In direction
     fn closer_to_centre(price_0: Ticks, price_1: Ticks) -> bool;
 }

@@ -19,4 +19,9 @@ impl LegCoordinates for Quote {
     fn row_iter(item: Row<Self>) -> impl Iterator<Item = Row<Self>> {
         (item.inner..=Row::<Self>::MAX.inner).map(Row::<Self>::new)
     }
+
+    fn closer_to_centre_v2<K: PartialEq + PartialOrd>(first: K, second: K) -> bool {
+        // For In=Quote (bid), we match upwards against resting asks
+        first < second
+    }
 }

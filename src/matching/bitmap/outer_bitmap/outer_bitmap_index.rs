@@ -5,7 +5,7 @@ use crate::{
     axis::leg::leg_coordinates::LegCoordinates, matching::bitmap::Coordinate, quantities::Ticks,
 };
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, PartialOrd)]
 pub struct OuterBitmapIndex<In>
 where
     In: LegCoordinates,
@@ -24,6 +24,11 @@ where
             _marker: PhantomData,
         }
     }
+
+    // fn closer_to_centre(self, other: Self) -> bool {
+    //     self > other
+    //     // In::closer_to_centre_v2::<OuterBitmapIndex<In>>(self, other)
+    // }
 }
 
 impl<In> Coordinate for OuterBitmapIndex<In>
@@ -36,6 +41,11 @@ where
     fn iter(self) -> impl Iterator<Item = Self> {
         In::outer_bitmap_index_iter(self)
     }
+
+    // fn closer_to_centre(self, other: Self) -> bool {
+    //     // self <= other
+    //     In::closer_to_centre_v2::<OuterBitmapIndex<In>>(self, other)
+    // }
 }
 
 impl<In> From<Ticks> for OuterBitmapIndex<In>

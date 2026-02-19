@@ -25,4 +25,9 @@ impl LegCoordinates for Base {
             .rev()
             .map(Row::<Self>::new)
     }
+
+    fn closer_to_centre_v2<K: PartialEq + PartialOrd>(first: K, second: K) -> bool {
+        // For In=Base (ask), we match downwards against resting bids
+        first > second
+    }
 }
