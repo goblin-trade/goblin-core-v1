@@ -1,2 +1,2 @@
-pub mod active_outer_bitmap_iterator;
-mod impl_iterator;
+pub mod inner_bitmap;
+pub mod outer_bitmap;

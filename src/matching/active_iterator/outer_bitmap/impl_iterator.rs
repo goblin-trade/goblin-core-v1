@@ -4,7 +4,7 @@ use crate::{
         token::token_marker::TokenMarker,
     },
     matching::{
-        active_iterator::active_outer_bitmap_iterator::ActiveOuterBitmapIterator,
+        active_iterator::outer_bitmap::ActiveOuterBitmapIterator,
         bitmap::{outer_bitmap_index::OuterBitmapIndex, Coordinate},
     },
     state::{
@@ -42,7 +42,7 @@ where
                     // Move the cursor and return the current value
                     self.outer_bitmap_index = linear_iterator.next();
                     return Some((outer_bitmap_index, active_outer_bitmap));
-                } else if outer_bitmap_index == self.limit {
+                } else if outer_bitmap_index == self.limit.outer_bitmap_index {
                     return None;
                 }
             }
