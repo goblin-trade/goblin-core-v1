@@ -4,7 +4,7 @@ use crate::{
     axis::leg::leg_coordinates::LegCoordinates, matching::bitmap::Coordinate, quantities::Ticks,
 };
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, PartialOrd)]
 pub struct OuterPos<In>
 where
     In: LegCoordinates,
@@ -34,6 +34,10 @@ where
 
     fn iter(self) -> impl Iterator<Item = Self> {
         In::outer_pos_iter(self)
+    }
+
+    fn closer_to_centre(self, other: Self) -> bool {
+        In::closer_to_centre_v2(self, other)
     }
 }
 

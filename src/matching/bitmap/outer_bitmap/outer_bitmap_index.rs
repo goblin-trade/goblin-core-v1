@@ -24,11 +24,6 @@ where
             _marker: PhantomData,
         }
     }
-
-    // fn closer_to_centre(self, other: Self) -> bool {
-    //     self > other
-    //     // In::closer_to_centre_v2::<OuterBitmapIndex<In>>(self, other)
-    // }
 }
 
 impl<In> Coordinate for OuterBitmapIndex<In>
@@ -42,10 +37,9 @@ where
         In::outer_bitmap_index_iter(self)
     }
 
-    // fn closer_to_centre(self, other: Self) -> bool {
-    //     // self <= other
-    //     In::closer_to_centre_v2::<OuterBitmapIndex<In>>(self, other)
-    // }
+    fn closer_to_centre(self, other: Self) -> bool {
+        In::closer_to_centre_v2(self, other)
+    }
 }
 
 impl<In> From<Ticks> for OuterBitmapIndex<In>

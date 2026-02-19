@@ -6,6 +6,7 @@ use crate::{
     quantities::Ticks,
 };
 
+#[derive(PartialEq, PartialOrd)]
 pub struct Row<In>
 where
     In: LegCoordinates,
@@ -35,6 +36,10 @@ where
 
     fn iter(self) -> impl Iterator<Item = Self> {
         In::row_iter(self)
+    }
+
+    fn closer_to_centre(self, other: Self) -> bool {
+        In::closer_to_centre_v2(self, other)
     }
 }
 

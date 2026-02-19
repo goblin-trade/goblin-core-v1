@@ -23,11 +23,11 @@ impl Coordinate for Column {
         (Self::MIN.inner..=Self::MAX.inner).map(Self::new)
     }
 
-    // fn closer_to_centre(self, other: Self) -> bool {
-    //     // Always move left to right for column
-    //     // The column with lower index is popped first
-    //     self < other
-    // }
+    fn closer_to_centre(self, other: Self) -> bool {
+        // Always move left to right for column
+        // The column with lower index is popped first
+        self < other
+    }
 }
 
 impl<In> From<InnerPos<In>> for Column

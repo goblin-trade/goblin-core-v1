@@ -7,5 +7,5 @@ pub trait Coordinate {
     /// starting from the current position
     fn iter(self) -> impl Iterator<Item = Self>;
 
-    // fn closer_to_centre(self, other: Self) -> bool;
+    fn closer_to_centre(self, other: Self) -> bool;
 }

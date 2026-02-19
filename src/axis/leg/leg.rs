@@ -1,7 +1,7 @@
 use crate::types::{Marker, Tuple};
 
 /// Leg axis- the side of a trade
-#[derive(Default, Clone, Copy, PartialEq)]
+#[derive(Default, Clone, Copy, PartialEq, PartialOrd)]
 pub struct Leg;
 
 pub type Base = Marker<Leg, 0>;
