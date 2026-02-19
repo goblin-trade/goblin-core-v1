@@ -39,7 +39,7 @@ where
     }
 
     fn closer_to_centre(self, other: Self) -> bool {
-        In::closer_to_centre_v2(self, other)
+        In::closer_to_centre(self, other)
     }
 }
 

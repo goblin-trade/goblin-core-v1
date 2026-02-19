@@ -37,8 +37,4 @@ impl LegMatcher for Base {
     ) -> BaseLots {
         matching
     }
-
-    fn closer_to_centre(price_0: Ticks, price_1: Ticks) -> bool {
-        price_0 < price_1
-    }
 }

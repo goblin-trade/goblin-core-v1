@@ -65,7 +65,7 @@ where
             let price = resting_order_position.price();
 
             // price limit reached, stop matching
-            if In::Opposite::closer_to_centre(price_limit, price) {
+            if In::closer_to_centre(price_limit, price) {
                 break;
             }
 

@@ -57,7 +57,7 @@ where
         let last_opposite_price = In::Opposite::get(best_prices);
 
         require!(
-            In::Opposite::closer_to_centre(last_opposite_price, price_limit)
+            In::closer_to_centre(last_opposite_price, price_limit)
                 || min_lots_to_fill == In::Lots::ZERO,
             GoblinError::TakerPriceLimitReached
         );
