@@ -18,8 +18,8 @@ where
     Q: TokenMarker,
     In: LegMatcher,
 {
-    outer_bitmap_key: SlotKey<OuterBitmapPreimage<M, B, Q, In>>,
-    outer_pos: OuterPos<In>,
+    pub outer_bitmap_key: SlotKey<OuterBitmapPreimage<M, B, Q, In>>,
+    pub outer_pos: OuterPos<In>,
 }
 
 impl<M, B, Q, In> Preimage for InnerBitmapPreimage<M, B, Q, In>
