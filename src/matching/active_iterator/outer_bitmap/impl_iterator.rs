@@ -29,11 +29,7 @@ where
             let mut linear_iterator = outer_bitmap_index.iter();
 
             while let Some(outer_bitmap_index) = linear_iterator.next() {
-                if self
-                    .limit
-                    .outer_bitmap_index
-                    .closer_to_centre(outer_bitmap_index)
-                {
+                if self.limit.closer_to_centre(outer_bitmap_index) {
                     return None;
                 }
                 let preimage = OuterBitmapPreimage {

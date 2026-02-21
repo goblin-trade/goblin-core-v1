@@ -24,4 +24,8 @@ impl LegCoordinates for Quote {
         // For In=Quote (bid), we match upwards against resting asks
         first < second
     }
+
+    fn start_value<C: Coordinate>() -> C {
+        C::MIN
+    }
 }

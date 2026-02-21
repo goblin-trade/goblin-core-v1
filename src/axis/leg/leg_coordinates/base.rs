@@ -30,4 +30,8 @@ impl LegCoordinates for Base {
         // For In=Base (ask), we match downwards against resting bids
         first > second
     }
+
+    fn start_value<C: Coordinate>() -> C {
+        C::MAX
+    }
 }

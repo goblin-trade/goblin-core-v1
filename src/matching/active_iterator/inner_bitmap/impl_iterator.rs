@@ -4,17 +4,12 @@ use crate::{
         token::token_marker::TokenMarker,
     },
     matching::{
-        active_iterator::{
-            inner_bitmap::{inner_bitmap_item::InnerBitmapItem, ActiveInnerBitmapIterator},
-            outer_bitmap::{outer_bitmap_item::OuterBitmapItem, ActiveOuterBitmapIterator},
+        active_iterator::inner_bitmap::{
+            inner_bitmap_item::InnerBitmapItem, ActiveInnerBitmapIterator,
         },
-        bitmap::{outer_pos::OuterPos, Coordinate},
+        bitmap::Coordinate,
     },
-    state::{
-        inner_bitmap::preimage::InnerBitmapPreimage,
-        outer_bitmap::{outer_bitmap_state::OuterBitmapState, preimage::OuterBitmapPreimage},
-        Preimage,
-    },
+    state::{inner_bitmap::preimage::InnerBitmapPreimage, Preimage},
 };
 
 impl<'a, M, B, Q, In> Iterator for ActiveInnerBitmapIterator<'a, M, B, Q, In>
@@ -28,35 +23,30 @@ where
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
-            if let Some(outer_item) = self.outer_bitmap_item {
-                if let Some(outer_pos) = self.outer_pos {
-                    let mut linear_iterator = outer_pos.iter();
+            if let Some(outer_pos) = self.outer_pos {
+                let mut linear_iterator = outer_pos.iter();
+                while let Some(outer_pos) = linear_iterator.next() {
+                    if self.outer_bitmap_item.active_outer_bitmap.active(outer_pos) {
+                        let preimage = InnerBitmapPreimage {
+                            outer_bitmap_key: self.outer_bitmap_item.outer_bitmap_key,
+                            outer_pos,
+                        };
+                        let hash = preimage.hash();
+                        let inner_bitmap = hash.load();
 
-                    while let Some(outer_pos) = linear_iterator.next() {
-                        if outer_item.active_outer_bitmap.active(outer_pos) {
-                            let preimage = InnerBitmapPreimage {
-                                outer_bitmap_key: outer_item.outer_bitmap_key,
-                                outer_pos,
-                            };
-                            let inner_bitmap_key = preimage.hash();
-                            let inner_bitmap = inner_bitmap_key.load();
-
-                            self.outer_pos = linear_iterator.next();
-                            return Some(InnerBitmapItem {
-                                outer_bitmap_index: outer_item.outer_bitmap_index,
-                                outer_pos,
-                                inner_bitmap,
-                            });
-                        }
+                        self.outer_pos = linear_iterator.next();
+                        return Some(InnerBitmapItem {
+                            outer_bitmap_index: self.outer_bitmap_item.outer_bitmap_index,
+                            outer_pos,
+                            inner_bitmap,
+                        });
                     }
-                    self.outer_pos = None;
-                } else {
-                    // TODO depending on side, default is different
-                    self.outer_pos = Some(OuterPos::new(0));
                 }
             } else {
-                if let Some(outer_bitmap_item) = self.active_outer_bitmap_iterator.next() {
-                    self.outer_bitmap_item = Some(outer_bitmap_item);
+                // if outer_pos is None try to load the next outer bitmap
+                if let Some(item) = self.active_outer_bitmap_iterator.next() {
+                    self.outer_bitmap_item = item;
+                    self.outer_pos = Some(In::start_value());
                 } else {
                     return None;
                 }
