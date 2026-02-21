@@ -39,13 +39,14 @@ where
                             outer_bitmap_key: self.outer_bitmap_item.outer_bitmap_key,
                             outer_pos,
                         };
-                        let hash = preimage.hash();
-                        let inner_bitmap = hash.load();
+                        let inner_bitmap_key = preimage.hash();
+                        let inner_bitmap = inner_bitmap_key.load();
 
                         self.outer_pos = linear_iterator.next();
                         return Some(InnerBitmapItem {
                             outer_bitmap_index: self.outer_bitmap_item.outer_bitmap_index,
                             outer_pos,
+                            inner_bitmap_key,
                             inner_bitmap,
                             limit_reached,
                         });
