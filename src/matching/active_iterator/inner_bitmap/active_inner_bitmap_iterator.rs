@@ -25,7 +25,7 @@ where
     /// The last returned outer bitmap item
     pub outer_bitmap_item: OuterBitmapItem<M, B, Q, In>,
 
-    /// Begin lookup from this position
+    /// The current position of cursor
     pub outer_pos: Option<OuterPos<In>>,
 
     pub limit: OuterPos<In>,

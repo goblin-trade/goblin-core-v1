@@ -17,4 +17,5 @@ where
     pub outer_bitmap_index: OuterBitmapIndex<In>,
     pub outer_pos: OuterPos<In>,
     pub inner_bitmap: InnerBitmap<M, B, Q>,
+    pub limit_reached: bool,
 }

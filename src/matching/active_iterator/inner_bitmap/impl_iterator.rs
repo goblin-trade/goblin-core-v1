@@ -26,6 +26,14 @@ where
             if let Some(outer_pos) = self.outer_pos {
                 let mut linear_iterator = outer_pos.iter();
                 while let Some(outer_pos) = linear_iterator.next() {
+                    if self.outer_bitmap_item.limit_reached
+                        && self.limit.closer_to_centre(outer_pos)
+                    {
+                        return None;
+                    }
+                    let limit_reached =
+                        self.outer_bitmap_item.limit_reached && self.limit == outer_pos;
+
                     if self.outer_bitmap_item.active_outer_bitmap.active(outer_pos) {
                         let preimage = InnerBitmapPreimage {
                             outer_bitmap_key: self.outer_bitmap_item.outer_bitmap_key,
@@ -39,6 +47,7 @@ where
                             outer_bitmap_index: self.outer_bitmap_item.outer_bitmap_index,
                             outer_pos,
                             inner_bitmap,
+                            limit_reached,
                         });
                     }
                 }

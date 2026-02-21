@@ -32,6 +32,8 @@ where
                 if self.limit.closer_to_centre(outer_bitmap_index) {
                     return None;
                 }
+                let limit_reached = self.limit == outer_bitmap_index;
+
                 let preimage = OuterBitmapPreimage {
                     market_key: *self.market_key,
                     outer_bitmap_index,
@@ -47,6 +49,7 @@ where
                         outer_bitmap_index,
                         outer_bitmap_key,
                         active_outer_bitmap,
+                        limit_reached,
                     });
                 }
             }
