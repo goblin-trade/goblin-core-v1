@@ -1,6 +1,6 @@
 use crate::{
     axis::leg::leg_matcher::LegMatcher,
-    matching::bitmap::{column::Column, row::Row, Coordinate},
+    matching::bitmap::{column::Column, compact_coordinates::CompactCoordinates, row::Row},
 };
 
 #[derive(Clone, Copy)]
@@ -10,6 +10,18 @@ where
 {
     pub row: Row<In>,
     pub column: Column,
+}
+
+impl<In> From<CompactCoordinates<In>> for InnerCoordinates<In>
+where
+    In: LegMatcher,
+{
+    fn from(value: CompactCoordinates<In>) -> Self {
+        Self {
+            row: Row::from(value),
+            column: Column::from(value),
+        }
+    }
 }
 
 impl<In> InnerCoordinates<In>
@@ -24,18 +36,8 @@ where
     }
 
     pub fn iter(self) -> impl Iterator<Item = Self> {
-        let start_row = self.row;
-
-        self.row.iter().flat_map(move |row| {
-            let column_start = if row.inner == start_row.inner {
-                self.column
-            } else {
-                Column::MIN
-            };
-
-            column_start
-                .iter()
-                .map(move |column| InnerCoordinates { row, column })
-        })
+        let compact_coordinates = CompactCoordinates::from(self);
+        let compact_iterator = In::coordinates_iter(compact_coordinates);
+        compact_iterator.map(Self::from)
     }
 }
