@@ -47,6 +47,8 @@ where
                             let resting_order_key = preimage.hash();
                             let resting_order = resting_order_key.load();
 
+                            // TODO update self.inner_coordinates
+                            // Could could be simplified. A single .next() defined on CompactCoordinates
                             return Some(RestingOrderItem {
                                 outer_bitmap_index: self.inner_bitmap_item.outer_bitmap_index,
                                 outer_pos: self.inner_bitmap_item.outer_pos,
