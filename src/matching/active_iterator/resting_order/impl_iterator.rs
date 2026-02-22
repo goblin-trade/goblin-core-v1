@@ -27,37 +27,34 @@ where
     fn next(&mut self) -> Option<Self::Item> {
         loop {
             if let Some(coordinates) = self.coordinates {
-                let mut row_linear_iterator = coordinates.row.iter();
-                while let Some(row) = row_linear_iterator.next() {
-                    if self.inner_bitmap_item.limit_reached && self.limit.row.closer_to_centre(row)
+                let mut linear_iterator = coordinates.iter();
+                while let Some(coordinates) = linear_iterator.next() {
+                    if self.inner_bitmap_item.limit_reached
+                        && self.limit.row.closer_to_centre(coordinates.row)
                     {
                         return None;
                     }
                     let limit_reached =
-                        self.inner_bitmap_item.limit_reached && self.limit.row == row;
+                        self.inner_bitmap_item.limit_reached && self.limit.row == coordinates.row;
 
-                    let mut column_linear_iterator = coordinates.column.iter();
-                    while let Some(column) = column_linear_iterator.next() {
-                        let cursor = InnerCoordinates { row, column };
-                        if self.inner_bitmap_item.inner_bitmap.active_v2(cursor) {
-                            let preimage = RestingOrderPreimage {
-                                inner_bitmap_key: self.inner_bitmap_item.inner_bitmap_key,
-                                compact_coordinates: CompactCoordinates::from(cursor),
-                            };
-                            let resting_order_key = preimage.hash();
-                            let resting_order = resting_order_key.load();
+                    if self.inner_bitmap_item.inner_bitmap.active_v2(coordinates) {
+                        let preimage = RestingOrderPreimage {
+                            inner_bitmap_key: self.inner_bitmap_item.inner_bitmap_key,
+                            compact_coordinates: CompactCoordinates::from(coordinates),
+                        };
+                        let resting_order_key = preimage.hash();
+                        let resting_order = resting_order_key.load();
 
-                            // TODO update self.inner_coordinates
-                            // Could could be simplified. A single .next() defined on CompactCoordinates
-                            return Some(RestingOrderItem {
-                                outer_bitmap_index: self.inner_bitmap_item.outer_bitmap_index,
-                                outer_pos: self.inner_bitmap_item.outer_pos,
-                                inner_coordinates: cursor,
-                                resting_order_key,
-                                resting_order,
-                                limit_reached,
-                            });
-                        }
+                        self.coordinates = linear_iterator.next();
+
+                        return Some(RestingOrderItem {
+                            outer_bitmap_index: self.inner_bitmap_item.outer_bitmap_index,
+                            outer_pos: self.inner_bitmap_item.outer_pos,
+                            inner_coordinates: coordinates,
+                            resting_order_key,
+                            resting_order,
+                            limit_reached,
+                        });
                     }
                 }
             } else {
