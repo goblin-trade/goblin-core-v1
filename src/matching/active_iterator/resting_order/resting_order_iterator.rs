@@ -5,11 +5,13 @@ use crate::{
     },
     goblin_error::GoblinError,
     matching::{
-        active_iterator::{
-            inner_bitmap::ActiveInnerBitmapIterator,
-            outer_bitmap::{outer_bitmap_item::OuterBitmapItem, ActiveOuterBitmapIterator},
+        active_iterator::inner_bitmap::{
+            inner_bitmap_item::InnerBitmapItem, ActiveInnerBitmapIterator,
         },
-        bitmap::{outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos, Coordinate},
+        bitmap::{
+            column::Column, inner_coordinates::InnerCoordinates,
+            outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos, row::Row, Coordinate,
+        },
     },
     state::{MarketPreimage, SlotKey},
 };
@@ -23,11 +25,62 @@ where
 {
     pub active_inner_bitmap_iterator: ActiveInnerBitmapIterator<'a, M, B, Q, In>,
 
-    /// The last returned outer bitmap item
-    pub outer_bitmap_item: OuterBitmapItem<M, B, Q, In>,
+    /// The last returned inner bitmap item
+    pub inner_bitmap_item: InnerBitmapItem<M, B, Q, In>,
 
     /// Begin lookup from this position
-    pub outer_pos: Option<OuterPos<In>>,
+    pub coordinates: Option<InnerCoordinates<In>>,
 
-    pub limit: OuterPos<In>,
+    pub limit: InnerCoordinates<In>,
+}
+
+impl<'a, M, B, Q, In> RestingOrderIterator<'a, M, B, Q, In>
+where
+    M: MarketMarker,
+    B: TokenMarker,
+    Q: TokenMarker,
+    In: LegMatcher,
+{
+    pub fn new(
+        market_key: &'a SlotKey<MarketPreimage<M, B, Q>>,
+        start_outer_bitmap_index: OuterBitmapIndex<In>,
+        limit_outer_bitmap_index: OuterBitmapIndex<In>,
+        start_outer_pos: OuterPos<In>,
+        limit_outer_pos: OuterPos<In>,
+        mut start_row: Row<In>,
+        limit_row: Row<In>,
+    ) -> Result<Self, GoblinError> {
+        let mut active_inner_bitmap_iterator = ActiveInnerBitmapIterator::new(
+            market_key,
+            start_outer_bitmap_index,
+            limit_outer_bitmap_index,
+            start_outer_pos,
+            limit_outer_pos,
+        )?;
+
+        if let Some(inner_bitmap_item) = active_inner_bitmap_iterator.next() {
+            // Reset starting Row if the starting OuterBitmapIndex or OuterPos is crossed
+            if start_outer_bitmap_index.closer_to_centre(inner_bitmap_item.outer_bitmap_index)
+                || (start_outer_bitmap_index == limit_outer_bitmap_index
+                    && start_outer_pos.closer_to_centre(inner_bitmap_item.outer_pos))
+            {
+                start_row = In::start_value();
+            }
+
+            Ok(Self {
+                active_inner_bitmap_iterator,
+                inner_bitmap_item,
+                coordinates: Some(InnerCoordinates {
+                    row: start_row,
+                    column: Column::new(0),
+                }),
+                limit: InnerCoordinates {
+                    row: limit_row,
+                    column: Column::new(0),
+                },
+            })
+        } else {
+            return Err(GoblinError::CallFail);
+        }
+    }
 }
