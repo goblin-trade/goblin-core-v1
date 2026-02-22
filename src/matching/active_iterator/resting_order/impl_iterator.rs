@@ -30,12 +30,12 @@ where
                 let mut linear_iterator = coordinates.iter();
                 while let Some(coordinates) = linear_iterator.next() {
                     if self.inner_bitmap_item.limit_reached
-                        && self.limit.row.closer_to_centre(coordinates.row)
+                        && self.limit.closer_to_centre(coordinates.row)
                     {
                         return None;
                     }
                     let limit_reached =
-                        self.inner_bitmap_item.limit_reached && self.limit.row == coordinates.row;
+                        self.inner_bitmap_item.limit_reached && self.limit == coordinates.row;
 
                     if self.inner_bitmap_item.inner_bitmap.active_v2(coordinates) {
                         let preimage = RestingOrderPreimage {

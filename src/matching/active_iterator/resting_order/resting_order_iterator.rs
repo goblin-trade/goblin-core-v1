@@ -31,7 +31,7 @@ where
     /// Begin lookup from this position
     pub coordinates: Option<InnerCoordinates<In>>,
 
-    pub limit: InnerCoordinates<In>,
+    pub limit: Row<In>,
 }
 
 impl<'a, M, B, Q, In> RestingOrderIterator<'a, M, B, Q, In>
@@ -74,10 +74,7 @@ where
                     row: start_row,
                     column: Column::new(0),
                 }),
-                limit: InnerCoordinates {
-                    row: limit_row,
-                    column: Column::new(0),
-                },
+                limit: limit_row,
             })
         } else {
             return Err(GoblinError::CallFail);
