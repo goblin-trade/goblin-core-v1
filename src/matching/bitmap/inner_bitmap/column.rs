@@ -1,9 +1,9 @@
 use crate::{
     axis::leg::leg_matcher::LegMatcher,
-    matching::bitmap::{inner_pos::InnerPos, Coordinate},
+    matching::bitmap::{compact_coordinates::CompactCoordinates, Coordinate},
 };
 
-#[derive(PartialEq, PartialOrd)]
+#[derive(Clone, Copy, PartialEq, PartialOrd)]
 pub struct Column {
     pub inner: u8,
 }
@@ -30,11 +30,11 @@ impl Coordinate for Column {
     }
 }
 
-impl<In> From<InnerPos<In>> for Column
+impl<In> From<CompactCoordinates<In>> for Column
 where
     In: LegMatcher,
 {
-    fn from(value: InnerPos<In>) -> Self {
+    fn from(value: CompactCoordinates<In>) -> Self {
         Column::new(value.inner % 8)
     }
 }

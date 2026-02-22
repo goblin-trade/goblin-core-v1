@@ -1,8 +1,9 @@
 use crate::{
     axis::leg::leg_matcher::LegMatcher,
-    matching::bitmap::{column::Column, inner_pos::InnerPos, row::Row},
+    matching::bitmap::{column::Column, row::Row},
 };
 
+#[derive(Clone, Copy)]
 pub struct InnerCoordinates<In>
 where
     In: LegMatcher,
@@ -11,11 +12,14 @@ where
     pub column: Column,
 }
 
-impl<In> From<InnerCoordinates<In>> for InnerPos<In>
+impl<In> InnerCoordinates<In>
 where
     In: LegMatcher,
 {
-    fn from(value: InnerCoordinates<In>) -> Self {
-        InnerPos::new(value.row.inner * 8 + value.column.inner)
+    pub fn start_value() -> Self {
+        Self {
+            row: In::start_value(),
+            column: Column::new(0),
+        }
     }
 }

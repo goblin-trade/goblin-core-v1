@@ -2,11 +2,11 @@ use core::marker::PhantomData;
 
 use crate::{
     axis::leg::leg_coordinates::LegCoordinates,
-    matching::bitmap::{inner_pos::InnerPos, Coordinate},
+    matching::bitmap::{compact_coordinates::CompactCoordinates, Coordinate},
     quantities::Ticks,
 };
 
-#[derive(PartialEq, PartialOrd)]
+#[derive(Clone, Copy, PartialEq, PartialOrd)]
 pub struct Row<In>
 where
     In: LegCoordinates,
@@ -43,11 +43,11 @@ where
     }
 }
 
-impl<In> From<InnerPos<In>> for Row<In>
+impl<In> From<CompactCoordinates<In>> for Row<In>
 where
     In: LegCoordinates,
 {
-    fn from(value: InnerPos<In>) -> Self {
+    fn from(value: CompactCoordinates<In>) -> Self {
         Row::new(value.inner / 8)
     }
 }

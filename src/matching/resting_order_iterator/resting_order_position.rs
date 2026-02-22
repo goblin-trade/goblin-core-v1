@@ -35,7 +35,7 @@ where
         PriceCoordinates {
             outer_bitmap_index: self.outer_bitmap_index,
             outer_pos: self.outer_pos,
-            row: self.preimage.inner_pos.into(),
+            row: self.preimage.compact_coordinates.into(),
         }
         .into()
     }
