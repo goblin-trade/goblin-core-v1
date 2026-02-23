@@ -7,11 +7,9 @@ use crate::{
 };
 
 pub trait LegIterator: LegQuantities {
-    type Iterable<C: Coordinate>;
+    type OuterBitmapIndexIter: Iterator<Item = OuterBitmapIndex<Self>>;
 
-    fn outer_bitmap_index_iter(
-        item: OuterBitmapIndex<Self>,
-    ) -> impl Iterator<Item = OuterBitmapIndex<Self>>;
+    fn outer_bitmap_index_iter(item: OuterBitmapIndex<Self>) -> Self::OuterBitmapIndexIter;
 
     fn outer_pos_iter(item: OuterPos<Self>) -> impl Iterator<Item = OuterPos<Self>>;
 

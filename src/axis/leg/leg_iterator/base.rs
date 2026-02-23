@@ -10,11 +10,11 @@ use crate::{
 };
 
 impl LegIterator for Base {
-    type Iterable<C: Coordinate> = Map<Rev<RangeInclusive<C::Inner>>, fn(C::Inner) -> C>;
+    type OuterBitmapIndexIter = Map<Rev<RangeInclusive<u64>>, fn(u64) -> OuterBitmapIndex<Self>>;
 
-    fn outer_bitmap_index_iter(
-        item: OuterBitmapIndex<Self>,
-    ) -> impl Iterator<Item = OuterBitmapIndex<Self>> {
+    // type Iterable<C: Coordinate> = Map<Rev<RangeInclusive<C::Inner>>, fn(C::Inner) -> C>;
+
+    fn outer_bitmap_index_iter(item: OuterBitmapIndex<Self>) -> Self::OuterBitmapIndexIter {
         (OuterBitmapIndex::<Self>::MIN.inner..=item.inner)
             .rev()
             .map(OuterBitmapIndex::<Self>::new)
