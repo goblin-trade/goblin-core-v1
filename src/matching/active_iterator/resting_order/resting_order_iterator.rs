@@ -10,7 +10,8 @@ use crate::{
         },
         bitmap::{
             column::Column, inner_coordinates::InnerCoordinates,
-            outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos, row::Row, Coordinate,
+            outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos, range::Range, row::Row,
+            Coordinate,
         },
     },
     state::{MarketPreimage, SlotKey},
@@ -43,31 +44,26 @@ where
 {
     pub fn new(
         market_key: &'a SlotKey<MarketPreimage<M, B, Q>>,
-        start_outer_bitmap_index: OuterBitmapIndex<In>,
-        limit_outer_bitmap_index: OuterBitmapIndex<In>,
-        start_outer_pos: OuterPos<In>,
-        limit_outer_pos: OuterPos<In>,
-        start_row: Row<In>,
-        limit_row: Row<In>,
+        outer_bitmap_index_range: Range<OuterBitmapIndex<In>>,
+        outer_pos_range: Range<OuterPos<In>>,
+        row_range: Range<Row<In>>,
     ) -> Result<Self, GoblinError> {
-        let mut active_inner_bitmap_iterator = ActiveInnerBitmapIterator::new(
-            market_key,
-            start_outer_bitmap_index,
-            limit_outer_bitmap_index,
-            start_outer_pos,
-            limit_outer_pos,
-        )?;
+        let mut active_inner_bitmap_iterator =
+            ActiveInnerBitmapIterator::new(market_key, outer_bitmap_index_range, outer_pos_range)?;
 
         if let Some(inner_bitmap_item) = active_inner_bitmap_iterator.next() {
             // Reset starting Row if the starting OuterBitmapIndex or OuterPos is crossed
-            let row = if start_outer_bitmap_index
+            let row = if outer_bitmap_index_range
+                .start
                 .closer_to_centre(inner_bitmap_item.outer_bitmap_index)
-                || (start_outer_bitmap_index == limit_outer_bitmap_index
-                    && start_outer_pos.closer_to_centre(inner_bitmap_item.outer_pos))
+                || (outer_bitmap_index_range.start == outer_bitmap_index_range.limit
+                    && outer_pos_range
+                        .start
+                        .closer_to_centre(inner_bitmap_item.outer_pos))
             {
                 In::start_value()
             } else {
-                start_row
+                row_range.start
             };
 
             Ok(Self {
@@ -80,7 +76,7 @@ where
                     }
                     .into(),
                 ),
-                limit: limit_row,
+                limit: row_range.limit,
             })
         } else {
             return Err(GoblinError::CallFail);

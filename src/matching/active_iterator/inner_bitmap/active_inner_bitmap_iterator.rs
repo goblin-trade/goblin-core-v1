@@ -8,7 +8,9 @@ use crate::{
         active_iterator::outer_bitmap::{
             outer_bitmap_item::OuterBitmapItem, ActiveOuterBitmapIterator,
         },
-        bitmap::{outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos, Coordinate},
+        bitmap::{
+            outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos, range::Range, Coordinate,
+        },
     },
     state::{MarketPreimage, SlotKey},
 };
@@ -41,32 +43,28 @@ where
 {
     pub fn new(
         market_key: &'a SlotKey<MarketPreimage<M, B, Q>>,
-        start_outer_bitmap_index: OuterBitmapIndex<In>,
-        limit_outer_bitmap_index: OuterBitmapIndex<In>,
-        start_outer_pos: OuterPos<In>,
-        limit_outer_pos: OuterPos<In>,
+        outer_bitmap_index_range: Range<OuterBitmapIndex<In>>,
+        outer_pos_range: Range<OuterPos<In>>,
     ) -> Result<Self, GoblinError> {
-        let mut active_outer_bitmap_iterator = ActiveOuterBitmapIterator::new(
-            market_key,
-            start_outer_bitmap_index,
-            limit_outer_bitmap_index,
-        );
+        let mut active_outer_bitmap_iterator =
+            ActiveOuterBitmapIterator::new(market_key, outer_bitmap_index_range);
 
         if let Some(outer_bitmap_item) = active_outer_bitmap_iterator.next() {
             // Reset starting OuterPos if the starting OuterBitmapIndex is crossed
-            let outer_pos = if start_outer_bitmap_index
+            let outer_pos = if outer_bitmap_index_range
+                .start
                 .closer_to_centre(outer_bitmap_item.outer_bitmap_index)
             {
                 In::start_value()
             } else {
-                start_outer_pos
+                outer_pos_range.start
             };
 
             Ok(Self {
                 active_outer_bitmap_iterator,
                 outer_bitmap_item,
                 outer_pos_iter: In::outer_pos_iter(outer_pos),
-                limit: limit_outer_pos,
+                limit: outer_pos_range.limit,
             })
         } else {
             return Err(GoblinError::CallFail);
