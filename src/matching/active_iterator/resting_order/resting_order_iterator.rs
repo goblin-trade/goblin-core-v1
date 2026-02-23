@@ -47,7 +47,7 @@ where
         limit_outer_bitmap_index: OuterBitmapIndex<In>,
         start_outer_pos: OuterPos<In>,
         limit_outer_pos: OuterPos<In>,
-        mut start_row: Row<In>,
+        start_row: Row<In>,
         limit_row: Row<In>,
     ) -> Result<Self, GoblinError> {
         let mut active_inner_bitmap_iterator = ActiveInnerBitmapIterator::new(
@@ -60,19 +60,22 @@ where
 
         if let Some(inner_bitmap_item) = active_inner_bitmap_iterator.next() {
             // Reset starting Row if the starting OuterBitmapIndex or OuterPos is crossed
-            if start_outer_bitmap_index.closer_to_centre(inner_bitmap_item.outer_bitmap_index)
+            let row = if start_outer_bitmap_index
+                .closer_to_centre(inner_bitmap_item.outer_bitmap_index)
                 || (start_outer_bitmap_index == limit_outer_bitmap_index
                     && start_outer_pos.closer_to_centre(inner_bitmap_item.outer_pos))
             {
-                start_row = In::start_value();
-            }
+                In::start_value()
+            } else {
+                start_row
+            };
 
             Ok(Self {
                 active_inner_bitmap_iterator,
                 inner_bitmap_item,
                 coordinates_iter: In::coordinates_iter(
                     InnerCoordinates {
-                        row: start_row,
+                        row,
                         column: Column::new(0),
                     }
                     .into(),

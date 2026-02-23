@@ -43,7 +43,7 @@ where
         market_key: &'a SlotKey<MarketPreimage<M, B, Q>>,
         start_outer_bitmap_index: OuterBitmapIndex<In>,
         limit_outer_bitmap_index: OuterBitmapIndex<In>,
-        mut start_outer_pos: OuterPos<In>,
+        start_outer_pos: OuterPos<In>,
         limit_outer_pos: OuterPos<In>,
     ) -> Result<Self, GoblinError> {
         let mut active_outer_bitmap_iterator = ActiveOuterBitmapIterator::new(
@@ -54,14 +54,18 @@ where
 
         if let Some(outer_bitmap_item) = active_outer_bitmap_iterator.next() {
             // Reset starting OuterPos if the starting OuterBitmapIndex is crossed
-            if start_outer_bitmap_index.closer_to_centre(outer_bitmap_item.outer_bitmap_index) {
-                start_outer_pos = In::start_value();
-            }
+            let outer_pos = if start_outer_bitmap_index
+                .closer_to_centre(outer_bitmap_item.outer_bitmap_index)
+            {
+                In::start_value()
+            } else {
+                start_outer_pos
+            };
 
             Ok(Self {
                 active_outer_bitmap_iterator,
                 outer_bitmap_item,
-                outer_pos_iter: In::outer_pos_iter(start_outer_pos),
+                outer_pos_iter: In::outer_pos_iter(outer_pos),
                 limit: limit_outer_pos,
             })
         } else {
