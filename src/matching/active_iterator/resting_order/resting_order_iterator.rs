@@ -28,8 +28,8 @@ where
     /// The last returned inner bitmap item
     pub inner_bitmap_item: InnerBitmapItem<M, B, Q, In>,
 
-    /// Begin lookup from this position
-    pub coordinates: Option<InnerCoordinates<In>>,
+    /// Linear iterator
+    pub coordinates_iter: In::CoordinatesIter,
 
     pub limit: Row<In>,
 }
@@ -70,10 +70,13 @@ where
             Ok(Self {
                 active_inner_bitmap_iterator,
                 inner_bitmap_item,
-                coordinates: Some(InnerCoordinates {
-                    row: start_row,
-                    column: Column::new(0),
-                }),
+                coordinates_iter: In::coordinates_iter(
+                    InnerCoordinates {
+                        row: start_row,
+                        column: Column::new(0),
+                    }
+                    .into(),
+                ),
                 limit: limit_row,
             })
         } else {

@@ -26,45 +26,49 @@ where
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
-            if let Some(coordinates) = self.coordinates {
-                let mut linear_iterator = coordinates.iter();
-                while let Some(coordinates) = linear_iterator.next() {
-                    if self.inner_bitmap_item.limit_reached
-                        && self.limit.closer_to_centre(coordinates.row)
-                    {
-                        return None;
-                    }
-                    let limit_reached =
-                        self.inner_bitmap_item.limit_reached && self.limit == coordinates.row;
+            while let Some(coordinates) = self.coordinates_iter.next() {
+                let inner_coordinates = InnerCoordinates::from(coordinates);
 
-                    if self.inner_bitmap_item.inner_bitmap.active_v2(coordinates) {
-                        let preimage = RestingOrderPreimage {
-                            inner_bitmap_key: self.inner_bitmap_item.inner_bitmap_key,
-                            compact_coordinates: CompactCoordinates::from(coordinates),
-                        };
-                        let resting_order_key = preimage.hash();
-                        let resting_order = resting_order_key.load();
-
-                        self.coordinates = linear_iterator.next();
-
-                        return Some(RestingOrderItem {
-                            outer_bitmap_index: self.inner_bitmap_item.outer_bitmap_index,
-                            outer_pos: self.inner_bitmap_item.outer_pos,
-                            inner_coordinates: coordinates,
-                            resting_order_key,
-                            resting_order,
-                            limit_reached,
-                        });
-                    }
-                }
-            } else {
-                // if coordinates is None try to load the next inner bitmap
-                if let Some(item) = self.active_inner_bitmap_iterator.next() {
-                    self.inner_bitmap_item = item;
-                    self.coordinates = Some(InnerCoordinates::start_value());
-                } else {
+                if self.inner_bitmap_item.limit_reached
+                    && self.limit.closer_to_centre(inner_coordinates.row)
+                {
                     return None;
                 }
+                let limit_reached =
+                    self.inner_bitmap_item.limit_reached && self.limit == inner_coordinates.row;
+
+                if self
+                    .inner_bitmap_item
+                    .inner_bitmap
+                    .active_v2(inner_coordinates)
+                {
+                    let preimage = RestingOrderPreimage {
+                        inner_bitmap_key: self.inner_bitmap_item.inner_bitmap_key,
+                        compact_coordinates: CompactCoordinates::from(coordinates),
+                    };
+                    let resting_order_key = preimage.hash();
+                    let resting_order = resting_order_key.load();
+
+                    self.coordinates_iter.next();
+
+                    return Some(RestingOrderItem {
+                        outer_bitmap_index: self.inner_bitmap_item.outer_bitmap_index,
+                        outer_pos: self.inner_bitmap_item.outer_pos,
+                        inner_coordinates,
+                        resting_order_key,
+                        resting_order,
+                        limit_reached,
+                    });
+                }
+            }
+
+            if let Some(item) = self.active_inner_bitmap_iterator.next() {
+                // Go to the next inner bitmap
+                // Reset coordinates to start position
+                self.inner_bitmap_item = item;
+                self.coordinates_iter = In::coordinates_iter(In::start_value());
+            } else {
+                return None;
             }
         }
     }

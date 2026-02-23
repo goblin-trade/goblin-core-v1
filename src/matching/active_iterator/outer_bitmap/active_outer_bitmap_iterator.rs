@@ -15,8 +15,13 @@ where
     Q: TokenMarker,
     In: LegMatcher,
 {
+    /// Market key
     pub market_key: &'a SlotKey<MarketPreimage<M, B, Q>>,
-    pub outer_bitmap_index: Option<OuterBitmapIndex<In>>,
+
+    /// Linear iterator
+    pub outer_bitmap_index_iter: In::OuterBitmapIndexIter,
+
+    /// Stop when limit reached
     pub limit: OuterBitmapIndex<In>,
 }
 
@@ -34,7 +39,7 @@ where
     ) -> Self {
         Self {
             market_key,
-            outer_bitmap_index: Some(outer_bitmap_index),
+            outer_bitmap_index_iter: In::outer_bitmap_index_iter(outer_bitmap_index),
             limit,
         }
     }

@@ -40,10 +40,6 @@ where
         self.inner
     }
 
-    fn iter(self) -> impl Iterator<Item = Self> {
-        In::outer_bitmap_index_iter(self)
-    }
-
     fn closer_to_centre(self, other: Self) -> bool {
         In::closer_to_centre(self, other)
     }

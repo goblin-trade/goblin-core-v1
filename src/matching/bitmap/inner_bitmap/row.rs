@@ -39,10 +39,6 @@ where
         self.inner
     }
 
-    fn iter(self) -> impl Iterator<Item = Self> {
-        In::row_iter(self)
-    }
-
     fn closer_to_centre(self, other: Self) -> bool {
         In::closer_to_centre(self, other)
     }

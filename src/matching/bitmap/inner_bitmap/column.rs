@@ -12,6 +12,10 @@ impl Column {
     pub const fn new(inner: u8) -> Self {
         Self { inner }
     }
+
+    pub fn iter(self) -> impl Iterator<Item = Self> {
+        (Self::MIN.inner..=Self::MAX.inner).map(Self::new)
+    }
 }
 
 impl Coordinate for Column {
@@ -22,10 +26,6 @@ impl Coordinate for Column {
 
     fn inner(self) -> Self::Inner {
         self.inner
-    }
-
-    fn iter(self) -> impl Iterator<Item = Self> {
-        (Self::MIN.inner..=Self::MAX.inner).map(Self::new)
     }
 
     fn closer_to_centre(self, other: Self) -> bool {

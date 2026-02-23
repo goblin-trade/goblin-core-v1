@@ -25,9 +25,10 @@ where
     /// The last returned outer bitmap item
     pub outer_bitmap_item: OuterBitmapItem<M, B, Q, In>,
 
-    /// The current position of cursor
-    pub outer_pos: Option<OuterPos<In>>,
+    /// Linear iterator
+    pub outer_pos_iter: In::OuterPosIter,
 
+    /// Stop when limit reached
     pub limit: OuterPos<In>,
 }
 
@@ -60,7 +61,7 @@ where
             Ok(Self {
                 active_outer_bitmap_iterator,
                 outer_bitmap_item,
-                outer_pos: Some(start_outer_pos),
+                outer_pos_iter: In::outer_pos_iter(start_outer_pos),
                 limit: limit_outer_pos,
             })
         } else {

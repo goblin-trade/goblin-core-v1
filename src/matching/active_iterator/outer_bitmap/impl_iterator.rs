@@ -25,33 +25,29 @@ where
     type Item = OuterBitmapItem<M, B, Q, In>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if let Some(outer_bitmap_index) = self.outer_bitmap_index {
-            let mut linear_iterator = outer_bitmap_index.iter();
+        while let Some(outer_bitmap_index) = self.outer_bitmap_index_iter.next() {
+            if self.limit.closer_to_centre(outer_bitmap_index) {
+                return None;
+            }
+            let limit_reached = self.limit == outer_bitmap_index;
 
-            while let Some(outer_bitmap_index) = linear_iterator.next() {
-                if self.limit.closer_to_centre(outer_bitmap_index) {
-                    return None;
-                }
-                let limit_reached = self.limit == outer_bitmap_index;
+            let preimage = OuterBitmapPreimage {
+                market_key: *self.market_key,
+                outer_bitmap_index,
+            };
+            let outer_bitmap_key = preimage.hash();
+            let outer_bitmap = outer_bitmap_key.load();
+            let outer_bitmap_state = OuterBitmapState::from(outer_bitmap);
 
-                let preimage = OuterBitmapPreimage {
-                    market_key: *self.market_key,
+            if let OuterBitmapState::Active(active_outer_bitmap) = outer_bitmap_state {
+                // Move the cursor and return the current value
+                self.outer_bitmap_index_iter.next();
+                return Some(OuterBitmapItem {
                     outer_bitmap_index,
-                };
-                let outer_bitmap_key = preimage.hash();
-                let outer_bitmap = outer_bitmap_key.load();
-                let outer_bitmap_state = OuterBitmapState::from(outer_bitmap);
-
-                if let OuterBitmapState::Active(active_outer_bitmap) = outer_bitmap_state {
-                    // Move the cursor and return the current value
-                    self.outer_bitmap_index = linear_iterator.next();
-                    return Some(OuterBitmapItem {
-                        outer_bitmap_index,
-                        outer_bitmap_key,
-                        active_outer_bitmap,
-                        limit_reached,
-                    });
-                }
+                    outer_bitmap_key,
+                    active_outer_bitmap,
+                    limit_reached,
+                });
             }
         }
 
