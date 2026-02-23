@@ -11,8 +11,9 @@ use crate::{
 
 impl LegIterator for Base {
     type OuterBitmapIndexIter = Map<Rev<RangeInclusive<u64>>, fn(u64) -> OuterBitmapIndex<Self>>;
-
-    // type Iterable<C: Coordinate> = Map<Rev<RangeInclusive<C::Inner>>, fn(C::Inner) -> C>;
+    type OuterPosIter = Map<Rev<RangeInclusive<u8>>, fn(u8) -> OuterPos<Self>>;
+    type RowIter = Map<Rev<RangeInclusive<u8>>, fn(u8) -> Row<Self>>;
+    type CoordinatesIter = Map<Rev<RangeInclusive<u8>>, fn(u8) -> CompactCoordinates<Self>>;
 
     fn outer_bitmap_index_iter(item: OuterBitmapIndex<Self>) -> Self::OuterBitmapIndexIter {
         (OuterBitmapIndex::<Self>::MIN.inner..=item.inner)
@@ -20,21 +21,19 @@ impl LegIterator for Base {
             .map(OuterBitmapIndex::<Self>::new)
     }
 
-    fn outer_pos_iter(item: OuterPos<Self>) -> impl Iterator<Item = OuterPos<Self>> {
+    fn outer_pos_iter(item: OuterPos<Self>) -> Self::OuterPosIter {
         (OuterPos::<Self>::MIN.inner..=item.inner)
             .rev()
             .map(OuterPos::<Self>::new)
     }
 
-    fn row_iter(item: Row<Self>) -> impl Iterator<Item = Row<Self>> {
+    fn row_iter(item: Row<Self>) -> Self::RowIter {
         (Row::<Self>::MIN.inner..=item.inner)
             .rev()
             .map(Row::<Self>::new)
     }
 
-    fn coordinates_iter(
-        item: CompactCoordinates<Self>,
-    ) -> impl Iterator<Item = CompactCoordinates<Self>> {
+    fn coordinates_iter(item: CompactCoordinates<Self>) -> Self::CoordinatesIter {
         /// Mask inverts the LSB 3 bits belonging to column
         /// Eg the starting value 255 will map to 248 (row 31, column 0).
         /// This way rows are traversed top to bottom as normal but
