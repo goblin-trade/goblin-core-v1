@@ -1,3 +1,6 @@
+use core::iter::{Map, Rev};
+use core::ops::RangeInclusive;
+
 use crate::{
     axis::leg::{leg_iterator::LegIterator, Base},
     matching::bitmap::{
@@ -7,6 +10,8 @@ use crate::{
 };
 
 impl LegIterator for Base {
+    type Iterable<C: Coordinate> = Map<Rev<RangeInclusive<C::Inner>>, fn(C::Inner) -> C>;
+
     fn outer_bitmap_index_iter(
         item: OuterBitmapIndex<Self>,
     ) -> impl Iterator<Item = OuterBitmapIndex<Self>> {

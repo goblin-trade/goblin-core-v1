@@ -15,9 +15,14 @@ impl Column {
 }
 
 impl Coordinate for Column {
-    const MIN: Self = Self::new(0);
+    type Inner = u8;
 
+    const MIN: Self = Self::new(0);
     const MAX: Self = Self::new(7);
+
+    fn inner(self) -> Self::Inner {
+        self.inner
+    }
 
     fn iter(self) -> impl Iterator<Item = Self> {
         (Self::MIN.inner..=Self::MAX.inner).map(Self::new)

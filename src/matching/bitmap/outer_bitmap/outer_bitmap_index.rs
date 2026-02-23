@@ -32,8 +32,13 @@ impl<In> Coordinate for OuterBitmapIndex<In>
 where
     In: LegCoordinates + LegIterator,
 {
+    type Inner = u64;
     const MIN: Self = OuterBitmapIndex::new(0);
     const MAX: Self = OuterBitmapIndex::new(u64::MAX);
+
+    fn inner(self) -> Self::Inner {
+        self.inner
+    }
 
     fn iter(self) -> impl Iterator<Item = Self> {
         In::outer_bitmap_index_iter(self)

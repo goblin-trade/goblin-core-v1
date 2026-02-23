@@ -1,12 +1,14 @@
 use crate::{
     axis::leg::leg_quantities::LegQuantities,
     matching::bitmap::{
-        compact_coordinates::CompactCoordinates, inner_coordinates::InnerCoordinates,
-        outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos, row::Row, Coordinate,
+        compact_coordinates::CompactCoordinates, outer_bitmap_index::OuterBitmapIndex,
+        outer_pos::OuterPos, row::Row, Coordinate,
     },
 };
 
 pub trait LegIterator: LegQuantities {
+    type Iterable<C: Coordinate>;
+
     fn outer_bitmap_index_iter(
         item: OuterBitmapIndex<Self>,
     ) -> impl Iterator<Item = OuterBitmapIndex<Self>>;

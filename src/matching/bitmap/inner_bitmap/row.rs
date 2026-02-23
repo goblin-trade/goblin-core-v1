@@ -31,8 +31,13 @@ impl<In> Coordinate for Row<In>
 where
     In: LegCoordinates + LegIterator,
 {
+    type Inner = u8;
     const MIN: Self = Row::new(0);
     const MAX: Self = Row::new(31);
+
+    fn inner(self) -> Self::Inner {
+        self.inner
+    }
 
     fn iter(self) -> impl Iterator<Item = Self> {
         In::row_iter(self)

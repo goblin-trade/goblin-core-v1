@@ -31,8 +31,13 @@ impl<In> Coordinate for OuterPos<In>
 where
     In: LegCoordinates + LegIterator,
 {
+    type Inner = u8;
     const MIN: Self = OuterPos::new(0);
     const MAX: Self = OuterPos::new(255);
+
+    fn inner(self) -> Self::Inner {
+        self.inner
+    }
 
     fn iter(self) -> impl Iterator<Item = Self> {
         In::outer_pos_iter(self)

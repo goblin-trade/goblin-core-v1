@@ -1,11 +1,13 @@
 use core::marker::PhantomData;
 
 use crate::{
-    axis::leg::{leg_iterator::LegIterator, leg_matcher::LegMatcher},
-    matching::bitmap::inner_coordinates::InnerCoordinates,
+    axis::leg::{
+        leg_coordinates::LegCoordinates, leg_iterator::LegIterator, leg_matcher::LegMatcher,
+    },
+    matching::bitmap::{inner_coordinates::InnerCoordinates, Coordinate},
 };
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, PartialOrd)]
 pub struct CompactCoordinates<In>
 where
     In: LegIterator,
@@ -23,6 +25,27 @@ where
             inner,
             _marker: PhantomData,
         }
+    }
+}
+
+impl<In> Coordinate for CompactCoordinates<In>
+where
+    In: LegCoordinates + LegIterator,
+{
+    type Inner = u8;
+    const MIN: Self = Self::new(0);
+    const MAX: Self = Self::new(u8::MAX);
+
+    fn inner(self) -> Self::Inner {
+        self.inner
+    }
+
+    fn iter(self) -> impl Iterator<Item = Self> {
+        In::coordinates_iter(self)
+    }
+
+    fn closer_to_centre(self, other: Self) -> bool {
+        In::closer_to_centre(self, other)
     }
 }
 
