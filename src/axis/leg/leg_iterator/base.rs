@@ -30,20 +30,18 @@ impl LegIterator for Base {
     fn coordinates_iter(
         item: CompactCoordinates<Self>,
     ) -> impl Iterator<Item = CompactCoordinates<Self>> {
-        /// Mask to invert the MSB 5 bits that store row (0-31)
-        /// The LSB 3 bits belong to column (0 - 7) and are unchanged.
-        ///
-        /// The value moves from 0 to 255, but we invert the row bits.
-        /// This way column always goes from 0 to 7, but the direction of
-        /// row is reversed from 31 to 0.
-        ///
-        /// We need to invert the starting position. For example if
-        /// starting row is 30, we map it to 1 so we can iterate from 1 to 31,
-        /// then perform the inversion.
-        const MSB5_MASK: u8 = 0b1111_1000;
-        let start_inverted = item.inner ^ MSB5_MASK;
-        (start_inverted..=255).map(|inner| {
-            let inner_inverted = inner ^ MSB5_MASK;
+        /// Mask inverts the LSB 3 bits belonging to column
+        /// Eg the starting value 255 will map to 248 (row 31, column 0).
+        /// This way rows are traversed top to bottom as normal but
+        /// the direction of column traversal becomes left to right.
+        const LSB3_MASK: u8 = 0b0000_0111;
+
+        // Invert the starting bits. This way they get inverted again
+        // to the original value inside map()
+        let item_inverted = item.inner ^ LSB3_MASK;
+
+        (0..=item_inverted).rev().map(|inner| {
+            let inner_inverted = inner ^ LSB3_MASK;
             CompactCoordinates::new(inner_inverted)
         })
     }
