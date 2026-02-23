@@ -1,13 +1,15 @@
 use core::marker::PhantomData;
 
 use crate::{
-    axis::leg::leg_coordinates::LegCoordinates, matching::bitmap::Coordinate, quantities::Ticks,
+    axis::leg::{leg_coordinates::LegCoordinates, leg_iterator::LegIterator},
+    matching::bitmap::Coordinate,
+    quantities::Ticks,
 };
 
 #[derive(Clone, Copy, PartialEq, PartialOrd)]
 pub struct OuterPos<In>
 where
-    In: LegCoordinates,
+    In: LegIterator,
 {
     pub inner: u8,
     _marker: PhantomData<In>,
@@ -15,7 +17,7 @@ where
 
 impl<In> OuterPos<In>
 where
-    In: LegCoordinates,
+    In: LegIterator,
 {
     pub const fn new(inner: u8) -> Self {
         Self {
@@ -27,7 +29,7 @@ where
 
 impl<In> Coordinate for OuterPos<In>
 where
-    In: LegCoordinates,
+    In: LegCoordinates + LegIterator,
 {
     const MIN: Self = OuterPos::new(0);
     const MAX: Self = OuterPos::new(255);
@@ -43,7 +45,7 @@ where
 
 impl<In> From<Ticks> for OuterPos<In>
 where
-    In: LegCoordinates,
+    In: LegIterator,
 {
     fn from(value: Ticks) -> Self {
         Self::new(((value.inner / 32) % 256) as u8)

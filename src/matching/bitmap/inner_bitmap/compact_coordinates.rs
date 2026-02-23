@@ -1,14 +1,14 @@
 use core::marker::PhantomData;
 
 use crate::{
-    axis::leg::{leg_coordinates::LegCoordinates, leg_matcher::LegMatcher},
+    axis::leg::{leg_iterator::LegIterator, leg_matcher::LegMatcher},
     matching::bitmap::inner_coordinates::InnerCoordinates,
 };
 
 #[derive(Clone, Copy)]
 pub struct CompactCoordinates<In>
 where
-    In: LegCoordinates,
+    In: LegIterator,
 {
     pub inner: u8,
     _marker: PhantomData<In>,
@@ -16,7 +16,7 @@ where
 
 impl<In> CompactCoordinates<In>
 where
-    In: LegCoordinates,
+    In: LegIterator,
 {
     pub const fn new(inner: u8) -> Self {
         Self {

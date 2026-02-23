@@ -1,6 +1,6 @@
 use crate::{
     axis::leg::{
-        leg_constants::LegConstants, leg_coordinates::LegCoordinates,
+        leg_constants::LegConstants, leg_coordinates::LegCoordinates, leg_iterator::LegIterator,
         leg_quantities::LegQuantities, leg_validator::LegValidator,
     },
     quantities::{BaseLots, BaseLotsPerBaseUnit, QuantityOps, QuoteLotsPerBaseUnitPerTick, Ticks},
@@ -8,7 +8,15 @@ use crate::{
 
 /// Conversions for matching orders
 pub trait LegMatcher:
-    Default + Clone + Copy + PartialEq + LegQuantities + LegConstants + LegValidator + LegCoordinates
+    Default
+    + Clone
+    + Copy
+    + PartialEq
+    + LegQuantities
+    + LegConstants
+    + LegValidator
+    + LegCoordinates
+    + LegIterator
 {
     /// The opposite side
     /// Opposite of opposite is Self
