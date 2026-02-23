@@ -1,17 +1,15 @@
 use crate::{
     axis::{
         leg::{leg_matcher::LegMatcher, Base, Leg, Quote},
-        market::{market_marker::MarketMarker, CommonMarket, MarketAndKey},
+        market::{market_marker::MarketMarker, MarketAndKey},
         token::token_marker::TokenMarker,
     },
     goblin_error::GoblinError,
-    matching::resting_order_iterator::RestingOrderIterator,
+    matching::{active_iterator::resting_order::RestingOrderIterator, bitmap::range::Range},
     quantities::{BaseLotsPerBaseUnit, QuantityOps, QuoteLotsPerQuoteUnit, Ticks},
-    settlement::{
-        local_delta::{LocalDelta, MakerDelta, TakerDelta},
-        MatchedLots,
-    },
-    state::{resting_order::RestingOrder, MarketState, Preimage},
+    require,
+    settlement::local_delta::{LocalDelta, MakerDelta, TakerDelta},
+    state::MarketState,
     types::{Address, StoreReader, Tuple},
 };
 
@@ -42,7 +40,7 @@ where
             Tuple<BaseLotsPerBaseUnit, QuoteLotsPerQuoteUnit, Leg>,
             Result = In::LotsPerUnit,
         >,
-    In::Opposite: StoreReader<Tuple<Ticks, Ticks, Leg>, Result = Ticks>,
+    In: StoreReader<Tuple<Ticks, Ticks, Leg>, Result = Ticks>,
 {
     let MarketAndKey {
         market,
@@ -53,25 +51,31 @@ where
     let budget = In::matching_lots_taker(num_lots, base_lot_size);
 
     let mut taker_delta = TakerDelta::<In>::zero();
+
+    // Convention- market_state.last_prices<In> means te opposite price matched
+    let last_price = In::get(&market_state.last_prices);
+
+    if In::closer_to_centre(price_limit, last_price) {
+        require!(
+            min_lots_to_fill == In::Lots::ZERO,
+            GoblinError::TakerPriceLimitReached
+        );
+
+        return Ok(());
+    }
+
     let mut resting_order_iterator = RestingOrderIterator::<M, B, Q, In>::new(
         market_key,
-        &market_state.last_prices,
-        price_limit,
-        min_lots_to_fill,
+        Range {
+            start: last_price,
+            limit: price_limit,
+        },
     )?;
 
     while budget > taker_delta.matched_lots.taker_in {
-        if let Some(resting_order_position) = resting_order_iterator.next() {
-            let price = resting_order_position.price();
-
-            // price limit reached, stop matching
-            if In::closer_to_centre(price_limit, price) {
-                break;
-            }
-
-            // Read resting order amount
-            let resting_order_key = resting_order_position.preimage.hash();
-            let mut resting_order = resting_order_key.load();
+        if let Some(resting_order_item) = resting_order_iterator.next() {
+            let price = resting_order_item.price();
+            let mut resting_order = resting_order_item.resting_order;
 
             let quote = In::matching_lots_maker(resting_order.size, market.tick_size, price);
             let quote_opposite =
@@ -89,7 +93,7 @@ where
                 let surplus_base_lots =
                     In::base_lots_from_matching(surplus, market.tick_size, price);
                 resting_order.size = surplus_base_lots;
-                resting_order_key.store(&resting_order);
+                resting_order_item.resting_order_key.store(&resting_order);
 
                 let consumed = budget - taker_delta.matched_lots.taker_in;
                 let consumed_base_lots = resting_order.size - surplus_base_lots;

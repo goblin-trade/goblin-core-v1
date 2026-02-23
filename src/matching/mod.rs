@@ -3,4 +3,3 @@ pub use match_order::*;
 
 pub mod active_iterator;
 pub mod bitmap;
-mod resting_order_iterator;

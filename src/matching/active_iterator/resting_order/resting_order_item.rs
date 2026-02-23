@@ -5,8 +5,9 @@ use crate::{
     },
     matching::bitmap::{
         inner_coordinates::InnerCoordinates, outer_bitmap_index::OuterBitmapIndex,
-        outer_pos::OuterPos,
+        outer_pos::OuterPos, PriceCoordinates,
     },
+    quantities::Ticks,
     state::{
         resting_order::{preimage::RestingOrderPreimage, RestingOrder},
         SlotKey,
@@ -26,4 +27,21 @@ where
     pub resting_order_key: SlotKey<RestingOrderPreimage<M, B, Q, In>>,
     pub resting_order: RestingOrder<M, B, Q>,
     pub limit_reached: bool,
+}
+
+impl<M, B, Q, In> RestingOrderItem<M, B, Q, In>
+where
+    M: MarketMarker,
+    B: TokenMarker,
+    Q: TokenMarker,
+    In: LegMatcher,
+{
+    pub fn price(&self) -> Ticks {
+        PriceCoordinates {
+            outer_bitmap_index: self.outer_bitmap_index,
+            outer_pos: self.outer_pos,
+            row: self.inner_coordinates.row,
+        }
+        .into()
+    }
 }

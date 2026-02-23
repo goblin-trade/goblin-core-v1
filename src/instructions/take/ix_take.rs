@@ -32,7 +32,7 @@ where
             Tuple<BaseLotsPerBaseUnit, QuoteLotsPerQuoteUnit, Leg>,
             Result = In::LotsPerUnit,
         >,
-    In::Opposite: StoreReader<Tuple<Ticks, Ticks, Leg>, Result = Ticks>,
+    In: StoreReader<Tuple<Ticks, Ticks, Leg>, Result = Ticks>,
 {
     let packet = TakePacket::<In>::try_decode(ctx)?;
 
