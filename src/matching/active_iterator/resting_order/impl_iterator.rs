@@ -40,7 +40,7 @@ where
                 if self
                     .inner_bitmap_item
                     .inner_bitmap
-                    .active_v2(inner_coordinates)
+                    .active(inner_coordinates)
                 {
                     let preimage = RestingOrderPreimage {
                         inner_bitmap_key: self.inner_bitmap_item.inner_bitmap_key,

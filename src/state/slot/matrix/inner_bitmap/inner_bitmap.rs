@@ -5,10 +5,7 @@ use crate::{
         leg::leg_matcher::LegMatcher, market::market_marker::MarketMarker,
         token::token_marker::TokenMarker,
     },
-    matching::bitmap::{
-        inner_coordinates::{self, InnerCoordinates},
-        row::Row,
-    },
+    matching::bitmap::inner_coordinates::InnerCoordinates,
 };
 
 #[repr(C)]
@@ -35,14 +32,7 @@ where
         }
     }
 
-    pub fn active<In>(&self, row: Row<In>) -> bool
-    where
-        In: LegMatcher,
-    {
-        self.inner[row.inner as usize] != 0
-    }
-
-    pub fn active_v2<In>(&self, inner_coordinates: InnerCoordinates<In>) -> bool
+    pub fn active<In>(&self, inner_coordinates: InnerCoordinates<In>) -> bool
     where
         In: LegMatcher,
     {

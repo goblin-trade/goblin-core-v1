@@ -34,10 +34,4 @@ where
             column: Column::new(0),
         }
     }
-
-    pub fn iter(self) -> impl Iterator<Item = Self> {
-        let compact_coordinates = CompactCoordinates::from(self);
-        let compact_iterator = In::coordinates_iter(compact_coordinates);
-        compact_iterator.map(Self::from)
-    }
 }
