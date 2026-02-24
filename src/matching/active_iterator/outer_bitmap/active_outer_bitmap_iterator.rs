@@ -19,7 +19,7 @@ where
     pub market_key: &'a SlotKey<MarketPreimage<M, B, Q>>,
 
     /// Linear iterator
-    pub outer_bitmap_index_iter: In::OuterBitmapIndexIter,
+    pub linear_iterator: In::OuterBitmapIndexIter,
 
     /// Stop when limit reached
     pub limit: OuterBitmapIndex<In>,
@@ -38,7 +38,7 @@ where
     ) -> Self {
         Self {
             market_key,
-            outer_bitmap_index_iter: In::outer_bitmap_index_iter(range.start),
+            linear_iterator: In::outer_bitmap_index_iter(range.start),
             limit: range.limit,
         }
     }

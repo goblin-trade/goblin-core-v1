@@ -26,34 +26,27 @@ where
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
-            while let Some(coordinates) = self.coordinates_iter.next() {
+            while let Some(coordinates) = self.linear_iterator.next() {
                 let inner_coordinates = InnerCoordinates::from(coordinates);
 
-                if self.inner_bitmap_item.on_limit
-                    && self.limit.closer_to_centre(inner_coordinates.row)
-                {
+                if self.item.on_limit && self.limit.closer_to_centre(inner_coordinates.row) {
                     return None;
                 }
-                let limit_reached =
-                    self.inner_bitmap_item.on_limit && self.limit == inner_coordinates.row;
+                let limit_reached = self.item.on_limit && self.limit == inner_coordinates.row;
 
-                if self
-                    .inner_bitmap_item
-                    .inner_bitmap
-                    .active(inner_coordinates)
-                {
+                if self.item.inner_bitmap.active(inner_coordinates) {
                     let preimage = RestingOrderPreimage {
-                        inner_bitmap_key: self.inner_bitmap_item.inner_bitmap_key,
+                        inner_bitmap_key: self.item.inner_bitmap_key,
                         compact_coordinates: CompactCoordinates::from(coordinates),
                     };
                     let resting_order_key = preimage.hash();
                     let resting_order = resting_order_key.load();
 
-                    self.coordinates_iter.next();
+                    self.linear_iterator.next();
 
                     return Some(RestingOrderItem {
-                        outer_bitmap_index: self.inner_bitmap_item.outer_bitmap_index,
-                        outer_pos: self.inner_bitmap_item.outer_pos,
+                        outer_bitmap_index: self.item.outer_bitmap_index,
+                        outer_pos: self.item.outer_pos,
                         inner_coordinates,
                         resting_order_key,
                         resting_order,
@@ -65,8 +58,8 @@ where
             if let Some(item) = self.active_inner_bitmap_iterator.next() {
                 // Go to the next inner bitmap
                 // Reset coordinates to start position
-                self.inner_bitmap_item = item;
-                self.coordinates_iter = In::coordinates_iter(In::start_value());
+                self.item = item;
+                self.linear_iterator = In::coordinates_iter(In::start_value());
             } else {
                 return None;
             }

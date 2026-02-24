@@ -23,8 +23,8 @@ where
     fn next(&mut self) -> Option<Self::Item> {
         loop {
             // Try advancing current outer_pos iterator
-            while let Some(outer_pos) = self.outer_pos_iter.next() {
-                let result = self.outer_bitmap_item.get_inner_bitmap_item(Range {
+            while let Some(outer_pos) = self.linear_iterator.next() {
+                let result = self.item.get_inner_bitmap_item(Range {
                     start: outer_pos,
                     limit: self.limit,
                 });
@@ -37,8 +37,8 @@ where
             // Try to load the next outer bitmap if no active OuterPos was found
             // in the current one. Reset OuterPos to start position.
             if let Some(item) = self.active_outer_bitmap_iterator.next() {
-                self.outer_bitmap_item = item;
-                self.outer_pos_iter = In::outer_pos_iter(In::start_value());
+                self.item = item;
+                self.linear_iterator = In::outer_pos_iter(In::start_value());
             } else {
                 return None;
             }

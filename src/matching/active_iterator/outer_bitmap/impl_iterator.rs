@@ -25,7 +25,7 @@ where
     type Item = OuterBitmapItem<M, B, Q, In>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        while let Some(outer_bitmap_index) = self.outer_bitmap_index_iter.next() {
+        while let Some(outer_bitmap_index) = self.linear_iterator.next() {
             if self.limit.closer_to_centre(outer_bitmap_index) {
                 return None;
             }
@@ -41,7 +41,7 @@ where
 
             if let OuterBitmapState::Active(active_outer_bitmap) = outer_bitmap_state {
                 // Move the cursor and return the current value
-                self.outer_bitmap_index_iter.next();
+                self.linear_iterator.next();
                 return Some(OuterBitmapItem {
                     outer_bitmap_index,
                     outer_bitmap_key,

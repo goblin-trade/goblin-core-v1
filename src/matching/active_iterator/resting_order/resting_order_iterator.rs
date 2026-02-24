@@ -27,10 +27,10 @@ where
     pub active_inner_bitmap_iterator: ActiveInnerBitmapIterator<'a, M, B, Q, In>,
 
     /// The last returned inner bitmap item
-    pub inner_bitmap_item: InnerBitmapItem<M, B, Q, In>,
+    pub item: InnerBitmapItem<M, B, Q, In>,
 
     /// Linear iterator
-    pub coordinates_iter: In::CoordinatesIter,
+    pub linear_iterator: In::CoordinatesIter,
 
     pub limit: Row<In>,
 }
@@ -69,8 +69,8 @@ where
 
             Ok(Self {
                 active_inner_bitmap_iterator,
-                inner_bitmap_item,
-                coordinates_iter: In::coordinates_iter(
+                item: inner_bitmap_item,
+                linear_iterator: In::coordinates_iter(
                     InnerCoordinates {
                         row,
                         column: Column::new(0),
