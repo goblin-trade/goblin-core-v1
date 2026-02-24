@@ -3,10 +3,16 @@ use crate::{
         leg::leg_matcher::LegMatcher, market::market_marker::MarketMarker,
         token::token_marker::TokenMarker,
     },
-    matching::bitmap::outer_bitmap_index::OuterBitmapIndex,
+    matching::{
+        active_iterator::inner_bitmap::inner_bitmap_item::InnerBitmapItem,
+        bitmap::{
+            outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos, range::Range, Coordinate,
+        },
+    },
     state::{
+        inner_bitmap::preimage::InnerBitmapPreimage,
         outer_bitmap::{active_outer_bitmap::ActiveOuterBitmap, preimage::OuterBitmapPreimage},
-        SlotKey,
+        Preimage, SlotKey,
     },
 };
 
@@ -27,5 +33,47 @@ where
     pub active_outer_bitmap: ActiveOuterBitmap<M, B, Q>,
 
     /// Whether `limit` is reached and that this is the last value
-    pub limit_reached: bool,
+    pub on_limit: bool,
+}
+
+impl<M, B, Q, In> OuterBitmapItem<M, B, Q, In>
+where
+    M: MarketMarker,
+    B: TokenMarker,
+    Q: TokenMarker,
+    In: LegMatcher,
+{
+    pub fn get_inner_bitmap_item(
+        &self,
+        outer_pos_range: Range<OuterPos<In>>,
+    ) -> Option<InnerBitmapItem<M, B, Q, In>> {
+        if self.on_limit
+            && outer_pos_range
+                .limit
+                .closer_to_centre(outer_pos_range.start)
+        {
+            return None;
+        }
+
+        if self.active_outer_bitmap.active(outer_pos_range.start) {
+            let preimage = InnerBitmapPreimage {
+                outer_bitmap_key: self.outer_bitmap_key,
+                outer_pos: outer_pos_range.start,
+            };
+            let inner_bitmap_key = preimage.hash();
+            let inner_bitmap = inner_bitmap_key.load();
+
+            let on_limit = self.on_limit && outer_pos_range.on_limit();
+
+            return Some(InnerBitmapItem {
+                outer_bitmap_index: self.outer_bitmap_index,
+                outer_pos: outer_pos_range.start,
+                inner_bitmap_key,
+                inner_bitmap,
+                on_limit,
+            });
+        }
+
+        None
+    }
 }

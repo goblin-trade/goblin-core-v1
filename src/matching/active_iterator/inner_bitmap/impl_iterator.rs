@@ -7,9 +7,8 @@ use crate::{
         active_iterator::inner_bitmap::{
             inner_bitmap_item::InnerBitmapItem, ActiveInnerBitmapIterator,
         },
-        bitmap::Coordinate,
+        bitmap::range::Range,
     },
-    state::{inner_bitmap::preimage::InnerBitmapPreimage, Preimage},
 };
 
 impl<'a, M, B, Q, In> Iterator for ActiveInnerBitmapIterator<'a, M, B, Q, In>
@@ -23,34 +22,21 @@ where
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
+            // Try advancing current outer_pos iterator
             while let Some(outer_pos) = self.outer_pos_iter.next() {
-                if self.outer_bitmap_item.limit_reached && self.limit.closer_to_centre(outer_pos) {
-                    return None;
-                }
-                let limit_reached = self.outer_bitmap_item.limit_reached && self.limit == outer_pos;
+                let result = self.outer_bitmap_item.get_inner_bitmap_item(Range {
+                    start: outer_pos,
+                    limit: self.limit,
+                });
 
-                if self.outer_bitmap_item.active_outer_bitmap.active(outer_pos) {
-                    let preimage = InnerBitmapPreimage {
-                        outer_bitmap_key: self.outer_bitmap_item.outer_bitmap_key,
-                        outer_pos,
-                    };
-                    let inner_bitmap_key = preimage.hash();
-                    let inner_bitmap = inner_bitmap_key.load();
-
-                    self.outer_pos_iter.next();
-                    return Some(InnerBitmapItem {
-                        outer_bitmap_index: self.outer_bitmap_item.outer_bitmap_index,
-                        outer_pos,
-                        inner_bitmap_key,
-                        inner_bitmap,
-                        limit_reached,
-                    });
+                if result.is_some() {
+                    return result;
                 }
             }
 
+            // Try to load the next outer bitmap if no active OuterPos was found
+            // in the current one. Reset OuterPos to start position.
             if let Some(item) = self.active_outer_bitmap_iterator.next() {
-                // Go to the next outer bitmap
-                // Reset outer_pos to start position
                 self.outer_bitmap_item = item;
                 self.outer_pos_iter = In::outer_pos_iter(In::start_value());
             } else {

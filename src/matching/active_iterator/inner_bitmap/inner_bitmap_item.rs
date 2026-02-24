@@ -21,5 +21,5 @@ where
     pub outer_pos: OuterPos<In>,
     pub inner_bitmap_key: SlotKey<InnerBitmapPreimage<M, B, Q, In>>,
     pub inner_bitmap: InnerBitmap<M, B, Q>,
-    pub limit_reached: bool,
+    pub on_limit: bool,
 }

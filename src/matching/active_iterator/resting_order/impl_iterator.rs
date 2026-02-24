@@ -29,13 +29,13 @@ where
             while let Some(coordinates) = self.coordinates_iter.next() {
                 let inner_coordinates = InnerCoordinates::from(coordinates);
 
-                if self.inner_bitmap_item.limit_reached
+                if self.inner_bitmap_item.on_limit
                     && self.limit.closer_to_centre(inner_coordinates.row)
                 {
                     return None;
                 }
                 let limit_reached =
-                    self.inner_bitmap_item.limit_reached && self.limit == inner_coordinates.row;
+                    self.inner_bitmap_item.on_limit && self.limit == inner_coordinates.row;
 
                 if self
                     .inner_bitmap_item

@@ -46,7 +46,7 @@ where
                     outer_bitmap_index,
                     outer_bitmap_key,
                     active_outer_bitmap,
-                    limit_reached,
+                    on_limit: limit_reached,
                 });
             }
         }
