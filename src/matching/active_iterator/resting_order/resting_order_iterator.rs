@@ -9,8 +9,8 @@ use crate::{
             inner_bitmap_item::InnerBitmapItem, ActiveInnerBitmapIterator,
         },
         bitmap::{
-            column::Column, inner_coordinates::InnerCoordinates, range::Range, row::Row,
-            Coordinate, CoordinatesRange,
+            column::Column, compact_coordinates::CompactCoordinates,
+            inner_coordinates::InnerCoordinates, range::Range, Coordinate, CoordinatesRange,
         },
     },
     quantities::Ticks,
@@ -32,7 +32,7 @@ where
     /// Linear iterator
     pub linear_iterator: In::CoordinatesIter,
 
-    pub limit: Row<In>,
+    pub limit: CompactCoordinates<In>,
 }
 
 impl<'a, M, B, Q, In> RestingOrderIterator<'a, M, B, Q, In>
@@ -77,7 +77,11 @@ where
                     }
                     .into(),
                 ),
-                limit: range.row.limit,
+                limit: InnerCoordinates {
+                    row: range.row.limit,
+                    column: Column::new(0),
+                }
+                .into(),
             })
         } else {
             return Err(GoblinError::CallFail);

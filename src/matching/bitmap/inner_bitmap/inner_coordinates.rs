@@ -3,7 +3,7 @@ use crate::{
     matching::bitmap::{column::Column, compact_coordinates::CompactCoordinates, row::Row},
 };
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, PartialOrd)]
 pub struct InnerCoordinates<In>
 where
     In: LegMatcher,
