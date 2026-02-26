@@ -7,11 +7,7 @@ use crate::{
         active_iterator::outer_bitmap::{
             outer_bitmap_item::OuterBitmapItem, ActiveOuterBitmapIterator,
         },
-        bitmap::Coordinate,
-    },
-    state::{
-        outer_bitmap::{outer_bitmap_state::OuterBitmapState, preimage::OuterBitmapPreimage},
-        Preimage,
+        bitmap::range::Range,
     },
 };
 
@@ -26,28 +22,13 @@ where
 
     fn next(&mut self) -> Option<Self::Item> {
         while let Some(outer_bitmap_index) = self.linear_iterator.next() {
-            if self.limit.closer_to_centre(outer_bitmap_index) {
-                return None;
-            }
-            let limit_reached = self.limit == outer_bitmap_index;
+            let result = self.item.get_outer_bitmap_item(Range {
+                start: outer_bitmap_index,
+                limit: self.limit,
+            });
 
-            let preimage = OuterBitmapPreimage {
-                market_key: *self.market_key,
-                outer_bitmap_index,
-            };
-            let outer_bitmap_key = preimage.hash();
-            let outer_bitmap = outer_bitmap_key.load();
-            let outer_bitmap_state = OuterBitmapState::from(outer_bitmap);
-
-            if let OuterBitmapState::Active(active_outer_bitmap) = outer_bitmap_state {
-                // Move the cursor and return the current value
-                self.linear_iterator.next();
-                return Some(OuterBitmapItem {
-                    outer_bitmap_index,
-                    outer_bitmap_key,
-                    active_outer_bitmap,
-                    on_limit: limit_reached,
-                });
+            if result.is_some() {
+                return result;
             }
         }
 

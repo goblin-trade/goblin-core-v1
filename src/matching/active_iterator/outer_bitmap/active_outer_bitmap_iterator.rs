@@ -3,7 +3,10 @@ use crate::{
         leg::leg_matcher::LegMatcher, market::market_marker::MarketMarker,
         token::token_marker::TokenMarker,
     },
-    matching::bitmap::{outer_bitmap_index::OuterBitmapIndex, range::Range},
+    matching::{
+        active_iterator::outer_bitmap::market_item::MarketItem,
+        bitmap::{outer_bitmap_index::OuterBitmapIndex, range::Range},
+    },
     state::{MarketPreimage, SlotKey},
 };
 
@@ -16,7 +19,7 @@ where
     In: LegMatcher,
 {
     /// Market key
-    pub market_key: &'a SlotKey<MarketPreimage<M, B, Q>>,
+    pub item: MarketItem<'a, M, B, Q, In>,
 
     /// Linear iterator
     pub linear_iterator: In::OuterBitmapIndexIter,
@@ -37,7 +40,7 @@ where
         range: Range<OuterBitmapIndex<In>>,
     ) -> Self {
         Self {
-            market_key,
+            item: MarketItem::new(market_key),
             linear_iterator: In::outer_bitmap_index_iter(range.start),
             limit: range.limit,
         }
