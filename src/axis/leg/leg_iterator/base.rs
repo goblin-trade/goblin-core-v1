@@ -4,8 +4,8 @@ use core::ops::RangeInclusive;
 use crate::{
     axis::leg::{leg_iterator::LegIterator, Base},
     matching::bitmap::{
-        compact_coordinates::CompactCoordinates, outer_bitmap_index::OuterBitmapIndex,
-        outer_pos::OuterPos, row::Row, Coordinate,
+        inner_pos::InnerPos, outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos, row::Row,
+        Coordinate,
     },
 };
 
@@ -13,7 +13,7 @@ impl LegIterator for Base {
     type OuterBitmapIndexIter = Map<Rev<RangeInclusive<u64>>, fn(u64) -> OuterBitmapIndex<Self>>;
     type OuterPosIter = Map<Rev<RangeInclusive<u8>>, fn(u8) -> OuterPos<Self>>;
     type RowIter = Map<Rev<RangeInclusive<u8>>, fn(u8) -> Row<Self>>;
-    type CoordinatesIter = Map<Rev<RangeInclusive<u8>>, fn(u8) -> CompactCoordinates<Self>>;
+    type CoordinatesIter = Map<Rev<RangeInclusive<u8>>, fn(u8) -> InnerPos<Self>>;
 
     fn outer_bitmap_index_iter(item: OuterBitmapIndex<Self>) -> Self::OuterBitmapIndexIter {
         (OuterBitmapIndex::<Self>::MIN.inner..=item.inner)
@@ -33,7 +33,7 @@ impl LegIterator for Base {
             .map(Row::<Self>::new)
     }
 
-    fn coordinates_iter(item: CompactCoordinates<Self>) -> Self::CoordinatesIter {
+    fn coordinates_iter(item: InnerPos<Self>) -> Self::CoordinatesIter {
         /// Mask inverts the LSB 3 bits belonging to column
         /// Eg the starting value 255 will map to 248 (row 31, column 0).
         /// This way rows are traversed top to bottom as normal but
@@ -46,7 +46,7 @@ impl LegIterator for Base {
 
         (0..=item_inverted).rev().map(|inner| {
             let inner_inverted = inner ^ LSB3_MASK;
-            CompactCoordinates::new(inner_inverted)
+            InnerPos::new(inner_inverted)
         })
     }
 }

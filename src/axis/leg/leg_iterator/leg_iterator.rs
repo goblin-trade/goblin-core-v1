@@ -1,8 +1,7 @@
 use crate::{
     axis::leg::leg_quantities::LegQuantities,
     matching::bitmap::{
-        compact_coordinates::CompactCoordinates, outer_bitmap_index::OuterBitmapIndex,
-        outer_pos::OuterPos, row::Row,
+        inner_pos::InnerPos, outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos, row::Row,
     },
 };
 
@@ -14,7 +13,7 @@ pub trait LegIterator: LegQuantities {
     type OuterBitmapIndexIter: Iterator<Item = OuterBitmapIndex<Self>>;
     type OuterPosIter: Iterator<Item = OuterPos<Self>>;
     type RowIter: Iterator<Item = Row<Self>>;
-    type CoordinatesIter: Iterator<Item = CompactCoordinates<Self>>;
+    type CoordinatesIter: Iterator<Item = InnerPos<Self>>;
 
     fn outer_bitmap_index_iter(item: OuterBitmapIndex<Self>) -> Self::OuterBitmapIndexIter;
 
@@ -22,5 +21,5 @@ pub trait LegIterator: LegQuantities {
 
     fn row_iter(item: Row<Self>) -> Self::RowIter;
 
-    fn coordinates_iter(item: CompactCoordinates<Self>) -> Self::CoordinatesIter;
+    fn coordinates_iter(item: InnerPos<Self>) -> Self::CoordinatesIter;
 }

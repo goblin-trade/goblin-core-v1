@@ -1,10 +1,10 @@
 use crate::{
     axis::leg::leg_matcher::LegMatcher,
-    matching::bitmap::{column::Column, compact_coordinates::CompactCoordinates, row::Row},
+    matching::bitmap::{column::Column, inner_pos::InnerPos, row::Row},
 };
 
 #[derive(Clone, Copy, PartialEq, PartialOrd)]
-pub struct InnerCoordinates<In>
+pub struct RowColumn<In>
 where
     In: LegMatcher,
 {
@@ -12,11 +12,11 @@ where
     pub column: Column,
 }
 
-impl<In> From<CompactCoordinates<In>> for InnerCoordinates<In>
+impl<In> From<InnerPos<In>> for RowColumn<In>
 where
     In: LegMatcher,
 {
-    fn from(value: CompactCoordinates<In>) -> Self {
+    fn from(value: InnerPos<In>) -> Self {
         Self {
             row: Row::from(value),
             column: Column::from(value),
@@ -24,7 +24,7 @@ where
     }
 }
 
-impl<In> InnerCoordinates<In>
+impl<In> RowColumn<In>
 where
     In: LegMatcher,
 {

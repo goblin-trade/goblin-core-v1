@@ -1,6 +1,6 @@
 use crate::{
     axis::leg::leg_matcher::LegMatcher,
-    matching::bitmap::{compact_coordinates::CompactCoordinates, Coordinate},
+    matching::bitmap::{inner_pos::InnerPos, Coordinate},
 };
 
 #[derive(Clone, Copy, PartialEq, PartialOrd)]
@@ -31,11 +31,11 @@ impl Coordinate for Column {
     }
 }
 
-impl<In> From<CompactCoordinates<In>> for Column
+impl<In> From<InnerPos<In>> for Column
 where
     In: LegMatcher,
 {
-    fn from(value: CompactCoordinates<In>) -> Self {
+    fn from(value: InnerPos<In>) -> Self {
         Column::new(value.inner % 8)
     }
 }

@@ -6,8 +6,8 @@ use crate::{
     matching::{
         active_iterator::resting_order::resting_order_item::RestingOrderItem,
         bitmap::{
-            compact_coordinates::CompactCoordinates, outer_bitmap_index::OuterBitmapIndex,
-            outer_pos::OuterPos, range::Range,
+            inner_pos::InnerPos, outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos,
+            range::Range,
         },
     },
     state::{
@@ -40,7 +40,7 @@ where
 {
     pub fn get_resting_order_item(
         &self,
-        coordinates_range: Range<CompactCoordinates<In>>,
+        coordinates_range: Range<InnerPos<In>>,
     ) -> Option<RestingOrderItem<M, B, Q, In>> {
         if self.on_limit && In::closer_to_centre(coordinates_range.limit, coordinates_range.start) {
             return None;
@@ -50,7 +50,7 @@ where
         if self.inner_bitmap.active(coordinates_range.start.into()) {
             let preimage = RestingOrderPreimage {
                 inner_bitmap_key: self.inner_bitmap_key,
-                compact_coordinates: coordinates_range.start,
+                inner_pos: coordinates_range.start,
             };
             let resting_order_key = preimage.hash();
             let resting_order = resting_order_key.load();
@@ -58,7 +58,7 @@ where
             return Some(RestingOrderItem {
                 outer_bitmap_index: self.outer_bitmap_index,
                 outer_pos: self.outer_pos,
-                inner_coordinates: coordinates_range.start.into(),
+                row_column: coordinates_range.start.into(),
                 resting_order_key,
                 resting_order,
                 limit_reached,

@@ -2,7 +2,7 @@ use core::marker::PhantomData;
 
 use crate::{
     axis::leg::{leg_coordinates::LegCoordinates, leg_iterator::LegIterator},
-    matching::bitmap::{compact_coordinates::CompactCoordinates, Coordinate},
+    matching::bitmap::{inner_pos::InnerPos, Coordinate},
     quantities::Ticks,
 };
 
@@ -44,11 +44,11 @@ where
     }
 }
 
-impl<In> From<CompactCoordinates<In>> for Row<In>
+impl<In> From<InnerPos<In>> for Row<In>
 where
     In: LegIterator,
 {
-    fn from(value: CompactCoordinates<In>) -> Self {
+    fn from(value: InnerPos<In>) -> Self {
         Row::new(value.inner / 8)
     }
 }

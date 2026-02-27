@@ -5,7 +5,10 @@ use crate::{
         token::token_marker::TokenMarker,
     },
     goblin_error::GoblinError,
-    matching::{active_iterator::resting_order::RestingOrderIterator, bitmap::range::Range},
+    matching::{
+        active_iterator::resting_order::RestingOrderIterator,
+        bitmap::{range::Range, StoredCoordinates},
+    },
     quantities::{BaseLotsPerBaseUnit, QuantityOps, QuoteLotsPerQuoteUnit, Ticks},
     require,
     settlement::local_delta::{LocalDelta, MakerDelta, TakerDelta},
@@ -40,7 +43,7 @@ where
             Tuple<BaseLotsPerBaseUnit, QuoteLotsPerQuoteUnit, Leg>,
             Result = In::LotsPerUnit,
         >,
-    In: StoreReader<Tuple<Ticks, Ticks, Leg>, Result = Ticks>,
+    In: StoreReader<Tuple<StoredCoordinates, StoredCoordinates, Leg>, Result = StoredCoordinates>,
 {
     let MarketAndKey {
         market,
@@ -53,9 +56,9 @@ where
     let mut taker_delta = TakerDelta::<In>::zero();
 
     // Convention- market_state.last_prices<In> means te opposite price matched
-    let last_price = In::get(&market_state.last_prices);
+    let last_coordinate = In::get(&market_state.last_coordinates);
 
-    if In::closer_to_centre(price_limit, last_price) {
+    if In::closer_to_centre(price_limit, last_coordinate.price) {
         require!(
             min_lots_to_fill == In::Lots::ZERO,
             GoblinError::TakerPriceLimitReached
@@ -67,8 +70,8 @@ where
     let mut resting_order_iterator = RestingOrderIterator::<M, B, Q, In>::new(
         market_key,
         Range {
-            start: last_price,
-            limit: price_limit,
+            start: last_coordinate.into(),
+            limit: price_limit.into(),
         },
     )?;
 

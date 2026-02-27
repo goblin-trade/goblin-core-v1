@@ -4,11 +4,12 @@ use crate::{
     axis::leg::{
         leg_coordinates::LegCoordinates, leg_iterator::LegIterator, leg_matcher::LegMatcher,
     },
-    matching::bitmap::{inner_coordinates::InnerCoordinates, Coordinate},
+    matching::bitmap::{row::Row, row_column::RowColumn, Coordinate},
+    quantities::Ticks,
 };
 
 #[derive(Clone, Copy, PartialEq, PartialOrd)]
-pub struct CompactCoordinates<In>
+pub struct InnerPos<In>
 where
     In: LegIterator,
 {
@@ -16,7 +17,7 @@ where
     _marker: PhantomData<In>,
 }
 
-impl<In> CompactCoordinates<In>
+impl<In> InnerPos<In>
 where
     In: LegIterator,
 {
@@ -28,7 +29,7 @@ where
     }
 }
 
-impl<In> Coordinate for CompactCoordinates<In>
+impl<In> Coordinate for InnerPos<In>
 where
     In: LegCoordinates + LegIterator,
 {
@@ -45,11 +46,21 @@ where
     }
 }
 
-impl<In> From<InnerCoordinates<In>> for CompactCoordinates<In>
+impl<In> From<RowColumn<In>> for InnerPos<In>
 where
     In: LegMatcher,
 {
-    fn from(value: InnerCoordinates<In>) -> Self {
-        CompactCoordinates::new(value.row.inner * 8 + value.column.inner)
+    fn from(value: RowColumn<In>) -> Self {
+        InnerPos::new(value.row.inner * 8 + value.column.inner)
+    }
+}
+
+impl<In> From<Ticks> for InnerPos<In>
+where
+    In: LegMatcher,
+{
+    fn from(value: Ticks) -> Self {
+        let row = Row::<In>::from(value);
+        InnerPos::new(row.inner * 8)
     }
 }

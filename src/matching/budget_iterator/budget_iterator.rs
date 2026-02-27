@@ -7,9 +7,8 @@ use crate::{
     goblin_error::GoblinError,
     matching::{
         active_iterator::resting_order::{quote_pair::QuotePair, RestingOrderIterator},
-        bitmap::range::Range,
+        bitmap::{range::Range, FullCoordinates},
     },
-    quantities::Ticks,
     settlement::local_delta::{LocalMakerDeltas, MakerDelta, TakerDelta},
     types::{Address, StoreReader, Tuple},
 };
@@ -45,7 +44,7 @@ where
     pub fn new(
         taker: &'a Address,
         market_and_key: &'a MarketAndKey<M, B, Q>,
-        price_range: Range<Ticks>,
+        coordinates_range: Range<FullCoordinates<In>>,
         num_lots: In::Lots,
         local_maker_deltas: &'a mut LocalMakerDeltas,
     ) -> Result<Self, GoblinError> {
@@ -61,7 +60,7 @@ where
             taker,
             market,
             budget,
-            resting_order_iterator: RestingOrderIterator::new(market_key, price_range)?,
+            resting_order_iterator: RestingOrderIterator::new(market_key, coordinates_range)?,
             taker_delta: TakerDelta::<In>::zero(),
             local_maker_deltas,
         })

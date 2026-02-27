@@ -6,8 +6,8 @@ use crate::{
     matching::{
         active_iterator::resting_order::quote_pair::QuotePair,
         bitmap::{
-            inner_coordinates::InnerCoordinates, outer_bitmap_index::OuterBitmapIndex,
-            outer_pos::OuterPos, PriceCoordinates,
+            outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos, row_column::RowColumn,
+            PriceCoordinates,
         },
     },
     quantities::{QuoteLotsPerBaseUnitPerTick, Ticks},
@@ -26,7 +26,7 @@ where
 {
     pub outer_bitmap_index: OuterBitmapIndex<In>,
     pub outer_pos: OuterPos<In>,
-    pub inner_coordinates: InnerCoordinates<In>,
+    pub row_column: RowColumn<In>,
     pub resting_order_key: SlotKey<RestingOrderPreimage<M, B, Q, In>>,
     pub resting_order: RestingOrder<M, B, Q>,
     pub limit_reached: bool,
@@ -43,7 +43,7 @@ where
         PriceCoordinates {
             outer_bitmap_index: self.outer_bitmap_index,
             outer_pos: self.outer_pos,
-            row: self.inner_coordinates.row,
+            row: self.row_column.row,
         }
         .into()
     }

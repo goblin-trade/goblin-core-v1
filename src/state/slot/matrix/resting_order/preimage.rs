@@ -3,7 +3,7 @@ use crate::{
         leg::leg_matcher::LegMatcher, market::market_marker::MarketMarker,
         token::token_marker::TokenMarker,
     },
-    matching::bitmap::compact_coordinates::CompactCoordinates,
+    matching::bitmap::inner_pos::InnerPos,
     state::{
         inner_bitmap::preimage::InnerBitmapPreimage, resting_order::RestingOrder, Preimage, SlotKey,
     },
@@ -18,7 +18,7 @@ where
     In: LegMatcher,
 {
     pub inner_bitmap_key: SlotKey<InnerBitmapPreimage<M, B, Q, In>>,
-    pub compact_coordinates: CompactCoordinates<In>,
+    pub inner_pos: InnerPos<In>,
 }
 
 impl<M, B, Q, In> Preimage for RestingOrderPreimage<M, B, Q, In>

@@ -1,10 +1,9 @@
 use crate::{
     axis::leg::leg_matcher::LegMatcher,
     matching::bitmap::{
-        outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos, range::Range, row::Row,
-        PriceCoordinates,
+        inner_pos::InnerPos, outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos,
+        range::Range, FullCoordinates,
     },
-    quantities::Ticks,
 };
 
 pub struct CoordinatesRange<In>
@@ -13,29 +12,26 @@ where
 {
     pub outer_bitmap_index: Range<OuterBitmapIndex<In>>,
     pub outer_pos: Range<OuterPos<In>>,
-    pub row: Range<Row<In>>,
+    pub inner_pos: Range<InnerPos<In>>,
 }
 
-impl<In> From<Range<Ticks>> for CoordinatesRange<In>
+impl<In> From<Range<FullCoordinates<In>>> for CoordinatesRange<In>
 where
     In: LegMatcher,
 {
-    fn from(value: Range<Ticks>) -> Self {
-        let start_coordinates = PriceCoordinates::from(value.start);
-        let limit_coordinates = PriceCoordinates::from(value.limit);
-
+    fn from(value: Range<FullCoordinates<In>>) -> Self {
         Self {
             outer_bitmap_index: Range {
-                start: start_coordinates.outer_bitmap_index,
-                limit: limit_coordinates.outer_bitmap_index,
+                start: value.start.outer_bitmap_index,
+                limit: value.limit.outer_bitmap_index,
             },
             outer_pos: Range {
-                start: start_coordinates.outer_pos,
-                limit: limit_coordinates.outer_pos,
+                start: value.start.outer_pos,
+                limit: value.limit.outer_pos,
             },
-            row: Range {
-                start: start_coordinates.row,
-                limit: limit_coordinates.row,
+            inner_pos: Range {
+                start: value.start.inner_pos,
+                limit: value.limit.inner_pos,
             },
         }
     }

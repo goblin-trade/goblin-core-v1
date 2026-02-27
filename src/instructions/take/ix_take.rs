@@ -7,7 +7,7 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
     instructions::take::take_packet::TakePacket,
-    matching::match_order,
+    matching::{bitmap::StoredCoordinates, match_order},
     quantities::{BaseLotsPerBaseUnit, QuoteLotsPerQuoteUnit, Ticks},
     settlement::local_delta::{LocalDelta, MakerDelta, TakerDelta},
     state::MarketState,
@@ -32,7 +32,7 @@ where
             Tuple<BaseLotsPerBaseUnit, QuoteLotsPerQuoteUnit, Leg>,
             Result = In::LotsPerUnit,
         >,
-    In: StoreReader<Tuple<Ticks, Ticks, Leg>, Result = Ticks>,
+    In: StoreReader<Tuple<StoredCoordinates, StoredCoordinates, Leg>, Result = StoredCoordinates>,
 {
     let packet = TakePacket::<In>::try_decode(ctx)?;
 
