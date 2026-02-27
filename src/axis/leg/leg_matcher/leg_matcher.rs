@@ -30,7 +30,7 @@ pub trait LegMatcher:
     /// * Quote in (Bid) case- MatchingLots = AdjustedQuoteLots, Opposite::MatchingLots = BaseLots
     ///
     /// Use Self::MatchingLots to track amount consumed and Opposite::MatchingLots to get the output
-    type MatchingLots: QuantityOps + PartialOrd;
+    type MatchingLots: QuantityOps;
 
     /// Obtain MatchingLots from taker amount in
     fn matching_lots_taker(

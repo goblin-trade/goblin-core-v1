@@ -5,7 +5,16 @@ use crate::quantities::{Exp, Quantity};
 /// Blanket trait for all supported Quantity operations
 ///
 pub trait QuantityOps:
-    Copy + Sized + PartialEq + Default + Add<Output = Self> + Sub<Output = Self> + AddAssign + SubAssign
+    Copy
+    + Sized
+    + PartialEq
+    + Default
+    + Add<Output = Self>
+    + Sub<Output = Self>
+    + AddAssign
+    + SubAssign
+    + PartialOrd
+    + Ord
 {
     const MIN: Self;
     const MAX: Self;
@@ -23,7 +32,7 @@ pub trait QuantityOps:
 // in the side namespace.
 impl<D> QuantityOps for Quantity<D>
 where
-    D: Exp + Copy + PartialEq + Default,
+    D: Exp + Copy + PartialEq + Default + PartialOrd + Ord,
 {
     const MIN: Self = Self::new(u64::MIN);
     const MAX: Self = Self::new(u64::MAX);

@@ -1,5 +1,8 @@
 use crate::{
-    axis::leg::leg_matcher::LegMatcher, goblin_error::GoblinError, quantities::QuantityOps,
+    axis::leg::leg_matcher::LegMatcher,
+    goblin_error::GoblinError,
+    matching::active_iterator::resting_order::quote_pair::{self, QuotePair},
+    quantities::QuantityOps,
 };
 
 #[derive(Default, Clone, Copy, PartialEq)]
@@ -17,6 +20,12 @@ impl<In: LegMatcher> MatchedLots<In> {
             taker_in: In::MatchingLots::ZERO,
             taker_out: <In::Opposite as LegMatcher>::MatchingLots::ZERO,
         }
+    }
+
+    pub fn checked_add_v2(&mut self, quote_pair: QuotePair<In>) -> Option<()> {
+        self.taker_in = self.taker_in.checked_add(quote_pair.quote)?;
+        self.taker_out = self.taker_out.checked_add(quote_pair.quote_opposite)?;
+        Some(())
     }
 
     pub fn checked_add(

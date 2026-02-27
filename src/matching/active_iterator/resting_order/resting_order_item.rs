@@ -3,11 +3,14 @@ use crate::{
         leg::leg_matcher::LegMatcher, market::market_marker::MarketMarker,
         token::token_marker::TokenMarker,
     },
-    matching::bitmap::{
-        inner_coordinates::InnerCoordinates, outer_bitmap_index::OuterBitmapIndex,
-        outer_pos::OuterPos, PriceCoordinates,
+    matching::{
+        active_iterator::resting_order::quote_pair::QuotePair,
+        bitmap::{
+            inner_coordinates::InnerCoordinates, outer_bitmap_index::OuterBitmapIndex,
+            outer_pos::OuterPos, PriceCoordinates,
+        },
     },
-    quantities::Ticks,
+    quantities::{QuoteLotsPerBaseUnitPerTick, Ticks},
     state::{
         resting_order::{preimage::RestingOrderPreimage, RestingOrder},
         SlotKey,
@@ -43,5 +46,18 @@ where
             row: self.inner_coordinates.row,
         }
         .into()
+    }
+
+    pub fn quote(&self, tick_size: QuoteLotsPerBaseUnitPerTick) -> QuotePair<In> {
+        let price = self.price();
+
+        QuotePair {
+            quote: In::matching_lots_maker(self.resting_order.size, tick_size, price),
+            quote_opposite: In::Opposite::matching_lots_maker(
+                self.resting_order.size,
+                tick_size,
+                price,
+            ),
+        }
     }
 }
