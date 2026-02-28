@@ -12,7 +12,7 @@ use crate::{
     quantities::{BaseLotsPerBaseUnit, QuantityOps, QuoteLotsPerQuoteUnit, Ticks},
     require,
     settlement::local_delta::{LocalDelta, MakerDelta, TakerDelta},
-    state::MarketState,
+    state::{MarketState, Preimage},
     types::{Address, StoreReader, Tuple},
 };
 
@@ -76,9 +76,12 @@ where
     )?;
 
     while budget > taker_delta.matched_lots.taker_in {
-        if let Some(resting_order_item) = resting_order_iterator.next() {
-            let price = resting_order_item.price();
-            let mut resting_order = resting_order_item.resting_order;
+        if let Some(coordinate_item) = resting_order_iterator.next() {
+            let price = Ticks::from(coordinate_item.full_coordinates);
+
+            let preimage = coordinate_item.preimage();
+            let resting_order_key = preimage.hash();
+            let mut resting_order = resting_order_key.load();
 
             let quote = In::matching_lots_maker(resting_order.size, market.tick_size, price);
             let quote_opposite =
@@ -96,7 +99,7 @@ where
                 let surplus_base_lots =
                     In::base_lots_from_matching(surplus, market.tick_size, price);
                 resting_order.size = surplus_base_lots;
-                resting_order_item.resting_order_key.store(&resting_order);
+                resting_order_key.store(&resting_order);
 
                 let consumed = budget - taker_delta.matched_lots.taker_in;
                 // let consumed_base_lots = resting_order.size - surplus_base_lots;

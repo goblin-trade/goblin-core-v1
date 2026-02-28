@@ -7,13 +7,12 @@ use crate::{
         active_iterator::coordinate::coordinate_item::CoordinateItem,
         bitmap::{
             inner_pos::InnerPos, outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos,
-            range::Range,
+            range::Range, FullCoordinates,
         },
     },
     state::{
         inner_bitmap::{preimage::InnerBitmapPreimage, InnerBitmap},
-        resting_order::preimage::RestingOrderPreimage,
-        Preimage, SlotKey,
+        SlotKey,
     },
 };
 
@@ -48,19 +47,13 @@ where
         let limit_reached = self.on_limit && coordinates_range.on_limit();
 
         if self.inner_bitmap.active(coordinates_range.start.into()) {
-            let preimage = RestingOrderPreimage {
-                inner_bitmap_key: self.inner_bitmap_key,
-                inner_pos: coordinates_range.start,
-            };
-            let resting_order_key = preimage.hash();
-            let resting_order = resting_order_key.load();
-
             return Some(CoordinateItem {
-                outer_bitmap_index: self.outer_bitmap_index,
-                outer_pos: self.outer_pos,
-                row_column: coordinates_range.start.into(),
-                resting_order_key,
-                resting_order,
+                full_coordinates: FullCoordinates {
+                    outer_bitmap_index: self.outer_bitmap_index,
+                    outer_pos: self.outer_pos,
+                    inner_pos: coordinates_range.start,
+                },
+                inner_bitmap_key: self.inner_bitmap_key,
                 limit_reached,
             });
         }
