@@ -28,6 +28,12 @@ impl<In: LegMatcher> MatchedLots<In> {
         Some(())
     }
 
+    pub fn checked_add_v3(&mut self, other: Self) -> Option<()> {
+        self.taker_in = self.taker_in.checked_add(other.taker_in)?;
+        self.taker_out = self.taker_out.checked_add(other.taker_out)?;
+        Some(())
+    }
+
     pub fn checked_add(
         &mut self,
         taker_in: In::MatchingLots,

@@ -3,7 +3,7 @@ use core::ops::{Div, Mul, Rem};
 
 pub trait LegQuantities: Sized + PartialEq + PartialOrd {
     // Basic quantities
-    type Lots: QuantityOps + From<u64> + PartialOrd + Mul<Self::AtomsPerLot, Output = Self::Atoms>;
+    type Lots: QuantityOps + From<u64> + Mul<Self::AtomsPerLot, Output = Self::Atoms>;
     type Units: QuantityOps;
     type Atoms: QuantityOps + AsUnsided<Self, Z0, Z0, P1>;
 

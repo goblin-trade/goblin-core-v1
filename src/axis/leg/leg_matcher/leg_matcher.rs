@@ -8,15 +8,7 @@ use crate::{
 
 /// Conversions for matching orders
 pub trait LegMatcher:
-    Default
-    + Clone
-    + Copy
-    + PartialEq
-    + LegQuantities
-    + LegConstants
-    + LegValidator
-    + LegCoordinates
-    + LegIterator
+    Default + Clone + Copy + LegQuantities + LegConstants + LegValidator + LegCoordinates + LegIterator
 {
     /// The opposite side
     /// Opposite of opposite is Self
