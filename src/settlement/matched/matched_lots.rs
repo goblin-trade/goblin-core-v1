@@ -1,7 +1,7 @@
 use crate::{
     axis::leg::leg_matcher::LegMatcher,
     goblin_error::GoblinError,
-    matching::active_iterator::resting_order::quote_pair::{self, QuotePair},
+    matching::active_iterator::coordinate::quote_pair::{self, QuotePair},
     quantities::QuantityOps,
 };
 

@@ -4,21 +4,19 @@ use crate::{
         token::token_marker::TokenMarker,
     },
     matching::{
-        active_iterator::resting_order::{
-            resting_order_item::RestingOrderItem, RestingOrderIterator,
-        },
+        active_iterator::coordinate::{coordinate_item::CoordinateItem, CoordinateIterator},
         bitmap::range::Range,
     },
 };
 
-impl<'a, M, B, Q, In> Iterator for RestingOrderIterator<'a, M, B, Q, In>
+impl<'a, M, B, Q, In> Iterator for CoordinateIterator<'a, M, B, Q, In>
 where
     M: MarketMarker,
     B: TokenMarker,
     Q: TokenMarker,
     In: LegMatcher,
 {
-    type Item = RestingOrderItem<M, B, Q, In>;
+    type Item = CoordinateItem<M, B, Q, In>;
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {

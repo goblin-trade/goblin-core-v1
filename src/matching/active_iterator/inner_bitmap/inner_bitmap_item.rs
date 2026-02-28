@@ -4,7 +4,7 @@ use crate::{
         token::token_marker::TokenMarker,
     },
     matching::{
-        active_iterator::resting_order::resting_order_item::RestingOrderItem,
+        active_iterator::coordinate::coordinate_item::CoordinateItem,
         bitmap::{
             inner_pos::InnerPos, outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos,
             range::Range,
@@ -41,7 +41,7 @@ where
     pub fn get_resting_order_item(
         &self,
         coordinates_range: Range<InnerPos<In>>,
-    ) -> Option<RestingOrderItem<M, B, Q, In>> {
+    ) -> Option<CoordinateItem<M, B, Q, In>> {
         if self.on_limit && In::closer_to_centre(coordinates_range.limit, coordinates_range.start) {
             return None;
         }
@@ -55,7 +55,7 @@ where
             let resting_order_key = preimage.hash();
             let resting_order = resting_order_key.load();
 
-            return Some(RestingOrderItem {
+            return Some(CoordinateItem {
                 outer_bitmap_index: self.outer_bitmap_index,
                 outer_pos: self.outer_pos,
                 row_column: coordinates_range.start.into(),

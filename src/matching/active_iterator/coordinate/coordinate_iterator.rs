@@ -15,7 +15,7 @@ use crate::{
     state::{MarketPreimage, SlotKey},
 };
 
-pub struct RestingOrderIterator<'a, M, B, Q, In>
+pub struct CoordinateIterator<'a, M, B, Q, In>
 where
     M: MarketMarker,
     B: TokenMarker,
@@ -33,7 +33,7 @@ where
     pub limit: InnerPos<In>,
 }
 
-impl<'a, M, B, Q, In> RestingOrderIterator<'a, M, B, Q, In>
+impl<'a, M, B, Q, In> CoordinateIterator<'a, M, B, Q, In>
 where
     M: MarketMarker,
     B: TokenMarker,

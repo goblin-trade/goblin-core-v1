@@ -4,7 +4,7 @@ use crate::{
         token::token_marker::TokenMarker,
     },
     matching::{
-        active_iterator::resting_order::quote_pair::QuotePair,
+        active_iterator::coordinate::quote_pair::QuotePair,
         bitmap::{
             outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos, row_column::RowColumn,
             PriceCoordinates,
@@ -17,7 +17,7 @@ use crate::{
     },
 };
 
-pub struct RestingOrderItem<M, B, Q, In>
+pub struct CoordinateItem<M, B, Q, In>
 where
     M: MarketMarker,
     B: TokenMarker,
@@ -32,7 +32,7 @@ where
     pub limit_reached: bool,
 }
 
-impl<M, B, Q, In> RestingOrderItem<M, B, Q, In>
+impl<M, B, Q, In> CoordinateItem<M, B, Q, In>
 where
     M: MarketMarker,
     B: TokenMarker,

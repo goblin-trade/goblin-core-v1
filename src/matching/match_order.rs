@@ -6,7 +6,7 @@ use crate::{
     },
     goblin_error::GoblinError,
     matching::{
-        active_iterator::resting_order::RestingOrderIterator,
+        active_iterator::coordinate::CoordinateIterator,
         bitmap::{range::Range, StoredCoordinates},
     },
     quantities::{BaseLotsPerBaseUnit, QuantityOps, QuoteLotsPerQuoteUnit, Ticks},
@@ -67,7 +67,7 @@ where
         return Ok(());
     }
 
-    let mut resting_order_iterator = RestingOrderIterator::<M, B, Q, In>::new(
+    let mut resting_order_iterator = CoordinateIterator::<M, B, Q, In>::new(
         market_key,
         Range {
             start: last_coordinate.into(),
