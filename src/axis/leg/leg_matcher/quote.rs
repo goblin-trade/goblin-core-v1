@@ -18,6 +18,14 @@ impl LegMatcher for Quote {
         input_lots * base_lot_size
     }
 
+    fn opposite_matching_lots(
+        matching_lots: Self::MatchingLots,
+        tick_size: QuoteLotsPerBaseUnitPerTick,
+        price: Ticks,
+    ) -> <Self::Opposite as LegMatcher>::MatchingLots {
+        matching_lots / (tick_size * price)
+    }
+
     fn matching_lots_maker(
         size: BaseLots,
         tick_size: QuoteLotsPerBaseUnitPerTick,

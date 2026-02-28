@@ -15,6 +15,14 @@ impl LegMatcher for Base {
         input_lots
     }
 
+    fn opposite_matching_lots(
+        matching_lots: Self::MatchingLots,
+        tick_size: QuoteLotsPerBaseUnitPerTick,
+        price: Ticks,
+    ) -> <Self::Opposite as LegMatcher>::MatchingLots {
+        (tick_size * price) * matching_lots
+    }
+
     fn matching_lots_maker(
         size: BaseLots,
         _tick_size: QuoteLotsPerBaseUnitPerTick,

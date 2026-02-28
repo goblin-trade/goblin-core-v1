@@ -45,13 +45,15 @@ where
 
             // TODO simpler utility
             let consumed = self.budget.min(maker_quote.quote);
-            let consumed_base_lots =
-                In::base_lots_from_matching(consumed, self.market.tick_size, item.price());
-            let consumed_opposite = In::Opposite::matching_lots_maker(
-                consumed_base_lots,
-                self.market.tick_size,
-                item.price(),
-            );
+            let consumed_opposite =
+                In::opposite_matching_lots(consumed, self.market.tick_size, item.price());
+            // let consumed_base_lots =
+            //     In::base_lots_from_matching(consumed, self.market.tick_size, item.price());
+            // let consumed_opposite = In::Opposite::matching_lots_maker(
+            //     consumed_base_lots,
+            //     self.market.tick_size,
+            //     item.price(),
+            // );
 
             self.add_quote(
                 item.resting_order.maker,

@@ -99,9 +99,10 @@ where
                 resting_order_item.resting_order_key.store(&resting_order);
 
                 let consumed = budget - taker_delta.matched_lots.taker_in;
-                let consumed_base_lots = resting_order.size - surplus_base_lots;
+                // let consumed_base_lots = resting_order.size - surplus_base_lots;
+                // let consumed_opposite = In::Opposite::matching_lots_maker(consumed_base_lots, market.tick_size, price);
                 let consumed_opposite =
-                    In::Opposite::matching_lots_maker(consumed_base_lots, market.tick_size, price);
+                    In::opposite_matching_lots(consumed, market.tick_size, price);
 
                 taker_delta
                     .matched_lots

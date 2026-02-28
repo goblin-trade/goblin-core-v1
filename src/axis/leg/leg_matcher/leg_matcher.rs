@@ -38,12 +38,11 @@ pub trait LegMatcher:
         base_lot_size: BaseLotsPerBaseUnit,
     ) -> Self::MatchingLots;
 
-    /// Obtain MatchingLots from a resting order
-    fn matching_lots_maker(
-        size: BaseLots,
+    fn opposite_matching_lots(
+        matching_lots: Self::MatchingLots,
         tick_size: QuoteLotsPerBaseUnitPerTick,
         price: Ticks,
-    ) -> Self::MatchingLots;
+    ) -> <Self::Opposite as LegMatcher>::MatchingLots;
 
     /// Decode MatchingLots into Lots
     fn decode_matching_lots(
@@ -62,6 +61,17 @@ pub trait LegMatcher:
         atoms
     }
 
+    // ------------
+
+    /// Obtain MatchingLots from a resting order
+    /// TODO replace with direct function opposite_matching_lots()
+    fn matching_lots_maker(
+        size: BaseLots,
+        tick_size: QuoteLotsPerBaseUnitPerTick,
+        price: Ticks,
+    ) -> Self::MatchingLots;
+
+    /// TODO replace with direct function opposite_matching_lots()
     fn base_lots_from_matching(
         matching_lots: Self::MatchingLots,
         tick_size: QuoteLotsPerBaseUnitPerTick,
