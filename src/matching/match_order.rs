@@ -54,10 +54,6 @@ where
     } = market_and_key;
 
     let base_lot_size = Base::get(&market.lot_size_pair);
-    let budget = In::matching_lots_taker(num_lots, base_lot_size);
-
-    let taker_delta = In::get_leg_mut(&mut local_delta.local_sender_delta.taker_delta_pair);
-    *taker_delta = TakerDelta::<In>::zero();
 
     // Convention- market_state.last_prices<In> means te opposite price matched
     let last_coordinate = In::get_leg_mut(&mut market_state.last_coordinates);
@@ -79,12 +75,12 @@ where
         },
     )?;
 
-    let mut remaining_budget = budget;
+    let mut budget = In::matching_lots_taker(num_lots, base_lot_size);
 
-    while remaining_budget >= In::MatchingLots::ZERO {
+    while budget >= In::MatchingLots::ZERO {
         if let Some(item) = iterator.next() {
             *last_coordinate = item.full_coordinates.into();
-            if remaining_budget == In::MatchingLots::ZERO {
+            if budget == In::MatchingLots::ZERO {
                 break;
             }
 
@@ -92,13 +88,23 @@ where
             let hash = preimage.hash();
             let mut resting_order = hash.load();
 
+            if resting_order.maker == *taker {
+                let quote_opposite = In::Opposite::matching_lots_maker(
+                    resting_order.size,
+                    market.tick_size,
+                    last_coordinate.price,
+                );
+                local_delta.add_self_trade::<In>(quote_opposite)?;
+                continue;
+            }
+
             let quote = In::matching_lots_maker(
                 resting_order.size,
                 market.tick_size,
                 last_coordinate.price,
             );
 
-            let matched = remaining_budget.min(quote);
+            let matched = budget.min(quote);
             let matched_opposite =
                 In::opposite_matching_lots(matched, market.tick_size, last_coordinate.price);
 
@@ -106,25 +112,11 @@ where
                 taker_in: matched,
                 taker_out: matched_opposite,
             };
-            // Update taker
-            taker_delta
-                .matched_lots
-                .checked_add_v3(matched_lots_delta)
-                .ok_or(GoblinError::DeltaOverflow)?;
 
-            // Update maker
-            let maker_delta_pair = local_delta
-                .local_maker_deltas
-                .get_or_insert_mut(resting_order.maker)
-                .ok_or(GoblinError::MakerListFull)?;
+            // Update taker and maker deltas
+            local_delta.add_matched(resting_order.maker, matched_lots_delta)?;
 
-            let maker_delta = In::get_leg_mut(maker_delta_pair);
-            maker_delta
-                .matched_lots
-                .checked_add_v3(matched_lots_delta)
-                .ok_or(GoblinError::DeltaOverflow)?;
-
-            remaining_budget -= matched;
+            budget -= matched;
 
             if matched < quote {
                 let residue = quote - matched;
@@ -140,12 +132,7 @@ where
         }
     }
 
-    let min_lots = In::matching_lots_taker(min_lots_to_fill, base_lot_size);
-
-    require!(
-        taker_delta.matched_lots.taker_in >= min_lots,
-        GoblinError::InsufficientTakerFill
-    );
+    local_delta.verify_min_match::<In>(min_lots_to_fill, base_lot_size)?;
 
     Ok(())
 }
