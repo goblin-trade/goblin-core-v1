@@ -77,57 +77,50 @@ where
 
     let mut budget = In::matching_lots_taker(num_lots, base_lot_size);
 
-    while budget >= In::MatchingLots::ZERO {
-        if let Some(item) = iterator.next() {
-            *last_coordinate = item.full_coordinates.into();
-            if budget == In::MatchingLots::ZERO {
-                break;
-            }
+    while let Some(item) = iterator.next() {
+        *last_coordinate = item.full_coordinates.into();
+        if budget == In::MatchingLots::ZERO {
+            break;
+        }
 
-            let preimage = item.preimage();
-            let hash = preimage.hash();
-            let mut resting_order = hash.load();
+        let preimage = item.preimage();
+        let hash = preimage.hash();
+        let mut resting_order = hash.load();
 
-            if resting_order.maker == *taker {
-                let quote_opposite = In::Opposite::matching_lots_maker(
-                    resting_order.size,
-                    market.tick_size,
-                    last_coordinate.price,
-                );
-                local_delta.add_self_trade::<In>(quote_opposite)?;
-                continue;
-            }
-
-            let quote = In::matching_lots_maker(
+        if resting_order.maker == *taker {
+            let quote_opposite = In::Opposite::matching_lots_maker(
                 resting_order.size,
                 market.tick_size,
                 last_coordinate.price,
             );
+            local_delta.add_self_trade::<In>(quote_opposite)?;
+            continue;
+        }
 
-            let matched = budget.min(quote);
-            let matched_opposite =
-                In::opposite_matching_lots(matched, market.tick_size, last_coordinate.price);
+        let quote =
+            In::matching_lots_maker(resting_order.size, market.tick_size, last_coordinate.price);
 
-            let matched_lots_delta = MatchedLots::<In> {
-                taker_in: matched,
-                taker_out: matched_opposite,
-            };
+        let matched = budget.min(quote);
+        let matched_opposite =
+            In::opposite_matching_lots(matched, market.tick_size, last_coordinate.price);
 
-            // Update taker and maker deltas
-            local_delta.add_matched(resting_order.maker, matched_lots_delta)?;
+        let matched_lots_delta = MatchedLots::<In> {
+            taker_in: matched,
+            taker_out: matched_opposite,
+        };
 
-            budget -= matched;
+        // Update taker and maker deltas
+        local_delta.add_matched(resting_order.maker, matched_lots_delta)?;
 
-            if matched < quote {
-                let residue = quote - matched;
-                let residue_base_lots =
-                    In::base_lots_from_matching(residue, market.tick_size, last_coordinate.price);
+        budget -= matched;
 
-                resting_order.size = residue_base_lots;
-                hash.store(&resting_order);
-                break;
-            }
-        } else {
+        if matched < quote {
+            let residue = quote - matched;
+            let residue_base_lots =
+                In::base_lots_from_matching(residue, market.tick_size, last_coordinate.price);
+
+            resting_order.size = residue_base_lots;
+            hash.store(&resting_order);
             break;
         }
     }
