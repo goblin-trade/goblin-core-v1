@@ -10,7 +10,6 @@ use crate::{
         bitmap::{range::Range, FullCoordinates, StoredCoordinates},
     },
     quantities::{BaseLotsPerBaseUnit, QuantityOps, QuoteLotsPerQuoteUnit, Ticks},
-    require,
     settlement::{
         local_delta::{LocalDelta, MakerDelta, TakerDelta},
         MatchedLots,
@@ -58,13 +57,13 @@ where
     // Convention- market_state.last_prices<In> means te opposite price matched
     let last_coordinate = In::get_leg_mut(&mut market_state.last_coordinates);
 
+    // Exit early if last price is beyond limit price
     if In::closer_to_centre(price_limit, last_coordinate.price) {
-        require!(
-            min_lots_to_fill == In::Lots::ZERO,
-            GoblinError::TakerPriceLimitReached
-        );
-
-        return Ok(());
+        return if min_lots_to_fill == In::Lots::ZERO {
+            Err(GoblinError::TakerPriceLimitReached)
+        } else {
+            Ok(())
+        };
     }
 
     let mut iterator = CoordinateIterator::<M, B, Q, In>::new(
