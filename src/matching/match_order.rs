@@ -51,10 +51,9 @@ where
         market,
         key: market_key,
     } = market_and_key;
-
     let base_lot_size = Base::get(&market.lot_size_pair);
 
-    // Convention- market_state.last_prices<In> means te opposite price matched
+    // Convention- market_state.last_prices<In> means the opposite price matched
     let last_coordinate = In::get_leg_mut(&mut market_state.last_coordinates);
 
     // Exit early if last price is beyond limit price
@@ -66,7 +65,7 @@ where
         };
     }
 
-    let mut iterator = CoordinateIterator::<M, B, Q, In>::new(
+    let iterator = CoordinateIterator::<M, B, Q, In>::new(
         market_key,
         Range {
             start: FullCoordinates::from(*last_coordinate),
@@ -76,7 +75,8 @@ where
 
     let mut budget = In::matching_lots_taker(num_lots, base_lot_size);
 
-    while let Some(item) = iterator.next() {
+    for item in iterator {
+        // Update last market price
         *last_coordinate = item.full_coordinates.into();
         if budget == In::MatchingLots::ZERO {
             break;
@@ -86,6 +86,7 @@ where
         let hash = preimage.hash();
         let mut resting_order = hash.load();
 
+        // Handle self trade
         if resting_order.maker == *taker {
             let quote_opposite = In::Opposite::matching_lots_maker(
                 resting_order.size,
@@ -99,22 +100,16 @@ where
         let quote =
             In::matching_lots_maker(resting_order.size, market.tick_size, last_coordinate.price);
 
-        let matched = budget.min(quote);
-        let matched_opposite =
-            In::opposite_matching_lots(matched, market.tick_size, last_coordinate.price);
+        let matched_lots =
+            MatchedLots::<In>::new(quote, budget, last_coordinate.price, market.tick_size);
 
-        let matched_lots_delta = MatchedLots::<In> {
-            taker_in: matched,
-            taker_out: matched_opposite,
-        };
+        local_delta.add_matched(resting_order.maker, matched_lots)?;
+        budget -= matched_lots.taker_in;
 
-        // Update taker and maker deltas
-        local_delta.add_matched(resting_order.maker, matched_lots_delta)?;
-
-        budget -= matched;
-
-        if matched < quote {
-            let residue = quote - matched;
+        // Budget exhausted but maker residue remains
+        // Write updated resting order to slot
+        if quote > matched_lots.taker_in {
+            let residue = quote - matched_lots.taker_in;
             let residue_base_lots =
                 In::base_lots_from_matching(residue, market.tick_size, last_coordinate.price);
 

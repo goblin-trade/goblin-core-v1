@@ -61,7 +61,7 @@ impl LocalDelta {
         let taker_delta = In::get_leg_mut(&mut self.local_sender_delta.taker_delta_pair);
         taker_delta
             .matched_lots
-            .checked_add_v3(matched_lots)
+            .checked_add(matched_lots)
             .ok_or(GoblinError::DeltaOverflow)?;
 
         let maker_delta_pair = self
@@ -72,7 +72,7 @@ impl LocalDelta {
         let maker_delta = In::get_leg_mut(maker_delta_pair);
         maker_delta
             .matched_lots
-            .checked_add_v3(matched_lots)
+            .checked_add(matched_lots)
             .ok_or(GoblinError::DeltaOverflow)?;
 
         Ok(())

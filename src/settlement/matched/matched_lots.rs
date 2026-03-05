@@ -1,8 +1,6 @@
 use crate::{
     axis::leg::leg_matcher::LegMatcher,
-    goblin_error::GoblinError,
-    matching::active_iterator::coordinate::quote_pair::{self, QuotePair},
-    quantities::QuantityOps,
+    quantities::{QuantityOps, QuoteLotsPerBaseUnitPerTick, Ticks},
 };
 
 #[derive(Default, Clone, Copy, PartialEq)]
@@ -22,32 +20,24 @@ impl<In: LegMatcher> MatchedLots<In> {
         }
     }
 
-    pub fn checked_add_v2(&mut self, quote_pair: QuotePair<In>) -> Option<()> {
-        self.taker_in = self.taker_in.checked_add(quote_pair.quote)?;
-        self.taker_out = self.taker_out.checked_add(quote_pair.quote_opposite)?;
-        Some(())
+    pub fn new(
+        quote: In::MatchingLots,
+        budget: In::MatchingLots,
+        price: Ticks,
+        tick_size: QuoteLotsPerBaseUnitPerTick,
+    ) -> Self {
+        let matched = budget.min(quote);
+        let matched_opposite = In::opposite_matching_lots(matched, tick_size, price);
+
+        Self {
+            taker_in: matched,
+            taker_out: matched_opposite,
+        }
     }
 
-    pub fn checked_add_v3(&mut self, other: Self) -> Option<()> {
+    pub fn checked_add(&mut self, other: Self) -> Option<()> {
         self.taker_in = self.taker_in.checked_add(other.taker_in)?;
         self.taker_out = self.taker_out.checked_add(other.taker_out)?;
         Some(())
-    }
-
-    pub fn checked_add(
-        &mut self,
-        taker_in: In::MatchingLots,
-        taker_out: <In::Opposite as LegMatcher>::MatchingLots,
-    ) -> Result<(), GoblinError> {
-        self.taker_in = self
-            .taker_in
-            .checked_add(taker_in)
-            .ok_or(GoblinError::DeltaOverflow)?;
-        self.taker_out = self
-            .taker_out
-            .checked_add(taker_out)
-            .ok_or(GoblinError::DeltaOverflow)?;
-
-        Ok(())
     }
 }
