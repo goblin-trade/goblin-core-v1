@@ -36,7 +36,7 @@ where
     let market_locator = M::MarketLocator::<B, Q>::decode_locator(ctx, erc20_list)?;
     let market_and_key = market_locator.locate_market()?;
 
-    let mut market_state = market_and_key.key.load();
+    let mut market_state = market_and_key.market_key.load();
 
     if market_header.decode_deposit_amounts {
         delta.local.deposits.set_deposits::<B, Q>(ctx)?;

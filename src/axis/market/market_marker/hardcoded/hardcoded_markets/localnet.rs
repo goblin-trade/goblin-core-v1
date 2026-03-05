@@ -27,7 +27,7 @@ impl HardcodedMarkets<ETH, HardcodedERC20> for HardcodedMarketIndex<ETH, Hardcod
                 ),
                 QuoteLotsPerBaseUnitPerTick::new(1),
             ),
-            key: SlotKey::new([0u8; 32]),
+            market_key: SlotKey::new([0u8; 32]),
         }];
 }
 
@@ -42,7 +42,7 @@ impl HardcodedMarkets<HardcodedERC20, ETH> for HardcodedMarketIndex<HardcodedERC
                 ),
                 QuoteLotsPerBaseUnitPerTick::new(1),
             ),
-            key: SlotKey::new([0u8; 32]),
+            market_key: SlotKey::new([0u8; 32]),
         }];
 }
 
@@ -59,6 +59,6 @@ impl HardcodedMarkets<HardcodedERC20, HardcodedERC20>
                 ),
                 QuoteLotsPerBaseUnitPerTick::new(1),
             ),
-            key: SlotKey::new([0u8; 32]),
+            market_key: SlotKey::new([0u8; 32]),
         }];
 }

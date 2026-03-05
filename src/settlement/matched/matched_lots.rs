@@ -23,8 +23,8 @@ impl<In: LegMatcher> MatchedLots<In> {
     pub fn new(
         quote: In::MatchingLots,
         budget: In::MatchingLots,
-        price: Ticks,
         tick_size: QuoteLotsPerBaseUnitPerTick,
+        price: Ticks,
     ) -> Self {
         let matched = budget.min(quote);
         let matched_opposite = In::opposite_matching_lots(matched, tick_size, price);

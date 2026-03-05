@@ -5,10 +5,7 @@ use crate::{
         token::token_marker::TokenMarker,
     },
     goblin_error::GoblinError,
-    matching::{
-        active_iterator::coordinate::CoordinateIterator,
-        bitmap::{range::Range, FullCoordinates, StoredCoordinates},
-    },
+    matching::{active_iterator::coordinate::CoordinateIterator, bitmap::StoredCoordinates},
     quantities::{BaseLotsPerBaseUnit, QuantityOps, QuoteLotsPerQuoteUnit, Ticks},
     settlement::{
         local_delta::{LocalDelta, MakerDelta, TakerDelta},
@@ -47,32 +44,13 @@ where
         >,
     In: StoreReader<Tuple<StoredCoordinates, StoredCoordinates, Leg>, Result = StoredCoordinates>,
 {
-    let MarketAndKey {
-        market,
-        key: market_key,
-    } = market_and_key;
-    let base_lot_size = Base::get(&market.lot_size_pair);
+    let MarketAndKey { market, market_key } = market_and_key;
 
-    // Convention- market_state.last_prices<In> means the opposite price matched
     let last_coordinate = In::get_leg_mut(&mut market_state.last_coordinates);
+    let iterator =
+        CoordinateIterator::<M, B, Q, In>::new(market_key, *last_coordinate, price_limit)?;
 
-    // Exit early if last price is beyond limit price
-    if In::closer_to_centre(price_limit, last_coordinate.price) {
-        return if min_lots_to_fill == In::Lots::ZERO {
-            Err(GoblinError::TakerPriceLimitReached)
-        } else {
-            Ok(())
-        };
-    }
-
-    let iterator = CoordinateIterator::<M, B, Q, In>::new(
-        market_key,
-        Range {
-            start: FullCoordinates::from(*last_coordinate),
-            limit: FullCoordinates::from(price_limit),
-        },
-    )?;
-
+    let base_lot_size = Base::get(&market.lot_size_pair);
     let mut budget = In::matching_lots_taker(num_lots, base_lot_size);
 
     for item in iterator {
@@ -101,7 +79,7 @@ where
             In::matching_lots_maker(resting_order.size, market.tick_size, last_coordinate.price);
 
         let matched_lots =
-            MatchedLots::<In>::new(quote, budget, last_coordinate.price, market.tick_size);
+            MatchedLots::<In>::new(quote, budget, market.tick_size, last_coordinate.price);
 
         local_delta.add_matched(resting_order.maker, matched_lots)?;
         budget -= matched_lots.taker_in;

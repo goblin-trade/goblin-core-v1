@@ -23,7 +23,7 @@ where
 
         Ok(MarketAndKey {
             market: common_market,
-            key,
+            market_key: key,
         })
     }
 

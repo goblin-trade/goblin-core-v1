@@ -10,8 +10,11 @@ use crate::{
         },
         bitmap::{
             inner_pos::InnerPos, range::Range, Coordinate, CoordinatesRange, FullCoordinates,
+            StoredCoordinates,
         },
     },
+    quantities::Ticks,
+    require,
     state::{MarketPreimage, SlotKey},
 };
 
@@ -41,6 +44,24 @@ where
     In: LegMatcher,
 {
     pub fn new(
+        market_key: &'a SlotKey<MarketPreimage<M, B, Q>>,
+        last_coordinate: StoredCoordinates,
+        price_limit: Ticks,
+    ) -> Result<Self, GoblinError> {
+        require!(
+            In::closer_to_centre(last_coordinate.price, price_limit),
+            GoblinError::TakerPriceLimitReached
+        );
+        Self::new_inner(
+            market_key,
+            Range {
+                start: FullCoordinates::from(last_coordinate),
+                limit: FullCoordinates::from(price_limit),
+            },
+        )
+    }
+
+    fn new_inner(
         market_key: &'a SlotKey<MarketPreimage<M, B, Q>>,
         coordinates_range: Range<FullCoordinates<In>>,
     ) -> Result<Self, GoblinError> {
