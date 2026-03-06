@@ -1,13 +1,6 @@
-use crate::{
-    goblin_error::GoblinError, input_processor::DecodeCtx, settlement::Delta, types::Address,
-};
+use crate::{goblin_error::GoblinError, input_processor::DecodeCtx, settlement::Delta};
 
 pub trait MarketCounts {
     /// Process legal combinations of market types
-    fn process(
-        &self,
-        ctx: &DecodeCtx,
-        msg_sender: &Address,
-        delta: &mut Delta,
-    ) -> Result<(), GoblinError>;
+    fn process(&self, ctx: &DecodeCtx, delta: &mut Delta) -> Result<(), GoblinError>;
 }

@@ -1,6 +1,6 @@
 use crate::{
     axis::{
-        leg::{leg_matcher::LegMatcher, leg_validator::LegValidator, Base, Leg, Quote},
+        leg::{leg_matcher::LegMatcher, Base, Leg, Quote},
         market::{market_marker::MarketMarker, MarketAndKey},
         token::token_marker::TokenMarker,
     },
@@ -8,15 +8,17 @@ use crate::{
     input_processor::{Decodable, DecodeCtx},
     instructions::take::take_packet::TakePacket,
     matching::{bitmap::StoredCoordinates, match_order},
-    quantities::{BaseLotsPerBaseUnit, QuoteLotsPerQuoteUnit, Ticks},
-    settlement::local_delta::{LocalDelta, MakerDelta, TakerDelta},
+    quantities::{BaseLotsPerBaseUnit, QuoteLotsPerQuoteUnit},
+    settlement::{
+        local_delta::{LocalDelta, MakerDelta},
+        MatchedLots,
+    },
     state::MarketState,
-    types::{Address, StoreReader, Tuple},
+    types::{StoreReader, Tuple},
 };
 
 pub fn ix_take<M, B, Q, In>(
     ctx: &DecodeCtx,
-    msg_sender: &Address,
     local_delta: &mut LocalDelta,
     market_and_key: &MarketAndKey<M, B, Q>,
     market_state: &mut MarketState<M, B, Q>,
@@ -27,7 +29,7 @@ where
     Q: TokenMarker,
     In: LegMatcher
         + StoreReader<Tuple<MakerDelta<Base>, MakerDelta<Quote>, Leg>, Result = MakerDelta<In>>
-        + StoreReader<Tuple<TakerDelta<Base>, TakerDelta<Quote>, Leg>, Result = TakerDelta<In>>
+        + StoreReader<Tuple<MatchedLots<Base>, MatchedLots<Quote>, Leg>, Result = MatchedLots<In>>
         + StoreReader<
             Tuple<BaseLotsPerBaseUnit, QuoteLotsPerQuoteUnit, Leg>,
             Result = In::LotsPerUnit,
@@ -37,7 +39,6 @@ where
     let packet = TakePacket::<In>::try_decode(ctx)?;
 
     match_order::<M, B, Q, In>(
-        msg_sender,
         local_delta,
         market_and_key,
         market_state,

@@ -3,14 +3,14 @@ use crate::{
         leg::{Base, Pair, Quote},
         market::LotSizePair,
     },
-    settlement::{global_delta::GlobalSenderUpdate, local_delta::TakerDelta},
+    settlement::{global_delta::GlobalSenderUpdate, MatchedLots},
 };
 
 pub type GlobalSenderUpdatePair = Pair<GlobalSenderUpdate<Base>, GlobalSenderUpdate<Quote>>;
 
 impl GlobalSenderUpdatePair {
     pub fn new_pair(
-        taker_delta_pair: &Pair<TakerDelta<Base>, TakerDelta<Quote>>,
+        taker_delta_pair: &Pair<MatchedLots<Base>, MatchedLots<Quote>>,
         lot_size_pair: &LotSizePair,
     ) -> Self {
         Self::new(

@@ -1,10 +1,10 @@
 use crate::{
     axis::leg::{leg_matcher::LegMatcher, Base, Leg, Pair, Quote},
     goblin_error::GoblinError,
-    quantities::{BaseLotsPerBaseUnit, DeltaAtoms, QuantityOps},
+    quantities::{BaseLotsPerBaseUnit, DeltaAtoms},
     require,
     settlement::{
-        local_delta::{Deposits, LocalMakerDeltas, LocalSenderDelta, MakerDelta, TakerDelta},
+        local_delta::{Deposits, LocalMakerDeltas, LocalSenderDelta, MakerDelta},
         MatchedLots,
     },
     types::{Address, StoreReader, Tuple},
@@ -29,24 +29,6 @@ impl LocalDelta {
         }
     }
 
-    /// Add self trade amount to taker delta
-    pub fn add_self_trade<In>(
-        &mut self,
-        taker_self_trade_unlocked: <In::Opposite as LegMatcher>::MatchingLots,
-    ) -> Result<(), GoblinError>
-    where
-        In: LegMatcher
-            + StoreReader<Tuple<TakerDelta<Base>, TakerDelta<Quote>, Leg>, Result = TakerDelta<In>>,
-    {
-        let taker_delta = In::get_leg_mut(&mut self.local_sender_delta.taker_delta_pair);
-        taker_delta
-            .taker_self_trade_unlocked
-            .checked_add(taker_self_trade_unlocked)
-            .ok_or(GoblinError::DeltaOverflow)?;
-
-        Ok(())
-    }
-
     /// Add matched lots to taker and maker deltas
     pub fn add_matched<In>(
         &mut self,
@@ -55,12 +37,11 @@ impl LocalDelta {
     ) -> Result<(), GoblinError>
     where
         In: LegMatcher
-            + StoreReader<Tuple<TakerDelta<Base>, TakerDelta<Quote>, Leg>, Result = TakerDelta<In>>
+            + StoreReader<Tuple<MatchedLots<Base>, MatchedLots<Quote>, Leg>, Result = MatchedLots<In>>
             + StoreReader<Tuple<MakerDelta<Base>, MakerDelta<Quote>, Leg>, Result = MakerDelta<In>>,
     {
         let taker_delta = In::get_leg_mut(&mut self.local_sender_delta.taker_delta_pair);
         taker_delta
-            .matched_lots
             .checked_add(matched_lots)
             .ok_or(GoblinError::DeltaOverflow)?;
 
@@ -86,12 +67,12 @@ impl LocalDelta {
     ) -> Result<(), GoblinError>
     where
         In: LegMatcher
-            + StoreReader<Tuple<TakerDelta<Base>, TakerDelta<Quote>, Leg>, Result = TakerDelta<In>>,
+            + StoreReader<Tuple<MatchedLots<Base>, MatchedLots<Quote>, Leg>, Result = MatchedLots<In>>,
     {
         let taker_delta = In::get_leg(&self.local_sender_delta.taker_delta_pair);
         let min_lots = In::matching_lots_taker(min_lots, base_lot_size);
         require!(
-            taker_delta.matched_lots.taker_in >= min_lots,
+            taker_delta.taker_in >= min_lots,
             GoblinError::InsufficientTakerFill
         );
         Ok(())

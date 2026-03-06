@@ -16,12 +16,10 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
     settlement::Delta,
-    types::Address,
 };
 
 pub fn process_market<'a, M, B, Q>(
     ctx: &DecodeCtx,
-    msg_sender: &Address,
     erc20_list: M::ERC20List<'a>,
     delta: &mut Delta,
 ) -> Result<(), GoblinError>
@@ -42,13 +40,7 @@ where
         delta.local.deposits.set_deposits::<B, Q>(ctx)?;
     }
 
-    market_header.execute_takes(
-        ctx,
-        msg_sender,
-        &mut delta.local,
-        market_and_key,
-        &mut market_state,
-    )?;
+    market_header.execute_takes(ctx, &mut delta.local, market_and_key, &mut market_state)?;
 
     // // TODO commit local delta into global delta
 

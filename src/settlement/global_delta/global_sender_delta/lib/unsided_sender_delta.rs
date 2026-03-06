@@ -1,6 +1,6 @@
 use crate::{
     axis::leg::leg_matcher::LegMatcher,
-    quantities::{AsUnsided, QuantityOps, UnsidedAtoms},
+    quantities::{QuantityOps, UnsidedAtoms},
     settlement::{global_delta::GlobalSenderUpdate, MatchedUnsidedAtoms},
 };
 
@@ -19,9 +19,6 @@ use crate::{
 pub struct UnsidedSenderDelta {
     pub matched_unsided_atoms: MatchedUnsidedAtoms,
 
-    /// Locked tokens released from taking a self trade
-    pub taker_self_trade_unlocked: UnsidedAtoms,
-
     /// Tokens locked on making a resting order
     pub maker_locked: UnsidedAtoms,
 
@@ -33,7 +30,6 @@ impl UnsidedSenderDelta {
     pub const fn zero() -> Self {
         Self {
             matched_unsided_atoms: MatchedUnsidedAtoms::zero(),
-            taker_self_trade_unlocked: UnsidedAtoms::ZERO,
             maker_locked: UnsidedAtoms::ZERO,
             cancel_unlocked: UnsidedAtoms::ZERO,
         }
@@ -47,10 +43,6 @@ impl UnsidedSenderDelta {
 
         self.matched_unsided_atoms
             .checked_add(matched_unsided_atoms)?;
-
-        self.taker_self_trade_unlocked = self
-            .taker_self_trade_unlocked
-            .checked_add(global_update.taker_self_trade_unlocked.unsided())?;
 
         Some(())
     }

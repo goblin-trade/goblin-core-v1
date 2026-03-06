@@ -8,7 +8,7 @@ use crate::{
     matching::{active_iterator::coordinate::CoordinateIterator, bitmap::StoredCoordinates},
     quantities::{BaseLotsPerBaseUnit, QuantityOps, QuoteLotsPerQuoteUnit, Ticks},
     settlement::{
-        local_delta::{LocalDelta, MakerDelta, TakerDelta},
+        local_delta::{LocalDelta, MakerDelta},
         MatchedLots,
     },
     state::{MarketState, Preimage},
@@ -23,7 +23,6 @@ use crate::{
 /// * All resting orders are popped
 ///
 pub fn match_order<M, B, Q, In>(
-    taker: &Address,
     local_delta: &mut LocalDelta,
     market_and_key: &MarketAndKey<M, B, Q>,
     market_state: &mut MarketState<M, B, Q>,
@@ -37,12 +36,11 @@ where
     Q: TokenMarker,
     In: LegMatcher
         + StoreReader<Tuple<MakerDelta<Base>, MakerDelta<Quote>, Leg>, Result = MakerDelta<In>>
-        + StoreReader<Tuple<TakerDelta<Base>, TakerDelta<Quote>, Leg>, Result = TakerDelta<In>>
+        + StoreReader<Tuple<MatchedLots<Base>, MatchedLots<Quote>, Leg>, Result = MatchedLots<In>>
         + StoreReader<
             Tuple<BaseLotsPerBaseUnit, QuoteLotsPerQuoteUnit, Leg>,
             Result = In::LotsPerUnit,
-        >,
-    In: StoreReader<Tuple<StoredCoordinates, StoredCoordinates, Leg>, Result = StoredCoordinates>,
+        > + StoreReader<Tuple<StoredCoordinates, StoredCoordinates, Leg>, Result = StoredCoordinates>,
 {
     let MarketAndKey { market, market_key } = market_and_key;
 
@@ -63,17 +61,6 @@ where
         let preimage = item.preimage();
         let hash = preimage.hash();
         let mut resting_order = hash.load();
-
-        // Handle self trade
-        if resting_order.maker == *taker {
-            let quote_opposite = In::Opposite::matching_lots_maker(
-                resting_order.size,
-                market.tick_size,
-                last_coordinate.price,
-            );
-            local_delta.add_self_trade::<In>(quote_opposite)?;
-            continue;
-        }
 
         let quote =
             In::matching_lots_maker(resting_order.size, market.tick_size, last_coordinate.price);

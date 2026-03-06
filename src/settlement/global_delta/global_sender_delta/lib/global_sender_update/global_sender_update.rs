@@ -1,15 +1,9 @@
 use crate::{
     axis::{
-        leg::{
-            leg_matcher::LegMatcher, leg_quantities::LegQuantities, leg_validator::LegValidator,
-            Base, Leg, Quote,
-        },
+        leg::{leg_matcher::LegMatcher, leg_quantities::LegQuantities, Base, Leg, Pair, Quote},
         market::LotSizePair,
     },
-    settlement::{
-        local_delta::{TakerDelta, TakerDeltaPair},
-        MatchedAtoms, MatchedLots, MatchedLotsPair,
-    },
+    settlement::{MatchedAtoms, MatchedLots},
     types::{StoreReader, Tuple},
 };
 
@@ -21,9 +15,6 @@ use crate::{
 pub struct GlobalSenderUpdate<In: LegMatcher> {
     /// Matched atoms for the given token
     pub matched_atoms: MatchedAtoms<In>,
-
-    /// Atoms released due to taker self-trading
-    pub taker_self_trade_unlocked: In::Atoms,
 }
 
 impl<In> GlobalSenderUpdate<In>
@@ -34,31 +25,15 @@ where
             Result = In::LotsPerUnit,
         > + StoreReader<Tuple<MatchedLots<Base>, MatchedLots<Quote>, Leg>, Result = MatchedLots<In>>,
     In::Opposite: StoreReader<
-            Tuple<MatchedLots<Base>, MatchedLots<Quote>, Leg>,
-            Result = MatchedLots<In::Opposite>,
-        > + StoreReader<
-            Tuple<TakerDelta<Base>, TakerDelta<Quote>, Leg>,
-            Result = TakerDelta<In::Opposite>,
-        >,
+        Tuple<MatchedLots<Base>, MatchedLots<Quote>, Leg>,
+        Result = MatchedLots<In::Opposite>,
+    >,
 {
-    pub fn new(taker_delta_pair: &TakerDeltaPair, lot_size_pair: &LotSizePair) -> Self {
-        let matched_lots_pair = MatchedLotsPair::from(taker_delta_pair);
-        let matched_atoms = MatchedAtoms::new(&matched_lots_pair, lot_size_pair);
-
-        let base_lot_size = Base::get(lot_size_pair);
-        let lot_size = *In::get_leg(lot_size_pair);
-        let atoms_per_lot = In::atoms_per_lot(lot_size);
-
-        let delta_opposite = In::Opposite::get_leg(taker_delta_pair);
-        let taker_self_trade_unlocked = In::matching_lots_to_atoms(
-            delta_opposite.taker_self_trade_unlocked,
-            base_lot_size,
-            atoms_per_lot,
-        );
-
-        Self {
-            matched_atoms,
-            taker_self_trade_unlocked,
-        }
+    pub fn new(
+        taker_delta_pair: &Pair<MatchedLots<Base>, MatchedLots<Quote>>,
+        lot_size_pair: &LotSizePair,
+    ) -> Self {
+        let matched_atoms = MatchedAtoms::new(taker_delta_pair, lot_size_pair);
+        Self { matched_atoms }
     }
 }

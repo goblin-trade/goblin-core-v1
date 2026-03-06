@@ -9,7 +9,7 @@ use crate::{
     instructions::ix_take,
     settlement::local_delta::LocalDelta,
     state::MarketState,
-    types::{Address, StoreReader},
+    types::StoreReader,
 };
 
 impl<M, B, Q> MarketHeader<M, B, Q>
@@ -21,16 +21,15 @@ where
     pub fn execute_takes(
         &self,
         ctx: &DecodeCtx,
-        msg_sender: &Address,
         local_delta: &mut LocalDelta,
         market_and_key: &MarketAndKey<M, B, Q>,
         market_state: &mut MarketState<M, B, Q>,
     ) -> Result<(), GoblinError> {
         if Base::get(&self.execute_takes) {
-            ix_take::<M, B, Q, Base>(ctx, msg_sender, local_delta, market_and_key, market_state)?;
+            ix_take::<M, B, Q, Base>(ctx, local_delta, market_and_key, market_state)?;
         }
         if Quote::get(&self.execute_takes) {
-            ix_take::<M, B, Q, Quote>(ctx, msg_sender, local_delta, market_and_key, market_state)?;
+            ix_take::<M, B, Q, Quote>(ctx, local_delta, market_and_key, market_state)?;
         }
 
         Ok(())
