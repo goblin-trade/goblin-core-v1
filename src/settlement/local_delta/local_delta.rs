@@ -50,7 +50,6 @@ impl LocalDelta {
 
         let maker_delta = In::get_leg_mut(maker_delta_pair);
         maker_delta
-            .matched_lots
             .checked_add(matched_lots)
             .ok_or(GoblinError::DeltaOverflow)?;
 

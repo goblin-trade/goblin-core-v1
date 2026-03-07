@@ -5,7 +5,7 @@ use crate::{
         Leg, Quote,
     },
     quantities::{BaseLots, BaseLotsPerBaseUnit, QuantityOps, QuoteLotsPerBaseUnitPerTick, Ticks},
-    settlement::{local_delta::MakerDelta, MatchedLots},
+    settlement::MatchedLots,
     types::{StoreReader, Tuple},
 };
 
@@ -20,7 +20,6 @@ pub trait LegMatcher:
     + LegCoordinates
     + LegIterator
     + LegReader
-    + StoreReader<Tuple<MakerDelta<Base>, MakerDelta<Quote>, Leg>, Result = MakerDelta<Self>>
     + StoreReader<Tuple<MatchedLots<Base>, MatchedLots<Quote>, Leg>, Result = MatchedLots<Self>>
 {
     /// The opposite side

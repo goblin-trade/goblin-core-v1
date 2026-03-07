@@ -1,6 +1,6 @@
 use crate::{
     axis::leg::{Base, Pair, Quote},
-    settlement::MatchedLots,
+    settlement::{MatchedLots, MatchedLotsPair},
 };
 
 /// The sender delta of local namespace
@@ -9,7 +9,7 @@ use crate::{
 /// so it can be added to the global delta
 pub struct LocalSenderDelta {
     /// The results of matching take orders
-    pub taker_delta_pair: Pair<MatchedLots<Base>, MatchedLots<Quote>>,
+    pub taker_delta_pair: MatchedLotsPair,
 }
 
 impl LocalSenderDelta {
