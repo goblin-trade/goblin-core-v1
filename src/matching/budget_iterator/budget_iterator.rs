@@ -20,9 +20,7 @@ where
     M: MarketMarker,
     B: TokenMarker,
     Q: TokenMarker,
-    In: LegMatcher
-        + StoreReader<Tuple<MakerDelta<Base>, MakerDelta<Quote>, Leg>, Result = MakerDelta<In>>
-        + StoreReader<Tuple<TakerDelta<Base>, TakerDelta<Quote>, Leg>, Result = TakerDelta<In>>,
+    In: LegMatcher,
 {
     pub taker: &'a Address,
     pub market: &'a CommonMarket<M, B, Q>,
@@ -37,9 +35,7 @@ where
     M: MarketMarker,
     B: TokenMarker,
     Q: TokenMarker,
-    In: LegMatcher
-        + StoreReader<Tuple<MakerDelta<Base>, MakerDelta<Quote>, Leg>, Result = MakerDelta<In>>
-        + StoreReader<Tuple<TakerDelta<Base>, TakerDelta<Quote>, Leg>, Result = TakerDelta<In>>,
+    In: LegMatcher,
 {
     pub fn new(
         taker: &'a Address,

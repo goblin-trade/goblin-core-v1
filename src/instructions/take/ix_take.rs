@@ -1,20 +1,15 @@
 use crate::{
     axis::{
-        leg::{leg_matcher::LegMatcher, Base, Leg, Quote},
+        leg::leg_matcher::LegMatcher,
         market::{market_marker::MarketMarker, MarketAndKey},
         token::token_marker::TokenMarker,
     },
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
     instructions::take::take_packet::TakePacket,
-    matching::{bitmap::StoredCoordinates, match_order},
-    quantities::{BaseLotsPerBaseUnit, QuoteLotsPerQuoteUnit},
-    settlement::{
-        local_delta::{LocalDelta, MakerDelta},
-        MatchedLots,
-    },
+    matching::match_order,
+    settlement::local_delta::LocalDelta,
     state::MarketState,
-    types::{StoreReader, Tuple},
 };
 
 pub fn ix_take<M, B, Q, In>(
@@ -27,14 +22,7 @@ where
     M: MarketMarker,
     B: TokenMarker,
     Q: TokenMarker,
-    In: LegMatcher
-        + StoreReader<Tuple<MakerDelta<Base>, MakerDelta<Quote>, Leg>, Result = MakerDelta<In>>
-        + StoreReader<Tuple<MatchedLots<Base>, MatchedLots<Quote>, Leg>, Result = MatchedLots<In>>
-        + StoreReader<
-            Tuple<BaseLotsPerBaseUnit, QuoteLotsPerQuoteUnit, Leg>,
-            Result = In::LotsPerUnit,
-        >,
-    In: StoreReader<Tuple<StoredCoordinates, StoredCoordinates, Leg>, Result = StoredCoordinates>,
+    In: LegMatcher,
 {
     let packet = TakePacket::<In>::try_decode(ctx)?;
 

@@ -1,13 +1,6 @@
 use crate::{
-    axis::{
-        leg::{
-            leg_matcher::LegMatcher, leg_quantities::LegQuantities, leg_validator::LegValidator,
-            Base, Leg, Quote,
-        },
-        market::LotSizePair,
-    },
-    settlement::{local_delta::MakerDeltaPair, MatchedAtoms, MatchedLots, MatchedLotsPair},
-    types::{StoreReader, Tuple},
+    axis::{leg::leg_matcher::LegMatcher, market::LotSizePair},
+    settlement::{local_delta::MakerDeltaPair, MatchedAtoms, MatchedLotsPair},
 };
 
 /// Pending update to maker state for the token at In
@@ -20,15 +13,7 @@ pub struct GlobalMakerUpdate<In: LegMatcher> {
 
 impl<In> GlobalMakerUpdate<In>
 where
-    In: LegMatcher
-        + StoreReader<
-            Tuple<<Base as LegQuantities>::LotsPerUnit, <Quote as LegQuantities>::LotsPerUnit, Leg>,
-            Result = In::LotsPerUnit,
-        > + StoreReader<Tuple<MatchedLots<Base>, MatchedLots<Quote>, Leg>, Result = MatchedLots<In>>,
-    In::Opposite: StoreReader<
-        Tuple<MatchedLots<Base>, MatchedLots<Quote>, Leg>,
-        Result = MatchedLots<In::Opposite>,
-    >,
+    In: LegMatcher,
 {
     pub fn new(maker_delta_pair: &MakerDeltaPair, lot_size_pair: &LotSizePair) -> Self {
         let matched_lots_pair = MatchedLotsPair::from(maker_delta_pair);

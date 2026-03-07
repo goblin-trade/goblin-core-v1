@@ -1,14 +1,27 @@
 use crate::{
     axis::leg::{
         leg_constants::LegConstants, leg_coordinates::LegCoordinates, leg_iterator::LegIterator,
-        leg_quantities::LegQuantities, leg_validator::LegValidator,
+        leg_quantities::LegQuantities, leg_reader::LegReader, leg_validator::LegValidator, Base,
+        Leg, Quote,
     },
     quantities::{BaseLots, BaseLotsPerBaseUnit, QuantityOps, QuoteLotsPerBaseUnitPerTick, Ticks},
+    settlement::{local_delta::MakerDelta, MatchedLots},
+    types::{StoreReader, Tuple},
 };
 
 /// Conversions for matching orders
 pub trait LegMatcher:
-    Default + Clone + Copy + LegQuantities + LegConstants + LegValidator + LegCoordinates + LegIterator
+    Default
+    + Clone
+    + Copy
+    + LegQuantities
+    + LegConstants
+    + LegValidator
+    + LegCoordinates
+    + LegIterator
+    + LegReader
+    + StoreReader<Tuple<MakerDelta<Base>, MakerDelta<Quote>, Leg>, Result = MakerDelta<Self>>
+    + StoreReader<Tuple<MatchedLots<Base>, MatchedLots<Quote>, Leg>, Result = MatchedLots<Self>>
 {
     /// The opposite side
     /// Opposite of opposite is Self

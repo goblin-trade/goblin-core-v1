@@ -1,10 +1,9 @@
 use crate::{
     axis::{
-        leg::{leg_matcher::LegMatcher, leg_quantities::LegQuantities, Base, Leg, Pair, Quote},
+        leg::{leg_matcher::LegMatcher, Base, Pair, Quote},
         market::LotSizePair,
     },
     settlement::{MatchedAtoms, MatchedLots},
-    types::{StoreReader, Tuple},
 };
 
 /// A balance update in the global token level namespace
@@ -19,15 +18,7 @@ pub struct GlobalSenderUpdate<In: LegMatcher> {
 
 impl<In> GlobalSenderUpdate<In>
 where
-    In: LegMatcher
-        + StoreReader<
-            Tuple<<Base as LegQuantities>::LotsPerUnit, <Quote as LegQuantities>::LotsPerUnit, Leg>,
-            Result = In::LotsPerUnit,
-        > + StoreReader<Tuple<MatchedLots<Base>, MatchedLots<Quote>, Leg>, Result = MatchedLots<In>>,
-    In::Opposite: StoreReader<
-        Tuple<MatchedLots<Base>, MatchedLots<Quote>, Leg>,
-        Result = MatchedLots<In::Opposite>,
-    >,
+    In: LegMatcher,
 {
     pub fn new(
         taker_delta_pair: &Pair<MatchedLots<Base>, MatchedLots<Quote>>,

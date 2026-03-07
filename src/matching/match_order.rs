@@ -1,18 +1,15 @@
 use crate::{
     axis::{
-        leg::{leg_matcher::LegMatcher, Base, Leg, Quote},
+        leg::{leg_matcher::LegMatcher, Base},
         market::{market_marker::MarketMarker, MarketAndKey},
         token::token_marker::TokenMarker,
     },
     goblin_error::GoblinError,
-    matching::{active_iterator::coordinate::CoordinateIterator, bitmap::StoredCoordinates},
-    quantities::{BaseLotsPerBaseUnit, QuantityOps, QuoteLotsPerQuoteUnit, Ticks},
-    settlement::{
-        local_delta::{LocalDelta, MakerDelta},
-        MatchedLots,
-    },
+    matching::active_iterator::coordinate::CoordinateIterator,
+    quantities::{QuantityOps, Ticks},
+    settlement::{local_delta::LocalDelta, MatchedLots},
     state::{MarketState, Preimage},
-    types::{Address, StoreReader, Tuple},
+    types::StoreReader,
 };
 
 /// Match a take order
@@ -34,13 +31,7 @@ where
     M: MarketMarker,
     B: TokenMarker,
     Q: TokenMarker,
-    In: LegMatcher
-        + StoreReader<Tuple<MakerDelta<Base>, MakerDelta<Quote>, Leg>, Result = MakerDelta<In>>
-        + StoreReader<Tuple<MatchedLots<Base>, MatchedLots<Quote>, Leg>, Result = MatchedLots<In>>
-        + StoreReader<
-            Tuple<BaseLotsPerBaseUnit, QuoteLotsPerQuoteUnit, Leg>,
-            Result = In::LotsPerUnit,
-        > + StoreReader<Tuple<StoredCoordinates, StoredCoordinates, Leg>, Result = StoredCoordinates>,
+    In: LegMatcher,
 {
     let MarketAndKey { market, market_key } = market_and_key;
 
@@ -55,6 +46,8 @@ where
         // Update last market price
         *last_coordinate = item.full_coordinates.into();
         if budget == In::MatchingLots::ZERO {
+            // If budget was exhausted in previous round, we still need to update
+            // the best market price
             break;
         }
 
@@ -73,6 +66,10 @@ where
 
         // Budget exhausted but maker residue remains
         // Write updated resting order to slot
+        //
+        // Simplification- this happens only once when loop stops
+        // Define `mut quote` outside the loop. Perform this check and state update outside the loop.
+        // But then we must propagate RestingOrder outside
         if quote > matched_lots.taker_in {
             let residue = quote - matched_lots.taker_in;
             let residue_base_lots =

@@ -1,13 +1,11 @@
 use crate::{
     axis::{
-        leg::{leg_matcher::LegMatcher, Leg},
+        leg::leg_matcher::LegMatcher,
         token::token_marker::custom_erc20::custom_erc20_data::CustomERC20Data,
     },
     goblin_error::GoblinError,
     input_processor::Decodable,
-    quantities::DeltaAtoms,
     settlement::local_delta::Deposits,
-    types::{StoreReader, Tuple},
 };
 
 /// Marker class for 'Token'. We have 3 variants- ETH, HardcodedERC20 and CustomERC20
@@ -31,5 +29,5 @@ pub trait TokenMarker: Clone + Copy + 'static {
     /// Save deposit amount in deposit store
     fn set_deposit<In>(deposits: &mut Deposits, deposit_amount: Self::Deposit)
     where
-        In: LegMatcher + StoreReader<Tuple<DeltaAtoms, DeltaAtoms, Leg>, Result = DeltaAtoms>;
+        In: LegMatcher;
 }

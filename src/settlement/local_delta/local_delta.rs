@@ -1,13 +1,13 @@
 use crate::{
-    axis::leg::{leg_matcher::LegMatcher, Base, Leg, Pair, Quote},
+    axis::leg::{leg_matcher::LegMatcher, Pair},
     goblin_error::GoblinError,
     quantities::{BaseLotsPerBaseUnit, DeltaAtoms},
     require,
     settlement::{
-        local_delta::{Deposits, LocalMakerDeltas, LocalSenderDelta, MakerDelta},
+        local_delta::{Deposits, LocalMakerDeltas, LocalSenderDelta},
         MatchedLots,
     },
-    types::{Address, StoreReader, Tuple},
+    types::Address,
 };
 
 pub struct LocalDelta {
@@ -36,9 +36,7 @@ impl LocalDelta {
         matched_lots: MatchedLots<In>,
     ) -> Result<(), GoblinError>
     where
-        In: LegMatcher
-            + StoreReader<Tuple<MatchedLots<Base>, MatchedLots<Quote>, Leg>, Result = MatchedLots<In>>
-            + StoreReader<Tuple<MakerDelta<Base>, MakerDelta<Quote>, Leg>, Result = MakerDelta<In>>,
+        In: LegMatcher,
     {
         let taker_delta = In::get_leg_mut(&mut self.local_sender_delta.taker_delta_pair);
         taker_delta
@@ -66,8 +64,7 @@ impl LocalDelta {
         base_lot_size: BaseLotsPerBaseUnit,
     ) -> Result<(), GoblinError>
     where
-        In: LegMatcher
-            + StoreReader<Tuple<MatchedLots<Base>, MatchedLots<Quote>, Leg>, Result = MatchedLots<In>>,
+        In: LegMatcher,
     {
         let taker_delta = In::get_leg(&self.local_sender_delta.taker_delta_pair);
         let min_lots = In::matching_lots_taker(min_lots, base_lot_size);

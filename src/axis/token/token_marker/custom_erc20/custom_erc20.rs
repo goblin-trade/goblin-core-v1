@@ -1,6 +1,6 @@
 use crate::{
     axis::{
-        leg::{leg_matcher::LegMatcher, Leg},
+        leg::leg_matcher::LegMatcher,
         token::{
             token_marker::{
                 custom_erc20::{
@@ -14,7 +14,7 @@ use crate::{
     goblin_error::GoblinError,
     quantities::DeltaAtoms,
     settlement::local_delta::Deposits,
-    types::{Address, StoreReader, Tuple},
+    types::Address,
 };
 
 impl TokenMarker for CustomERC20 {
@@ -36,8 +36,7 @@ impl TokenMarker for CustomERC20 {
 
     fn set_deposit<In>(deposits: &mut Deposits, deposit_amount: Self::Deposit)
     where
-        // In: LegMatcher + TupleReader<DeltaAtoms, DeltaAtoms, (Base, Quote), Result = DeltaAtoms>,
-        In: LegMatcher + StoreReader<Tuple<DeltaAtoms, DeltaAtoms, Leg>, Result = DeltaAtoms>,
+        In: LegMatcher,
     {
         *In::get_leg_mut(deposits) = deposit_amount;
     }
