@@ -7,7 +7,7 @@ use crate::{
     goblin_error::GoblinError,
     matching::active_iterator::coordinate::CoordinateIterator,
     quantities::{QuantityOps, Ticks},
-    settlement::{local_delta::LocalDelta, MatchedLots},
+    settlement::local_delta::LocalDelta,
     state::{MarketState, Preimage},
     types::StoreReader,
 };
@@ -50,24 +50,23 @@ where
         let quote =
             In::matching_lots_maker(resting_order.size, market.tick_size, last_coordinate.price);
 
-        if quote >= budget {
-            let matched = budget;
-            let residue = quote - budget;
-            local_delta.add_matched::<In>(
-                resting_order.maker,
-                matched,
-                market.tick_size,
-                last_coordinate.price,
-            )?;
+        let matched = quote.min(budget);
+        budget -= matched;
+        local_delta.add_matched::<In>(
+            resting_order.maker,
+            matched,
+            market.tick_size,
+            last_coordinate.price,
+        )?;
 
+        if budget == In::MatchingLots::ZERO {
+            let residue = quote - matched;
             if residue > In::MatchingLots::ZERO {
                 resting_order.size =
                     In::base_lots_from_matching(residue, market.tick_size, last_coordinate.price);
                 hash.store(&resting_order);
             }
             break;
-        } else {
-            budget -= quote;
         }
     }
 
