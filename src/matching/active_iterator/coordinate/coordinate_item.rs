@@ -5,7 +5,8 @@ use crate::{
     },
     matching::bitmap::FullCoordinates,
     state::{
-        inner_bitmap::preimage::InnerBitmapPreimage, resting_order::preimage::RestingOrderPreimage,
+        inner_bitmap::preimage::InnerBitmapPreimage,
+        resting_order::{preimage::RestingOrderPreimage, RestingOrder},
         SlotKey,
     },
 };
@@ -19,6 +20,8 @@ where
 {
     pub full_coordinates: FullCoordinates<In>,
     pub inner_bitmap_key: SlotKey<InnerBitmapPreimage<M, B, Q, In>>,
+    pub hash: SlotKey<RestingOrderPreimage<M, B, Q, In>>,
+    pub resting_order: RestingOrder<M, B, Q>,
     pub limit_reached: bool,
 }
 

@@ -8,7 +8,7 @@ use crate::{
     matching::active_iterator::coordinate::CoordinateIterator,
     quantities::{QuantityOps, Ticks},
     settlement::local_delta::LocalDelta,
-    state::{MarketState, Preimage},
+    state::MarketState,
     types::StoreReader,
 };
 
@@ -40,20 +40,19 @@ where
     let base_lot_size = Base::get(&market.lot_size_pair);
     let mut budget = In::matching_lots_taker(num_lots, base_lot_size);
 
-    for item in iterator {
+    for mut item in iterator {
         *last_coordinate = item.full_coordinates.into();
 
-        let preimage = item.preimage();
-        let hash = preimage.hash();
-        let mut resting_order = hash.load();
-
-        let quote =
-            In::matching_lots_maker(resting_order.size, market.tick_size, last_coordinate.price);
+        let quote = In::matching_lots_maker(
+            item.resting_order.size,
+            market.tick_size,
+            last_coordinate.price,
+        );
 
         let matched = quote.min(budget);
         budget -= matched;
         local_delta.add_matched::<In>(
-            resting_order.maker,
+            item.resting_order.maker,
             matched,
             market.tick_size,
             last_coordinate.price,
@@ -62,9 +61,9 @@ where
         if budget == In::MatchingLots::ZERO {
             let residue = quote - matched;
             if residue > In::MatchingLots::ZERO {
-                resting_order.size =
+                item.resting_order.size =
                     In::base_lots_from_matching(residue, market.tick_size, last_coordinate.price);
-                hash.store(&resting_order);
+                item.hash.store(&item.resting_order);
             }
             break;
         }

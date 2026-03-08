@@ -12,7 +12,8 @@ use crate::{
     },
     state::{
         inner_bitmap::{preimage::InnerBitmapPreimage, InnerBitmap},
-        SlotKey,
+        resting_order::preimage::RestingOrderPreimage,
+        Preimage, SlotKey,
     },
 };
 
@@ -47,6 +48,13 @@ where
         let limit_reached = self.on_limit && coordinates_range.on_limit();
 
         if self.inner_bitmap.active(coordinates_range.start.into()) {
+            let preimage = RestingOrderPreimage {
+                inner_bitmap_key: self.inner_bitmap_key,
+                inner_pos: coordinates_range.start,
+            };
+            let hash = preimage.hash();
+            let resting_order = hash.load();
+
             return Some(CoordinateItem {
                 full_coordinates: FullCoordinates {
                     outer_bitmap_index: self.outer_bitmap_index,
@@ -54,6 +62,8 @@ where
                     inner_pos: coordinates_range.start,
                 },
                 inner_bitmap_key: self.inner_bitmap_key,
+                hash,
+                resting_order,
                 limit_reached,
             });
         }
