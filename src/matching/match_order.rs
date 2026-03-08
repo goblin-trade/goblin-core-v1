@@ -34,7 +34,7 @@ where
     In: LegMatcher,
 {
     let last_coordinate = In::get_leg_mut(&mut market_state.last_coordinates);
-    let mut iterator =
+    let iterator =
         CoordinateIterator::<M, B, Q, In>::new(market_key, *last_coordinate, price_limit)?;
 
     let base_lot_size = Base::get(&market.lot_size_pair);
@@ -42,9 +42,6 @@ where
 
     for item in iterator {
         *last_coordinate = item.full_coordinates.into();
-        if budget == In::MatchingLots::ZERO {
-            break;
-        }
 
         let preimage = item.preimage();
         let hash = preimage.hash();
@@ -53,31 +50,26 @@ where
         let quote =
             In::matching_lots_maker(resting_order.size, market.tick_size, last_coordinate.price);
 
-        let matched = budget.min(quote);
+        if quote >= budget {
+            let matched = budget;
+            let residue = quote - budget;
+            local_delta.add_matched::<In>(
+                resting_order.maker,
+                matched,
+                market.tick_size,
+                last_coordinate.price,
+            )?;
 
-        local_delta.add_matched::<In>(
-            resting_order.maker,
-            matched,
-            market.tick_size,
-            last_coordinate.price,
-        )?;
-
-        // Since we use taker_in = min(budget, quote) this subtraction never underflows
-        // But the code is unclear
-        budget -= matched;
-
-        if quote > matched {
-            let residue = quote - matched;
-            let residue_base_lots =
-                In::base_lots_from_matching(residue, market.tick_size, last_coordinate.price);
-
-            resting_order.size = residue_base_lots;
-            hash.store(&resting_order);
+            if residue > In::MatchingLots::ZERO {
+                resting_order.size =
+                    In::base_lots_from_matching(residue, market.tick_size, last_coordinate.price);
+                hash.store(&resting_order);
+            }
             break;
+        } else {
+            budget -= quote;
         }
     }
 
-    local_delta.verify_min_match::<In>(min_lots_to_fill, base_lot_size)?;
-
-    Ok(())
+    local_delta.verify_min_match::<In>(min_lots_to_fill, base_lot_size)
 }
