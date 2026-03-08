@@ -1,7 +1,4 @@
-use crate::{
-    axis::leg::leg_matcher::LegMatcher,
-    quantities::{QuantityOps, QuoteLotsPerBaseUnitPerTick, Ticks},
-};
+use crate::{axis::leg::leg_matcher::LegMatcher, quantities::QuantityOps};
 
 #[derive(Default, Clone, Copy, PartialEq)]
 pub struct MatchedLots<In: LegMatcher> {
@@ -17,21 +14,6 @@ impl<In: LegMatcher> MatchedLots<In> {
         Self {
             taker_in: In::MatchingLots::ZERO,
             taker_out: <In::Opposite as LegMatcher>::MatchingLots::ZERO,
-        }
-    }
-
-    pub fn new(
-        quote: In::MatchingLots,
-        budget: In::MatchingLots,
-        tick_size: QuoteLotsPerBaseUnitPerTick,
-        price: Ticks,
-    ) -> Self {
-        let matched = budget.min(quote);
-        let matched_opposite = In::opposite_matching_lots(matched, tick_size, price);
-
-        Self {
-            taker_in: matched,
-            taker_out: matched_opposite,
         }
     }
 

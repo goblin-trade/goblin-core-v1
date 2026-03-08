@@ -1,7 +1,7 @@
 use crate::{
     axis::leg::{leg_matcher::LegMatcher, Pair},
     goblin_error::GoblinError,
-    quantities::{BaseLotsPerBaseUnit, DeltaAtoms},
+    quantities::{BaseLotsPerBaseUnit, DeltaAtoms, QuoteLotsPerBaseUnitPerTick, Ticks},
     require,
     settlement::{
         local_delta::{Deposits, LocalMakerDeltas, LocalSenderDelta},
@@ -33,11 +33,19 @@ impl LocalDelta {
     pub fn add_matched<In>(
         &mut self,
         maker: Address,
-        matched_lots: MatchedLots<In>,
+        taker_in: In::MatchingLots,
+        tick_size: QuoteLotsPerBaseUnitPerTick,
+        price: Ticks,
     ) -> Result<(), GoblinError>
     where
         In: LegMatcher,
     {
+        let taker_out = In::opposite_matching_lots(taker_in, tick_size, price);
+        let matched_lots = MatchedLots {
+            taker_in,
+            taker_out,
+        };
+
         let taker_delta = In::get_leg_mut(&mut self.local_sender_delta.taker_delta_pair);
         taker_delta
             .checked_add(matched_lots)

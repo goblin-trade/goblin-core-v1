@@ -21,7 +21,7 @@ use crate::{
 ///
 pub fn match_order<M, B, Q, In>(
     local_delta: &mut LocalDelta,
-    market_and_key: &MarketAndKey<M, B, Q>,
+    MarketAndKey { market, market_key }: &MarketAndKey<M, B, Q>,
     market_state: &mut MarketState<M, B, Q>,
     num_lots: In::Lots,
     min_lots_to_fill: In::Lots,
@@ -33,21 +33,16 @@ where
     Q: TokenMarker,
     In: LegMatcher,
 {
-    let MarketAndKey { market, market_key } = market_and_key;
-
     let last_coordinate = In::get_leg_mut(&mut market_state.last_coordinates);
-    let iterator =
+    let mut iterator =
         CoordinateIterator::<M, B, Q, In>::new(market_key, *last_coordinate, price_limit)?;
 
     let base_lot_size = Base::get(&market.lot_size_pair);
     let mut budget = In::matching_lots_taker(num_lots, base_lot_size);
 
     for item in iterator {
-        // Update last market price
         *last_coordinate = item.full_coordinates.into();
         if budget == In::MatchingLots::ZERO {
-            // If budget was exhausted in previous round, we still need to update
-            // the best market price
             break;
         }
 
@@ -58,20 +53,21 @@ where
         let quote =
             In::matching_lots_maker(resting_order.size, market.tick_size, last_coordinate.price);
 
-        let matched_lots =
-            MatchedLots::<In>::new(quote, budget, market.tick_size, last_coordinate.price);
+        let matched = budget.min(quote);
 
-        local_delta.add_matched(resting_order.maker, matched_lots)?;
-        budget -= matched_lots.taker_in;
+        local_delta.add_matched::<In>(
+            resting_order.maker,
+            matched,
+            market.tick_size,
+            last_coordinate.price,
+        )?;
 
-        // Budget exhausted but maker residue remains
-        // Write updated resting order to slot
-        //
-        // Simplification- this happens only once when loop stops
-        // Define `mut quote` outside the loop. Perform this check and state update outside the loop.
-        // But then we must propagate RestingOrder outside
-        if quote > matched_lots.taker_in {
-            let residue = quote - matched_lots.taker_in;
+        // Since we use taker_in = min(budget, quote) this subtraction never underflows
+        // But the code is unclear
+        budget -= matched;
+
+        if quote > matched {
+            let residue = quote - matched;
             let residue_base_lots =
                 In::base_lots_from_matching(residue, market.tick_size, last_coordinate.price);
 
