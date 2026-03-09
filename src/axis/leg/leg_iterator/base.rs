@@ -12,8 +12,9 @@ use crate::{
 impl LegIterator for Base {
     type OuterBitmapIndexIter = Map<Rev<RangeInclusive<u64>>, fn(u64) -> OuterBitmapIndex<Self>>;
     type OuterPosIter = Map<Rev<RangeInclusive<u8>>, fn(u8) -> OuterPos<Self>>;
+    type InnerPosIter = Map<Rev<RangeInclusive<u8>>, fn(u8) -> InnerPos<Self>>;
+
     type RowIter = Map<Rev<RangeInclusive<u8>>, fn(u8) -> Row<Self>>;
-    type CoordinatesIter = Map<Rev<RangeInclusive<u8>>, fn(u8) -> InnerPos<Self>>;
 
     fn outer_bitmap_index_iter(item: OuterBitmapIndex<Self>) -> Self::OuterBitmapIndexIter {
         (OuterBitmapIndex::<Self>::MIN.inner..=item.inner)
@@ -27,13 +28,7 @@ impl LegIterator for Base {
             .map(OuterPos::<Self>::new)
     }
 
-    fn row_iter(item: Row<Self>) -> Self::RowIter {
-        (Row::<Self>::MIN.inner..=item.inner)
-            .rev()
-            .map(Row::<Self>::new)
-    }
-
-    fn coordinates_iter(item: InnerPos<Self>) -> Self::CoordinatesIter {
+    fn inner_pos_iter(item: InnerPos<Self>) -> Self::InnerPosIter {
         /// Mask inverts the LSB 3 bits belonging to column
         /// Eg the starting value 255 will map to 248 (row 31, column 0).
         /// This way rows are traversed top to bottom as normal but
@@ -48,5 +43,11 @@ impl LegIterator for Base {
             let inner_inverted = inner ^ LSB3_MASK;
             InnerPos::new(inner_inverted)
         })
+    }
+
+    fn row_iter(item: Row<Self>) -> Self::RowIter {
+        (Row::<Self>::MIN.inner..=item.inner)
+            .rev()
+            .map(Row::<Self>::new)
     }
 }

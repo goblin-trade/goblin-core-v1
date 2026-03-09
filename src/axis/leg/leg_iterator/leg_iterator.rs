@@ -12,14 +12,15 @@ use crate::{
 pub trait LegIterator: LegQuantities {
     type OuterBitmapIndexIter: Iterator<Item = OuterBitmapIndex<Self>>;
     type OuterPosIter: Iterator<Item = OuterPos<Self>>;
+    type InnerPosIter: Iterator<Item = InnerPos<Self>>;
+
     type RowIter: Iterator<Item = Row<Self>>;
-    type CoordinatesIter: Iterator<Item = InnerPos<Self>>;
 
     fn outer_bitmap_index_iter(item: OuterBitmapIndex<Self>) -> Self::OuterBitmapIndexIter;
 
     fn outer_pos_iter(item: OuterPos<Self>) -> Self::OuterPosIter;
 
-    fn row_iter(item: Row<Self>) -> Self::RowIter;
+    fn inner_pos_iter(item: InnerPos<Self>) -> Self::InnerPosIter;
 
-    fn coordinates_iter(item: InnerPos<Self>) -> Self::CoordinatesIter;
+    fn row_iter(item: Row<Self>) -> Self::RowIter;
 }

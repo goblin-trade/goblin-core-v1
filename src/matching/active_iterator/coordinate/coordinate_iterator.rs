@@ -31,7 +31,7 @@ where
     pub item: InnerBitmapItem<M, B, Q, In>,
 
     /// Linear iterator
-    pub linear_iterator: In::CoordinatesIter,
+    pub linear_iterator: In::InnerPosIter,
 
     pub limit: InnerPos<In>,
 }
@@ -89,7 +89,7 @@ where
             Ok(Self {
                 active_inner_bitmap_iterator,
                 item: inner_bitmap_item,
-                linear_iterator: In::coordinates_iter(start),
+                linear_iterator: In::inner_pos_iter(start),
                 limit: range.inner_pos.limit,
             })
         } else {

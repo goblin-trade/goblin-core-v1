@@ -35,7 +35,7 @@ where
             // in the current one. Reset coordinate iterator to start position.
             if let Some(item) = self.active_inner_bitmap_iterator.next() {
                 self.item = item;
-                self.linear_iterator = In::coordinates_iter(In::start_value());
+                self.linear_iterator = In::inner_pos_iter(In::start_value());
             } else {
                 return None;
             }
