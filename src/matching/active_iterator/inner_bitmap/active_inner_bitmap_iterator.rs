@@ -60,6 +60,7 @@ where
                 outer_pos_range.start
             };
 
+            // TODO set outer bound if outer_bitmap_item.on_limit
             Ok(Self {
                 active_outer_bitmap_iterator,
                 item: outer_bitmap_item,

@@ -38,6 +38,8 @@ where
             // in the current one. Reset OuterPos to start position.
             if let Some(item) = self.active_outer_bitmap_iterator.next() {
                 self.item = item;
+
+                // TODO set end bound if item.on_limit is true
                 self.linear_iterator = In::outer_pos_iter(In::start_value());
             } else {
                 return None;
