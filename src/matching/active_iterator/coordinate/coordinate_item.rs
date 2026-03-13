@@ -22,7 +22,7 @@ where
     pub inner_bitmap_key: SlotKey<InnerBitmapPreimage<M, B, Q, In>>,
     pub hash: SlotKey<RestingOrderPreimage<M, B, Q, In>>,
     pub resting_order: RestingOrder<M, B, Q>,
-    pub limit_reached: bool,
+    // pub limit_reached: bool,
 }
 
 impl<M, B, Q, In> CoordinateItem<M, B, Q, In>

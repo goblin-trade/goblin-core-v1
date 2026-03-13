@@ -1,9 +1,7 @@
 use core::marker::PhantomData;
 
 use crate::{
-    axis::leg::{
-        leg_coordinates::LegCoordinates, leg_iterator::LegIterator, leg_matcher::LegMatcher,
-    },
+    axis::leg::{leg_iterator::LegIterator, leg_matcher::LegMatcher},
     matching::bitmap::{row::Row, row_column::RowColumn, Coordinate},
     quantities::Ticks,
 };
@@ -27,11 +25,27 @@ where
             _marker: PhantomData,
         }
     }
+
+    pub fn get_start(self, on_start: bool) -> Self {
+        if on_start {
+            self
+        } else {
+            In::start_value()
+        }
+    }
+
+    pub fn get_limit(self, on_limit: bool) -> Self {
+        if on_limit {
+            self
+        } else {
+            In::end_value()
+        }
+    }
 }
 
 impl<In> Coordinate for InnerPos<In>
 where
-    In: LegCoordinates + LegIterator,
+    In: LegIterator,
 {
     type Inner = u8;
     const MIN: Self = Self::new(0);

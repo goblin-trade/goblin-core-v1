@@ -1,6 +1,8 @@
 use crate::{
     axis::leg::leg_matcher::LegMatcher,
-    matching::bitmap::{outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos},
+    matching::bitmap::{
+        inner_pos::InnerPos, outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos,
+    },
 };
 
 #[derive(Clone, Copy)]
@@ -34,6 +36,22 @@ where
         &self,
         current: OuterBitmapIndex<In>,
         range: Range<OuterBitmapIndex<In>>,
+    ) -> Self {
+        Self {
+            start: self.start.get_start(current == range.start),
+            limit: self.limit.get_limit(current == range.limit),
+        }
+    }
+}
+
+impl<In> Range<InnerPos<In>>
+where
+    In: LegMatcher,
+{
+    pub fn adjust(
+        &self,
+        current: (OuterBitmapIndex<In>, OuterPos<In>),
+        range: Range<(OuterBitmapIndex<In>, OuterPos<In>)>,
     ) -> Self {
         Self {
             start: self.start.get_start(current == range.start),

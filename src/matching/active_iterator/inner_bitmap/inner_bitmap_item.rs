@@ -45,7 +45,7 @@ where
         if self.on_limit && In::closer_to_centre(coordinates_range.limit, coordinates_range.start) {
             return None;
         }
-        let limit_reached = self.on_limit && coordinates_range.on_limit();
+        // let limit_reached = self.on_limit && coordinates_range.on_limit();
 
         if self.inner_bitmap.active(coordinates_range.start.into()) {
             let preimage = RestingOrderPreimage {
@@ -64,7 +64,7 @@ where
                 inner_bitmap_key: self.inner_bitmap_key,
                 hash,
                 resting_order,
-                limit_reached,
+                // limit_reached,
             });
         }
 

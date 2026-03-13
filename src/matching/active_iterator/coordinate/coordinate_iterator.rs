@@ -9,8 +9,7 @@ use crate::{
             inner_bitmap_item::InnerBitmapItem, ActiveInnerBitmapIterator,
         },
         bitmap::{
-            inner_pos::InnerPos, range::Range, Coordinate, CoordinatesRange, FullCoordinates,
-            StoredCoordinates,
+            inner_pos::InnerPos, range::Range, CoordinatesRange, FullCoordinates, StoredCoordinates,
         },
     },
     quantities::Ticks,
@@ -73,31 +72,19 @@ where
             .next()
             .ok_or(GoblinError::IteratorOutOfBounds)?;
 
-        if let Some(inner_bitmap_item) = active_inner_bitmap_iterator.next() {
-            // Reset starting Row if the starting OuterBitmapIndex or OuterPos is crossed
-            let start = if range
-                .outer_bitmap_index
-                .start
-                .closer_to_centre(inner_bitmap_item.outer_bitmap_index)
-                || (range.outer_bitmap_index.start == range.outer_bitmap_index.limit
-                    && range
-                        .outer_pos
-                        .start
-                        .closer_to_centre(inner_bitmap_item.outer_pos))
-            {
-                In::start_value()
-            } else {
-                range.inner_pos.start
-            };
+        let adjusted_range = range.inner_pos.adjust(
+            (item.outer_bitmap_index, item.outer_pos),
+            Range {
+                start: (range.outer_bitmap_index.start, range.outer_pos.start),
+                limit: (range.outer_bitmap_index.limit, range.outer_pos.limit),
+            },
+        );
 
-            Ok(Self {
-                active_inner_bitmap_iterator,
-                item: inner_bitmap_item,
-                linear_iterator: In::inner_pos_iter(start),
-                limit: range.inner_pos.limit,
-            })
-        } else {
-            return Err(GoblinError::IteratorOutOfBounds);
-        }
+        Ok(Self {
+            active_inner_bitmap_iterator,
+            item,
+            linear_iterator: In::inner_pos_iter(adjusted_range),
+            limit: range.inner_pos.limit,
+        })
     }
 }

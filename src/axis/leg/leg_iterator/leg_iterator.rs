@@ -1,5 +1,5 @@
 use crate::{
-    axis::leg::leg_quantities::LegQuantities,
+    axis::leg::{leg_coordinates::LegCoordinates, leg_quantities::LegQuantities},
     matching::bitmap::{
         inner_pos::InnerPos, outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos,
         range::Range, row::Row,
@@ -10,7 +10,7 @@ use crate::{
 ///
 /// Step trait is unstable. We are forced to declare dedicated types
 /// and getter functions for each variant.
-pub trait LegIterator: LegQuantities {
+pub trait LegIterator: LegCoordinates {
     type OuterBitmapIndexIter: Iterator<Item = OuterBitmapIndex<Self>>;
     type OuterPosIter: Iterator<Item = OuterPos<Self>>;
     type InnerPosIter: Iterator<Item = InnerPos<Self>>;
