@@ -8,9 +8,7 @@ use crate::{
         active_iterator::outer_bitmap::{
             outer_bitmap_item::OuterBitmapItem, ActiveOuterBitmapIterator,
         },
-        bitmap::{
-            outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos, range::Range, Coordinate,
-        },
+        bitmap::{outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos, range::Range},
     },
     state::{MarketPreimage, SlotKey},
 };
@@ -49,26 +47,17 @@ where
         let mut active_outer_bitmap_iterator =
             ActiveOuterBitmapIterator::new(market_key, outer_bitmap_index_range);
 
-        if let Some(outer_bitmap_item) = active_outer_bitmap_iterator.next() {
-            // Reset starting OuterPos if the starting OuterBitmapIndex is crossed
-            let outer_pos = if outer_bitmap_index_range
-                .start
-                .closer_to_centre(outer_bitmap_item.outer_bitmap_index)
-            {
-                In::start_value()
-            } else {
-                outer_pos_range.start
-            };
+        let item = active_outer_bitmap_iterator
+            .next()
+            .ok_or(GoblinError::IteratorOutOfBounds)?;
 
-            // TODO set outer bound if outer_bitmap_item.on_limit
-            Ok(Self {
-                active_outer_bitmap_iterator,
-                item: outer_bitmap_item,
-                linear_iterator: In::outer_pos_iter(outer_pos),
-                limit: outer_pos_range.limit,
-            })
-        } else {
-            return Err(GoblinError::CallFail);
-        }
+        let adjusted_range = outer_pos_range.adjust(outer_bitmap_index_range);
+
+        Ok(Self {
+            active_outer_bitmap_iterator,
+            item,
+            linear_iterator: In::outer_pos_iter(adjusted_range),
+            limit: outer_pos_range.limit,
+        })
     }
 }

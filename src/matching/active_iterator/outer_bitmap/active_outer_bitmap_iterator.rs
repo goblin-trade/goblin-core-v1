@@ -41,7 +41,7 @@ where
     ) -> Self {
         Self {
             item: MarketItem::new(market_key),
-            linear_iterator: In::outer_bitmap_index_iter(range.start),
+            linear_iterator: In::outer_bitmap_index_iter(range),
             limit: range.limit,
         }
     }

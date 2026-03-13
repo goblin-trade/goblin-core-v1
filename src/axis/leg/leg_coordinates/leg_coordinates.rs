@@ -12,4 +12,6 @@ pub trait LegCoordinates: LegQuantities {
     fn closer_to_centre<K: PartialEq + PartialOrd>(first: K, second: K) -> bool;
 
     fn start_value<C: Coordinate>() -> C;
+
+    fn end_value<C: Coordinate>() -> C;
 }

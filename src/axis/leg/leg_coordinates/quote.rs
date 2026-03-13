@@ -12,4 +12,8 @@ impl LegCoordinates for Quote {
     fn start_value<C: Coordinate>() -> C {
         C::MIN
     }
+
+    fn end_value<C: Coordinate>() -> C {
+        C::MAX
+    }
 }

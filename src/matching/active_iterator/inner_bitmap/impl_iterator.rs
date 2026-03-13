@@ -39,8 +39,21 @@ where
             if let Some(item) = self.active_outer_bitmap_iterator.next() {
                 self.item = item;
 
-                // TODO set end bound if item.on_limit is true
-                self.linear_iterator = In::outer_pos_iter(In::start_value());
+                // TODO get rid of on_limit and evaluate directly?
+                let limit = self.limit.get_limit(Range {
+                    start: self.item.outer_bitmap_index,
+                    limit: self.active_outer_bitmap_iterator.limit,
+                });
+
+                // let limit = if self.item.on_limit {
+                //     self.limit
+                // } else {
+                //     In::end_value()
+                // };
+                self.linear_iterator = In::outer_pos_iter(Range {
+                    start: In::start_value(),
+                    limit,
+                });
             } else {
                 return None;
             }

@@ -93,7 +93,7 @@ where
                 limit: range.inner_pos.limit,
             })
         } else {
-            return Err(GoblinError::CallFail);
+            return Err(GoblinError::IteratorOutOfBounds);
         }
     }
 }

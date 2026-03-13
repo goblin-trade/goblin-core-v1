@@ -47,14 +47,6 @@ where
         &self,
         outer_pos_range: Range<OuterPos<In>>,
     ) -> Option<InnerBitmapItem<M, B, Q, In>> {
-        if self.on_limit
-            && outer_pos_range
-                .limit
-                .closer_to_centre(outer_pos_range.start)
-        {
-            return None;
-        }
-
         if self.active_outer_bitmap.active(outer_pos_range.start) {
             let preimage = InnerBitmapPreimage {
                 outer_bitmap_key: self.outer_bitmap_key,

@@ -17,11 +17,11 @@ pub trait LegIterator: LegQuantities {
 
     type RowIter: Iterator<Item = Row<Self>>;
 
-    fn outer_bitmap_index_iter(range: OuterBitmapIndex<Self>) -> Self::OuterBitmapIndexIter;
+    fn outer_bitmap_index_iter(range: Range<OuterBitmapIndex<Self>>) -> Self::OuterBitmapIndexIter;
 
-    fn outer_pos_iter(start: OuterPos<Self>) -> Self::OuterPosIter;
+    fn outer_pos_iter(range: Range<OuterPos<Self>>) -> Self::OuterPosIter;
 
-    fn inner_pos_iter(start: InnerPos<Self>) -> Self::InnerPosIter;
+    fn inner_pos_iter(range: Range<InnerPos<Self>>) -> Self::InnerPosIter;
 
-    fn row_iter(start: Row<Self>) -> Self::RowIter;
+    fn row_iter(range: Range<Row<Self>>) -> Self::RowIter;
 }

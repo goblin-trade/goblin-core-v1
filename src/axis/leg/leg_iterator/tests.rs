@@ -1,10 +1,12 @@
 use crate::{
     axis::leg::{leg_iterator::LegIterator, Base, Quote},
-    matching::bitmap::{column::Column, inner_pos::InnerPos, row::Row, row_column::RowColumn},
+    matching::bitmap::{
+        column::Column, inner_pos::InnerPos, range::Range, row::Row, row_column::RowColumn,
+    },
 };
 
 fn range_equal<In: LegIterator>(start: InnerPos<In>, results_iterator: impl Iterator<Item = u8>) {
-    let iterator = In::inner_pos_iter(start);
+    let iterator = In::inner_pos_iter(Range { start, limit });
     for (actual, expected) in iterator.zip(results_iterator) {
         assert_eq!(actual.inner, expected);
     }

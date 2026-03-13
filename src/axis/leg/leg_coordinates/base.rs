@@ -12,4 +12,8 @@ impl LegCoordinates for Base {
     fn start_value<C: Coordinate>() -> C {
         C::MAX
     }
+
+    fn end_value<C: Coordinate>() -> C {
+        C::MIN
+    }
 }

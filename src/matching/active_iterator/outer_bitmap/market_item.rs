@@ -7,7 +7,7 @@ use crate::{
     },
     matching::{
         active_iterator::outer_bitmap::outer_bitmap_item::OuterBitmapItem,
-        bitmap::{outer_bitmap_index::OuterBitmapIndex, range::Range, Coordinate},
+        bitmap::{outer_bitmap_index::OuterBitmapIndex, range::Range},
     },
     state::{
         outer_bitmap::{outer_bitmap_state::OuterBitmapState, preimage::OuterBitmapPreimage},
@@ -47,9 +47,6 @@ where
         &self,
         range: Range<OuterBitmapIndex<In>>,
     ) -> Option<OuterBitmapItem<M, B, Q, In>> {
-        if range.limit.closer_to_centre(range.start) {
-            return None;
-        }
         let limit_reached = range.on_limit();
 
         let preimage = OuterBitmapPreimage {
