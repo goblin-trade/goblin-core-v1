@@ -36,8 +36,8 @@ where
         range: Range<OuterBitmapIndex<In>>,
     ) -> Self {
         Self {
-            start: self.start.get_start(current, range.start),
-            limit: self.limit.get_limit(current, range.limit),
+            start: self.start.get_start(current == range.start),
+            limit: self.limit.get_limit(current == range.limit),
         }
     }
 }
