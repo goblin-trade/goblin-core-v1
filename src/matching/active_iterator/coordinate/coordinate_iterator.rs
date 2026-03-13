@@ -69,6 +69,10 @@ where
         let mut active_inner_bitmap_iterator =
             ActiveInnerBitmapIterator::new(market_key, range.outer_bitmap_index, range.outer_pos)?;
 
+        let item = active_inner_bitmap_iterator
+            .next()
+            .ok_or(GoblinError::IteratorOutOfBounds)?;
+
         if let Some(inner_bitmap_item) = active_inner_bitmap_iterator.next() {
             // Reset starting Row if the starting OuterBitmapIndex or OuterPos is crossed
             let start = if range

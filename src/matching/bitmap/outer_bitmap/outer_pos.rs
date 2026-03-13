@@ -26,16 +26,16 @@ where
         }
     }
 
-    pub fn get_start(self, range: Range<OuterBitmapIndex<In>>) -> Self {
-        if range.on_limit() {
+    pub fn get_start(self, current: OuterBitmapIndex<In>, start: OuterBitmapIndex<In>) -> Self {
+        if current == start {
             self
         } else {
             In::start_value()
         }
     }
 
-    pub fn get_limit(self, range: Range<OuterBitmapIndex<In>>) -> Self {
-        if range.on_limit() {
+    pub fn get_limit(self, current: OuterBitmapIndex<In>, limit: OuterBitmapIndex<In>) -> Self {
+        if current == limit {
             self
         } else {
             In::end_value()

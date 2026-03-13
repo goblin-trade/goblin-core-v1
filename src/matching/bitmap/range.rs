@@ -30,10 +30,14 @@ impl<In> Range<OuterPos<In>>
 where
     In: LegMatcher,
 {
-    pub fn adjust(&self, outer_bitmap_index_range: Range<OuterBitmapIndex<In>>) -> Self {
+    pub fn adjust(
+        &self,
+        current: OuterBitmapIndex<In>,
+        range: Range<OuterBitmapIndex<In>>,
+    ) -> Self {
         Self {
-            start: self.start.get_start(outer_bitmap_index_range),
-            limit: self.start.get_limit(outer_bitmap_index_range),
+            start: self.start.get_start(current, range.start),
+            limit: self.limit.get_limit(current, range.limit),
         }
     }
 }

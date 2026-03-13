@@ -36,27 +36,20 @@ where
 
             // Try to load the next outer bitmap if no active OuterPos was found
             // in the current one. Reset OuterPos to start position.
-            if let Some(item) = self.active_outer_bitmap_iterator.next() {
-                self.item = item;
+            self.item = self.active_outer_bitmap_iterator.next()?;
 
-                // TODO get rid of on_limit and evaluate directly?
-                let limit = self.limit.get_limit(Range {
-                    start: self.item.outer_bitmap_index,
-                    limit: self.active_outer_bitmap_iterator.limit,
-                });
+            // TODO get rid of on_limit and evaluate directly?
+            // This way on_limit is checked only when we move to a new OuterBitmapIndex,
+            // not on every call
+            let limit = self.limit.get_limit(
+                self.item.outer_bitmap_index,
+                self.active_outer_bitmap_iterator.limit,
+            );
 
-                // let limit = if self.item.on_limit {
-                //     self.limit
-                // } else {
-                //     In::end_value()
-                // };
-                self.linear_iterator = In::outer_pos_iter(Range {
-                    start: In::start_value(),
-                    limit,
-                });
-            } else {
-                return None;
-            }
+            self.linear_iterator = In::outer_pos_iter(Range {
+                start: In::start_value(),
+                limit,
+            });
         }
     }
 }
