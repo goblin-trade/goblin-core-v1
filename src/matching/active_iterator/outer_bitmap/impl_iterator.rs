@@ -3,11 +3,8 @@ use crate::{
         leg::leg_matcher::LegMatcher, market::market_marker::MarketMarker,
         token::token_marker::TokenMarker,
     },
-    matching::{
-        active_iterator::outer_bitmap::{
-            outer_bitmap_item::OuterBitmapItem, ActiveOuterBitmapIterator,
-        },
-        bitmap::range::CustomRange,
+    matching::active_iterator::outer_bitmap::{
+        outer_bitmap_item::OuterBitmapItem, ActiveOuterBitmapIterator,
     },
 };
 
@@ -21,17 +18,7 @@ where
     type Item = OuterBitmapItem<M, B, Q, In>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        while let Some(outer_bitmap_index) = self.linear_iterator.next() {
-            let result = self.item.get_outer_bitmap_item(CustomRange {
-                start: outer_bitmap_index,
-                end: self.limit,
-            });
-
-            if result.is_some() {
-                return result;
-            }
-        }
-
-        None
+        let outer_bitmap_index = self.linear_iterator.next()?;
+        self.item.get_outer_bitmap_item(outer_bitmap_index)
     }
 }

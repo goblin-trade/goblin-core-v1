@@ -5,7 +5,7 @@ use crate::{
     },
     matching::{
         active_iterator::inner_bitmap::inner_bitmap_item::InnerBitmapItem,
-        bitmap::{outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos, range::CustomRange},
+        bitmap::{outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos},
     },
     state::{
         inner_bitmap::preimage::InnerBitmapPreimage,
@@ -40,24 +40,24 @@ where
 {
     pub fn get_inner_bitmap_item(
         &self,
-        outer_pos_range: CustomRange<OuterPos<In>>,
+        start: OuterPos<In>,
     ) -> Option<InnerBitmapItem<M, B, Q, In>> {
-        if self.active_outer_bitmap.active(outer_pos_range.start) {
-            let preimage = InnerBitmapPreimage {
-                outer_bitmap_key: self.outer_bitmap_key,
-                outer_pos: outer_pos_range.start,
-            };
-            let inner_bitmap_key = preimage.hash();
-            let inner_bitmap = inner_bitmap_key.load();
-
-            return Some(InnerBitmapItem {
-                outer_bitmap_index: self.outer_bitmap_index,
-                outer_pos: outer_pos_range.start,
-                inner_bitmap_key,
-                inner_bitmap,
-            });
+        if !self.active_outer_bitmap.active(start) {
+            return None;
         }
 
-        None
+        let preimage = InnerBitmapPreimage {
+            outer_bitmap_key: self.outer_bitmap_key,
+            outer_pos: start,
+        };
+        let inner_bitmap_key = preimage.hash();
+        let inner_bitmap = inner_bitmap_key.load();
+
+        Some(InnerBitmapItem {
+            outer_bitmap_index: self.outer_bitmap_index,
+            outer_pos: start,
+            inner_bitmap_key,
+            inner_bitmap,
+        })
     }
 }

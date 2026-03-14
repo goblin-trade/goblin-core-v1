@@ -24,10 +24,7 @@ where
         loop {
             // Try advancing current outer_pos iterator
             while let Some(outer_pos) = self.linear_iterator.next() {
-                let result = self.item.get_inner_bitmap_item(CustomRange {
-                    start: outer_pos,
-                    end: self.limit,
-                });
+                let result = self.item.get_inner_bitmap_item(outer_pos);
 
                 if result.is_some() {
                     return result;

@@ -5,10 +5,11 @@ use crate::{
     },
     matching::{
         active_iterator::outer_bitmap::market_item::MarketItem,
-        bitmap::{outer_bitmap_index::OuterBitmapIndex, range::CustomRange},
+        bitmap::outer_bitmap_index::OuterBitmapIndex,
     },
     state::{MarketPreimage, SlotKey},
 };
+use core::ops::RangeInclusive;
 
 /// Return active outer bitmaps with their index
 pub struct ActiveOuterBitmapIterator<'a, M, B, Q, In>
@@ -37,12 +38,12 @@ where
 {
     pub fn new(
         market_key: &'a SlotKey<MarketPreimage<M, B, Q>>,
-        range: CustomRange<OuterBitmapIndex<In>>,
+        range: RangeInclusive<OuterBitmapIndex<In>>,
     ) -> Self {
         Self {
             item: MarketItem::new(market_key),
+            limit: *range.end(),
             linear_iterator: In::outer_bitmap_index_iter(range),
-            limit: range.end,
         }
     }
 }
