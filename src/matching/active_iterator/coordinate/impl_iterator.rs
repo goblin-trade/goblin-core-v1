@@ -35,18 +35,9 @@ where
             // in the current one. Reset coordinate iterator to start position.
             self.item = self.active_inner_bitmap_iterator.next()?;
 
-            let limit = self.limit.get_limit(
-                self.item.outer_bitmap_index
-                    == self
-                        .active_inner_bitmap_iterator
-                        .active_outer_bitmap_iterator
-                        .limit
-                    && self.item.outer_pos == self.active_inner_bitmap_iterator.limit,
-            );
-
             self.linear_iterator = In::inner_pos_iter(Range {
                 start: In::start_value(),
-                limit,
+                limit: self.limit.adjust_limit(self.on_limit()),
             });
         }
     }

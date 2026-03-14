@@ -14,20 +14,6 @@ where
     pub limit: C,
 }
 
-impl<C> Range<C>
-where
-    C: Clone + Copy + PartialEq,
-{
-    /// Whether start equals limit
-    ///
-    /// For OuterPos and Row, we additionally need to check the top level dimensions.
-    ///
-    /// We compare OuterPos only if we are on the same OuterBitmapIndex
-    pub fn on_limit(&self) -> bool {
-        self.start == self.limit
-    }
-}
-
 impl<In> Range<OuterPos<In>>
 where
     In: LegMatcher,
@@ -38,8 +24,8 @@ where
         range: Range<OuterBitmapIndex<In>>,
     ) -> Self {
         Self {
-            start: self.start.get_start(current == range.start),
-            limit: self.limit.get_limit(current == range.limit),
+            start: self.start.adjust_start(current == range.start),
+            limit: self.limit.adjust_limit(current == range.limit),
         }
     }
 }
@@ -54,8 +40,8 @@ where
         range: Range<(OuterBitmapIndex<In>, OuterPos<In>)>,
     ) -> Self {
         Self {
-            start: self.start.get_start(current == range.start),
-            limit: self.limit.get_limit(current == range.limit),
+            start: self.start.adjust_start(current == range.start),
+            limit: self.limit.adjust_limit(current == range.limit),
         }
     }
 }

@@ -47,8 +47,6 @@ where
         &self,
         range: Range<OuterBitmapIndex<In>>,
     ) -> Option<OuterBitmapItem<M, B, Q, In>> {
-        let limit_reached = range.on_limit();
-
         let preimage = OuterBitmapPreimage {
             market_key: *self.market_key,
             outer_bitmap_index: range.start,
@@ -62,7 +60,6 @@ where
                 outer_bitmap_index: range.start,
                 outer_bitmap_key,
                 active_outer_bitmap,
-                on_limit: limit_reached,
             });
         }
 

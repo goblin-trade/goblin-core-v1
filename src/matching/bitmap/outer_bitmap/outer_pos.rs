@@ -24,7 +24,7 @@ where
         }
     }
 
-    pub fn get_start(self, on_start: bool) -> Self {
+    pub fn adjust_start(self, on_start: bool) -> Self {
         if on_start {
             self
         } else {
@@ -32,7 +32,7 @@ where
         }
     }
 
-    pub fn get_limit(self, on_limit: bool) -> Self {
+    pub fn adjust_limit(self, on_limit: bool) -> Self {
         if on_limit {
             self
         } else {

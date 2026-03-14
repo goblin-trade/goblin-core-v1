@@ -61,4 +61,8 @@ where
             limit: outer_pos_range.limit,
         })
     }
+
+    pub fn on_limit(&self) -> bool {
+        self.item.outer_bitmap_index == self.active_outer_bitmap_iterator.limit
+    }
 }

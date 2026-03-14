@@ -5,9 +5,7 @@ use crate::{
     },
     matching::{
         active_iterator::inner_bitmap::inner_bitmap_item::InnerBitmapItem,
-        bitmap::{
-            outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos, range::Range, Coordinate,
-        },
+        bitmap::{outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos, range::Range},
     },
     state::{
         inner_bitmap::preimage::InnerBitmapPreimage,
@@ -31,9 +29,6 @@ where
 
     /// The active outer bitmap read from slot
     pub active_outer_bitmap: ActiveOuterBitmap<M, B, Q>,
-
-    /// Whether `limit` is reached and that this is the last value
-    pub on_limit: bool,
 }
 
 impl<M, B, Q, In> OuterBitmapItem<M, B, Q, In>
@@ -55,14 +50,11 @@ where
             let inner_bitmap_key = preimage.hash();
             let inner_bitmap = inner_bitmap_key.load();
 
-            let on_limit = self.on_limit && outer_pos_range.on_limit();
-
             return Some(InnerBitmapItem {
                 outer_bitmap_index: self.outer_bitmap_index,
                 outer_pos: outer_pos_range.start,
                 inner_bitmap_key,
                 inner_bitmap,
-                on_limit,
             });
         }
 
