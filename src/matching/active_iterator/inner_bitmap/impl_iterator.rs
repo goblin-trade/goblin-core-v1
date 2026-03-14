@@ -32,7 +32,6 @@ where
             // in the current one. Reset OuterPos to start position.
             self.item = self.active_outer_bitmap_iterator.next()?;
             let limit = self.limit.adjust_limit(self.on_limit());
-
             self.linear_iterator = In::outer_pos_iter(In::start_value()..=limit);
         }
     }

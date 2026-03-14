@@ -8,15 +8,13 @@ use crate::{
         active_iterator::inner_bitmap::{
             inner_bitmap_item::InnerBitmapItem, ActiveInnerBitmapIterator,
         },
-        bitmap::{
-            inner_pos::InnerPos, range::CustomRange, CoordinatesRange, FullCoordinates,
-            StoredCoordinates,
-        },
+        bitmap::{inner_pos::InnerPos, CoordinatesRange, FullCoordinates, StoredCoordinates},
     },
     quantities::Ticks,
     require,
     state::{MarketPreimage, SlotKey},
 };
+use core::ops::RangeInclusive;
 
 pub struct CoordinateIterator<'a, M, B, Q, In>
 where
@@ -54,41 +52,39 @@ where
         );
         Self::new_inner(
             market_key,
-            CustomRange {
-                start: FullCoordinates::from(last_coordinate),
-                end: FullCoordinates::from(price_limit),
-            },
+            FullCoordinates::from(last_coordinate)..=FullCoordinates::from(price_limit),
         )
     }
 
     fn new_inner(
         market_key: &'a SlotKey<MarketPreimage<M, B, Q>>,
-        coordinates_range: CustomRange<FullCoordinates<In>>,
+        coordinates_range: RangeInclusive<FullCoordinates<In>>,
     ) -> Result<Self, GoblinError> {
         let range = CoordinatesRange::<In>::from(coordinates_range);
-        let mut active_inner_bitmap_iterator =
-            ActiveInnerBitmapIterator::new(market_key, range.outer_bitmap_index, range.outer_pos)?;
+        let mut active_inner_bitmap_iterator = ActiveInnerBitmapIterator::new(
+            market_key,
+            range.outer_bitmap_index.clone(),
+            range.outer_pos.clone(),
+        )?;
 
         let item = active_inner_bitmap_iterator
             .next()
             .ok_or(GoblinError::IteratorOutOfBounds)?;
 
-        let start = range.inner_pos.start.adjust_start(
+        let start = range.inner_pos.start().adjust_start(
             (item.outer_bitmap_index, item.outer_pos)
-                == (range.outer_bitmap_index.start, range.outer_pos.start),
+                == (*range.outer_bitmap_index.start(), *range.outer_pos.start()),
         );
-        let end = range.inner_pos.end.adjust_end(
+        let end = range.inner_pos.end().adjust_end(
             (item.outer_bitmap_index, item.outer_pos)
-                == (range.outer_bitmap_index.end, range.outer_pos.end),
+                == (*range.outer_bitmap_index.end(), *range.outer_pos.end()),
         );
-
-        let adjusted_range = CustomRange { start, end };
 
         Ok(Self {
             active_inner_bitmap_iterator,
             item,
-            linear_iterator: In::inner_pos_iter(adjusted_range),
-            limit: range.inner_pos.end,
+            linear_iterator: In::inner_pos_iter(start..=end),
+            limit: *range.inner_pos.end(),
         })
     }
 
