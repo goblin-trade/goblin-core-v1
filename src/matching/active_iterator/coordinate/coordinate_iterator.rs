@@ -73,13 +73,16 @@ where
             .next()
             .ok_or(GoblinError::IteratorOutOfBounds)?;
 
-        let adjusted_range = range.inner_pos.adjust(
-            (item.outer_bitmap_index, item.outer_pos),
-            CustomRange {
-                start: (range.outer_bitmap_index.start, range.outer_pos.start),
-                end: (range.outer_bitmap_index.end, range.outer_pos.end),
-            },
+        let start = range.inner_pos.start.adjust_start(
+            (item.outer_bitmap_index, item.outer_pos)
+                == (range.outer_bitmap_index.start, range.outer_pos.start),
         );
+        let end = range.inner_pos.end.adjust_end(
+            (item.outer_bitmap_index, item.outer_pos)
+                == (range.outer_bitmap_index.end, range.outer_pos.end),
+        );
+
+        let adjusted_range = CustomRange { start, end };
 
         Ok(Self {
             active_inner_bitmap_iterator,

@@ -34,7 +34,7 @@ where
         }
     }
 
-    pub fn adjust_limit(self, on_limit: bool) -> Self {
+    pub fn adjust_end(self, on_limit: bool) -> Self {
         if on_limit {
             self
         } else {

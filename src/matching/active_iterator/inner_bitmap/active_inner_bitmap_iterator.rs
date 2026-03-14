@@ -51,8 +51,15 @@ where
             .next()
             .ok_or(GoblinError::IteratorOutOfBounds)?;
 
-        let adjusted_range =
-            outer_pos_range.adjust(item.outer_bitmap_index, outer_bitmap_index_range);
+        let start = outer_pos_range
+            .start
+            .adjust_start(item.outer_bitmap_index == outer_bitmap_index_range.start);
+
+        let end = outer_pos_range
+            .end
+            .adjust_limit(item.outer_bitmap_index == outer_bitmap_index_range.end);
+
+        let adjusted_range = CustomRange { start, end };
 
         Ok(Self {
             active_outer_bitmap_iterator,

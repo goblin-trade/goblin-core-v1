@@ -37,7 +37,7 @@ where
 
             self.linear_iterator = In::inner_pos_iter(CustomRange {
                 start: In::start_value(),
-                end: self.limit.adjust_limit(self.on_limit()),
+                end: self.limit.adjust_end(self.on_limit()),
             });
         }
     }
