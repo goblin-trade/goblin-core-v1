@@ -18,7 +18,7 @@ where
     fn next(&mut self) -> Option<Self::Item> {
         loop {
             while let Some(inner_pos) = self.linear_iterator.next() {
-                let result = self.item.get_resting_order_item(inner_pos);
+                let result = self.inner_item.next_item(inner_pos);
 
                 if result.is_some() {
                     return result;
@@ -27,7 +27,7 @@ where
 
             // Try to load the next inner bitmap if no active coordinate was found
             // in the current one. Reset coordinate iterator to start position.
-            self.item = self.active_inner_bitmap_iterator.next()?;
+            self.inner_item = self.inner_iterator.next()?;
             let limit = self.limit.adjust_end(self.on_limit());
             self.linear_iterator = In::inner_pos_iter(In::start_value()..=limit);
         }

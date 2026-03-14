@@ -20,13 +20,13 @@ where
     In: LegMatcher,
 {
     /// Market key
-    pub item: MarketItem<'a, M, B, Q, In>,
-
-    /// Linear iterator
-    pub linear_iterator: In::OuterBitmapIndexIter,
+    pub inner_item: MarketItem<'a, M, B, Q, In>,
 
     /// Stop when limit reached
     pub limit: OuterBitmapIndex<In>,
+
+    /// Linear iterator
+    pub linear_iterator: In::OuterBitmapIndexIter,
 }
 
 impl<'a, M, B, Q, In> ActiveOuterBitmapIterator<'a, M, B, Q, In>
@@ -41,7 +41,7 @@ where
         range: RangeInclusive<OuterBitmapIndex<In>>,
     ) -> Self {
         Self {
-            item: MarketItem::new(market_key),
+            inner_item: MarketItem::new(market_key),
             limit: *range.end(),
             linear_iterator: In::outer_bitmap_index_iter(range),
         }

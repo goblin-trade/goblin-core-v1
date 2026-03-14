@@ -1,10 +1,19 @@
-pub struct GenericIterator<K0, IT0, K1, IT1>
+use core::marker::PhantomData;
+
+pub struct GenericIterator<A, B, C, D, E>
 where
-    IT0: Iterator<Item = K0>,
-    IT1: Iterator<Item = K1>,
+    A: InnerItem<C, E>,
+    B: Iterator<Item = A>,
+    D: Iterator<Item = C>,
+    Self: Iterator<Item = E>,
 {
-    pub outer_iterator: IT0,
-    pub outer_item: K0,
-    pub linear_iterator: IT1,
-    pub limit: K1,
+    pub inner_item: A,
+    pub inner_iterator: B,
+    pub limit: C,
+    pub linear_iterator: D,
+    _marker: PhantomData<E>,
+}
+
+pub trait InnerItem<C, E> {
+    fn next_item(&self, position: C) -> E;
 }

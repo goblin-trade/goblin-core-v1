@@ -26,15 +26,15 @@ where
     Q: TokenMarker,
     In: LegMatcher,
 {
-    pub active_inner_bitmap_iterator: ActiveInnerBitmapIterator<'a, M, B, Q, In>,
-
     /// The last returned inner bitmap item
-    pub item: InnerBitmapItem<M, B, Q, In>,
+    pub inner_item: InnerBitmapItem<M, B, Q, In>,
+
+    pub inner_iterator: ActiveInnerBitmapIterator<'a, M, B, Q, In>,
+
+    pub limit: InnerPos<In>,
 
     /// Linear iterator
     pub linear_iterator: In::InnerPosIter,
-
-    pub limit: InnerPos<In>,
 }
 
 impl<'a, M, B, Q, In> CoordinateIterator<'a, M, B, Q, In>
@@ -79,15 +79,14 @@ where
             .adjust_end((item.outer_bitmap_index, item.outer_pos) == end_inner);
 
         Ok(Self {
-            active_inner_bitmap_iterator,
-            item,
+            inner_iterator: active_inner_bitmap_iterator,
+            inner_item: item,
             linear_iterator: In::inner_pos_iter(start..=end),
             limit: range.end().2,
         })
     }
 
     pub fn on_limit(&self) -> bool {
-        self.active_inner_bitmap_iterator.on_limit()
-            && self.item.outer_pos == self.active_inner_bitmap_iterator.limit
+        self.inner_iterator.on_limit() && self.inner_item.outer_pos == self.inner_iterator.limit
     }
 }

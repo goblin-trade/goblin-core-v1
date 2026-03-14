@@ -19,6 +19,6 @@ where
 
     fn next(&mut self) -> Option<Self::Item> {
         let outer_bitmap_index = self.linear_iterator.next()?;
-        self.item.get_outer_bitmap_item(outer_bitmap_index)
+        self.inner_item.next_item(outer_bitmap_index)
     }
 }

@@ -43,7 +43,7 @@ where
         }
     }
 
-    pub fn get_outer_bitmap_item(
+    pub fn next_item(
         &self,
         outer_bitmap_index: OuterBitmapIndex<In>,
     ) -> Option<OuterBitmapItem<M, B, Q, In>> {

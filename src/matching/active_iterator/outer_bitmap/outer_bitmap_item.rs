@@ -38,10 +38,7 @@ where
     Q: TokenMarker,
     In: LegMatcher,
 {
-    pub fn get_inner_bitmap_item(
-        &self,
-        start: OuterPos<In>,
-    ) -> Option<InnerBitmapItem<M, B, Q, In>> {
+    pub fn next_item(&self, start: OuterPos<In>) -> Option<InnerBitmapItem<M, B, Q, In>> {
         if !self.active_outer_bitmap.active(start) {
             return None;
         }
