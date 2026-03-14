@@ -6,42 +6,42 @@ use crate::{
 };
 
 #[derive(Clone, Copy)]
-pub struct Range<C>
+pub struct CustomRange<C>
 where
     C: Clone + Copy + PartialEq,
 {
     pub start: C,
-    pub limit: C,
+    pub end: C,
 }
 
-impl<In> Range<OuterPos<In>>
+impl<In> CustomRange<OuterPos<In>>
 where
     In: LegMatcher,
 {
     pub fn adjust(
         &self,
         current: OuterBitmapIndex<In>,
-        range: Range<OuterBitmapIndex<In>>,
+        range: CustomRange<OuterBitmapIndex<In>>,
     ) -> Self {
         Self {
             start: self.start.adjust_start(current == range.start),
-            limit: self.limit.adjust_limit(current == range.limit),
+            end: self.end.adjust_limit(current == range.end),
         }
     }
 }
 
-impl<In> Range<InnerPos<In>>
+impl<In> CustomRange<InnerPos<In>>
 where
     In: LegMatcher,
 {
     pub fn adjust(
         &self,
         current: (OuterBitmapIndex<In>, OuterPos<In>),
-        range: Range<(OuterBitmapIndex<In>, OuterPos<In>)>,
+        range: CustomRange<(OuterBitmapIndex<In>, OuterPos<In>)>,
     ) -> Self {
         Self {
             start: self.start.adjust_start(current == range.start),
-            limit: self.limit.adjust_limit(current == range.limit),
+            end: self.end.adjust_limit(current == range.end),
         }
     }
 }

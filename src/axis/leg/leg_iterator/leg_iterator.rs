@@ -2,7 +2,7 @@ use crate::{
     axis::leg::{leg_coordinates::LegCoordinates, leg_quantities::LegQuantities},
     matching::bitmap::{
         inner_pos::InnerPos, outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos,
-        range::Range, row::Row,
+        range::CustomRange, row::Row,
     },
 };
 
@@ -17,11 +17,11 @@ pub trait LegIterator: LegCoordinates {
 
     type RowIter: Iterator<Item = Row<Self>>;
 
-    fn outer_bitmap_index_iter(range: Range<OuterBitmapIndex<Self>>) -> Self::OuterBitmapIndexIter;
+    fn outer_bitmap_index_iter(range: CustomRange<OuterBitmapIndex<Self>>) -> Self::OuterBitmapIndexIter;
 
-    fn outer_pos_iter(range: Range<OuterPos<Self>>) -> Self::OuterPosIter;
+    fn outer_pos_iter(range: CustomRange<OuterPos<Self>>) -> Self::OuterPosIter;
 
-    fn inner_pos_iter(range: Range<InnerPos<Self>>) -> Self::InnerPosIter;
+    fn inner_pos_iter(range: CustomRange<InnerPos<Self>>) -> Self::InnerPosIter;
 
-    fn row_iter(range: Range<Row<Self>>) -> Self::RowIter;
+    fn row_iter(range: CustomRange<Row<Self>>) -> Self::RowIter;
 }

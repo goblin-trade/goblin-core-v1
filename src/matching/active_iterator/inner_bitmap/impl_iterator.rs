@@ -7,7 +7,7 @@ use crate::{
         active_iterator::inner_bitmap::{
             inner_bitmap_item::InnerBitmapItem, ActiveInnerBitmapIterator,
         },
-        bitmap::range::Range,
+        bitmap::range::CustomRange,
     },
 };
 
@@ -24,9 +24,9 @@ where
         loop {
             // Try advancing current outer_pos iterator
             while let Some(outer_pos) = self.linear_iterator.next() {
-                let result = self.item.get_inner_bitmap_item(Range {
+                let result = self.item.get_inner_bitmap_item(CustomRange {
                     start: outer_pos,
-                    limit: self.limit,
+                    end: self.limit,
                 });
 
                 if result.is_some() {
@@ -39,9 +39,9 @@ where
             self.item = self.active_outer_bitmap_iterator.next()?;
             let limit = self.limit.adjust_limit(self.on_limit());
 
-            self.linear_iterator = In::outer_pos_iter(Range {
+            self.linear_iterator = In::outer_pos_iter(CustomRange {
                 start: In::start_value(),
-                limit,
+                end: limit,
             });
         }
     }

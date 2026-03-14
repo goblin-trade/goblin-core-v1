@@ -5,7 +5,7 @@ use crate::{
     },
     matching::{
         active_iterator::inner_bitmap::inner_bitmap_item::InnerBitmapItem,
-        bitmap::{outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos, range::Range},
+        bitmap::{outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos, range::CustomRange},
     },
     state::{
         inner_bitmap::preimage::InnerBitmapPreimage,
@@ -40,7 +40,7 @@ where
 {
     pub fn get_inner_bitmap_item(
         &self,
-        outer_pos_range: Range<OuterPos<In>>,
+        outer_pos_range: CustomRange<OuterPos<In>>,
     ) -> Option<InnerBitmapItem<M, B, Q, In>> {
         if self.active_outer_bitmap.active(outer_pos_range.start) {
             let preimage = InnerBitmapPreimage {

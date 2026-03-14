@@ -8,7 +8,7 @@ use crate::{
         active_iterator::outer_bitmap::{
             outer_bitmap_item::OuterBitmapItem, ActiveOuterBitmapIterator,
         },
-        bitmap::{outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos, range::Range},
+        bitmap::{outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos, range::CustomRange},
     },
     state::{MarketPreimage, SlotKey},
 };
@@ -41,8 +41,8 @@ where
 {
     pub fn new(
         market_key: &'a SlotKey<MarketPreimage<M, B, Q>>,
-        outer_bitmap_index_range: Range<OuterBitmapIndex<In>>,
-        outer_pos_range: Range<OuterPos<In>>,
+        outer_bitmap_index_range: CustomRange<OuterBitmapIndex<In>>,
+        outer_pos_range: CustomRange<OuterPos<In>>,
     ) -> Result<Self, GoblinError> {
         let mut active_outer_bitmap_iterator =
             ActiveOuterBitmapIterator::new(market_key, outer_bitmap_index_range);
@@ -58,7 +58,7 @@ where
             active_outer_bitmap_iterator,
             item,
             linear_iterator: In::outer_pos_iter(adjusted_range),
-            limit: outer_pos_range.limit,
+            limit: outer_pos_range.end,
         })
     }
 

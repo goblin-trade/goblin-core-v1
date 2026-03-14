@@ -5,7 +5,7 @@ use crate::{
     },
     matching::{
         active_iterator::outer_bitmap::market_item::MarketItem,
-        bitmap::{outer_bitmap_index::OuterBitmapIndex, range::Range},
+        bitmap::{outer_bitmap_index::OuterBitmapIndex, range::CustomRange},
     },
     state::{MarketPreimage, SlotKey},
 };
@@ -37,12 +37,12 @@ where
 {
     pub fn new(
         market_key: &'a SlotKey<MarketPreimage<M, B, Q>>,
-        range: Range<OuterBitmapIndex<In>>,
+        range: CustomRange<OuterBitmapIndex<In>>,
     ) -> Self {
         Self {
             item: MarketItem::new(market_key),
             linear_iterator: In::outer_bitmap_index_iter(range),
-            limit: range.limit,
+            limit: range.end,
         }
     }
 }

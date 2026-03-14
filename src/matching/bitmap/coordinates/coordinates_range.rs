@@ -2,7 +2,7 @@ use crate::{
     axis::leg::leg_matcher::LegMatcher,
     matching::bitmap::{
         inner_pos::InnerPos, outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos,
-        range::Range, FullCoordinates,
+        range::CustomRange, FullCoordinates,
     },
 };
 
@@ -10,28 +10,28 @@ pub struct CoordinatesRange<In>
 where
     In: LegMatcher,
 {
-    pub outer_bitmap_index: Range<OuterBitmapIndex<In>>,
-    pub outer_pos: Range<OuterPos<In>>,
-    pub inner_pos: Range<InnerPos<In>>,
+    pub outer_bitmap_index: CustomRange<OuterBitmapIndex<In>>,
+    pub outer_pos: CustomRange<OuterPos<In>>,
+    pub inner_pos: CustomRange<InnerPos<In>>,
 }
 
-impl<In> From<Range<FullCoordinates<In>>> for CoordinatesRange<In>
+impl<In> From<CustomRange<FullCoordinates<In>>> for CoordinatesRange<In>
 where
     In: LegMatcher,
 {
-    fn from(value: Range<FullCoordinates<In>>) -> Self {
+    fn from(value: CustomRange<FullCoordinates<In>>) -> Self {
         Self {
-            outer_bitmap_index: Range {
+            outer_bitmap_index: CustomRange {
                 start: value.start.outer_bitmap_index,
-                limit: value.limit.outer_bitmap_index,
+                end: value.end.outer_bitmap_index,
             },
-            outer_pos: Range {
+            outer_pos: CustomRange {
                 start: value.start.outer_pos,
-                limit: value.limit.outer_pos,
+                end: value.end.outer_pos,
             },
-            inner_pos: Range {
+            inner_pos: CustomRange {
                 start: value.start.inner_pos,
-                limit: value.limit.inner_pos,
+                end: value.end.inner_pos,
             },
         }
     }

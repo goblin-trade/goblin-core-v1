@@ -5,7 +5,7 @@ use crate::{
     },
     matching::{
         active_iterator::coordinate::{coordinate_item::CoordinateItem, CoordinateIterator},
-        bitmap::range::Range,
+        bitmap::range::CustomRange,
     },
 };
 
@@ -21,9 +21,9 @@ where
     fn next(&mut self) -> Option<Self::Item> {
         loop {
             while let Some(coordinates) = self.linear_iterator.next() {
-                let result = self.item.get_resting_order_item(Range {
+                let result = self.item.get_resting_order_item(CustomRange {
                     start: coordinates,
-                    limit: self.limit,
+                    end: self.limit,
                 });
 
                 if result.is_some() {
@@ -35,9 +35,9 @@ where
             // in the current one. Reset coordinate iterator to start position.
             self.item = self.active_inner_bitmap_iterator.next()?;
 
-            self.linear_iterator = In::inner_pos_iter(Range {
+            self.linear_iterator = In::inner_pos_iter(CustomRange {
                 start: In::start_value(),
-                limit: self.limit.adjust_limit(self.on_limit()),
+                end: self.limit.adjust_limit(self.on_limit()),
             });
         }
     }

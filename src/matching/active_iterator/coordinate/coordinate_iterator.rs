@@ -9,7 +9,8 @@ use crate::{
             inner_bitmap_item::InnerBitmapItem, ActiveInnerBitmapIterator,
         },
         bitmap::{
-            inner_pos::InnerPos, range::Range, CoordinatesRange, FullCoordinates, StoredCoordinates,
+            inner_pos::InnerPos, range::CustomRange, CoordinatesRange, FullCoordinates,
+            StoredCoordinates,
         },
     },
     quantities::Ticks,
@@ -53,16 +54,16 @@ where
         );
         Self::new_inner(
             market_key,
-            Range {
+            CustomRange {
                 start: FullCoordinates::from(last_coordinate),
-                limit: FullCoordinates::from(price_limit),
+                end: FullCoordinates::from(price_limit),
             },
         )
     }
 
     fn new_inner(
         market_key: &'a SlotKey<MarketPreimage<M, B, Q>>,
-        coordinates_range: Range<FullCoordinates<In>>,
+        coordinates_range: CustomRange<FullCoordinates<In>>,
     ) -> Result<Self, GoblinError> {
         let range = CoordinatesRange::<In>::from(coordinates_range);
         let mut active_inner_bitmap_iterator =
@@ -74,9 +75,9 @@ where
 
         let adjusted_range = range.inner_pos.adjust(
             (item.outer_bitmap_index, item.outer_pos),
-            Range {
+            CustomRange {
                 start: (range.outer_bitmap_index.start, range.outer_pos.start),
-                limit: (range.outer_bitmap_index.limit, range.outer_pos.limit),
+                end: (range.outer_bitmap_index.end, range.outer_pos.end),
             },
         );
 
@@ -84,7 +85,7 @@ where
             active_inner_bitmap_iterator,
             item,
             linear_iterator: In::inner_pos_iter(adjusted_range),
-            limit: range.inner_pos.limit,
+            limit: range.inner_pos.end,
         })
     }
 

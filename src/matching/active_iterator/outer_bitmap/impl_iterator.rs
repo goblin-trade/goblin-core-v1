@@ -7,7 +7,7 @@ use crate::{
         active_iterator::outer_bitmap::{
             outer_bitmap_item::OuterBitmapItem, ActiveOuterBitmapIterator,
         },
-        bitmap::range::Range,
+        bitmap::range::CustomRange,
     },
 };
 
@@ -22,9 +22,9 @@ where
 
     fn next(&mut self) -> Option<Self::Item> {
         while let Some(outer_bitmap_index) = self.linear_iterator.next() {
-            let result = self.item.get_outer_bitmap_item(Range {
+            let result = self.item.get_outer_bitmap_item(CustomRange {
                 start: outer_bitmap_index,
-                limit: self.limit,
+                end: self.limit,
             });
 
             if result.is_some() {

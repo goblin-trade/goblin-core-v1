@@ -7,7 +7,7 @@ use crate::{
         active_iterator::coordinate::coordinate_item::CoordinateItem,
         bitmap::{
             inner_pos::InnerPos, outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos,
-            range::Range, FullCoordinates,
+            range::CustomRange, FullCoordinates,
         },
     },
     state::{
@@ -39,7 +39,7 @@ where
 {
     pub fn get_resting_order_item(
         &self,
-        coordinates_range: Range<InnerPos<In>>,
+        coordinates_range: CustomRange<InnerPos<In>>,
     ) -> Option<CoordinateItem<M, B, Q, In>> {
         if self.inner_bitmap.active(coordinates_range.start.into()) {
             let preimage = RestingOrderPreimage {

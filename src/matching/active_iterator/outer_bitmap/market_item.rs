@@ -7,7 +7,7 @@ use crate::{
     },
     matching::{
         active_iterator::outer_bitmap::outer_bitmap_item::OuterBitmapItem,
-        bitmap::{outer_bitmap_index::OuterBitmapIndex, range::Range},
+        bitmap::{outer_bitmap_index::OuterBitmapIndex, range::CustomRange},
     },
     state::{
         outer_bitmap::{outer_bitmap_state::OuterBitmapState, preimage::OuterBitmapPreimage},
@@ -45,7 +45,7 @@ where
 
     pub fn get_outer_bitmap_item(
         &self,
-        range: Range<OuterBitmapIndex<In>>,
+        range: CustomRange<OuterBitmapIndex<In>>,
     ) -> Option<OuterBitmapItem<M, B, Q, In>> {
         let preimage = OuterBitmapPreimage {
             market_key: *self.market_key,
