@@ -20,9 +20,9 @@ where
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
-            while let Some(coordinates) = self.linear_iterator.next() {
+            while let Some(inner_pos) = self.linear_iterator.next() {
                 let result = self.item.get_resting_order_item(CustomRange {
-                    start: coordinates,
+                    start: inner_pos,
                     end: self.limit,
                 });
 

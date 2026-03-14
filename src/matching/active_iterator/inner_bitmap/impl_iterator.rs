@@ -3,11 +3,8 @@ use crate::{
         leg::leg_matcher::LegMatcher, market::market_marker::MarketMarker,
         token::token_marker::TokenMarker,
     },
-    matching::{
-        active_iterator::inner_bitmap::{
-            inner_bitmap_item::InnerBitmapItem, ActiveInnerBitmapIterator,
-        },
-        bitmap::range::CustomRange,
+    matching::active_iterator::inner_bitmap::{
+        inner_bitmap_item::InnerBitmapItem, ActiveInnerBitmapIterator,
     },
 };
 
@@ -36,10 +33,7 @@ where
             self.item = self.active_outer_bitmap_iterator.next()?;
             let limit = self.limit.adjust_limit(self.on_limit());
 
-            self.linear_iterator = In::outer_pos_iter(CustomRange {
-                start: In::start_value(),
-                end: limit,
-            });
+            self.linear_iterator = In::outer_pos_iter(In::start_value()..=limit);
         }
     }
 }

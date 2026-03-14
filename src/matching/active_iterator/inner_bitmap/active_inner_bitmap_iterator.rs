@@ -8,10 +8,11 @@ use crate::{
         active_iterator::outer_bitmap::{
             outer_bitmap_item::OuterBitmapItem, ActiveOuterBitmapIterator,
         },
-        bitmap::{outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos, range::CustomRange},
+        bitmap::{outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos},
     },
     state::{MarketPreimage, SlotKey},
 };
+use core::ops::RangeInclusive;
 
 pub struct ActiveInnerBitmapIterator<'a, M, B, Q, In>
 where
@@ -41,31 +42,29 @@ where
 {
     pub fn new(
         market_key: &'a SlotKey<MarketPreimage<M, B, Q>>,
-        outer_bitmap_index_range: CustomRange<OuterBitmapIndex<In>>,
-        outer_pos_range: CustomRange<OuterPos<In>>,
+        outer_bitmap_index_range: RangeInclusive<OuterBitmapIndex<In>>,
+        outer_pos_range: RangeInclusive<OuterPos<In>>,
     ) -> Result<Self, GoblinError> {
         let mut active_outer_bitmap_iterator =
-            ActiveOuterBitmapIterator::new(market_key, outer_bitmap_index_range);
+            ActiveOuterBitmapIterator::new(market_key, outer_bitmap_index_range.clone());
 
         let item = active_outer_bitmap_iterator
             .next()
             .ok_or(GoblinError::IteratorOutOfBounds)?;
 
         let start = outer_pos_range
-            .start
-            .adjust_start(item.outer_bitmap_index == outer_bitmap_index_range.start);
+            .start()
+            .adjust_start(item.outer_bitmap_index == *outer_bitmap_index_range.start());
 
         let end = outer_pos_range
-            .end
-            .adjust_limit(item.outer_bitmap_index == outer_bitmap_index_range.end);
-
-        let adjusted_range = CustomRange { start, end };
+            .end()
+            .adjust_limit(item.outer_bitmap_index == *outer_bitmap_index_range.end());
 
         Ok(Self {
             active_outer_bitmap_iterator,
             item,
-            linear_iterator: In::outer_pos_iter(adjusted_range),
-            limit: outer_pos_range.end,
+            linear_iterator: In::outer_pos_iter(start..=end),
+            limit: *outer_pos_range.end(),
         })
     }
 
