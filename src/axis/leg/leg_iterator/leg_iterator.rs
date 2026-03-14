@@ -1,10 +1,10 @@
 use crate::{
-    axis::leg::{leg_coordinates::LegCoordinates, leg_quantities::LegQuantities},
+    axis::leg::leg_coordinates::LegCoordinates,
     matching::bitmap::{
-        inner_pos::InnerPos, outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos,
-        range::CustomRange, row::Row,
+        inner_pos::InnerPos, outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos, row::Row,
     },
 };
+use core::ops::RangeInclusive;
 
 /// Iterators of coordinates
 ///
@@ -17,11 +17,13 @@ pub trait LegIterator: LegCoordinates {
 
     type RowIter: Iterator<Item = Row<Self>>;
 
-    fn outer_bitmap_index_iter(range: CustomRange<OuterBitmapIndex<Self>>) -> Self::OuterBitmapIndexIter;
+    fn outer_bitmap_index_iter(
+        range: RangeInclusive<OuterBitmapIndex<Self>>,
+    ) -> Self::OuterBitmapIndexIter;
 
-    fn outer_pos_iter(range: CustomRange<OuterPos<Self>>) -> Self::OuterPosIter;
+    fn outer_pos_iter(range: RangeInclusive<OuterPos<Self>>) -> Self::OuterPosIter;
 
-    fn inner_pos_iter(range: CustomRange<InnerPos<Self>>) -> Self::InnerPosIter;
+    fn inner_pos_iter(range: RangeInclusive<InnerPos<Self>>) -> Self::InnerPosIter;
 
-    fn row_iter(range: CustomRange<Row<Self>>) -> Self::RowIter;
+    fn row_iter(range: RangeInclusive<Row<Self>>) -> Self::RowIter;
 }

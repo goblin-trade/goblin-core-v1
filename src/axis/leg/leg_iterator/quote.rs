@@ -4,8 +4,7 @@ use core::ops::RangeInclusive;
 use crate::{
     axis::leg::{leg_iterator::LegIterator, Quote},
     matching::bitmap::{
-        inner_pos::InnerPos, outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos,
-        range::CustomRange, row::Row,
+        inner_pos::InnerPos, outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos, row::Row,
     },
 };
 
@@ -17,20 +16,20 @@ impl LegIterator for Quote {
     type RowIter = Map<RangeInclusive<u8>, fn(u8) -> Row<Self>>;
 
     fn outer_bitmap_index_iter(
-        range: CustomRange<OuterBitmapIndex<Self>>,
+        range: RangeInclusive<OuterBitmapIndex<Self>>,
     ) -> Self::OuterBitmapIndexIter {
-        (range.start.inner..=range.end.inner).map(OuterBitmapIndex::new)
+        (range.start().inner..=range.end().inner).map(OuterBitmapIndex::new)
     }
 
-    fn outer_pos_iter(range: CustomRange<OuterPos<Self>>) -> Self::OuterPosIter {
-        (range.start.inner..=range.end.inner).map(OuterPos::new)
+    fn outer_pos_iter(range: RangeInclusive<OuterPos<Self>>) -> Self::OuterPosIter {
+        (range.start().inner..=range.end().inner).map(OuterPos::new)
     }
 
-    fn inner_pos_iter(range: CustomRange<InnerPos<Self>>) -> Self::InnerPosIter {
-        (range.start.inner..=range.end.inner).map(InnerPos::new)
+    fn inner_pos_iter(range: RangeInclusive<InnerPos<Self>>) -> Self::InnerPosIter {
+        (range.start().inner..=range.end().inner).map(InnerPos::new)
     }
 
-    fn row_iter(range: CustomRange<Row<Self>>) -> Self::RowIter {
-        (range.start.inner..=range.end.inner).map(Row::new)
+    fn row_iter(range: RangeInclusive<Row<Self>>) -> Self::RowIter {
+        (range.start().inner..=range.end().inner).map(Row::new)
     }
 }

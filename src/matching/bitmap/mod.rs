@@ -2,7 +2,6 @@ pub mod coordinate;
 pub mod coordinates;
 pub mod inner_bitmap;
 pub mod outer_bitmap;
-pub mod range;
 
 pub use coordinate::*;
 pub use coordinates::*;

@@ -1,15 +1,10 @@
 use crate::{
     axis::leg::{leg_coordinates::LegCoordinates, leg_iterator::LegIterator, Base, Quote},
-    matching::bitmap::{
-        column::Column, inner_pos::InnerPos, range::CustomRange, row::Row, row_column::RowColumn,
-    },
+    matching::bitmap::{column::Column, inner_pos::InnerPos, row::Row, row_column::RowColumn},
 };
 
 fn range_equal<In: LegIterator>(start: InnerPos<In>, results_iterator: impl Iterator<Item = u8>) {
-    let iterator = In::inner_pos_iter(CustomRange {
-        start,
-        end: In::end_value(),
-    });
+    let iterator = In::inner_pos_iter(start..=In::end_value());
     for (actual, expected) in iterator.zip(results_iterator) {
         assert_eq!(actual.inner, expected);
     }
@@ -47,10 +42,7 @@ fn test_coordinates_iter_for_base_in() {
         row: Row::new(31),
         column: Column::new(0),
     });
-    let mut iterator = Base::inner_pos_iter(CustomRange {
-        start,
-        end: Base::end_value(),
-    });
+    let mut iterator = Base::inner_pos_iter(start..=Base::end_value());
 
     for row in (0..=31).rev() {
         for column in 0..=7 {
@@ -65,10 +57,7 @@ fn test_coordinates_iter_for_base_in() {
         row: Row::new(31),
         column: Column::new(7),
     });
-    let mut iterator = Base::inner_pos_iter(CustomRange {
-        start,
-        end: Base::end_value(),
-    });
+    let mut iterator = Base::inner_pos_iter(start..=Base::end_value());
     let coordinates = RowColumn::from(iterator.next().unwrap());
     assert_eq!(coordinates.row.inner, 31);
     assert_eq!(coordinates.column.inner, 7);

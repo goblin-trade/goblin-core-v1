@@ -1,7 +1,6 @@
 use core::iter::{Map, Rev};
 use core::ops::RangeInclusive;
 
-use crate::matching::bitmap::range::CustomRange;
 use crate::{
     axis::leg::{leg_iterator::LegIterator, Base},
     matching::bitmap::{
@@ -17,20 +16,20 @@ impl LegIterator for Base {
     type RowIter = Map<Rev<RangeInclusive<u8>>, fn(u8) -> Row<Self>>;
 
     fn outer_bitmap_index_iter(
-        range: CustomRange<OuterBitmapIndex<Self>>,
+        range: RangeInclusive<OuterBitmapIndex<Self>>,
     ) -> Self::OuterBitmapIndexIter {
-        (range.end.inner..=range.start.inner)
+        (range.end().inner..=range.start().inner)
             .rev()
             .map(OuterBitmapIndex::<Self>::new)
     }
 
-    fn outer_pos_iter(range: CustomRange<OuterPos<Self>>) -> Self::OuterPosIter {
-        (range.end.inner..=range.start.inner)
+    fn outer_pos_iter(range: RangeInclusive<OuterPos<Self>>) -> Self::OuterPosIter {
+        (range.end().inner..=range.start().inner)
             .rev()
             .map(OuterPos::<Self>::new)
     }
 
-    fn inner_pos_iter(range: CustomRange<InnerPos<Self>>) -> Self::InnerPosIter {
+    fn inner_pos_iter(range: RangeInclusive<InnerPos<Self>>) -> Self::InnerPosIter {
         /// Mask inverts the LSB 3 bits belonging to column
         /// Eg the starting value 255 will map to 248 (row 31, column 0).
         /// This way rows are traversed top to bottom as normal but
@@ -39,16 +38,16 @@ impl LegIterator for Base {
 
         // Invert the starting bits. This way they get inverted again
         // to the original value inside map()
-        let item_inverted = range.start.inner ^ LSB3_MASK;
+        let item_inverted = range.start().inner ^ LSB3_MASK;
 
-        (range.end.inner..=item_inverted).rev().map(|inner| {
+        (range.end().inner..=item_inverted).rev().map(|inner| {
             let inner_inverted = inner ^ LSB3_MASK;
             InnerPos::new(inner_inverted)
         })
     }
 
-    fn row_iter(range: CustomRange<Row<Self>>) -> Self::RowIter {
-        (range.end.inner..=range.start.inner)
+    fn row_iter(range: RangeInclusive<Row<Self>>) -> Self::RowIter {
+        (range.end().inner..=range.start().inner)
             .rev()
             .map(Row::<Self>::new)
     }
