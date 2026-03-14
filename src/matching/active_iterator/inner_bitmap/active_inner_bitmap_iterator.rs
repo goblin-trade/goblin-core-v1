@@ -42,29 +42,30 @@ where
 {
     pub fn new(
         market_key: &'a SlotKey<MarketPreimage<M, B, Q>>,
-        outer_bitmap_index_range: RangeInclusive<OuterBitmapIndex<In>>,
-        outer_pos_range: RangeInclusive<OuterPos<In>>,
+        range: RangeInclusive<(OuterBitmapIndex<In>, OuterPos<In>)>,
     ) -> Result<Self, GoblinError> {
         let mut active_outer_bitmap_iterator =
-            ActiveOuterBitmapIterator::new(market_key, outer_bitmap_index_range.clone());
+            ActiveOuterBitmapIterator::new(market_key, range.start().0..=range.end().0);
 
         let item = active_outer_bitmap_iterator
             .next()
             .ok_or(GoblinError::IteratorOutOfBounds)?;
 
-        let start = outer_pos_range
+        let start = range
             .start()
-            .adjust_start(item.outer_bitmap_index == *outer_bitmap_index_range.start());
+            .1
+            .adjust_start(item.outer_bitmap_index == range.start().0);
 
-        let end = outer_pos_range
+        let end = range
             .end()
-            .adjust_limit(item.outer_bitmap_index == *outer_bitmap_index_range.end());
+            .1
+            .adjust_limit(item.outer_bitmap_index == range.end().0);
 
         Ok(Self {
             active_outer_bitmap_iterator,
             item,
             linear_iterator: In::outer_pos_iter(start..=end),
-            limit: *outer_pos_range.end(),
+            limit: range.end().1,
         })
     }
 
