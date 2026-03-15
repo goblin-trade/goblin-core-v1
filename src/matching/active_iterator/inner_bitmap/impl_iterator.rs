@@ -30,9 +30,9 @@ where
 
             // Try to load the next outer bitmap if no active OuterPos was found
             // in the current one. Reset OuterPos to start position.
-            self.inner_item = self.active_outer_bitmap_iterator.next()?;
-            let limit = self.limit.adjust_limit(self.on_limit());
-            self.linear_iterator = In::outer_pos_iter(In::start_value()..=limit);
+            self.inner_item = self.inner_iterator.next()?;
+            let end = self.limit.adjust_limit(self.on_limit());
+            self.linear_iterator = In::outer_pos_iter(In::start_value()..=end);
         }
     }
 }

@@ -28,8 +28,8 @@ where
             // Try to load the next inner bitmap if no active coordinate was found
             // in the current one. Reset coordinate iterator to start position.
             self.inner_item = self.inner_iterator.next()?;
-            let limit = self.limit.adjust_end(self.on_limit());
-            self.linear_iterator = In::inner_pos_iter(In::start_value()..=limit);
+            let end = self.limit.adjust_end(self.on_limit());
+            self.linear_iterator = In::inner_pos_iter(In::start_value()..=end);
         }
     }
 }
