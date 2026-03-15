@@ -5,7 +5,7 @@ use crate::{
     },
     matching::bitmap::FullCoordinates,
     state::{
-        inner_bitmap::preimage::InnerBitmapPreimage,
+        bitmap::inner_bitmap::preimage::InnerBitmapPreimage,
         resting_order::{preimage::RestingOrderPreimage, RestingOrder},
         SlotKey,
     },

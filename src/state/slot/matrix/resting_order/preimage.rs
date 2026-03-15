@@ -5,7 +5,8 @@ use crate::{
     },
     matching::bitmap::inner_pos::InnerPos,
     state::{
-        inner_bitmap::preimage::InnerBitmapPreimage, resting_order::RestingOrder, Preimage, SlotKey,
+        bitmap::inner_bitmap::preimage::InnerBitmapPreimage, resting_order::RestingOrder, Preimage,
+        SlotKey,
     },
 };
 

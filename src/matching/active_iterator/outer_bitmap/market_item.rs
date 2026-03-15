@@ -10,7 +10,9 @@ use crate::{
         bitmap::outer_bitmap_index::OuterBitmapIndex,
     },
     state::{
-        outer_bitmap::{outer_bitmap_state::OuterBitmapState, preimage::OuterBitmapPreimage},
+        bitmap::outer_bitmap::{
+            outer_bitmap_state::OuterBitmapState, preimage::OuterBitmapPreimage,
+        },
         MarketPreimage, Preimage, SlotKey,
     },
 };

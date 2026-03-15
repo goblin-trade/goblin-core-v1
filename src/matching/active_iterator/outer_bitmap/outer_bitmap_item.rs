@@ -8,8 +8,10 @@ use crate::{
         bitmap::{outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos},
     },
     state::{
-        inner_bitmap::preimage::InnerBitmapPreimage,
-        outer_bitmap::{active_outer_bitmap::ActiveOuterBitmap, preimage::OuterBitmapPreimage},
+        bitmap::inner_bitmap::preimage::InnerBitmapPreimage,
+        bitmap::outer_bitmap::{
+            active_outer_bitmap::ActiveOuterBitmap, preimage::OuterBitmapPreimage,
+        },
         Preimage, SlotKey,
     },
 };
