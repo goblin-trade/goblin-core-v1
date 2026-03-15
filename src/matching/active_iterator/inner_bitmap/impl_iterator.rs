@@ -19,20 +19,17 @@ where
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
-            // Try advancing current outer_pos iterator
-            while let Some(outer_pos) = self.linear_iterator.next() {
+            if let Some(outer_pos) = self.linear_iterator.next() {
                 let result = self.inner_item.next_item(outer_pos);
-
                 if result.is_some() {
                     return result;
                 }
+            } else {
+                // Load the next item and reset the linear iterator
+                self.inner_item = self.inner_iterator.next()?;
+                let end = self.limit.adjust_limit(self.on_limit());
+                self.linear_iterator = In::outer_pos_iter(In::start_value()..=end);
             }
-
-            // Try to load the next outer bitmap if no active OuterPos was found
-            // in the current one. Reset OuterPos to start position.
-            self.inner_item = self.inner_iterator.next()?;
-            let end = self.limit.adjust_limit(self.on_limit());
-            self.linear_iterator = In::outer_pos_iter(In::start_value()..=end);
         }
     }
 }

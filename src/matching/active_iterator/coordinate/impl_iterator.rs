@@ -17,19 +17,18 @@ where
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
-            while let Some(inner_pos) = self.linear_iterator.next() {
+            if let Some(inner_pos) = self.linear_iterator.next() {
                 let result = self.inner_item.next_item(inner_pos);
 
                 if result.is_some() {
                     return result;
                 }
+            } else {
+                // Load the next item and reset the linear iterator
+                self.inner_item = self.inner_iterator.next()?;
+                let end = self.limit.adjust_end(self.on_limit());
+                self.linear_iterator = In::inner_pos_iter(In::start_value()..=end);
             }
-
-            // Try to load the next inner bitmap if no active coordinate was found
-            // in the current one. Reset coordinate iterator to start position.
-            self.inner_item = self.inner_iterator.next()?;
-            let end = self.limit.adjust_end(self.on_limit());
-            self.linear_iterator = In::inner_pos_iter(In::start_value()..=end);
         }
     }
 }
