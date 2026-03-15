@@ -11,7 +11,10 @@ use crate::{
         },
     },
     state::{
-        bitmap::inner_bitmap::{preimage::InnerBitmapPreimage, InnerBitmap},
+        bitmap::{
+            inner_bitmap::{preimage::InnerBitmapPreimage, InnerBitmap},
+            Bitmap,
+        },
         resting_order::preimage::RestingOrderPreimage,
         Preimage, SlotKey,
     },
