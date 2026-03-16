@@ -14,7 +14,7 @@ where
 }
 
 pub trait InnerItem<P, N> {
-    fn next_item(&self, pos: P) -> N;
+    fn next_item(&self, pos: P) -> Option<N>;
 }
 
 impl<I, L, N> Iterator for GenericIterator<I, L, N>
