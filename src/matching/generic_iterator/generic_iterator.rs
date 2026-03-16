@@ -57,6 +57,22 @@ where
     type Item = N;
 
     fn next(&mut self) -> Option<Self::Item> {
-        todo!()
+        loop {
+            if let Some(pos) = self.linear_iterator.next() {
+                let result = self.inner_item.next_item(pos);
+
+                if result.is_some() {
+                    return result;
+                }
+            } else {
+                self.inner_item = self.inner_iterator.next()?;
+
+                // How to reset linear iterator?
+                // The end value is a function of bounds stored in the inner iterator
+                //
+                // Define LinearIterator trait that extends iterator
+                // Has new and reset function
+            }
+        }
     }
 }
