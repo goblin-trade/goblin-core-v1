@@ -27,7 +27,7 @@ where
             } else {
                 // Load the next item and reset the linear iterator
                 self.inner_item = self.inner_iterator.next()?;
-                let end = self.limit.adjust_limit(self.on_limit());
+                let end = self.limit.adjust_end(self.on_limit());
                 self.linear_iterator = In::outer_pos_iter(In::start_value()..=end);
             }
         }

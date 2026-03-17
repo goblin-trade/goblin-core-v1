@@ -59,7 +59,7 @@ where
         let end = range
             .end()
             .1
-            .adjust_limit(inner_item.outer_bitmap_index == range.end().0);
+            .adjust_end(inner_item.outer_bitmap_index == range.end().0);
 
         let linear_iterator = In::outer_pos_iter(start..=end);
 
@@ -77,7 +77,7 @@ where
         self.inner_item = self.inner_iterator.next()?;
         let end = self
             .limit
-            .adjust_limit(self.inner_item.outer_bitmap_index == self.inner_iterator.limit);
+            .adjust_end(self.inner_item.outer_bitmap_index == self.inner_iterator.limit);
         self.linear_iterator = In::outer_pos_iter(In::start_value()..=end);
 
         Some(())

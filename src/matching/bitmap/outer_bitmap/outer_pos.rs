@@ -32,8 +32,8 @@ where
         }
     }
 
-    pub fn adjust_limit(self, on_limit: bool) -> Self {
-        if on_limit {
+    pub fn adjust_end(self, on_end: bool) -> Self {
+        if on_end {
             self
         } else {
             In::end_value()

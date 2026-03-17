@@ -41,7 +41,7 @@ where
     In: LegMatcher,
 {
     pub fn next_item(&self, inner_pos: InnerPos<In>) -> Option<CoordinateItem<M, B, Q, In>> {
-        if self.inner_bitmap.active(inner_pos.into()) {
+        if self.inner_bitmap.active(inner_pos) {
             let preimage = RestingOrderPreimage {
                 inner_bitmap_key: self.inner_bitmap_key,
                 inner_pos,
