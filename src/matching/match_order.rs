@@ -5,7 +5,7 @@ use crate::{
         token::token_marker::TokenMarker,
     },
     goblin_error::GoblinError,
-    matching::active_iterator::coordinate::CoordinateIterator,
+    matching::{bitmap::FullCoordinates, flat_iterator::flat_iterator},
     quantities::{QuantityOps, Ticks},
     settlement::local_delta::LocalDelta,
     state::MarketState,
@@ -33,37 +33,31 @@ where
     Q: TokenMarker,
     In: LegMatcher,
 {
-    let last_coordinate = In::get_leg_mut(&mut market_state.last_coordinates);
-    let iterator =
-        CoordinateIterator::<M, B, Q, In>::new(market_key, *last_coordinate, price_limit)?;
+    let start_coordinate_ref = In::get_leg_mut(&mut market_state.last_coordinates);
+
+    let start = FullCoordinates::<In>::from(*start_coordinate_ref);
+    let end = FullCoordinates::<In>::from(price_limit);
+
+    let iterator = flat_iterator(*market_key, start..=end);
 
     let base_lot_size = Base::get(&market.lot_size_pair);
     let mut budget = In::matching_lots_taker(num_lots, base_lot_size);
 
-    for mut item in iterator {
-        *last_coordinate = item.full_coordinates.into();
+    for (full_coordinates, resting_order_key, mut resting_order) in iterator {
+        *start_coordinate_ref = full_coordinates.into();
+        let price = Ticks::from(full_coordinates);
 
-        let quote = In::matching_lots_maker(
-            item.resting_order.size,
-            market.tick_size,
-            last_coordinate.price,
-        );
+        let quote = In::matching_lots_maker(resting_order.size, market.tick_size, price);
 
         let matched = quote.min(budget);
         budget -= matched;
-        local_delta.add_matched::<In>(
-            item.resting_order.maker,
-            matched,
-            market.tick_size,
-            last_coordinate.price,
-        )?;
+        local_delta.add_matched::<In>(resting_order.maker, matched, market.tick_size, price)?;
 
         if budget == In::MatchingLots::ZERO {
             let residue = quote - matched;
             if residue > In::MatchingLots::ZERO {
-                item.resting_order.size =
-                    In::base_lots_from_matching(residue, market.tick_size, last_coordinate.price);
-                item.hash.store(&item.resting_order);
+                resting_order.size = In::base_lots_from_matching(residue, market.tick_size, price);
+                resting_order_key.store(&resting_order);
             }
             break;
         }

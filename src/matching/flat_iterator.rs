@@ -5,41 +5,44 @@ use crate::{
         leg::leg_matcher::LegMatcher, market::market_marker::MarketMarker,
         token::token_marker::TokenMarker,
     },
-    goblin_error::GoblinError,
-    matching::bitmap::{
-        inner_pos::InnerPos, outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos,
-    },
+    matching::bitmap::FullCoordinates,
     state::{
         bitmap::{
             inner_bitmap::preimage::InnerBitmapPreimage,
             outer_bitmap::{outer_bitmap_state::OuterBitmapState, preimage::OuterBitmapPreimage},
             Bitmap,
         },
-        resting_order::preimage::RestingOrderPreimage,
+        resting_order::{preimage::RestingOrderPreimage, RestingOrder},
         MarketPreimage, Preimage, SlotKey,
     },
 };
 
-pub fn match_order<'a, M, B, Q, In>(
-    market_key: &'a SlotKey<MarketPreimage<M, B, Q>>,
-    range: RangeInclusive<(OuterBitmapIndex<In>, OuterPos<In>, InnerPos<In>)>,
-) -> Result<(), GoblinError>
+pub fn flat_iterator<M, B, Q, In>(
+    market_key: SlotKey<MarketPreimage<M, B, Q>>,
+    range: RangeInclusive<FullCoordinates<In>>,
+) -> impl Iterator<
+    Item = (
+        FullCoordinates<In>,
+        SlotKey<RestingOrderPreimage<M, B, Q, In>>,
+        RestingOrder<M, B, Q>,
+    ),
+>
 where
     M: MarketMarker,
     B: TokenMarker,
     Q: TokenMarker,
     In: LegMatcher,
 {
-    let (outer_bitmap_index_start, outer_pos_start, inner_pos_start) = *range.start();
-    let (outer_bitmap_index_end, outer_pos_end, inner_pos_end) = *range.end();
+    let start = *range.start();
+    let end = *range.end();
 
     let outer_bitmap_iter =
-        In::outer_bitmap_index_iter(outer_bitmap_index_start..=outer_bitmap_index_end);
+        In::outer_bitmap_index_iter(start.outer_bitmap_index..=end.outer_bitmap_index);
 
     let final_iter = outer_bitmap_iter
         .filter_map(move |outer_bitmap_index| {
             let preimage = OuterBitmapPreimage {
-                market_key: *market_key,
+                market_key,
                 outer_bitmap_index,
             };
             let outer_bitmap_key = preimage.hash();
@@ -48,11 +51,11 @@ where
 
             match outer_bitmap_state {
                 OuterBitmapState::Active(active_outer_bitmap) => {
-                    let on_start = outer_bitmap_index == outer_bitmap_index_start;
-                    let on_end = outer_bitmap_index == outer_bitmap_index_end;
+                    let on_start = outer_bitmap_index == start.outer_bitmap_index;
+                    let on_end = outer_bitmap_index == end.outer_bitmap_index;
 
-                    let child_start = outer_pos_start.adjust_start(on_start);
-                    let child_end = outer_pos_end.adjust_end(on_end);
+                    let child_start = start.outer_pos.adjust_start(on_start);
+                    let child_end = end.outer_pos.adjust_end(on_end);
                     let outer_pos_iter = In::outer_pos_iter(child_start..=child_end);
 
                     return Some((
@@ -79,13 +82,13 @@ where
                     let inner_bitmap_key = preimage.hash();
                     let inner_bitmap = inner_bitmap_key.load();
 
-                    let child_start = inner_pos_start.adjust_start(
+                    let child_start = start.inner_pos.adjust_start(
                         (outer_bitmap_index, outer_pos)
-                            == (outer_bitmap_index_start, outer_pos_start),
+                            == (start.outer_bitmap_index, start.outer_pos),
                     );
 
-                    let child_end = inner_pos_end.adjust_end(
-                        (outer_bitmap_index, outer_pos) == (outer_bitmap_index_end, outer_pos_end),
+                    let child_end = end.inner_pos.adjust_end(
+                        (outer_bitmap_index, outer_pos) == (end.outer_bitmap_index, end.outer_pos),
                     );
 
                     let inner_pos_iter = In::inner_pos_iter(child_start..=child_end);
@@ -121,9 +124,11 @@ where
                     let resting_order = resting_order_key.load();
 
                     Some((
-                        outer_bitmap_index,
-                        outer_pos,
-                        inner_pos,
+                        FullCoordinates {
+                            outer_bitmap_index,
+                            outer_pos,
+                            inner_pos,
+                        },
                         resting_order_key,
                         resting_order,
                     ))
@@ -131,5 +136,5 @@ where
             },
         );
 
-    Ok(())
+    final_iter
 }
