@@ -51,11 +51,17 @@ where
 
             match outer_bitmap_state {
                 OuterBitmapState::Active(active_outer_bitmap) => {
-                    let on_start = outer_bitmap_index == start.outer_bitmap_index;
-                    let on_end = outer_bitmap_index == end.outer_bitmap_index;
+                    let child_start = if outer_bitmap_index == start.outer_bitmap_index {
+                        start.outer_pos
+                    } else {
+                        In::start_value()
+                    };
+                    let child_end = if outer_bitmap_index == end.outer_bitmap_index {
+                        end.outer_pos
+                    } else {
+                        In::end_value()
+                    };
 
-                    let child_start = start.outer_pos.adjust_start(on_start);
-                    let child_end = end.outer_pos.adjust_end(on_end);
                     let outer_pos_iter = In::outer_pos_iter(child_start..=child_end);
 
                     return Some((
@@ -82,14 +88,20 @@ where
                     let inner_bitmap_key = preimage.hash();
                     let inner_bitmap = inner_bitmap_key.load();
 
-                    let child_start = start.inner_pos.adjust_start(
-                        (outer_bitmap_index, outer_pos)
-                            == (start.outer_bitmap_index, start.outer_pos),
-                    );
-
-                    let child_end = end.inner_pos.adjust_end(
-                        (outer_bitmap_index, outer_pos) == (end.outer_bitmap_index, end.outer_pos),
-                    );
+                    let child_start = if (outer_bitmap_index, outer_pos)
+                        == (start.outer_bitmap_index, start.outer_pos)
+                    {
+                        start.inner_pos
+                    } else {
+                        In::start_value()
+                    };
+                    let child_end = if (outer_bitmap_index, outer_pos)
+                        == (end.outer_bitmap_index, end.outer_pos)
+                    {
+                        end.inner_pos
+                    } else {
+                        In::end_value()
+                    };
 
                     let inner_pos_iter = In::inner_pos_iter(child_start..=child_end);
 
