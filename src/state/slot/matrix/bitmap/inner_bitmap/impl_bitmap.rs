@@ -3,12 +3,7 @@ use crate::{
         leg::leg_matcher::LegMatcher, market::market_marker::MarketMarker,
         token::token_marker::TokenMarker,
     },
-    matching::bitmap::{
-        column::Column,
-        inner_pos::InnerPos,
-        row::Row,
-        row_column::{self, RowColumn},
-    },
+    matching::bitmap::{column::Column, inner_pos::InnerPos, row::Row},
     state::bitmap::{inner_bitmap::InnerBitmap, Bitmap},
 };
 

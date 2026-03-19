@@ -7,7 +7,7 @@ use crate::{
     goblin_error::GoblinError,
     matching::{
         bitmap::FullCoordinates,
-        flat_iterator::{flat_iterator, resting_order_iter::RestingOrderEntry},
+        match_iterator::{match_iterator, RestingOrderEntry},
     },
     quantities::{QuantityOps, Ticks},
     require,
@@ -46,7 +46,7 @@ where
     let start = FullCoordinates::<In>::from(*start_coordinate_ref);
     let end = FullCoordinates::<In>::from(price_limit);
 
-    let iterator = flat_iterator(*market_key, start, end);
+    let iterator = match_iterator(*market_key, start, end);
 
     let base_lot_size = Base::get(&market.lot_size_pair);
     let mut budget = In::matching_lots_taker(num_lots, base_lot_size);

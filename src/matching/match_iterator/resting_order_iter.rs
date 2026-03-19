@@ -3,25 +3,12 @@ use crate::{
         leg::leg_matcher::LegMatcher, market::market_marker::MarketMarker,
         token::token_marker::TokenMarker,
     },
-    matching::{bitmap::FullCoordinates, flat_iterator::inner_bitmap_iter::InnerBitmapEntry},
-    state::{
-        bitmap::Bitmap,
-        resting_order::{preimage::RestingOrderPreimage, RestingOrder},
-        Preimage, SlotKey,
+    matching::{
+        bitmap::FullCoordinates,
+        match_iterator::{inner_bitmap_iter::InnerBitmapEntry, RestingOrderEntry},
     },
+    state::{bitmap::Bitmap, resting_order::preimage::RestingOrderPreimage, Preimage},
 };
-
-pub struct RestingOrderEntry<M, B, Q, In>
-where
-    M: MarketMarker,
-    B: TokenMarker,
-    Q: TokenMarker,
-    In: LegMatcher,
-{
-    pub full_coordinates: FullCoordinates<In>,
-    pub resting_order_key: SlotKey<RestingOrderPreimage<M, B, Q, In>>,
-    pub resting_order: RestingOrder<M, B, Q>,
-}
 
 pub fn resting_order_iter<M, B, Q, In>(
     InnerBitmapEntry {

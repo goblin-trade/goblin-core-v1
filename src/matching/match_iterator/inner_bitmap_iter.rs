@@ -8,7 +8,7 @@ use crate::{
             inner_pos::InnerPos, outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos,
             FullCoordinates,
         },
-        flat_iterator::outer_bitmap_iter::OuterBitmapEntry,
+        match_iterator::outer_bitmap_iter::OuterBitmapEntry,
     },
     state::{
         bitmap::{
