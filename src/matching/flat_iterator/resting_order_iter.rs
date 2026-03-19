@@ -1,0 +1,63 @@
+use crate::{
+    axis::{
+        leg::leg_matcher::LegMatcher, market::market_marker::MarketMarker,
+        token::token_marker::TokenMarker,
+    },
+    matching::{bitmap::FullCoordinates, flat_iterator::inner_bitmap_iter::InnerBitmapEntry},
+    state::{
+        bitmap::Bitmap,
+        resting_order::{preimage::RestingOrderPreimage, RestingOrder},
+        Preimage, SlotKey,
+    },
+};
+
+pub struct RestingOrderEntry<M, B, Q, In>
+where
+    M: MarketMarker,
+    B: TokenMarker,
+    Q: TokenMarker,
+    In: LegMatcher,
+{
+    pub full_coordinates: FullCoordinates<In>,
+    pub resting_order_key: SlotKey<RestingOrderPreimage<M, B, Q, In>>,
+    pub resting_order: RestingOrder<M, B, Q>,
+}
+
+pub fn resting_order_iter<M, B, Q, In>(
+    InnerBitmapEntry {
+        outer_bitmap_index,
+        outer_pos,
+        inner_bitmap_key,
+        inner_bitmap,
+        child_range,
+    }: InnerBitmapEntry<M, B, Q, In>,
+) -> impl Iterator<Item = RestingOrderEntry<M, B, Q, In>>
+where
+    M: MarketMarker,
+    B: TokenMarker,
+    Q: TokenMarker,
+    In: LegMatcher,
+{
+    In::inner_pos_iter(child_range).filter_map(move |inner_pos| {
+        if !inner_bitmap.active(inner_pos) {
+            return None;
+        }
+
+        let key = RestingOrderPreimage {
+            inner_bitmap_key,
+            inner_pos,
+        }
+        .hash();
+        let resting_order = key.load();
+
+        Some(RestingOrderEntry {
+            full_coordinates: FullCoordinates {
+                outer_bitmap_index,
+                outer_pos,
+                inner_pos,
+            },
+            resting_order_key: key,
+            resting_order,
+        })
+    })
+}

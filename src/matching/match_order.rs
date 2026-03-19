@@ -5,8 +5,12 @@ use crate::{
         token::token_marker::TokenMarker,
     },
     goblin_error::GoblinError,
-    matching::{bitmap::FullCoordinates, flat_iterator::flat_iterator},
+    matching::{
+        bitmap::FullCoordinates,
+        flat_iterator::{flat_iterator, resting_order_iter::RestingOrderEntry},
+    },
     quantities::{QuantityOps, Ticks},
+    require,
     settlement::local_delta::LocalDelta,
     state::MarketState,
     types::StoreReader,
@@ -34,16 +38,25 @@ where
     In: LegMatcher,
 {
     let start_coordinate_ref = In::get_leg_mut(&mut market_state.last_coordinates);
+    require!(
+        In::closer_to_centre(start_coordinate_ref.price, price_limit),
+        GoblinError::TakerPriceLimitReached
+    );
 
     let start = FullCoordinates::<In>::from(*start_coordinate_ref);
     let end = FullCoordinates::<In>::from(price_limit);
 
-    let iterator = flat_iterator(*market_key, start..=end);
+    let iterator = flat_iterator(*market_key, start, end);
 
     let base_lot_size = Base::get(&market.lot_size_pair);
     let mut budget = In::matching_lots_taker(num_lots, base_lot_size);
 
-    for (full_coordinates, resting_order_key, mut resting_order) in iterator {
+    for RestingOrderEntry {
+        full_coordinates,
+        resting_order_key,
+        mut resting_order,
+    } in iterator
+    {
         *start_coordinate_ref = full_coordinates.into();
         let price = Ticks::from(full_coordinates);
 
