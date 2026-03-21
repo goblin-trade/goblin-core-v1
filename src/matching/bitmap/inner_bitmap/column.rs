@@ -1,7 +1,4 @@
-use crate::{
-    axis::leg::leg_matcher::LegMatcher,
-    matching::bitmap::{inner_pos::InnerPos, Coordinate},
-};
+use crate::matching::bitmap::{inner_pos::InnerPos, Coordinate};
 
 #[derive(Clone, Copy, PartialEq, PartialOrd)]
 pub struct Column {
@@ -24,18 +21,15 @@ impl Coordinate for Column {
         self.inner
     }
 
-    fn closer_to_centre(self, other: Self) -> bool {
-        // Always move left to right for column
-        // The column with lower index is popped first
-        self < other
-    }
+    // fn closer_to_centre(self, other: Self) -> bool {
+    //     // Always move left to right for column
+    //     // The column with lower index is popped first
+    //     self < other
+    // }
 }
 
-impl<In> From<InnerPos<In>> for Column
-where
-    In: LegMatcher,
-{
-    fn from(value: InnerPos<In>) -> Self {
+impl From<InnerPos> for Column {
+    fn from(value: InnerPos) -> Self {
         Column::new(value.inner % 8)
     }
 }

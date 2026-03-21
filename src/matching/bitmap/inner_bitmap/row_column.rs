@@ -1,37 +1,16 @@
-use crate::{
-    axis::leg::leg_matcher::LegMatcher,
-    matching::bitmap::{column::Column, inner_pos::InnerPos, row::Row},
-};
+use crate::matching::bitmap::{column::Column, inner_pos::InnerPos, row::Row};
 
 #[derive(Clone, Copy, PartialEq, PartialOrd)]
-pub struct RowColumn<In>
-where
-    In: LegMatcher,
-{
-    pub row: Row<In>,
+pub struct RowColumn {
+    pub row: Row,
     pub column: Column,
 }
 
-impl<In> From<InnerPos<In>> for RowColumn<In>
-where
-    In: LegMatcher,
-{
-    fn from(value: InnerPos<In>) -> Self {
+impl From<InnerPos> for RowColumn {
+    fn from(value: InnerPos) -> Self {
         Self {
             row: Row::from(value),
             column: Column::from(value),
-        }
-    }
-}
-
-impl<In> RowColumn<In>
-where
-    In: LegMatcher,
-{
-    pub fn start_value() -> Self {
-        Self {
-            row: In::start_value(),
-            column: Column::new(0),
         }
     }
 }

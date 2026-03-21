@@ -1,5 +1,4 @@
 use crate::{
-    axis::leg::leg_matcher::LegMatcher,
     matching::bitmap::{column::Column, FullCoordinates},
     quantities::Ticks,
 };
@@ -11,11 +10,8 @@ pub struct StoredCoordinates {
     pub column: Column,
 }
 
-impl<In> From<FullCoordinates<In>> for StoredCoordinates
-where
-    In: LegMatcher,
-{
-    fn from(value: FullCoordinates<In>) -> Self {
+impl From<FullCoordinates> for StoredCoordinates {
+    fn from(value: FullCoordinates) -> Self {
         Self {
             price: value.into(),
             column: value.inner_pos.into(),

@@ -1,5 +1,4 @@
 use crate::{
-    axis::leg::leg_matcher::LegMatcher,
     matching::bitmap::{
         inner_pos::InnerPos, outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos, row::Row,
         row_column::RowColumn, StoredCoordinates,
@@ -8,19 +7,13 @@ use crate::{
 };
 
 #[derive(Clone, Copy, PartialEq)]
-pub struct FullCoordinates<In>
-where
-    In: LegMatcher,
-{
-    pub outer_bitmap_index: OuterBitmapIndex<In>,
-    pub outer_pos: OuterPos<In>,
-    pub inner_pos: InnerPos<In>,
+pub struct FullCoordinates {
+    pub outer_bitmap_index: OuterBitmapIndex,
+    pub outer_pos: OuterPos,
+    pub inner_pos: InnerPos,
 }
 
-impl<In> From<Ticks> for FullCoordinates<In>
-where
-    In: LegMatcher,
-{
+impl From<Ticks> for FullCoordinates {
     fn from(value: Ticks) -> Self {
         Self {
             outer_bitmap_index: value.into(),
@@ -30,11 +23,8 @@ where
     }
 }
 
-impl<In> From<FullCoordinates<In>> for Ticks
-where
-    In: LegMatcher,
-{
-    fn from(value: FullCoordinates<In>) -> Self {
+impl From<FullCoordinates> for Ticks {
+    fn from(value: FullCoordinates) -> Self {
         let outer_bitmap_index = value.outer_bitmap_index.inner;
         let outer_pos = value.outer_pos.inner as u64;
         let row = Row::from(value.inner_pos).inner as u64;
@@ -45,10 +35,7 @@ where
     }
 }
 
-impl<In> From<StoredCoordinates> for FullCoordinates<In>
-where
-    In: LegMatcher,
-{
+impl From<StoredCoordinates> for FullCoordinates {
     fn from(value: StoredCoordinates) -> Self {
         Self {
             outer_bitmap_index: value.price.into(),
