@@ -9,27 +9,27 @@ use crate::{
 };
 
 impl LegIterator for Base {
-    type OuterBitmapIndexIter = Map<Rev<RangeInclusive<u64>>, fn(u64) -> OuterBitmapIndex<Self>>;
-    type OuterPosIter = Map<Rev<RangeInclusive<u8>>, fn(u8) -> OuterPos<Self>>;
-    type InnerPosIter = Map<Rev<RangeInclusive<u8>>, fn(u8) -> InnerPos<Self>>;
+    type OuterBitmapIndexIter = Map<Rev<RangeInclusive<u64>>, fn(u64) -> OuterBitmapIndex>;
+    type OuterPosIter = Map<Rev<RangeInclusive<u8>>, fn(u8) -> OuterPos>;
+    type InnerPosIter = Map<Rev<RangeInclusive<u8>>, fn(u8) -> InnerPos>;
 
-    type RowIter = Map<Rev<RangeInclusive<u8>>, fn(u8) -> Row<Self>>;
+    type RowIter = Map<Rev<RangeInclusive<u8>>, fn(u8) -> Row>;
 
     fn outer_bitmap_index_iter(
-        range: RangeInclusive<OuterBitmapIndex<Self>>,
+        range: RangeInclusive<OuterBitmapIndex>,
     ) -> Self::OuterBitmapIndexIter {
         (range.end().inner..=range.start().inner)
             .rev()
-            .map(OuterBitmapIndex::<Self>::new)
+            .map(OuterBitmapIndex::new)
     }
 
-    fn outer_pos_iter(range: RangeInclusive<OuterPos<Self>>) -> Self::OuterPosIter {
+    fn outer_pos_iter(range: RangeInclusive<OuterPos>) -> Self::OuterPosIter {
         (range.end().inner..=range.start().inner)
             .rev()
-            .map(OuterPos::<Self>::new)
+            .map(OuterPos::new)
     }
 
-    fn inner_pos_iter(range: RangeInclusive<InnerPos<Self>>) -> Self::InnerPosIter {
+    fn inner_pos_iter(range: RangeInclusive<InnerPos>) -> Self::InnerPosIter {
         /// Mask inverts the LSB 3 bits belonging to column
         /// Eg the starting value 255 will map to 248 (row 31, column 0).
         /// This way rows are traversed top to bottom as normal but
@@ -46,9 +46,9 @@ impl LegIterator for Base {
         })
     }
 
-    fn row_iter(range: RangeInclusive<Row<Self>>) -> Self::RowIter {
+    fn row_iter(range: RangeInclusive<Row>) -> Self::RowIter {
         (range.end().inner..=range.start().inner)
             .rev()
-            .map(Row::<Self>::new)
+            .map(Row::new)
     }
 }
