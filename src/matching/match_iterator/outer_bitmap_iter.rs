@@ -24,7 +24,7 @@ where
 {
     pub outer_bitmap_index: OuterBitmapIndex,
     pub outer_bitmap_key: SlotKey<OuterBitmapPreimage<M, B, Q>>,
-    pub active_outer_bitmap: ActiveOuterBitmap<M, B, Q>,
+    pub active_outer_bitmap: ActiveOuterBitmap,
     pub child_range: RangeInclusive<OuterPos>,
 }
 

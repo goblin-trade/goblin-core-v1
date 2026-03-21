@@ -24,7 +24,7 @@ where
         ctx: &DecodeCtx,
         local_delta: &mut LocalDelta,
         market_and_key: &MarketAndKey<M, B, Q>,
-        market_state: &mut MarketState<M, B, Q>,
+        market_state: &mut MarketState,
     ) -> Result<(), GoblinError> {
         if Base::get(&self.execute_takes) {
             ix_take::<M, B, Q, Base>(ctx, local_delta, market_and_key, market_state)?;

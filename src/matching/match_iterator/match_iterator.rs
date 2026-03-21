@@ -21,7 +21,7 @@ where
 {
     pub full_coordinates: FullCoordinates,
     pub resting_order_key: SlotKey<RestingOrderPreimage<M, B, Q>>,
-    pub resting_order: RestingOrder<M, B, Q>,
+    pub resting_order: RestingOrder,
 }
 
 /// Match iterator generates consecutive resting orders for a side

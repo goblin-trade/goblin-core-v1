@@ -29,7 +29,7 @@ where
     pub outer_bitmap_index: OuterBitmapIndex,
     pub outer_pos: OuterPos,
     pub inner_bitmap_key: SlotKey<InnerBitmapPreimage<M, B, Q>>,
-    pub inner_bitmap: InnerBitmap<M, B, Q>,
+    pub inner_bitmap: InnerBitmap,
     pub child_range: RangeInclusive<InnerPos>,
 }
 

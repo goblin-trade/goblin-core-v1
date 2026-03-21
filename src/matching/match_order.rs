@@ -26,7 +26,7 @@ use crate::{
 pub fn match_order<M, B, Q, In>(
     local_delta: &mut LocalDelta,
     MarketAndKey { market, market_key }: &MarketAndKey<M, B, Q>,
-    market_state: &mut MarketState<M, B, Q>,
+    market_state: &mut MarketState,
     num_lots: In::Lots,
     min_lots_to_fill: In::Lots,
     price_limit: Ticks,
