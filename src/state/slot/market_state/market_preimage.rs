@@ -56,5 +56,5 @@ where
 {
     const SLOT_DISCRIMINATOR: u8 = M::DISCRIMINATOR + B::DISCRIMINATOR << 3 + Q::DISCRIMINATOR << 4;
 
-    type SlotState = MarketState<M, B, Q>;
+    type SlotState = MarketState;
 }

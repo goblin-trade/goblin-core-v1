@@ -26,5 +26,5 @@ where
     Q: TokenMarker,
 {
     const SLOT_DISCRIMINATOR: u8 = 6;
-    type SlotState = InnerBitmap<M, B, Q>;
+    type SlotState = InnerBitmap;
 }

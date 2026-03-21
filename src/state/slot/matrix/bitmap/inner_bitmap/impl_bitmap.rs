@@ -1,15 +1,9 @@
 use crate::{
-    axis::{market::market_marker::MarketMarker, token::token_marker::TokenMarker},
     matching::bitmap::{column::Column, inner_pos::InnerPos, row::Row},
     state::bitmap::{inner_bitmap::InnerBitmap, Bitmap},
 };
 
-impl<M, B, Q> Bitmap<InnerPos> for InnerBitmap<M, B, Q>
-where
-    M: MarketMarker,
-    B: TokenMarker,
-    Q: TokenMarker,
-{
+impl Bitmap<InnerPos> for InnerBitmap {
     fn active(&self, pos: InnerPos) -> bool {
         let row = Row::from(pos);
         let column = Column::from(pos);

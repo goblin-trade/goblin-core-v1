@@ -1,29 +1,11 @@
-use core::marker::PhantomData;
-
-use crate::axis::{market::market_marker::MarketMarker, token::token_marker::TokenMarker};
-
 #[repr(C)]
 #[derive(PartialEq)]
-pub struct OuterBitmap<M, B, Q>
-where
-    M: MarketMarker,
-    B: TokenMarker,
-    Q: TokenMarker,
-{
+pub struct OuterBitmap {
     pub inner: [u8; 32],
-    _marker: PhantomData<(M, B, Q)>,
 }
 
-impl<M, B, Q> OuterBitmap<M, B, Q>
-where
-    M: MarketMarker,
-    B: TokenMarker,
-    Q: TokenMarker,
-{
+impl OuterBitmap {
     pub const fn new(inner: [u8; 32]) -> Self {
-        Self {
-            inner,
-            _marker: PhantomData,
-        }
+        Self { inner }
     }
 }

@@ -1,10 +1,4 @@
-use core::marker::PhantomData;
-
-use crate::{
-    axis::{market::market_marker::MarketMarker, token::token_marker::TokenMarker},
-    quantities::BaseLots,
-    types::Address,
-};
+use crate::{quantities::BaseLots, types::Address};
 
 /// A resting order stored in slot
 /// Total size = 24 + 8 = 32. 20 byte address is padded to 24.
@@ -25,28 +19,13 @@ use crate::{
 /// * If quote in case (bid), we use adjustedQuoteLots = quote lots * BaseLotsPerBaseUnit
 /// * Base in taker (ask) is matched against quote in maker (bid).
 #[repr(C)]
-pub struct RestingOrder<M, B, Q>
-where
-    M: MarketMarker,
-    B: TokenMarker,
-    Q: TokenMarker,
-{
+pub struct RestingOrder {
     pub maker: Address,
     pub size: BaseLots,
-    _marker: PhantomData<(M, B, Q)>,
 }
 
-impl<M, B, Q> RestingOrder<M, B, Q>
-where
-    M: MarketMarker,
-    B: TokenMarker,
-    Q: TokenMarker,
-{
+impl RestingOrder {
     pub const fn new(maker: Address, size: BaseLots) -> Self {
-        Self {
-            maker,
-            size,
-            _marker: PhantomData,
-        }
+        Self { maker, size }
     }
 }
