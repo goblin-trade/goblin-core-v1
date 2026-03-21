@@ -13,15 +13,14 @@ use crate::{
     },
 };
 
-pub struct RestingOrderEntry<M, B, Q, In>
+pub struct RestingOrderEntry<M, B, Q>
 where
     M: MarketMarker,
     B: TokenMarker,
     Q: TokenMarker,
-    In: LegMatcher,
 {
-    pub full_coordinates: FullCoordinates<In>,
-    pub resting_order_key: SlotKey<RestingOrderPreimage<M, B, Q, In>>,
+    pub full_coordinates: FullCoordinates,
+    pub resting_order_key: SlotKey<RestingOrderPreimage<M, B, Q>>,
     pub resting_order: RestingOrder<M, B, Q>,
 }
 
@@ -29,16 +28,16 @@ where
 /// beginning from centre of the book
 pub fn match_iterator<M, B, Q, In>(
     market_key: SlotKey<MarketPreimage<M, B, Q>>,
-    start: FullCoordinates<In>,
-    end: FullCoordinates<In>,
-) -> impl Iterator<Item = RestingOrderEntry<M, B, Q, In>>
+    start: FullCoordinates,
+    end: FullCoordinates,
+) -> impl Iterator<Item = RestingOrderEntry<M, B, Q>>
 where
     M: MarketMarker,
     B: TokenMarker,
     Q: TokenMarker,
     In: LegMatcher,
 {
-    outer_bitmap_iter(market_key, start, end)
-        .flat_map(move |outer| inner_bitmap_iter(outer, start, end))
-        .flat_map(resting_order_iter)
+    outer_bitmap_iter::<M, B, Q, In>(market_key, start, end)
+        .flat_map(move |outer| inner_bitmap_iter::<M, B, Q, In>(outer, start, end))
+        .flat_map(resting_order_iter::<M, B, Q, In>)
 }

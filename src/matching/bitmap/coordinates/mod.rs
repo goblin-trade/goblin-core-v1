@@ -1,4 +1,3 @@
-mod coordinate_triple;
 pub mod full_coordinates;
 pub mod stored_coordinates;
 

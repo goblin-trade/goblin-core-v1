@@ -20,18 +20,17 @@ use crate::{
 };
 use core::ops::RangeInclusive;
 
-pub struct InnerBitmapEntry<M, B, Q, In>
+pub struct InnerBitmapEntry<M, B, Q>
 where
     M: MarketMarker,
     B: TokenMarker,
     Q: TokenMarker,
-    In: LegMatcher,
 {
-    pub outer_bitmap_index: OuterBitmapIndex<In>,
-    pub outer_pos: OuterPos<In>,
-    pub inner_bitmap_key: SlotKey<InnerBitmapPreimage<M, B, Q, In>>,
+    pub outer_bitmap_index: OuterBitmapIndex,
+    pub outer_pos: OuterPos,
+    pub inner_bitmap_key: SlotKey<InnerBitmapPreimage<M, B, Q>>,
     pub inner_bitmap: InnerBitmap<M, B, Q>,
-    pub child_range: RangeInclusive<InnerPos<In>>,
+    pub child_range: RangeInclusive<InnerPos>,
 }
 
 pub fn inner_bitmap_iter<M, B, Q, In>(
@@ -40,10 +39,10 @@ pub fn inner_bitmap_iter<M, B, Q, In>(
         outer_bitmap_key,
         active_outer_bitmap,
         child_range,
-    }: OuterBitmapEntry<M, B, Q, In>,
-    start: FullCoordinates<In>,
-    end: FullCoordinates<In>,
-) -> impl Iterator<Item = InnerBitmapEntry<M, B, Q, In>>
+    }: OuterBitmapEntry<M, B, Q>,
+    start: FullCoordinates,
+    end: FullCoordinates,
+) -> impl Iterator<Item = InnerBitmapEntry<M, B, Q>>
 where
     M: MarketMarker,
     B: TokenMarker,

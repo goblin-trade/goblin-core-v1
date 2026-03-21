@@ -1,8 +1,5 @@
 use crate::{
-    axis::{
-        leg::leg_matcher::LegMatcher, market::market_marker::MarketMarker,
-        token::token_marker::TokenMarker,
-    },
+    axis::{market::market_marker::MarketMarker, token::token_marker::TokenMarker},
     matching::bitmap::inner_pos::InnerPos,
     state::{
         bitmap::inner_bitmap::preimage::InnerBitmapPreimage, resting_order::RestingOrder, Preimage,
@@ -11,23 +8,21 @@ use crate::{
 };
 
 #[derive(Clone, Copy)]
-pub struct RestingOrderPreimage<M, B, Q, In>
+pub struct RestingOrderPreimage<M, B, Q>
 where
     M: MarketMarker,
     B: TokenMarker,
     Q: TokenMarker,
-    In: LegMatcher,
 {
-    pub inner_bitmap_key: SlotKey<InnerBitmapPreimage<M, B, Q, In>>,
-    pub inner_pos: InnerPos<In>,
+    pub inner_bitmap_key: SlotKey<InnerBitmapPreimage<M, B, Q>>,
+    pub inner_pos: InnerPos,
 }
 
-impl<M, B, Q, In> Preimage for RestingOrderPreimage<M, B, Q, In>
+impl<M, B, Q> Preimage for RestingOrderPreimage<M, B, Q>
 where
     M: MarketMarker,
     B: TokenMarker,
     Q: TokenMarker,
-    In: LegMatcher,
 {
     const SLOT_DISCRIMINATOR: u8 = 7;
     type SlotState = RestingOrder<M, B, Q>;

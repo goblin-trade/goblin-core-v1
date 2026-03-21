@@ -17,8 +17,8 @@ pub fn resting_order_iter<M, B, Q, In>(
         inner_bitmap_key,
         inner_bitmap,
         child_range,
-    }: InnerBitmapEntry<M, B, Q, In>,
-) -> impl Iterator<Item = RestingOrderEntry<M, B, Q, In>>
+    }: InnerBitmapEntry<M, B, Q>,
+) -> impl Iterator<Item = RestingOrderEntry<M, B, Q>>
 where
     M: MarketMarker,
     B: TokenMarker,
