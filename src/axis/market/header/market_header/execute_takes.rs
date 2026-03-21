@@ -1,7 +1,8 @@
+use super::MarketHeader;
 use crate::{
     axis::{
         leg::{Base, Quote},
-        market::{market_header::MarketHeader, market_marker::MarketMarker, MarketAndKey},
+        market::{market_marker::MarketMarker, MarketAndKey},
         token::token_marker::TokenMarker,
     },
     goblin_error::GoblinError,

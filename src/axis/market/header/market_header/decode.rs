@@ -1,8 +1,6 @@
+use super::MarketHeader;
 use crate::{
-    axis::{
-        market::{market_header::MarketHeader, market_marker::MarketMarker},
-        token::token_marker::TokenMarker,
-    },
+    axis::{market::market_marker::MarketMarker, token::token_marker::TokenMarker},
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
     types::Tuple,

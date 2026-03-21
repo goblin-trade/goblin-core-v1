@@ -11,7 +11,7 @@ pub mod process_market;
 pub use process_market::*;
 
 // Submodules
+pub mod header;
 pub mod market_counts;
-pub mod market_header;
 pub mod market_locator;
 pub mod market_marker;
