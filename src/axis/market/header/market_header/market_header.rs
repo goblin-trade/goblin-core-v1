@@ -16,8 +16,8 @@ where
     /// Whether to execute take orders for sides In=Base and In=Quote
     pub execute_takes: Pair<bool, bool>,
 
-    /// Number of outer bitmap indices
-    pub outer_bitmap_indices: u8,
+    /// Number of outer bitmaps to traverse
+    pub outer_bitmap_count: u8,
 
     _marker: PhantomData<(M, B, Q)>,
 }
@@ -36,7 +36,7 @@ where
         Self {
             decode_deposit_amounts,
             execute_takes,
-            outer_bitmap_indices,
+            outer_bitmap_count: outer_bitmap_indices,
             _marker: PhantomData,
         }
     }

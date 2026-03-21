@@ -1,7 +1,10 @@
 use crate::{
     axis::{
         market::{
-            header::market_header::MarketHeader,
+            header::{
+                inner_bitmap_header::InnerBitmapHeader, market_header::MarketHeader,
+                outer_bitmap_header::OuterBitmapHeader,
+            },
             market_locator::MarketLocator,
             market_marker::{
                 hardcoded::{
@@ -42,7 +45,15 @@ where
 
     market_header.execute_takes(ctx, &mut delta.local, market_and_key, &mut market_state)?;
 
-    // // TODO commit local delta into global delta
+    for _ in 0..market_header.outer_bitmap_count {
+        let outer_bitmap_header = OuterBitmapHeader::try_decode(ctx)?;
+
+        for _ in 0..outer_bitmap_header.inner_bitmap_count {
+            let inner_bitmap_header = InnerBitmapHeader::try_decode(ctx)?;
+
+            for _ in 0..inner_bitmap_header.update_count {}
+        }
+    }
 
     // Reset local delta for reuse
     delta.local.deposits.reset::<B, Q>();
