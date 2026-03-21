@@ -1,5 +1,4 @@
 use core::marker::PhantomData;
-use core::u64;
 
 use crate::{
     axis::leg::{leg_coordinates::LegCoordinates, leg_iterator::LegIterator},

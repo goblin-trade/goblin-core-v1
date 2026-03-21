@@ -45,6 +45,24 @@ where
 
     market_header.execute_takes(ctx, &mut delta.local, market_and_key, &mut market_state)?;
 
+    // Indices hold In: Legmarker generic
+    // We need separate operations for each side?
+    // Correct. Suppose if we want to open a bid resting order at position X, but the
+    // market updates and X falls on ask side. We must then revert.
+    //
+    // Problem- a bitmap can hold both bid and ask orders.
+    // In: LegMarker is used for traversal, but in this case we need it only for
+    // representing position.
+    //
+    // Possible solutions
+    // 1. Declare new unsided coordinate types
+    // 2. Separate loops for the same bitmap. But this will cause the bitmap to be
+    // read twice
+    // 3. Refactor the generic system. Turn side In into a variable? No, this will
+    // break the matching math.
+    //
+    // Remove In: LegMarker from coordinates. Pass In: LegMarker as a function
+    // generic when obtaining the linear iterators.
     for _ in 0..market_header.outer_bitmap_count {
         let outer_bitmap_header = OuterBitmapHeader::try_decode(ctx)?;
 
