@@ -11,3 +11,13 @@ pub enum UpdateEnum {
     Increase(Increase),
     Decrease(Decrease),
 }
+
+impl From<bool> for UpdateEnum {
+    fn from(value: bool) -> Self {
+        if value {
+            UpdateEnum::Increase(Increase::new())
+        } else {
+            UpdateEnum::Decrease(Decrease::new())
+        }
+    }
+}
