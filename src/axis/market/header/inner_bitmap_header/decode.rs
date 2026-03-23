@@ -1,5 +1,5 @@
 use crate::{
-    axis::{leg::Pair, market::header::inner_bitmap_header::InnerBitmapHeader},
+    axis::market::header::inner_bitmap_header::InnerBitmapHeader,
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodablePrimitive, DecodeCtx},
     matching::bitmap::outer_pos::OuterPos,
@@ -13,10 +13,7 @@ impl Decodable for InnerBitmapHeader {
         require!(ctx.len() >= BYTE_COUNT, GoblinError::InvalidPayload);
         let header = Self {
             outer_pos: OuterPos::new(u8::decode_unchecked_no_advance(ctx)),
-            update_count: Pair::new(
-                u8::decode_unchecked_no_advance(ctx),
-                u8::decode_unchecked_no_advance(ctx),
-            ),
+            update_count: u8::decode_unchecked_no_advance(ctx),
         };
 
         ctx.advance_offset(BYTE_COUNT);

@@ -1,11 +1,7 @@
 use crate::{
     axis::{
-        leg::{Base, Quote},
         market::{
-            header::{
-                inner_bitmap_header::InnerBitmapHeader, market_header::MarketHeader,
-                outer_bitmap_header::OuterBitmapHeader,
-            },
+            header::market_header::MarketHeader,
             market_locator::MarketLocator,
             market_marker::{
                 hardcoded::{
@@ -20,7 +16,6 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
     settlement::Delta,
-    types::StoreReader,
 };
 
 pub fn process_market<'a, M, B, Q>(
@@ -46,18 +41,7 @@ where
     }
 
     market_header.execute_takes(ctx, &mut delta.local, market_and_key, &mut market_state)?;
-
-    // The same bitmap can have both takes and makes
-    for _ in 0..market_header.outer_bitmap_count {
-        let outer_bitmap_header = OuterBitmapHeader::try_decode(ctx)?;
-
-        for _ in 0..outer_bitmap_header.inner_bitmap_count {
-            let inner_bitmap_header = InnerBitmapHeader::try_decode(ctx)?;
-
-            for _ in 0..Base::get(&inner_bitmap_header.update_count) {}
-            for _ in 0..Quote::get(&inner_bitmap_header.update_count) {}
-        }
-    }
+    market_header.execute_updates(ctx, &mut delta.local, market_and_key, &mut market_state)?;
 
     // Reset local delta for reuse
     delta.local.deposits.reset::<B, Q>();

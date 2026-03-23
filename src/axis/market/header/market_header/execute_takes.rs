@@ -55,11 +55,8 @@ where
             for _ in 0..outer_bitmap_header.inner_bitmap_count {
                 let inner_bitmap_header = InnerBitmapHeader::try_decode(ctx)?;
 
-                for _ in 0..Base::get(&inner_bitmap_header.update_count) {
+                for _ in 0..inner_bitmap_header.update_count {
                     ix_update::<M, B, Q, Base>(ctx, local_delta, market_and_key, market_state)?;
-                }
-                for _ in 0..Quote::get(&inner_bitmap_header.update_count) {
-                    ix_update::<M, B, Q, Quote>(ctx, local_delta, market_and_key, market_state)?;
                 }
             }
         }

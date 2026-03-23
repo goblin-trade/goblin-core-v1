@@ -1,12 +1,11 @@
 use crate::{
     axis::{
         leg::leg_matcher::LegMatcher,
-        market::{market_marker::MarketMarker, MarketAndKey},
+        market::{header::update_header::UpdateHeader, market_marker::MarketMarker, MarketAndKey},
         token::token_marker::TokenMarker,
     },
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
-    instructions::update_header::UpdateHeader,
     settlement::local_delta::LocalDelta,
     state::MarketState,
 };
