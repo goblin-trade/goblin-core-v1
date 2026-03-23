@@ -12,7 +12,7 @@ use crate::{
 /// otherwise the order gets cancelled, i.e.
 ///
 /// num_lots == min_lots_to_fill
-pub struct TakePacket<In: LegMatcher> {
+pub struct TakeHeader<In: LegMatcher> {
     /// The order size, i.e. number of lots to fill
     pub num_lots: In::Lots,
 
@@ -23,7 +23,7 @@ pub struct TakePacket<In: LegMatcher> {
     pub price_limit: Ticks,
 }
 
-impl<In: LegMatcher> Decodable for TakePacket<In> {
+impl<In: LegMatcher> Decodable for TakeHeader<In> {
     fn try_decode(ctx: &DecodeCtx) -> Result<Self, GoblinError> {
         // 2 bits for flags and rest 62 bits for num_lots
         let flags_and_num_lots_raw = u64::try_decode(ctx)?;

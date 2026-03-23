@@ -6,13 +6,12 @@ use crate::{
     },
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
-    instructions::take::take_header::TakeHeader,
-    matching::match_order,
+    instructions::update_header::UpdateHeader,
     settlement::local_delta::LocalDelta,
     state::MarketState,
 };
 
-pub fn ix_take<M, B, Q, In>(
+pub fn ix_update<M, B, Q, In>(
     ctx: &DecodeCtx,
     local_delta: &mut LocalDelta,
     market_and_key: &MarketAndKey<M, B, Q>,
@@ -24,14 +23,13 @@ where
     Q: TokenMarker,
     In: LegMatcher,
 {
-    let header = TakeHeader::<In>::try_decode(ctx)?;
+    let header = UpdateHeader::try_decode(ctx)?;
 
-    match_order::<M, B, Q, In>(
-        local_delta,
-        market_and_key,
-        market_state,
-        header.num_lots,
-        header.min_lots_to_fill,
-        header.price_limit,
-    )
+    // We have increase and decrease sub-operations
+    //
+    // In: LegMarker is only relevant for placing a new order.
+    // If we cancel or increase existing order.
+    // We get an invalid state if order exists on wrong side.
+
+    Ok(())
 }
