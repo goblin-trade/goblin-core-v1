@@ -15,7 +15,13 @@ use crate::{
     input_processor::{Decodable, DecodeCtx},
     instructions::{ix_take, ix_update::ix_update},
     settlement::local_delta::LocalDelta,
-    state::MarketState,
+    state::{
+        bitmap::{
+            inner_bitmap::preimage::InnerBitmapPreimage,
+            outer_bitmap::{outer_bitmap_state::OuterBitmapState, preimage::OuterBitmapPreimage},
+        },
+        MarketState, Preimage,
+    },
     types::StoreReader,
 };
 
@@ -52,11 +58,37 @@ where
         for _ in 0..self.outer_bitmap_count {
             let outer_bitmap_header = OuterBitmapHeader::try_decode(ctx)?;
 
+            let outer_bitmap_key = OuterBitmapPreimage {
+                market_key: market_and_key.market_key,
+                outer_bitmap_index: outer_bitmap_header.outer_bitmap_index,
+            }
+            .hash();
+
+            let outer_bitmap_state = OuterBitmapState::from(outer_bitmap_key.load());
+
             for _ in 0..outer_bitmap_header.inner_bitmap_count {
                 let inner_bitmap_header = InnerBitmapHeader::try_decode(ctx)?;
 
+                let inner_bitmap_key = InnerBitmapPreimage {
+                    outer_bitmap_key,
+                    outer_pos: inner_bitmap_header.outer_pos,
+                }
+                .hash();
+                let inner_bitmap_state = inner_bitmap_key.load();
+
                 for _ in 0..inner_bitmap_header.update_count {
-                    ix_update::<M, B, Q, Base>(ctx, local_delta, market_and_key, market_state)?;
+                    ix_update::<M, B, Q>(
+                        ctx,
+                        local_delta,
+                        market_and_key,
+                        market_state,
+                        outer_bitmap_header.outer_bitmap_index,
+                        &outer_bitmap_key,
+                        &outer_bitmap_state,
+                        inner_bitmap_header.outer_pos,
+                        &inner_bitmap_key,
+                        &inner_bitmap_state,
+                    )?;
                 }
             }
         }

@@ -34,6 +34,7 @@ pub enum GoblinError {
     InvalidCustomTokenIndex = 30,
     DepositOverflow = 31,
     IteratorOutOfBounds = 32,
+    NoValidLegForPrice = 33,
 }
 
 impl GoblinError {
