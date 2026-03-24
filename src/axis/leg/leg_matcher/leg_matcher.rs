@@ -37,12 +37,12 @@ pub trait LegMatcher:
     type MatchingLots: QuantityOps;
 
     /// Obtain MatchingLots from taker amount in
-    fn matching_lots_taker(
+    fn matching_lots_in(
         input_lots: Self::Lots,
         base_lot_size: BaseLotsPerBaseUnit,
     ) -> Self::MatchingLots;
 
-    fn opposite_matching_lots(
+    fn matching_lots_out(
         matching_lots: Self::MatchingLots,
         tick_size: QuoteLotsPerBaseUnitPerTick,
         price: Ticks,

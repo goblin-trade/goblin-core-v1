@@ -40,7 +40,7 @@ impl LocalDelta {
     where
         In: LegMatcher,
     {
-        let taker_out = In::opposite_matching_lots(taker_in, tick_size, price);
+        let taker_out = In::matching_lots_out(taker_in, tick_size, price);
         let matched_lots = MatchedLots {
             taker_in,
             taker_out,
@@ -74,7 +74,7 @@ impl LocalDelta {
         In: LegMatcher,
     {
         let taker_delta = In::get_leg(&self.local_sender_delta.taker_delta_pair);
-        let min_lots = In::matching_lots_taker(min_lots, base_lot_size);
+        let min_lots = In::matching_lots_in(min_lots, base_lot_size);
         require!(
             taker_delta.taker_in >= min_lots,
             GoblinError::InsufficientTakerFill

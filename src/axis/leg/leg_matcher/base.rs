@@ -8,14 +8,14 @@ impl LegMatcher for Base {
 
     type MatchingLots = BaseLots;
 
-    fn matching_lots_taker(
+    fn matching_lots_in(
         input_lots: Self::Lots,
         _base_lot_size: BaseLotsPerBaseUnit,
     ) -> Self::MatchingLots {
         input_lots
     }
 
-    fn opposite_matching_lots(
+    fn matching_lots_out(
         matching_lots: Self::MatchingLots,
         tick_size: QuoteLotsPerBaseUnitPerTick,
         price: Ticks,

@@ -49,7 +49,7 @@ where
     let iterator = match_iterator::<M, B, Q, In>(*market_key, start, end);
 
     let base_lot_size = Base::get(&market.lot_size_pair);
-    let mut budget = In::matching_lots_taker(num_lots, base_lot_size);
+    let mut budget = In::matching_lots_in(num_lots, base_lot_size);
 
     for RestingOrderEntry {
         full_coordinates,
