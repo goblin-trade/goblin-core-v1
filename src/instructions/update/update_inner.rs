@@ -1,0 +1,47 @@
+use crate::{
+    axis::{
+        leg::{leg_coordinates::LegCoordinates, leg_matcher::LegMatcher, Base, LegEnum, Quote},
+        market::{header::update_header::UpdateHeader, market_marker::MarketMarker, MarketAndKey},
+        token::token_marker::TokenMarker,
+        update::{update_marker::UpdateMarker, UpdateEnum},
+    },
+    goblin_error::GoblinError,
+    input_processor::{Decodable, DecodeCtx},
+    instructions::get_leg_in::get_leg_in,
+    matching::bitmap::{
+        outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos, FullCoordinates,
+    },
+    quantities::{BaseLots, Ticks},
+    settlement::local_delta::LocalDelta,
+    state::{
+        bitmap::{
+            inner_bitmap::{preimage::InnerBitmapPreimage, InnerBitmap},
+            outer_bitmap::{outer_bitmap_state::OuterBitmapState, preimage::OuterBitmapPreimage},
+        },
+        MarketState, SlotKey,
+    },
+    types::StoreReader,
+};
+
+pub fn update_inner<M, B, Q, In, U>(
+    ctx: &DecodeCtx,
+    local_delta: &mut LocalDelta,
+    market_and_key: &MarketAndKey<M, B, Q>,
+    market_state: &mut MarketState,
+    full_coordinates: FullCoordinates,
+    base_lots: BaseLots,
+    outer_bitmap_key: &SlotKey<OuterBitmapPreimage<M, B, Q>>,
+    outer_bitmap_state: &OuterBitmapState,
+    inner_bitmap_key: &SlotKey<InnerBitmapPreimage<M, B, Q>>,
+    inner_bitmap_state: &InnerBitmap,
+) -> Result<(), GoblinError>
+where
+    M: MarketMarker,
+    B: TokenMarker,
+    Q: TokenMarker,
+    In: LegMatcher,
+    U: UpdateMarker,
+{
+    // TODO calculate In::Lots from base_lots
+    Ok(())
+}

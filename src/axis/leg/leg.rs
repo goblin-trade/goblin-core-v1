@@ -10,6 +10,6 @@ pub type Quote = Marker<Leg, 1>;
 pub type Pair<T0, T1> = Tuple<T0, T1, Leg>;
 
 pub enum LegEnum {
-    Base(Base),
-    Quote(Quote),
+    Base,
+    Quote,
 }

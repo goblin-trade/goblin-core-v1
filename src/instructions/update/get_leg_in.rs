@@ -21,13 +21,13 @@ pub fn get_leg_in(
     // Ask- maker wants base token
     let last_price_base_in = Base::get(last_coordinates).price;
     if price >= last_price_base_in {
-        return Ok(LegEnum::Base(Base::new()));
+        return Ok(LegEnum::Base);
     }
 
     // Bid- maker wants quote token
     let last_price_quote_in = Quote::get(last_coordinates).price;
     if price <= last_price_quote_in {
-        return Ok(LegEnum::Quote(Quote::new()));
+        return Ok(LegEnum::Quote);
     }
 
     Err(GoblinError::NoValidLegForPrice)

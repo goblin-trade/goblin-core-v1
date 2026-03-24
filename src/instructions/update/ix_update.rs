@@ -1,12 +1,13 @@
 use crate::{
     axis::{
-        leg::{leg_coordinates::LegCoordinates, Base, Quote},
+        leg::{leg_coordinates::LegCoordinates, Base, LegEnum, Quote},
         market::{header::update_header::UpdateHeader, market_marker::MarketMarker, MarketAndKey},
         token::token_marker::TokenMarker,
+        update::{Increase, UpdateEnum},
     },
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
-    instructions::get_leg_in::get_leg_in,
+    instructions::{get_leg_in::get_leg_in, update_inner::update_inner},
     matching::bitmap::{
         outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos, FullCoordinates,
     },
@@ -41,14 +42,32 @@ where
 {
     let header = UpdateHeader::try_decode(ctx)?;
 
-    let coordinate = FullCoordinates {
+    let full_coordinates = FullCoordinates {
         outer_bitmap_index,
         outer_pos,
         inner_pos: header.inner_pos,
     };
-    let price = Ticks::from(coordinate);
+    let price = Ticks::from(full_coordinates);
 
     let leg_in = get_leg_in(price, &market_state.last_coordinates)?;
+
+    match (leg_in, header.update_variant) {
+        (LegEnum::Base, UpdateEnum::Increase) => update_inner::<M, B, Q, Base, Increase>(
+            ctx,
+            local_delta,
+            market_and_key,
+            market_state,
+            full_coordinates,
+            header.base_lots,
+            outer_bitmap_key,
+            outer_bitmap_state,
+            inner_bitmap_key,
+            inner_bitmap_state,
+        )?,
+        (LegEnum::Base, UpdateEnum::Decrease) => {}
+        (LegEnum::Quote, UpdateEnum::Increase) => {}
+        (LegEnum::Quote, UpdateEnum::Decrease) => {}
+    }
 
     Ok(())
 }

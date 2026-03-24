@@ -4,9 +4,3 @@ use core::marker::PhantomData;
 /// sub variants of each `axis`
 #[derive(Default, Clone, Copy, PartialEq, PartialOrd)]
 pub struct Marker<K, const N: usize>(PhantomData<K>);
-
-impl<K, const N: usize> Marker<K, N> {
-    pub const fn new() -> Self {
-        Self(PhantomData)
-    }
-}
