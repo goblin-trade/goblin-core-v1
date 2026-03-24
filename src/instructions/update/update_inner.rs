@@ -16,9 +16,13 @@ use crate::{
     state::{
         bitmap::{
             inner_bitmap::{preimage::InnerBitmapPreimage, InnerBitmap},
-            outer_bitmap::{outer_bitmap_state::OuterBitmapState, preimage::OuterBitmapPreimage},
+            outer_bitmap::{
+                active_outer_bitmap::ActiveOuterBitmap, outer_bitmap_state::OuterBitmapState,
+                preimage::OuterBitmapPreimage,
+            },
         },
-        MarketState, SlotKey,
+        resting_order::preimage::RestingOrderPreimage,
+        MarketState, Preimage, SlotKey,
     },
     types::StoreReader,
 };
@@ -31,7 +35,7 @@ pub fn update_inner<M, B, Q, In, U>(
     full_coordinates: FullCoordinates,
     base_lots: BaseLots,
     outer_bitmap_key: &SlotKey<OuterBitmapPreimage<M, B, Q>>,
-    outer_bitmap_state: &OuterBitmapState,
+    active_outer_bitmap: &ActiveOuterBitmap,
     inner_bitmap_key: &SlotKey<InnerBitmapPreimage<M, B, Q>>,
     inner_bitmap_state: &InnerBitmap,
 ) -> Result<(), GoblinError>
@@ -42,7 +46,16 @@ where
     In: LegMatcher,
     U: UpdateMarker,
 {
-    // TODO calculate In::Lots from base_lots
+    // Check if active. If inactive, we cannot increase or decrease
+    // Update slot
+    let resting_order_key = RestingOrderPreimage {
+        inner_bitmap_key: *inner_bitmap_key,
+        inner_pos: full_coordinates.inner_pos,
+    }
+    .hash();
+
+    let resting_order_state = resting_order_key.load();
+
     let base_lot_size = Base::get(&market.lot_size_pair);
     let price = Ticks::from(full_coordinates);
     let delta = In::maker_deposit(base_lots, base_lot_size, market.tick_size, price);

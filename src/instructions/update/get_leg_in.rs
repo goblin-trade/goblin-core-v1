@@ -30,5 +30,5 @@ pub fn get_leg_in(
         return Ok(LegEnum::Quote);
     }
 
-    Err(GoblinError::NoValidLegForPrice)
+    Err(GoblinError::NoRestingOrder)
 }

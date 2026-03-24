@@ -12,11 +12,16 @@ use crate::{
         outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos, FullCoordinates,
     },
     quantities::Ticks,
+    require,
     settlement::local_delta::LocalDelta,
     state::{
         bitmap::{
             inner_bitmap::{preimage::InnerBitmapPreimage, InnerBitmap},
-            outer_bitmap::{outer_bitmap_state::OuterBitmapState, preimage::OuterBitmapPreimage},
+            outer_bitmap::{
+                active_outer_bitmap::ActiveOuterBitmap, outer_bitmap_state::OuterBitmapState,
+                preimage::OuterBitmapPreimage,
+            },
+            Bitmap,
         },
         MarketState, SlotKey,
     },
@@ -30,7 +35,7 @@ pub fn ix_update<M, B, Q>(
     market_state: &mut MarketState,
     outer_bitmap_index: OuterBitmapIndex,
     outer_bitmap_key: &SlotKey<OuterBitmapPreimage<M, B, Q>>,
-    outer_bitmap_state: &OuterBitmapState,
+    active_outer_bitmap: &ActiveOuterBitmap,
     outer_pos: OuterPos,
     inner_bitmap_key: &SlotKey<InnerBitmapPreimage<M, B, Q>>,
     inner_bitmap_state: &InnerBitmap,
@@ -41,6 +46,10 @@ where
     Q: TokenMarker,
 {
     let header = UpdateHeader::try_decode(ctx)?;
+    require!(
+        inner_bitmap_state.active(header.inner_pos),
+        GoblinError::NoRestingOrder
+    );
 
     let full_coordinates = FullCoordinates {
         outer_bitmap_index,
@@ -60,7 +69,7 @@ where
             full_coordinates,
             header.base_lots,
             outer_bitmap_key,
-            outer_bitmap_state,
+            active_outer_bitmap,
             inner_bitmap_key,
             inner_bitmap_state,
         )?,

@@ -14,11 +14,16 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
     instructions::{ix_take, ix_update::ix_update},
+    require,
     settlement::local_delta::LocalDelta,
     state::{
         bitmap::{
             inner_bitmap::preimage::InnerBitmapPreimage,
-            outer_bitmap::{outer_bitmap_state::OuterBitmapState, preimage::OuterBitmapPreimage},
+            outer_bitmap::{
+                active_outer_bitmap, outer_bitmap_state::OuterBitmapState,
+                preimage::OuterBitmapPreimage,
+            },
+            Bitmap,
         },
         MarketState, Preimage,
     },
@@ -66,8 +71,17 @@ where
 
             let outer_bitmap_state = OuterBitmapState::from(outer_bitmap_key.load());
 
+            let OuterBitmapState::Active(active_outer_bitmap) = outer_bitmap_state else {
+                return Err(GoblinError::NoRestingOrder);
+            };
+
             for _ in 0..outer_bitmap_header.inner_bitmap_count {
                 let inner_bitmap_header = InnerBitmapHeader::try_decode(ctx)?;
+
+                require!(
+                    active_outer_bitmap.active(inner_bitmap_header.outer_pos),
+                    GoblinError::NoRestingOrder
+                );
 
                 let inner_bitmap_key = InnerBitmapPreimage {
                     outer_bitmap_key,
@@ -84,7 +98,7 @@ where
                         market_state,
                         outer_bitmap_header.outer_bitmap_index,
                         &outer_bitmap_key,
-                        &outer_bitmap_state,
+                        &active_outer_bitmap,
                         inner_bitmap_header.outer_pos,
                         &inner_bitmap_key,
                         &inner_bitmap_state,
