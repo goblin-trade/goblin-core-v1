@@ -26,7 +26,7 @@ use crate::{
 pub fn update_inner<M, B, Q, In, U>(
     ctx: &DecodeCtx,
     local_delta: &mut LocalDelta,
-    market_and_key: &MarketAndKey<M, B, Q>,
+    MarketAndKey { market, market_key }: &MarketAndKey<M, B, Q>,
     market_state: &mut MarketState,
     full_coordinates: FullCoordinates,
     base_lots: BaseLots,
@@ -43,5 +43,8 @@ where
     U: UpdateMarker,
 {
     // TODO calculate In::Lots from base_lots
+    let base_lot_size = Base::get(&market.lot_size_pair);
+    let price = Ticks::from(full_coordinates);
+    let delta = In::maker_deposit(base_lots, base_lot_size, market.tick_size, price);
     Ok(())
 }

@@ -1,7 +1,7 @@
 use crate::quantities::{AsUnsided, QuantityOps, P1, Z0};
 use core::ops::{Div, Mul, Rem};
 
-pub trait LegQuantities: Sized + PartialEq + PartialOrd + Clone + Copy {
+pub trait LegQuantities: Default + Sized + PartialEq + PartialOrd + Clone + Copy {
     // Basic quantities
     type Lots: QuantityOps + From<u64> + Mul<Self::AtomsPerLot, Output = Self::Atoms>;
     type Units: QuantityOps;

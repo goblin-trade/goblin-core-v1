@@ -1,3 +1,4 @@
+use crate::axis::leg::leg_quantities::LegQuantities;
 ///! LegMarker for input base, also known as ask / sell
 use crate::axis::leg::{leg_matcher::LegMatcher, Base, Quote};
 use crate::quantities::{BaseLots, BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, Ticks};
@@ -44,5 +45,14 @@ impl LegMatcher for Base {
         _price: Ticks,
     ) -> BaseLots {
         matching
+    }
+
+    fn maker_deposit(
+        base_lots: BaseLots,
+        base_lot_size: BaseLotsPerBaseUnit,
+        tick_size: QuoteLotsPerBaseUnitPerTick,
+        price: Ticks,
+    ) -> <Self::Opposite as LegQuantities>::Lots {
+        tick_size * price * base_lots / base_lot_size
     }
 }

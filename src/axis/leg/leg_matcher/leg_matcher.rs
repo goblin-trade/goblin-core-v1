@@ -11,10 +11,7 @@ use crate::{
 
 /// Conversions for matching orders
 pub trait LegMatcher:
-    Default
-    + Clone
-    + Copy
-    + LegQuantities
+    LegQuantities
     + LegConstants
     + LegValidator
     + LegCoordinates
@@ -81,4 +78,13 @@ pub trait LegMatcher:
         tick_size: QuoteLotsPerBaseUnitPerTick,
         price: Ticks,
     ) -> BaseLots;
+
+    /// Maker functions
+
+    fn maker_deposit(
+        base_lots: BaseLots,
+        base_lot_size: BaseLotsPerBaseUnit,
+        tick_size: QuoteLotsPerBaseUnitPerTick,
+        price: Ticks,
+    ) -> <Self::Opposite as LegQuantities>::Lots;
 }
