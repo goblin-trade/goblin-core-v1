@@ -11,7 +11,7 @@ use crate::{
     matching::bitmap::{
         outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos, FullCoordinates,
     },
-    quantities::{BaseLots, Ticks},
+    quantities::{BaseLots, QuantityOps, Ticks},
     settlement::local_delta::LocalDelta,
     state::{
         bitmap::{
@@ -27,7 +27,7 @@ use crate::{
     types::StoreReader,
 };
 
-pub fn update_inner<M, B, Q, In, U>(
+pub fn increase_inner<M, B, Q, In>(
     ctx: &DecodeCtx,
     local_delta: &mut LocalDelta,
     MarketAndKey { market, market_key }: &MarketAndKey<M, B, Q>,
@@ -44,7 +44,6 @@ where
     B: TokenMarker,
     Q: TokenMarker,
     In: LegMatcher,
-    U: UpdateMarker,
 {
     // Check if active. If inactive, we cannot increase or decrease
     // Update slot
@@ -54,12 +53,18 @@ where
     }
     .hash();
 
-    let resting_order_state = resting_order_key.load();
-
-    // Use UpdateMarker trait to increase or decrease
+    let mut resting_order_state = resting_order_key.load();
+    resting_order_state.size = resting_order_state
+        .size
+        .checked_add(base_lots)
+        .ok_or(GoblinError::Overflow)?;
 
     let base_lot_size = Base::get(&market.lot_size_pair);
     let price = Ticks::from(full_coordinates);
     let delta = In::maker_deposit(base_lots, base_lot_size, market.tick_size, price);
+
+    // Define new fields in local delta to store these amounts
+    //
+    // local_delta.
     Ok(())
 }

@@ -1,7 +1,7 @@
 use crate::{
     axis::leg::{leg_quantities::LegQuantities, Base, Leg, Quote},
     matching::bitmap::StoredCoordinates,
-    quantities::{BaseLotsPerBaseUnit, DeltaAtoms, QuoteLotsPerQuoteUnit},
+    quantities::{BaseLots, BaseLotsPerBaseUnit, DeltaAtoms, QuoteLots, QuoteLotsPerQuoteUnit},
     types::{StoreReader, Tuple},
 };
 

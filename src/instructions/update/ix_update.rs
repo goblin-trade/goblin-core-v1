@@ -60,6 +60,8 @@ where
 
     let leg_in = get_leg_in(price, &market_state.last_coordinates)?;
 
+    // Decrease has a case where bits are turned off if the order closes
+    // Pass value > current to close
     match (leg_in, header.update_variant) {
         (LegEnum::Base, UpdateEnum::Increase) => update_inner::<M, B, Q, Base, Increase>(
             ctx,

@@ -4,7 +4,9 @@ use crate::{
         leg_quantities::LegQuantities, leg_reader::LegReader, leg_validator::LegValidator, Base,
         Leg, Quote,
     },
-    quantities::{BaseLots, BaseLotsPerBaseUnit, QuantityOps, QuoteLotsPerBaseUnitPerTick, Ticks},
+    quantities::{
+        BaseLots, BaseLotsPerBaseUnit, QuantityOps, QuoteLots, QuoteLotsPerBaseUnitPerTick, Ticks,
+    },
     settlement::MatchedLots,
     types::{StoreReader, Tuple},
 };
@@ -18,6 +20,7 @@ pub trait LegMatcher:
     + LegIterator
     + LegReader
     + StoreReader<Tuple<MatchedLots<Base>, MatchedLots<Quote>, Leg>, Result = MatchedLots<Self>>
+// + StoreReader<Tuple<QuoteLots, BaseLots, Leg>, Result = <Self::Opposite as Self>::Lots>
 {
     /// The opposite side
     /// Opposite of opposite is Self
