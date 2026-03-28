@@ -20,7 +20,7 @@ pub trait LegMatcher:
     + LegIterator
     + LegReader
     + StoreReader<Tuple<MatchedLots<Base>, MatchedLots<Quote>, Leg>, Result = MatchedLots<Self>>
-// + StoreReader<Tuple<QuoteLots, BaseLots, Leg>, Result = <Self::Opposite as Self>::Lots>
+    + StoreReader<Tuple<QuoteLots, BaseLots, Leg>, Result = <Self::Opposite as LegQuantities>::Lots>
 {
     /// The opposite side
     /// Opposite of opposite is Self

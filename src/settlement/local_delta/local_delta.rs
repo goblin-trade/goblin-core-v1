@@ -1,10 +1,7 @@
 use crate::{
     axis::leg::{leg_matcher::LegMatcher, Pair},
     goblin_error::GoblinError,
-    quantities::{
-        BaseLots, BaseLotsPerBaseUnit, DeltaAtoms, QuantityOps, QuoteLots,
-        QuoteLotsPerBaseUnitPerTick, Ticks,
-    },
+    quantities::{BaseLotsPerBaseUnit, DeltaAtoms, QuoteLotsPerBaseUnitPerTick, Ticks},
     require,
     settlement::{
         local_delta::{Deposits, LocalMakerDeltas, LocalSenderDelta},
@@ -20,9 +17,6 @@ pub struct LocalDelta {
     /// Deltas for makers of matched resting orders
     pub local_maker_deltas: LocalMakerDeltas,
 
-    /// Deposits for opening and increasing resting orders
-    pub resting_order_deposits: Pair<QuoteLots, BaseLots>,
-
     pub deposits: Deposits,
 }
 
@@ -31,38 +25,18 @@ impl LocalDelta {
         Self {
             local_sender_delta: LocalSenderDelta::zero(),
             local_maker_deltas: LocalMakerDeltas::zero(),
-            resting_order_deposits: Pair::new(QuoteLots::ZERO, BaseLots::ZERO),
             deposits: Pair::new(DeltaAtoms::ZERO, DeltaAtoms::ZERO),
         }
     }
 
-    pub fn add_resting_order_deposit<In>(
-        &mut self,
-        base_lots: BaseLots,
-        base_lot_size: BaseLotsPerBaseUnit,
-        tick_size: QuoteLotsPerBaseUnitPerTick,
-        price: Ticks,
-    ) -> Result<(), GoblinError>
-    where
-        In: LegMatcher,
-    {
-        let delta = In::maker_deposit(base_lots, base_lot_size, tick_size, price);
-
-        // let store = In::get_leg_mut(&mut self.resting_order_deposits);
-        Ok(())
-    }
-
     /// Add matched lots to taker and maker deltas
-    pub fn add_matched<In>(
+    pub fn add_matched<In: LegMatcher>(
         &mut self,
         maker: Address,
         taker_in: In::MatchingLots,
         tick_size: QuoteLotsPerBaseUnitPerTick,
         price: Ticks,
-    ) -> Result<(), GoblinError>
-    where
-        In: LegMatcher,
-    {
+    ) -> Result<(), GoblinError> {
         let taker_out = In::matching_lots_out(taker_in, tick_size, price);
         let matched_lots = MatchedLots {
             taker_in,

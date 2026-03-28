@@ -7,7 +7,9 @@ use crate::{
     },
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
-    instructions::{get_leg_in::get_leg_in, update_inner::update_inner},
+    instructions::{
+        get_leg_in::get_leg_in, increase_inner::increase_inner, update_inner::update_inner,
+    },
     matching::bitmap::{
         outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos, FullCoordinates,
     },
@@ -63,20 +65,22 @@ where
     // Decrease has a case where bits are turned off if the order closes
     // Pass value > current to close
     match (leg_in, header.update_variant) {
-        (LegEnum::Base, UpdateEnum::Increase) => update_inner::<M, B, Q, Base, Increase>(
-            ctx,
-            local_delta,
-            market_and_key,
-            market_state,
+        (LegEnum::Base, UpdateEnum::Increase) => increase_inner::<M, B, Q, Base>(
+            &mut local_delta.local_sender_delta,
+            &market_and_key.market,
             full_coordinates,
             header.base_lots,
-            outer_bitmap_key,
-            active_outer_bitmap,
             inner_bitmap_key,
-            inner_bitmap_state,
+        )?,
+        (LegEnum::Quote, UpdateEnum::Increase) => increase_inner::<M, B, Q, Quote>(
+            &mut local_delta.local_sender_delta,
+            &market_and_key.market,
+            full_coordinates,
+            header.base_lots,
+            inner_bitmap_key,
         )?,
         (LegEnum::Base, UpdateEnum::Decrease) => {}
-        (LegEnum::Quote, UpdateEnum::Increase) => {}
+
         (LegEnum::Quote, UpdateEnum::Decrease) => {}
     }
 

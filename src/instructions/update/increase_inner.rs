@@ -1,43 +1,26 @@
 use crate::{
     axis::{
-        leg::{leg_coordinates::LegCoordinates, leg_matcher::LegMatcher, Base, LegEnum, Quote},
-        market::{header::update_header::UpdateHeader, market_marker::MarketMarker, MarketAndKey},
+        leg::{leg_matcher::LegMatcher, Base},
+        market::{market_marker::MarketMarker, CommonMarket},
         token::token_marker::TokenMarker,
-        update::{update_marker::UpdateMarker, UpdateEnum},
     },
     goblin_error::GoblinError,
-    input_processor::{Decodable, DecodeCtx},
-    instructions::get_leg_in::get_leg_in,
-    matching::bitmap::{
-        outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos, FullCoordinates,
-    },
+    matching::bitmap::FullCoordinates,
     quantities::{BaseLots, QuantityOps, Ticks},
-    settlement::local_delta::LocalDelta,
+    settlement::local_delta::LocalSenderDelta,
     state::{
-        bitmap::{
-            inner_bitmap::{preimage::InnerBitmapPreimage, InnerBitmap},
-            outer_bitmap::{
-                active_outer_bitmap::ActiveOuterBitmap, outer_bitmap_state::OuterBitmapState,
-                preimage::OuterBitmapPreimage,
-            },
-        },
-        resting_order::preimage::RestingOrderPreimage,
-        MarketState, Preimage, SlotKey,
+        bitmap::inner_bitmap::preimage::InnerBitmapPreimage,
+        resting_order::preimage::RestingOrderPreimage, Preimage, SlotKey,
     },
     types::StoreReader,
 };
 
 pub fn increase_inner<M, B, Q, In>(
-    ctx: &DecodeCtx,
-    local_delta: &mut LocalDelta,
-    MarketAndKey { market, market_key }: &MarketAndKey<M, B, Q>,
-    market_state: &mut MarketState,
+    local_sender_delta: &mut LocalSenderDelta,
+    market: &CommonMarket<M, B, Q>,
     full_coordinates: FullCoordinates,
     base_lots: BaseLots,
-    outer_bitmap_key: &SlotKey<OuterBitmapPreimage<M, B, Q>>,
-    active_outer_bitmap: &ActiveOuterBitmap,
     inner_bitmap_key: &SlotKey<InnerBitmapPreimage<M, B, Q>>,
-    inner_bitmap_state: &InnerBitmap,
 ) -> Result<(), GoblinError>
 where
     M: MarketMarker,
@@ -45,7 +28,6 @@ where
     Q: TokenMarker,
     In: LegMatcher,
 {
-    // Check if active. If inactive, we cannot increase or decrease
     // Update slot
     let resting_order_key = RestingOrderPreimage {
         inner_bitmap_key: *inner_bitmap_key,
@@ -58,13 +40,17 @@ where
         .size
         .checked_add(base_lots)
         .ok_or(GoblinError::Overflow)?;
+    resting_order_key.store(&resting_order_state);
 
+    // Update delta
     let base_lot_size = Base::get(&market.lot_size_pair);
     let price = Ticks::from(full_coordinates);
-    let delta = In::maker_deposit(base_lots, base_lot_size, market.tick_size, price);
+    local_sender_delta.add_resting_order_deposit::<In>(
+        base_lots,
+        base_lot_size,
+        market.tick_size,
+        price,
+    )?;
 
-    // Define new fields in local delta to store these amounts
-    //
-    // local_delta.
     Ok(())
 }
