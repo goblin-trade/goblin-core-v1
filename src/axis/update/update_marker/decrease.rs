@@ -22,7 +22,7 @@ impl UpdateMarker for Decrease {
         local_sender_delta: &mut LocalSenderDelta,
         market: &CommonMarket<M, B, Q>,
         resting_order_key: &SlotKey<RestingOrderPreimage<M, B, Q>>,
-        full_coordinates: FullCoordinates,
+        full_coordinates: &FullCoordinates,
         base_lots: BaseLots,
         inner_bitmap_state: &mut InnerBitmap,
     ) -> Result<(), GoblinError>
@@ -47,7 +47,7 @@ impl UpdateMarker for Decrease {
 
         // Update delta
         let base_lot_size = Base::get(&market.lot_size_pair);
-        let price = Ticks::from(full_coordinates);
+        let price = Ticks::from(*full_coordinates);
         local_sender_delta.subtract_resting_order_deposit::<In>(
             reduced_lots,
             base_lot_size,

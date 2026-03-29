@@ -1,14 +1,14 @@
 use crate::{
     axis::{
         leg::{Base, LegEnum, Quote},
-        market::{header::update_header::UpdateHeader, market_marker::MarketMarker, CommonMarket},
+        market::{market_marker::MarketMarker, CommonMarket},
         token::token_marker::TokenMarker,
         update::{update_marker::UpdateMarker, Decrease, Increase, UpdateEnum},
     },
     goblin_error::GoblinError,
-    instructions::get_leg_in::get_leg_in,
+    instructions::update::get_leg_in,
     matching::bitmap::FullCoordinates,
-    quantities::Ticks,
+    quantities::{BaseLots, Ticks},
     settlement::local_delta::LocalSenderDelta,
     state::{
         bitmap::inner_bitmap::InnerBitmap, resting_order::preimage::RestingOrderPreimage,
@@ -21,25 +21,26 @@ pub fn process_update_cases<M, B, Q>(
     market: &CommonMarket<M, B, Q>,
     market_state: &mut MarketState,
     resting_order_key: &SlotKey<RestingOrderPreimage<M, B, Q>>,
-    full_coordinates: FullCoordinates,
-    header: &UpdateHeader,
+    full_coordinates: &FullCoordinates,
     inner_bitmap_state: &mut InnerBitmap,
+    base_lots: BaseLots,
+    update_variant: UpdateEnum,
 ) -> Result<(), GoblinError>
 where
     M: MarketMarker,
     B: TokenMarker,
     Q: TokenMarker,
 {
-    let price = Ticks::from(full_coordinates);
+    let price = Ticks::from(*full_coordinates);
     let leg_in = get_leg_in(price, &market_state.last_coordinates)?;
 
-    match (leg_in, header.update_variant) {
+    match (leg_in, update_variant) {
         (LegEnum::Base, UpdateEnum::Increase) => Increase::process_update::<M, B, Q, Base>(
             local_sender_delta,
             market,
             &resting_order_key,
             full_coordinates,
-            header.base_lots,
+            base_lots,
             inner_bitmap_state,
         ),
         (LegEnum::Quote, UpdateEnum::Increase) => Increase::process_update::<M, B, Q, Quote>(
@@ -47,7 +48,7 @@ where
             market,
             &resting_order_key,
             full_coordinates,
-            header.base_lots,
+            base_lots,
             inner_bitmap_state,
         ),
         (LegEnum::Base, UpdateEnum::Decrease) => Decrease::process_update::<M, B, Q, Base>(
@@ -55,7 +56,7 @@ where
             market,
             &resting_order_key,
             full_coordinates,
-            header.base_lots,
+            base_lots,
             inner_bitmap_state,
         ),
 
@@ -64,7 +65,7 @@ where
             market,
             &resting_order_key,
             full_coordinates,
-            header.base_lots,
+            base_lots,
             inner_bitmap_state,
         ),
     }

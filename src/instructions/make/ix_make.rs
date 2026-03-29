@@ -1,27 +1,18 @@
 use crate::{
     axis::{
-        market::{
-            header::{make_header::MakeHeader, update_header::UpdateHeader},
-            market_marker::MarketMarker,
-            MarketAndKey,
-        },
+        market::{header::make_header::MakeHeader, market_marker::MarketMarker, MarketAndKey},
         token::token_marker::TokenMarker,
     },
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
-    instructions::process_update_cases::process_update_cases,
+    instructions::{make_variant::MakeVariant, update::ix_update},
     matching::bitmap::{
         outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos, FullCoordinates,
     },
-    require,
     settlement::local_delta::LocalDelta,
     state::{
-        bitmap::{
-            inner_bitmap::{preimage::InnerBitmapPreimage, InnerBitmap},
-            Bitmap,
-        },
-        resting_order::preimage::RestingOrderPreimage,
-        MarketState, Preimage, SlotKey,
+        bitmap::inner_bitmap::{preimage::InnerBitmapPreimage, InnerBitmap},
+        MarketState, SlotKey,
     },
 };
 
@@ -41,6 +32,26 @@ where
     Q: TokenMarker,
 {
     let header = MakeHeader::try_decode(ctx)?;
+
+    let full_coordinates = FullCoordinates {
+        outer_bitmap_index,
+        outer_pos,
+        inner_pos: header.inner_pos,
+    };
+
+    match header.make_variant {
+        MakeVariant::Update(update_enum) => ix_update::<M, B, Q>(
+            local_delta,
+            market_and_key,
+            market_state,
+            &full_coordinates,
+            &inner_bitmap_key,
+            inner_bitmap_state,
+            header.base_lots,
+            update_enum,
+        )?,
+        MakeVariant::Open(leg_enum) => todo!(),
+    }
 
     Ok(())
 }

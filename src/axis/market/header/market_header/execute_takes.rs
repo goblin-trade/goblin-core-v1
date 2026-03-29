@@ -13,16 +13,13 @@ use crate::{
     },
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
-    instructions::{ix_take, ix_update::ix_update},
+    instructions::{ix_make, ix_take},
     require,
     settlement::local_delta::LocalDelta,
     state::{
         bitmap::{
             inner_bitmap::preimage::InnerBitmapPreimage,
-            outer_bitmap::{
-                active_outer_bitmap, outer_bitmap_state::OuterBitmapState,
-                preimage::OuterBitmapPreimage,
-            },
+            outer_bitmap::{outer_bitmap_state::OuterBitmapState, preimage::OuterBitmapPreimage},
             Bitmap,
         },
         MarketState, Preimage,
@@ -94,7 +91,7 @@ where
                 let mut inner_bitmap_state = inner_bitmap_key.load();
 
                 for _ in 0..update_count {
-                    ix_update::<M, B, Q>(
+                    ix_make::<M, B, Q>(
                         ctx,
                         local_delta,
                         market_and_key,
