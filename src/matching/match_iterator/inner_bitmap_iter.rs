@@ -50,7 +50,7 @@ where
     In: LegMatcher,
 {
     In::outer_pos_iter(child_range).filter_map(move |outer_pos| {
-        if !active_outer_bitmap.active(outer_pos) {
+        if !active_outer_bitmap.pos_active(outer_pos) {
             return None;
         }
 

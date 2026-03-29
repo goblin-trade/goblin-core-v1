@@ -1,5 +1,5 @@
 #[repr(C)]
-#[derive(PartialEq)]
+#[derive(PartialEq, Default)]
 pub struct ActiveOuterBitmap {
     pub inner: [u8; 32],
 }

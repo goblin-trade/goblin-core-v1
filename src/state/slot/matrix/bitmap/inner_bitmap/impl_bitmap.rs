@@ -4,12 +4,15 @@ use crate::{
 };
 
 impl Bitmap<InnerPos> for InnerBitmap {
-    fn active(&self, pos: InnerPos) -> bool {
-        let row = Row::from(pos);
-        let column = Column::from(pos);
+    fn pos_active(&self, pos: InnerPos) -> bool {
+        let row_byte = self.inner[Row::from(pos).inner as usize];
+        let mask = 1 << Column::from(pos).inner;
+        (row_byte & mask) != 0
+    }
 
-        let row_bits = self.inner[row.inner as usize];
-        let mask = 1u8 << column.inner;
-        (row_bits & mask) != 0
+    fn deactivate(&mut self, pos: InnerPos) {
+        // mask with 0 at target bit, 1 elsewhere
+        let mask = !(1u8 << Column::from(pos).inner);
+        self.inner[Row::from(pos).inner as usize] &= mask;
     }
 }

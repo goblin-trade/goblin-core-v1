@@ -7,6 +7,7 @@ pub struct Update;
 pub type Increase = Marker<Update, 0>;
 pub type Decrease = Marker<Update, 1>;
 
+#[derive(Clone, Copy)]
 pub enum UpdateEnum {
     Increase,
     Decrease,

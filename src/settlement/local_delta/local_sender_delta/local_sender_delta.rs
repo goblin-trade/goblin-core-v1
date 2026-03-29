@@ -39,4 +39,17 @@ impl LocalSenderDelta {
         *deposit = deposit.checked_add(delta).ok_or(GoblinError::Overflow)?;
         Ok(())
     }
+
+    pub fn subtract_resting_order_deposit<In: LegMatcher>(
+        &mut self,
+        base_lots: BaseLots,
+        base_lot_size: BaseLotsPerBaseUnit,
+        tick_size: QuoteLotsPerBaseUnitPerTick,
+        price: Ticks,
+    ) -> Result<(), GoblinError> {
+        let delta = In::maker_deposit(base_lots, base_lot_size, tick_size, price);
+        let deposit = In::get_leg_mut(&mut self.resting_order_deposits);
+        *deposit = deposit.checked_sub(delta).ok_or(GoblinError::Overflow)?;
+        Ok(())
+    }
 }

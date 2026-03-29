@@ -26,7 +26,7 @@ where
     In: LegMatcher,
 {
     In::inner_pos_iter(child_range).filter_map(move |inner_pos| {
-        if !inner_bitmap.active(inner_pos) {
+        if !inner_bitmap.pos_active(inner_pos) {
             return None;
         }
 

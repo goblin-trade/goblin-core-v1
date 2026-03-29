@@ -4,13 +4,16 @@ use crate::{
 };
 
 impl Bitmap<OuterPos> for ActiveOuterBitmap {
-    fn active(&self, pos: OuterPos) -> bool {
-        let idx = pos.inner as usize;
+    fn pos_active(&self, pos: OuterPos) -> bool {
+        let byte = self.inner[pos.byte_index()];
+        let mask = 1 << pos.bit_index();
 
-        let byte_index = idx / 8;
-        let bit_index = idx % 8;
+        (byte & mask) != 0
+    }
 
-        let byte = self.inner[byte_index];
-        (byte >> bit_index) & 1 == 1
+    fn deactivate(&mut self, pos: OuterPos) {
+        // mask with 0 at target bit, 1 elsewhere
+        let mask = !(1u8 << pos.bit_index());
+        self.inner[pos.byte_index()] &= mask;
     }
 }

@@ -9,6 +9,14 @@ impl OuterPos {
     pub const fn new(inner: u8) -> Self {
         Self { inner }
     }
+
+    pub fn byte_index(&self) -> usize {
+        self.inner as usize / 8
+    }
+
+    pub fn bit_index(&self) -> usize {
+        self.inner as usize % 8
+    }
 }
 
 impl Coordinate for OuterPos {
