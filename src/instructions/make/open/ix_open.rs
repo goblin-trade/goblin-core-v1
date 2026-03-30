@@ -1,11 +1,11 @@
 use crate::{
     axis::{
+        leg::{leg_matcher::LegMatcher, LegEnum},
         market::{market_marker::MarketMarker, MarketAndKey},
         token::token_marker::TokenMarker,
         update::UpdateEnum,
     },
     goblin_error::GoblinError,
-    instructions::update::process_update_cases,
     matching::bitmap::FullCoordinates,
     quantities::BaseLots,
     require,
@@ -20,7 +20,7 @@ use crate::{
     },
 };
 
-pub fn ix_update<M, B, Q>(
+pub fn ix_open<M, B, Q, In>(
     local_delta: &mut LocalDelta,
     market_and_key: &MarketAndKey<M, B, Q>,
     market_state: &mut MarketState,
@@ -28,32 +28,16 @@ pub fn ix_update<M, B, Q>(
     inner_bitmap_key: &SlotKey<InnerBitmapPreimage<M, B, Q>>,
     inner_bitmap_state: &mut InnerBitmap,
     base_lots: BaseLots,
-    update_enum: UpdateEnum,
 ) -> Result<(), GoblinError>
 where
     M: MarketMarker,
     B: TokenMarker,
     Q: TokenMarker,
+    In: LegMatcher,
 {
     require!(
-        inner_bitmap_state.pos_active(full_coordinates.inner_pos),
-        GoblinError::NoRestingOrder
+        In::valid_open_price(market_state, (*full_coordinates).into()),
+        GoblinError::InvalidOpenPrice
     );
-
-    let resting_order_key = RestingOrderPreimage {
-        inner_bitmap_key: *inner_bitmap_key,
-        inner_pos: full_coordinates.inner_pos,
-    }
-    .hash();
-
-    process_update_cases::<M, B, Q>(
-        &mut local_delta.local_sender_delta,
-        &market_and_key.market,
-        market_state,
-        &resting_order_key,
-        full_coordinates,
-        inner_bitmap_state,
-        base_lots,
-        update_enum,
-    )
+    Ok(())
 }

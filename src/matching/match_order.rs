@@ -39,7 +39,7 @@ where
 {
     let start_coordinate_ref = In::get_leg_mut(&mut market_state.last_coordinates);
     require!(
-        In::closer_to_centre(start_coordinate_ref.price, price_limit),
+        In::closer_to_opposite_limit(start_coordinate_ref.price, price_limit),
         GoblinError::TakerPriceLimitReached
     );
 

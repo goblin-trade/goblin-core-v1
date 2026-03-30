@@ -8,6 +8,7 @@ use crate::{
         BaseLots, BaseLotsPerBaseUnit, QuantityOps, QuoteLots, QuoteLotsPerBaseUnitPerTick, Ticks,
     },
     settlement::MatchedLots,
+    state::MarketState,
     types::{StoreReader, Tuple},
 };
 
@@ -90,4 +91,9 @@ pub trait LegMatcher:
         tick_size: QuoteLotsPerBaseUnitPerTick,
         price: Ticks,
     ) -> <Self::Opposite as LegQuantities>::Lots;
+
+    fn valid_open_price(market_state: &MarketState, price: Ticks) -> bool {
+        let opposite_price = Self::Opposite::get(&market_state.last_coordinates).price;
+        Self::closer_to_opposite_limit(price, opposite_price)
+    }
 }

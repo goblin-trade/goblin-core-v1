@@ -4,7 +4,7 @@ use crate::{
 };
 
 impl LegCoordinates for Base {
-    fn closer_to_centre<K: PartialEq + PartialOrd>(first: K, second: K) -> bool {
+    fn closer_to_opposite_limit<K: PartialEq + PartialOrd>(first: K, second: K) -> bool {
         // For In=Base (ask), we match downwards against resting bids
         first > second
     }
