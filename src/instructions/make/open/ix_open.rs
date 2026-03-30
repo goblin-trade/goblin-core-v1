@@ -6,7 +6,7 @@ use crate::{
         update::UpdateEnum,
     },
     goblin_error::GoblinError,
-    matching::bitmap::FullCoordinates,
+    matching::bitmap::{FullCoordinates, StoredCoordinates},
     quantities::BaseLots,
     require,
     settlement::local_delta::LocalDelta,
@@ -40,10 +40,12 @@ where
         GoblinError::InvalidOpenPrice
     );
 
-    let last_coordinate = FullCoordinates::from(In::get(&market_state.last_coordinates));
+    let last_coordinate_mut = In::get_leg_mut(&mut market_state.last_coordinates);
 
-    // TODO fix wrong definition
-    // if In::closer_to_opposite_limit(*full_coordinates, last_coordinate) {}
+    let current_coordinate = StoredCoordinates::from(*full_coordinates);
+    if current_coordinate.closer_to_opposite_pole::<In>(last_coordinate_mut) {
+        *last_coordinate_mut = current_coordinate;
+    }
 
     Ok(())
 }
