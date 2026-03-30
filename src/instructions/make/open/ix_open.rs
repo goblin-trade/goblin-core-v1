@@ -39,5 +39,11 @@ where
         In::valid_open_price(market_state, (*full_coordinates).into()),
         GoblinError::InvalidOpenPrice
     );
+
+    let last_coordinate = FullCoordinates::from(In::get(&market_state.last_coordinates));
+
+    // TODO fix wrong definition
+    // if In::closer_to_opposite_limit(*full_coordinates, last_coordinate) {}
+
     Ok(())
 }

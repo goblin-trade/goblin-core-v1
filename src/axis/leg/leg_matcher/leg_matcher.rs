@@ -94,6 +94,6 @@ pub trait LegMatcher:
 
     fn valid_open_price(market_state: &MarketState, price: Ticks) -> bool {
         let opposite_price = Self::Opposite::get(&market_state.last_coordinates).price;
-        Self::closer_to_opposite_limit(price, opposite_price)
+        Self::closer_to_opposite_pole(opposite_price, price)
     }
 }

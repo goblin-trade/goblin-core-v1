@@ -9,7 +9,7 @@ pub trait LegCoordinates: LegQuantities {
     ///
     /// 1. For In = Base (ask / sell) match against resting bids downwards. first > second.
     /// 2. For In = Quote (bid / buy) match against resting asks upwards. first < second.
-    fn closer_to_opposite_limit<K: PartialEq + PartialOrd>(first: K, second: K) -> bool;
+    fn closer_to_opposite_pole<K: PartialEq + PartialOrd>(first: K, second: K) -> bool;
 
     fn start_value<C: Coordinate>() -> C;
 

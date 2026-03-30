@@ -4,7 +4,7 @@ use crate::{
 };
 
 impl LegCoordinates for Quote {
-    fn closer_to_opposite_limit<K: PartialEq + PartialOrd>(first: K, second: K) -> bool {
+    fn closer_to_opposite_pole<K: PartialEq + PartialOrd>(first: K, second: K) -> bool {
         // For In=Quote (bid), we match upwards against resting asks
         first < second
     }
