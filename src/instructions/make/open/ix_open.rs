@@ -40,6 +40,9 @@ where
         GoblinError::InvalidOpenPrice
     );
 
+    // Ensure bit is not already active
+    // But what about garbage bits?
+
     let last_coordinate_mut = In::get_leg_mut(&mut market_state.last_coordinates);
 
     let current_coordinate = StoredCoordinates::from(*full_coordinates);
