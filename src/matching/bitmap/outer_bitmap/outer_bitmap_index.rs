@@ -1,4 +1,9 @@
-use crate::{matching::bitmap::Coordinate, quantities::Ticks};
+use crate::{
+    axis::leg::{leg_coordinates::LegCoordinates, Base, Pair, Quote},
+    matching::bitmap::{Coordinate, StoredCoordinates},
+    quantities::Ticks,
+    types::StoreReader,
+};
 
 #[derive(Clone, Copy, PartialEq, PartialOrd)]
 pub struct OuterBitmapIndex {
@@ -8,6 +13,11 @@ pub struct OuterBitmapIndex {
 impl OuterBitmapIndex {
     pub const fn new(inner: u64) -> Self {
         Self { inner }
+    }
+
+    pub fn holds_garbage(&self, pair: &Pair<Self, Self>) -> bool {
+        Base::closer_to_opposite_pole(*self, Base::get(pair))
+            && Base::closer_to_opposite_pole(*self, Quote::get(pair))
     }
 }
 

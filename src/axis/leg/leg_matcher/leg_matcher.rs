@@ -4,6 +4,7 @@ use crate::{
         leg_quantities::LegQuantities, leg_reader::LegReader, leg_validator::LegValidator, Base,
         Leg, Quote,
     },
+    matching::bitmap::outer_bitmap_index::OuterBitmapIndex,
     quantities::{
         BaseLots, BaseLotsPerBaseUnit, QuantityOps, QuoteLots, QuoteLotsPerBaseUnitPerTick, Ticks,
     },
