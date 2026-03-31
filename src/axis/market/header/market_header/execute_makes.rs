@@ -1,7 +1,7 @@
 use super::MarketHeader;
 use crate::{
     axis::{
-        leg::{Base, Pair},
+        leg::{Base, Pair, SamePair},
         market::{
             header::{
                 inner_bitmap_header::InnerBitmapHeader, outer_bitmap_header::OuterBitmapHeader,
@@ -14,6 +14,7 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
     instructions::ix_make,
+    matching::bitmap::{outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos},
     require,
     settlement::local_delta::LocalDelta,
     state::{
@@ -25,7 +26,6 @@ use crate::{
             },
             Bitmap,
         },
-        pair::{OuterBitmapIndexPair, OuterPosPair},
         MarketState, Preimage,
     },
 };
@@ -43,8 +43,9 @@ where
         market_and_key: &MarketAndKey<M, B, Q>,
         market_state: &mut MarketState,
     ) -> Result<(), GoblinError> {
-        let outer_bitmap_index_pair = OuterBitmapIndexPair::from(market_state.last_coordinates);
-        let outer_pos_pair = OuterPosPair::from(market_state.last_coordinates);
+        let outer_bitmap_index_pair =
+            SamePair::<OuterBitmapIndex>::from(market_state.last_coordinates);
+        let outer_pos_pair = SamePair::<OuterPos>::from(market_state.last_coordinates);
 
         for _ in 0..self.outer_bitmap_count {
             let outer_bitmap_header = OuterBitmapHeader::try_decode(ctx)?;

@@ -1,5 +1,5 @@
 use crate::{
-    axis::leg::{leg_coordinates::LegCoordinates, Base, Pair, Quote},
+    axis::leg::{leg_coordinates::LegCoordinates, Base, Pair, Quote, SamePair},
     matching::bitmap::{Coordinate, StoredCoordinates},
     quantities::Ticks,
     types::StoreReader,
@@ -15,7 +15,7 @@ impl OuterBitmapIndex {
         Self { inner }
     }
 
-    pub fn holds_garbage(&self, pair: &Pair<Self, Self>) -> bool {
+    pub fn holds_garbage(&self, pair: &SamePair<Self>) -> bool {
         Base::closer_to_opposite_pole(*self, Base::get(pair))
             && Base::closer_to_opposite_pole(*self, Quote::get(pair))
     }

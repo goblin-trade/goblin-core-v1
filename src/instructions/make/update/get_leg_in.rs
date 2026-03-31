@@ -1,5 +1,5 @@
 use crate::{
-    axis::leg::{Base, LegEnum, Pair, Quote},
+    axis::leg::{Base, LegEnum, Quote, SamePair},
     goblin_error::GoblinError,
     matching::bitmap::StoredCoordinates,
     quantities::Ticks,
@@ -16,7 +16,7 @@ use crate::{
 ///
 pub fn get_leg_in(
     price: Ticks,
-    last_coordinates: &Pair<StoredCoordinates, StoredCoordinates>,
+    last_coordinates: &SamePair<StoredCoordinates>,
 ) -> Result<LegEnum, GoblinError> {
     // Ask- maker wants base token
     let last_price_base_in = Base::get(last_coordinates).price;

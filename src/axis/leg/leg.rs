@@ -8,6 +8,7 @@ pub type Base = Marker<Leg, 0>;
 pub type Quote = Marker<Leg, 1>;
 
 pub type Pair<T0, T1> = Tuple<T0, T1, Leg>;
+pub type SamePair<T> = Pair<T, T>;
 
 pub enum LegEnum {
     Base,

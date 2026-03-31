@@ -1,6 +1,6 @@
 use crate::{
     axis::{
-        leg::{Base, Pair, Quote},
+        leg::{Base, Quote, SamePair},
         token::token_marker::TokenMarker,
     },
     goblin_error::GoblinError,
@@ -12,7 +12,7 @@ use crate::{
 ///
 /// ETH cannot be dynamically deposited. We only track deposit amounts for
 /// ERC20 tokens. The code is common for both HardcodedERC20 and CustomERC20
-pub type Deposits = Pair<DeltaAtoms, DeltaAtoms>;
+pub type Deposits = SamePair<DeltaAtoms>;
 
 impl Deposits {
     pub fn set_deposits<'a, B, Q>(&mut self, ctx: &DecodeCtx) -> Result<(), GoblinError>

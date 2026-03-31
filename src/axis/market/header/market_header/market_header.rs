@@ -1,7 +1,7 @@
 use core::marker::PhantomData;
 
 use crate::axis::{
-    leg::Pair, market::market_marker::MarketMarker, token::token_marker::TokenMarker,
+    leg::SamePair, market::market_marker::MarketMarker, token::token_marker::TokenMarker,
 };
 
 pub struct MarketHeader<M, B, Q>
@@ -14,7 +14,7 @@ where
     pub decode_deposit_amounts: bool,
 
     /// Whether to execute take orders for sides In=Base and In=Quote
-    pub execute_takes: Pair<bool, bool>,
+    pub execute_takes: SamePair<bool>,
 
     /// Number of outer bitmaps to traverse
     pub outer_bitmap_count: u8,
@@ -30,7 +30,7 @@ where
 {
     pub fn new(
         decode_deposit_amounts: bool,
-        execute_takes: Pair<bool, bool>,
+        execute_takes: SamePair<bool>,
         outer_bitmap_indices: u8,
     ) -> Self {
         Self {
