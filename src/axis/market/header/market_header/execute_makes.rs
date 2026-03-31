@@ -18,7 +18,7 @@ use crate::{
     settlement::local_delta::LocalDelta,
     state::{
         bitmap::{
-            inner_bitmap::preimage::InnerBitmapPreimage,
+            inner_bitmap::{preimage::InnerBitmapPreimage, InnerBitmap},
             outer_bitmap::{
                 active_outer_bitmap::ActiveOuterBitmap, outer_bitmap_state::OuterBitmapState,
                 preimage::OuterBitmapPreimage, OuterBitmap,
@@ -56,32 +56,18 @@ where
             }
             .hash();
 
-            // Check if garbage
             let mut active_outer_bitmap =
                 if outer_bitmap_index.holds_garbage(&outer_bitmap_index_pair) {
                     ActiveOuterBitmap::default()
                 } else {
-                    match OuterBitmapState::from(outer_bitmap_key.load()) {
-                        OuterBitmapState::Active(active_outer_bitmap) => active_outer_bitmap,
-                        _ => ActiveOuterBitmap::default(),
+                    if let OuterBitmapState::Active(active_outer_bitmap) =
+                        OuterBitmapState::from(outer_bitmap_key.load())
+                    {
+                        active_outer_bitmap
+                    } else {
+                        ActiveOuterBitmap::default()
                     }
                 };
-
-            // let outer_bitmap = outer_bitmap_key.load();
-
-            // This was an optimization for updates. If there is no active bit,
-            // we cannot inrease or cancel.
-            //
-            // However empty bitmap is usable when opening orders.
-            // Better to have separate flows?
-            //
-            // Hot path- market maker will open, update and cancel together. If bitmap
-            // was already closed, he will know this client side and will not make the RPC call to waste gas.
-
-            // let outer_bitmap_state = OuterBitmapState::from(outer_bitmap);
-            // let OuterBitmapState::Active(mut active_outer_bitmap) = outer_bitmap_state else {
-            //     return Err(GoblinError::NoRestingOrder);
-            // };
 
             for _ in 0..outer_bitmap_header.inner_bitmap_count {
                 let InnerBitmapHeader {
@@ -89,17 +75,19 @@ where
                     update_count,
                 } = InnerBitmapHeader::try_decode(ctx)?;
 
-                require!(
-                    active_outer_bitmap.pos_active(outer_pos),
-                    GoblinError::NoRestingOrder
-                );
-
                 let inner_bitmap_key = InnerBitmapPreimage {
                     outer_bitmap_key,
                     outer_pos,
                 }
                 .hash();
-                let mut inner_bitmap_state = inner_bitmap_key.load();
+
+                let mut inner_bitmap_state = if outer_pos.holds_garbage(&outer_pos_pair)
+                    || !active_outer_bitmap.pos_active(outer_pos)
+                {
+                    InnerBitmap::default()
+                } else {
+                    inner_bitmap_key.load()
+                };
 
                 for _ in 0..update_count {
                     ix_make::<M, B, Q>(

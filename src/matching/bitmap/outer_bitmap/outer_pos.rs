@@ -1,4 +1,10 @@
-use crate::{matching::bitmap::Coordinate, quantities::Ticks};
+use crate::{
+    axis::leg::{leg_coordinates::LegCoordinates, Base, Quote},
+    matching::bitmap::Coordinate,
+    quantities::Ticks,
+    state::pair::OuterPosPair,
+    types::StoreReader,
+};
 
 #[derive(Clone, Copy, PartialEq, PartialOrd)]
 pub struct OuterPos {
@@ -16,6 +22,11 @@ impl OuterPos {
 
     pub fn bit_index(&self) -> usize {
         self.inner as usize % 8
+    }
+
+    pub fn holds_garbage(&self, pair: &OuterPosPair) -> bool {
+        Base::closer_to_opposite_pole(*self, Base::get(pair))
+            && Base::closer_to_opposite_pole(*self, Quote::get(pair))
     }
 }
 
