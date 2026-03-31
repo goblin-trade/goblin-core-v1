@@ -20,7 +20,8 @@ use crate::{
         bitmap::{
             inner_bitmap::preimage::InnerBitmapPreimage,
             outer_bitmap::{
-                outer_bitmap_state::OuterBitmapState, preimage::OuterBitmapPreimage, OuterBitmap,
+                active_outer_bitmap::ActiveOuterBitmap, outer_bitmap_state::OuterBitmapState,
+                preimage::OuterBitmapPreimage, OuterBitmap,
             },
             Bitmap,
         },
@@ -56,11 +57,15 @@ where
             .hash();
 
             // Check if garbage
-            let outer_bitmap = if outer_bitmap_index.holds_garbage(&outer_bitmap_index_pair) {
-                OuterBitmap::default()
-            } else {
-                outer_bitmap_key.load()
-            };
+            let mut active_outer_bitmap =
+                if outer_bitmap_index.holds_garbage(&outer_bitmap_index_pair) {
+                    ActiveOuterBitmap::default()
+                } else {
+                    match OuterBitmapState::from(outer_bitmap_key.load()) {
+                        OuterBitmapState::Active(active_outer_bitmap) => active_outer_bitmap,
+                        _ => ActiveOuterBitmap::default(),
+                    }
+                };
 
             // let outer_bitmap = outer_bitmap_key.load();
 
