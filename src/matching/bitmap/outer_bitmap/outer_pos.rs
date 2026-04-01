@@ -27,6 +27,14 @@ impl OuterPos {
         Base::closer_to_opposite_pole(*self, Base::get(pair))
             && Base::closer_to_opposite_pole(*self, Quote::get(pair))
     }
+
+    pub fn next(&self) -> Option<Self> {
+        self.inner.checked_add(1).map(Self::new)
+    }
+
+    pub fn prev(&self) -> Option<Self> {
+        self.inner.checked_add(1).map(Self::new)
+    }
 }
 
 impl Coordinate for OuterPos {

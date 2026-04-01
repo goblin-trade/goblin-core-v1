@@ -1,7 +1,7 @@
 use super::MarketHeader;
 use crate::{
     axis::{
-        leg::{Base, Pair, SamePair},
+        leg::SamePair,
         market::{
             header::{
                 inner_bitmap_header::InnerBitmapHeader, outer_bitmap_header::OuterBitmapHeader,
@@ -57,18 +57,12 @@ where
             }
             .hash();
 
-            let mut active_outer_bitmap =
-                if outer_bitmap_index.holds_garbage(&outer_bitmap_index_pair) {
-                    ActiveOuterBitmap::default()
-                } else {
-                    if let OuterBitmapState::Active(active_outer_bitmap) =
-                        OuterBitmapState::from(outer_bitmap_key.load())
-                    {
-                        active_outer_bitmap
-                    } else {
-                        ActiveOuterBitmap::default()
-                    }
-                };
+            let mut active_outer_bitmap = ActiveOuterBitmap::new_cleaned(
+                &outer_bitmap_key,
+                outer_bitmap_index,
+                &outer_bitmap_index_pair,
+                &outer_pos_pair,
+            );
 
             for _ in 0..outer_bitmap_header.inner_bitmap_count {
                 let InnerBitmapHeader {
@@ -82,8 +76,9 @@ where
                 }
                 .hash();
 
-                let mut inner_bitmap_state = if outer_pos.holds_garbage(&outer_pos_pair)
-                    || !active_outer_bitmap.pos_active(outer_pos)
+                let mut inner_bitmap_state = if !active_outer_bitmap.pos_active(outer_pos)
+                    || outer_pos.holds_garbage(&outer_pos_pair)
+                // todo this is only when outer_bitmap_index = last
                 {
                     InnerBitmap::default()
                 } else {
