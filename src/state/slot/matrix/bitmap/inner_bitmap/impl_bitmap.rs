@@ -1,9 +1,12 @@
 use crate::{
-    matching::bitmap::{column::Column, inner_pos::InnerPos, row::Row},
+    matching::bitmap::{
+        column::Column, inner_pos::InnerPos, outer_bitmap_index::OuterBitmapIndex,
+        outer_pos::OuterPos, row::Row,
+    },
     state::bitmap::{inner_bitmap::InnerBitmap, Bitmap},
 };
 
-impl Bitmap<InnerPos> for InnerBitmap {
+impl Bitmap<(OuterBitmapIndex, OuterPos), InnerPos> for InnerBitmap {
     fn pos_active(&self, pos: InnerPos) -> bool {
         let row_byte = self.inner[Row::from(pos).inner as usize];
         let mask = 1 << Column::from(pos).inner;

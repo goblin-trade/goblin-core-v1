@@ -85,4 +85,27 @@ impl ActiveOuterBitmap {
             }
         }
     }
+
+    pub fn new_cleaned_v2<M, B, Q>(
+        key: &SlotKey<OuterBitmapPreimage<M, B, Q>>,
+        outer_bitmap_index: OuterBitmapIndex,
+        outer_bitmap_index_pair: &SamePair<OuterBitmapIndex>,
+    ) -> Self
+    where
+        M: MarketMarker,
+        B: TokenMarker,
+        Q: TokenMarker,
+    {
+        if outer_bitmap_index.holds_garbage(outer_bitmap_index_pair) {
+            Self::default()
+        } else {
+            if let OuterBitmapState::Active(active_outer_bitmap) =
+                OuterBitmapState::from(key.load())
+            {
+                active_outer_bitmap
+            } else {
+                Self::default()
+            }
+        }
+    }
 }

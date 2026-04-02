@@ -1,9 +1,9 @@
 use crate::{
-    matching::bitmap::outer_pos::OuterPos,
+    matching::bitmap::{outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos},
     state::bitmap::{outer_bitmap::active_outer_bitmap::ActiveOuterBitmap, Bitmap},
 };
 
-impl Bitmap<OuterPos> for ActiveOuterBitmap {
+impl Bitmap<OuterBitmapIndex, OuterPos> for ActiveOuterBitmap {
     fn pos_active(&self, pos: OuterPos) -> bool {
         let byte = self.inner[pos.byte_index()];
         let mask = 1 << pos.bit_index();
