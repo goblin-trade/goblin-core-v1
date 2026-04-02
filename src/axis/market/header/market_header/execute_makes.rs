@@ -14,7 +14,9 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
     instructions::ix_make,
-    matching::bitmap::{outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos},
+    matching::bitmap::{
+        inner_pos::InnerPos, outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos,
+    },
     require,
     settlement::local_delta::LocalDelta,
     state::{
@@ -46,6 +48,7 @@ where
         let outer_bitmap_index_pair =
             SamePair::<OuterBitmapIndex>::from(market_state.last_coordinates);
         let outer_pos_pair = SamePair::<OuterPos>::from(market_state.last_coordinates);
+        let inner_pos_pair = SamePair::<InnerPos>::from(market_state.last_coordinates);
 
         for _ in 0..self.outer_bitmap_count {
             let outer_bitmap_header = OuterBitmapHeader::try_decode(ctx)?;
@@ -76,10 +79,7 @@ where
                 }
                 .hash();
 
-                let mut inner_bitmap_state = if !active_outer_bitmap.pos_active(outer_pos)
-                    || outer_pos.holds_garbage(&outer_pos_pair)
-                // todo this is only when outer_bitmap_index = last
-                {
+                let mut inner_bitmap_state = if !active_outer_bitmap.pos_active(outer_pos) {
                     InnerBitmap::default()
                 } else {
                     inner_bitmap_key.load()
