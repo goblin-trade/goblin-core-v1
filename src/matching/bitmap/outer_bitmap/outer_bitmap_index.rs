@@ -15,10 +15,10 @@ impl OuterBitmapIndex {
         Self { inner }
     }
 
-    pub fn holds_garbage(&self, pair: &SamePair<Self>) -> bool {
-        Base::closer_to_opposite_pole(*self, Base::get(pair))
-            && Base::closer_to_opposite_pole(*self, Quote::get(pair))
-    }
+    // pub fn holds_garbage(&self, pair: &SamePair<Self>) -> bool {
+    //     Base::closer_to_opposite_pole(*self, Base::get(pair))
+    //         && Base::closer_to_opposite_pole(*self, Quote::get(pair))
+    // }
 }
 
 impl Coordinate for OuterBitmapIndex {

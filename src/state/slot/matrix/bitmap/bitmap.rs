@@ -10,15 +10,15 @@ where
 {
     fn pos_active(&self, pos: P1) -> bool;
 
-    fn pos_active_checked(&self, pos: (P0, P1), limits: &SamePair<(P0, P1)>) -> bool {
-        if Base::closer_to_opposite_pole(pos, Base::get(limits))
-            && Quote::closer_to_opposite_pole(pos, Quote::get(limits))
-        {
-            return false;
-        }
+    // fn pos_active_checked(&self, pos: (P0, P1), limits: &SamePair<(P0, P1)>) -> bool {
+    //     if Base::closer_to_opposite_pole(pos, Base::get(limits))
+    //         && Quote::closer_to_opposite_pole(pos, Quote::get(limits))
+    //     {
+    //         return false;
+    //     }
 
-        self.pos_active(pos.1)
-    }
+    //     self.pos_active(pos.1)
+    // }
 
     fn deactivate(&mut self, pos: P1);
 
@@ -26,8 +26,8 @@ where
         *self == Self::default()
     }
 
-    fn holds_garbage(pos: P1, pair: &SamePair<P1>) -> bool {
-        Base::closer_to_opposite_pole(pos, Base::get(pair))
-            && Base::closer_to_opposite_pole(pos, Quote::get(pair))
-    }
+    // fn holds_garbage(pos: P1, pair: &SamePair<P1>) -> bool {
+    //     Base::closer_to_opposite_pole(pos, Base::get(pair))
+    //         && Base::closer_to_opposite_pole(pos, Quote::get(pair))
+    // }
 }

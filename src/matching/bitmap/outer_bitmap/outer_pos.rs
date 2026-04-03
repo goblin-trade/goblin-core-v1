@@ -23,18 +23,10 @@ impl OuterPos {
         self.inner as usize % 8
     }
 
-    pub fn holds_garbage(&self, pair: &SamePair<Self>) -> bool {
-        Base::closer_to_opposite_pole(*self, Base::get(pair))
-            && Base::closer_to_opposite_pole(*self, Quote::get(pair))
-    }
-
-    pub fn next(&self) -> Option<Self> {
-        self.inner.checked_add(1).map(Self::new)
-    }
-
-    pub fn prev(&self) -> Option<Self> {
-        self.inner.checked_add(1).map(Self::new)
-    }
+    // pub fn holds_garbage(&self, pair: &SamePair<Self>) -> bool {
+    //     Base::closer_to_opposite_pole(*self, Base::get(pair))
+    //         && Base::closer_to_opposite_pole(*self, Quote::get(pair))
+    // }
 }
 
 impl Coordinate for OuterPos {

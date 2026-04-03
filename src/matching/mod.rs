@@ -3,3 +3,4 @@ pub use match_order::*;
 
 pub mod bitmap;
 pub mod match_iterator;
+pub mod region;

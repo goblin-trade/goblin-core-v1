@@ -35,20 +35,20 @@ where
     Q: TokenMarker,
     In: LegMatcher,
 {
-    require!(
-        In::valid_open_price(market_state, (*full_coordinates).into()),
-        GoblinError::InvalidOpenPrice
-    );
+    // require!(
+    //     In::valid_open_price(market_state, (*full_coordinates).into()),
+    //     GoblinError::InvalidOpenPrice
+    // );
 
-    // Ensure bit is not already active
-    // But what about garbage bits?
+    // // Ensure bit is not already active
+    // // But what about garbage bits?
 
-    let last_coordinate_mut = In::get_leg_mut(&mut market_state.last_coordinates);
+    // let last_coordinate_mut = In::get_leg_mut(&mut market_state.last_coordinates);
 
-    let current_coordinate = StoredCoordinates::from(*full_coordinates);
-    if current_coordinate.closer_to_opposite_pole::<In>(last_coordinate_mut) {
-        *last_coordinate_mut = current_coordinate;
-    }
+    // let current_coordinate = StoredCoordinates::from(*full_coordinates);
+    // if current_coordinate.closer_to_opposite_pole::<In>(last_coordinate_mut) {
+    //     *last_coordinate_mut = current_coordinate;
+    // }
 
     Ok(())
 }
