@@ -5,17 +5,7 @@ use crate::{
 };
 
 pub trait LegCoordinates: LegQuantities {
-    /// Whether `first` is closer to the opposite limit price wrt `second`
-    ///
-    /// # Convention
-    ///
-    /// `In` is the taker direction
-    ///
-    /// 1. For In = Base (ask / sell) match against resting bids downwards. first > second.
-    /// 2. For In = Quote (bid / buy) match against resting asks upwards. first < second.
-    fn closer_to_opposite_pole<K: PartialEq + PartialOrd>(first: K, second: K) -> bool;
-
-    fn region(limit_price: Ticks, price: Ticks) -> TakeRegion;
+    fn take_region(limit_price: Ticks, price: Ticks) -> TakeRegion;
 
     fn start_value<C: Coordinate>() -> C;
 

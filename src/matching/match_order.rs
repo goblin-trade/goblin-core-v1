@@ -8,6 +8,7 @@ use crate::{
     matching::{
         bitmap::FullCoordinates,
         match_iterator::{match_iterator, RestingOrderEntry},
+        region::{self, take_region::TakeRegion},
     },
     quantities::{QuantityOps, Ticks},
     require,
@@ -38,8 +39,10 @@ where
     In: LegMatcher,
 {
     let start_coordinate_mut = In::get_leg_mut(&mut market_state.last_coordinates);
+    let region = In::take_region(price_limit, start_coordinate_mut.price);
+
     require!(
-        In::closer_to_opposite_pole(start_coordinate_mut.price, price_limit),
+        region == TakeRegion::Leg,
         GoblinError::TakerPriceLimitReached
     );
 
