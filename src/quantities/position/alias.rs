@@ -7,13 +7,3 @@ pub type RowV2 = DerivedPosition<u8, 3, 5>;
 pub type OuterPosV2 = DerivedPosition<u8, 8, 8>;
 pub type OuterBitmapIndexV2 = DerivedPosition<u64, 16, 48>;
 pub type TickPosV2 = DerivedPosition<u64, 3, 61>;
-
-impl OuterPosV2 {
-    pub fn byte_index(&self) -> usize {
-        self.inner as usize / 8
-    }
-
-    pub fn bit_index(&self) -> usize {
-        self.inner as usize % 8
-    }
-}

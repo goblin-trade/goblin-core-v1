@@ -1,6 +1,6 @@
 use crate::quantities::{inner_val::InnerVal, Position};
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, PartialOrd)]
 pub struct DerivedPosition<K, const BIT_OFFSET: usize, const BIT_COUNT: usize>
 where
     K: InnerVal,
