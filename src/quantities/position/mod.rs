@@ -1,3 +1,6 @@
-pub mod position;
-pub use position::*;
 pub mod alias;
+pub mod derived_position;
+pub mod position;
+
+pub use derived_position::*;
+pub use position::*;
