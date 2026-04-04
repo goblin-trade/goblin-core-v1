@@ -1,9 +1,21 @@
 use crate::quantities::Position;
-use core::usize;
 
-pub struct DerivedPosition<K, const BIT_OFFSET: usize, const BIT_COUNT: usize>(pub K)
+pub struct DerivedPosition<K, const BIT_OFFSET: usize, const BIT_COUNT: usize>
 where
-    K: From<u64> + Into<u64>;
+    K: From<u64> + Into<u64>,
+{
+    pub inner: K,
+}
+
+impl<K, const BIT_OFFSET: usize, const BIT_COUNT: usize> DerivedPosition<K, BIT_OFFSET, BIT_COUNT>
+where
+    K: From<u64> + Into<u64>,
+{
+    #[inline]
+    pub fn new(inner: K) -> Self {
+        Self { inner }
+    }
+}
 
 impl<K, const BIT_OFFSET: usize, const BIT_COUNT: usize> From<Position>
     for DerivedPosition<K, BIT_OFFSET, BIT_COUNT>
@@ -11,10 +23,13 @@ where
     K: From<u64> + Into<u64>,
 {
     fn from(value: Position) -> Self {
-        // Mask is not legal for BIT_COUNT=64
-        let mask = (1 << BIT_COUNT) - 1;
-        let extracted = (value.0 >> BIT_OFFSET) & mask;
-        Self(extracted.into())
+        // Mask is not legal for BIT_COUNT = 64
+        let mask = (1u64 << BIT_COUNT) - 1;
+        let extracted = (value.inner >> BIT_OFFSET) & mask;
+
+        Self {
+            inner: extracted.into(),
+        }
     }
 }
 
@@ -24,8 +39,11 @@ where
     K: From<u64> + Into<u64>,
 {
     fn from(value: DerivedPosition<K, BIT_OFFSET, BIT_COUNT>) -> Self {
-        let mask: u64 = (1u64 << BIT_COUNT) - 1;
-        let inner: u64 = value.0.into();
-        Position((inner & mask) << BIT_OFFSET)
+        let mask = (1u64 << BIT_COUNT) - 1;
+        let inner: u64 = value.inner.into();
+
+        Position {
+            inner: (inner & mask) << BIT_OFFSET,
+        }
     }
 }
