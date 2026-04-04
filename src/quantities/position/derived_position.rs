@@ -1,5 +1,6 @@
 use crate::quantities::Position;
 
+#[derive(Clone, Copy)]
 pub struct DerivedPosition<K, const BIT_OFFSET: usize, const BIT_COUNT: usize>
 where
     K: From<u64> + Into<u64>,

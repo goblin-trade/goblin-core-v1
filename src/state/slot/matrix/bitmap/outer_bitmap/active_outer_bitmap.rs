@@ -4,7 +4,6 @@ use crate::{
         market::market_marker::MarketMarker,
         token::token_marker::TokenMarker,
     },
-    matching::bitmap::{outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos, Coordinate},
     state::{
         bitmap::{
             outer_bitmap::{outer_bitmap_state::OuterBitmapState, preimage::OuterBitmapPreimage},

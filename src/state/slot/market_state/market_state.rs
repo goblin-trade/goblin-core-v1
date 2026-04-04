@@ -1,12 +1,11 @@
-use crate::{axis::leg::SamePair, matching::bitmap::StoredCoordinates};
+use crate::{axis::leg::SamePair, quantities::Position};
 
 /// The market state slot
 /// We have 6 possible sub-types based on MarketVariant and PairShape
 #[repr(C)]
 pub struct MarketState {
     /// The last known price coordinates at the centre
-    /// The best price is equal to or worse than the last price.
-    pub last_coordinates: SamePair<StoredCoordinates>,
+    pub last_coordinates: SamePair<Position>,
     /// Padding to match 32 bits
-    _padding: [u8; 14],
+    _padding: [u8; 16],
 }
