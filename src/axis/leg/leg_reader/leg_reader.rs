@@ -1,13 +1,12 @@
 use crate::{
     axis::leg::{leg_quantities::LegQuantities, Base, Leg, Quote},
-    matching::bitmap::StoredCoordinates,
-    quantities::{BaseLots, BaseLotsPerBaseUnit, DeltaAtoms, QuoteLots, QuoteLotsPerQuoteUnit},
+    quantities::{BaseLotsPerBaseUnit, DeltaAtoms, Position, QuoteLotsPerQuoteUnit},
     types::{StoreReader, Tuple},
 };
 
 pub trait LegReader: LegQuantities
     + StoreReader<Tuple<BaseLotsPerBaseUnit, QuoteLotsPerQuoteUnit, Leg>, Result = Self::LotsPerUnit>
-    + StoreReader<Tuple<StoredCoordinates, StoredCoordinates, Leg>, Result = StoredCoordinates>
+    + StoreReader<Tuple<Position, Position, Leg>, Result = Position>
     + StoreReader<Tuple<DeltaAtoms, DeltaAtoms, Leg>, Result = DeltaAtoms>
 {
 }

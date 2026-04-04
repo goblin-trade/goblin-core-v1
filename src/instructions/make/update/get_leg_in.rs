@@ -1,34 +1,35 @@
 use crate::{
     axis::leg::{Base, LegEnum, Quote, SamePair},
     goblin_error::GoblinError,
-    matching::bitmap::StoredCoordinates,
     quantities::Ticks,
     types::StoreReader,
 };
 
-/// Get the side of an update instruction
-///
-/// # Convention
-///
-/// * leg_in represents the input leg from perspective of the taker.
-/// * A resting bid has In = Base while a resting ask has In = Quote.
-/// * The `In` token represents the token the maker wants to obtain.
-///
-pub fn get_leg_in(
-    price: Ticks,
-    last_coordinates: &SamePair<StoredCoordinates>,
-) -> Result<LegEnum, GoblinError> {
-    // Ask- maker wants base token
-    let last_price_base_in = Base::get(last_coordinates).price;
-    if price >= last_price_base_in {
-        return Ok(LegEnum::Base);
-    }
+// TODO replace with region
 
-    // Bid- maker wants quote token
-    let last_price_quote_in = Quote::get(last_coordinates).price;
-    if price <= last_price_quote_in {
-        return Ok(LegEnum::Quote);
-    }
+// /// Get the side of an update instruction
+// ///
+// /// # Convention
+// ///
+// /// * leg_in represents the input leg from perspective of the taker.
+// /// * A resting bid has In = Base while a resting ask has In = Quote.
+// /// * The `In` token represents the token the maker wants to obtain.
+// ///
+// pub fn get_leg_in(
+//     price: Ticks,
+//     last_coordinates: &SamePair<StoredCoordinates>,
+// ) -> Result<LegEnum, GoblinError> {
+//     // Ask- maker wants base token
+//     let last_price_base_in = Base::get(last_coordinates).price;
+//     if price >= last_price_base_in {
+//         return Ok(LegEnum::Base);
+//     }
 
-    Err(GoblinError::NoRestingOrder)
-}
+//     // Bid- maker wants quote token
+//     let last_price_quote_in = Quote::get(last_coordinates).price;
+//     if price <= last_price_quote_in {
+//         return Ok(LegEnum::Quote);
+//     }
+
+//     Err(GoblinError::NoRestingOrder)
+// }

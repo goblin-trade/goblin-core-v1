@@ -14,9 +14,6 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
     instructions::ix_make,
-    matching::bitmap::{
-        inner_pos::InnerPos, outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos,
-    },
     require,
     settlement::local_delta::LocalDelta,
     state::{

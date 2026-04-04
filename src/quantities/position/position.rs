@@ -1,6 +1,6 @@
 use core::ops::{Add, Sub};
 
-#[derive(PartialEq, PartialOrd)]
+#[derive(PartialEq, PartialOrd, Clone, Copy)]
 pub struct Position {
     pub inner: u64,
 }

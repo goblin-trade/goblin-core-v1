@@ -1,6 +1,6 @@
 use crate::{
     axis::{market::market_marker::MarketMarker, token::token_marker::TokenMarker},
-    matching::bitmap::inner_pos::InnerPos,
+    quantities::InnerPosV2,
     state::{
         bitmap::inner_bitmap::preimage::InnerBitmapPreimage, resting_order::RestingOrder, Preimage,
         SlotKey,
@@ -15,7 +15,7 @@ where
     Q: TokenMarker,
 {
     pub inner_bitmap_key: SlotKey<InnerBitmapPreimage<M, B, Q>>,
-    pub inner_pos: InnerPos,
+    pub inner_pos: InnerPosV2,
 }
 
 impl<M, B, Q> Preimage for RestingOrderPreimage<M, B, Q>
