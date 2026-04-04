@@ -1,7 +1,7 @@
 use crate::{
     axis::leg::{leg_coordinates::LegCoordinates, Quote},
     matching::region::take_region::TakeRegion,
-    quantities::{DerivedPosition, Ticks},
+    quantities::{inner_val::InnerVal, DerivedPosition, Ticks},
 };
 
 impl LegCoordinates for Quote {
@@ -16,7 +16,7 @@ impl LegCoordinates for Quote {
     fn start<K, const BIT_OFFSET: usize, const BIT_COUNT: usize>(
     ) -> DerivedPosition<K, BIT_OFFSET, BIT_COUNT>
     where
-        K: From<u64> + Into<u64>,
+        K: InnerVal,
     {
         DerivedPosition::min()
     }
@@ -24,7 +24,7 @@ impl LegCoordinates for Quote {
     fn end<K, const BIT_OFFSET: usize, const BIT_COUNT: usize>(
     ) -> DerivedPosition<K, BIT_OFFSET, BIT_COUNT>
     where
-        K: From<u64> + Into<u64>,
+        K: InnerVal,
     {
         DerivedPosition::max()
     }

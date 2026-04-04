@@ -1,7 +1,7 @@
 use crate::{
     axis::leg::leg_quantities::LegQuantities,
     matching::region::take_region::TakeRegion,
-    quantities::{DerivedPosition, Ticks},
+    quantities::{inner_val::InnerVal, DerivedPosition, Ticks},
 };
 
 pub trait LegCoordinates: LegQuantities {
@@ -10,10 +10,10 @@ pub trait LegCoordinates: LegQuantities {
     fn start<K, const BIT_OFFSET: usize, const BIT_COUNT: usize>(
     ) -> DerivedPosition<K, BIT_OFFSET, BIT_COUNT>
     where
-        K: From<u64> + Into<u64>;
+        K: InnerVal;
 
     fn end<K, const BIT_OFFSET: usize, const BIT_COUNT: usize>(
     ) -> DerivedPosition<K, BIT_OFFSET, BIT_COUNT>
     where
-        K: From<u64> + Into<u64>;
+        K: InnerVal;
 }

@@ -1,16 +1,16 @@
-use crate::quantities::Position;
+use crate::quantities::{inner_val::InnerVal, Position};
 
 #[derive(Clone, Copy)]
 pub struct DerivedPosition<K, const BIT_OFFSET: usize, const BIT_COUNT: usize>
 where
-    K: From<u64> + Into<u64>,
+    K: InnerVal,
 {
     pub inner: K,
 }
 
 impl<K, const BIT_OFFSET: usize, const BIT_COUNT: usize> DerivedPosition<K, BIT_OFFSET, BIT_COUNT>
 where
-    K: From<u64> + Into<u64>,
+    K: InnerVal,
 {
     /// Unshifted bitmask of BIT_COUNT ones
     /// e.g. BIT_COUNT=4 → 0b1111
@@ -25,32 +25,29 @@ where
     }
 
     pub fn min() -> Self {
-        Self::new(K::from(Self::MIN_RAW))
+        Self::new(K::from_u64(Self::MIN_RAW))
     }
 
     pub fn max() -> Self {
-        Self::new(K::from(Self::MAX_RAW))
+        Self::new(K::from_u64(Self::MAX_RAW))
     }
 }
 
 impl<K, const BIT_OFFSET: usize, const BIT_COUNT: usize> From<Position>
     for DerivedPosition<K, BIT_OFFSET, BIT_COUNT>
 where
-    K: From<u64> + Into<u64>,
+    K: InnerVal,
 {
     fn from(value: Position) -> Self {
         let extracted = (value.inner >> BIT_OFFSET) & Self::MASK;
-
-        Self {
-            inner: extracted.into(),
-        }
+        Self::new(K::from_u64(extracted))
     }
 }
 
 impl<K, const BIT_OFFSET: usize, const BIT_COUNT: usize>
     From<DerivedPosition<K, BIT_OFFSET, BIT_COUNT>> for Position
 where
-    K: From<u64> + Into<u64>,
+    K: InnerVal,
 {
     fn from(value: DerivedPosition<K, BIT_OFFSET, BIT_COUNT>) -> Self {
         let inner: u64 = value.inner.into();
