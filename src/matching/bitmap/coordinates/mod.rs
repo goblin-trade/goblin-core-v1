@@ -1,5 +1,0 @@
-pub mod full_coordinates;
-pub mod stored_coordinates;
-
-pub use full_coordinates::*;
-pub use stored_coordinates::*;

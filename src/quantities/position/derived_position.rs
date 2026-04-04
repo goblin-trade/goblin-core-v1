@@ -16,12 +16,19 @@ where
     /// Note: not legal for BIT_COUNT = 64
     pub const MASK: u64 = (1 << BIT_COUNT) - 1;
 
-    pub const MIN: u64 = 0;
-    pub const MAX: u64 = Self::MASK;
+    pub const MIN_RAW: u64 = 0;
+    pub const MAX_RAW: u64 = Self::MASK;
 
-    #[inline]
     pub fn new(inner: K) -> Self {
         Self { inner }
+    }
+
+    pub fn min() -> Self {
+        Self::new(K::from(Self::MIN_RAW))
+    }
+
+    pub fn max() -> Self {
+        Self::new(K::from(Self::MAX_RAW))
     }
 }
 
