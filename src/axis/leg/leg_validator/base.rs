@@ -1,10 +1,3 @@
-use crate::{
-    axis::leg::{leg_validator::LegValidator, Base},
-    quantities::Ticks,
-};
+use crate::axis::leg::{leg_validator::LegValidator, Base};
 
-impl LegValidator for Base {
-    fn price_limit_valid(_price_limit: Ticks) -> bool {
-        true
-    }
-}
+impl LegValidator for Base {}

@@ -10,7 +10,7 @@ use crate::{
         match_iterator::{match_iterator, RestingOrderEntry},
         region::{self, take_region::TakeRegion},
     },
-    quantities::{QuantityOps, Ticks},
+    quantities::{Position, QuantityOps, Ticks},
     require,
     settlement::local_delta::LocalDelta,
     state::MarketState,
@@ -30,7 +30,7 @@ pub fn match_order<M, B, Q, In>(
     market_state: &mut MarketState,
     num_lots: In::Lots,
     min_lots_to_fill: In::Lots,
-    price_limit: Ticks,
+    limit: Position,
 ) -> Result<(), GoblinError>
 where
     M: MarketMarker,
@@ -39,7 +39,7 @@ where
     In: LegMatcher,
 {
     let start_coordinate_mut = In::get_leg_mut(&mut market_state.last_coordinates);
-    let region = In::take_region(price_limit, start_coordinate_mut.price);
+    let region = In::take_region(limit, start_coordinate_mut.price);
 
     require!(
         region == TakeRegion::Leg,
@@ -47,7 +47,7 @@ where
     );
 
     let start = FullCoordinates::from(*start_coordinate_mut);
-    let end = FullCoordinates::from(price_limit);
+    let end = FullCoordinates::from(limit);
 
     let iterator = match_iterator::<M, B, Q, In>(*market_key, start, end);
 

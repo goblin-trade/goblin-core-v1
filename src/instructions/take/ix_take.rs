@@ -32,6 +32,6 @@ where
         market_state,
         header.num_lots,
         header.min_lots_to_fill,
-        header.price_limit,
+        header.limit,
     )
 }

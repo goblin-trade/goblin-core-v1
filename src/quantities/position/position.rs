@@ -1,4 +1,5 @@
 use core::ops::{Add, Sub};
+use core::u64;
 
 #[derive(PartialEq, PartialOrd, Clone, Copy)]
 pub struct Position {
@@ -6,6 +7,10 @@ pub struct Position {
 }
 
 impl Position {
+    pub const ZERO: Self = Self::new(0);
+    pub const MIN: Self = Self::ZERO;
+    pub const MAX: Self = Self::new(u64::MAX);
+
     pub const fn new(inner: u64) -> Self {
         Self { inner }
     }

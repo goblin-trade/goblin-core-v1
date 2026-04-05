@@ -2,7 +2,7 @@ use crate::{
     axis::leg::leg_matcher::LegMatcher,
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
-    quantities::Ticks,
+    quantities::Position,
     require,
 };
 
@@ -19,8 +19,8 @@ pub struct TakeHeader<In: LegMatcher> {
     /// The minimum number of base lots to fill, otherwise the order will be invalidated.
     pub min_lots_to_fill: In::Lots,
 
-    /// The worst price to be matched against. Stop matching after this price is crossed.
-    pub price_limit: Ticks,
+    /// The worst position to be matched against. Stop matching after this price is crossed.
+    pub limit: Position,
 }
 
 impl<In: LegMatcher> Decodable for TakeHeader<In> {
@@ -29,7 +29,7 @@ impl<In: LegMatcher> Decodable for TakeHeader<In> {
         let flags_and_num_lots_raw = u64::try_decode(ctx)?;
 
         let read_min_lots_to_fill = flags_and_num_lots_raw & 0b01 != 0;
-        let read_price_limit = flags_and_num_lots_raw & 0b10 != 0;
+        let read_limit = flags_and_num_lots_raw & 0b10 != 0;
 
         let num_lots = In::Lots::from(flags_and_num_lots_raw >> 2);
 
@@ -38,20 +38,20 @@ impl<In: LegMatcher> Decodable for TakeHeader<In> {
             false => 0,
         });
 
-        let price_limit = match read_price_limit {
-            true => Ticks::new(u32::try_decode(ctx)? as u64),
+        let limit = match read_limit {
+            true => Position::new(u64::try_decode(ctx)?),
             false => In::DEFAULT_PRICE_LIMIT,
         };
 
         require!(
-            num_lots > In::Lots::from(0) && In::price_limit_valid(price_limit),
+            num_lots > In::Lots::from(0) && limit > Position::ZERO,
             GoblinError::InvalidTakeArgs
         );
 
         Ok(Self {
             num_lots,
             min_lots_to_fill,
-            price_limit,
+            limit,
         })
     }
 }

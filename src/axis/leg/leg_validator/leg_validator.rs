@@ -1,7 +1,4 @@
-use crate::{
-    axis::leg::leg_constants::LegConstants,
-    quantities::{QuantityOps, Ticks},
-};
+use crate::{axis::leg::leg_constants::LegConstants, quantities::QuantityOps};
 
 pub trait LegValidator: LegConstants {
     /// Ensure that market has an integer number of atoms per lot
@@ -21,6 +18,4 @@ pub trait LegValidator: LegConstants {
     fn atoms_per_lot(lots_per_unit: Self::LotsPerUnit) -> Self::AtomsPerLot {
         Self::ATOMS_PER_UNIT / lots_per_unit
     }
-
-    fn price_limit_valid(_price_limit: Ticks) -> bool;
 }
