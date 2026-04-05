@@ -38,15 +38,15 @@ where
     Q: TokenMarker,
     In: LegMatcher,
 {
-    let start_coordinate_mut = In::get_leg_mut(&mut market_state.last_coordinates);
-    let region = In::take_region(limit, start_coordinate_mut.price);
+    let last_position_mut = In::get_leg_mut(&mut market_state.last_coordinates);
+    let region = In::take_region(limit.into(), (*last_position_mut).into());
 
     require!(
         region == TakeRegion::Leg,
         GoblinError::TakerPriceLimitReached
     );
 
-    let start = FullCoordinates::from(*start_coordinate_mut);
+    let start = FullCoordinates::from(*last_position_mut);
     let end = FullCoordinates::from(limit);
 
     let iterator = match_iterator::<M, B, Q, In>(*market_key, start, end);
@@ -60,7 +60,7 @@ where
         mut resting_order,
     } in iterator
     {
-        *start_coordinate_mut = full_coordinates.into();
+        *last_position_mut = full_coordinates.into();
         let price = Ticks::from(full_coordinates);
 
         let quote = In::matching_lots_maker(resting_order.size, market.tick_size, price);
