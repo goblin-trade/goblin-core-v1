@@ -1,40 +1,18 @@
+use crate::axis::leg::{leg_iterator::LegIterator, Base};
+use crate::quantities::Position;
 use core::iter::{Map, Rev};
 use core::ops::RangeInclusive;
 
-use crate::{
-    axis::leg::{leg_iterator::LegIterator, Base},
-    matching::bitmap::{
-        inner_pos::InnerPos, outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos, row::Row,
-    },
-};
-
 impl LegIterator for Base {
-    type OuterBitmapIndexIter = Map<Rev<RangeInclusive<u64>>, fn(u64) -> OuterBitmapIndex>;
-    type OuterPosIter = Map<Rev<RangeInclusive<u8>>, fn(u8) -> OuterPos>;
-    type InnerPosIter = Map<Rev<RangeInclusive<u8>>, fn(u8) -> InnerPos>;
+    type PositionIter = Map<Rev<RangeInclusive<u64>>, fn(u64) -> Position>;
 
-    type RowIter = Map<Rev<RangeInclusive<u8>>, fn(u8) -> Row>;
-
-    fn outer_bitmap_index_iter(
-        range: RangeInclusive<OuterBitmapIndex>,
-    ) -> Self::OuterBitmapIndexIter {
-        (range.end().inner..=range.start().inner)
-            .rev()
-            .map(OuterBitmapIndex::new)
-    }
-
-    fn outer_pos_iter(range: RangeInclusive<OuterPos>) -> Self::OuterPosIter {
-        (range.end().inner..=range.start().inner)
-            .rev()
-            .map(OuterPos::new)
-    }
-
-    fn inner_pos_iter(range: RangeInclusive<InnerPos>) -> Self::InnerPosIter {
+    fn position_iter(range: RangeInclusive<Position>) -> Self::PositionIter {
         /// Mask inverts the LSB 3 bits belonging to column
-        /// Eg the starting value 255 will map to 248 (row 31, column 0).
-        /// This way rows are traversed top to bottom as normal but
+        /// This will turn column 0 to 7 and vice versa.
+        ///
+        /// This way Position is traversed top to bottom as normal but
         /// the direction of column traversal becomes left to right.
-        const LSB3_MASK: u8 = 0b0000_0111;
+        const LSB3_MASK: u64 = 0b111;
 
         // Invert the starting bits. This way they get inverted again
         // to the original value inside map()
@@ -42,13 +20,50 @@ impl LegIterator for Base {
 
         (range.end().inner..=item_inverted).rev().map(|inner| {
             let inner_inverted = inner ^ LSB3_MASK;
-            InnerPos::new(inner_inverted)
+            Position::new(inner_inverted)
         })
     }
 
-    fn row_iter(range: RangeInclusive<Row>) -> Self::RowIter {
-        (range.end().inner..=range.start().inner)
-            .rev()
-            .map(Row::new)
-    }
+    // type OuterBitmapIndexIter = Map<Rev<RangeInclusive<u64>>, fn(u64) -> OuterBitmapIndex>;
+    // type OuterPosIter = Map<Rev<RangeInclusive<u8>>, fn(u8) -> OuterPos>;
+    // type InnerPosIter = Map<Rev<RangeInclusive<u8>>, fn(u8) -> InnerPos>;
+
+    // type RowIter = Map<Rev<RangeInclusive<u8>>, fn(u8) -> Row>;
+
+    // fn outer_bitmap_index_iter(
+    //     range: RangeInclusive<OuterBitmapIndex>,
+    // ) -> Self::OuterBitmapIndexIter {
+    //     (range.end().inner..=range.start().inner)
+    //         .rev()
+    //         .map(OuterBitmapIndex::new)
+    // }
+
+    // fn outer_pos_iter(range: RangeInclusive<OuterPos>) -> Self::OuterPosIter {
+    //     (range.end().inner..=range.start().inner)
+    //         .rev()
+    //         .map(OuterPos::new)
+    // }
+
+    // fn inner_pos_iter(range: RangeInclusive<InnerPos>) -> Self::InnerPosIter {
+    //     /// Mask inverts the LSB 3 bits belonging to column
+    //     /// Eg the starting value 255 will map to 248 (row 31, column 0).
+    //     /// This way rows are traversed top to bottom as normal but
+    //     /// the direction of column traversal becomes left to right.
+    //     const LSB3_MASK: u8 = 0b0000_0111;
+
+    //     // Invert the starting bits. This way they get inverted again
+    //     // to the original value inside map()
+    //     let item_inverted = range.start().inner ^ LSB3_MASK;
+
+    //     (range.end().inner..=item_inverted).rev().map(|inner| {
+    //         let inner_inverted = inner ^ LSB3_MASK;
+    //         InnerPos::new(inner_inverted)
+    //     })
+    // }
+
+    // fn row_iter(range: RangeInclusive<Row>) -> Self::RowIter {
+    //     (range.end().inner..=range.start().inner)
+    //         .rev()
+    //         .map(Row::new)
+    // }
 }
