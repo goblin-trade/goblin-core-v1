@@ -49,6 +49,8 @@ where
     let start = FullCoordinates::from(*last_position_mut);
     let end = FullCoordinates::from(limit);
 
+    // TODO use new iterator based on Coordinate
+    // It has a single loop. As bits are read from bitmap, we increment the pointer by steps
     let iterator = match_iterator::<M, B, Q, In>(*market_key, start, end);
 
     let base_lot_size = Base::get(&market.lot_size_pair);
