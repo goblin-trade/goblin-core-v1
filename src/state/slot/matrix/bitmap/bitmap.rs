@@ -1,11 +1,13 @@
 use crate::{
     axis::leg::{leg_coordinates::LegCoordinates, Base, Pair, Quote, SamePair},
+    state::bitmap::bitmap_index::BitmapIndex,
     types::StoreReader,
 };
 
-pub trait Bitmap<P0, P1>: PartialEq + Default
+pub trait Bitmap<F, P0, P1>: PartialEq + Default
 where
-    P0: Clone + Copy + PartialEq + PartialOrd,
+    F: Clone + Copy + PartialEq + PartialOrd,
+    P0: BitmapIndex,
     P1: Clone + Copy + PartialEq + PartialOrd,
 {
     fn pos_active(&self, pos: P1) -> bool;

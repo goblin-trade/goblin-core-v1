@@ -6,7 +6,7 @@ use crate::{
     },
 };
 
-impl Bitmap<OuterBitmapIndexV2, OuterPosV2> for ActiveOuterBitmap {
+impl Bitmap<(), OuterBitmapIndexV2, OuterPosV2> for ActiveOuterBitmap {
     fn pos_active(&self, pos: OuterPosV2) -> bool {
         let byte = self.inner[pos.byte_index()];
         let mask = 1 << pos.bit_index();

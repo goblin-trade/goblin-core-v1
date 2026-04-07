@@ -1,12 +1,9 @@
 use core::ops::RangeInclusive;
 
 use crate::{
-    axis::leg::leg_iterator::LegIterator,
-    quantities::{OuterBitmapIndexV2, OuterPosV2},
+    axis::leg::leg_iterator::LegIterator, quantities::OuterPosV2,
     state::bitmap::bitmap_index::BitmapIndex,
 };
-
-pub type InnerBitmapIndex = (OuterBitmapIndexV2, OuterPosV2);
 
 // Collision
 //
@@ -22,7 +19,7 @@ pub type InnerBitmapIndex = (OuterBitmapIndexV2, OuterPosV2);
 //
 // Problem- if we use composite index, there are 2 values of OuterBitmapIndex. We have an invalid
 // state where the two OuterBitmapIndex are different
-impl BitmapIndex for InnerBitmapIndex {
+impl BitmapIndex for OuterPosV2 {
     fn build_iterator<In>(range: RangeInclusive<Self>) -> impl Iterator<Item = Self>
     where
         In: LegIterator,

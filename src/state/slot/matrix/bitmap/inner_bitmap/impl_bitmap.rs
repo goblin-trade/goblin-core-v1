@@ -3,7 +3,7 @@ use crate::{
     state::bitmap::{bitmap_iterator::BitmapIterator, inner_bitmap::InnerBitmap, Bitmap},
 };
 
-impl Bitmap<(OuterBitmapIndexV2, OuterPosV2), InnerPosV2> for InnerBitmap {
+impl Bitmap<OuterBitmapIndexV2, OuterPosV2, InnerPosV2> for InnerBitmap {
     fn pos_active(&self, pos: InnerPosV2) -> bool {
         let row_byte = self.inner[RowV2::from(pos).inner as usize];
         let mask = 1 << ColumnV2::from(pos).inner;
