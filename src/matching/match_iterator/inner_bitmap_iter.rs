@@ -50,6 +50,8 @@ where
     In: LegMatcher,
 {
     In::outer_pos_iter(child_range).filter_map(move |outer_pos| {
+        // TODO move to a separate .filter() block so we can have symmetry
+        // and use Bitmap trait
         if !active_outer_bitmap.pos_active(outer_pos) {
             return None;
         }
@@ -61,6 +63,7 @@ where
         .hash();
         let bitmap = key.load();
 
+        // TODO move on bitmap trait
         let child_start =
             if (outer_bitmap_index, outer_pos) == (start.outer_bitmap_index, start.outer_pos) {
                 start.inner_pos

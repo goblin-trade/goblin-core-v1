@@ -72,4 +72,6 @@ where
             })
         },
     )
+    // TODO this block checks in OuterBitmap
+    // Move active bit check here as a filter statement
 }
