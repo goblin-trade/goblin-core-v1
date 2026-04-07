@@ -1,4 +1,5 @@
 use crate::quantities::{inner_val::InnerVal, Position};
+use core::ops::RangeInclusive;
 
 #[derive(Clone, Copy, PartialEq, PartialOrd)]
 pub struct DerivedPosition<K, const BIT_OFFSET: usize, const BIT_COUNT: usize>
@@ -30,6 +31,11 @@ where
 
     pub fn max() -> Self {
         Self::new(K::from_u64(Self::MAX_RAW))
+    }
+
+    pub fn convert_range(value: RangeInclusive<Position>) -> RangeInclusive<Self> {
+        let (start, end) = value.into_inner();
+        RangeInclusive::new(start.into(), end.into())
     }
 }
 

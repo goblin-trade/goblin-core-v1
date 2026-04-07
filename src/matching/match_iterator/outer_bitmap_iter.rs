@@ -3,9 +3,7 @@ use crate::{
         leg::leg_matcher::LegMatcher, market::market_marker::MarketMarker,
         token::token_marker::TokenMarker,
     },
-    matching::bitmap::{
-        outer_bitmap_index::OuterBitmapIndex, outer_pos::OuterPos, FullCoordinates,
-    },
+    quantities::{OuterBitmapIndexV2, OuterPosV2},
     state::{
         bitmap::outer_bitmap::{
             active_outer_bitmap::ActiveOuterBitmap, outer_bitmap_state::OuterBitmapState,
@@ -22,10 +20,10 @@ where
     B: TokenMarker,
     Q: TokenMarker,
 {
-    pub outer_bitmap_index: OuterBitmapIndex,
+    pub outer_bitmap_index: OuterBitmapIndexV2,
     pub outer_bitmap_key: SlotKey<OuterBitmapPreimage<M, B, Q>>,
     pub active_outer_bitmap: ActiveOuterBitmap,
-    pub child_range: RangeInclusive<OuterPos>,
+    pub child_range: RangeInclusive<OuterPosV2>,
 }
 
 pub fn outer_bitmap_iter<M, B, Q, In>(

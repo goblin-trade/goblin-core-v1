@@ -1,6 +1,9 @@
 use crate::{
     quantities::{OuterBitmapIndexV2, OuterPosV2},
-    state::bitmap::{outer_bitmap::active_outer_bitmap::ActiveOuterBitmap, Bitmap},
+    state::bitmap::{
+        bitmap_iterator::BitmapIterator, outer_bitmap::active_outer_bitmap::ActiveOuterBitmap,
+        Bitmap,
+    },
 };
 
 impl Bitmap<OuterBitmapIndexV2, OuterPosV2> for ActiveOuterBitmap {
@@ -17,3 +20,5 @@ impl Bitmap<OuterBitmapIndexV2, OuterPosV2> for ActiveOuterBitmap {
         self.inner[pos.byte_index()] &= mask;
     }
 }
+
+impl BitmapIterator<OuterBitmapIndexV2, OuterPosV2> for ActiveOuterBitmap {}

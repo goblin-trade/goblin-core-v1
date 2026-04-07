@@ -1,6 +1,6 @@
 use crate::{
     quantities::{ColumnV2, InnerPosV2, OuterBitmapIndexV2, OuterPosV2, RowV2},
-    state::bitmap::{inner_bitmap::InnerBitmap, Bitmap},
+    state::bitmap::{bitmap_iterator::BitmapIterator, inner_bitmap::InnerBitmap, Bitmap},
 };
 
 impl Bitmap<(OuterBitmapIndexV2, OuterPosV2), InnerPosV2> for InnerBitmap {
@@ -16,3 +16,5 @@ impl Bitmap<(OuterBitmapIndexV2, OuterPosV2), InnerPosV2> for InnerBitmap {
         self.inner[RowV2::from(pos).inner as usize] &= mask;
     }
 }
+
+impl BitmapIterator<(OuterBitmapIndexV2, OuterPosV2), InnerPosV2> for InnerBitmap {}
