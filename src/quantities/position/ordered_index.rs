@@ -7,26 +7,18 @@ use crate::{
 
 // Add inner() function
 // But we need to duplicate code for each impl
-pub trait Index: Clone + Copy + PartialEq {
-    type Inner;
+pub trait OrderedIndex: Clone + Copy + PartialEq {
     type Outer: Clone + Copy + PartialEq;
-
-    fn inner(&self) -> Self::Inner;
 
     fn get_iter<In>(range: RangeInclusive<Self>) -> impl Iterator<Item = Self>
     where
         In: LegMatcher;
 }
 
-pub type OuterIndex<I: Index> = (<I::Outer as Index>::Outer, I::Outer);
+pub type OuterIndex<I: OrderedIndex> = (<I::Outer as OrderedIndex>::Outer, I::Outer);
 
-impl Index for OuterBitmapIndexV2 {
-    type Inner = u64;
+impl OrderedIndex for OuterBitmapIndexV2 {
     type Outer = ();
-
-    fn inner(&self) -> Self::Inner {
-        self.inner
-    }
 
     fn get_iter<In>(range: RangeInclusive<Self>) -> impl Iterator<Item = Self>
     where
@@ -36,13 +28,8 @@ impl Index for OuterBitmapIndexV2 {
     }
 }
 
-impl Index for OuterPosV2 {
-    type Inner = u8;
+impl OrderedIndex for OuterPosV2 {
     type Outer = OuterBitmapIndexV2;
-
-    fn inner(&self) -> Self::Inner {
-        self.inner
-    }
 
     fn get_iter<In>(range: RangeInclusive<Self>) -> impl Iterator<Item = Self>
     where
@@ -52,13 +39,8 @@ impl Index for OuterPosV2 {
     }
 }
 
-impl Index for InnerPosV2 {
-    type Inner = u8;
+impl OrderedIndex for InnerPosV2 {
     type Outer = OuterPosV2;
-
-    fn inner(&self) -> Self::Inner {
-        self.inner
-    }
 
     fn get_iter<In>(range: RangeInclusive<Self>) -> impl Iterator<Item = Self>
     where

@@ -1,8 +1,8 @@
 use crate::{
     axis::leg::leg_matcher::LegMatcher,
     quantities::{
-        index::{Index, OuterIndex},
         inner_val::InnerVal,
+        ordered_index::{OrderedIndex, OuterIndex},
         Position,
     },
 };
@@ -52,8 +52,8 @@ where
     ) -> RangeInclusive<Self>
     where
         In: LegMatcher,
-        Self: Index,
-        <Self as Index>::Outer: Index,
+        Self: OrderedIndex,
+        <Self as OrderedIndex>::Outer: OrderedIndex,
     {
         let (start_inner, end_inner) = range.into_inner();
         let (start_outer, end_outer) = outer_range.into_inner();
