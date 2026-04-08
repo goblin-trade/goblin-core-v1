@@ -1,4 +1,11 @@
-use crate::quantities::{inner_val::InnerVal, Position};
+use crate::{
+    axis::leg::leg_matcher::LegMatcher,
+    quantities::{
+        index::{Index, OuterIndex},
+        inner_val::InnerVal,
+        Position,
+    },
+};
 use core::ops::RangeInclusive;
 
 #[derive(Clone, Copy, PartialEq, PartialOrd)]
@@ -36,6 +43,34 @@ where
     pub fn convert_range(value: RangeInclusive<Position>) -> RangeInclusive<Self> {
         let (start, end) = value.into_inner();
         RangeInclusive::new(start.into(), end.into())
+    }
+
+    fn clamp_range<In>(
+        range: RangeInclusive<Self>,
+        outer_range: RangeInclusive<OuterIndex<Self>>,
+        current_outer: OuterIndex<Self>,
+    ) -> RangeInclusive<Self>
+    where
+        In: LegMatcher,
+        Self: Index,
+        <Self as Index>::Outer: Index,
+    {
+        let (start_inner, end_inner) = range.into_inner();
+        let (start_outer, end_outer) = outer_range.into_inner();
+
+        let start = if current_outer == start_outer {
+            start_inner
+        } else {
+            In::start()
+        };
+
+        let end = if current_outer == end_outer {
+            end_inner
+        } else {
+            In::end()
+        };
+
+        start..=end
     }
 }
 
