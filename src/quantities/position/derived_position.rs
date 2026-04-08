@@ -72,6 +72,8 @@ where
 
         start..=end
     }
+
+    // fn active_bit
 }
 
 impl<K, const BIT_OFFSET: usize, const BIT_COUNT: usize> From<Position>

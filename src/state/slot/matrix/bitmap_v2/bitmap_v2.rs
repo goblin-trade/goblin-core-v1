@@ -1,7 +1,9 @@
 use core::marker::PhantomData;
 use core::ops::RangeInclusive;
+use std::u64;
 
-use crate::state::bitmap_v2::index::Index;
+use crate::axis::leg::leg_matcher::LegMatcher;
+use crate::quantities::index::Index;
 
 pub struct BitmapV2<I>
 where
@@ -17,6 +19,21 @@ where
     I: Index,
     I::Outer: Index,
 {
+    pub fn index_active(&self, index: I) -> bool {
+        // map to row (byte) and column (bit)
+        // Add another bound such that .inner is only of type u8
+    }
+
+    pub fn active_iterator<In>(clamped_range: RangeInclusive<I>) -> impl Iterator<Item = I>
+    where
+        In: LegMatcher,
+    {
+        // TODO add iterator type
+        // We need to call the iterator generation function generically
+        // I::get_iter::<In>(clamped_range).filter(|index| {
+        //     // TODO
+        // })
+    }
     // pub type PrevComposite = (<I::Prev as Index>::Prev, I::Prev);
 
     // pub fn clamp_range(
