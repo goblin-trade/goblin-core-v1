@@ -1,6 +1,6 @@
 use crate::axis::leg::leg_matcher::LegMatcher;
-use crate::quantities::bitmap_index_v2::BitmapIndexV2;
-use crate::quantities::ordered_index::OrderedIndex;
+use crate::state::bitmap_v2::bitmap_index_v2::BitmapIndexV2;
+use crate::state::bitmap_v2::ordered_index::OrderedIndex;
 use core::marker::PhantomData;
 use core::ops::RangeInclusive;
 
