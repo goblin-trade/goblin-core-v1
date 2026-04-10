@@ -6,7 +6,7 @@ use core::ops::RangeInclusive;
 
 pub struct BitmapV2<I>
 where
-    I: BitmapIndexV2,
+    I: OrderedIndex,
     I::Prev: OrderedIndex,
 {
     pub inner: [u8; 32],

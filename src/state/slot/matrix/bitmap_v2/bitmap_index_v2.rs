@@ -1,16 +1,6 @@
 use crate::{
-    axis::{
-        leg::leg_matcher::LegMatcher, market::market_marker::MarketMarker,
-        token::token_marker::TokenMarker,
-    },
     quantities::{InnerPosV2, OuterPosV2},
-    state::{
-        bitmap::{
-            inner_bitmap::preimage::InnerBitmapPreimage,
-            outer_bitmap::preimage::OuterBitmapPreimage,
-        },
-        bitmap_v2::ordered_index::{OrderedIndex, OuterIndex},
-    },
+    state::bitmap_v2::ordered_index::OrderedIndex,
 };
 
 pub trait BitmapIndexV2: OrderedIndex {
