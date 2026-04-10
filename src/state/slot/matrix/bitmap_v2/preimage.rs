@@ -1,7 +1,10 @@
 use crate::{
     axis::{market::market_marker::MarketMarker, token::token_marker::TokenMarker},
     state::{
-        bitmap_v2::{ordered_index::OrderedIndex, outer_index::OuterIndex, BitmapV2},
+        bitmap_v2::{
+            bitmap_index_v2::BitmapIndexV2, ordered_index::OrderedIndex, outer_index::OuterIndex,
+            BitmapV2,
+        },
         MarketPreimage, Preimage, SlotKey,
     },
 };
@@ -25,7 +28,7 @@ where
     M: MarketMarker,
     B: TokenMarker,
     Q: TokenMarker,
-    I: OrderedIndex,
+    I: BitmapIndexV2,
     I::Prev: OrderedIndex,
 {
     // Discriminator 5 for both bitmaps

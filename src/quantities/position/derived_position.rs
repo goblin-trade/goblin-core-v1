@@ -1,7 +1,7 @@
 use crate::{
     axis::leg::leg_matcher::LegMatcher,
     quantities::{inner_val::InnerVal, Position},
-    state::bitmap_v2::ordered_index::{OrderedIndex, OuterIndex},
+    state::bitmap_v2::{ordered_index::OrderedIndex, outer_index::OuterIndex},
 };
 use core::ops::RangeInclusive;
 
