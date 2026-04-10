@@ -3,15 +3,15 @@ use crate::state::bitmap_v2::bitmap_index_v2::BitmapIndexV2;
 use crate::state::bitmap_v2::ordered_index::OrderedIndex;
 use core::ops::RangeInclusive;
 
-pub struct BitmapV2<const BIT_OFFSET: usize, const BIT_COUNT: usize> {
+pub struct BitmapV2<const BITS: usize> {
     pub inner: [u8; 32],
 }
 
-impl<const BIT_OFFSET: usize, const BIT_COUNT: usize> BitmapV2<BIT_OFFSET, BIT_COUNT>
+impl<const BITS: usize> BitmapV2<BITS>
 where
-    BitmapIndexV2<BIT_OFFSET, BIT_COUNT>: OrderedIndex,
+    BitmapIndexV2<BITS>: OrderedIndex,
 {
-    pub fn index_active(&self, index: BitmapIndexV2<BIT_OFFSET, BIT_COUNT>) -> bool {
+    pub fn index_active(&self, index: BitmapIndexV2<BITS>) -> bool {
         let byte = self.inner[index.byte_index()];
         let mask = 1 << index.bit_index();
 
@@ -20,12 +20,12 @@ where
 
     pub fn active_iterator<In>(
         self,
-        clamped_range: RangeInclusive<BitmapIndexV2<BIT_OFFSET, BIT_COUNT>>,
-    ) -> impl Iterator<Item = BitmapIndexV2<BIT_OFFSET, BIT_COUNT>>
+        clamped_range: RangeInclusive<BitmapIndexV2<BITS>>,
+    ) -> impl Iterator<Item = BitmapIndexV2<BITS>>
     where
         In: LegMatcher,
     {
-        BitmapIndexV2::<BIT_OFFSET, BIT_COUNT>::get_iter::<In>(clamped_range)
+        BitmapIndexV2::<BITS>::get_iter::<In>(clamped_range)
             .filter(move |index| self.index_active(*index))
         // I::get_iter::<In>(clamped_range).filter(move |index| self.index_active(*index))
     }

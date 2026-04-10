@@ -11,29 +11,28 @@ use crate::{
 
 #[repr(C)]
 #[derive(Clone, Copy)]
-pub struct BitmapPreimageV2<M, B, Q, const BIT_OFFSET: usize, const BIT_COUNT: usize>
+pub struct BitmapPreimageV2<M, B, Q, const BITS: usize>
 where
     M: MarketMarker,
     B: TokenMarker,
     Q: TokenMarker,
-    BitmapIndexV2<BIT_OFFSET, BIT_COUNT>: OrderedIndex,
-    <BitmapIndexV2<BIT_OFFSET, BIT_COUNT> as OrderedIndex>::Prev: OrderedIndex,
+    BitmapIndexV2<BITS>: OrderedIndex,
+    <BitmapIndexV2<BITS> as OrderedIndex>::Prev: OrderedIndex,
 {
     pub market_key: SlotKey<MarketPreimage<M, B, Q>>,
-    pub outer_index: OuterIndex<BitmapIndexV2<BIT_OFFSET, BIT_COUNT>>,
+    pub outer_index: OuterIndex<BitmapIndexV2<BITS>>,
 }
 
-impl<M, B, Q, const BIT_OFFSET: usize, const BIT_COUNT: usize> Preimage
-    for BitmapPreimageV2<M, B, Q, BIT_OFFSET, BIT_COUNT>
+impl<M, B, Q, const BITS: usize> Preimage for BitmapPreimageV2<M, B, Q, BITS>
 where
     M: MarketMarker,
     B: TokenMarker,
     Q: TokenMarker,
-    BitmapIndexV2<BIT_OFFSET, BIT_COUNT>: OrderedIndex,
-    <BitmapIndexV2<BIT_OFFSET, BIT_COUNT> as OrderedIndex>::Prev: OrderedIndex,
+    BitmapIndexV2<BITS>: OrderedIndex,
+    <BitmapIndexV2<BITS> as OrderedIndex>::Prev: OrderedIndex,
 {
     // Discriminator 5 for both bitmaps
     // TODO update RestingOrderBitmap with discriminator 6
     const SLOT_DISCRIMINATOR: u8 = 5;
-    type SlotState = BitmapV2<BIT_OFFSET, BIT_COUNT>;
+    type SlotState = BitmapV2<BITS>;
 }
