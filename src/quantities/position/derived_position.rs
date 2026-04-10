@@ -50,7 +50,7 @@ where
     where
         In: LegMatcher,
         Self: OrderedIndex,
-        <Self as OrderedIndex>::Outer: OrderedIndex,
+        <Self as OrderedIndex>::Prev: OrderedIndex,
     {
         let (start_inner, end_inner) = range.into_inner();
         let (start_outer, end_outer) = outer_range.into_inner();

@@ -7,7 +7,7 @@ use core::ops::RangeInclusive;
 pub struct BitmapV2<I>
 where
     I: BitmapIndexV2,
-    I::Outer: OrderedIndex,
+    I::Prev: OrderedIndex,
 {
     pub inner: [u8; 32],
     _marker: PhantomData<I>,
@@ -16,7 +16,7 @@ where
 impl<I> BitmapV2<I>
 where
     I: BitmapIndexV2,
-    I::Outer: OrderedIndex,
+    I::Prev: OrderedIndex,
 {
     pub fn index_active(&self, index: I) -> bool {
         let byte = self.inner[index.byte_index()];
