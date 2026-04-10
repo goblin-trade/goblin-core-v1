@@ -4,6 +4,10 @@ use crate::state::bitmap_v2::ordered_index::OrderedIndex;
 use core::marker::PhantomData;
 use core::ops::RangeInclusive;
 
+// Alt design to get rid of BitmapIndex trait
+// Instead of I: BitmapIndexV2, use Derived position directly with K = 8 and rest as generics
+//
+// inside the impl block, add a restriction bound OrderedIndex
 pub struct BitmapV2<I>
 where
     I: BitmapIndexV2,
