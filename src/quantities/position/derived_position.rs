@@ -6,21 +6,24 @@ use crate::{
 use core::ops::RangeInclusive;
 
 #[derive(Clone, Copy, PartialEq, PartialOrd)]
-pub struct DerivedPosition<K, const BIT_OFFSET: usize, const BIT_COUNT: usize>
+pub struct DerivedPosition<K, const BITS: usize>
 where
     K: InnerVal,
 {
     pub inner: K,
 }
 
-impl<K, const BIT_OFFSET: usize, const BIT_COUNT: usize> DerivedPosition<K, BIT_OFFSET, BIT_COUNT>
+impl<K, const BITS: usize> DerivedPosition<K, BITS>
 where
     K: InnerVal,
 {
+    const BIT_OFFSET: usize = BITS >> 8;
+    const BIT_COUNT: usize = BITS & 0xFF;
+
     /// Unshifted bitmask of BIT_COUNT ones
     /// e.g. BIT_COUNT=4 → 0b1111
     /// Note: not legal for BIT_COUNT = 64
-    pub const MASK: u64 = (1 << BIT_COUNT) - 1;
+    pub const MASK: u64 = (1 << Self::BIT_COUNT) - 1;
 
     pub const MIN_RAW: u64 = 0;
     pub const MAX_RAW: u64 = Self::MASK;
@@ -73,27 +76,25 @@ where
     // fn active_bit
 }
 
-impl<K, const BIT_OFFSET: usize, const BIT_COUNT: usize> From<Position>
-    for DerivedPosition<K, BIT_OFFSET, BIT_COUNT>
+impl<K, const BITS: usize> From<Position> for DerivedPosition<K, BITS>
 where
     K: InnerVal,
 {
     fn from(value: Position) -> Self {
-        let extracted = (value.inner >> BIT_OFFSET) & Self::MASK;
+        let extracted = (value.inner >> Self::BIT_OFFSET) & Self::MASK;
         Self::new(K::from_u64(extracted))
     }
 }
 
-impl<K, const BIT_OFFSET: usize, const BIT_COUNT: usize>
-    From<DerivedPosition<K, BIT_OFFSET, BIT_COUNT>> for Position
+impl<K, const BITS: usize> From<DerivedPosition<K, BITS>> for Position
 where
     K: InnerVal,
 {
-    fn from(value: DerivedPosition<K, BIT_OFFSET, BIT_COUNT>) -> Self {
+    fn from(value: DerivedPosition<K, BITS>) -> Self {
         let inner: u64 = value.inner.into();
-
         Position {
-            inner: (inner & DerivedPosition::<K, BIT_OFFSET, BIT_COUNT>::MASK) << BIT_OFFSET,
+            inner: (inner & DerivedPosition::<K, BITS>::MASK)
+                << DerivedPosition::<K, BITS>::BIT_OFFSET,
         }
     }
 }

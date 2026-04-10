@@ -13,16 +13,14 @@ impl LegCoordinates for Quote {
         }
     }
 
-    fn start<K, const BIT_OFFSET: usize, const BIT_COUNT: usize>(
-    ) -> DerivedPosition<K, BIT_OFFSET, BIT_COUNT>
+    fn start<K, const BITS: usize>() -> DerivedPosition<K, BITS>
     where
         K: InnerVal,
     {
         DerivedPosition::min()
     }
 
-    fn end<K, const BIT_OFFSET: usize, const BIT_COUNT: usize>(
-    ) -> DerivedPosition<K, BIT_OFFSET, BIT_COUNT>
+    fn end<K, const BITS: usize>() -> DerivedPosition<K, BITS>
     where
         K: InnerVal,
     {
