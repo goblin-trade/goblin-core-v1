@@ -18,7 +18,8 @@ impl OuterPosV2 {
     pub fn get_iter<M, B, Q, In>(
         market_key: SlotKey<MarketPreimage<M, B, Q>>,
         range: RangeInclusive<(OuterIndex<Self>, Self)>,
-    ) where
+    ) -> impl Iterator<Item = (OuterIndex<Self>, RangeInclusive<Self>)>
+    where
         M: MarketMarker,
         B: TokenMarker,
         Q: TokenMarker,
@@ -45,8 +46,8 @@ impl OuterPosV2 {
 
                 let outer_pos_range = Self::clamped_range::<In>(range.clone(), outer_index);
 
-                Some((outer_bitmap_index, outer_pos_range))
+                Some((outer_index, outer_pos_range))
             },
-        );
+        )
     }
 }
