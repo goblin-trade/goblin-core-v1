@@ -11,15 +11,17 @@ pub trait OrderedIndex: Clone + Copy + PartialEq {
 
     // Can add Bitmap type here or we will face recursion problem?
 
-    fn get_iter<In>(range: RangeInclusive<Self>) -> impl Iterator<Item = Self>
+    fn linear_iterator<In>(range: RangeInclusive<Self>) -> impl Iterator<Item = Self>
     where
         In: LegMatcher;
+
+    // TODO move clamp function here?
 }
 
 impl OrderedIndex for OuterBitmapIndexV2 {
     type Prev = ();
 
-    fn get_iter<In>(range: RangeInclusive<Self>) -> impl Iterator<Item = Self>
+    fn linear_iterator<In>(range: RangeInclusive<Self>) -> impl Iterator<Item = Self>
     where
         In: LegMatcher,
     {
@@ -30,18 +32,20 @@ impl OrderedIndex for OuterBitmapIndexV2 {
 impl OrderedIndex for OuterPosV2 {
     type Prev = OuterBitmapIndexV2;
 
-    fn get_iter<In>(range: RangeInclusive<Self>) -> impl Iterator<Item = Self>
+    fn linear_iterator<In>(range: RangeInclusive<Self>) -> impl Iterator<Item = Self>
     where
         In: LegMatcher,
     {
         In::outer_pos_iter(range)
     }
+
+    // TODO can we have full iterator here?
 }
 
 impl OrderedIndex for InnerPosV2 {
     type Prev = OuterPosV2;
 
-    fn get_iter<In>(range: RangeInclusive<Self>) -> impl Iterator<Item = Self>
+    fn linear_iterator<In>(range: RangeInclusive<Self>) -> impl Iterator<Item = Self>
     where
         In: LegMatcher,
     {
