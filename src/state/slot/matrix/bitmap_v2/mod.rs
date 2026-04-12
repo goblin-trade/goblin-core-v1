@@ -6,3 +6,4 @@ pub mod bitmap_index_v2;
 pub mod ordered_index;
 pub mod outer_index;
 pub mod preimage;
+pub mod previous_bitmap;

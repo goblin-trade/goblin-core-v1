@@ -27,39 +27,26 @@ where
     {
         BitmapIndexV2::<BITS>::get_iter::<In>(clamped_range)
             .filter(move |index| self.index_active(*index))
-        // I::get_iter::<In>(clamped_range).filter(move |index| self.index_active(*index))
+    }
+
+    // TODO need a previous_bitmap generic
+    // - For B0, this will be ()
+    // - For B1, this will be B0
+    //
+    // We need a trait to break recursion and to integrate () and Bitmap
+    // We can't use generic.
+    //
+    // trait PreviousBitmap
+    pub fn get_active_bitmap(previous_index: <BitmapIndexV2<BITS> as OrderedIndex>::Prev) {
+        // First think in if-else style
+        //
+        // if previous_index == () prevous_bitmap is also ()
+        //   Read bitmap state and filter for sentinel and 0 bytes
+        //
+        // Else use previous_index to lookup in previous_bitmap
+        //
+        // Trait is inevitable since these 2 have different branches.
+        // Why not just have separate impls for Outer and Inner bitmap?
+        //
     }
 }
-
-// Alt design to get rid of BitmapIndex trait
-// Instead of I: BitmapIndexV2, use Derived position directly with K = 8 and rest as generics
-//
-// inside the impl block, add a restriction bound OrderedIndex
-// pub struct BitmapV2<I>
-// where
-//     I: BitmapIndexV2,
-//     I::Prev: OrderedIndex,
-// {
-//     pub inner: [u8; 32],
-//     _marker: PhantomData<I>,
-// }
-
-// impl<I> BitmapV2<I>
-// where
-//     I: BitmapIndexV2,
-//     I::Prev: OrderedIndex,
-// {
-//     pub fn index_active(&self, index: I) -> bool {
-//         let byte = self.inner[index.byte_index()];
-//         let mask = 1 << index.bit_index();
-
-//         (byte & mask) != 0
-//     }
-
-//     pub fn active_iterator<In>(self, clamped_range: RangeInclusive<I>) -> impl Iterator<Item = I>
-//     where
-//         In: LegMatcher,
-//     {
-//         I::get_iter::<In>(clamped_range).filter(move |index| self.index_active(*index))
-//     }
-// }

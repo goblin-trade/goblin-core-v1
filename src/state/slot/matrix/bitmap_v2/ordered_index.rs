@@ -9,6 +9,8 @@ use core::ops::RangeInclusive;
 pub trait OrderedIndex: Clone + Copy + PartialEq {
     type Prev: Clone + Copy + PartialEq;
 
+    // Can add Bitmap type here or we will face recursion problem?
+
     fn get_iter<In>(range: RangeInclusive<Self>) -> impl Iterator<Item = Self>
     where
         In: LegMatcher;
