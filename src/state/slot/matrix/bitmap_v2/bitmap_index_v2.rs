@@ -1,8 +1,9 @@
 use core::ops::RangeInclusive;
 
 use crate::{
-    axis::leg::leg_matcher::LegMatcher, quantities::DerivedPosition,
-    state::bitmap_v2::ordered_index::OrderedIndex,
+    axis::leg::leg_matcher::LegMatcher,
+    quantities::DerivedPosition,
+    state::bitmap_v2::{ordered_index::OrderedIndex, outer_index::OuterIndex},
 };
 
 pub type BitmapIndexV2<const BITS: usize> = DerivedPosition<u8, BITS>;
@@ -21,8 +22,8 @@ where
     }
 
     pub fn clamped_range<In>(
-        range: RangeInclusive<(<Self as OrderedIndex>::Prev, Self)>,
-        current_outer: <Self as OrderedIndex>::Prev,
+        range: RangeInclusive<(OuterIndex<Self>, Self)>,
+        current_outer: OuterIndex<Self>,
     ) -> RangeInclusive<Self>
     where
         In: LegMatcher,
