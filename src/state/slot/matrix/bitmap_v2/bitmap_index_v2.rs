@@ -1,10 +1,16 @@
-use crate::{quantities::DerivedPosition, state::bitmap_v2::ordered_index::OrderedIndex};
+use core::ops::RangeInclusive;
+
+use crate::{
+    axis::leg::leg_matcher::LegMatcher, quantities::DerivedPosition,
+    state::bitmap_v2::ordered_index::OrderedIndex,
+};
 
 pub type BitmapIndexV2<const BITS: usize> = DerivedPosition<u8, BITS>;
 
 impl<const BITS: usize> BitmapIndexV2<BITS>
 where
     Self: OrderedIndex,
+    <Self as OrderedIndex>::Prev: OrderedIndex,
 {
     pub fn byte_index(&self) -> usize {
         self.inner as usize / 8
@@ -12,5 +18,26 @@ where
 
     pub fn bit_index(&self) -> usize {
         self.inner as usize % 8
+    }
+
+    pub fn clamped_range<In>(
+        range: RangeInclusive<(<Self as OrderedIndex>::Prev, Self)>,
+        current_outer: <Self as OrderedIndex>::Prev,
+    ) -> RangeInclusive<Self>
+    where
+        In: LegMatcher,
+    {
+        let start = if current_outer == range.start().0 {
+            range.start().1
+        } else {
+            In::start()
+        };
+        let end = if current_outer == range.end().0 {
+            range.end().1
+        } else {
+            In::end()
+        };
+
+        start..=end
     }
 }

@@ -22,7 +22,7 @@ impl OuterPosV2 {
         Q: TokenMarker,
         In: LegMatcher,
     {
-        let (start, end) = range.into_inner();
+        let (start, end) = range.clone().into_inner();
         let outer_range = start.0..=end.0;
 
         OuterBitmapIndexV2::linear_iterator::<In>(outer_range).filter_map(
@@ -39,7 +39,9 @@ impl OuterPosV2 {
                     return None;
                 }
 
-                Some(())
+                let outer_pos_range = Self::clamped_range::<In>(range.clone(), outer_bitmap_index);
+
+                Some((outer_bitmap_index, outer_pos_range))
             },
         );
     }

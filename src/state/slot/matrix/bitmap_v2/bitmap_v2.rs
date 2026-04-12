@@ -10,6 +10,7 @@ pub struct BitmapV2<const BITS: usize> {
 impl<const BITS: usize> BitmapV2<BITS>
 where
     BitmapIndexV2<BITS>: OrderedIndex,
+    <BitmapIndexV2<BITS> as OrderedIndex>::Prev: OrderedIndex,
 {
     pub fn is_active(&self) -> bool {
         const EMPTY_VALUE: [u8; 32] = [0; 32];
