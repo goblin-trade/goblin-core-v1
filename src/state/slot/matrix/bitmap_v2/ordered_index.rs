@@ -1,16 +1,29 @@
 use crate::{
-    axis::leg::leg_matcher::LegMatcher,
+    axis::{
+        leg::leg_matcher::LegMatcher, market::market_marker::MarketMarker,
+        token::token_marker::TokenMarker,
+    },
     quantities::{InnerPosV2, OuterBitmapIndexV2, OuterPosV2},
+    state::{bitmap_v2::outer_index::OuterIndex, MarketPreimage, SlotKey},
 };
+use core::default;
 use core::ops::RangeInclusive;
 
-// Add inner() function
-// But we need to duplicate code for each impl
-pub trait OrderedIndex: Clone + Copy + PartialEq {
+pub trait OrderedIndex: Clone + Copy + PartialEq + Default {
     type Prev: OrderedIndex<Prev: Clone + Copy + PartialEq>;
 
     fn linear_iterator<In>(range: RangeInclusive<Self>) -> impl Iterator<Item = Self>
     where
+        In: LegMatcher;
+
+    fn parent_iterator<M, B, Q, In>(
+        market_key: SlotKey<MarketPreimage<M, B, Q>>,
+        range: RangeInclusive<(OuterIndex<Self>, Self)>,
+    ) -> impl Iterator<Item = (OuterIndex<Self>, impl Iterator<Item = Self>)>
+    where
+        M: MarketMarker,
+        B: TokenMarker,
+        Q: TokenMarker,
         In: LegMatcher;
 }
 
@@ -23,6 +36,19 @@ impl OrderedIndex for () {
     {
         core::iter::once(()) // or empty(), depending on your semantics
     }
+
+    fn parent_iterator<M, B, Q, In>(
+        _market_key: SlotKey<MarketPreimage<M, B, Q>>,
+        _range: RangeInclusive<(OuterIndex<Self>, Self)>,
+    ) -> impl Iterator<Item = (OuterIndex<Self>, impl Iterator<Item = Self>)>
+    where
+        M: MarketMarker,
+        B: TokenMarker,
+        Q: TokenMarker,
+        In: LegMatcher,
+    {
+        core::iter::once((OuterIndex::<Self>::default(), core::iter::once(())))
+    }
 }
 
 impl OrderedIndex for OuterBitmapIndexV2 {
@@ -33,6 +59,24 @@ impl OrderedIndex for OuterBitmapIndexV2 {
         In: LegMatcher,
     {
         In::outer_bitmap_index_iter(range)
+    }
+
+    fn parent_iterator<M, B, Q, In>(
+        _market_key: SlotKey<MarketPreimage<M, B, Q>>,
+        range: RangeInclusive<(OuterIndex<Self>, Self)>,
+    ) -> impl Iterator<Item = (OuterIndex<Self>, impl Iterator<Item = Self>)>
+    where
+        M: MarketMarker,
+        B: TokenMarker,
+        Q: TokenMarker,
+        In: LegMatcher,
+    {
+        let outer_index = OuterIndex::<Self>::default();
+
+        let (start, end) = range.clone().into_inner();
+        let outer_bitmap_index_iterator = Self::linear_iterator::<In>(start.1..=end.1);
+
+        core::iter::once((outer_index, outer_bitmap_index_iterator))
     }
 }
 

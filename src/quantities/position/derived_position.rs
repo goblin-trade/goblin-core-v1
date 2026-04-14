@@ -5,7 +5,7 @@ use crate::{
 };
 use core::ops::RangeInclusive;
 
-#[derive(Clone, Copy, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, PartialEq, PartialOrd, Default)]
 pub struct DerivedPosition<K, const BITS: usize>
 where
     K: InnerVal,
