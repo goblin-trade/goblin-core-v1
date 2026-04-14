@@ -44,36 +44,6 @@ where
         let (start, end) = value.into_inner();
         RangeInclusive::new(start.into(), end.into())
     }
-
-    fn clamp_range<In>(
-        range: RangeInclusive<Self>,
-        outer_range: RangeInclusive<OuterIndex<Self>>,
-        current_outer: OuterIndex<Self>,
-    ) -> RangeInclusive<Self>
-    where
-        In: LegMatcher,
-        Self: OrderedIndex,
-        <Self as OrderedIndex>::Prev: OrderedIndex,
-    {
-        let (start_inner, end_inner) = range.into_inner();
-        let (start_outer, end_outer) = outer_range.into_inner();
-
-        let start = if current_outer == start_outer {
-            start_inner
-        } else {
-            In::start()
-        };
-
-        let end = if current_outer == end_outer {
-            end_inner
-        } else {
-            In::end()
-        };
-
-        start..=end
-    }
-
-    // fn active_bit
 }
 
 impl<K, const BITS: usize> From<Position> for DerivedPosition<K, BITS>

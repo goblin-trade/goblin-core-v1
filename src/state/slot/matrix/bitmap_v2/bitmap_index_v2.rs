@@ -11,7 +11,6 @@ pub type BitmapIndexV2<const BITS: usize> = DerivedPosition<u8, BITS>;
 impl<const BITS: usize> BitmapIndexV2<BITS>
 where
     Self: OrderedIndex,
-    // RangeInclusive<(OuterIndex<Self>, Self)>: Clone + Copy,
 {
     pub fn byte_index(&self) -> usize {
         self.inner as usize / 8
@@ -22,12 +21,11 @@ where
     }
 
     pub fn clamped_range<In>(
-        range: RangeInclusive<(OuterIndex<Self>, Self)>,
+        range: &RangeInclusive<(OuterIndex<Self>, Self)>,
         current_outer: OuterIndex<Self>,
     ) -> RangeInclusive<Self>
     where
         In: LegMatcher,
-        // RangeInclusive<(OuterIndex<Self>, Self)>: Clone + Copy,
     {
         let start = if current_outer == range.start().0 {
             range.start().1

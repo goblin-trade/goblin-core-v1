@@ -44,7 +44,7 @@ impl InnerPosV2 {
 
                     let inner_bitmap = hash.load();
 
-                    let inner_pos_range = Self::clamped_range::<In>(range.clone(), outer_index);
+                    let inner_pos_range = Self::clamped_range::<In>(&range, outer_index);
 
                     let inner_pos_iterator =
                         InnerPosV2::linear_iterator::<In>(inner_pos_range.clone())
