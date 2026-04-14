@@ -1,6 +1,7 @@
 use crate::axis::leg::leg_matcher::LegMatcher;
 use crate::state::bitmap_v2::bitmap_index_v2::BitmapIndexV2;
 use crate::state::bitmap_v2::ordered_index::OrderedIndex;
+use crate::state::bitmap_v2::outer_index::OuterIndex;
 use core::ops::RangeInclusive;
 
 pub struct BitmapV2<const BITS: usize> {
@@ -11,6 +12,7 @@ impl<const BITS: usize> BitmapV2<BITS>
 where
     BitmapIndexV2<BITS>: OrderedIndex,
     <BitmapIndexV2<BITS> as OrderedIndex>::Prev: OrderedIndex,
+    // RangeInclusive<(OuterIndex<Self>, Self)>: Clone + Copy,
 {
     pub fn is_active(&self) -> bool {
         const EMPTY_VALUE: [u8; 32] = [0; 32];
