@@ -11,7 +11,6 @@ pub type BitmapIndexV2<const BITS: usize> = DerivedPosition<u8, BITS>;
 impl<const BITS: usize> BitmapIndexV2<BITS>
 where
     Self: OrderedIndex,
-    <Self as OrderedIndex>::Prev: OrderedIndex,
     // RangeInclusive<(OuterIndex<Self>, Self)>: Clone + Copy,
 {
     pub fn byte_index(&self) -> usize {

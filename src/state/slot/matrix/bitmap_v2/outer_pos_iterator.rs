@@ -44,7 +44,7 @@ impl OuterPosV2 {
                     return None;
                 }
 
-                let outer_pos_range = Self::clamped_range::<In>(range.clone(), outer_index);
+                let outer_pos_range = Self::clamped_range::<In>(range, outer_index);
 
                 let outer_pos_iterator = OuterPosV2::linear_iterator::<In>(outer_pos_range.clone())
                     .filter(move |outer_pos| outer_bitmap.index_active(*outer_pos));

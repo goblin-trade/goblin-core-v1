@@ -11,7 +11,7 @@ pub struct BitmapV2<const BITS: usize> {
 impl<const BITS: usize> BitmapV2<BITS>
 where
     BitmapIndexV2<BITS>: OrderedIndex,
-    <BitmapIndexV2<BITS> as OrderedIndex>::Prev: OrderedIndex,
+    // <BitmapIndexV2<BITS> as OrderedIndex>::Prev: OrderedIndex,
     // RangeInclusive<(OuterIndex<Self>, Self)>: Clone + Copy,
 {
     pub fn is_active(&self) -> bool {

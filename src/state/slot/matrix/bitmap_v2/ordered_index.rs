@@ -7,15 +7,22 @@ use core::ops::RangeInclusive;
 // Add inner() function
 // But we need to duplicate code for each impl
 pub trait OrderedIndex: Clone + Copy + PartialEq {
-    type Prev: Clone + Copy + PartialEq;
-
-    // Can add Bitmap type here or we will face recursion problem?
+    type Prev: OrderedIndex<Prev: Clone + Copy + PartialEq>;
 
     fn linear_iterator<In>(range: RangeInclusive<Self>) -> impl Iterator<Item = Self>
     where
         In: LegMatcher;
+}
 
-    // TODO move clamp function here?
+impl OrderedIndex for () {
+    type Prev = (); // bottoms out, self-referential terminator
+
+    fn linear_iterator<In>(_range: RangeInclusive<Self>) -> impl Iterator<Item = Self>
+    where
+        In: LegMatcher,
+    {
+        core::iter::once(()) // or empty(), depending on your semantics
+    }
 }
 
 impl OrderedIndex for OuterBitmapIndexV2 {
@@ -38,8 +45,6 @@ impl OrderedIndex for OuterPosV2 {
     {
         In::outer_pos_iter(range)
     }
-
-    // TODO can we have full iterator here?
 }
 
 impl OrderedIndex for InnerPosV2 {
