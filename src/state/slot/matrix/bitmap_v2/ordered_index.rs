@@ -152,10 +152,11 @@ impl OrderedIndex for InnerPosV2 {
         Q: TokenMarker,
         In: LegMatcher,
     {
-        let mapped_start = (((), range.start().0 .0), range.start().0 .1);
-        let mapped_end = (((), range.end().0 .0), range.end().0 .1);
+        let start = (((), range.start().0 .0), range.start().0 .1);
+        let end = (((), range.end().0 .0), range.end().0 .1);
+        let outer_range = start..=end;
 
-        OuterPosV2::get_iter::<M, B, Q, In>(market_key, mapped_start..=mapped_end).flat_map(
+        OuterPosV2::parent_iterator::<M, B, Q, In>(market_key, outer_range).flat_map(
             move |((_, outer_bitmap_index), outer_pos_iter)| {
                 let range = range.clone();
                 outer_pos_iter.flat_map(move |outer_pos| {
