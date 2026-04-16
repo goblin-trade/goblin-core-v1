@@ -12,4 +12,4 @@ pub trait PreviousBitmap {}
 
 impl PreviousBitmap for () {}
 
-impl<const BITS: usize> PreviousBitmap for BitmapV2<BITS> where BitmapIndexV2<BITS>: OrderedIndex {}
+impl<const BITS: u16> PreviousBitmap for BitmapV2<BITS> where BitmapIndexV2<BITS>: OrderedIndex {}

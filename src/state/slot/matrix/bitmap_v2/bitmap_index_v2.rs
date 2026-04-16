@@ -6,9 +6,9 @@ use crate::{
     state::bitmap_v2::{ordered_index::OrderedIndex, outer_index::OuterIndex},
 };
 
-pub type BitmapIndexV2<const BITS: usize> = DerivedPosition<u8, BITS>;
+pub type BitmapIndexV2<const BITS: u16> = DerivedPosition<u8, BITS>;
 
-impl<const BITS: usize> BitmapIndexV2<BITS>
+impl<const BITS: u16> BitmapIndexV2<BITS>
 where
     Self: OrderedIndex,
 {

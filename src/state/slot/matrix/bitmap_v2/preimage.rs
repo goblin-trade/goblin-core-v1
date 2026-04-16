@@ -11,7 +11,7 @@ use crate::{
 
 #[repr(C)]
 #[derive(Clone, Copy)]
-pub struct BitmapPreimageV2<M, B, Q, const BITS: usize>
+pub struct BitmapPreimageV2<M, B, Q, const BITS: u16>
 where
     M: MarketMarker,
     B: TokenMarker,
@@ -23,7 +23,7 @@ where
     pub outer_index: OuterIndex<BitmapIndexV2<BITS>>,
 }
 
-impl<M, B, Q, const BITS: usize> Preimage for BitmapPreimageV2<M, B, Q, BITS>
+impl<M, B, Q, const BITS: u16> Preimage for BitmapPreimageV2<M, B, Q, BITS>
 where
     M: MarketMarker,
     B: TokenMarker,

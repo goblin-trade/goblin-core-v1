@@ -6,19 +6,19 @@ use crate::{
 use core::ops::RangeInclusive;
 
 #[derive(Clone, Copy, PartialEq, PartialOrd, Default)]
-pub struct DerivedPosition<K, const BITS: usize>
+pub struct DerivedPosition<K, const BITS: u16>
 where
     K: InnerVal,
 {
     pub inner: K,
 }
 
-impl<K, const BITS: usize> DerivedPosition<K, BITS>
+impl<K, const BITS: u16> DerivedPosition<K, BITS>
 where
     K: InnerVal,
 {
-    const BIT_OFFSET: usize = BITS >> 8;
-    const BIT_COUNT: usize = BITS & 0xFF;
+    const BIT_OFFSET: u16 = BITS >> 8;
+    const BIT_COUNT: u16 = BITS & 0xFF;
 
     /// Unshifted bitmask of BIT_COUNT ones
     /// e.g. BIT_COUNT=4 → 0b1111
@@ -46,7 +46,7 @@ where
     }
 }
 
-impl<K, const BITS: usize> From<Position> for DerivedPosition<K, BITS>
+impl<K, const BITS: u16> From<Position> for DerivedPosition<K, BITS>
 where
     K: InnerVal,
 {
@@ -56,7 +56,7 @@ where
     }
 }
 
-impl<K, const BITS: usize> From<DerivedPosition<K, BITS>> for Position
+impl<K, const BITS: u16> From<DerivedPosition<K, BITS>> for Position
 where
     K: InnerVal,
 {

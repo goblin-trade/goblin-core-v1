@@ -13,14 +13,14 @@ impl LegCoordinates for Base {
         }
     }
 
-    fn start<K, const BITS: usize>() -> DerivedPosition<K, BITS>
+    fn start<K, const BITS: u16>() -> DerivedPosition<K, BITS>
     where
         K: InnerVal,
     {
         DerivedPosition::max()
     }
 
-    fn end<K, const BITS: usize>() -> DerivedPosition<K, BITS>
+    fn end<K, const BITS: u16>() -> DerivedPosition<K, BITS>
     where
         K: InnerVal,
     {

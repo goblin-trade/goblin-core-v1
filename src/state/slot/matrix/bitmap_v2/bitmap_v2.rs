@@ -3,11 +3,11 @@ use crate::state::bitmap_v2::bitmap_index_v2::BitmapIndexV2;
 use crate::state::bitmap_v2::ordered_index::OrderedIndex;
 use core::ops::RangeInclusive;
 
-pub struct BitmapV2<const BITS: usize> {
+pub struct BitmapV2<const BITS: u16> {
     pub inner: [u8; 32],
 }
 
-impl<const BITS: usize> BitmapV2<BITS>
+impl<const BITS: u16> BitmapV2<BITS>
 where
     BitmapIndexV2<BITS>: OrderedIndex,
 {
