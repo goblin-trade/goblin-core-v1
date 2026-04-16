@@ -40,8 +40,8 @@ where
         Self::new(K::from_u64(Self::MAX_RAW))
     }
 
-    pub fn convert_range(value: RangeInclusive<Position>) -> RangeInclusive<Self> {
-        let (start, end) = value.into_inner();
+    pub fn convert_range(value: &RangeInclusive<Position>) -> RangeInclusive<Self> {
+        let (start, end) = value.clone().into_inner();
         RangeInclusive::new(start.into(), end.into())
     }
 }
