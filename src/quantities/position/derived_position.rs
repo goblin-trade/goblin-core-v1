@@ -17,8 +17,8 @@ impl<K, const BITS: u16> DerivedPosition<K, BITS>
 where
     K: InnerVal,
 {
-    const BIT_OFFSET: u16 = BITS >> 8;
-    const BIT_COUNT: u16 = BITS & 0xFF;
+    pub const BIT_OFFSET: u16 = BITS >> 8;
+    pub const BIT_COUNT: u16 = BITS & 0xFF;
 
     /// Unshifted bitmask of BIT_COUNT ones
     /// e.g. BIT_COUNT=4 → 0b1111

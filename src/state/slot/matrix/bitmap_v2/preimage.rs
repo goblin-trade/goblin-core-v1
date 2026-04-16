@@ -31,8 +31,7 @@ where
     BitmapIndexV2<BITS>: OrderedIndex,
     <BitmapIndexV2<BITS> as OrderedIndex>::Prev: OrderedIndex,
 {
-    // Discriminator 5 for both bitmaps
     // TODO update RestingOrderBitmap with discriminator 6
-    const SLOT_DISCRIMINATOR: u8 = 5;
+    const SLOT_DISCRIMINATOR: u8 = 5 + BitmapIndexV2::<BITS>::BIT_OFFSET as u8;
     type SlotState = BitmapV2<BITS>;
 }
