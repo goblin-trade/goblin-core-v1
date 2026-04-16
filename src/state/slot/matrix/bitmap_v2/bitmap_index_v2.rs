@@ -1,9 +1,8 @@
 use core::ops::RangeInclusive;
 
 use crate::{
-    axis::leg::leg_matcher::LegMatcher,
-    quantities::DerivedPosition,
-    state::bitmap_v2::{ordered_index::OrderedIndex, outer_index::OuterIndex},
+    axis::leg::leg_matcher::LegMatcher, quantities::DerivedPosition,
+    state::bitmap_v2::ordered_index::OrderedIndex,
 };
 
 pub type BitmapIndexV2<const BITS: u16> = DerivedPosition<u8, BITS>;

@@ -18,7 +18,7 @@ where
     K: InnerVal,
 {
     pub const BIT_OFFSET: u16 = BITS >> 8;
-    pub const BIT_COUNT: u16 = BITS & 0xFF;
+    pub const BIT_COUNT: u16 = BITS & 0b1111;
 
     /// Unshifted bitmask of BIT_COUNT ones
     /// e.g. BIT_COUNT=4 → 0b1111

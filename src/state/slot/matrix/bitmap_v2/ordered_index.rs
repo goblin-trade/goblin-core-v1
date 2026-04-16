@@ -4,10 +4,7 @@ use crate::{
         token::token_marker::TokenMarker,
     },
     quantities::{InnerPosV2, OuterBitmapIndexV2, OuterPosV2, INNER_POS_V2, OUTER_POS_V2},
-    state::{
-        bitmap_v2::{outer_index::OuterIndex, preimage::BitmapPreimageV2},
-        MarketPreimage, Preimage, SlotKey,
-    },
+    state::{bitmap_v2::preimage::BitmapPreimageV2, MarketPreimage, Preimage, SlotKey},
 };
 use core::ops::RangeInclusive;
 pub trait OrderedIndex: Clone + Copy + PartialEq + Default {
