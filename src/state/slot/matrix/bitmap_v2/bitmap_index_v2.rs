@@ -27,36 +27,14 @@ where
     where
         In: LegMatcher,
     {
-        let offset = Self::BIT_OFFSET as usize;
-        let compliment = position.complement(offset);
-        let start = if compliment == range.start().complement(offset) {
+        let compliment = position.complement::<BITS>();
+        let start = if compliment == range.start().complement::<BITS>() {
             Self::from(position)
         } else {
             In::start()
         };
-        let end = if compliment == range.end().complement(offset) {
+        let end = if compliment == range.end().complement::<BITS>() {
             Self::from(position)
-        } else {
-            In::end()
-        };
-
-        start..=end
-    }
-
-    pub fn clamped_range<In>(
-        range: &RangeInclusive<(OuterIndex<Self>, Self)>,
-        current_outer: OuterIndex<Self>,
-    ) -> RangeInclusive<Self>
-    where
-        In: LegMatcher,
-    {
-        let start = if current_outer == range.start().0 {
-            range.start().1
-        } else {
-            In::start()
-        };
-        let end = if current_outer == range.end().0 {
-            range.end().1
         } else {
             In::end()
         };
