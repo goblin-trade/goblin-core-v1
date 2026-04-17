@@ -1,7 +1,5 @@
-use crate::axis::leg::leg_matcher::LegMatcher;
 use crate::state::bitmap_v2::bitmap_index_v2::BitmapIndexV2;
 use crate::state::bitmap_v2::ordered_index::OrderedIndex;
-use core::ops::RangeInclusive;
 
 pub struct BitmapV2<const BITS: u16> {
     pub inner: [u8; 32],
@@ -23,16 +21,5 @@ where
         let mask = 1 << index.bit_index();
 
         (byte & mask) != 0
-    }
-
-    pub fn active_iterator<In>(
-        self,
-        clamped_range: RangeInclusive<BitmapIndexV2<BITS>>,
-    ) -> impl Iterator<Item = BitmapIndexV2<BITS>>
-    where
-        In: LegMatcher,
-    {
-        BitmapIndexV2::<BITS>::linear_iterator::<In>(clamped_range.clone())
-            .filter(move |index| self.index_active(*index))
     }
 }
