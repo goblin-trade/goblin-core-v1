@@ -11,7 +11,7 @@ use crate::{
 use core::ops::RangeInclusive;
 
 pub trait OrderedIndex: Clone + Copy + PartialEq + Default {
-    fn parent_iterator<M, B, Q, In>(
+    fn active_iterator<M, B, Q, In>(
         market_key: SlotKey<MarketPreimage<M, B, Q>>,
         range: RangeInclusive<Position>,
     ) -> impl Iterator<Item = Position>
@@ -23,7 +23,7 @@ pub trait OrderedIndex: Clone + Copy + PartialEq + Default {
 }
 
 impl OrderedIndex for OuterPosV2 {
-    fn parent_iterator<M, B, Q, In>(
+    fn active_iterator<M, B, Q, In>(
         market_key: SlotKey<MarketPreimage<M, B, Q>>,
         range: RangeInclusive<Position>,
     ) -> impl Iterator<Item = Position>
@@ -35,33 +35,27 @@ impl OrderedIndex for OuterPosV2 {
     {
         let outer_range = OuterBitmapIndexV2::convert_range(&range);
         In::outer_bitmap_index_iter(outer_range)
-            .flat_map(move |outer_bitmap_index| {
+            .filter_map(move |outer_bitmap_index| {
                 let position = Position::from(outer_bitmap_index);
-
                 let preimage = BitmapPreimageV2::<M, B, Q, OUTER_POS_V2> {
                     market_key,
                     position,
                 };
                 let outer_bitmap = preimage.hash().load();
-
-                if !outer_bitmap.is_active() {
-                    return None;
-                }
-
                 let outer_pos_range = Self::effective_range::<In>(&range, position);
 
-                Some(
+                outer_bitmap.is_active().then(|| {
                     In::outer_pos_iter(outer_pos_range)
                         .filter(move |outer_pos| outer_bitmap.index_active(*outer_pos))
-                        .map(move |outer_pos| position + outer_pos.into()),
-                )
+                        .map(move |outer_pos| position + outer_pos.into())
+                })
             })
             .flatten()
     }
 }
 
 impl OrderedIndex for InnerPosV2 {
-    fn parent_iterator<M, B, Q, In>(
+    fn active_iterator<M, B, Q, In>(
         market_key: SlotKey<MarketPreimage<M, B, Q>>,
         range: RangeInclusive<Position>,
     ) -> impl Iterator<Item = Position>
@@ -75,7 +69,7 @@ impl OrderedIndex for InnerPosV2 {
         let end = range.end().complement::<INNER_POS_V2>();
         let outer_range = start..=end;
 
-        OuterPosV2::parent_iterator::<M, B, Q, In>(market_key, outer_range).flat_map(
+        OuterPosV2::active_iterator::<M, B, Q, In>(market_key, outer_range).flat_map(
             move |position| {
                 let preimage = BitmapPreimageV2::<M, B, Q, INNER_POS_V2> {
                     market_key,
