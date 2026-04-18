@@ -45,7 +45,16 @@ impl OrderedIndex for OuterPosV2 {
                 };
                 let outer_bitmap = preimage.hash().load();
 
-                let outer_pos_range = range.effective_range::<OUTER_POS_V2, In>(position);
+                // TODO update linear iterators to use Position?
+                // We convert Position to DerivedPosition, use it to check if active
+                // then convert back to Position
+                //
+                // Should the linear iterator then clear the inner bits?
+                // Eg. For start (outer_pos = 1, inner_pos = 1) should we begin iteration
+                // from (outer_pos = 1, inner_pos = 0)?
+                //
+                // Yes. We can't have any inner_pos, because this value is used to build preimage
+                let outer_pos_range = range.effective_range::<In, OUTER_POS_V2>(position);
 
                 outer_bitmap.is_active().then(|| {
                     In::outer_pos_iter(outer_pos_range)
@@ -77,7 +86,7 @@ impl OrderedIndex for InnerPosV2 {
                 };
                 let inner_bitmap = preimage.hash().load();
 
-                let inner_pos_range = range.effective_range::<INNER_POS_V2, In>(position);
+                let inner_pos_range = range.effective_range::<In, INNER_POS_V2>(position);
 
                 In::inner_pos_iter(inner_pos_range)
                     .filter(move |inner_pos| inner_bitmap.index_active(*inner_pos))

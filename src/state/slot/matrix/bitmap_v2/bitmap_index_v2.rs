@@ -1,11 +1,8 @@
-use crate::{quantities::DerivedPosition, state::bitmap_v2::ordered_index::OrderedIndex};
+use crate::quantities::DerivedPosition;
 
 pub type BitmapIndexV2<const BITS: u16> = DerivedPosition<u8, BITS>;
 
-impl<const BITS: u16> BitmapIndexV2<BITS>
-where
-    Self: OrderedIndex,
-{
+impl<const BITS: u16> BitmapIndexV2<BITS> {
     pub fn byte_index(&self) -> usize {
         self.inner as usize / 8
     }

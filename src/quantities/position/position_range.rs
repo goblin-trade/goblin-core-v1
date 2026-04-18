@@ -1,14 +1,13 @@
-use core::ops::RangeInclusive;
-
 use crate::{
     axis::leg::leg_matcher::LegMatcher,
     quantities::{DerivedPosition, Position},
 };
+use core::ops::RangeInclusive;
 
 pub trait PositionRange: Sized {
     fn map_range<A>(&self, f: impl Fn(Position) -> A) -> RangeInclusive<A>;
 
-    fn effective_range<const BITS: u16, In>(
+    fn effective_range<In, const BITS: u16>(
         &self,
         position: Position,
     ) -> RangeInclusive<DerivedPosition<u8, BITS>>
@@ -21,7 +20,7 @@ impl PositionRange for RangeInclusive<Position> {
         f(*self.start())..=f(*self.end())
     }
 
-    fn effective_range<const BITS: u16, In>(
+    fn effective_range<In, const BITS: u16>(
         &self,
         position: Position,
     ) -> RangeInclusive<DerivedPosition<u8, BITS>>
