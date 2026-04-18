@@ -1,4 +1,4 @@
-use crate::state::bitmap_v2::bitmap_index_v2::BitmapIndexV2;
+use crate::quantities::DerivedPosition;
 
 pub struct BitmapV2<const BITS: u16> {
     pub inner: [u8; 32],
@@ -12,9 +12,12 @@ impl<const BITS: u16> BitmapV2<BITS> {
         self.inner != EMPTY_VALUE && self.inner != CLOSED_SENTINEL
     }
 
-    pub fn index_active(&self, index: BitmapIndexV2<BITS>) -> bool {
-        let byte = self.inner[index.byte_index()];
-        let mask = 1 << index.bit_index();
+    pub fn index_active(&self, index: DerivedPosition<u8, BITS>) -> bool {
+        let byte_index = index.inner as usize / 8;
+        let bit_index = index.inner as usize % 8;
+
+        let byte = self.inner[byte_index];
+        let mask = 1 << bit_index;
 
         (byte & mask) != 0
     }
