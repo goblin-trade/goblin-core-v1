@@ -1,5 +1,9 @@
+use core::ops::RangeInclusive;
 use core::ops::{Add, Sub};
 use core::u64;
+
+use crate::axis::leg::leg_matcher::LegMatcher;
+use crate::quantities::DerivedPosition;
 
 #[derive(PartialEq, PartialOrd, Clone, Copy)]
 pub struct Position {
@@ -27,6 +31,33 @@ impl Position {
         Self {
             inner: self.inner & mask,
         }
+    }
+
+    pub fn map_range<A>(range: RangeInclusive<Self>, f: impl Fn(Self) -> A) -> RangeInclusive<A> {
+        let (s, e) = range.into_inner();
+        f(s)..=f(e)
+    }
+
+    pub fn effective_range<const BITS: u16, In>(
+        range: RangeInclusive<Position>,
+        position: Position,
+    ) -> RangeInclusive<DerivedPosition<u8, BITS>>
+    where
+        In: LegMatcher,
+    {
+        let compliment = position.complement::<BITS>();
+        let start = if compliment == range.start().complement::<BITS>() {
+            position.into()
+        } else {
+            In::start()
+        };
+        let end = if compliment == range.end().complement::<BITS>() {
+            position.into()
+        } else {
+            In::end()
+        };
+
+        start..=end
     }
 }
 

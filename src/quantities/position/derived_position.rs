@@ -1,8 +1,4 @@
-use crate::{
-    axis::leg::leg_matcher::LegMatcher,
-    quantities::{inner_val::InnerVal, Position},
-    state::bitmap_v2::{ordered_index::OrderedIndex, outer_index::OuterIndex},
-};
+use crate::quantities::{inner_val::InnerVal, Position};
 use core::ops::RangeInclusive;
 
 #[derive(Clone, Copy, PartialEq, PartialOrd, Default)]
@@ -40,17 +36,8 @@ where
         Self::new(K::from_u64(Self::MAX_RAW))
     }
 
-    pub fn compliment(&self) -> Position {
-        let mask = !((1u64 << (Self::BIT_OFFSET + 1)) - 1);
-        let position = Position::from(*self);
-
-        Position {
-            inner: position.inner & mask,
-        }
-    }
-
-    pub fn convert_range(value: &RangeInclusive<Position>) -> RangeInclusive<Self> {
-        let (start, end) = value.clone().into_inner();
+    pub fn convert_range(value: RangeInclusive<Position>) -> RangeInclusive<Self> {
+        let (start, end) = value.into_inner();
         RangeInclusive::new(start.into(), end.into())
     }
 }
