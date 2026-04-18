@@ -33,32 +33,14 @@ impl Position {
         }
     }
 
-    // pub fn map_range<A>(range: RangeInclusive<Self>, f: impl Fn(Self) -> A) -> RangeInclusive<A> {
-    //     let (s, e) = range.into_inner();
-    //     f(s)..=f(e)
-    // }
+    /// Extracts the bitfield defined by `BITS` and returns it as a `Position`
+    /// with all other bits zeroed.
+    pub fn extract<const BITS: u16>(&self) -> Self {
+        let inner = (self.inner >> DerivedPosition::<u64, BITS>::BIT_OFFSET)
+            & DerivedPosition::<u64, BITS>::MASK;
 
-    // pub fn effective_range<const BITS: u16, In>(
-    //     range: RangeInclusive<Position>,
-    //     position: Position,
-    // ) -> RangeInclusive<DerivedPosition<u8, BITS>>
-    // where
-    //     In: LegMatcher,
-    // {
-    //     let compliment = position.complement::<BITS>();
-    //     let start = if compliment == range.start().complement::<BITS>() {
-    //         position.into()
-    //     } else {
-    //         In::start()
-    //     };
-    //     let end = if compliment == range.end().complement::<BITS>() {
-    //         position.into()
-    //     } else {
-    //         In::end()
-    //     };
-
-    //     start..=end
-    // }
+        Self { inner }
+    }
 }
 
 impl Add for Position {

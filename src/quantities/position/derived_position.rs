@@ -47,8 +47,8 @@ where
     K: InnerVal,
 {
     fn from(value: Position) -> Self {
-        let extracted = (value.inner >> Self::BIT_OFFSET) & Self::MASK;
-        Self::new(K::from_u64(extracted))
+        let extracted = Position::extract::<BITS>(&value);
+        Self::new(K::from_u64(extracted.inner))
     }
 }
 
