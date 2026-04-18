@@ -8,8 +8,6 @@ use crate::{
 pub trait PositionRange: Sized {
     fn map_range<A>(&self, f: impl Fn(Position) -> A) -> RangeInclusive<A>;
 
-    fn compliment_range<const BITS: u16>(&self) -> Self;
-
     fn effective_range<const BITS: u16, In>(
         &self,
         position: Position,
@@ -21,10 +19,6 @@ pub trait PositionRange: Sized {
 impl PositionRange for RangeInclusive<Position> {
     fn map_range<A>(&self, f: impl Fn(Position) -> A) -> RangeInclusive<A> {
         f(*self.start())..=f(*self.end())
-    }
-
-    fn compliment_range<const BITS: u16>(&self) -> Self {
-        self.map_range(|p| p.complement::<BITS>())
     }
 
     fn effective_range<const BITS: u16, In>(

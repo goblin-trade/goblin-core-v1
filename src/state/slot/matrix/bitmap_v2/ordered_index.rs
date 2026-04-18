@@ -68,9 +68,8 @@ impl OrderedIndex for InnerPosV2 {
         Q: TokenMarker,
         In: LegMatcher,
     {
-        let outer_range = range.compliment_range::<INNER_POS_V2>();
-
-        OuterPosV2::active_iterator::<M, B, Q, In>(market_key, outer_range).flat_map(
+        // outer iterator ignores inner bits in range endpoints — no complement needed
+        OuterPosV2::active_iterator::<M, B, Q, In>(market_key, range.clone()).flat_map(
             move |position| {
                 let preimage = BitmapPreimageV2::<M, B, Q, INNER_POS_V2> {
                     market_key,
