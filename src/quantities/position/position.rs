@@ -33,32 +33,32 @@ impl Position {
         }
     }
 
-    pub fn map_range<A>(range: RangeInclusive<Self>, f: impl Fn(Self) -> A) -> RangeInclusive<A> {
-        let (s, e) = range.into_inner();
-        f(s)..=f(e)
-    }
+    // pub fn map_range<A>(range: RangeInclusive<Self>, f: impl Fn(Self) -> A) -> RangeInclusive<A> {
+    //     let (s, e) = range.into_inner();
+    //     f(s)..=f(e)
+    // }
 
-    pub fn effective_range<const BITS: u16, In>(
-        range: RangeInclusive<Position>,
-        position: Position,
-    ) -> RangeInclusive<DerivedPosition<u8, BITS>>
-    where
-        In: LegMatcher,
-    {
-        let compliment = position.complement::<BITS>();
-        let start = if compliment == range.start().complement::<BITS>() {
-            position.into()
-        } else {
-            In::start()
-        };
-        let end = if compliment == range.end().complement::<BITS>() {
-            position.into()
-        } else {
-            In::end()
-        };
+    // pub fn effective_range<const BITS: u16, In>(
+    //     range: RangeInclusive<Position>,
+    //     position: Position,
+    // ) -> RangeInclusive<DerivedPosition<u8, BITS>>
+    // where
+    //     In: LegMatcher,
+    // {
+    //     let compliment = position.complement::<BITS>();
+    //     let start = if compliment == range.start().complement::<BITS>() {
+    //         position.into()
+    //     } else {
+    //         In::start()
+    //     };
+    //     let end = if compliment == range.end().complement::<BITS>() {
+    //         position.into()
+    //     } else {
+    //         In::end()
+    //     };
 
-        start..=end
-    }
+    //     start..=end
+    // }
 }
 
 impl Add for Position {

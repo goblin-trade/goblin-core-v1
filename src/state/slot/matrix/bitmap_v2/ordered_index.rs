@@ -4,7 +4,8 @@ use crate::{
         token::token_marker::TokenMarker,
     },
     quantities::{
-        InnerPosV2, OuterBitmapIndexV2, OuterPosV2, Position, INNER_POS_V2, OUTER_POS_V2,
+        InnerPosV2, OuterBitmapIndexV2, OuterPosV2, Position, PositionRange, INNER_POS_V2,
+        OUTER_POS_V2,
     },
     state::{bitmap_v2::preimage::BitmapPreimageV2, MarketPreimage, Preimage, SlotKey},
 };
@@ -33,10 +34,8 @@ impl OrderedIndex for OuterPosV2 {
         Q: TokenMarker,
         In: LegMatcher,
     {
-        // let outer_bitmap_index_range = range.map
-        // This produces `DerivedPosition` while the other version produces `Position`
-        let outer_bitmap_index_range = Position::map_range(range.clone(), OuterBitmapIndexV2::from);
-        // let outer_bitmap_index_range = OuterBitmapIndexV2::convert_range(range.clone());
+        let outer_bitmap_index_range = range.map_range(OuterBitmapIndexV2::from);
+
         In::outer_bitmap_index_iter(outer_bitmap_index_range)
             .filter_map(move |outer_bitmap_index| {
                 let position = Position::from(outer_bitmap_index);
@@ -45,9 +44,8 @@ impl OrderedIndex for OuterPosV2 {
                     position,
                 };
                 let outer_bitmap = preimage.hash().load();
-                let outer_pos_range =
-                    Position::effective_range::<OUTER_POS_V2, In>(range.clone(), position);
-                // let outer_pos_range = Self::effective_range::<In>(&range, position);
+
+                let outer_pos_range = range.effective_range::<OUTER_POS_V2, In>(position);
 
                 outer_bitmap.is_active().then(|| {
                     In::outer_pos_iter(outer_pos_range)
@@ -70,8 +68,8 @@ impl OrderedIndex for InnerPosV2 {
         Q: TokenMarker,
         In: LegMatcher,
     {
-        let outer_range = Position::map_range(range.clone(), |p| p.complement::<INNER_POS_V2>());
-        // let outer_range = Position::complement_range::<INNER_POS_V2>(range.clone());
+        let outer_range = range.compliment_range::<INNER_POS_V2>();
+
         OuterPosV2::active_iterator::<M, B, Q, In>(market_key, outer_range).flat_map(
             move |position| {
                 let preimage = BitmapPreimageV2::<M, B, Q, INNER_POS_V2> {
@@ -80,8 +78,7 @@ impl OrderedIndex for InnerPosV2 {
                 };
                 let inner_bitmap = preimage.hash().load();
 
-                let inner_pos_range =
-                    Position::effective_range::<INNER_POS_V2, In>(range.clone(), position);
+                let inner_pos_range = range.effective_range::<INNER_POS_V2, In>(position);
 
                 In::inner_pos_iter(inner_pos_range)
                     .filter(move |inner_pos| inner_bitmap.index_active(*inner_pos))
