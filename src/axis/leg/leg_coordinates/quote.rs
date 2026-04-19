@@ -13,25 +13,11 @@ impl LegCoordinates for Quote {
         }
     }
 
-    fn start<K, const BITS: u16>() -> DerivedPosition<K, BITS>
-    where
-        K: InnerVal,
-    {
-        DerivedPosition::min()
-    }
-
-    fn end<K, const BITS: u16>() -> DerivedPosition<K, BITS>
-    where
-        K: InnerVal,
-    {
-        DerivedPosition::max()
-    }
-
-    fn start_v2<const BITS: u16>() -> Position {
+    fn start<const BITS: u16>() -> Position {
         Position::ZERO
     }
 
-    fn end_v2<const BITS: u16>() -> Position {
+    fn end<const BITS: u16>() -> Position {
         Position::new(DerivedPosition::<u64, BITS>::MAX_RAW)
     }
 }

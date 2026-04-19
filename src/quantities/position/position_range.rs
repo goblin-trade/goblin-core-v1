@@ -66,12 +66,12 @@ impl PositionRange for RangeInclusive<Position> {
         let start = if compliment == self.start().complement::<BITS>() {
             position
         } else {
-            In::start_v2::<BITS>()
+            In::start::<BITS>()
         };
         let end = if compliment == self.end().complement::<BITS>() {
             position
         } else {
-            In::end_v2::<BITS>()
+            In::end::<BITS>()
         };
 
         start..=end

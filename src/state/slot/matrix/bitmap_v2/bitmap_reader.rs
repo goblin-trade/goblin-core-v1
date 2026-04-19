@@ -31,7 +31,7 @@ impl BitmapReader for OuterPosV2 {
         Q: TokenMarker,
         In: LegMatcher,
     {
-        In::outer_bitmap_index_iter_v2(range.clone())
+        In::outer_bitmap_index_iter(range.clone())
             .filter_map(move |position| {
                 let preimage = BitmapPreimageV2::<M, B, Q, OUTER_POS_V2> {
                     market_key,
@@ -41,7 +41,7 @@ impl BitmapReader for OuterPosV2 {
                 let outer_pos_range = range.effective_range_v2::<In, OUTER_POS_V2>(position);
 
                 outer_bitmap.is_active().then(|| {
-                    In::outer_pos_iter_v2(outer_pos_range)
+                    In::outer_pos_iter(outer_pos_range)
                         .filter(move |outer_pos| outer_bitmap.index_active((*outer_pos).into()))
                         .map(move |outer_pos| position + outer_pos)
                 })
@@ -72,7 +72,7 @@ impl BitmapReader for InnerPosV2 {
 
                 let inner_pos_range = range.effective_range_v2::<In, INNER_POS_V2>(position);
 
-                In::inner_pos_iter_v2(inner_pos_range)
+                In::inner_pos_iter(inner_pos_range)
                     .filter(move |inner_pos| inner_bitmap.index_active((*inner_pos).into()))
                     .map(move |inner_pos| position + inner_pos)
             },
