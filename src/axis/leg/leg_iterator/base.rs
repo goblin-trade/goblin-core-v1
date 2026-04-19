@@ -1,25 +1,19 @@
 use crate::axis::leg::{leg_iterator::LegIterator, Base};
 use crate::quantities::{
-    Position, PositionRange, INNER_POS_V2, OUTER_BITMAP_INDEX_V2, OUTER_POS_V2,
+    InnerPosV2, OuterBitmapIndexV2, OuterPosV2, Position, PositionRange, INNER_POS_V2,
+    OUTER_BITMAP_INDEX_V2, OUTER_POS_V2,
 };
-use core::iter::{Map, Rev};
+use core::iter::{Map, Rev, StepBy};
 use core::ops::RangeInclusive;
 
 impl LegIterator for Base {
-    type PositionIter = Map<Rev<RangeInclusive<u64>>, fn(u64) -> Position>;
-
-    // type RowIter = Map<Rev<RangeInclusive<u8>>, fn(u8) -> Row>;
-
-    // fn row_iter(range: RangeInclusive<Row>) -> Self::RowIter {
-    //     (range.end().inner..=range.start().inner)
-    //         .rev()
-    //         .map(Row::new)
-    // }
+    type PositionIter = Map<StepBy<Rev<RangeInclusive<u64>>>, fn(u64) -> Position>;
 
     fn outer_bitmap_index_iter(range: RangeInclusive<Position>) -> Self::PositionIter {
         let extracted_range = range.extract_range::<OUTER_BITMAP_INDEX_V2>();
         (extracted_range.end().inner..=extracted_range.start().inner)
             .rev()
+            .step_by(OuterBitmapIndexV2::step_interval())
             .map(Position::new)
     }
 
@@ -27,6 +21,7 @@ impl LegIterator for Base {
         let extracted_range = range.effective_range::<Self, OUTER_POS_V2>(current);
         (extracted_range.end().inner..=extracted_range.start().inner)
             .rev()
+            .step_by(OuterPosV2::step_interval())
             .map(Position::new)
     }
 
@@ -45,6 +40,7 @@ impl LegIterator for Base {
 
         (extracted_range.end().inner..=item_inverted)
             .rev()
+            .step_by(InnerPosV2::step_interval())
             .map(|inner| {
                 let inner_inverted = inner ^ LSB3_MASK;
                 Position::new(inner_inverted)
