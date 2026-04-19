@@ -34,26 +34,15 @@ impl BitmapReader for OuterPosV2 {
         Q: TokenMarker,
         In: LegMatcher,
     {
-        let outer_bitmap_index_range = range.map_range(OuterBitmapIndexV2::from);
+        // let outer_bitmap_index_range = range.map_range(OuterBitmapIndexV2::from);
 
-        In::outer_bitmap_index_iter(outer_bitmap_index_range)
-            .filter_map(move |outer_bitmap_index| {
-                let position = Position::from(outer_bitmap_index);
+        In::outer_bitmap_index_iter_v2(range.clone())
+            .filter_map(move |position| {
                 let preimage = BitmapPreimageV2::<M, B, Q, OUTER_POS_V2> {
                     market_key,
                     position,
                 };
                 let outer_bitmap = preimage.hash().load();
-
-                // TODO update linear iterators to use Position?
-                // We convert Position to DerivedPosition, use it to check if active
-                // then convert back to Position
-                //
-                // Should the linear iterator then clear the inner bits?
-                // Eg. For start (outer_pos = 1, inner_pos = 1) should we begin iteration
-                // from (outer_pos = 1, inner_pos = 0)?
-                //
-                // Yes. We can't have any inner_pos, because this value is used to build preimage
                 let outer_pos_range = range.effective_range::<In, OUTER_POS_V2>(position);
 
                 outer_bitmap.is_active().then(|| {

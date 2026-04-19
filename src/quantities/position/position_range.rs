@@ -15,6 +15,13 @@ pub trait PositionRange: Sized {
     ) -> RangeInclusive<DerivedPosition<u8, BITS>>
     where
         In: LegMatcher;
+
+    fn effective_range_v2<In, const BITS: u16>(
+        &self,
+        position: Position,
+    ) -> RangeInclusive<Position>
+    where
+        In: LegMatcher;
 }
 
 impl PositionRange for RangeInclusive<Position> {
@@ -43,6 +50,28 @@ impl PositionRange for RangeInclusive<Position> {
             position.into()
         } else {
             In::end()
+        };
+
+        start..=end
+    }
+
+    fn effective_range_v2<In, const BITS: u16>(
+        &self,
+        position: Position,
+    ) -> RangeInclusive<Position>
+    where
+        In: LegMatcher,
+    {
+        let compliment = position.complement::<BITS>();
+        let start = if compliment == self.start().complement::<BITS>() {
+            position
+        } else {
+            In::start::<u8, BITS>().into()
+        };
+        let end = if compliment == self.end().complement::<BITS>() {
+            position
+        } else {
+            In::end::<u8, BITS>().into()
         };
 
         start..=end
