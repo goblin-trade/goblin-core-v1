@@ -11,7 +11,7 @@ use crate::{
 };
 use core::ops::RangeInclusive;
 
-pub trait OrderedIndex: Clone + Copy + PartialEq + Default {
+pub trait BitmapReader: Clone + Copy + PartialEq + Default {
     fn active_iterator<M, B, Q, In>(
         market_key: SlotKey<MarketPreimage<M, B, Q>>,
         range: RangeInclusive<Position>,
@@ -23,7 +23,7 @@ pub trait OrderedIndex: Clone + Copy + PartialEq + Default {
         In: LegMatcher;
 }
 
-impl OrderedIndex for OuterPosV2 {
+impl BitmapReader for OuterPosV2 {
     fn active_iterator<M, B, Q, In>(
         market_key: SlotKey<MarketPreimage<M, B, Q>>,
         range: RangeInclusive<Position>,
@@ -66,7 +66,7 @@ impl OrderedIndex for OuterPosV2 {
     }
 }
 
-impl OrderedIndex for InnerPosV2 {
+impl BitmapReader for InnerPosV2 {
     fn active_iterator<M, B, Q, In>(
         market_key: SlotKey<MarketPreimage<M, B, Q>>,
         range: RangeInclusive<Position>,
