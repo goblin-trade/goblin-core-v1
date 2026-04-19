@@ -25,12 +25,6 @@ where
         Self::new(K::from_u64(BitsLayout::<BITS>::MAX))
     }
 
-    pub fn step_interval() -> usize {
-        let derived_position = DerivedPosition::<u64, BITS>::new(1);
-        let position = Position::from(derived_position);
-        position.inner as usize
-    }
-
     pub fn convert_range(value: RangeInclusive<Position>) -> RangeInclusive<Self> {
         let (start, end) = value.into_inner();
         RangeInclusive::new(start.into(), end.into())

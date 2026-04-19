@@ -10,4 +10,8 @@ impl<const BITS: u16> BitsLayout<BITS> {
     pub const MASK: u64 = (1u64 << Self::COUNT) - 1;
 
     pub const MAX: u64 = Self::MASK;
+
+    pub fn step_interval() -> usize {
+        (1u64 << Self::OFFSET) as usize
+    }
 }
