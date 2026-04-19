@@ -7,6 +7,8 @@ use core::ops::RangeInclusive;
 pub trait PositionRange: Sized {
     fn map_range<A>(&self, f: impl Fn(Position) -> A) -> RangeInclusive<A>;
 
+    fn extract_range<const BITS: u16>(&self) -> Self;
+
     fn effective_range<In, const BITS: u16>(
         &self,
         position: Position,
@@ -18,6 +20,10 @@ pub trait PositionRange: Sized {
 impl PositionRange for RangeInclusive<Position> {
     fn map_range<A>(&self, f: impl Fn(Position) -> A) -> RangeInclusive<A> {
         f(*self.start())..=f(*self.end())
+    }
+
+    fn extract_range<const BITS: u16>(&self) -> Self {
+        self.map_range(|i| i.extract::<BITS>())
     }
 
     fn effective_range<In, const BITS: u16>(

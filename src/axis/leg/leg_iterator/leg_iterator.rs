@@ -1,6 +1,6 @@
 use crate::{
     axis::leg::leg_coordinates::LegCoordinates,
-    quantities::{InnerPosV2, OuterBitmapIndexV2, OuterPosV2},
+    quantities::{InnerPosV2, OuterBitmapIndexV2, OuterPosV2, Position},
 };
 use core::ops::RangeInclusive;
 
@@ -16,6 +16,7 @@ pub trait LegIterator: LegCoordinates {
     type OuterBitmapIndexIter: Iterator<Item = OuterBitmapIndexV2>;
     type OuterPosIter: Iterator<Item = OuterPosV2>;
     type InnerPosIter: Iterator<Item = InnerPosV2>;
+    type PositionIter: Iterator<Item = Position>;
 
     // type RowIter: Iterator<Item = Row>;
 
@@ -26,6 +27,12 @@ pub trait LegIterator: LegCoordinates {
     fn outer_pos_iter(range: RangeInclusive<OuterPosV2>) -> Self::OuterPosIter;
 
     fn inner_pos_iter(range: RangeInclusive<InnerPosV2>) -> Self::InnerPosIter;
+
+    fn outer_bitmap_index_iter_v2(range: RangeInclusive<Position>) -> Self::PositionIter;
+
+    fn outer_pos_iter_v2(range: RangeInclusive<Position>) -> Self::PositionIter;
+
+    fn inner_pos_iter_v2(range: RangeInclusive<Position>) -> Self::PositionIter;
 
     // fn row_iter(range: RangeInclusive<Row>) -> Self::RowIter;
 }
