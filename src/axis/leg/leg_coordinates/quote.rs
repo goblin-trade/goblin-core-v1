@@ -1,7 +1,7 @@
 use crate::{
     axis::leg::{leg_coordinates::LegCoordinates, Quote},
     matching::region::take_region::TakeRegion,
-    quantities::{inner_val::InnerVal, DerivedPosition, Position, TickPosV2},
+    quantities::{bits_layout::BitsLayout, Position, TickPosV2},
 };
 
 impl LegCoordinates for Quote {
@@ -18,6 +18,6 @@ impl LegCoordinates for Quote {
     }
 
     fn end<const BITS: u16>() -> Position {
-        Position::new(DerivedPosition::<u64, BITS>::MAX_RAW)
+        Position::new(BitsLayout::<BITS>::MAX)
     }
 }

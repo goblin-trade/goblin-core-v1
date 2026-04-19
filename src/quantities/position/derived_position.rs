@@ -1,4 +1,4 @@
-use crate::quantities::{inner_val::InnerVal, Position};
+use crate::quantities::{bits_layout::BitsLayout, inner_val::InnerVal, Position};
 use core::ops::RangeInclusive;
 
 #[derive(Clone, Copy, PartialEq, PartialOrd, Default)]
@@ -13,27 +13,16 @@ impl<K, const BITS: u16> DerivedPosition<K, BITS>
 where
     K: InnerVal,
 {
-    pub const BIT_OFFSET: u16 = BITS >> 8;
-    pub const BIT_COUNT: u16 = BITS & 0b1111;
-
-    /// Unshifted bitmask of BIT_COUNT ones
-    /// e.g. BIT_COUNT=4 → 0b1111
-    /// Note: not legal for BIT_COUNT = 64
-    pub const MASK: u64 = (1 << Self::BIT_COUNT) - 1;
-
-    pub const MIN_RAW: u64 = 0;
-    pub const MAX_RAW: u64 = Self::MASK;
-
     pub fn new(inner: K) -> Self {
         Self { inner }
     }
 
     pub fn min() -> Self {
-        Self::new(K::from_u64(Self::MIN_RAW))
+        Self::new(K::from_u64(0))
     }
 
     pub fn max() -> Self {
-        Self::new(K::from_u64(Self::MAX_RAW))
+        Self::new(K::from_u64(BitsLayout::<BITS>::MAX))
     }
 
     pub fn step_interval() -> usize {
@@ -65,8 +54,7 @@ where
     fn from(value: DerivedPosition<K, BITS>) -> Self {
         let inner: u64 = value.inner.into();
         Position {
-            inner: (inner & DerivedPosition::<K, BITS>::MASK)
-                << DerivedPosition::<K, BITS>::BIT_OFFSET,
+            inner: (inner & BitsLayout::<BITS>::MASK) << BitsLayout::<BITS>::OFFSET,
         }
     }
 }

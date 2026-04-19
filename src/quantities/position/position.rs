@@ -1,9 +1,6 @@
-use core::ops::RangeInclusive;
+use crate::quantities::bits_layout::BitsLayout;
 use core::ops::{Add, Sub};
 use core::u64;
-
-use crate::axis::leg::leg_matcher::LegMatcher;
-use crate::quantities::DerivedPosition;
 
 #[derive(PartialEq, PartialOrd, Clone, Copy)]
 pub struct Position {
@@ -26,8 +23,7 @@ impl Position {
     /// Externally ensure that `offset` is ≥ 63
     ///
     pub fn complement<const BITS: u16>(&self) -> Self {
-        let offset = BITS >> 8;
-        let mask = !((1u64 << (offset + 1)) - 1);
+        let mask = !((1u64 << (BitsLayout::<BITS>::OFFSET + 1)) - 1);
         Self {
             inner: self.inner & mask,
         }
@@ -36,9 +32,7 @@ impl Position {
     /// Extracts the bitfield defined by `BITS` and returns it as a `Position`
     /// with all other bits zeroed.
     pub fn extract<const BITS: u16>(&self) -> Self {
-        let inner = (self.inner >> DerivedPosition::<u64, BITS>::BIT_OFFSET)
-            & DerivedPosition::<u64, BITS>::MASK;
-
+        let inner = (self.inner >> BitsLayout::<BITS>::OFFSET) & BitsLayout::<BITS>::MASK;
         Self { inner }
     }
 }
