@@ -18,13 +18,13 @@ impl LegIterator for Quote {
         (extracted_range.start().inner..=extracted_range.end().inner).map(Position::new)
     }
 
-    fn outer_pos_iter(range: RangeInclusive<Position>) -> Self::PositionIter {
-        let extracted_range = range.extract_range::<OUTER_POS_V2>();
+    fn outer_pos_iter(range: RangeInclusive<Position>, current: Position) -> Self::PositionIter {
+        let extracted_range = range.effective_range::<Self, OUTER_POS_V2>(current);
         (extracted_range.start().inner..=extracted_range.end().inner).map(Position::new)
     }
 
-    fn inner_pos_iter(range: RangeInclusive<Position>) -> Self::PositionIter {
-        let extracted_range = range.extract_range::<INNER_POS_V2>();
+    fn inner_pos_iter(range: RangeInclusive<Position>, current: Position) -> Self::PositionIter {
+        let extracted_range = range.effective_range::<Self, INNER_POS_V2>(current);
         (extracted_range.start().inner..=extracted_range.end().inner).map(Position::new)
     }
 }

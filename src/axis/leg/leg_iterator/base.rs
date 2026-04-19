@@ -23,21 +23,21 @@ impl LegIterator for Base {
             .map(Position::new)
     }
 
-    fn outer_pos_iter(range: RangeInclusive<Position>) -> Self::PositionIter {
-        let extracted_range = range.extract_range::<OUTER_POS_V2>();
+    fn outer_pos_iter(range: RangeInclusive<Position>, current: Position) -> Self::PositionIter {
+        let extracted_range = range.effective_range::<Self, OUTER_POS_V2>(current);
         (extracted_range.end().inner..=extracted_range.start().inner)
             .rev()
             .map(Position::new)
     }
 
-    fn inner_pos_iter(range: RangeInclusive<Position>) -> Self::PositionIter {
+    fn inner_pos_iter(range: RangeInclusive<Position>, current: Position) -> Self::PositionIter {
         /// Mask inverts the LSB 3 bits belonging to column
         /// Eg the starting value 255 will map to 248 (row 31, column 0).
         /// This way rows are traversed top to bottom as normal but
         /// the direction of column traversal becomes left to right.
         const LSB3_MASK: u64 = 0b111;
 
-        let extracted_range = range.extract_range::<INNER_POS_V2>();
+        let extracted_range = range.effective_range::<Self, INNER_POS_V2>(current);
 
         // Invert the starting bits. This way they get inverted again
         // to the original value inside map()

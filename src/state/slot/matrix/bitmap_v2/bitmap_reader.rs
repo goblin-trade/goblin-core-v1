@@ -38,10 +38,9 @@ impl BitmapReader for OuterPosV2 {
                     position,
                 };
                 let outer_bitmap = preimage.hash().load();
-                let outer_pos_range = range.effective_range_v2::<In, OUTER_POS_V2>(position);
 
                 outer_bitmap.is_active().then(|| {
-                    In::outer_pos_iter(outer_pos_range)
+                    In::outer_pos_iter(range.clone(), position)
                         .filter(move |outer_pos| outer_bitmap.index_active((*outer_pos).into()))
                         .map(move |outer_pos| position + outer_pos)
                 })
@@ -70,9 +69,7 @@ impl BitmapReader for InnerPosV2 {
                 };
                 let inner_bitmap = preimage.hash().load();
 
-                let inner_pos_range = range.effective_range_v2::<In, INNER_POS_V2>(position);
-
-                In::inner_pos_iter(inner_pos_range)
+                In::inner_pos_iter(range.clone(), position)
                     .filter(move |inner_pos| inner_bitmap.index_active((*inner_pos).into()))
                     .map(move |inner_pos| position + inner_pos)
             },

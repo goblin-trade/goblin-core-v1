@@ -12,7 +12,7 @@ pub trait LegIterator: LegCoordinates {
 
     fn outer_bitmap_index_iter(range: RangeInclusive<Position>) -> Self::PositionIter;
 
-    fn outer_pos_iter(range: RangeInclusive<Position>) -> Self::PositionIter;
+    fn outer_pos_iter(range: RangeInclusive<Position>, current: Position) -> Self::PositionIter;
 
-    fn inner_pos_iter(range: RangeInclusive<Position>) -> Self::PositionIter;
+    fn inner_pos_iter(range: RangeInclusive<Position>, current: Position) -> Self::PositionIter;
 }
