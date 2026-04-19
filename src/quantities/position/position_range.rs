@@ -9,12 +9,12 @@ pub trait PositionRange: Sized {
 
     fn extract_range<const BITS: u16>(&self) -> Self;
 
-    fn effective_range<In, const BITS: u16>(
-        &self,
-        position: Position,
-    ) -> RangeInclusive<DerivedPosition<u8, BITS>>
-    where
-        In: LegMatcher;
+    // fn effective_range<In, const BITS: u16>(
+    //     &self,
+    //     position: Position,
+    // ) -> RangeInclusive<DerivedPosition<u8, BITS>>
+    // where
+    //     In: LegMatcher;
 
     fn effective_range_v2<In, const BITS: u16>(
         &self,
@@ -33,27 +33,27 @@ impl PositionRange for RangeInclusive<Position> {
         self.map_range(|i| i.extract::<BITS>())
     }
 
-    fn effective_range<In, const BITS: u16>(
-        &self,
-        position: Position,
-    ) -> RangeInclusive<DerivedPosition<u8, BITS>>
-    where
-        In: LegMatcher,
-    {
-        let compliment = position.complement::<BITS>();
-        let start = if compliment == self.start().complement::<BITS>() {
-            position.into()
-        } else {
-            In::start()
-        };
-        let end = if compliment == self.end().complement::<BITS>() {
-            position.into()
-        } else {
-            In::end()
-        };
+    // fn effective_range<In, const BITS: u16>(
+    //     &self,
+    //     position: Position,
+    // ) -> RangeInclusive<DerivedPosition<u8, BITS>>
+    // where
+    //     In: LegMatcher,
+    // {
+    //     let compliment = position.complement::<BITS>();
+    //     let start = if compliment == self.start().complement::<BITS>() {
+    //         position.into()
+    //     } else {
+    //         In::start()
+    //     };
+    //     let end = if compliment == self.end().complement::<BITS>() {
+    //         position.into()
+    //     } else {
+    //         In::end()
+    //     };
 
-        start..=end
-    }
+    //     start..=end
+    // }
 
     fn effective_range_v2<In, const BITS: u16>(
         &self,
@@ -66,12 +66,12 @@ impl PositionRange for RangeInclusive<Position> {
         let start = if compliment == self.start().complement::<BITS>() {
             position
         } else {
-            In::start::<u8, BITS>().into()
+            In::start_v2::<BITS>()
         };
         let end = if compliment == self.end().complement::<BITS>() {
             position
         } else {
-            In::end::<u8, BITS>().into()
+            In::end_v2::<BITS>()
         };
 
         start..=end

@@ -3,10 +3,7 @@ use crate::{
         leg::leg_matcher::LegMatcher, market::market_marker::MarketMarker,
         token::token_marker::TokenMarker,
     },
-    quantities::{
-        InnerPosV2, OuterBitmapIndexV2, OuterPosV2, Position, PositionRange, INNER_POS_V2,
-        OUTER_POS_V2,
-    },
+    quantities::{InnerPosV2, OuterPosV2, Position, PositionRange, INNER_POS_V2, OUTER_POS_V2},
     state::{bitmap_v2::preimage::BitmapPreimageV2, MarketPreimage, Preimage, SlotKey},
 };
 use core::ops::RangeInclusive;
@@ -34,8 +31,6 @@ impl BitmapReader for OuterPosV2 {
         Q: TokenMarker,
         In: LegMatcher,
     {
-        // let outer_bitmap_index_range = range.map_range(OuterBitmapIndexV2::from);
-
         In::outer_bitmap_index_iter_v2(range.clone())
             .filter_map(move |position| {
                 let preimage = BitmapPreimageV2::<M, B, Q, OUTER_POS_V2> {
@@ -43,12 +38,12 @@ impl BitmapReader for OuterPosV2 {
                     position,
                 };
                 let outer_bitmap = preimage.hash().load();
-                let outer_pos_range = range.effective_range::<In, OUTER_POS_V2>(position);
+                let outer_pos_range = range.effective_range_v2::<In, OUTER_POS_V2>(position);
 
                 outer_bitmap.is_active().then(|| {
-                    In::outer_pos_iter(outer_pos_range)
-                        .filter(move |outer_pos| outer_bitmap.index_active(*outer_pos))
-                        .map(move |outer_pos| position + outer_pos.into())
+                    In::outer_pos_iter_v2(outer_pos_range)
+                        .filter(move |outer_pos| outer_bitmap.index_active((*outer_pos).into()))
+                        .map(move |outer_pos| position + outer_pos)
                 })
             })
             .flatten()
@@ -75,11 +70,11 @@ impl BitmapReader for InnerPosV2 {
                 };
                 let inner_bitmap = preimage.hash().load();
 
-                let inner_pos_range = range.effective_range::<In, INNER_POS_V2>(position);
+                let inner_pos_range = range.effective_range_v2::<In, INNER_POS_V2>(position);
 
-                In::inner_pos_iter(inner_pos_range)
-                    .filter(move |inner_pos| inner_bitmap.index_active(*inner_pos))
-                    .map(move |inner_pos| position + inner_pos.into())
+                In::inner_pos_iter_v2(inner_pos_range)
+                    .filter(move |inner_pos| inner_bitmap.index_active((*inner_pos).into()))
+                    .map(move |inner_pos| position + inner_pos)
             },
         )
     }
