@@ -8,7 +8,7 @@ use crate::{
 };
 use core::ops::RangeInclusive;
 
-pub trait BitmapReader: Clone + Copy + PartialEq + Default {
+pub trait BitmapReader {
     /// Give an iterator to return active positions inside a bitmap
     fn active_iterator<M, B, Q, In>(
         market_key: SlotKey<MarketPreimage<M, B, Q>>,

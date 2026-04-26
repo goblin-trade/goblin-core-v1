@@ -3,15 +3,15 @@ use crate::{
         leg::leg_matcher::LegMatcher, market::market_marker::MarketMarker,
         token::token_marker::TokenMarker,
     },
-    quantities::{OuterPosV2, Position, OUTER_POS_V2},
+    quantities::{Position, OUTER_POS_V2},
     state::{
-        bitmap_v2::{bitmap_reader::BitmapReader, preimage::BitmapPreimageV2},
+        bitmap_v2::{bitmap_reader::BitmapReader, preimage::BitmapPreimageV2, BitmapV2},
         MarketPreimage, Preimage, SlotKey,
     },
 };
 use core::ops::RangeInclusive;
 
-impl BitmapReader for OuterPosV2 {
+impl BitmapReader for BitmapV2<OUTER_POS_V2> {
     fn active_iterator<M, B, Q, In>(
         market_key: SlotKey<MarketPreimage<M, B, Q>>,
         range: RangeInclusive<Position>,

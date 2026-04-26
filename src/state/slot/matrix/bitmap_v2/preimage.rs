@@ -22,7 +22,6 @@ where
     B: TokenMarker,
     Q: TokenMarker,
 {
-    // TODO update RestingOrderBitmap with discriminator 6
     const SLOT_DISCRIMINATOR: u8 = 5 + BitsLayout::<BITS>::OFFSET as u8;
     type SlotState = BitmapV2<BITS>;
 }

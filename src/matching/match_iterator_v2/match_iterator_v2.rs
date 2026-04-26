@@ -1,15 +1,13 @@
-use std::ops::RangeInclusive;
+use core::ops::RangeInclusive;
 
 use crate::{
     axis::{
         leg::leg_matcher::LegMatcher, market::market_marker::MarketMarker,
         token::token_marker::TokenMarker,
     },
-    quantities::{OuterBitmapIndexV2, Position},
+    quantities::{Position, INNER_POS_V2},
     state::{
-        bitmap::outer_bitmap::{
-            outer_bitmap_state::OuterBitmapState, preimage::OuterBitmapPreimage,
-        },
+        bitmap_v2::{bitmap_reader::BitmapReader, BitmapV2},
         resting_order::{preimage::RestingOrderPreimage, RestingOrder},
         MarketPreimage, Preimage, SlotKey,
     },
@@ -36,49 +34,20 @@ where
     Q: TokenMarker,
     In: LegMatcher,
 {
-    let outer_bitmap_index_start = OuterBitmapIndexV2::from(*range.start());
-    let outer_bitmap_index_end = OuterBitmapIndexV2::from(*range.end());
-
-    let mut counter = *range.start();
-
-    loop {
-        let outer_bitmap_index = OuterBitmapIndexV2::from(counter);
-
-        let key = OuterBitmapPreimage {
-            market_key,
-            outer_bitmap_index,
-        }
-        .hash();
-        let state = OuterBitmapState::from(key.load());
-
-        let OuterBitmapState::Active(active) = state else {
-            break;
-        };
-
-        // TODO start and end of inner loop
-    }
-
-    // we are back at separate iterators again
-    // build primitive MVP with loop(), then convert to map lazy iterator
-    In::position_iter(outer_bitmap_index_start..=outer_bitmap_index_end).filter_map(
+    BitmapV2::<INNER_POS_V2>::active_iterator::<M, B, Q, In>(market_key, range).map(
         move |position| {
-            let outer_bitmap_index = OuterBitmapIndexV2::from(position);
-
-            let key = OuterBitmapPreimage {
+            let preimage = RestingOrderPreimage::<M, B, Q> {
                 market_key,
-                outer_bitmap_index,
-            }
-            .hash();
-            let state = OuterBitmapState::from(key.load());
-
-            let OuterBitmapState::Active(active) = state else {
-                return None;
+                position,
             };
+            let resting_order_key = preimage.hash();
+            let resting_order = resting_order_key.load();
 
-            // What about resetting OuterPos start and end values?
-            // Use same logic as before?
-
-            None
+            RestingOrderEntryV2 {
+                position,
+                resting_order_key,
+                resting_order,
+            }
         },
     )
 }
