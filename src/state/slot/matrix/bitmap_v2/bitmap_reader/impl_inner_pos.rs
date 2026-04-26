@@ -1,0 +1,44 @@
+use crate::{
+    axis::{
+        leg::leg_matcher::LegMatcher, market::market_marker::MarketMarker,
+        token::token_marker::TokenMarker,
+    },
+    quantities::{InnerPosV2, OuterPosV2, Position, INNER_POS_V2},
+    state::{
+        bitmap_v2::{bitmap_reader::BitmapReader, preimage::BitmapPreimageV2},
+        MarketPreimage, Preimage, SlotKey,
+    },
+};
+use core::ops::RangeInclusive;
+
+impl BitmapReader for InnerPosV2 {
+    /// Get an iterator of active positions
+    ///
+    /// # Range
+    /// - start() should be the lower bound. I.e. last_price in In=Quote and limit_price in In=Base
+    fn active_iterator<M, B, Q, In>(
+        market_key: SlotKey<MarketPreimage<M, B, Q>>,
+        range: RangeInclusive<Position>,
+    ) -> impl Iterator<Item = Position>
+    where
+        M: MarketMarker,
+        B: TokenMarker,
+        Q: TokenMarker,
+        In: LegMatcher,
+    {
+        // outer iterator ignores inner bits in range endpoints — no complement needed
+        OuterPosV2::active_iterator::<M, B, Q, In>(market_key, range.clone()).flat_map(
+            move |position| {
+                let preimage = BitmapPreimageV2::<M, B, Q, INNER_POS_V2> {
+                    market_key,
+                    position,
+                };
+                let inner_bitmap = preimage.hash().load();
+
+                In::inner_pos_iter(range.clone(), position)
+                    .filter(move |inner_pos| inner_bitmap.index_active((*inner_pos).into()))
+                    .map(move |inner_pos| position + inner_pos)
+            },
+        )
+    }
+}

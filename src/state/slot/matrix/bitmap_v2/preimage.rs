@@ -1,6 +1,6 @@
 use crate::{
     axis::{market::market_marker::MarketMarker, token::token_marker::TokenMarker},
-    quantities::{DerivedPosition, Position},
+    quantities::{bits_layout::BitsLayout, Position},
     state::{bitmap_v2::BitmapV2, MarketPreimage, Preimage, SlotKey},
 };
 
@@ -23,6 +23,6 @@ where
     Q: TokenMarker,
 {
     // TODO update RestingOrderBitmap with discriminator 6
-    const SLOT_DISCRIMINATOR: u8 = 5 + DerivedPosition::<u8, BITS>::BIT_OFFSET as u8;
+    const SLOT_DISCRIMINATOR: u8 = 5 + BitsLayout::<BITS>::OFFSET as u8;
     type SlotState = BitmapV2<BITS>;
 }
