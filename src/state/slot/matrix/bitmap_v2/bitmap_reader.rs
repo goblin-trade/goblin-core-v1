@@ -50,6 +50,10 @@ impl BitmapReader for OuterPosV2 {
 }
 
 impl BitmapReader for InnerPosV2 {
+    /// Get an iterator of active positions
+    ///
+    /// # Range
+    /// - start() should be the lower bound. I.e. last_price in In=Quote and limit_price in In=Base
     fn active_iterator<M, B, Q, In>(
         market_key: SlotKey<MarketPreimage<M, B, Q>>,
         range: RangeInclusive<Position>,

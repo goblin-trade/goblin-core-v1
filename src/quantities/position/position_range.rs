@@ -1,4 +1,4 @@
-use crate::{axis::leg::leg_matcher::LegMatcher, quantities::Position};
+use crate::{axis::leg::leg_coordinates::LegCoordinates, quantities::Position};
 use core::ops::RangeInclusive;
 
 pub trait PositionRange: Sized {
@@ -6,9 +6,9 @@ pub trait PositionRange: Sized {
 
     fn extract_range<const BITS: u16>(&self) -> Self;
 
-    fn effective_range<In, const BITS: u16>(&self, position: Position) -> RangeInclusive<Position>
+    fn clamp_range<In, const BITS: u16>(&self, position: Position) -> RangeInclusive<Position>
     where
-        In: LegMatcher;
+        In: LegCoordinates;
 }
 
 impl PositionRange for RangeInclusive<Position> {
@@ -20,9 +20,9 @@ impl PositionRange for RangeInclusive<Position> {
         self.map_range(|i| i.extract::<BITS>())
     }
 
-    fn effective_range<In, const BITS: u16>(&self, position: Position) -> RangeInclusive<Position>
+    fn clamp_range<In, const BITS: u16>(&self, position: Position) -> RangeInclusive<Position>
     where
-        In: LegMatcher,
+        In: LegCoordinates,
     {
         let compliment = position.complement::<BITS>();
         let start = if compliment == self.start().complement::<BITS>() {
