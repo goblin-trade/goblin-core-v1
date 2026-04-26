@@ -1,6 +1,6 @@
 use crate::axis::leg::{leg_iterator::LegIterator, Base};
 use crate::quantities::bits_layout::BitsLayout;
-use crate::quantities::{Position, PositionRange};
+use crate::quantities::Position;
 use core::iter::{Map, Rev, StepBy};
 use core::ops::RangeInclusive;
 
@@ -12,8 +12,7 @@ impl LegIterator for Base {
     }
 
     fn step_iter<const BITS: u16>(range: RangeInclusive<Position>) -> Self::PositionIter {
-        let extracted_range = range.extract_range::<BITS>();
-        (extracted_range.start().inner..=extracted_range.end().inner)
+        (range.start().inner..=range.end().inner)
             .rev()
             .step_by(BitsLayout::<BITS>::step_interval())
             .map(Position::new)

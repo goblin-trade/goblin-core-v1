@@ -3,7 +3,10 @@ use crate::{
         leg::leg_matcher::LegMatcher, market::market_marker::MarketMarker,
         token::token_marker::TokenMarker,
     },
-    quantities::{InnerPosV2, OuterPosV2, Position, PositionRange, INNER_POS_V2, OUTER_POS_V2},
+    quantities::{
+        InnerPosV2, OuterPosV2, Position, PositionRange, INNER_POS_V2, OUTER_BITMAP_INDEX_V2,
+        OUTER_POS_V2,
+    },
     state::{bitmap_v2::preimage::BitmapPreimageV2, MarketPreimage, Preimage, SlotKey},
 };
 use core::ops::RangeInclusive;
