@@ -6,7 +6,6 @@ use crate::{
     },
     goblin_error::GoblinError,
     matching::{
-        bitmap::FullCoordinates,
         match_iterator::{match_iterator, RestingOrderEntry},
         region::{self, take_region::TakeRegion},
     },
