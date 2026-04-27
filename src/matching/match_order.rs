@@ -6,8 +6,8 @@ use crate::{
     },
     goblin_error::GoblinError,
     matching::{
-        match_iterator::{match_iterator, RestingOrderEntry},
-        region::{self, take_region::TakeRegion},
+        match_iterator_v2::{match_iterator_v2, RestingOrderEntryV2},
+        region::take_region::TakeRegion,
     },
     quantities::{Position, QuantityOps, Ticks},
     require,
@@ -45,24 +45,19 @@ where
         GoblinError::TakerPriceLimitReached
     );
 
-    let start = FullCoordinates::from(*last_position_mut);
-    let end = FullCoordinates::from(limit);
-
-    // TODO use new iterator based on Coordinate
-    // It has a single loop. As bits are read from bitmap, we increment the pointer by steps
-    let iterator = match_iterator::<M, B, Q, In>(*market_key, start, end);
+    let iterator = match_iterator_v2::<M, B, Q, In>(*market_key, *last_position_mut, limit);
 
     let base_lot_size = Base::get(&market.lot_size_pair);
     let mut budget = In::matching_lots_in(num_lots, base_lot_size);
 
-    for RestingOrderEntry {
-        full_coordinates,
+    for RestingOrderEntryV2 {
+        position,
         resting_order_key,
         mut resting_order,
     } in iterator
     {
-        *last_position_mut = full_coordinates.into();
-        let price = Ticks::from(full_coordinates);
+        *last_position_mut = position;
+        let price = Ticks::from(position);
 
         let quote = In::matching_lots_maker(resting_order.size, market.tick_size, price);
 

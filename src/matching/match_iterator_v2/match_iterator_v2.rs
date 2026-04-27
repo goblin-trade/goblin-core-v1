@@ -1,5 +1,3 @@
-use core::ops::RangeInclusive;
-
 use crate::{
     axis::{
         leg::leg_matcher::LegMatcher, market::market_marker::MarketMarker,
@@ -26,7 +24,8 @@ where
 
 pub fn match_iterator_v2<M, B, Q, In>(
     market_key: SlotKey<MarketPreimage<M, B, Q>>,
-    range: RangeInclusive<Position>,
+    last_position: Position,
+    limit: Position,
 ) -> impl Iterator<Item = RestingOrderEntryV2<M, B, Q>>
 where
     M: MarketMarker,
@@ -34,6 +33,7 @@ where
     Q: TokenMarker,
     In: LegMatcher,
 {
+    let range = In::get_range(last_position, limit);
     BitmapV2::<INNER_POS_V2>::active_iterator::<M, B, Q, In>(market_key, range).map(
         move |position| {
             let preimage = RestingOrderPreimage::<M, B, Q> {
