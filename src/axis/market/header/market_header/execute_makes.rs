@@ -16,17 +16,7 @@ use crate::{
     instructions::ix_make,
     require,
     settlement::local_delta::LocalDelta,
-    state::{
-        bitmap::{
-            inner_bitmap::{preimage::InnerBitmapPreimage, InnerBitmap},
-            outer_bitmap::{
-                active_outer_bitmap::ActiveOuterBitmap, outer_bitmap_state::OuterBitmapState,
-                preimage::OuterBitmapPreimage, OuterBitmap,
-            },
-            Bitmap,
-        },
-        MarketState, Preimage,
-    },
+    state::{MarketState, Preimage},
 };
 
 impl<M, B, Q> MarketHeader<M, B, Q>

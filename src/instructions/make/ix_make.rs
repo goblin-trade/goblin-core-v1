@@ -9,10 +9,7 @@ use crate::{
     instructions::{make_variant::MakeVariant, open::ix_open, update::ix_update},
     quantities::{OuterBitmapIndexV2, OuterPosV2},
     settlement::local_delta::LocalDelta,
-    state::{
-        bitmap::inner_bitmap::{preimage::InnerBitmapPreimage, InnerBitmap},
-        MarketState, SlotKey,
-    },
+    state::{MarketState, SlotKey},
 };
 
 pub fn ix_make<M, B, Q>(

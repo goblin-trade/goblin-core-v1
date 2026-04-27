@@ -9,14 +9,7 @@ use crate::{
     quantities::BaseLots,
     require,
     settlement::local_delta::LocalDelta,
-    state::{
-        bitmap::{
-            inner_bitmap::{preimage::InnerBitmapPreimage, InnerBitmap},
-            Bitmap,
-        },
-        resting_order::preimage::RestingOrderPreimage,
-        MarketState, Preimage, SlotKey,
-    },
+    state::{resting_order::preimage::RestingOrderPreimage, MarketState, Preimage, SlotKey},
 };
 
 pub fn ix_open<M, B, Q, In>(

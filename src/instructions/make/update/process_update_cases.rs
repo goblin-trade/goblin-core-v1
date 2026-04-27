@@ -9,10 +9,7 @@ use crate::{
     instructions::update::get_leg_in,
     quantities::{BaseLots, Ticks},
     settlement::local_delta::LocalSenderDelta,
-    state::{
-        bitmap::inner_bitmap::InnerBitmap, resting_order::preimage::RestingOrderPreimage,
-        MarketState, SlotKey,
-    },
+    state::{MarketState, SlotKey},
 };
 
 pub fn process_update_cases<M, B, Q>(
