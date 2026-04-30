@@ -37,7 +37,7 @@ where
     Q: TokenMarker,
     In: LegMatcher,
 {
-    let last_position_mut = In::get_leg_mut(&mut market_state.last_coordinates);
+    let last_position_mut = In::get_leg_mut(&mut market_state.last_positions);
     let region = In::take_region(limit.into(), (*last_position_mut).into());
 
     require!(
