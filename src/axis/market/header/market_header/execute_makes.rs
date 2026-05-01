@@ -1,7 +1,6 @@
 use super::MarketHeader;
 use crate::{
     axis::{
-        leg::SamePair,
         market::{
             header::{
                 inner_bitmap_header::InnerBitmapHeader, outer_bitmap_header::OuterBitmapHeader,
@@ -18,7 +17,6 @@ use crate::{
     quantities::{
         InnerPosV2, OuterBitmapIndexV2, OuterPosV2, Position, INNER_POS_V2, OUTER_POS_V2,
     },
-    require,
     settlement::local_delta::LocalDelta,
     state::{
         bitmap_v2::{preimage::BitmapPreimageV2, BitmapV2},
@@ -60,32 +58,16 @@ where
 
             let region_0 = MakeRegion::new(&market_state.last_positions, position_0);
 
-            let active_outer_bitmap = if region_0 == MakeRegion::Spread {
+            let mut active_outer_bitmap = if region_0 == MakeRegion::Spread {
                 BitmapV2::<OUTER_POS_V2>::default()
             } else {
-                // EPOCHE
-                // If last position passes through this bitmap, it has garbage
-                // OuterPos values
                 let outer_bitmap = outer_bitmap_key.load();
-
                 if outer_bitmap.is_closed() {
                     BitmapV2::<OUTER_POS_V2>::default()
                 } else {
                     outer_bitmap
                 }
             };
-
-            // Cases
-            // 1. Fully garbage- position > last_position for both sides.
-            // Use default empty bitmap, don't read from slot. TODO use MakeRegion enum
-            //
-            // 2. Partially garbage
-            // let mut active_outer_bitmap = ActiveOuterBitmap::new_cleaned(
-            //     &outer_bitmap_key,
-            //     outer_bitmap_index,
-            //     &outer_bitmap_index_pair,
-            //     &outer_pos_pair,
-            // );
 
             for _ in 0..outer_bitmap_header.inner_bitmap_count {
                 let InnerBitmapHeader {
@@ -133,7 +115,9 @@ where
                 }
             }
 
-            if active_outer_bitmap.bitmap_inactive() {}
+            if active_outer_bitmap.is_empty() {
+                active_outer_bitmap.close_with_sentinel();
+            }
         }
 
         Ok(())

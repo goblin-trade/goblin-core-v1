@@ -1,5 +1,7 @@
 use crate::quantities::DerivedPosition;
 
+const CLOSED_SENTINEL: [u8; 32] = [0xFF; 32];
+
 #[derive(Default)]
 pub struct BitmapV2<const BITS: u16> {
     pub inner: [u8; 32],
@@ -7,26 +9,31 @@ pub struct BitmapV2<const BITS: u16> {
 
 impl<const BITS: u16> BitmapV2<BITS> {
     pub fn is_closed(&self) -> bool {
-        const CLOSED_SENTINEL: [u8; 32] = [0xFF; 32];
         self.inner == CLOSED_SENTINEL
     }
 
     pub fn is_empty(&self) -> bool {
-        const EMPTY_VALUE: [u8; 32] = [0; 32];
-        self.inner == EMPTY_VALUE
+        self.inner == Self::default().inner
     }
 
     pub fn is_active(&self) -> bool {
         !self.is_empty() && !self.is_closed()
     }
 
-    pub fn index_active(&self, index: DerivedPosition<u8, BITS>) -> bool {
-        let byte_index = index.inner as usize / 8;
-        let bit_index = index.inner as usize % 8;
-
-        let byte = self.inner[byte_index];
-        let mask = 1 << bit_index;
+    pub fn index_active(&self, pos: DerivedPosition<u8, BITS>) -> bool {
+        let byte = self.inner[pos.byte_index()];
+        let mask = 1 << pos.bit_index();
 
         (byte & mask) != 0
+    }
+
+    pub fn deactivate(&mut self, pos: DerivedPosition<u8, BITS>) {
+        // mask with 0 at target bit, 1 elsewhere
+        let mask = !(1u8 << pos.bit_index());
+        self.inner[pos.byte_index()] &= mask;
+    }
+
+    pub fn close_with_sentinel(&mut self) {
+        self.inner = CLOSED_SENTINEL
     }
 }
