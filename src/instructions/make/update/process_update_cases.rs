@@ -7,9 +7,11 @@ use crate::{
     },
     goblin_error::GoblinError,
     instructions::update::get_leg_in,
-    quantities::{BaseLots, Ticks},
+    quantities::{BaseLots, Position, Ticks, INNER_POS_V2},
     settlement::local_delta::LocalSenderDelta,
-    state::{MarketState, SlotKey},
+    state::{
+        bitmap_v2::BitmapV2, resting_order::preimage::RestingOrderPreimage, MarketState, SlotKey,
+    },
 };
 
 pub fn process_update_cases<M, B, Q>(
@@ -17,53 +19,50 @@ pub fn process_update_cases<M, B, Q>(
     market: &CommonMarket<M, B, Q>,
     market_state: &mut MarketState,
     resting_order_key: &SlotKey<RestingOrderPreimage<M, B, Q>>,
-    // full_coordinates: &FullCoordinates,
-    inner_bitmap_state: &mut InnerBitmap,
+    position_2: Position,
+    inner_bitmap_state: &mut BitmapV2<INNER_POS_V2>,
     base_lots: BaseLots,
     update_variant: UpdateEnum,
+    leg_in: LegEnum,
 ) -> Result<(), GoblinError>
 where
     M: MarketMarker,
     B: TokenMarker,
     Q: TokenMarker,
 {
-    Ok(())
-    // let price = Ticks::from(*full_coordinates);
-    // let leg_in = get_leg_in(price, &market_state.last_coordinates)?;
+    match (leg_in, update_variant) {
+        (LegEnum::Base, UpdateEnum::Increase) => Increase::process_update::<M, B, Q, Base>(
+            local_sender_delta,
+            market,
+            &resting_order_key,
+            full_coordinates,
+            base_lots,
+            inner_bitmap_state,
+        ),
+        (LegEnum::Quote, UpdateEnum::Increase) => Increase::process_update::<M, B, Q, Quote>(
+            local_sender_delta,
+            market,
+            &resting_order_key,
+            full_coordinates,
+            base_lots,
+            inner_bitmap_state,
+        ),
+        (LegEnum::Base, UpdateEnum::Decrease) => Decrease::process_update::<M, B, Q, Base>(
+            local_sender_delta,
+            market,
+            &resting_order_key,
+            full_coordinates,
+            base_lots,
+            inner_bitmap_state,
+        ),
 
-    // match (leg_in, update_variant) {
-    //     (LegEnum::Base, UpdateEnum::Increase) => Increase::process_update::<M, B, Q, Base>(
-    //         local_sender_delta,
-    //         market,
-    //         &resting_order_key,
-    //         full_coordinates,
-    //         base_lots,
-    //         inner_bitmap_state,
-    //     ),
-    //     (LegEnum::Quote, UpdateEnum::Increase) => Increase::process_update::<M, B, Q, Quote>(
-    //         local_sender_delta,
-    //         market,
-    //         &resting_order_key,
-    //         full_coordinates,
-    //         base_lots,
-    //         inner_bitmap_state,
-    //     ),
-    //     (LegEnum::Base, UpdateEnum::Decrease) => Decrease::process_update::<M, B, Q, Base>(
-    //         local_sender_delta,
-    //         market,
-    //         &resting_order_key,
-    //         full_coordinates,
-    //         base_lots,
-    //         inner_bitmap_state,
-    //     ),
-
-    //     (LegEnum::Quote, UpdateEnum::Decrease) => Decrease::process_update::<M, B, Q, Quote>(
-    //         local_sender_delta,
-    //         market,
-    //         &resting_order_key,
-    //         full_coordinates,
-    //         base_lots,
-    //         inner_bitmap_state,
-    //     ),
-    // }
+        (LegEnum::Quote, UpdateEnum::Decrease) => Decrease::process_update::<M, B, Q, Quote>(
+            local_sender_delta,
+            market,
+            &resting_order_key,
+            full_coordinates,
+            base_lots,
+            inner_bitmap_state,
+        ),
+    }
 }

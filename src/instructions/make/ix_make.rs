@@ -7,6 +7,7 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
     instructions::{make_variant::MakeVariant, open::ix_open, update::ix_update},
+    matching::region::make_region::MakeRegion,
     quantities::{Position, INNER_POS_V2},
     settlement::local_delta::LocalDelta,
     state::{
@@ -36,14 +37,16 @@ where
     } = MakeHeader::try_decode(ctx)?;
 
     let position_2 = position_1 + Position::from(inner_pos);
+    let region_2 = MakeRegion::new(&market_state.last_positions, position_2);
 
     match make_variant {
+        // TODO make it symmetric, pass update_enum as generic?
         MakeVariant::Update(update_enum) => ix_update::<M, B, Q>(
             local_delta,
             market_and_key,
             market_state,
             position_2,
-            &inner_bitmap_key,
+            region_2,
             inner_bitmap_state,
             base_lots,
             update_enum,

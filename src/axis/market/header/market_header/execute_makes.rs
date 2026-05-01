@@ -98,8 +98,7 @@ where
                         local_delta,
                         market_and_key,
                         market_state,
-                        outer_bitmap_header.outer_bitmap_index,
-                        outer_pos,
+                        position_1,
                         &inner_bitmap_key,
                         &mut inner_bitmap_state,
                     )?;
