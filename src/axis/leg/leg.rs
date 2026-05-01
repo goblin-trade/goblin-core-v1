@@ -7,6 +7,7 @@ pub struct Leg;
 pub type Base = Marker<Leg, 0>;
 pub type Quote = Marker<Leg, 1>;
 
+#[derive(PartialEq)]
 pub enum LegEnum {
     Base,
     Quote,

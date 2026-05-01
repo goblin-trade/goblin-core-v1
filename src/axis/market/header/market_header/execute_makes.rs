@@ -14,10 +14,16 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
     instructions::ix_make,
-    quantities::{InnerPosV2, OuterBitmapIndexV2, OuterPosV2, Position, OUTER_POS_V2},
+    matching::region::make_region::MakeRegion,
+    quantities::{
+        InnerPosV2, OuterBitmapIndexV2, OuterPosV2, Position, INNER_POS_V2, OUTER_POS_V2,
+    },
     require,
     settlement::local_delta::LocalDelta,
-    state::{bitmap_v2::preimage::BitmapPreimageV2, MarketState, Preimage},
+    state::{
+        bitmap_v2::{preimage::BitmapPreimageV2, BitmapV2},
+        MarketState, Preimage,
+    },
 };
 
 impl<M, B, Q> MarketHeader<M, B, Q>
@@ -26,7 +32,7 @@ where
     B: TokenMarker,
     Q: TokenMarker,
 {
-    pub fn execute_updates(
+    pub fn execute_makes(
         &self,
         ctx: &DecodeCtx,
         local_delta: &mut LocalDelta,
@@ -44,21 +50,42 @@ where
             let outer_bitmap_header = OuterBitmapHeader::try_decode(ctx)?;
 
             let outer_bitmap_index = outer_bitmap_header.outer_bitmap_index;
-            let position = Position::from(outer_bitmap_index);
+            let position_0 = Position::from(outer_bitmap_index);
 
             let outer_bitmap_key = BitmapPreimageV2::<M, B, Q, OUTER_POS_V2> {
                 market_key: market_and_key.market_key,
-                position,
+                position: position_0,
             }
             .hash();
 
-            // TODO revise cleaning and garbage logic
-            let mut active_outer_bitmap = ActiveOuterBitmap::new_cleaned(
-                &outer_bitmap_key,
-                outer_bitmap_index,
-                &outer_bitmap_index_pair,
-                &outer_pos_pair,
-            );
+            let region_0 = MakeRegion::new(&market_state.last_positions, position_0);
+
+            let active_outer_bitmap = if region_0 == MakeRegion::Spread {
+                BitmapV2::<OUTER_POS_V2>::default()
+            } else {
+                // EPOCHE
+                // If last position passes through this bitmap, it has garbage
+                // OuterPos values
+                let outer_bitmap = outer_bitmap_key.load();
+
+                if outer_bitmap.is_closed() {
+                    BitmapV2::<OUTER_POS_V2>::default()
+                } else {
+                    outer_bitmap
+                }
+            };
+
+            // Cases
+            // 1. Fully garbage- position > last_position for both sides.
+            // Use default empty bitmap, don't read from slot. TODO use MakeRegion enum
+            //
+            // 2. Partially garbage
+            // let mut active_outer_bitmap = ActiveOuterBitmap::new_cleaned(
+            //     &outer_bitmap_key,
+            //     outer_bitmap_index,
+            //     &outer_bitmap_index_pair,
+            //     &outer_pos_pair,
+            // );
 
             for _ in 0..outer_bitmap_header.inner_bitmap_count {
                 let InnerBitmapHeader {
@@ -66,14 +93,19 @@ where
                     update_count,
                 } = InnerBitmapHeader::try_decode(ctx)?;
 
-                let inner_bitmap_key = InnerBitmapPreimage {
-                    outer_bitmap_key,
-                    outer_pos,
+                let position_1 = position_0 + Position::from(outer_pos);
+                let region_1 = MakeRegion::new(&market_state.last_positions, position_1);
+
+                let inner_bitmap_key = BitmapPreimageV2::<M, B, Q, INNER_POS_V2> {
+                    market_key: market_and_key.market_key,
+                    position: position_1,
                 }
                 .hash();
 
-                let mut inner_bitmap_state = if !active_outer_bitmap.pos_active(outer_pos) {
-                    InnerBitmap::default()
+                let mut inner_bitmap_state = if region_1 == MakeRegion::Spread
+                    || !active_outer_bitmap.index_active(outer_pos)
+                {
+                    BitmapV2::<INNER_POS_V2>::default()
                 } else {
                     inner_bitmap_key.load()
                 };
@@ -91,7 +123,7 @@ where
                     )?;
                 }
 
-                if inner_bitmap_state.bitmap_inactive() {
+                if inner_bitmap_state.is_empty() {
                     active_outer_bitmap.deactivate(outer_pos);
                 } else {
                     // TODO compare with original field or use a flag

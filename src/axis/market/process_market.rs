@@ -41,7 +41,7 @@ where
     }
 
     market_header.execute_takes(ctx, &mut delta.local, market_and_key, &mut market_state)?;
-    market_header.execute_updates(ctx, &mut delta.local, market_and_key, &mut market_state)?;
+    market_header.execute_makes(ctx, &mut delta.local, market_and_key, &mut market_state)?;
 
     // Reset local delta for reuse
     delta.local.deposits.reset::<B, Q>();
