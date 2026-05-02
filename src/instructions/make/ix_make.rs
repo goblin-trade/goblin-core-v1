@@ -44,7 +44,6 @@ where
         MakeVariant::Update(update_enum) => ix_update::<M, B, Q>(
             local_delta,
             market_and_key,
-            market_state,
             position_2,
             region_2,
             inner_bitmap_state,

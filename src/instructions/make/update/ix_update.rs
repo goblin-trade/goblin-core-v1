@@ -10,15 +10,12 @@ use crate::{
     quantities::{BaseLots, Position, INNER_POS_V2},
     require,
     settlement::local_delta::LocalDelta,
-    state::{
-        bitmap_v2::BitmapV2, resting_order::preimage::RestingOrderPreimage, MarketState, Preimage,
-    },
+    state::{bitmap_v2::BitmapV2, resting_order::preimage::RestingOrderPreimage, Preimage},
 };
 
 pub fn ix_update<M, B, Q>(
     local_delta: &mut LocalDelta,
     market_and_key: &MarketAndKey<M, B, Q>,
-    market_state: &mut MarketState,
     position_2: Position,
     region_2: MakeRegion,
     inner_bitmap_state: &mut BitmapV2<INNER_POS_V2>,
@@ -30,6 +27,7 @@ where
     B: TokenMarker,
     Q: TokenMarker,
 {
+    // Cannot update in `Spread` region as it has no orders
     let MakeRegion::In(leg_in) = region_2 else {
         return Err(GoblinError::NoRestingOrder);
     };
@@ -48,7 +46,6 @@ where
     process_update_cases::<M, B, Q>(
         &mut local_delta.local_sender_delta,
         &market_and_key.market,
-        market_state,
         &resting_order_key,
         position_2,
         inner_bitmap_state,
