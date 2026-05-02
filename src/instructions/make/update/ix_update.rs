@@ -37,16 +37,9 @@ where
         GoblinError::NoRestingOrder
     );
 
-    let resting_order_key = RestingOrderPreimage {
-        market_key: market_and_key.market_key,
-        position: position_2,
-    }
-    .hash();
-
     process_update_cases::<M, B, Q>(
         &mut local_delta.local_sender_delta,
-        &market_and_key.market,
-        &resting_order_key,
+        market_and_key,
         position_2,
         inner_bitmap_state,
         base_lots,

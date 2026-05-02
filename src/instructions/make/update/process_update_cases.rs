@@ -1,7 +1,7 @@
 use crate::{
     axis::{
         leg::{Base, LegEnum, Quote},
-        market::{market_marker::MarketMarker, CommonMarket},
+        market::{market_marker::MarketMarker, CommonMarket, MarketAndKey},
         token::token_marker::TokenMarker,
         update::{update_marker::UpdateMarker, Decrease, Increase, UpdateEnum},
     },
@@ -13,8 +13,7 @@ use crate::{
 
 pub fn process_update_cases<M, B, Q>(
     local_sender_delta: &mut LocalSenderDelta,
-    market: &CommonMarket<M, B, Q>,
-    resting_order_key: &SlotKey<RestingOrderPreimage<M, B, Q>>,
+    market_and_key: &MarketAndKey<M, B, Q>,
     position_2: Position,
     inner_bitmap_state: &mut BitmapV2<INNER_POS_V2>,
     base_lots: BaseLots,
@@ -29,24 +28,21 @@ where
     match (leg_in, update_variant) {
         (LegEnum::Base, UpdateEnum::Increase) => Increase::process_update::<M, B, Q, Base>(
             local_sender_delta,
-            market,
-            &resting_order_key,
+            market_and_key,
             position_2,
             base_lots,
             inner_bitmap_state,
         ),
         (LegEnum::Quote, UpdateEnum::Increase) => Increase::process_update::<M, B, Q, Quote>(
             local_sender_delta,
-            market,
-            &resting_order_key,
+            market_and_key,
             position_2,
             base_lots,
             inner_bitmap_state,
         ),
         (LegEnum::Base, UpdateEnum::Decrease) => Decrease::process_update::<M, B, Q, Base>(
             local_sender_delta,
-            market,
-            &resting_order_key,
+            market_and_key,
             position_2,
             base_lots,
             inner_bitmap_state,
@@ -54,8 +50,7 @@ where
 
         (LegEnum::Quote, UpdateEnum::Decrease) => Decrease::process_update::<M, B, Q, Quote>(
             local_sender_delta,
-            market,
-            &resting_order_key,
+            market_and_key,
             position_2,
             base_lots,
             inner_bitmap_state,

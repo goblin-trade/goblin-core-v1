@@ -1,22 +1,21 @@
 use crate::{
     axis::{
         leg::{leg_matcher::LegMatcher, Base},
-        market::{market_marker::MarketMarker, CommonMarket},
+        market::{market_marker::MarketMarker, MarketAndKey},
         token::token_marker::TokenMarker,
         update::{update_marker::UpdateMarker, Decrease},
     },
     goblin_error::GoblinError,
     quantities::{BaseLots, Position, Ticks, INNER_POS_V2},
     settlement::local_delta::LocalSenderDelta,
-    state::{bitmap_v2::BitmapV2, resting_order::preimage::RestingOrderPreimage, SlotKey},
+    state::{bitmap_v2::BitmapV2, resting_order::preimage::RestingOrderPreimage, Preimage},
     types::StoreReader,
 };
 
 impl UpdateMarker for Decrease {
     fn process_update<M, B, Q, In>(
         local_sender_delta: &mut LocalSenderDelta,
-        market: &CommonMarket<M, B, Q>,
-        resting_order_key: &SlotKey<RestingOrderPreimage<M, B, Q>>,
+        market_and_key: &MarketAndKey<M, B, Q>,
         position_2: Position,
         base_lots: BaseLots,
         inner_bitmap_state: &mut BitmapV2<INNER_POS_V2>,
@@ -27,6 +26,12 @@ impl UpdateMarker for Decrease {
         Q: TokenMarker,
         In: LegMatcher,
     {
+        let resting_order_key = RestingOrderPreimage {
+            market_key: market_and_key.market_key,
+            position: position_2,
+        }
+        .hash();
+
         let mut resting_order_state = resting_order_key.load();
 
         let reduced_lots = if resting_order_state.size > base_lots {
@@ -41,13 +46,13 @@ impl UpdateMarker for Decrease {
         };
 
         // Update delta
-        let base_lot_size = Base::get(&market.lot_size_pair);
+        let base_lot_size = Base::get(&market_and_key.market.lot_size_pair);
         let price = Ticks::from(position_2);
 
         local_sender_delta.subtract_resting_order_deposit::<In>(
             reduced_lots,
             base_lot_size,
-            market.tick_size,
+            market_and_key.market.tick_size,
             price,
         )
     }
