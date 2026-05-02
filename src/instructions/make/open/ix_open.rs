@@ -8,7 +8,7 @@ use crate::{
     goblin_error::GoblinError,
     instructions::open::process_open_cases::process_open_cases,
     matching::region::make_region::MakeRegion,
-    quantities::{BaseLots, Position, INNER_POS_V2},
+    quantities::{BaseLots, InnerPosV2, Position, INNER_POS_V2},
     require,
     settlement::local_delta::LocalDelta,
     state::{
@@ -35,13 +35,14 @@ where
     B: TokenMarker,
     Q: TokenMarker,
 {
+    let inner_pos = InnerPosV2::from(position_2);
+
     // Ensure that we open on the correct side.
     // leg_in must match or the order must be opened within the spread region.
     if let MakeRegion::In(leg_in) = region_2 {
         require!(leg_in == leg_enum, GoblinError::InvalidOpenPrice);
-
         require!(
-            !inner_bitmap_state.index_active(position_2.into()),
+            !inner_bitmap_state.index_active(inner_pos),
             GoblinError::PositionOccupied
         );
     } else {
@@ -52,6 +53,8 @@ where
         };
         *last_position = position_2;
     }
+
+    inner_bitmap_state.activate(inner_pos);
 
     let resting_order_key = RestingOrderPreimage {
         market_key: market_and_key.market_key,

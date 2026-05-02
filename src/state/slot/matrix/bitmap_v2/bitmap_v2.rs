@@ -33,6 +33,12 @@ impl<const BITS: u16> BitmapV2<BITS> {
         self.inner[pos.byte_index()] &= mask;
     }
 
+    pub fn activate(&mut self, pos: DerivedPosition<u8, BITS>) {
+        // OR with 1 to turn on the bit
+        let mask = 1u8 << pos.bit_index();
+        self.inner[pos.byte_index()] |= mask;
+    }
+
     pub fn close_with_sentinel(&mut self) {
         self.inner = CLOSED_SENTINEL
     }
