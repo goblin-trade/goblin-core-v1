@@ -6,7 +6,7 @@ use crate::{
         update::UpdateEnum,
     },
     goblin_error::GoblinError,
-    instructions::open::process_open_cases::process_open_cases,
+    instructions::open::process_open::process_open,
     matching::region::make_region::MakeRegion,
     quantities::{BaseLots, InnerPosV2, Position, INNER_POS_V2},
     require,
@@ -16,10 +16,11 @@ use crate::{
         resting_order::preimage::RestingOrderPreimage,
         MarketState, Preimage, SlotKey,
     },
-    types::StoreReader,
+    types::{Address, StoreReader},
 };
 
 pub fn ix_open<M, B, Q>(
+    msg_sender: &Address,
     local_delta: &mut LocalDelta,
     market_and_key: &MarketAndKey<M, B, Q>,
     market_state: &mut MarketState,
@@ -56,14 +57,9 @@ where
 
     inner_bitmap_state.activate(inner_pos);
 
-    let resting_order_key = RestingOrderPreimage {
-        market_key: market_and_key.market_key,
-        position: position_2,
-    }
-    .hash();
-
     match leg_enum {
-        LegEnum::Base => process_open_cases::<M, B, Q, Base>(
+        LegEnum::Base => process_open::<M, B, Q, Base>(
+            msg_sender,
             local_delta,
             market_and_key,
             market_state,
@@ -73,7 +69,8 @@ where
             inner_bitmap_state,
             base_lots,
         ),
-        LegEnum::Quote => process_open_cases::<M, B, Q, Quote>(
+        LegEnum::Quote => process_open::<M, B, Q, Quote>(
+            msg_sender,
             local_delta,
             market_and_key,
             market_state,

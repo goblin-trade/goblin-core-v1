@@ -33,8 +33,8 @@ impl UpdateMarker for Increase {
         .hash();
 
         let mut resting_order_state = resting_order_key.load();
-        resting_order_state.size = resting_order_state
-            .size
+        resting_order_state.base_lots = resting_order_state
+            .base_lots
             .checked_add(base_lots)
             .ok_or(GoblinError::Overflow)?;
         resting_order_key.store(&resting_order_state);

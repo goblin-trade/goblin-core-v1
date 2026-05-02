@@ -21,11 +21,11 @@ use crate::{quantities::BaseLots, types::Address};
 #[repr(C)]
 pub struct RestingOrder {
     pub maker: Address,
-    pub size: BaseLots,
+    pub base_lots: BaseLots,
 }
 
 impl RestingOrder {
-    pub const fn new(maker: Address, size: BaseLots) -> Self {
-        Self { maker, size }
+    pub const fn new(maker: Address, base_lots: BaseLots) -> Self {
+        Self { maker, base_lots }
     }
 }

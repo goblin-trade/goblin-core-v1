@@ -59,7 +59,7 @@ where
         *last_position_mut = position;
         let price = Ticks::from(position);
 
-        let quote = In::matching_lots_maker(resting_order.size, market.tick_size, price);
+        let quote = In::matching_lots_maker(resting_order.base_lots, market.tick_size, price);
 
         let matched = quote.min(budget);
         budget -= matched;
@@ -68,7 +68,8 @@ where
         if budget == In::MatchingLots::ZERO {
             let residue = quote - matched;
             if residue > In::MatchingLots::ZERO {
-                resting_order.size = In::base_lots_from_matching(residue, market.tick_size, price);
+                resting_order.base_lots =
+                    In::base_lots_from_matching(residue, market.tick_size, price);
                 resting_order_key.store(&resting_order);
             }
             break;

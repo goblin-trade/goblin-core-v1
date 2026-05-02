@@ -34,15 +34,15 @@ impl UpdateMarker for Decrease {
 
         let mut resting_order_state = resting_order_key.load();
 
-        let reduced_lots = if resting_order_state.size > base_lots {
-            resting_order_state.size -= base_lots;
+        let reduced_lots = if resting_order_state.base_lots > base_lots {
+            resting_order_state.base_lots -= base_lots;
             resting_order_key.store(&resting_order_state);
 
             base_lots
         } else {
             inner_bitmap_state.deactivate(position_2.into());
 
-            resting_order_state.size
+            resting_order_state.base_lots
         };
 
         // Update delta

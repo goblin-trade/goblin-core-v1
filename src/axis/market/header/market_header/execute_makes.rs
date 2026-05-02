@@ -22,6 +22,7 @@ use crate::{
         bitmap_v2::{preimage::BitmapPreimageV2, BitmapV2},
         MarketState, Preimage,
     },
+    types::Address,
 };
 
 impl<M, B, Q> MarketHeader<M, B, Q>
@@ -32,6 +33,7 @@ where
 {
     pub fn execute_makes(
         &self,
+        msg_sender: &Address,
         ctx: &DecodeCtx,
         local_delta: &mut LocalDelta,
         market_and_key: &MarketAndKey<M, B, Q>,
@@ -94,6 +96,7 @@ where
 
                 for _ in 0..update_count {
                     ix_make::<M, B, Q>(
+                        msg_sender,
                         ctx,
                         local_delta,
                         market_and_key,
@@ -103,6 +106,9 @@ where
                         &mut inner_bitmap_state,
                     )?;
                 }
+
+                // TODO activate outer bitmap if inner bitmap was activated
+                // due to a position being opened
 
                 if inner_bitmap_state.is_empty() {
                     active_outer_bitmap.deactivate(outer_pos);
