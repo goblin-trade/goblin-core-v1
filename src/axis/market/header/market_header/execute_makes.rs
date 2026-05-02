@@ -102,7 +102,6 @@ where
                         market_and_key,
                         market_state,
                         position_1,
-                        &inner_bitmap_key,
                         &mut inner_bitmap_state,
                     )?;
                 }

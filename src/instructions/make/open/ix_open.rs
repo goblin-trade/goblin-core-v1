@@ -1,9 +1,8 @@
 use crate::{
     axis::{
-        leg::{leg_matcher::LegMatcher, Base, LegEnum, Quote},
+        leg::{Base, LegEnum, Quote},
         market::{market_marker::MarketMarker, MarketAndKey},
         token::token_marker::TokenMarker,
-        update::UpdateEnum,
     },
     goblin_error::GoblinError,
     instructions::open::process_open::process_open,
@@ -11,11 +10,7 @@ use crate::{
     quantities::{BaseLots, InnerPosV2, Position, INNER_POS_V2},
     require,
     settlement::local_delta::LocalDelta,
-    state::{
-        bitmap_v2::{preimage::BitmapPreimageV2, BitmapV2},
-        resting_order::preimage::RestingOrderPreimage,
-        MarketState, Preimage, SlotKey,
-    },
+    state::{bitmap_v2::BitmapV2, MarketState},
     types::{Address, StoreReader},
 };
 
@@ -26,7 +21,6 @@ pub fn ix_open<M, B, Q>(
     market_state: &mut MarketState,
     position_2: Position,
     region_2: MakeRegion,
-    inner_bitmap_key: &SlotKey<BitmapPreimageV2<M, B, Q, INNER_POS_V2>>,
     inner_bitmap_state: &mut BitmapV2<INNER_POS_V2>,
     base_lots: BaseLots,
     leg_enum: LegEnum,
@@ -60,24 +54,16 @@ where
     match leg_enum {
         LegEnum::Base => process_open::<M, B, Q, Base>(
             msg_sender,
-            local_delta,
+            &mut local_delta.local_sender_delta,
             market_and_key,
-            market_state,
             position_2,
-            region_2,
-            inner_bitmap_key,
-            inner_bitmap_state,
             base_lots,
         ),
         LegEnum::Quote => process_open::<M, B, Q, Quote>(
             msg_sender,
-            local_delta,
+            &mut local_delta.local_sender_delta,
             market_and_key,
-            market_state,
             position_2,
-            region_2,
-            inner_bitmap_key,
-            inner_bitmap_state,
             base_lots,
         ),
     }

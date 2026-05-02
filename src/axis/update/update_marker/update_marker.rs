@@ -8,10 +8,12 @@ use crate::{
     quantities::{BaseLots, Position, INNER_POS_V2},
     settlement::local_delta::LocalSenderDelta,
     state::bitmap_v2::BitmapV2,
+    types::Address,
 };
 
 pub trait UpdateMarker {
     fn process_update<M, B, Q, In>(
+        msg_sender: &Address,
         local_sender_delta: &mut LocalSenderDelta,
         market_and_key: &MarketAndKey<M, B, Q>,
         position_2: Position,

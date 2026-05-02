@@ -1,32 +1,24 @@
 use crate::{
     axis::{
-        leg::{leg_matcher::LegMatcher, LegEnum},
+        leg::{leg_matcher::LegMatcher, Base},
         market::{market_marker::MarketMarker, MarketAndKey},
         token::token_marker::TokenMarker,
-        update::UpdateEnum,
     },
     goblin_error::GoblinError,
-    matching::region::make_region::MakeRegion,
-    quantities::{BaseLots, Position, INNER_POS_V2},
-    require,
-    settlement::local_delta::LocalDelta,
+    quantities::{BaseLots, Position, Ticks},
+    settlement::local_delta::LocalSenderDelta,
     state::{
-        bitmap_v2::{preimage::BitmapPreimageV2, BitmapV2},
         resting_order::{preimage::RestingOrderPreimage, RestingOrder},
-        MarketState, Preimage, SlotKey,
+        Preimage,
     },
-    types::Address,
+    types::{Address, StoreReader},
 };
 
 pub fn process_open<M, B, Q, In>(
     msg_sender: &Address,
-    local_delta: &mut LocalDelta,
+    local_sender_delta: &mut LocalSenderDelta,
     market_and_key: &MarketAndKey<M, B, Q>,
-    market_state: &mut MarketState,
     position_2: Position,
-    region_2: MakeRegion,
-    inner_bitmap_key: &SlotKey<BitmapPreimageV2<M, B, Q, INNER_POS_V2>>,
-    inner_bitmap_state: &mut BitmapV2<INNER_POS_V2>,
     base_lots: BaseLots,
 ) -> Result<(), GoblinError>
 where
@@ -41,10 +33,19 @@ where
     }
     .hash();
 
-    let mut resting_order = RestingOrder {
+    resting_order_key.store(&RestingOrder {
         maker: *msg_sender,
         base_lots,
-    };
+    });
 
-    Ok(())
+    // Update delta
+    let base_lot_size = Base::get(&market_and_key.market.lot_size_pair);
+    let price = Ticks::from(position_2);
+
+    local_sender_delta.add_resting_order_deposit::<In>(
+        base_lots,
+        base_lot_size,
+        market_and_key.market.tick_size,
+        price,
+    )
 }

@@ -9,10 +9,7 @@ use crate::{
     matching::region::make_region::MakeRegion,
     quantities::{Position, INNER_POS_V2},
     settlement::local_delta::LocalDelta,
-    state::{
-        bitmap_v2::{preimage::BitmapPreimageV2, BitmapV2},
-        MarketState, SlotKey,
-    },
+    state::{bitmap_v2::BitmapV2, MarketState},
     types::Address,
 };
 
@@ -23,7 +20,6 @@ pub fn ix_make<M, B, Q>(
     market_and_key: &MarketAndKey<M, B, Q>,
     market_state: &mut MarketState,
     position_1: Position,
-    inner_bitmap_key: &SlotKey<BitmapPreimageV2<M, B, Q, INNER_POS_V2>>,
     inner_bitmap_state: &mut BitmapV2<INNER_POS_V2>,
 ) -> Result<(), GoblinError>
 where
@@ -42,6 +38,7 @@ where
 
     match make_variant {
         MakeVariant::Update(update_enum) => ix_update::<M, B, Q>(
+            msg_sender,
             local_delta,
             market_and_key,
             position_2,
@@ -57,7 +54,6 @@ where
             market_state,
             position_2,
             region_2,
-            inner_bitmap_key,
             inner_bitmap_state,
             base_lots,
             leg_enum,

@@ -7,13 +7,15 @@ use crate::{
     },
     goblin_error::GoblinError,
     quantities::{BaseLots, Position, QuantityOps, Ticks, INNER_POS_V2},
+    require,
     settlement::local_delta::LocalSenderDelta,
     state::{bitmap_v2::BitmapV2, resting_order::preimage::RestingOrderPreimage, Preimage},
-    types::StoreReader,
+    types::{Address, StoreReader},
 };
 
 impl UpdateMarker for Increase {
     fn process_update<M, B, Q, In>(
+        msg_sender: &Address,
         local_sender_delta: &mut LocalSenderDelta,
         market_and_key: &MarketAndKey<M, B, Q>,
         position_2: Position,
@@ -33,6 +35,11 @@ impl UpdateMarker for Increase {
         .hash();
 
         let mut resting_order_state = resting_order_key.load();
+        require!(
+            resting_order_state.maker == *msg_sender,
+            GoblinError::UnauthorizedMsgSender
+        );
+
         resting_order_state.base_lots = resting_order_state
             .base_lots
             .checked_add(base_lots)

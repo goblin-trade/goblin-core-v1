@@ -10,10 +10,12 @@ use crate::{
     quantities::{BaseLots, Position, INNER_POS_V2},
     require,
     settlement::local_delta::LocalDelta,
-    state::{bitmap_v2::BitmapV2, resting_order::preimage::RestingOrderPreimage, Preimage},
+    state::bitmap_v2::BitmapV2,
+    types::Address,
 };
 
 pub fn ix_update<M, B, Q>(
+    msg_sender: &Address,
     local_delta: &mut LocalDelta,
     market_and_key: &MarketAndKey<M, B, Q>,
     position_2: Position,
@@ -38,6 +40,7 @@ where
     );
 
     process_update_cases::<M, B, Q>(
+        msg_sender,
         &mut local_delta.local_sender_delta,
         market_and_key,
         position_2,

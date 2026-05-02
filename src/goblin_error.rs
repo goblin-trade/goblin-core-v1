@@ -35,8 +35,9 @@ pub enum GoblinError {
     DepositOverflow = 31,
     IteratorOutOfBounds = 32,
     NoRestingOrder = 33,
-    InvalidOpenPrice = 34,
-    PositionOccupied = 35,
+    UnauthorizedMsgSender = 34,
+    InvalidOpenPrice = 35,
+    PositionOccupied = 36,
 }
 
 impl GoblinError {
