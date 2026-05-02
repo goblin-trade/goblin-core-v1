@@ -1,11 +1,13 @@
 use crate::{
     axis::{
-        leg::{leg_matcher::LegMatcher, LegEnum},
+        leg::{leg_matcher::LegMatcher, Base, LegEnum, Quote},
         market::{market_marker::MarketMarker, MarketAndKey},
         token::token_marker::TokenMarker,
         update::UpdateEnum,
     },
     goblin_error::GoblinError,
+    instructions::open::process_open_cases::process_open_cases,
+    matching::region::make_region::MakeRegion,
     quantities::{BaseLots, Position, INNER_POS_V2},
     require,
     settlement::local_delta::LocalDelta,
@@ -14,37 +16,69 @@ use crate::{
         resting_order::preimage::RestingOrderPreimage,
         MarketState, Preimage, SlotKey,
     },
+    types::StoreReader,
 };
 
-pub fn ix_open<M, B, Q, In>(
+pub fn ix_open<M, B, Q>(
     local_delta: &mut LocalDelta,
     market_and_key: &MarketAndKey<M, B, Q>,
     market_state: &mut MarketState,
     position_2: Position,
+    region_2: MakeRegion,
     inner_bitmap_key: &SlotKey<BitmapPreimageV2<M, B, Q, INNER_POS_V2>>,
     inner_bitmap_state: &mut BitmapV2<INNER_POS_V2>,
     base_lots: BaseLots,
+    leg_enum: LegEnum,
 ) -> Result<(), GoblinError>
 where
     M: MarketMarker,
     B: TokenMarker,
     Q: TokenMarker,
-    In: LegMatcher,
 {
-    // require!(
-    //     In::valid_open_price(market_state, (*full_coordinates).into()),
-    //     GoblinError::InvalidOpenPrice
-    // );
+    // Ensure that we open on the correct side.
+    // leg_in must match or the order must be opened within the spread region.
+    if let MakeRegion::In(leg_in) = region_2 {
+        require!(leg_in == leg_enum, GoblinError::InvalidOpenPrice);
 
-    // // Ensure bit is not already active
-    // // But what about garbage bits?
+        require!(
+            !inner_bitmap_state.index_active(position_2.into()),
+            GoblinError::PositionOccupied
+        );
+    } else {
+        // update last price if order is placed in spread
+        let last_position = match leg_enum {
+            LegEnum::Base => Base::get_leg_mut(&mut market_state.last_positions),
+            LegEnum::Quote => Quote::get_leg_mut(&mut market_state.last_positions),
+        };
+        *last_position = position_2;
+    }
 
-    // let last_coordinate_mut = In::get_leg_mut(&mut market_state.last_coordinates);
+    let resting_order_key = RestingOrderPreimage {
+        market_key: market_and_key.market_key,
+        position: position_2,
+    }
+    .hash();
 
-    // let current_coordinate = StoredCoordinates::from(*full_coordinates);
-    // if current_coordinate.closer_to_opposite_pole::<In>(last_coordinate_mut) {
-    //     *last_coordinate_mut = current_coordinate;
-    // }
-
-    Ok(())
+    match leg_enum {
+        LegEnum::Base => process_open_cases::<M, B, Q, Base>(
+            local_delta,
+            market_and_key,
+            market_state,
+            position_2,
+            region_2,
+            inner_bitmap_key,
+            inner_bitmap_state,
+            base_lots,
+        ),
+        LegEnum::Quote => process_open_cases::<M, B, Q, Quote>(
+            local_delta,
+            market_and_key,
+            market_state,
+            position_2,
+            region_2,
+            inner_bitmap_key,
+            inner_bitmap_state,
+            base_lots,
+        ),
+    }
 }

@@ -40,7 +40,6 @@ where
     let region_2 = MakeRegion::new(&market_state.last_positions, position_2);
 
     match make_variant {
-        // TODO make it symmetric, pass update_enum as generic?
         MakeVariant::Update(update_enum) => ix_update::<M, B, Q>(
             local_delta,
             market_and_key,
@@ -50,26 +49,38 @@ where
             base_lots,
             update_enum,
         )?,
-        MakeVariant::Open(leg_enum) => match leg_enum {
-            LegEnum::Base => ix_open::<M, B, Q, Base>(
-                local_delta,
-                market_and_key,
-                market_state,
-                position_2,
-                inner_bitmap_key,
-                inner_bitmap_state,
-                base_lots,
-            )?,
-            LegEnum::Quote => ix_open::<M, B, Q, Quote>(
-                local_delta,
-                market_and_key,
-                market_state,
-                position_2,
-                inner_bitmap_key,
-                inner_bitmap_state,
-                base_lots,
-            )?,
-        },
+        MakeVariant::Open(leg_enum) => ix_open::<M, B, Q>(
+            local_delta,
+            market_and_key,
+            market_state,
+            position_2,
+            region_2,
+            inner_bitmap_key,
+            inner_bitmap_state,
+            base_lots,
+            leg_enum,
+        )?, // MakeVariant::Open(leg_enum) => match leg_enum {
+            //     LegEnum::Base => ix_open::<M, B, Q, Base>(
+            //         local_delta,
+            //         market_and_key,
+            //         market_state,
+            //         position_2,
+            //         region_2,
+            //         inner_bitmap_key,
+            //         inner_bitmap_state,
+            //         base_lots,
+            //     )?,
+            //     LegEnum::Quote => ix_open::<M, B, Q, Quote>(
+            //         local_delta,
+            //         market_and_key,
+            //         market_state,
+            //         position_2,
+            //         region_2,
+            //         inner_bitmap_key,
+            //         inner_bitmap_state,
+            //         base_lots,
+            //     )?,
+            // },
     }
 
     Ok(())

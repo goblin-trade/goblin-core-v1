@@ -4,7 +4,7 @@ use crate::{
     types::StoreReader,
 };
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Clone, Copy)]
 pub enum MakeRegion {
     Spread,
     In(LegEnum),
