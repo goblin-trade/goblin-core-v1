@@ -5,13 +5,15 @@ use crate::{
         token::token_marker::TokenMarker,
     },
     goblin_error::GoblinError,
-    instructions::open::process_open::process_open,
+    instructions::open::{
+        process_open::process_open, validate_open_in_spread::validate_open_in_spread,
+    },
     matching::region::make_region::MakeRegion,
     quantities::{BaseLots, InnerPosV2, Position, INNER_POS_V2},
     require,
     settlement::local_delta::LocalDelta,
     state::{bitmap_v2::BitmapV2, MarketState},
-    types::{Address, StoreReader},
+    types::Address,
 };
 
 pub fn ix_open<M, B, Q>(
@@ -31,8 +33,8 @@ where
     Q: TokenMarker,
 {
     let inner_pos = InnerPosV2::from(position_2);
+    inner_bitmap_state.activate(inner_pos);
 
-    // Ensure that we open on the correct side.
     // leg_in must match or the order must be opened within the spread region.
     if let MakeRegion::In(leg_in) = region_2 {
         require!(leg_in == leg_enum, GoblinError::InvalidOpenPrice);
@@ -41,15 +43,15 @@ where
             GoblinError::PositionOccupied
         );
     } else {
-        // update last price if order is placed in spread
-        let last_position = match leg_enum {
-            LegEnum::Base => Base::get_leg_mut(&mut market_state.last_positions),
-            LegEnum::Quote => Quote::get_leg_mut(&mut market_state.last_positions),
-        };
-        *last_position = position_2;
+        match leg_enum {
+            LegEnum::Base => {
+                validate_open_in_spread::<Base>(&mut market_state.last_positions, position_2)
+            }
+            LegEnum::Quote => {
+                validate_open_in_spread::<Quote>(&mut market_state.last_positions, position_2)
+            }
+        }?;
     }
-
-    inner_bitmap_state.activate(inner_pos);
 
     match leg_enum {
         LegEnum::Base => process_open::<M, B, Q, Base>(
