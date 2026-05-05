@@ -1,9 +1,7 @@
 use crate::{
     axis::{
         market::{
-            header::market_header::{
-                execute_makes::process_outer_bitmap::process_outer_bitmap, MarketHeader,
-            },
+            header::{market_header::MarketHeader, outer_bitmap_header::OuterBitmapHeader},
             market_marker::MarketMarker,
             MarketAndKey,
         },
@@ -31,7 +29,7 @@ where
         market_state: &mut MarketState,
     ) -> Result<(), GoblinError> {
         for _ in 0..self.outer_bitmap_count {
-            process_outer_bitmap(msg_sender, ctx, local_delta, market_and_key, market_state)?;
+            OuterBitmapHeader::process(msg_sender, ctx, local_delta, market_and_key, market_state)?;
         }
 
         Ok(())
