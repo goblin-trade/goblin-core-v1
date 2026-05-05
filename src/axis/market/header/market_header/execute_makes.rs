@@ -94,6 +94,8 @@ where
                     inner_bitmap_key.load()
                 };
 
+                let inner_bitmap_clone = inner_bitmap_state;
+
                 for _ in 0..update_count {
                     ix_make::<M, B, Q>(
                         msg_sender,
@@ -106,16 +108,18 @@ where
                     )?;
                 }
 
-                // TODO activate outer bitmap if inner bitmap was activated
-                // due to a position being opened
-
-                if inner_bitmap_state.is_empty() {
-                    active_outer_bitmap.deactivate(outer_pos);
-                } else {
-                    // TODO compare with original field or use a flag
-                    // to decide whether to write or not? We don't want to
-                    // write to bitmap if orders were not opened or closed
-                    inner_bitmap_key.store(&inner_bitmap_state);
+                if inner_bitmap_clone != inner_bitmap_state {
+                    if inner_bitmap_clone.is_empty() {
+                        // Inner Bitmap activated
+                        inner_bitmap_key.store(&inner_bitmap_state);
+                        active_outer_bitmap.activate(outer_pos);
+                    } else if inner_bitmap_state.is_empty() {
+                        // Inner bitmap deactivated
+                        active_outer_bitmap.deactivate(outer_pos);
+                    } else {
+                        // Inner bitmap updated
+                        inner_bitmap_key.store(&inner_bitmap_state);
+                    }
                 }
             }
 

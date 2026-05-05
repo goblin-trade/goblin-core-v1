@@ -2,7 +2,7 @@ use crate::quantities::DerivedPosition;
 
 const CLOSED_SENTINEL: [u8; 32] = [0xFF; 32];
 
-#[derive(Default)]
+#[derive(Default, Clone, Copy, PartialEq)]
 pub struct BitmapV2<const BITS: u16> {
     pub inner: [u8; 32],
 }
@@ -13,7 +13,7 @@ impl<const BITS: u16> BitmapV2<BITS> {
     }
 
     pub fn is_empty(&self) -> bool {
-        self.inner == Self::default().inner
+        *self == Self::default()
     }
 
     pub fn is_active(&self) -> bool {
