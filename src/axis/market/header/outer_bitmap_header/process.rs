@@ -71,14 +71,7 @@ impl OuterBitmapHeader {
             )?;
         }
 
-        if outer_bitmap_clone != outer_bitmap_state {
-            if outer_bitmap_state.is_empty() {
-                // Outer bitmap deactivated
-                outer_bitmap_state.close_with_sentinel();
-            } else {
-                outer_bitmap_key.store(&outer_bitmap_state);
-            }
-        }
+        outer_bitmap_state.conditional_write(&outer_bitmap_clone, &outer_bitmap_key);
 
         Ok(())
     }

@@ -69,19 +69,12 @@ impl InnerBitmapHeader {
             )?;
         }
 
-        if inner_bitmap_clone != inner_bitmap_state {
-            if inner_bitmap_state.is_empty() {
-                // Inner bitmap deactivated
-                outer_bitmap_state.deactivate(outer_pos);
-            } else if inner_bitmap_clone.is_empty() {
-                // Inner Bitmap activated
-                inner_bitmap_key.store(&inner_bitmap_state);
-                outer_bitmap_state.activate(outer_pos);
-            } else {
-                // Inner bitmap updated
-                inner_bitmap_key.store(&inner_bitmap_state);
-            }
-        }
+        inner_bitmap_state.conditional_write(
+            &inner_bitmap_clone,
+            &inner_bitmap_key,
+            outer_bitmap_state,
+            outer_pos,
+        );
 
         Ok(())
     }
