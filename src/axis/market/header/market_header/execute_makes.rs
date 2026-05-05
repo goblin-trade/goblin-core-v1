@@ -60,7 +60,7 @@ where
 
             let region_0 = MakeRegion::new(&market_state.last_positions, position_0);
 
-            let mut active_outer_bitmap = if region_0 == MakeRegion::Spread {
+            let mut outer_bitmap_state = if region_0 == MakeRegion::Spread {
                 BitmapV2::<OUTER_POS_V2>::default()
             } else {
                 let outer_bitmap = outer_bitmap_key.load();
@@ -70,6 +70,7 @@ where
                     outer_bitmap
                 }
             };
+            let outer_bitmap_clone = outer_bitmap_state;
 
             for _ in 0..outer_bitmap_header.inner_bitmap_count {
                 let InnerBitmapHeader {
@@ -87,7 +88,7 @@ where
                 .hash();
 
                 let mut inner_bitmap_state = if region_1 == MakeRegion::Spread
-                    || !active_outer_bitmap.index_active(outer_pos)
+                    || !outer_bitmap_state.index_active(outer_pos)
                 {
                     BitmapV2::<INNER_POS_V2>::default()
                 } else {
@@ -109,13 +110,13 @@ where
                 }
 
                 if inner_bitmap_clone != inner_bitmap_state {
-                    if inner_bitmap_clone.is_empty() {
+                    if inner_bitmap_state.is_empty() {
+                        // Inner bitmap deactivated
+                        outer_bitmap_state.deactivate(outer_pos);
+                    } else if inner_bitmap_clone.is_empty() {
                         // Inner Bitmap activated
                         inner_bitmap_key.store(&inner_bitmap_state);
-                        active_outer_bitmap.activate(outer_pos);
-                    } else if inner_bitmap_state.is_empty() {
-                        // Inner bitmap deactivated
-                        active_outer_bitmap.deactivate(outer_pos);
+                        outer_bitmap_state.activate(outer_pos);
                     } else {
                         // Inner bitmap updated
                         inner_bitmap_key.store(&inner_bitmap_state);
@@ -123,8 +124,13 @@ where
                 }
             }
 
-            if active_outer_bitmap.is_empty() {
-                active_outer_bitmap.close_with_sentinel();
+            if outer_bitmap_clone != outer_bitmap_state {
+                if outer_bitmap_state.is_empty() {
+                    // Outer bitmap deactivated
+                    outer_bitmap_state.close_with_sentinel();
+                } else {
+                    outer_bitmap_key.store(&outer_bitmap_state);
+                }
             }
         }
 
