@@ -11,13 +11,9 @@ use crate::{
     },
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
-    matching::region::make_region::MakeRegion,
     quantities::{Position, OUTER_POS_V2},
     settlement::local_delta::LocalDelta,
-    state::{
-        bitmap_v2::{preimage::BitmapPreimageV2, BitmapV2},
-        MarketState, Preimage,
-    },
+    state::{bitmap_v2::BitmapV2, MarketState},
     types::Address,
 };
 
@@ -34,32 +30,21 @@ impl OuterBitmapHeader {
         B: TokenMarker,
         Q: TokenMarker,
     {
-        let outer_bitmap_header = Self::try_decode(ctx)?;
+        let Self {
+            outer_bitmap_index,
+            inner_bitmap_count,
+        } = Self::try_decode(ctx)?;
 
-        let outer_bitmap_index = outer_bitmap_header.outer_bitmap_index;
         let position_0 = Position::from(outer_bitmap_index);
 
-        let outer_bitmap_key = BitmapPreimageV2::<M, B, Q, OUTER_POS_V2> {
-            market_key: market_and_key.market_key,
-            position: position_0,
-        }
-        .hash();
-
-        let region_0 = MakeRegion::new(&market_state.last_positions, position_0);
-
-        let mut outer_bitmap_state = if region_0 == MakeRegion::Spread {
-            BitmapV2::<OUTER_POS_V2>::default()
-        } else {
-            let outer_bitmap = outer_bitmap_key.load();
-            if outer_bitmap.is_closed() {
-                BitmapV2::<OUTER_POS_V2>::default()
-            } else {
-                outer_bitmap
-            }
-        };
+        let (outer_bitmap_key, mut outer_bitmap_state) = BitmapV2::<OUTER_POS_V2>::conditional_read(
+            market_and_key.market_key,
+            &market_state.last_positions,
+            position_0,
+        );
         let outer_bitmap_clone = outer_bitmap_state;
 
-        for _ in 0..outer_bitmap_header.inner_bitmap_count {
+        for _ in 0..inner_bitmap_count {
             InnerBitmapHeader::process(
                 msg_sender,
                 ctx,

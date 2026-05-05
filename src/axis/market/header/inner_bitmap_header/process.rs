@@ -9,13 +9,9 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
     instructions::ix_make,
-    matching::region::make_region::MakeRegion,
     quantities::{Position, INNER_POS_V2, OUTER_POS_V2},
     settlement::local_delta::LocalDelta,
-    state::{
-        bitmap_v2::{preimage::BitmapPreimageV2, BitmapV2},
-        MarketState, Preimage,
-    },
+    state::{bitmap_v2::BitmapV2, MarketState},
     types::Address,
 };
 
@@ -40,21 +36,14 @@ impl InnerBitmapHeader {
         } = Self::try_decode(ctx)?;
 
         let position_1 = position_0 + Position::from(outer_pos);
-        let region_1 = MakeRegion::new(&market_state.last_positions, position_1);
 
-        let inner_bitmap_key = BitmapPreimageV2::<M, B, Q, INNER_POS_V2> {
-            market_key: market_and_key.market_key,
-            position: position_1,
-        }
-        .hash();
-
-        let mut inner_bitmap_state =
-            if region_1 == MakeRegion::Spread || !outer_bitmap_state.index_active(outer_pos) {
-                BitmapV2::<INNER_POS_V2>::default()
-            } else {
-                inner_bitmap_key.load()
-            };
-
+        let (inner_bitmap_key, mut inner_bitmap_state) = BitmapV2::<INNER_POS_V2>::conditional_read(
+            market_and_key.market_key,
+            &market_state.last_positions,
+            position_1,
+            outer_bitmap_state,
+            outer_pos,
+        );
         let inner_bitmap_clone = inner_bitmap_state;
 
         for _ in 0..update_count {
