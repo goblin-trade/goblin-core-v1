@@ -1,4 +1,4 @@
-use crate::quantities::{ColumnV2, InnerPosV2, RowV2};
+use crate::quantities::{Column, InnerPos, Row};
 
 // impl From<InnerPosV2> for RowV2 {
 //     fn from(value: InnerPosV2) -> Self {

@@ -6,7 +6,7 @@ use crate::{
     },
     goblin_error::GoblinError,
     matching::{
-        match_iterator_v2::{match_iterator_v2, RestingOrderEntryV2},
+        match_iterator::{match_iterator, RestingOrderEntry},
         region::take_region::TakeRegion,
     },
     quantities::{Position, QuantityOps, Ticks},
@@ -45,12 +45,12 @@ where
         GoblinError::TakerPriceLimitReached
     );
 
-    let iterator = match_iterator_v2::<M, B, Q, In>(*market_key, *last_position_mut, limit);
+    let iterator = match_iterator::<M, B, Q, In>(*market_key, *last_position_mut, limit);
 
     let base_lot_size = Base::get(&market.lot_size_pair);
     let mut budget = In::matching_lots_in(num_lots, base_lot_size);
 
-    for RestingOrderEntryV2 {
+    for RestingOrderEntry {
         position,
         resting_order_key,
         mut resting_order,

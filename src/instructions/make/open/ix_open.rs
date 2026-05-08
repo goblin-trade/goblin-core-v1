@@ -9,10 +9,10 @@ use crate::{
         process_open::process_open, validate_open_in_spread::validate_open_in_spread,
     },
     matching::region::make_region::MakeRegion,
-    quantities::{BaseLots, InnerPosV2, Position, INNER_POS_V2},
+    quantities::{BaseLots, InnerPos, Position, INNER_POS},
     require,
     settlement::local_delta::LocalDelta,
-    state::{bitmap_v2::BitmapV2, MarketState},
+    state::{bitmap::Bitmap, MarketState},
     types::Address,
 };
 
@@ -23,7 +23,7 @@ pub fn ix_open<M, B, Q>(
     market_state: &mut MarketState,
     position_2: Position,
     region_2: MakeRegion,
-    inner_bitmap_state: &mut BitmapV2<INNER_POS_V2>,
+    inner_bitmap_state: &mut Bitmap<INNER_POS>,
     base_lots: BaseLots,
     leg_enum: LegEnum,
 ) -> Result<(), GoblinError>
@@ -32,7 +32,7 @@ where
     B: TokenMarker,
     Q: TokenMarker,
 {
-    let inner_pos = InnerPosV2::from(position_2);
+    let inner_pos = InnerPos::from(position_2);
     inner_bitmap_state.activate(inner_pos);
 
     // leg_in must match or the order must be opened within the spread region.

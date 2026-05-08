@@ -7,9 +7,9 @@ use crate::{
     input_processor::{Decodable, DecodeCtx},
     instructions::{make_variant::MakeVariant, open::ix_open, update::ix_update},
     matching::region::make_region::MakeRegion,
-    quantities::{Position, INNER_POS_V2},
+    quantities::{Position, INNER_POS},
     settlement::local_delta::LocalDelta,
-    state::{bitmap_v2::BitmapV2, MarketState},
+    state::{bitmap::Bitmap, MarketState},
     types::Address,
 };
 
@@ -20,7 +20,7 @@ pub fn ix_make<M, B, Q>(
     market_and_key: &MarketAndKey<M, B, Q>,
     market_state: &mut MarketState,
     position_1: Position,
-    inner_bitmap_state: &mut BitmapV2<INNER_POS_V2>,
+    inner_bitmap_state: &mut Bitmap<INNER_POS>,
 ) -> Result<(), GoblinError>
 where
     M: MarketMarker,

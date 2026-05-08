@@ -11,9 +11,9 @@ use crate::{
     },
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
-    quantities::{Position, OUTER_POS_V2},
+    quantities::{Position, OUTER_POS},
     settlement::local_delta::LocalDelta,
-    state::{bitmap_v2::BitmapV2, MarketState},
+    state::{bitmap::Bitmap, MarketState},
     types::Address,
 };
 
@@ -37,7 +37,7 @@ impl OuterBitmapHeader {
 
         let position_0 = Position::from(outer_bitmap_index);
 
-        let (outer_bitmap_key, mut outer_bitmap_state) = BitmapV2::<OUTER_POS_V2>::conditional_read(
+        let (outer_bitmap_key, mut outer_bitmap_state) = Bitmap::<OUTER_POS>::conditional_read(
             market_and_key.market_key,
             &market_state.last_positions,
             position_0,

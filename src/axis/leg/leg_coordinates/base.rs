@@ -1,11 +1,11 @@
 use crate::{
     axis::leg::{leg_coordinates::LegCoordinates, Base},
     matching::region::take_region::TakeRegion,
-    quantities::{bits_layout::BitsLayout, Position, TickPosV2},
+    quantities::{bits_layout::BitsLayout, Position, TickPos},
 };
 
 impl LegCoordinates for Base {
-    fn take_region(limit_price: TickPosV2, price: TickPosV2) -> TakeRegion {
+    fn take_region(limit_price: TickPos, price: TickPos) -> TakeRegion {
         if price > limit_price {
             TakeRegion::NotLeg
         } else {

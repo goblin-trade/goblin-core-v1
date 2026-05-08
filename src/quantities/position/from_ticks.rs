@@ -1,12 +1,12 @@
-use crate::quantities::{Position, TickPosV2, Ticks};
+use crate::quantities::{Position, TickPos, Ticks};
 
-impl From<TickPosV2> for Ticks {
-    fn from(value: TickPosV2) -> Self {
+impl From<TickPos> for Ticks {
+    fn from(value: TickPos) -> Self {
         Self::new(value.inner)
     }
 }
 
-impl From<Ticks> for TickPosV2 {
+impl From<Ticks> for TickPos {
     fn from(value: Ticks) -> Self {
         Self::new(value.inner)
     }
@@ -14,7 +14,7 @@ impl From<Ticks> for TickPosV2 {
 
 impl From<Position> for Ticks {
     fn from(value: Position) -> Self {
-        let tick_pos = TickPosV2::from(value);
+        let tick_pos = TickPos::from(value);
         Self::from(tick_pos)
     }
 }

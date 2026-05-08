@@ -3,11 +3,11 @@ use crate::quantities::DerivedPosition;
 const CLOSED_SENTINEL: [u8; 32] = [0xFF; 32];
 
 #[derive(Default, Clone, Copy, PartialEq)]
-pub struct BitmapV2<const BITS: u16> {
+pub struct Bitmap<const BITS: u16> {
     pub inner: [u8; 32],
 }
 
-impl<const BITS: u16> BitmapV2<BITS> {
+impl<const BITS: u16> Bitmap<BITS> {
     pub fn is_closed(&self) -> bool {
         self.inner == CLOSED_SENTINEL
     }

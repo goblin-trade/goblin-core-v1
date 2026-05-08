@@ -1,4 +1,4 @@
-use crate::quantities::OuterPosV2;
+use crate::quantities::OuterPos;
 
 // impl OuterPosV2 {
 //     pub fn byte_index(&self) -> usize {
