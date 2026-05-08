@@ -1,4 +1,4 @@
-use crate::{axis::leg::SamePair, quantities::Position};
+use crate::{axis::leg::SamePair, impl_checked_slot_state, quantities::Position};
 
 /// The market state slot
 /// We have 6 possible sub-types based on MarketVariant and PairShape
@@ -9,3 +9,4 @@ pub struct MarketState {
     /// Padding to match 32 bits
     _padding: [u8; 16],
 }
+impl_checked_slot_state!(MarketState);

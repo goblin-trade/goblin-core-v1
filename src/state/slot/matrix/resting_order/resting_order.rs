@@ -1,4 +1,4 @@
-use crate::{quantities::BaseLots, types::Address};
+use crate::{impl_checked_slot_state, quantities::BaseLots, types::Address};
 
 /// A resting order stored in slot
 /// Total size = 24 + 8 = 32. 20 byte address is padded to 24.
@@ -24,8 +24,4 @@ pub struct RestingOrder {
     pub base_lots: BaseLots,
 }
 
-impl RestingOrder {
-    pub const fn new(maker: Address, base_lots: BaseLots) -> Self {
-        Self { maker, base_lots }
-    }
-}
+impl_checked_slot_state!(RestingOrder);

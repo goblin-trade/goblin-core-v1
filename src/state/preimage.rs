@@ -1,6 +1,6 @@
 use crate::{
     hostio::hostio_helpers,
-    state::{PreimageSerializer, SlotKey},
+    state::{PreimageSerializer, SlotKey, SlotState},
 };
 /// Preimage used to derive slot key. The slot key is then used
 /// to read SlotState
@@ -20,7 +20,7 @@ pub trait Preimage: Sized + Clone + Copy {
     const SLOT_DISCRIMINATOR: u8;
 
     /// 32 byte slot read using the derived key
-    type SlotState;
+    type SlotState: SlotState;
 
     /// Hash the preimage to obtain SlotKey
     fn hash(self) -> SlotKey<Self> {

@@ -1,4 +1,4 @@
-use crate::{quantities::UnsidedAtoms, state::Preimage, types::Address};
+use crate::{impl_checked_slot_state, quantities::UnsidedAtoms, state::Preimage, types::Address};
 
 #[repr(C)]
 #[derive(Clone, Copy)]
@@ -19,16 +19,4 @@ pub struct EthStore {
     _padding: [u8; 16],
 }
 
-// impl SlotState for EthStore {
-//     const SLOT_DISCRIMINATOR: u8 = 1;
-// }
-
-// impl SlotKey<EthStore> {
-//     pub fn new(trader: &Address) -> Self {
-//         let mut bytes = [0u8; (1 + 20)];
-//         bytes[0] = EthStore::SLOT_DISCRIMINATOR;
-//         bytes[1..21].copy_from_slice(trader.as_slice());
-
-//         Self::generate(bytes.as_slice())
-//     }
-// }
+impl_checked_slot_state!(EthStore);

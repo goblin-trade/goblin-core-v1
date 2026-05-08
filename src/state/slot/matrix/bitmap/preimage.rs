@@ -1,7 +1,7 @@
 use crate::{
     axis::{market::market_marker::MarketMarker, token::token_marker::TokenMarker},
-    quantities::{bits_layout::BitsLayout, Position},
-    state::{bitmap::Bitmap, MarketPreimage, Preimage, SlotKey},
+    quantities::{bits_layout::BitsLayout, Position, OUTER_POS},
+    state::{bitmap::Bitmap, MarketPreimage, Preimage, SlotKey, SlotState},
 };
 
 #[repr(C)]
@@ -25,3 +25,6 @@ where
     const SLOT_DISCRIMINATOR: u8 = 5 + BitsLayout::<BITS>::OFFSET as u8;
     type SlotState = Bitmap<BITS>;
 }
+
+unsafe impl<const BITS: u16> SlotState for Bitmap<BITS> {}
+const _: () = <Bitmap<OUTER_POS> as SlotState>::_ASSERT;
