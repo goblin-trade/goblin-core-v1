@@ -1,13 +1,10 @@
-use core::marker::PhantomData;
-
 use crate::quantities::Position;
 
-pub struct SafePosition<P> {
+pub struct SafePosition<const BITS: u16> {
     pub(super) inner: Position,
-    pub(super) _marker: PhantomData<P>,
 }
 
-impl<P> SafePosition<P> {
+impl<const BITS: u16> SafePosition<BITS> {
     pub fn position(&self) -> Position {
         self.inner
     }
