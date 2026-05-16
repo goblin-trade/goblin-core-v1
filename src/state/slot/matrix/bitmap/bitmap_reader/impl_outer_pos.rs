@@ -26,7 +26,7 @@ impl BitmapReader for Bitmap<OUTER_POS> {
             .filter_map(move |position| {
                 let preimage = BitmapPreimage::<M, B, Q, OUTER_POS> {
                     market_key,
-                    position,
+                    safe_position: position,
                 };
                 let outer_bitmap = preimage.hash().load();
 

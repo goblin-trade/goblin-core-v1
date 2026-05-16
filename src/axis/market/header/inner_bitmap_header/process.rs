@@ -37,6 +37,8 @@ impl InnerBitmapHeader {
 
         let pos_1 = SafePosition::<POS_1>::new(pos_0, outer_pos);
 
+        // the position used in key should hold both OuterBitmapIndex and OuterPos.
+        // I.e. POS_1 and not INNER_POS
         let (inner_bitmap_key, mut inner_bitmap_state) = Bitmap::<INNER_POS>::conditional_read(
             market_and_key.market_key,
             &market_state.last_positions,

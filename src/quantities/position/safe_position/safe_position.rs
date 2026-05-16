@@ -1,5 +1,6 @@
 use crate::quantities::Position;
 
+#[derive(Clone, Copy)]
 pub struct SafePosition<const BITS: u16> {
     pub(super) inner: Position,
 }

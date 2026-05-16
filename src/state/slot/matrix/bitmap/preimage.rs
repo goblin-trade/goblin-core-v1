@@ -1,6 +1,6 @@
 use crate::{
     axis::{market::market_marker::MarketMarker, token::token_marker::TokenMarker},
-    quantities::{bits_layout::BitsLayout, Position, OUTER_POS},
+    quantities::{bits_layout::BitsLayout, SafePosition, OUTER_POS},
     state::{bitmap::Bitmap, MarketPreimage, Preimage, SlotKey, SlotState},
 };
 
@@ -13,7 +13,7 @@ where
     Q: TokenMarker,
 {
     pub market_key: SlotKey<MarketPreimage<M, B, Q>>,
-    pub position: Position,
+    pub safe_position: SafePosition<BITS>,
 }
 
 impl<M, B, Q, const BITS: u16> Preimage for BitmapPreimage<M, B, Q, BITS>

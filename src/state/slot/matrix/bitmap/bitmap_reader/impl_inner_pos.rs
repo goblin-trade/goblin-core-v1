@@ -31,7 +31,7 @@ impl BitmapReader for Bitmap<INNER_POS> {
             move |position| {
                 let preimage = BitmapPreimage::<M, B, Q, INNER_POS> {
                     market_key,
-                    position,
+                    safe_position: position,
                 };
                 let inner_bitmap = preimage.hash().load();
 
