@@ -18,8 +18,8 @@ pub fn ix_update<M, B, Q>(
     msg_sender: &Address,
     local_delta: &mut LocalDelta,
     market_and_key: &MarketAndKey<M, B, Q>,
-    position_2: Position,
-    region_2: MakeRegion,
+    position: Position,
+    region: MakeRegion,
     inner_bitmap_state: &mut Bitmap<INNER_POS>,
     base_lots: BaseLots,
     update_enum: UpdateEnum,
@@ -30,12 +30,12 @@ where
     Q: TokenMarker,
 {
     // Cannot update in `Spread` region as it has no orders
-    let MakeRegion::In(leg_in) = region_2 else {
+    let MakeRegion::In(leg_in) = region else {
         return Err(GoblinError::NoRestingOrder);
     };
 
     require!(
-        inner_bitmap_state.index_active(position_2.into()),
+        inner_bitmap_state.index_active(position.into()),
         GoblinError::NoRestingOrder
     );
 
@@ -43,7 +43,7 @@ where
         msg_sender,
         &mut local_delta.local_sender_delta,
         market_and_key,
-        position_2,
+        position,
         inner_bitmap_state,
         base_lots,
         update_enum,

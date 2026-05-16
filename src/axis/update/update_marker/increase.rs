@@ -18,7 +18,7 @@ impl UpdateMarker for Increase {
         msg_sender: &Address,
         local_sender_delta: &mut LocalSenderDelta,
         market_and_key: &MarketAndKey<M, B, Q>,
-        position_2: Position,
+        position: Position,
         base_lots: BaseLots,
         _inner_bitmap_state: &mut Bitmap<INNER_POS>,
     ) -> Result<(), GoblinError>
@@ -30,7 +30,7 @@ impl UpdateMarker for Increase {
     {
         let resting_order_key = RestingOrderPreimage {
             market_key: market_and_key.market_key,
-            position: position_2,
+            position,
         }
         .hash();
 
@@ -48,7 +48,7 @@ impl UpdateMarker for Increase {
 
         // Update delta
         let base_lot_size = Base::get(&market_and_key.market.lot_size_pair);
-        let price = Ticks::from(position_2);
+        let price = Ticks::from(position);
 
         local_sender_delta.add_resting_order_deposit::<In>(
             base_lots,

@@ -11,7 +11,7 @@ use crate::{
     },
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
-    quantities::{Position, OUTER_POS},
+    quantities::{Position, SafePosition, OUTER_POS, POS_0},
     settlement::local_delta::LocalDelta,
     state::{bitmap::Bitmap, MarketState},
     types::Address,
@@ -35,12 +35,12 @@ impl OuterBitmapHeader {
             inner_bitmap_count,
         } = Self::try_decode(ctx)?;
 
-        let position_0 = Position::from(outer_bitmap_index);
+        let pos_0 = SafePosition::<POS_0>::new(outer_bitmap_index);
 
         let (outer_bitmap_key, mut outer_bitmap_state) = Bitmap::<OUTER_POS>::conditional_read(
             market_and_key.market_key,
             &market_state.last_positions,
-            position_0,
+            pos_0,
         );
         let outer_bitmap_clone = outer_bitmap_state;
 
@@ -51,7 +51,7 @@ impl OuterBitmapHeader {
                 local_delta,
                 market_and_key,
                 market_state,
-                position_0,
+                pos_0,
                 &mut outer_bitmap_state,
             )?;
         }

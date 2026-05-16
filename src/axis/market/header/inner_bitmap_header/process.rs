@@ -9,7 +9,7 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
     instructions::ix_make,
-    quantities::{Position, INNER_POS, OUTER_POS},
+    quantities::{Position, SafePosition, INNER_POS, OUTER_POS, POS_0, POS_1},
     settlement::local_delta::LocalDelta,
     state::{bitmap::Bitmap, MarketState},
     types::Address,
@@ -22,7 +22,7 @@ impl InnerBitmapHeader {
         local_delta: &mut LocalDelta,
         market_and_key: &MarketAndKey<M, B, Q>,
         market_state: &mut MarketState,
-        position_0: Position,
+        pos_0: SafePosition<POS_0>,
         outer_bitmap_state: &mut Bitmap<OUTER_POS>,
     ) -> Result<(), GoblinError>
     where
@@ -35,12 +35,12 @@ impl InnerBitmapHeader {
             update_count,
         } = Self::try_decode(ctx)?;
 
-        let position_1 = position_0 + Position::from(outer_pos);
+        let pos_1 = SafePosition::<POS_1>::new(pos_0, outer_pos);
 
         let (inner_bitmap_key, mut inner_bitmap_state) = Bitmap::<INNER_POS>::conditional_read(
             market_and_key.market_key,
             &market_state.last_positions,
-            position_1,
+            pos_1,
             outer_bitmap_state,
             outer_pos,
         );
@@ -53,7 +53,7 @@ impl InnerBitmapHeader {
                 local_delta,
                 market_and_key,
                 market_state,
-                position_1,
+                pos_1,
                 &mut inner_bitmap_state,
             )?;
         }

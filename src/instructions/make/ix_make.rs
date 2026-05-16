@@ -7,7 +7,7 @@ use crate::{
     input_processor::{Decodable, DecodeCtx},
     instructions::{make_variant::MakeVariant, open::ix_open, update::ix_update},
     matching::region::make_region::MakeRegion,
-    quantities::{Position, INNER_POS},
+    quantities::{SafePosition, INNER_POS, POS_1, POS_2},
     settlement::local_delta::LocalDelta,
     state::{bitmap::Bitmap, MarketState},
     types::Address,
@@ -19,7 +19,7 @@ pub fn ix_make<M, B, Q>(
     local_delta: &mut LocalDelta,
     market_and_key: &MarketAndKey<M, B, Q>,
     market_state: &mut MarketState,
-    position_1: Position,
+    pos_1: SafePosition<POS_1>,
     inner_bitmap_state: &mut Bitmap<INNER_POS>,
 ) -> Result<(), GoblinError>
 where
@@ -33,16 +33,17 @@ where
         make_variant,
     } = MakeHeader::try_decode(ctx)?;
 
-    let position_2 = position_1 + Position::from(inner_pos);
-    let region_2 = MakeRegion::new(&market_state.last_positions, position_2);
+    let pos_2 = SafePosition::<POS_2>::new(pos_1, inner_pos);
+    let position = pos_2.position();
+    let region = MakeRegion::new(&market_state.last_positions, position);
 
     match make_variant {
         MakeVariant::Update(update_enum) => ix_update::<M, B, Q>(
             msg_sender,
             local_delta,
             market_and_key,
-            position_2,
-            region_2,
+            position,
+            region,
             inner_bitmap_state,
             base_lots,
             update_enum,
@@ -52,8 +53,8 @@ where
             local_delta,
             market_and_key,
             market_state,
-            position_2,
-            region_2,
+            position,
+            region,
             inner_bitmap_state,
             base_lots,
             leg_enum,
