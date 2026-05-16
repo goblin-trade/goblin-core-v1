@@ -1,17 +1,17 @@
 use crate::{
     axis::{market::market_marker::MarketMarker, token::token_marker::TokenMarker},
-    quantities::OUTER_POS,
+    quantities::{OUTER_POS, POS_0},
     state::{
         bitmap::{preimage::BitmapPreimage, Bitmap},
         SlotKey,
     },
 };
 
-impl Bitmap<OUTER_POS> {
+impl Bitmap<POS_0, OUTER_POS> {
     pub fn conditional_write<M, B, Q>(
         &mut self,
         clone: &Self,
-        key: &SlotKey<BitmapPreimage<M, B, Q, OUTER_POS>>,
+        key: &SlotKey<BitmapPreimage<M, B, Q, POS_0, OUTER_POS>>,
     ) where
         M: MarketMarker,
         B: TokenMarker,
