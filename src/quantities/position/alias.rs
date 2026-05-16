@@ -11,6 +11,10 @@ pub const OUTER_POS: u16 = bits(8, 8);
 pub const OUTER_BITMAP_INDEX: u16 = bits(16, 48);
 pub const TICK_POS: u16 = bits(3, 61);
 
+pub const POS_0: u16 = OUTER_BITMAP_INDEX;
+pub const POS_1: u16 = bits(8, 56);
+pub const POS_2: u16 = bits(0, 64);
+
 pub type InnerPos = DerivedPosition<u8, INNER_POS>;
 pub type Column = DerivedPosition<u8, COLUMN>;
 pub type Row = DerivedPosition<u8, ROW>;

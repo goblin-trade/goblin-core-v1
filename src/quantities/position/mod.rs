@@ -7,8 +7,10 @@ pub mod impl_outer_pos;
 pub mod inner_val;
 pub mod position;
 pub mod position_range;
+pub mod safe_position;
 
 pub use alias::*;
 pub use derived_position::*;
 pub use position::*;
 pub use position_range::*;
+pub use safe_position::*;
