@@ -1,18 +1,10 @@
 use crate::{
     axis::leg::{leg_coordinates::LegCoordinates, Quote},
-    quantities::{bits_layout::BitsLayout, Position, SafePosition, POS_2},
+    quantities::{bits_layout::BitsLayout, Pos2, Position},
 };
 
 impl LegCoordinates for Quote {
-    // fn take_region(limit_price: TickPos, price: TickPos) -> TakeRegion {
-    //     if price < limit_price {
-    //         TakeRegion::NotLeg
-    //     } else {
-    //         TakeRegion::Leg
-    //     }
-    // }
-
-    fn in_region(last_position: SafePosition<POS_2>, position: SafePosition<POS_2>) -> bool {
+    fn in_region(last_position: Pos2, position: Pos2) -> bool {
         position >= last_position
     }
 
