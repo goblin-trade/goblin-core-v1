@@ -4,8 +4,8 @@ use crate::{
         token::token_marker::TokenMarker,
     },
     quantities::{
-        OuterBitmapIndex, Position, PositionRange, SafePosition, OUTER_BITMAP_INDEX, OUTER_POS,
-        POS_0, POS_1,
+        OuterBitmapIndex, Pos2, Position, PositionRange, SafePosition, OUTER_BITMAP_INDEX,
+        OUTER_POS, POS_0, POS_1,
     },
     state::{
         bitmap::{bitmap_reader::BitmapReader, preimage::BitmapPreimage, Bitmap},
@@ -15,11 +15,11 @@ use crate::{
 use core::ops::RangeInclusive;
 
 // TODO this should return Pos_1
-impl BitmapReader for Bitmap<POS_0, OUTER_POS> {
+impl BitmapReader<POS_1> for Bitmap<POS_0, OUTER_POS> {
     fn active_iterator<M, B, Q, In>(
         market_key: SlotKey<MarketPreimage<M, B, Q>>,
-        range: RangeInclusive<Position>,
-    ) -> impl Iterator<Item = Position>
+        range: RangeInclusive<Pos2>,
+    ) -> impl Iterator<Item = SafePosition<POS_1>>
     where
         M: MarketMarker,
         B: TokenMarker,

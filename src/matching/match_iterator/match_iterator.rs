@@ -3,7 +3,7 @@ use crate::{
         leg::leg_matcher::LegMatcher, market::market_marker::MarketMarker,
         token::token_marker::TokenMarker,
     },
-    quantities::{Pos2, Position, INNER_POS, POS_1},
+    quantities::{Pos2, INNER_POS, POS_1},
     state::{
         bitmap::{bitmap_reader::BitmapReader, Bitmap},
         resting_order::{preimage::RestingOrderPreimage, RestingOrder},
@@ -35,16 +35,16 @@ where
 {
     let range = In::get_range(last_position, limit);
     Bitmap::<POS_1, INNER_POS>::active_iterator::<M, B, Q, In>(market_key, range).map(
-        move |position| {
+        move |pos_2| {
             let preimage = RestingOrderPreimage::<M, B, Q> {
                 market_key,
-                position,
+                position: pos_2,
             };
             let resting_order_key = preimage.hash();
             let resting_order = resting_order_key.load();
 
             RestingOrderEntry {
-                position,
+                position: pos_2,
                 resting_order_key,
                 resting_order,
             }

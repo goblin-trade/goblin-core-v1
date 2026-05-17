@@ -1,6 +1,6 @@
 use crate::{
     axis::{market::market_marker::MarketMarker, token::token_marker::TokenMarker},
-    quantities::Position,
+    quantities::Pos2,
     state::{resting_order::RestingOrder, MarketPreimage, Preimage, SlotKey},
 };
 
@@ -12,7 +12,7 @@ where
     Q: TokenMarker,
 {
     pub market_key: SlotKey<MarketPreimage<M, B, Q>>,
-    pub position: Position,
+    pub position: Pos2,
 }
 
 impl<M, B, Q> Preimage for RestingOrderPreimage<M, B, Q>

@@ -3,7 +3,7 @@ use crate::{
         leg::leg_matcher::LegMatcher, market::market_marker::MarketMarker,
         token::token_marker::TokenMarker,
     },
-    quantities::{Pos2, Position, INNER_POS, OUTER_POS, POS_0, POS_1},
+    quantities::{Pos2, Position, SafePosition, INNER_POS, OUTER_POS, POS_0, POS_1, POS_2},
     state::{
         bitmap::{bitmap_reader::BitmapReader, preimage::BitmapPreimage, Bitmap},
         MarketPreimage, Preimage, SlotKey,
@@ -11,7 +11,7 @@ use crate::{
 };
 use core::ops::RangeInclusive;
 
-impl BitmapReader for Bitmap<POS_1, INNER_POS> {
+impl BitmapReader<POS_2> for Bitmap<POS_1, INNER_POS> {
     /// Get an iterator of active positions
     ///
     /// # Range
@@ -19,7 +19,7 @@ impl BitmapReader for Bitmap<POS_1, INNER_POS> {
     fn active_iterator<M, B, Q, In>(
         market_key: SlotKey<MarketPreimage<M, B, Q>>,
         range: RangeInclusive<Pos2>,
-    ) -> impl Iterator<Item = Pos2>
+    ) -> impl Iterator<Item = SafePosition<POS_2>>
     where
         M: MarketMarker,
         B: TokenMarker,
@@ -34,6 +34,8 @@ impl BitmapReader for Bitmap<POS_1, INNER_POS> {
                     safe_position: pos_1,
                 };
                 let inner_bitmap = preimage.hash().load();
+
+                // clamp the range and cast it to RangeInclusive<InnerPos>
 
                 In::inner_pos_iter(range.clone(), pos_1)
                     .filter(move |inner_pos| inner_bitmap.index_active((*inner_pos).into()))
