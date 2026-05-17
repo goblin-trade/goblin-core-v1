@@ -3,7 +3,10 @@ use crate::{
         leg::leg_matcher::LegMatcher, market::market_marker::MarketMarker,
         token::token_marker::TokenMarker,
     },
-    quantities::{Position, OUTER_POS, POS_0},
+    quantities::{
+        OuterBitmapIndex, Position, PositionRange, SafePosition, OUTER_BITMAP_INDEX, OUTER_POS,
+        POS_0, POS_1,
+    },
     state::{
         bitmap::{bitmap_reader::BitmapReader, preimage::BitmapPreimage, Bitmap},
         MarketPreimage, Preimage, SlotKey,
@@ -22,18 +25,28 @@ impl BitmapReader for Bitmap<POS_0, OUTER_POS> {
         Q: TokenMarker,
         In: LegMatcher,
     {
-        In::outer_bitmap_index_iter(range.clone())
-            .filter_map(move |position| {
+        let casted_range = range.cast_range::<u64, OUTER_BITMAP_INDEX>();
+
+        In::outer_bitmap_index_iter(casted_range.clone())
+            .filter_map(move |outer_bitmap_index| {
+                let safe_position = SafePosition::<POS_0>::new(outer_bitmap_index);
+
                 let preimage = BitmapPreimage::<M, B, Q, POS_0, OUTER_POS> {
                     market_key,
-                    safe_position: position,
+                    safe_position,
                 };
                 let outer_bitmap = preimage.hash().load();
 
                 outer_bitmap.is_active().then(|| {
-                    In::outer_pos_iter(range.clone(), position)
-                        .filter(move |outer_pos| outer_bitmap.index_active((*outer_pos).into()))
-                        .map(move |outer_pos| position + outer_pos)
+                    // TODO clamp range
+                    let clamped_range = range
+                        .clamp_range(outer_bitmap_index.into())
+                        .cast_range::<u8, OUTER_POS>();
+
+                    // In::outer_pos_iter(range.clone(), outer_bitmap_index)
+                    In::outer_pos_iter(clamped_range)
+                        .filter(move |outer_pos| outer_bitmap.index_active(*outer_pos))
+                        .map(move |outer_pos| SafePosition::<POS_1>::new(safe_position, outer_pos))
                 })
             })
             .flatten()
