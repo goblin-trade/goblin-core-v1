@@ -14,6 +14,7 @@ use crate::{
 };
 use core::ops::RangeInclusive;
 
+// TODO this should return Pos_1
 impl BitmapReader for Bitmap<POS_0, OUTER_POS> {
     fn active_iterator<M, B, Q, In>(
         market_key: SlotKey<MarketPreimage<M, B, Q>>,

@@ -1,6 +1,6 @@
 use crate::{
     axis::leg::{leg_iterator::LegIterator, Quote},
-    quantities::{bits_layout::BitsLayout, InnerPos, OuterBitmapIndex, OuterPos, Position},
+    quantities::{bits_layout::BitsLayout, InnerPos, OuterBitmapIndex, OuterPos, Pos2, Position},
 };
 use core::iter::{Map, StepBy};
 use core::ops::RangeInclusive;
@@ -12,7 +12,7 @@ impl LegIterator for Quote {
     type OuterPosIter = Map<RangeInclusive<u8>, fn(u8) -> OuterPos>;
     type InnerPosIter = Map<RangeInclusive<u8>, fn(u8) -> InnerPos>;
 
-    fn get_range(last_position: Position, limit: Position) -> RangeInclusive<Position> {
+    fn get_range(last_position: Pos2, limit: Pos2) -> RangeInclusive<Pos2> {
         last_position..=limit
     }
 
