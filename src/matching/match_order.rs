@@ -5,11 +5,8 @@ use crate::{
         token::token_marker::TokenMarker,
     },
     goblin_error::GoblinError,
-    matching::{
-        match_iterator::{match_iterator, RestingOrderEntry},
-        region::take_region::TakeRegion,
-    },
-    quantities::{Position, QuantityOps, Ticks},
+    matching::match_iterator::{match_iterator, RestingOrderEntry},
+    quantities::{Position, QuantityOps, SafePosition, Ticks, POS_2},
     require,
     settlement::local_delta::LocalDelta,
     state::MarketState,
@@ -29,7 +26,7 @@ pub fn match_order<M, B, Q, In>(
     market_state: &mut MarketState,
     num_lots: In::Lots,
     min_lots_to_fill: In::Lots,
-    limit: Position,
+    limit: SafePosition<POS_2>,
 ) -> Result<(), GoblinError>
 where
     M: MarketMarker,
@@ -38,10 +35,9 @@ where
     In: LegMatcher,
 {
     let last_position_mut = In::get_leg_mut(&mut market_state.last_positions);
-    let region = In::take_region(limit.into(), (*last_position_mut).into());
 
     require!(
-        region == TakeRegion::Leg,
+        In::in_region(*last_position_mut, limit),
         GoblinError::TakerPriceLimitReached
     );
 

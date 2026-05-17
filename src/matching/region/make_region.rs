@@ -1,6 +1,6 @@
 use crate::{
-    axis::leg::{Base, LegEnum, Quote, SamePair},
-    quantities::Position,
+    axis::leg::{leg_coordinates::LegCoordinates, Base, LegEnum, Quote, SamePair},
+    quantities::{SafePosition, POS_2},
     types::StoreReader,
 };
 
@@ -11,10 +11,16 @@ pub enum MakeRegion {
 }
 
 impl MakeRegion {
-    pub fn new(last_positions: &SamePair<Position>, position: Position) -> Self {
-        if position >= Quote::get(last_positions) {
+    pub fn new(
+        last_positions: &SamePair<SafePosition<POS_2>>,
+        position: SafePosition<POS_2>,
+    ) -> Self {
+        let last_position_quote = Quote::get(last_positions);
+        let last_position_base = Base::get(last_positions);
+
+        if Quote::in_region(last_position_quote, position) {
             Self::In(LegEnum::Quote)
-        } else if position <= Base::get(last_positions) {
+        } else if Base::in_region(last_position_base, position) {
             Self::In(LegEnum::Base)
         } else {
             Self::Spread
