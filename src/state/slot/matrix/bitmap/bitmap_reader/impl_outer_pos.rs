@@ -4,8 +4,7 @@ use crate::{
         token::token_marker::TokenMarker,
     },
     quantities::{
-        OuterBitmapIndex, Pos2, Position, PositionRange, SafePosition, OUTER_BITMAP_INDEX,
-        OUTER_POS, POS_0, POS_1,
+        Pos2, Position, PositionRange, SafePosition, OUTER_BITMAP_INDEX, OUTER_POS, POS_0, POS_1,
     },
     state::{
         bitmap::{bitmap_reader::BitmapReader, preimage::BitmapPreimage, Bitmap},
@@ -14,7 +13,6 @@ use crate::{
 };
 use core::ops::RangeInclusive;
 
-// TODO this should return Pos_1
 impl BitmapReader<POS_1> for Bitmap<POS_0, OUTER_POS> {
     fn active_iterator<M, B, Q, In>(
         market_key: SlotKey<MarketPreimage<M, B, Q>>,
@@ -26,28 +24,26 @@ impl BitmapReader<POS_1> for Bitmap<POS_0, OUTER_POS> {
         Q: TokenMarker,
         In: LegMatcher,
     {
-        let casted_range = range.cast_range::<u64, OUTER_BITMAP_INDEX>();
+        let raw_range = RangeInclusive::<Position>::from(range);
+        let casted_range = raw_range.cast_range::<u64, OUTER_BITMAP_INDEX>();
 
-        In::outer_bitmap_index_iter(casted_range.clone())
+        In::outer_bitmap_index_iter(casted_range)
             .filter_map(move |outer_bitmap_index| {
-                let safe_position = SafePosition::<POS_0>::new(outer_bitmap_index);
+                let pos_0 = SafePosition::<POS_0>::new(outer_bitmap_index);
 
                 let preimage = BitmapPreimage::<M, B, Q, POS_0, OUTER_POS> {
                     market_key,
-                    safe_position,
+                    safe_position: pos_0,
                 };
                 let outer_bitmap = preimage.hash().load();
 
                 outer_bitmap.is_active().then(|| {
-                    // TODO clamp range
-                    let clamped_range = range
-                        .clamp_range(outer_bitmap_index.into())
-                        .cast_range::<u8, OUTER_POS>();
+                    let clamped_rage = raw_range.clamp_range(pos_0.position());
+                    let inner_pos_range = clamped_rage.cast_range::<u8, OUTER_POS>();
 
-                    // In::outer_pos_iter(range.clone(), outer_bitmap_index)
-                    In::outer_pos_iter(clamped_range)
+                    In::outer_pos_iter(inner_pos_range)
                         .filter(move |outer_pos| outer_bitmap.index_active(*outer_pos))
-                        .map(move |outer_pos| SafePosition::<POS_1>::new(safe_position, outer_pos))
+                        .map(move |outer_pos| SafePosition::<POS_1>::new(pos_0, outer_pos))
                 })
             })
             .flatten()

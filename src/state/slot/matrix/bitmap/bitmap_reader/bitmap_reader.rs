@@ -3,7 +3,7 @@ use crate::{
         leg::leg_matcher::LegMatcher, market::market_marker::MarketMarker,
         token::token_marker::TokenMarker,
     },
-    quantities::{Pos2, Position, SafePosition},
+    quantities::{Pos2, SafePosition},
     state::{MarketPreimage, SlotKey},
 };
 use core::ops::RangeInclusive;

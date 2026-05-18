@@ -1,8 +1,15 @@
+use core::ops::RangeInclusive;
+
 use crate::{
     axis::leg::leg_coordinates::LegCoordinates,
-    quantities::{inner_val::InnerVal, DerivedPosition, Position},
+    quantities::{inner_val::InnerVal, DerivedPosition, Pos2, Position},
 };
-use core::ops::RangeInclusive;
+
+impl From<RangeInclusive<Pos2>> for RangeInclusive<Position> {
+    fn from(value: RangeInclusive<Pos2>) -> Self {
+        value.start().position()..=value.end().position()
+    }
+}
 
 pub trait PositionRange: Sized {
     fn map_range<A>(&self, f: impl Fn(Position) -> A) -> RangeInclusive<A>;

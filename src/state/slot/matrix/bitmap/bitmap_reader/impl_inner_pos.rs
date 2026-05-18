@@ -3,7 +3,9 @@ use crate::{
         leg::leg_matcher::LegMatcher, market::market_marker::MarketMarker,
         token::token_marker::TokenMarker,
     },
-    quantities::{Pos2, Position, SafePosition, INNER_POS, OUTER_POS, POS_0, POS_1, POS_2},
+    quantities::{
+        Pos2, Position, PositionRange, SafePosition, INNER_POS, OUTER_POS, POS_0, POS_1, POS_2,
+    },
     state::{
         bitmap::{bitmap_reader::BitmapReader, preimage::BitmapPreimage, Bitmap},
         MarketPreimage, Preimage, SlotKey,
@@ -36,10 +38,13 @@ impl BitmapReader<POS_2> for Bitmap<POS_1, INNER_POS> {
                 let inner_bitmap = preimage.hash().load();
 
                 // clamp the range and cast it to RangeInclusive<InnerPos>
+                let raw_range = RangeInclusive::<Position>::from(range);
+                let clamped_rage = raw_range.clamp_range(pos_1.position());
+                let inner_pos_range = clamped_rage.cast_range::<u8, INNER_POS>();
 
-                In::inner_pos_iter(range.clone(), pos_1)
+                In::inner_pos_iter(inner_pos_range)
                     .filter(move |inner_pos| inner_bitmap.index_active((*inner_pos).into()))
-                    .map(move |inner_pos| pos_1 + inner_pos)
+                    .map(move |inner_pos| Pos2::new(pos_1, inner_pos))
             })
     }
 }
