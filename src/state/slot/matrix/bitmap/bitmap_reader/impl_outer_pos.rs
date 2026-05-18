@@ -16,7 +16,7 @@ use core::ops::RangeInclusive;
 impl BitmapReader<POS_1> for Bitmap<POS_0, OUTER_POS> {
     fn active_iterator<M, B, Q, In>(
         market_key: SlotKey<MarketPreimage<M, B, Q>>,
-        range: RangeInclusive<Pos2>,
+        range: RangeInclusive<Position>,
     ) -> impl Iterator<Item = SafePosition<POS_1>>
     where
         M: MarketMarker,
@@ -24,10 +24,9 @@ impl BitmapReader<POS_1> for Bitmap<POS_0, OUTER_POS> {
         Q: TokenMarker,
         In: LegMatcher,
     {
-        let raw_range = RangeInclusive::<Position>::from(range);
-        let casted_range = raw_range.cast_range::<u64, OUTER_BITMAP_INDEX>();
+        let outer_bitmap_index_range = range.cast_range::<u64, OUTER_BITMAP_INDEX>();
 
-        In::outer_bitmap_index_iter(casted_range)
+        In::outer_bitmap_index_iter(outer_bitmap_index_range)
             .filter_map(move |outer_bitmap_index| {
                 let pos_0 = SafePosition::<POS_0>::new(outer_bitmap_index);
 
@@ -38,7 +37,7 @@ impl BitmapReader<POS_1> for Bitmap<POS_0, OUTER_POS> {
                 let outer_bitmap = preimage.hash().load();
 
                 outer_bitmap.is_active().then(|| {
-                    let clamped_rage = raw_range.clamp_range(pos_0.position());
+                    let clamped_rage = range.clamp_range::<In, OUTER_POS>(pos_0.position());
                     let inner_pos_range = clamped_rage.cast_range::<u8, OUTER_POS>();
 
                     In::outer_pos_iter(inner_pos_range)

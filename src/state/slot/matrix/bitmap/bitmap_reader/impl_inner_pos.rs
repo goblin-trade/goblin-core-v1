@@ -20,7 +20,7 @@ impl BitmapReader<POS_2> for Bitmap<POS_1, INNER_POS> {
     /// - start() should be the lower bound. I.e. last_price in In=Quote and limit_price in In=Base
     fn active_iterator<M, B, Q, In>(
         market_key: SlotKey<MarketPreimage<M, B, Q>>,
-        range: RangeInclusive<Pos2>,
+        range: RangeInclusive<Position>,
     ) -> impl Iterator<Item = SafePosition<POS_2>>
     where
         M: MarketMarker,
@@ -37,9 +37,7 @@ impl BitmapReader<POS_2> for Bitmap<POS_1, INNER_POS> {
                 };
                 let inner_bitmap = preimage.hash().load();
 
-                // clamp the range and cast it to RangeInclusive<InnerPos>
-                let raw_range = RangeInclusive::<Position>::from(range);
-                let clamped_rage = raw_range.clamp_range(pos_1.position());
+                let clamped_rage = range.clamp_range::<In, OUTER_POS>(pos_1.position());
                 let inner_pos_range = clamped_rage.cast_range::<u8, INNER_POS>();
 
                 In::inner_pos_iter(inner_pos_range)

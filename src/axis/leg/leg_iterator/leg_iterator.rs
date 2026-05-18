@@ -40,10 +40,10 @@ pub trait LegIterator: LegCoordinates {
     //     Self::step_iter::<OUTER_BITMAP_INDEX>(extracted_range)
     // }
 
-    fn outer_pos_iter(range: RangeInclusive<Position>, current: Position) -> Self::PositionIter {
-        let clamped_range = range.clamp_range::<Self, OUTER_POS>(current);
-        Self::step_iter::<OUTER_POS>(clamped_range)
-    }
+    // fn outer_pos_iter(range: RangeInclusive<Position>, current: Position) -> Self::PositionIter {
+    //     let clamped_range = range.clamp_range::<Self, OUTER_POS>(current);
+    //     Self::step_iter::<OUTER_POS>(clamped_range)
+    // }
 
     // fn inner_pos_iter(range: RangeInclusive<Position>, current: Position) -> Self::PositionIter {
     //     let clamped_range = range.clamp_range::<Self, INNER_POS>(current);
