@@ -1,4 +1,4 @@
-use crate::quantities::{InnerPos, OuterBitmapIndex, OuterPos, Pos2, PositionRange};
+use crate::quantities::{InnerPos, OuterBitmapIndex, OuterPos, PositionRange};
 use crate::{
     axis::leg::leg_coordinates::LegCoordinates,
     quantities::{Position, INNER_POS, OUTER_BITMAP_INDEX, OUTER_POS},
@@ -14,7 +14,7 @@ pub trait LegIterator: LegCoordinates {
     /// Normalize last and limit positions into a RangeInclusive struct.
     ///
     /// In RangeInclusive, start is always the smaller value.
-    fn get_range(last_position: Pos2, limit: Pos2) -> RangeInclusive<Pos2>;
+    fn get_range(last_position: Position, limit: Position) -> RangeInclusive<Position>;
 
     fn step_iter<const BITS: u16>(
         range: RangeInclusive<Position>,

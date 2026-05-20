@@ -1,10 +1,10 @@
 use crate::{
     axis::leg::{leg_coordinates::LegCoordinates, Quote},
-    quantities::{bits_layout::BitsLayout, Pos2, Position},
+    quantities::{bits_layout::BitsLayout, Position},
 };
 
 impl LegCoordinates for Quote {
-    fn in_region(last_position: Pos2, position: Pos2) -> bool {
+    fn in_region(last_position: Position, position: Position) -> bool {
         position >= last_position
     }
 

@@ -1,10 +1,10 @@
 use crate::axis::leg::{leg_iterator::LegIterator, Base};
 use crate::quantities::bits_layout::BitsLayout;
-use crate::quantities::{Pos2, Position};
+use crate::quantities::Position;
 use core::ops::RangeInclusive;
 
 impl LegIterator for Base {
-    fn get_range(last_position: Pos2, limit: Pos2) -> RangeInclusive<Pos2> {
+    fn get_range(last_position: Position, limit: Position) -> RangeInclusive<Position> {
         limit..=last_position
     }
 

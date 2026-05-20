@@ -6,7 +6,7 @@ use crate::{
         update::{update_marker::UpdateMarker, Increase},
     },
     goblin_error::GoblinError,
-    quantities::{BaseLots, Position, QuantityOps, Ticks, INNER_POS},
+    quantities::{BaseLots, Position, QuantityOps, Ticks, INNER_POS, POS_1},
     require,
     settlement::local_delta::LocalSenderDelta,
     state::{bitmap::Bitmap, resting_order::preimage::RestingOrderPreimage, Preimage},
@@ -20,7 +20,7 @@ impl UpdateMarker for Increase {
         market_and_key: &MarketAndKey<M, B, Q>,
         position: Position,
         base_lots: BaseLots,
-        _inner_bitmap_state: &mut Bitmap<INNER_POS>,
+        inner_bitmap_state: &mut Bitmap<POS_1, INNER_POS>,
     ) -> Result<(), GoblinError>
     where
         M: MarketMarker,

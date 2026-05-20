@@ -1,7 +1,7 @@
 use crate::{
     axis::{leg::SamePair, market::market_marker::MarketMarker, token::token_marker::TokenMarker},
     matching::region::make_region::MakeRegion,
-    quantities::{OuterPos, Position, SafePosition, INNER_POS, OUTER_POS, POS_0, POS_1},
+    quantities::{OuterPos, Pos2, Position, SafePosition, INNER_POS, OUTER_POS, POS_0, POS_1},
     state::{
         bitmap::{preimage::BitmapPreimage, Bitmap},
         MarketPreimage, Preimage, SlotKey,

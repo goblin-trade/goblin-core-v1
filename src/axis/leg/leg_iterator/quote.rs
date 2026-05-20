@@ -1,11 +1,11 @@
 use crate::{
     axis::leg::{leg_iterator::LegIterator, Quote},
-    quantities::{bits_layout::BitsLayout, Pos2, Position},
+    quantities::{bits_layout::BitsLayout, Position},
 };
 use core::ops::RangeInclusive;
 
 impl LegIterator for Quote {
-    fn get_range(last_position: Pos2, limit: Pos2) -> RangeInclusive<Pos2> {
+    fn get_range(last_position: Position, limit: Position) -> RangeInclusive<Position> {
         last_position..=limit
     }
 

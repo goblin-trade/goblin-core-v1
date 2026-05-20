@@ -20,7 +20,7 @@ pub fn ix_make<M, B, Q>(
     market_and_key: &MarketAndKey<M, B, Q>,
     market_state: &mut MarketState,
     pos_1: SafePosition<POS_1>,
-    inner_bitmap_state: &mut Bitmap<INNER_POS>,
+    inner_bitmap_state: &mut Bitmap<POS_1, INNER_POS>,
 ) -> Result<(), GoblinError>
 where
     M: MarketMarker,

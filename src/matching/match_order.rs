@@ -6,7 +6,7 @@ use crate::{
     },
     goblin_error::GoblinError,
     matching::match_iterator::{match_iterator, RestingOrderEntry},
-    quantities::{Pos2, Position, QuantityOps, SafePosition, Ticks, POS_2},
+    quantities::{Position, QuantityOps, Ticks},
     require,
     settlement::local_delta::LocalDelta,
     state::MarketState,
@@ -26,7 +26,7 @@ pub fn match_order<M, B, Q, In>(
     market_state: &mut MarketState,
     num_lots: In::Lots,
     min_lots_to_fill: In::Lots,
-    limit: Pos2,
+    limit: Position,
 ) -> Result<(), GoblinError>
 where
     M: MarketMarker,

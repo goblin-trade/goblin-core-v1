@@ -7,7 +7,7 @@ use crate::{
     goblin_error::GoblinError,
     instructions::update::process_update_cases,
     matching::region::make_region::MakeRegion,
-    quantities::{BaseLots, Position, INNER_POS},
+    quantities::{BaseLots, Position, INNER_POS, POS_1},
     require,
     settlement::local_delta::LocalDelta,
     state::bitmap::Bitmap,
@@ -20,7 +20,7 @@ pub fn ix_update<M, B, Q>(
     market_and_key: &MarketAndKey<M, B, Q>,
     position: Position,
     region: MakeRegion,
-    inner_bitmap_state: &mut Bitmap<INNER_POS>,
+    inner_bitmap_state: &mut Bitmap<POS_1, INNER_POS>,
     base_lots: BaseLots,
     update_enum: UpdateEnum,
 ) -> Result<(), GoblinError>

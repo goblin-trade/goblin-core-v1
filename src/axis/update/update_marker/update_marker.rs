@@ -5,7 +5,7 @@ use crate::{
         token::token_marker::TokenMarker,
     },
     goblin_error::GoblinError,
-    quantities::{BaseLots, Position, INNER_POS},
+    quantities::{BaseLots, Position, INNER_POS, POS_1},
     settlement::local_delta::LocalSenderDelta,
     state::bitmap::Bitmap,
     types::Address,
@@ -16,9 +16,9 @@ pub trait UpdateMarker {
         msg_sender: &Address,
         local_sender_delta: &mut LocalSenderDelta,
         market_and_key: &MarketAndKey<M, B, Q>,
-        position_2: Position,
+        position: Position,
         base_lots: BaseLots,
-        inner_bitmap_state: &mut Bitmap<INNER_POS>,
+        inner_bitmap_state: &mut Bitmap<POS_1, INNER_POS>,
     ) -> Result<(), GoblinError>
     where
         M: MarketMarker,

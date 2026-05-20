@@ -9,7 +9,7 @@ use crate::{
         process_open::process_open, validate_open_in_spread::validate_open_in_spread,
     },
     matching::region::make_region::MakeRegion,
-    quantities::{BaseLots, InnerPos, Position, INNER_POS},
+    quantities::{BaseLots, InnerPos, Position, INNER_POS, POS_1},
     require,
     settlement::local_delta::LocalDelta,
     state::{bitmap::Bitmap, MarketState},
@@ -23,7 +23,7 @@ pub fn ix_open<M, B, Q>(
     market_state: &mut MarketState,
     position_2: Position,
     region_2: MakeRegion,
-    inner_bitmap_state: &mut Bitmap<INNER_POS>,
+    inner_bitmap_state: &mut Bitmap<POS_1, INNER_POS>,
     base_lots: BaseLots,
     leg_enum: LegEnum,
 ) -> Result<(), GoblinError>

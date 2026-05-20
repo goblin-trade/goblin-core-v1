@@ -2,7 +2,7 @@ use crate::{
     axis::leg::leg_matcher::LegMatcher,
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
-    quantities::{Pos2, Position},
+    quantities::Position,
     require,
 };
 
@@ -20,7 +20,7 @@ pub struct TakeHeader<In: LegMatcher> {
     pub min_lots_to_fill: In::Lots,
 
     /// The worst position to be matched against. Stop matching after this price is crossed.
-    pub limit: Pos2,
+    pub limit: Position,
 }
 
 impl<In: LegMatcher> Decodable for TakeHeader<In> {
@@ -51,7 +51,7 @@ impl<In: LegMatcher> Decodable for TakeHeader<In> {
         Ok(Self {
             num_lots,
             min_lots_to_fill,
-            limit: Pos2::new_unchecked(limit),
+            limit,
         })
     }
 }
