@@ -24,9 +24,9 @@ impl BitmapReader<POS_1> for Bitmap<POS_0, OUTER_POS> {
         Q: TokenMarker,
         In: LegMatcher,
     {
-        let outer_bitmap_index_range = range.cast_range::<u64, OUTER_BITMAP_INDEX>();
+        // let outer_bitmap_index_range = range.cast_range::<u64, OUTER_BITMAP_INDEX>();
 
-        In::outer_bitmap_index_iter(outer_bitmap_index_range)
+        In::outer_bitmap_index_iter(range)
             .filter_map(move |outer_bitmap_index| {
                 let pos_0 = SafePosition::<POS_0>::new(outer_bitmap_index);
 
