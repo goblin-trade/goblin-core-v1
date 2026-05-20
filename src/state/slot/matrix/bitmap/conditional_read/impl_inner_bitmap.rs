@@ -1,7 +1,7 @@
 use crate::{
     axis::{leg::SamePair, market::market_marker::MarketMarker, token::token_marker::TokenMarker},
     matching::region::make_region::MakeRegion,
-    quantities::{OuterPos, Pos2, Position, SafePosition, INNER_POS, OUTER_POS, POS_0, POS_1},
+    quantities::{OuterPos, Position, SafePosition, INNER_POS, OUTER_POS, POS_0, POS_1},
     state::{
         bitmap::{preimage::BitmapPreimage, Bitmap},
         MarketPreimage, Preimage, SlotKey,
@@ -27,7 +27,7 @@ impl Bitmap<POS_1, INNER_POS> {
         }
         .hash();
 
-        let region = MakeRegion::new(last_positions, safe_position.position());
+        let region = MakeRegion::new(last_positions, safe_position.into());
 
         let bitmap = if region == MakeRegion::Spread || !outer_bitmap_state.index_active(outer_pos)
         {

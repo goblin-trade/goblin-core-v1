@@ -25,7 +25,7 @@ impl Bitmap<POS_0, OUTER_POS> {
         }
         .hash();
 
-        let region = MakeRegion::new(last_positions, safe_position.position());
+        let region = MakeRegion::new(last_positions, safe_position.into());
 
         let bitmap = if region == MakeRegion::Spread {
             Bitmap::<POS_0, OUTER_POS>::default()

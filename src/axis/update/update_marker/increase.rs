@@ -20,7 +20,7 @@ impl UpdateMarker for Increase {
         market_and_key: &MarketAndKey<M, B, Q>,
         position: Position,
         base_lots: BaseLots,
-        inner_bitmap_state: &mut Bitmap<POS_1, INNER_POS>,
+        _inner_bitmap_state: &mut Bitmap<POS_1, INNER_POS>,
     ) -> Result<(), GoblinError>
     where
         M: MarketMarker,

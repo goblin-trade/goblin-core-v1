@@ -36,7 +36,7 @@ where
     let range = In::get_range(last_position, limit);
     Bitmap::<POS_1, INNER_POS>::active_iterator::<M, B, Q, In>(market_key, range).map(
         move |pos_2| {
-            let position = pos_2.position();
+            let position = pos_2.into();
 
             let preimage = RestingOrderPreimage::<M, B, Q> {
                 market_key,

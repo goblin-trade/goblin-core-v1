@@ -5,8 +5,8 @@ pub struct SafePosition<const BITS: u16> {
     pub(super) inner: Position,
 }
 
-impl<const BITS: u16> SafePosition<BITS> {
-    pub fn position(&self) -> Position {
-        self.inner
+impl<const BITS: u16> From<SafePosition<BITS>> for Position {
+    fn from(value: SafePosition<BITS>) -> Self {
+        value.inner
     }
 }

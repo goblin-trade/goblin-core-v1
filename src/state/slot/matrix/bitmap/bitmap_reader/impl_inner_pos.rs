@@ -35,7 +35,7 @@ impl BitmapReader<POS_2> for Bitmap<POS_1, INNER_POS> {
                 };
                 let inner_bitmap = preimage.hash().load();
 
-                In::inner_pos_iter(range.clone(), pos_1.position())
+                In::inner_pos_iter(range.clone(), pos_1.into())
                     .filter(move |inner_pos| inner_bitmap.index_active((*inner_pos).into()))
                     .map(move |inner_pos| Pos2::new(pos_1, inner_pos))
             })

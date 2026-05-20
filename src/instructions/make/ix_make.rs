@@ -34,7 +34,7 @@ where
     } = MakeHeader::try_decode(ctx)?;
 
     let pos_2 = SafePosition::<POS_2>::new(pos_1, inner_pos);
-    let position = pos_2.position();
+    let position = pos_2.into();
     let region = MakeRegion::new(&market_state.last_positions, position);
 
     match make_variant {

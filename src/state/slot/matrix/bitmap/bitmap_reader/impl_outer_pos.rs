@@ -33,7 +33,7 @@ impl BitmapReader<POS_1> for Bitmap<POS_0, OUTER_POS> {
                 let outer_bitmap = preimage.hash().load();
 
                 outer_bitmap.is_active().then(|| {
-                    In::outer_pos_iter(range.clone(), pos_0.position())
+                    In::outer_pos_iter(range.clone(), pos_0.into())
                         .filter(move |outer_pos| outer_bitmap.index_active(*outer_pos))
                         .map(move |outer_pos| SafePosition::<POS_1>::new(pos_0, outer_pos))
                 })
