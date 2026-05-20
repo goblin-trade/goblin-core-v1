@@ -3,9 +3,7 @@ use crate::{
         leg::leg_matcher::LegMatcher, market::market_marker::MarketMarker,
         token::token_marker::TokenMarker,
     },
-    quantities::{
-        Pos2, Position, PositionRange, SafePosition, OUTER_BITMAP_INDEX, OUTER_POS, POS_0, POS_1,
-    },
+    quantities::{Position, SafePosition, OUTER_POS, POS_0, POS_1},
     state::{
         bitmap::{bitmap_reader::BitmapReader, preimage::BitmapPreimage, Bitmap},
         MarketPreimage, Preimage, SlotKey,
@@ -24,9 +22,7 @@ impl BitmapReader<POS_1> for Bitmap<POS_0, OUTER_POS> {
         Q: TokenMarker,
         In: LegMatcher,
     {
-        // let outer_bitmap_index_range = range.cast_range::<u64, OUTER_BITMAP_INDEX>();
-
-        In::outer_bitmap_index_iter(range)
+        In::outer_bitmap_index_iter(range.clone())
             .filter_map(move |outer_bitmap_index| {
                 let pos_0 = SafePosition::<POS_0>::new(outer_bitmap_index);
 
@@ -37,10 +33,7 @@ impl BitmapReader<POS_1> for Bitmap<POS_0, OUTER_POS> {
                 let outer_bitmap = preimage.hash().load();
 
                 outer_bitmap.is_active().then(|| {
-                    let clamped_rage = range.clamp_range::<In, OUTER_POS>(pos_0.position());
-                    let inner_pos_range = clamped_rage.cast_range::<u8, OUTER_POS>();
-
-                    In::outer_pos_iter(inner_pos_range)
+                    In::outer_pos_iter(range.clone(), pos_0.position())
                         .filter(move |outer_pos| outer_bitmap.index_active(*outer_pos))
                         .map(move |outer_pos| SafePosition::<POS_1>::new(pos_0, outer_pos))
                 })
