@@ -21,8 +21,8 @@ pub fn ix_open<M, B, Q>(
     local_delta: &mut LocalDelta,
     market_and_key: &MarketAndKey<M, B, Q>,
     market_state: &mut MarketState,
-    position_2: Position,
-    region_2: MakeRegion,
+    position: Position,
+    region: MakeRegion,
     inner_bitmap_state: &mut Bitmap<POS_1, INNER_POS>,
     base_lots: BaseLots,
     leg_enum: LegEnum,
@@ -32,11 +32,11 @@ where
     B: TokenMarker,
     Q: TokenMarker,
 {
-    let inner_pos = InnerPos::from(position_2);
+    let inner_pos = InnerPos::from(position);
     inner_bitmap_state.activate(inner_pos);
 
     // leg_in must match or the order must be opened within the spread region.
-    if let MakeRegion::In(leg_in) = region_2 {
+    if let MakeRegion::In(leg_in) = region {
         require!(leg_in == leg_enum, GoblinError::InvalidOpenPrice);
         require!(
             !inner_bitmap_state.index_active(inner_pos),
@@ -45,10 +45,10 @@ where
     } else {
         match leg_enum {
             LegEnum::Base => {
-                validate_open_in_spread::<Base>(&mut market_state.last_positions, position_2)
+                validate_open_in_spread::<Base>(&mut market_state.last_positions, position)
             }
             LegEnum::Quote => {
-                validate_open_in_spread::<Quote>(&mut market_state.last_positions, position_2)
+                validate_open_in_spread::<Quote>(&mut market_state.last_positions, position)
             }
         }?;
     }
@@ -58,14 +58,14 @@ where
             msg_sender,
             &mut local_delta.local_sender_delta,
             market_and_key,
-            position_2,
+            position,
             base_lots,
         ),
         LegEnum::Quote => process_open::<M, B, Q, Quote>(
             msg_sender,
             &mut local_delta.local_sender_delta,
             market_and_key,
-            position_2,
+            position,
             base_lots,
         ),
     }
