@@ -6,21 +6,22 @@ use crate::{
         update::{update_marker::UpdateMarker, Increase},
     },
     goblin_error::GoblinError,
-    quantities::{BaseLots, Position, QuantityOps, Ticks, INNER_POS, POS_1},
+    instructions::{MakeMutables, PosHeader},
+    quantities::{QuantityOps, Ticks},
     require,
-    settlement::local_delta::LocalSenderDelta,
-    state::{bitmap::Bitmap, resting_order::preimage::RestingOrderPreimage, Preimage},
+    state::{resting_order::preimage::RestingOrderPreimage, Preimage},
     types::{Address, StoreReader},
 };
 
 impl UpdateMarker for Increase {
-    fn process_update<M, B, Q, In>(
+    fn process_update<'a, M, B, Q, In>(
+        make_mutables: &mut MakeMutables<'a>,
         msg_sender: &Address,
-        local_sender_delta: &mut LocalSenderDelta,
         market_and_key: &MarketAndKey<M, B, Q>,
-        position: Position,
-        base_lots: BaseLots,
-        _inner_bitmap_state: &mut Bitmap<POS_1, INNER_POS>,
+        PosHeader {
+            position,
+            base_lots,
+        }: PosHeader,
     ) -> Result<(), GoblinError>
     where
         M: MarketMarker,
@@ -50,11 +51,14 @@ impl UpdateMarker for Increase {
         let base_lot_size = Base::get(&market_and_key.market.lot_size_pair);
         let price = Ticks::from(position);
 
-        local_sender_delta.add_resting_order_deposit::<In>(
-            base_lots,
-            base_lot_size,
-            market_and_key.market.tick_size,
-            price,
-        )
+        make_mutables
+            .local_delta
+            .local_sender_delta
+            .add_resting_order_deposit::<In>(
+                base_lots,
+                base_lot_size,
+                market_and_key.market.tick_size,
+                price,
+            )
     }
 }

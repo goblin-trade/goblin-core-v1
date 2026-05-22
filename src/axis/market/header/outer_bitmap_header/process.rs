@@ -47,8 +47,8 @@ impl OuterBitmapHeader {
 
         for _ in 0..inner_bitmap_count {
             InnerBitmapHeader::process(
-                msg_sender,
                 ctx,
+                msg_sender,
                 local_delta,
                 market_and_key,
                 market_state,

@@ -5,20 +5,16 @@ use crate::{
         token::token_marker::TokenMarker,
     },
     goblin_error::GoblinError,
-    quantities::{BaseLots, Position, INNER_POS, POS_1},
-    settlement::local_delta::LocalSenderDelta,
-    state::bitmap::Bitmap,
+    instructions::{MakeMutables, PosHeader},
     types::Address,
 };
 
 pub trait UpdateMarker {
-    fn process_update<M, B, Q, In>(
+    fn process_update<'a, M, B, Q, In>(
+        make_mutables: &mut MakeMutables<'a>,
         msg_sender: &Address,
-        local_sender_delta: &mut LocalSenderDelta,
         market_and_key: &MarketAndKey<M, B, Q>,
-        position: Position,
-        base_lots: BaseLots,
-        inner_bitmap_state: &mut Bitmap<POS_1, INNER_POS>,
+        pos_header: PosHeader,
     ) -> Result<(), GoblinError>
     where
         M: MarketMarker,

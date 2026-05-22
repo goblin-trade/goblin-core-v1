@@ -5,6 +5,7 @@ use crate::{
         token::token_marker::TokenMarker,
     },
     goblin_error::GoblinError,
+    instructions::{MakeMutables, PosHeader},
     matching::region::make_region::MakeRegion,
     quantities::{BaseLots, InnerPos, Position, INNER_POS, POS_1},
     require,
@@ -13,21 +14,19 @@ use crate::{
     types::Address,
 };
 
-pub fn ix_limit<M, B, Q>(
-    msg_sender: &Address,
-    local_delta: &mut LocalDelta,
-    market_and_key: &MarketAndKey<M, B, Q>,
-    market_state: &mut MarketState,
-    position: Position,
-    region: MakeRegion,
-    inner_bitmap_state: &mut Bitmap<POS_1, INNER_POS>,
-    base_lots: BaseLots,
-    leg_enum: LegEnum,
-) -> Result<(), GoblinError>
-where
-    M: MarketMarker,
-    B: TokenMarker,
-    Q: TokenMarker,
-{
-    Ok(())
+impl<'a> MakeMutables<'a> {
+    pub fn ix_limit<M, B, Q>(
+        &mut self,
+        msg_sender: &Address,
+        market_and_key: &MarketAndKey<M, B, Q>,
+        pos_header: PosHeader,
+        leg_enum: LegEnum,
+    ) -> Result<(), GoblinError>
+    where
+        M: MarketMarker,
+        B: TokenMarker,
+        Q: TokenMarker,
+    {
+        Ok(())
+    }
 }

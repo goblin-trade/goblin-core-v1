@@ -5,68 +5,60 @@ use crate::{
         token::token_marker::TokenMarker,
     },
     goblin_error::GoblinError,
-    instructions::open::{
-        process_open::process_open, validate_open_in_spread::validate_open_in_spread,
+    instructions::{
+        open::validate_open_in_spread::validate_open_in_spread, MakeMutables, PosHeader,
     },
     matching::region::make_region::MakeRegion,
-    quantities::{BaseLots, InnerPos, Position, INNER_POS, POS_1},
+    quantities::InnerPos,
     require,
-    settlement::local_delta::LocalDelta,
-    state::{bitmap::Bitmap, MarketState},
     types::Address,
 };
 
-pub fn ix_open<M, B, Q>(
-    msg_sender: &Address,
-    local_delta: &mut LocalDelta,
-    market_and_key: &MarketAndKey<M, B, Q>,
-    market_state: &mut MarketState,
-    position: Position,
-    region: MakeRegion,
-    inner_bitmap_state: &mut Bitmap<POS_1, INNER_POS>,
-    base_lots: BaseLots,
-    leg_enum: LegEnum,
-) -> Result<(), GoblinError>
-where
-    M: MarketMarker,
-    B: TokenMarker,
-    Q: TokenMarker,
-{
-    let inner_pos = InnerPos::from(position);
-    inner_bitmap_state.activate(inner_pos);
+impl<'a> MakeMutables<'a> {
+    pub fn ix_open<M, B, Q>(
+        &mut self,
+        msg_sender: &Address,
+        market_and_key: &MarketAndKey<M, B, Q>,
+        pos_header: PosHeader,
+        leg_enum: LegEnum,
+    ) -> Result<(), GoblinError>
+    where
+        M: MarketMarker,
+        B: TokenMarker,
+        Q: TokenMarker,
+    {
+        let position = pos_header.position;
+        let region = MakeRegion::new(&self.market_state.last_positions, position);
 
-    // leg_in must match or the order must be opened within the spread region.
-    if let MakeRegion::In(leg_in) = region {
-        require!(leg_in == leg_enum, GoblinError::InvalidOpenPrice);
-        require!(
-            !inner_bitmap_state.index_active(inner_pos),
-            GoblinError::PositionOccupied
-        );
-    } else {
+        let inner_pos = InnerPos::from(position);
+
+        self.inner_bitmap_state.activate(inner_pos);
+
+        // leg_in must match or the order must be opened within the spread region.
+        if let MakeRegion::In(leg_in) = region {
+            require!(leg_in == leg_enum, GoblinError::InvalidOpenPrice);
+            require!(
+                !self.inner_bitmap_state.index_active(inner_pos),
+                GoblinError::PositionOccupied
+            );
+        } else {
+            match leg_enum {
+                LegEnum::Base => {
+                    validate_open_in_spread::<Base>(&mut self.market_state.last_positions, position)
+                }
+                LegEnum::Quote => validate_open_in_spread::<Quote>(
+                    &mut self.market_state.last_positions,
+                    position,
+                ),
+            }?;
+        }
         match leg_enum {
             LegEnum::Base => {
-                validate_open_in_spread::<Base>(&mut market_state.last_positions, position)
+                self.process_open::<M, B, Q, Base>(msg_sender, market_and_key, pos_header)
             }
             LegEnum::Quote => {
-                validate_open_in_spread::<Quote>(&mut market_state.last_positions, position)
+                self.process_open::<M, B, Q, Quote>(msg_sender, market_and_key, pos_header)
             }
-        }?;
-    }
-
-    match leg_enum {
-        LegEnum::Base => process_open::<M, B, Q, Base>(
-            msg_sender,
-            &mut local_delta.local_sender_delta,
-            market_and_key,
-            position,
-            base_lots,
-        ),
-        LegEnum::Quote => process_open::<M, B, Q, Quote>(
-            msg_sender,
-            &mut local_delta.local_sender_delta,
-            market_and_key,
-            position,
-            base_lots,
-        ),
+        }
     }
 }

@@ -5,70 +5,48 @@ use crate::{
     },
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
-    instructions::{limit::ix_limit, make_variant::MakeVariant, open::ix_open, update::ix_update},
-    matching::region::make_region::MakeRegion,
-    quantities::{SafePosition, INNER_POS, POS_1, POS_2},
-    settlement::local_delta::LocalDelta,
-    state::{bitmap::Bitmap, MarketState},
+    instructions::{make_variant::MakeVariant, MakeMutables, PosHeader},
+    quantities::{SafePosition, POS_1, POS_2},
     types::Address,
 };
 
-pub fn ix_make<M, B, Q>(
-    msg_sender: &Address,
-    ctx: &DecodeCtx,
-    local_delta: &mut LocalDelta,
-    market_and_key: &MarketAndKey<M, B, Q>,
-    market_state: &mut MarketState,
-    pos_1: SafePosition<POS_1>,
-    inner_bitmap_state: &mut Bitmap<POS_1, INNER_POS>,
-) -> Result<(), GoblinError>
-where
-    M: MarketMarker,
-    B: TokenMarker,
-    Q: TokenMarker,
-{
-    let MakeHeader {
-        inner_pos,
-        base_lots,
-        make_variant,
-    } = MakeHeader::try_decode(ctx)?;
+impl<'a> MakeMutables<'a> {
+    pub fn ix_make<M, B, Q>(
+        &mut self,
+        ctx: &DecodeCtx,
+        msg_sender: &Address,
+        market_and_key: &MarketAndKey<M, B, Q>,
+        pos_1: SafePosition<POS_1>,
+    ) -> Result<(), GoblinError>
+    where
+        M: MarketMarker,
+        B: TokenMarker,
+        Q: TokenMarker,
+    {
+        let MakeHeader {
+            inner_pos,
+            base_lots,
+            make_variant,
+        } = MakeHeader::try_decode(ctx)?;
 
-    let pos_2 = SafePosition::<POS_2>::new(pos_1, inner_pos);
-    let position = pos_2.into();
-    let region = MakeRegion::new(&market_state.last_positions, position);
+        let pos_2 = SafePosition::<POS_2>::new(pos_1, inner_pos);
+        let position = pos_2.into();
 
-    match make_variant {
-        MakeVariant::Update(update_enum) => ix_update::<M, B, Q>(
-            msg_sender,
-            local_delta,
-            market_and_key,
+        let pos_header = PosHeader {
             position,
-            region,
-            inner_bitmap_state,
             base_lots,
-            update_enum,
-        ),
-        MakeVariant::Open(leg_enum) => ix_open::<M, B, Q>(
-            msg_sender,
-            local_delta,
-            market_and_key,
-            market_state,
-            position,
-            region,
-            inner_bitmap_state,
-            base_lots,
-            leg_enum,
-        ),
-        MakeVariant::Limit(leg_enum) => ix_limit::<M, B, Q>(
-            msg_sender,
-            local_delta,
-            market_and_key,
-            market_state,
-            position,
-            region,
-            inner_bitmap_state,
-            base_lots,
-            leg_enum,
-        ),
+        };
+
+        match make_variant {
+            MakeVariant::Update(update_enum) => {
+                self.ix_update(msg_sender, market_and_key, pos_header, update_enum)
+            }
+            MakeVariant::Open(leg_enum) => {
+                self.ix_open(msg_sender, market_and_key, pos_header, leg_enum)
+            }
+            MakeVariant::Limit(leg_enum) => {
+                self.ix_limit(msg_sender, market_and_key, pos_header, leg_enum)
+            }
+        }
     }
 }

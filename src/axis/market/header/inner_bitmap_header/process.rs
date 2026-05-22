@@ -8,7 +8,7 @@ use crate::{
     },
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
-    instructions::ix_make,
+    instructions::MakeMutables,
     quantities::{SafePosition, INNER_POS, OUTER_POS, POS_0, POS_1},
     settlement::local_delta::LocalDelta,
     state::{bitmap::Bitmap, MarketState},
@@ -17,8 +17,8 @@ use crate::{
 
 impl InnerBitmapHeader {
     pub fn process<M, B, Q>(
-        msg_sender: &Address,
         ctx: &DecodeCtx,
+        msg_sender: &Address,
         local_delta: &mut LocalDelta,
         market_and_key: &MarketAndKey<M, B, Q>,
         market_state: &mut MarketState,
@@ -49,16 +49,14 @@ impl InnerBitmapHeader {
             );
         let inner_bitmap_clone = inner_bitmap_state;
 
+        let make_mutables = &mut MakeMutables {
+            local_delta,
+            market_state,
+            inner_bitmap_state: &mut inner_bitmap_state,
+        };
+
         for _ in 0..update_count {
-            ix_make::<M, B, Q>(
-                msg_sender,
-                ctx,
-                local_delta,
-                market_and_key,
-                market_state,
-                pos_1,
-                &mut inner_bitmap_state,
-            )?;
+            make_mutables.ix_make(ctx, msg_sender, market_and_key, pos_1)?;
         }
 
         inner_bitmap_state.conditional_write(
