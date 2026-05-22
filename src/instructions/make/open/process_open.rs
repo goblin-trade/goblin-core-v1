@@ -1,7 +1,7 @@
 use crate::{
     axis::{
         leg::{leg_matcher::LegMatcher, Base},
-        market::{market_marker::MarketMarker, MarketAndKey},
+        market::{market_marker::MarketMarker, Readables},
         token::token_marker::TokenMarker,
     },
     goblin_error::GoblinError,
@@ -11,14 +11,13 @@ use crate::{
         resting_order::{preimage::RestingOrderPreimage, RestingOrder},
         Preimage,
     },
-    types::{Address, StoreReader},
+    types::StoreReader,
 };
 
 impl<'a> MakeMutables<'a> {
     pub fn process_open<M, B, Q, In>(
         &mut self,
-        msg_sender: &Address,
-        market_and_key: &MarketAndKey<M, B, Q>,
+        readables: &Readables<M, B, Q>,
         PosHeader {
             position,
             base_lots,
@@ -30,6 +29,10 @@ impl<'a> MakeMutables<'a> {
         Q: TokenMarker,
         In: LegMatcher,
     {
+        let Readables {
+            msg_sender,
+            market_and_key,
+        } = *readables;
         let resting_order_key = RestingOrderPreimage {
             market_key: market_and_key.market_key,
             position,

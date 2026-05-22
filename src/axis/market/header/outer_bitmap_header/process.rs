@@ -5,7 +5,7 @@ use crate::{
                 inner_bitmap_header::InnerBitmapHeader, outer_bitmap_header::OuterBitmapHeader,
             },
             market_marker::MarketMarker,
-            MarketAndKey,
+            Readables,
         },
         token::token_marker::TokenMarker,
     },
@@ -14,16 +14,14 @@ use crate::{
     quantities::{SafePosition, OUTER_POS, POS_0},
     settlement::local_delta::LocalDelta,
     state::{bitmap::Bitmap, MarketState},
-    types::Address,
 };
 
 impl OuterBitmapHeader {
     pub fn process<M, B, Q>(
-        msg_sender: &Address,
         ctx: &DecodeCtx,
         local_delta: &mut LocalDelta,
-        market_and_key: &MarketAndKey<M, B, Q>,
         market_state: &mut MarketState,
+        readables: &Readables<M, B, Q>,
     ) -> Result<(), GoblinError>
     where
         M: MarketMarker,
@@ -39,7 +37,7 @@ impl OuterBitmapHeader {
 
         let (outer_bitmap_key, mut outer_bitmap_state) =
             Bitmap::<POS_0, OUTER_POS>::conditional_read(
-                market_and_key.market_key,
+                readables.market_and_key.market_key,
                 &market_state.last_positions,
                 pos_0,
             );
@@ -48,12 +46,11 @@ impl OuterBitmapHeader {
         for _ in 0..inner_bitmap_count {
             InnerBitmapHeader::process(
                 ctx,
-                msg_sender,
                 local_delta,
-                market_and_key,
                 market_state,
-                pos_0,
                 &mut outer_bitmap_state,
+                readables,
+                pos_0,
             )?;
         }
 

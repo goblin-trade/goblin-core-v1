@@ -1,8 +1,7 @@
 use crate::{
     axis::{
         market::{
-            header::inner_bitmap_header::InnerBitmapHeader, market_marker::MarketMarker,
-            MarketAndKey,
+            header::inner_bitmap_header::InnerBitmapHeader, market_marker::MarketMarker, Readables,
         },
         token::token_marker::TokenMarker,
     },
@@ -12,18 +11,16 @@ use crate::{
     quantities::{SafePosition, INNER_POS, OUTER_POS, POS_0, POS_1},
     settlement::local_delta::LocalDelta,
     state::{bitmap::Bitmap, MarketState},
-    types::Address,
 };
 
 impl InnerBitmapHeader {
     pub fn process<M, B, Q>(
         ctx: &DecodeCtx,
-        msg_sender: &Address,
         local_delta: &mut LocalDelta,
-        market_and_key: &MarketAndKey<M, B, Q>,
         market_state: &mut MarketState,
-        pos_0: SafePosition<POS_0>,
         outer_bitmap_state: &mut Bitmap<POS_0, OUTER_POS>,
+        readables: &Readables<M, B, Q>,
+        pos_0: SafePosition<POS_0>,
     ) -> Result<(), GoblinError>
     where
         M: MarketMarker,
@@ -37,11 +34,9 @@ impl InnerBitmapHeader {
 
         let pos_1 = SafePosition::<POS_1>::new(pos_0, outer_pos);
 
-        // the position used in key should hold both OuterBitmapIndex and OuterPos.
-        // I.e. POS_1 and not INNER_POS
         let (inner_bitmap_key, mut inner_bitmap_state) =
             Bitmap::<POS_1, INNER_POS>::conditional_read(
-                market_and_key.market_key,
+                readables.market_and_key.market_key,
                 &market_state.last_positions,
                 pos_1,
                 outer_bitmap_state,
@@ -56,7 +51,7 @@ impl InnerBitmapHeader {
         };
 
         for _ in 0..update_count {
-            make_mutables.ix_make(ctx, msg_sender, market_and_key, pos_1)?;
+            make_mutables.ix_make(ctx, readables, pos_1)?;
         }
 
         inner_bitmap_state.conditional_write(

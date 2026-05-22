@@ -1,7 +1,7 @@
 use crate::{
     axis::{
         leg::{leg_matcher::LegMatcher, Base},
-        market::{market_marker::MarketMarker, MarketAndKey},
+        market::{market_marker::MarketMarker, Readables},
         token::token_marker::TokenMarker,
         update::{update_marker::UpdateMarker, Decrease},
     },
@@ -10,14 +10,13 @@ use crate::{
     quantities::Ticks,
     require,
     state::{resting_order::preimage::RestingOrderPreimage, Preimage},
-    types::{Address, StoreReader},
+    types::StoreReader,
 };
 
 impl UpdateMarker for Decrease {
     fn process_update<'a, M, B, Q, In>(
         make_mutables: &mut MakeMutables<'a>,
-        msg_sender: &Address,
-        market_and_key: &MarketAndKey<M, B, Q>,
+        readables: &Readables<M, B, Q>,
         PosHeader {
             position,
             base_lots,
@@ -29,6 +28,10 @@ impl UpdateMarker for Decrease {
         Q: TokenMarker,
         In: LegMatcher,
     {
+        let Readables {
+            msg_sender,
+            market_and_key,
+        } = *readables;
         let resting_order_key = RestingOrderPreimage {
             market_key: market_and_key.market_key,
             position,

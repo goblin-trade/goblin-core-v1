@@ -1,7 +1,7 @@
 use crate::{
     axis::{
         leg::{Base, LegEnum, Quote},
-        market::{market_marker::MarketMarker, MarketAndKey},
+        market::{market_marker::MarketMarker, Readables},
         token::token_marker::TokenMarker,
     },
     goblin_error::GoblinError,
@@ -11,14 +11,12 @@ use crate::{
     matching::region::make_region::MakeRegion,
     quantities::InnerPos,
     require,
-    types::Address,
 };
 
 impl<'a> MakeMutables<'a> {
     pub fn ix_open<M, B, Q>(
         &mut self,
-        msg_sender: &Address,
-        market_and_key: &MarketAndKey<M, B, Q>,
+        readables: &Readables<M, B, Q>,
         pos_header: PosHeader,
         leg_enum: LegEnum,
     ) -> Result<(), GoblinError>
@@ -53,12 +51,8 @@ impl<'a> MakeMutables<'a> {
             }?;
         }
         match leg_enum {
-            LegEnum::Base => {
-                self.process_open::<M, B, Q, Base>(msg_sender, market_and_key, pos_header)
-            }
-            LegEnum::Quote => {
-                self.process_open::<M, B, Q, Quote>(msg_sender, market_and_key, pos_header)
-            }
+            LegEnum::Base => self.process_open::<M, B, Q, Base>(readables, pos_header),
+            LegEnum::Quote => self.process_open::<M, B, Q, Quote>(readables, pos_header),
         }
     }
 }
