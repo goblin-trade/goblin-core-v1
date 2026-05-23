@@ -2,6 +2,7 @@ use crate::{
     axis::{
         market::{
             header::inner_bitmap_header::InnerBitmapHeader, market_marker::MarketMarker, Readables,
+            Writables,
         },
         token::token_marker::TokenMarker,
     },
@@ -16,8 +17,7 @@ use crate::{
 impl InnerBitmapHeader {
     pub fn process<M, B, Q>(
         ctx: &DecodeCtx,
-        local_delta: &mut LocalDelta,
-        market_state: &mut MarketState,
+        writables: &mut Writables,
         outer_bitmap_state: &mut Bitmap<POS_0, OUTER_POS>,
         readables: &Readables<M, B, Q>,
         pos_0: SafePosition<POS_0>,
