@@ -18,7 +18,7 @@ impl Decodable for MakeHeader {
 
         let make_variant = MakeVariant::from(bytes);
 
-        let base_lots = BaseLots::new(bytes >> 3);
+        let base_lots = BaseLots::new(bytes >> 2);
 
         let header = Self {
             inner_pos,

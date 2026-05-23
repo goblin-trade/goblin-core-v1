@@ -8,8 +8,8 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
     instructions::{
-        limit::ix_limit, make_variant::MakeVariant, open::ix_open::ix_open,
-        update::ix_update::ix_update, MakeReadables, PosHeader,
+        make_variant::MakeVariant, open::ix_open::ix_open, update::ix_update::ix_update,
+        MakeReadables, PosHeader,
     },
     quantities::{Pos2, SafePosition, POS_1},
     state::bitmap::alias::InnerBitmap,
@@ -50,9 +50,6 @@ where
         }
         MakeVariant::Open(leg_enum) => {
             ix_open(make_readables, leg_enum, writables, inner_bitmap_state)
-        }
-        MakeVariant::Limit(leg_enum) => {
-            ix_limit(make_readables, leg_enum, writables, inner_bitmap_state)
         }
     }
 }
