@@ -5,7 +5,7 @@ use crate::{
         token::token_marker::TokenMarker,
     },
     goblin_error::GoblinError,
-    instructions::PosHeader,
+    instructions::{MakeReadables, PosHeader},
     matching::region::make_region::MakeRegion,
     quantities::{BaseLots, InnerPos, Position, INNER_POS, POS_1},
     require,
@@ -18,8 +18,7 @@ use crate::{
 };
 
 pub fn ix_limit<M, B, Q>(
-    readables: &Readables<M, B, Q>,
-    pos_header: PosHeader,
+    make_readables: &MakeReadables<M, B, Q>,
     leg_enum: LegEnum,
     writables: &mut Writables,
     inner_bitmap_state: &mut InnerBitmap,

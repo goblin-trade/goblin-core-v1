@@ -5,7 +5,7 @@ use crate::{
         token::token_marker::TokenMarker,
     },
     goblin_error::GoblinError,
-    instructions::PosHeader,
+    instructions::{MakeReadables, PosHeader},
     quantities::Ticks,
     state::{
         resting_order::{preimage::RestingOrderPreimage, RestingOrder},
@@ -15,11 +15,7 @@ use crate::{
 };
 
 pub fn process_open<M, B, Q, In>(
-    readables: &Readables<M, B, Q>,
-    PosHeader {
-        position,
-        base_lots,
-    }: PosHeader,
+    make_readables: &MakeReadables<M, B, Q>,
     writables: &mut Writables,
 ) -> Result<(), GoblinError>
 where
@@ -31,7 +27,13 @@ where
     let Readables {
         msg_sender,
         market_and_key,
-    } = *readables;
+    } = *make_readables.readables;
+
+    let PosHeader {
+        position,
+        base_lots,
+    } = make_readables.pos_header;
+
     let resting_order_key = RestingOrderPreimage {
         market_key: market_and_key.market_key,
         position,

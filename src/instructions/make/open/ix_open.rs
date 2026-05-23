@@ -1,13 +1,13 @@
 use crate::{
     axis::{
         leg::{Base, LegEnum, Quote},
-        market::{market_marker::MarketMarker, Readables, Writables},
+        market::{market_marker::MarketMarker, Writables},
         token::token_marker::TokenMarker,
     },
     goblin_error::GoblinError,
     instructions::{
         open::{process_open::process_open, validate_open_in_spread::validate_open_in_spread},
-        PosHeader,
+        MakeReadables,
     },
     matching::region::make_region::MakeRegion,
     quantities::InnerPos,
@@ -16,8 +16,7 @@ use crate::{
 };
 
 pub fn ix_open<M, B, Q>(
-    readables: &Readables<M, B, Q>,
-    pos_header: PosHeader,
+    make_readables: &MakeReadables<M, B, Q>,
     leg_enum: LegEnum,
     writables: &mut Writables,
     inner_bitmap_state: &mut InnerBitmap,
@@ -27,7 +26,7 @@ where
     B: TokenMarker,
     Q: TokenMarker,
 {
-    let position = pos_header.position;
+    let position = make_readables.pos_header.position;
     let region = MakeRegion::new(&writables.market_state.last_positions, position);
 
     let inner_pos = InnerPos::from(position);
@@ -54,7 +53,7 @@ where
         }?;
     }
     match leg_enum {
-        LegEnum::Base => process_open::<M, B, Q, Base>(readables, pos_header, writables),
-        LegEnum::Quote => process_open::<M, B, Q, Quote>(readables, pos_header, writables),
+        LegEnum::Base => process_open::<M, B, Q, Base>(make_readables, writables),
+        LegEnum::Quote => process_open::<M, B, Q, Quote>(make_readables, writables),
     }
 }

@@ -1,18 +1,17 @@
 use crate::{
     axis::{
         leg::leg_matcher::LegMatcher,
-        market::{market_marker::MarketMarker, Readables, Writables},
+        market::{market_marker::MarketMarker, Writables},
         token::token_marker::TokenMarker,
     },
     goblin_error::GoblinError,
-    instructions::PosHeader,
+    instructions::MakeReadables,
     state::bitmap::alias::InnerBitmap,
 };
 
 pub trait UpdateMarker {
     fn process_update<'a, M, B, Q, In>(
-        readables: &Readables<M, B, Q>,
-        pos_header: PosHeader,
+        make_readables: &MakeReadables<M, B, Q>,
         writables: &mut Writables,
         inner_bitmap_state: &mut InnerBitmap,
     ) -> Result<(), GoblinError>

@@ -6,7 +6,7 @@ use crate::{
         update::{update_marker::UpdateMarker, Decrease},
     },
     goblin_error::GoblinError,
-    instructions::PosHeader,
+    instructions::{MakeReadables, PosHeader},
     quantities::Ticks,
     require,
     state::{bitmap::alias::InnerBitmap, resting_order::preimage::RestingOrderPreimage, Preimage},
@@ -15,11 +15,7 @@ use crate::{
 
 impl UpdateMarker for Decrease {
     fn process_update<'a, M, B, Q, In>(
-        readables: &Readables<M, B, Q>,
-        PosHeader {
-            position,
-            base_lots,
-        }: PosHeader,
+        make_readables: &MakeReadables<M, B, Q>,
         writables: &mut Writables,
         inner_bitmap_state: &mut InnerBitmap,
     ) -> Result<(), GoblinError>
@@ -32,7 +28,13 @@ impl UpdateMarker for Decrease {
         let Readables {
             msg_sender,
             market_and_key,
-        } = *readables;
+        } = *make_readables.readables;
+
+        let PosHeader {
+            position,
+            base_lots,
+        } = make_readables.pos_header;
+
         let resting_order_key = RestingOrderPreimage {
             market_key: market_and_key.market_key,
             position,
