@@ -5,12 +5,12 @@ use crate::{
         update::UpdateEnum,
     },
     goblin_error::GoblinError,
-    instructions::{MakeMutables, PosHeader},
+    instructions::{MakeWritables, PosHeader},
     matching::region::make_region::MakeRegion,
     require,
 };
 
-impl<'a> MakeMutables<'a> {
+impl<'a> MakeWritables<'a> {
     pub fn ix_update<M, B, Q>(
         &mut self,
         readables: &Readables<M, B, Q>,

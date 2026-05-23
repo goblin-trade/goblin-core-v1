@@ -7,7 +7,7 @@ use crate::{
     },
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
-    instructions::MakeMutables,
+    instructions::MakeWritables,
     quantities::{SafePosition, INNER_POS, OUTER_POS, POS_0, POS_1},
     settlement::local_delta::LocalDelta,
     state::{bitmap::Bitmap, MarketState},
@@ -44,7 +44,7 @@ impl InnerBitmapHeader {
             );
         let inner_bitmap_clone = inner_bitmap_state;
 
-        let make_mutables = &mut MakeMutables {
+        let make_mutables = &mut MakeWritables {
             local_delta,
             market_state,
             inner_bitmap_state: &mut inner_bitmap_state,

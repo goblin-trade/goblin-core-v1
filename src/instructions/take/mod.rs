@@ -1,4 +1,5 @@
 pub mod ix_take;
 pub use ix_take::*;
 
-mod take_header;
+pub mod take_header;
+pub use take_header::*;

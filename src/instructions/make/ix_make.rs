@@ -5,11 +5,11 @@ use crate::{
     },
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
-    instructions::{make_variant::MakeVariant, MakeMutables, PosHeader},
+    instructions::{make_variant::MakeVariant, MakeWritables, PosHeader},
     quantities::{SafePosition, POS_1, POS_2},
 };
 
-impl<'a> MakeMutables<'a> {
+impl<'a> MakeWritables<'a> {
     pub fn ix_make<M, B, Q>(
         &mut self,
         ctx: &DecodeCtx,

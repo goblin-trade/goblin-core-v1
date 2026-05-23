@@ -5,7 +5,7 @@ use crate::{
         token::token_marker::TokenMarker,
     },
     goblin_error::GoblinError,
-    instructions::{MakeMutables, PosHeader},
+    instructions::{MakeWritables, PosHeader},
     quantities::Ticks,
     state::{
         resting_order::{preimage::RestingOrderPreimage, RestingOrder},
@@ -14,7 +14,7 @@ use crate::{
     types::StoreReader,
 };
 
-impl<'a> MakeMutables<'a> {
+impl<'a> MakeWritables<'a> {
     pub fn process_open<M, B, Q, In>(
         &mut self,
         readables: &Readables<M, B, Q>,

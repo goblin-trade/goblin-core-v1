@@ -5,12 +5,12 @@ use crate::{
         token::token_marker::TokenMarker,
     },
     goblin_error::GoblinError,
-    instructions::{MakeMutables, PosHeader},
+    instructions::{MakeWritables, PosHeader},
 };
 
 pub trait UpdateMarker {
     fn process_update<'a, M, B, Q, In>(
-        make_mutables: &mut MakeMutables<'a>,
+        make_mutables: &mut MakeWritables<'a>,
         readables: &Readables<M, B, Q>,
         pos_header: PosHeader,
     ) -> Result<(), GoblinError>

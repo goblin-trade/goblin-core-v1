@@ -13,6 +13,9 @@ pub use process_market::*;
 pub mod readables;
 pub use readables::*;
 
+pub mod writables;
+pub use writables::*;
+
 // Submodules
 pub mod header;
 pub mod market_counts;

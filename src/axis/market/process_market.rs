@@ -10,7 +10,7 @@ use crate::{
                 },
                 MarketMarker,
             },
-            readables, Readables,
+            Readables, Writables,
         },
         token::token_marker::TokenMarker,
     },
@@ -33,24 +33,27 @@ where
     HardcodedMarketIndex<B, Q>: HardcodedMarkets<B, Q>,
 {
     let market_header = MarketHeader::<M, B, Q>::try_decode(ctx)?;
-
-    let market_locator = M::MarketLocator::<B, Q>::decode_locator(ctx, erc20_list)?;
-    let market_and_key = market_locator.locate_market()?;
-
-    let mut market_state = market_and_key.market_key.load();
-
     if market_header.decode_deposit_amounts {
         delta.local.deposits.set_deposits::<B, Q>(ctx)?;
     }
 
-    market_header.execute_takes(ctx, &mut delta.local, market_and_key, &mut market_state)?;
+    let market_locator = M::MarketLocator::<B, Q>::decode_locator(ctx, erc20_list)?;
+    let market_and_key = market_locator.locate_market()?;
+
+    let market_state = &mut market_and_key.market_key.load();
 
     let readables = &Readables {
         msg_sender,
         market_and_key,
     };
 
-    market_header.execute_makes(ctx, &mut delta.local, &mut market_state, readables)?;
+    let writables = &mut Writables {
+        local_delta: &mut delta.local,
+        market_state,
+    };
+
+    market_header.execute_takes(ctx, writables, readables)?;
+    market_header.execute_makes(ctx, &mut delta.local, market_state, readables)?;
 
     // Reset local delta for reuse
     delta.local.deposits.reset::<B, Q>();

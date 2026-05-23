@@ -6,14 +6,14 @@ use crate::{
     },
     goblin_error::GoblinError,
     instructions::{
-        open::validate_open_in_spread::validate_open_in_spread, MakeMutables, PosHeader,
+        open::validate_open_in_spread::validate_open_in_spread, MakeWritables, PosHeader,
     },
     matching::region::make_region::MakeRegion,
     quantities::InnerPos,
     require,
 };
 
-impl<'a> MakeMutables<'a> {
+impl<'a> MakeWritables<'a> {
     pub fn ix_open<M, B, Q>(
         &mut self,
         readables: &Readables<M, B, Q>,

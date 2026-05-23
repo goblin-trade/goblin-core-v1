@@ -6,10 +6,10 @@ use crate::{
         update::{update_marker::UpdateMarker, Decrease, Increase, UpdateEnum},
     },
     goblin_error::GoblinError,
-    instructions::{MakeMutables, PosHeader},
+    instructions::{MakeWritables, PosHeader},
 };
 
-impl<'a> MakeMutables<'a> {
+impl<'a> MakeWritables<'a> {
     pub(super) fn process_update_cases<M, B, Q>(
         &mut self,
         readables: &Readables<M, B, Q>,

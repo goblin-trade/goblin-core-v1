@@ -1,15 +1,14 @@
 use crate::{
     axis::{
         leg::{leg_matcher::LegMatcher, Base},
-        market::{market_marker::MarketMarker, MarketAndKey},
+        market::{market_marker::MarketMarker, MarketAndKey, Readables, Writables},
         token::token_marker::TokenMarker,
     },
     goblin_error::GoblinError,
+    instructions::TakeHeader,
     matching::match_iterator::{match_iterator, RestingOrderEntry},
-    quantities::{Position, QuantityOps, Ticks},
+    quantities::{QuantityOps, Ticks},
     require,
-    settlement::local_delta::LocalDelta,
-    state::MarketState,
     types::StoreReader,
 };
 
@@ -21,12 +20,13 @@ use crate::{
 /// * All resting orders are popped
 ///
 pub fn match_order<M, B, Q, In>(
-    local_delta: &mut LocalDelta,
-    MarketAndKey { market, market_key }: &MarketAndKey<M, B, Q>,
-    market_state: &mut MarketState,
-    num_lots: In::Lots,
-    min_lots_to_fill: In::Lots,
-    limit: Position,
+    writables: &mut Writables,
+    readables: &Readables<M, B, Q>,
+    TakeHeader {
+        num_lots,
+        min_lots_to_fill,
+        limit,
+    }: TakeHeader<In>,
 ) -> Result<(), GoblinError>
 where
     M: MarketMarker,
@@ -34,7 +34,9 @@ where
     Q: TokenMarker,
     In: LegMatcher,
 {
-    let last_position_mut = In::get_leg_mut(&mut market_state.last_positions);
+    let MarketAndKey { market, market_key } = readables.market_and_key;
+
+    let last_position_mut = In::get_leg_mut(&mut writables.market_state.last_positions);
 
     require!(
         In::in_region(*last_position_mut, limit),
@@ -59,7 +61,12 @@ where
 
         let matched = quote.min(budget);
         budget -= matched;
-        local_delta.add_matched::<In>(resting_order.maker, matched, market.tick_size, price)?;
+        writables.local_delta.add_matched::<In>(
+            resting_order.maker,
+            matched,
+            market.tick_size,
+            price,
+        )?;
 
         if budget == In::MatchingLots::ZERO {
             let residue = quote - matched;
@@ -72,5 +79,7 @@ where
         }
     }
 
-    local_delta.verify_min_match::<In>(min_lots_to_fill, base_lot_size)
+    writables
+        .local_delta
+        .verify_min_match::<In>(min_lots_to_fill, base_lot_size)
 }
