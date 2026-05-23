@@ -1,26 +1,27 @@
 use crate::{
     axis::{
         leg::{leg_matcher::LegMatcher, Base},
-        market::{market_marker::MarketMarker, Readables},
+        market::{market_marker::MarketMarker, Readables, Writables},
         token::token_marker::TokenMarker,
         update::{update_marker::UpdateMarker, Increase},
     },
     goblin_error::GoblinError,
-    instructions::{MakeWritables, PosHeader},
+    instructions::PosHeader,
     quantities::{QuantityOps, Ticks},
     require,
-    state::{resting_order::preimage::RestingOrderPreimage, Preimage},
+    state::{bitmap::alias::InnerBitmap, resting_order::preimage::RestingOrderPreimage, Preimage},
     types::StoreReader,
 };
 
 impl UpdateMarker for Increase {
     fn process_update<'a, M, B, Q, In>(
-        make_mutables: &mut MakeWritables<'a>,
         readables: &Readables<M, B, Q>,
         PosHeader {
             position,
             base_lots,
         }: PosHeader,
+        writables: &mut Writables,
+        _inner_bitmap_state: &mut InnerBitmap,
     ) -> Result<(), GoblinError>
     where
         M: MarketMarker,
@@ -55,7 +56,7 @@ impl UpdateMarker for Increase {
         let base_lot_size = Base::get(&market_and_key.market.lot_size_pair);
         let price = Ticks::from(position);
 
-        make_mutables
+        writables
             .local_delta
             .local_sender_delta
             .add_resting_order_deposit::<In>(

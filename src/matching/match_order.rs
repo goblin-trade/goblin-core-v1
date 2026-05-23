@@ -20,13 +20,13 @@ use crate::{
 /// * All resting orders are popped
 ///
 pub fn match_order<M, B, Q, In>(
-    writables: &mut Writables,
-    readables: &Readables<M, B, Q>,
     TakeHeader {
         num_lots,
         min_lots_to_fill,
         limit,
     }: TakeHeader<In>,
+    readables: &Readables<M, B, Q>,
+    writables: &mut Writables,
 ) -> Result<(), GoblinError>
 where
     M: MarketMarker,

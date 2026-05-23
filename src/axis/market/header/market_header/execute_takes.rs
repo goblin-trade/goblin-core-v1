@@ -20,14 +20,14 @@ where
     pub fn execute_takes(
         &self,
         ctx: &DecodeCtx,
-        writables: &mut Writables,
         readables: &Readables<M, B, Q>,
+        writables: &mut Writables,
     ) -> Result<(), GoblinError> {
         if Base::get(&self.execute_takes) {
-            ix_take::<M, B, Q, Base>(ctx, writables, readables)?;
+            ix_take::<M, B, Q, Base>(ctx, readables, writables)?;
         }
         if Quote::get(&self.execute_takes) {
-            ix_take::<M, B, Q, Quote>(ctx, writables, readables)?;
+            ix_take::<M, B, Q, Quote>(ctx, readables, writables)?;
         }
 
         Ok(())

@@ -20,11 +20,11 @@ where
     pub fn execute_makes(
         &self,
         ctx: &DecodeCtx,
-        writables: &mut Writables,
         readables: &Readables<M, B, Q>,
+        writables: &mut Writables,
     ) -> Result<(), GoblinError> {
         for _ in 0..self.outer_bitmap_count {
-            OuterBitmapHeader::process(ctx, writables, readables)?;
+            OuterBitmapHeader::process(ctx, readables, writables)?;
         }
 
         Ok(())

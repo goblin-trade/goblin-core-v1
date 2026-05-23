@@ -12,8 +12,8 @@ use crate::{
 
 pub fn ix_take<M, B, Q, In>(
     ctx: &DecodeCtx,
-    writables: &mut Writables,
     readables: &Readables<M, B, Q>,
+    writables: &mut Writables,
 ) -> Result<(), GoblinError>
 where
     M: MarketMarker,
@@ -22,5 +22,5 @@ where
     In: LegMatcher,
 {
     let header = TakeHeader::<In>::try_decode(ctx)?;
-    match_order::<M, B, Q, In>(writables, readables, header)
+    match_order::<M, B, Q, In>(header, readables, writables)
 }

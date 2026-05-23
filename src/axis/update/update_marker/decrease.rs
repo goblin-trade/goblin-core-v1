@@ -1,26 +1,27 @@
 use crate::{
     axis::{
         leg::{leg_matcher::LegMatcher, Base},
-        market::{market_marker::MarketMarker, Readables},
+        market::{market_marker::MarketMarker, Readables, Writables},
         token::token_marker::TokenMarker,
         update::{update_marker::UpdateMarker, Decrease},
     },
     goblin_error::GoblinError,
-    instructions::{MakeWritables, PosHeader},
+    instructions::PosHeader,
     quantities::Ticks,
     require,
-    state::{resting_order::preimage::RestingOrderPreimage, Preimage},
+    state::{bitmap::alias::InnerBitmap, resting_order::preimage::RestingOrderPreimage, Preimage},
     types::StoreReader,
 };
 
 impl UpdateMarker for Decrease {
     fn process_update<'a, M, B, Q, In>(
-        make_mutables: &mut MakeWritables<'a>,
         readables: &Readables<M, B, Q>,
         PosHeader {
             position,
             base_lots,
         }: PosHeader,
+        writables: &mut Writables,
+        inner_bitmap_state: &mut InnerBitmap,
     ) -> Result<(), GoblinError>
     where
         M: MarketMarker,
@@ -50,7 +51,7 @@ impl UpdateMarker for Decrease {
 
             base_lots
         } else {
-            make_mutables.inner_bitmap_state.deactivate(position.into());
+            inner_bitmap_state.deactivate(position.into());
 
             resting_order_state.base_lots
         };
@@ -59,7 +60,7 @@ impl UpdateMarker for Decrease {
         let base_lot_size = Base::get(&market_and_key.market.lot_size_pair);
         let price = Ticks::from(position);
 
-        make_mutables
+        writables
             .local_delta
             .local_sender_delta
             .subtract_resting_order_deposit::<In>(

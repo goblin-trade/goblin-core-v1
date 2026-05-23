@@ -8,19 +8,18 @@ use crate::{
     },
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
-    instructions::MakeWritables,
-    quantities::{SafePosition, INNER_POS, OUTER_POS, POS_0, POS_1},
-    settlement::local_delta::LocalDelta,
-    state::{bitmap::Bitmap, MarketState},
+    instructions::ix_make::ix_make,
+    quantities::{SafePosition, INNER_POS, POS_0, POS_1},
+    state::bitmap::{alias::OuterBitmap, Bitmap},
 };
 
 impl InnerBitmapHeader {
     pub fn process<M, B, Q>(
         ctx: &DecodeCtx,
-        writables: &mut Writables,
-        outer_bitmap_state: &mut Bitmap<POS_0, OUTER_POS>,
         readables: &Readables<M, B, Q>,
         pos_0: SafePosition<POS_0>,
+        writables: &mut Writables,
+        outer_bitmap_state: &mut OuterBitmap,
     ) -> Result<(), GoblinError>
     where
         M: MarketMarker,
@@ -37,28 +36,22 @@ impl InnerBitmapHeader {
         let (inner_bitmap_key, mut inner_bitmap_state) =
             Bitmap::<POS_1, INNER_POS>::conditional_read(
                 readables.market_and_key.market_key,
-                &market_state.last_positions,
+                &writables.market_state.last_positions,
                 pos_1,
                 outer_bitmap_state,
                 outer_pos,
             );
         let inner_bitmap_clone = inner_bitmap_state;
 
-        let make_mutables = &mut MakeWritables {
-            local_delta,
-            market_state,
-            inner_bitmap_state: &mut inner_bitmap_state,
-        };
-
         for _ in 0..update_count {
-            make_mutables.ix_make(ctx, readables, pos_1)?;
+            ix_make(ctx, readables, pos_1, writables, &mut inner_bitmap_state)?;
         }
 
         inner_bitmap_state.conditional_write(
             &inner_bitmap_clone,
             &inner_bitmap_key,
-            outer_bitmap_state,
             outer_pos,
+            outer_bitmap_state,
         );
 
         Ok(())

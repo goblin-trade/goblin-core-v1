@@ -52,8 +52,8 @@ where
         market_state,
     };
 
-    market_header.execute_takes(ctx, writables, readables)?;
-    market_header.execute_makes(ctx, writables, readables)?;
+    market_header.execute_takes(ctx, readables, writables)?;
+    market_header.execute_makes(ctx, readables, writables)?;
 
     // Reset local delta for reuse
     delta.local.deposits.reset::<B, Q>();

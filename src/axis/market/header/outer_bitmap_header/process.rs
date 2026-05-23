@@ -12,15 +12,14 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
     quantities::{SafePosition, OUTER_POS, POS_0},
-    settlement::local_delta::LocalDelta,
-    state::{bitmap::Bitmap, MarketState},
+    state::bitmap::Bitmap,
 };
 
 impl OuterBitmapHeader {
     pub fn process<M, B, Q>(
         ctx: &DecodeCtx,
-        writables: &mut Writables,
         readables: &Readables<M, B, Q>,
+        writables: &mut Writables,
     ) -> Result<(), GoblinError>
     where
         M: MarketMarker,
@@ -43,7 +42,7 @@ impl OuterBitmapHeader {
         let outer_bitmap_clone = outer_bitmap_state;
 
         for _ in 0..inner_bitmap_count {
-            InnerBitmapHeader::process(ctx, writables, &mut outer_bitmap_state, readables, pos_0)?;
+            InnerBitmapHeader::process(ctx, readables, pos_0, writables, &mut outer_bitmap_state)?;
         }
 
         outer_bitmap_state.conditional_write(&outer_bitmap_clone, &outer_bitmap_key);
