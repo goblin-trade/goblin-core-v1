@@ -17,6 +17,9 @@ pub struct LocalSenderDelta {
 
     /// Deposits for opening and increasing resting orders
     pub resting_order_deposits: Pair<QuoteLots, BaseLots>,
+
+    /// Amount unlocked when resting order is reduced
+    pub resting_order_reductions: Pair<QuoteLots, BaseLots>,
 }
 
 impl LocalSenderDelta {
@@ -24,6 +27,7 @@ impl LocalSenderDelta {
         Self {
             taker_delta_pair: Pair::new(MatchedLots::<Base>::zero(), MatchedLots::<Quote>::zero()),
             resting_order_deposits: Pair::new(QuoteLots::ZERO, BaseLots::ZERO),
+            resting_order_reductions: Pair::new(QuoteLots::ZERO, BaseLots::ZERO),
         }
     }
 
@@ -48,8 +52,8 @@ impl LocalSenderDelta {
         price: Ticks,
     ) -> Result<(), GoblinError> {
         let delta = In::maker_deposit(base_lots, base_lot_size, tick_size, price);
-        let deposit = In::get_leg_mut(&mut self.resting_order_deposits);
-        *deposit = deposit.checked_sub(delta).ok_or(GoblinError::Overflow)?;
+        let reduction = In::get_leg_mut(&mut self.resting_order_reductions);
+        *reduction = reduction.checked_add(delta).ok_or(GoblinError::Overflow)?;
         Ok(())
     }
 }

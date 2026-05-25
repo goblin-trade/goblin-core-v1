@@ -11,13 +11,14 @@ use crate::{
 };
 
 pub struct LocalDelta {
+    /// Deposits of the market's token pair
+    pub deposits: Deposits,
+
     /// Delta for msg.sender
     pub local_sender_delta: LocalSenderDelta,
 
     /// Deltas for makers of matched resting orders
     pub local_maker_deltas: LocalMakerDeltas,
-
-    pub deposits: Deposits,
 }
 
 impl LocalDelta {

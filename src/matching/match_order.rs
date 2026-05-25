@@ -57,6 +57,8 @@ where
         *last_position_mut = position;
         let price = Ticks::from(position);
 
+        // TODO cleanup- common struct for base lots, tick size, price
+        // also for matching lots, tick size, price
         let quote = In::matching_lots_maker(resting_order.base_lots, market.tick_size, price);
 
         let matched = quote.min(budget);
