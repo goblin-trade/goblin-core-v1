@@ -1,8 +1,21 @@
+use crate::settlement::ConstZero;
+
 pub struct TakeDelta<I, O>
 where
-    I: Clone + Copy,
-    O: Clone + Copy,
+    I: Clone + Copy + ConstZero,
+    O: Clone + Copy + ConstZero,
 {
-    take_in: I,
-    take_out: O,
+    pub take_in: I,
+    pub take_out: O,
+}
+
+impl<I, O> ConstZero for TakeDelta<I, O>
+where
+    I: Clone + Copy + ConstZero,
+    O: Clone + Copy + ConstZero,
+{
+    const ZEROED: Self = Self {
+        take_in: I::ZEROED,
+        take_out: O::ZEROED,
+    };
 }

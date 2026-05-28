@@ -1,7 +1,19 @@
+use crate::settlement::ConstZero;
+
 pub struct MakeDelta<O>
 where
-    O: Clone + Copy,
+    O: Clone + Copy + ConstZero,
 {
-    increase: O,
-    reduce: O,
+    pub increase: O,
+    pub reduce: O,
+}
+
+impl<O> ConstZero for MakeDelta<O>
+where
+    O: Clone + Copy + ConstZero,
+{
+    const ZEROED: Self = Self {
+        increase: O::ZEROED,
+        reduce: O::ZEROED,
+    };
 }

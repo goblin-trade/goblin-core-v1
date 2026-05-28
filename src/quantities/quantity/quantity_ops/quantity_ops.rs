@@ -1,6 +1,9 @@
 use core::ops::{Add, AddAssign, Sub, SubAssign};
 
-use crate::quantities::{Exp, Quantity};
+use crate::{
+    quantities::{Exp, Quantity},
+    settlement::ConstZero,
+};
 
 /// Blanket trait for all supported Quantity operations
 ///
@@ -46,4 +49,11 @@ where
     fn checked_sub(self, rhs: Self) -> Option<Self> {
         self.inner.checked_sub(rhs.inner).map(Quantity::new)
     }
+}
+
+impl<D> ConstZero for Quantity<D>
+where
+    D: Exp + Copy + PartialEq + Default + PartialOrd + Ord,
+{
+    const ZEROED: Self = Self::ZERO;
 }
