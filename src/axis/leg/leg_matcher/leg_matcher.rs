@@ -8,8 +8,8 @@ use crate::{
         BaseLots, BaseLotsPerBaseUnit, QuantityOps, QuoteLots, QuoteLotsPerBaseUnitPerTick, Ticks,
     },
     settlement::{
-        sender_delta::alias::{SidedSenderDeltaV2, SidedTakeDeltaV2},
-        ConstZero, MatchedLots,
+        sender_delta::{alias::SidedSenderDeltaV2, SidedTakeDeltaV2},
+        CheckedAdd, ConstZero, MatchedLots,
     },
     types::{StoreReader, Tuple},
 };
@@ -44,7 +44,7 @@ pub trait LegMatcher:
     /// * Quote in (Bid) case- MatchingLots = AdjustedQuoteLots, Opposite::MatchingLots = BaseLots
     ///
     /// Use Self::MatchingLots to track amount consumed and Opposite::MatchingLots to get the output
-    type MatchingLots: QuantityOps + ConstZero;
+    type MatchingLots: QuantityOps + ConstZero + CheckedAdd;
 
     /// Obtain MatchingLots from taker amount in
     fn matching_lots_in(

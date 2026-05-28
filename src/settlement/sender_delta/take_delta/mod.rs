@@ -1,5 +1,5 @@
-pub mod sided_take_delta;
+pub mod alias;
 pub mod take_delta;
-pub mod unsided_take_delta;
 
+pub use alias::*;
 pub use take_delta::*;

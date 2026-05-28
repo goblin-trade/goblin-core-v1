@@ -1,7 +1,7 @@
 use crate::{
     axis::leg::{Base, Pair, Quote},
     settlement::{
-        sender_delta::alias::{SidedSenderDeltaV2, SidedTakeDeltaV2},
+        sender_delta::{alias::SidedSenderDeltaV2, SidedTakeDeltaV2},
         ConstZero,
     },
 };

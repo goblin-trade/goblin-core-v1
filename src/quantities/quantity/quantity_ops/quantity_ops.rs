@@ -2,7 +2,7 @@ use core::ops::{Add, AddAssign, Sub, SubAssign};
 
 use crate::{
     quantities::{Exp, Quantity},
-    settlement::ConstZero,
+    settlement::{CheckedAdd, ConstZero},
 };
 
 /// Blanket trait for all supported Quantity operations
@@ -24,7 +24,6 @@ pub trait QuantityOps:
     const ZERO: Self;
     const ONE: Self;
 
-    fn checked_add(self, rhs: Self) -> Option<Self>;
     fn checked_sub(self, rhs: Self) -> Option<Self>;
 }
 
@@ -42,10 +41,6 @@ where
     const ZERO: Self = Self::new(0);
     const ONE: Self = Self::new(1);
 
-    fn checked_add(self, rhs: Self) -> Option<Self> {
-        self.inner.checked_add(rhs.inner).map(Quantity::new)
-    }
-
     fn checked_sub(self, rhs: Self) -> Option<Self> {
         self.inner.checked_sub(rhs.inner).map(Quantity::new)
     }
@@ -56,4 +51,13 @@ where
     D: Exp + Copy + PartialEq + Default + PartialOrd + Ord,
 {
     const ZEROED: Self = Self::ZERO;
+}
+
+impl<D> CheckedAdd for Quantity<D>
+where
+    D: Exp + Copy + PartialEq + Default + PartialOrd + Ord,
+{
+    fn checked_add(self, rhs: Self) -> Option<Self> {
+        self.inner.checked_add(rhs.inner).map(Quantity::new)
+    }
 }

@@ -1,7 +1,7 @@
 use crate::{
     axis::leg::leg_matcher::LegMatcher,
     quantities::UnsidedAtoms,
-    settlement::sender_delta::{MakeDelta, SenderDelta, TakeDelta},
+    settlement::sender_delta::{MakeDelta, SenderDelta},
 };
 
 pub type SidedMakeDeltaV2<In: LegMatcher> = MakeDelta<<In::Opposite as LegMatcher>::MatchingLots>;
