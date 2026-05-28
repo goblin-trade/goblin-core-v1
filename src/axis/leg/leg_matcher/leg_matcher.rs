@@ -7,7 +7,7 @@ use crate::{
     quantities::{
         BaseLots, BaseLotsPerBaseUnit, QuantityOps, QuoteLots, QuoteLotsPerBaseUnitPerTick, Ticks,
     },
-    settlement::MatchedLots,
+    settlement::{ConstZero, MatchedLots},
     types::{StoreReader, Tuple},
 };
 
@@ -21,6 +21,12 @@ pub trait LegMatcher:
     + LegReader
     + StoreReader<Tuple<MatchedLots<Base>, MatchedLots<Quote>, Leg>, Result = MatchedLots<Self>>
     + StoreReader<Tuple<QuoteLots, BaseLots, Leg>, Result = <Self::Opposite as LegQuantities>::Lots>
+// TODO new trait to host StoreReader with In::MatchingLots
+// We can't do it in the same trait due to cyclic dependency problem
+// + StoreReader<
+//     Tuple<SidedSenderDeltaV2<Base>, SidedSenderDeltaV2<Quote>, Leg>,
+//     Result = SidedSenderDeltaV2<In>,
+// >
 {
     /// The opposite side
     /// Opposite of opposite is Self
@@ -34,7 +40,7 @@ pub trait LegMatcher:
     /// * Quote in (Bid) case- MatchingLots = AdjustedQuoteLots, Opposite::MatchingLots = BaseLots
     ///
     /// Use Self::MatchingLots to track amount consumed and Opposite::MatchingLots to get the output
-    type MatchingLots: QuantityOps;
+    type MatchingLots: QuantityOps + ConstZero;
 
     /// Obtain MatchingLots from taker amount in
     fn matching_lots_in(

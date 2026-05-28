@@ -1,13 +1,16 @@
 use crate::{
-    axis::leg::{leg_matcher::LegMatcher, Pair},
+    axis::leg::{leg_matcher::LegMatcher, Base, Leg, Pair, Quote},
     goblin_error::GoblinError,
-    quantities::{BaseLotsPerBaseUnit, DeltaAtoms, QuoteLotsPerBaseUnitPerTick, Ticks},
+    quantities::{
+        BaseLotsPerBaseUnit, DeltaAtoms, QuantityOps, QuoteLotsPerBaseUnitPerTick, Ticks,
+    },
     require,
     settlement::{
         local_delta::{Deposits, LocalMakerDeltas, LocalSenderDelta},
+        sender_delta::alias::{SidedSenderDeltaV2, SidedTakeDeltaV2},
         ConstZero, MatchedLots,
     },
-    types::Address,
+    types::{Address, StoreReader, Tuple},
 };
 
 pub struct LocalDelta {
@@ -31,23 +34,29 @@ impl ConstZero for LocalDelta {
 
 impl LocalDelta {
     /// Add matched lots to taker and maker deltas
-    pub fn add_matched<In: LegMatcher>(
+    pub fn add_matched<In>(
         &mut self,
         maker: Address,
-        taker_in: In::MatchingLots,
+        take_in: In::MatchingLots,
         tick_size: QuoteLotsPerBaseUnitPerTick,
         price: Ticks,
-    ) -> Result<(), GoblinError> {
-        let taker_out = In::matching_lots_out(taker_in, tick_size, price);
-        let matched_lots = MatchedLots {
-            taker_in,
-            taker_out,
-        };
+    ) -> Result<(), GoblinError>
+    where
+        In: LegMatcher
+            + StoreReader<
+                Tuple<SidedSenderDeltaV2<Base>, SidedSenderDeltaV2<Quote>, Leg>,
+                Result = SidedSenderDeltaV2<In>,
+            >,
+    {
+        let take_out = In::matching_lots_out(take_in, tick_size, price);
 
-        let taker_delta = In::get_leg_mut(&mut self.local_sender_delta.taker_delta_pair);
-        taker_delta
-            .checked_add(matched_lots)
-            .ok_or(GoblinError::DeltaOverflow)?;
+        let leg_delta = In::get_leg_mut(&mut self.local_sender_delta);
+        leg_delta.take = SidedTakeDeltaV2::<In> { take_in, take_out };
+
+        // let taker_delta = In::get_leg_mut(&mut self.local_sender_delta.taker_delta_pair);
+        // taker_delta
+        //     .checked_add(matched_lots)
+        //     .ok_or(GoblinError::DeltaOverflow)?;
 
         let maker_delta_pair = self
             .local_maker_deltas
