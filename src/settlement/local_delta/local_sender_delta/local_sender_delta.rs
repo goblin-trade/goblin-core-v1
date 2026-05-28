@@ -4,10 +4,19 @@ use crate::{
     quantities::{
         BaseLots, BaseLotsPerBaseUnit, QuantityOps, QuoteLots, QuoteLotsPerBaseUnitPerTick, Ticks,
     },
-    settlement::{sender_delta::alias::SidedSenderDeltaV2, MatchedLots, MatchedLotsPair},
+    settlement::{
+        sender_delta::alias::SidedSenderDeltaV2, ConstZero, MatchedLots, MatchedLotsPair,
+    },
 };
 
 pub type LocalSenderDelta = Pair<SidedSenderDeltaV2<Base>, SidedSenderDeltaV2<Quote>>;
+
+impl ConstZero for LocalSenderDelta {
+    const ZEROED: Self = Pair::new(
+        SidedSenderDeltaV2::<Base>::ZEROED,
+        SidedSenderDeltaV2::<Quote>::ZEROED,
+    );
+}
 
 // /// The sender delta of local namespace
 // ///

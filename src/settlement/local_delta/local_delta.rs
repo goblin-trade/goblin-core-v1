@@ -5,7 +5,7 @@ use crate::{
     require,
     settlement::{
         local_delta::{Deposits, LocalMakerDeltas, LocalSenderDelta},
-        MatchedLots,
+        ConstZero, MatchedLots,
     },
     types::Address,
 };
@@ -21,15 +21,15 @@ pub struct LocalDelta {
     pub local_maker_deltas: LocalMakerDeltas,
 }
 
-impl LocalDelta {
-    pub const fn zero() -> Self {
-        Self {
-            local_sender_delta: LocalSenderDelta::zero(),
-            local_maker_deltas: LocalMakerDeltas::zero(),
-            deposits: Pair::new(DeltaAtoms::ZERO, DeltaAtoms::ZERO),
-        }
-    }
+impl ConstZero for LocalDelta {
+    const ZEROED: Self = Self {
+        deposits: Deposits::ZEROED,
+        local_sender_delta: LocalSenderDelta::ZEROED,
+        local_maker_deltas: LocalMakerDeltas::ZEROED,
+    };
+}
 
+impl LocalDelta {
     /// Add matched lots to taker and maker deltas
     pub fn add_matched<In: LegMatcher>(
         &mut self,

@@ -1,5 +1,5 @@
 use crate::{
-    settlement::{MatchedLots, MatchedLotsPair},
+    settlement::{ConstZero, MatchedLots, MatchedLotsPair},
     types::{Address, FixedMap, Tuple},
 };
 
@@ -10,14 +10,12 @@ pub const MAX_MAKERS: usize = 16;
 /// This list tracks deltas generated when resting orders are matched.
 pub type LocalMakerDeltas = FixedMap<Address, MatchedLotsPair, MAX_MAKERS>;
 
-impl LocalMakerDeltas {
-    pub const fn zero() -> Self {
-        Self {
-            entries: [(
-                [0u8; 20],
-                Tuple::new(MatchedLots::zero(), MatchedLots::zero()),
-            ); MAX_MAKERS],
-            len: 0,
-        }
-    }
+impl ConstZero for LocalMakerDeltas {
+    const ZEROED: Self = Self {
+        entries: [(
+            [0u8; 20],
+            Tuple::new(MatchedLots::zero(), MatchedLots::zero()),
+        ); MAX_MAKERS],
+        len: 0,
+    };
 }
