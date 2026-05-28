@@ -9,6 +9,7 @@ use crate::{
     instructions::{MakeReadables, PosHeader},
     quantities::{QuantityOps, Ticks},
     require,
+    settlement::CheckedAdd,
     state::{bitmap::alias::InnerBitmap, resting_order::preimage::RestingOrderPreimage, Preimage},
     types::StoreReader,
 };
