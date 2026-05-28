@@ -42,11 +42,7 @@ impl LocalDelta {
         price: Ticks,
     ) -> Result<(), GoblinError>
     where
-        In: LegMatcher
-            + StoreReader<
-                Tuple<SidedSenderDeltaV2<Base>, SidedSenderDeltaV2<Quote>, Leg>,
-                Result = SidedSenderDeltaV2<In>,
-            >,
+        In: LegMatcher,
     {
         let take_out = In::matching_lots_out(take_in, tick_size, price);
 

@@ -1,5 +1,6 @@
 use crate::settlement::ConstZero;
 
+#[derive(Clone, Copy)]
 pub struct MakeDelta<O>
 where
     O: Clone + Copy + ConstZero,

@@ -7,7 +7,10 @@ use crate::{
     quantities::{
         BaseLots, BaseLotsPerBaseUnit, QuantityOps, QuoteLots, QuoteLotsPerBaseUnitPerTick, Ticks,
     },
-    settlement::{ConstZero, MatchedLots},
+    settlement::{
+        sender_delta::{alias::SidedSenderDeltaV2, SenderDelta},
+        ConstZero, MatchedLots,
+    },
     types::{StoreReader, Tuple},
 };
 
@@ -21,12 +24,10 @@ pub trait LegMatcher:
     + LegReader
     + StoreReader<Tuple<MatchedLots<Base>, MatchedLots<Quote>, Leg>, Result = MatchedLots<Self>>
     + StoreReader<Tuple<QuoteLots, BaseLots, Leg>, Result = <Self::Opposite as LegQuantities>::Lots>
-// TODO new trait to host StoreReader with In::MatchingLots
-// We can't do it in the same trait due to cyclic dependency problem
-// + StoreReader<
-//     Tuple<SidedSenderDeltaV2<Base>, SidedSenderDeltaV2<Quote>, Leg>,
-//     Result = SidedSenderDeltaV2<In>,
-// >
+    + StoreReader<
+        Tuple<SidedSenderDeltaV2<Base>, SidedSenderDeltaV2<Quote>, Leg>,
+        Result = SidedSenderDeltaV2<Self>,
+    >
 {
     /// The opposite side
     /// Opposite of opposite is Self
