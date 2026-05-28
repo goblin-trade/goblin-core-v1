@@ -4,11 +4,6 @@ use crate::{
     settlement::sender_delta::{MakeDelta, SenderDelta, TakeDelta},
 };
 
-pub type SidedTakeDeltaV2<In: LegMatcher> =
-    TakeDelta<In::MatchingLots, <In::Opposite as LegMatcher>::MatchingLots>;
-
-pub type UnsidedTakeDeltaV2 = TakeDelta<UnsidedAtoms, UnsidedAtoms>;
-
 pub type SidedMakeDeltaV2<In: LegMatcher> = MakeDelta<<In::Opposite as LegMatcher>::MatchingLots>;
 pub type UnsidedMakeDeltaV2 = MakeDelta<UnsidedAtoms>;
 

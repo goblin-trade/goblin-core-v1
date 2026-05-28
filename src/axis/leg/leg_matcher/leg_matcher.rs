@@ -8,7 +8,7 @@ use crate::{
         BaseLots, BaseLotsPerBaseUnit, QuantityOps, QuoteLots, QuoteLotsPerBaseUnitPerTick, Ticks,
     },
     settlement::{
-        sender_delta::{alias::SidedSenderDeltaV2, SenderDelta},
+        sender_delta::alias::{SidedSenderDeltaV2, SidedTakeDeltaV2},
         ConstZero, MatchedLots,
     },
     types::{StoreReader, Tuple},
@@ -27,6 +27,9 @@ pub trait LegMatcher:
     + StoreReader<
         Tuple<SidedSenderDeltaV2<Base>, SidedSenderDeltaV2<Quote>, Leg>,
         Result = SidedSenderDeltaV2<Self>,
+    > + StoreReader<
+        Tuple<SidedTakeDeltaV2<Base>, SidedTakeDeltaV2<Quote>, Leg>,
+        Result = SidedTakeDeltaV2<Self>,
     >
 {
     /// The opposite side

@@ -6,8 +6,11 @@ use crate::{
     },
     require,
     settlement::{
-        local_delta::{Deposits, LocalMakerDeltas, LocalSenderDelta},
-        sender_delta::alias::{SidedSenderDeltaV2, SidedTakeDeltaV2},
+        local_delta::{Deposits, LocalMakerDeltas},
+        sender_delta::{
+            alias::{SidedSenderDeltaV2, SidedTakeDeltaV2},
+            pair::SidedSenderDeltaPairV2,
+        },
         ConstZero, MatchedLots,
     },
     types::{Address, StoreReader, Tuple},
@@ -18,7 +21,7 @@ pub struct LocalDelta {
     pub deposits: Deposits,
 
     /// Delta for msg.sender
-    pub local_sender_delta: LocalSenderDelta,
+    pub local_sender_delta: SidedSenderDeltaPairV2,
 
     /// Deltas for makers of matched resting orders
     pub local_maker_deltas: LocalMakerDeltas,
@@ -27,7 +30,7 @@ pub struct LocalDelta {
 impl ConstZero for LocalDelta {
     const ZEROED: Self = Self {
         deposits: Deposits::ZEROED,
-        local_sender_delta: LocalSenderDelta::ZEROED,
+        local_sender_delta: SidedSenderDeltaPairV2::ZEROED,
         local_maker_deltas: LocalMakerDeltas::ZEROED,
     };
 }
@@ -61,7 +64,7 @@ impl LocalDelta {
 
         let maker_delta = In::get_leg_mut(maker_delta_pair);
         maker_delta
-            .checked_add(matched_lots)
+            .checked_add(*leg_delta.take)
             .ok_or(GoblinError::DeltaOverflow)?;
 
         Ok(())
