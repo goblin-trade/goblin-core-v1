@@ -1,11 +1,15 @@
 use crate::{
     axis::{
-        leg::leg_matcher::LegMatcher,
+        leg::leg_matcher::LegMatcher, market::market_marker::MarketMarker,
         token::token_marker::custom_erc20::custom_erc20_data::CustomERC20Data,
     },
     goblin_error::GoblinError,
     input_processor::Decodable,
-    settlement::local_delta::Deposits,
+    quantities::DeltaAtoms,
+    settlement::{
+        global_delta::{ERC20Delta, GlobalSenderDelta, UnsidedSenderDelta},
+        local_delta::Deposits,
+    },
 };
 
 /// Marker class for 'Token'. We have 3 variants- ETH, HardcodedERC20 and CustomERC20
@@ -21,6 +25,8 @@ pub trait TokenMarker: Clone + Copy + 'static {
     /// Data type representing pending deposit amount
     type Deposit: Clone + Copy + Default + Decodable;
 
+    type Delta;
+
     fn token_index_to_address(
         token_index: Self::TokenIndex,
         custom_erc20_list: &[CustomERC20Data],
@@ -30,4 +36,10 @@ pub trait TokenMarker: Clone + Copy + 'static {
     fn set_deposit<In>(deposits: &mut Deposits, deposit_amount: Self::Deposit)
     where
         In: LegMatcher;
+
+    fn add_delta(
+        delta: Self::Delta,
+        token_index: Self::TokenIndex,
+        global_sender_delta: &mut GlobalSenderDelta,
+    );
 }

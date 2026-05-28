@@ -27,9 +27,9 @@ pub fn process_market<'a, M, B, Q>(
     delta: &mut Delta,
 ) -> Result<(), GoblinError>
 where
+    M: MarketMarker,
     B: TokenMarker,
     Q: TokenMarker,
-    M: MarketMarker,
     HardcodedMarketIndex<B, Q>: HardcodedMarkets<B, Q>,
 {
     let market_header = MarketHeader::<M, B, Q>::try_decode(ctx)?;
@@ -55,10 +55,5 @@ where
     market_header.execute_takes(ctx, readables, writables)?;
     market_header.execute_makes(ctx, readables, writables)?;
 
-    // TODO commit local delta into global delta
-
-    // Reset local delta for reuse
-    delta.local.deposits.reset::<B, Q>();
-
-    Ok(())
+    delta.commit_local_delta::<M, B, Q>(market_and_key.market.token_index_pair)
 }

@@ -11,23 +11,25 @@ use crate::{
 ///
 /// Values are denominated in MatchingLots. Convert it to TakerTokenUpdate
 /// so it can be added to the global delta
+///
+/// TODO update. This has 3 pair types inside. Replace with a common struct and a single Pair
 pub struct LocalSenderDelta {
     /// The results of matching take orders
     pub taker_delta_pair: MatchedLotsPair,
 
     /// Deposits for opening and increasing resting orders
-    pub resting_order_deposits: Pair<QuoteLots, BaseLots>,
+    pub make_locked: Pair<QuoteLots, BaseLots>,
 
     /// Amount unlocked when resting order is reduced
-    pub resting_order_reductions: Pair<QuoteLots, BaseLots>,
+    pub reduce_unlocked: Pair<QuoteLots, BaseLots>,
 }
 
 impl LocalSenderDelta {
     pub const fn zero() -> Self {
         Self {
             taker_delta_pair: Pair::new(MatchedLots::<Base>::zero(), MatchedLots::<Quote>::zero()),
-            resting_order_deposits: Pair::new(QuoteLots::ZERO, BaseLots::ZERO),
-            resting_order_reductions: Pair::new(QuoteLots::ZERO, BaseLots::ZERO),
+            make_locked: Pair::new(QuoteLots::ZERO, BaseLots::ZERO),
+            reduce_unlocked: Pair::new(QuoteLots::ZERO, BaseLots::ZERO),
         }
     }
 
@@ -39,7 +41,7 @@ impl LocalSenderDelta {
         price: Ticks,
     ) -> Result<(), GoblinError> {
         let delta = In::maker_deposit(base_lots, base_lot_size, tick_size, price);
-        let deposit = In::get_leg_mut(&mut self.resting_order_deposits);
+        let deposit = In::get_leg_mut(&mut self.make_locked);
         *deposit = deposit.checked_add(delta).ok_or(GoblinError::Overflow)?;
         Ok(())
     }
@@ -52,7 +54,7 @@ impl LocalSenderDelta {
         price: Ticks,
     ) -> Result<(), GoblinError> {
         let delta = In::maker_deposit(base_lots, base_lot_size, tick_size, price);
-        let reduction = In::get_leg_mut(&mut self.resting_order_reductions);
+        let reduction = In::get_leg_mut(&mut self.reduce_unlocked);
         *reduction = reduction.checked_add(delta).ok_or(GoblinError::Overflow)?;
         Ok(())
     }

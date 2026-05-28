@@ -20,18 +20,18 @@ pub struct UnsidedSenderDelta {
     pub matched_unsided_atoms: MatchedUnsidedAtoms,
 
     /// Tokens locked on making a resting order
-    pub maker_locked: UnsidedAtoms,
+    pub make_locked: UnsidedAtoms,
 
     /// Tokens unlocked on cancelling a resting order
-    pub cancel_unlocked: UnsidedAtoms,
+    pub reduce_unlocked: UnsidedAtoms,
 }
 
 impl UnsidedSenderDelta {
     pub const fn zero() -> Self {
         Self {
             matched_unsided_atoms: MatchedUnsidedAtoms::zero(),
-            maker_locked: UnsidedAtoms::ZERO,
-            cancel_unlocked: UnsidedAtoms::ZERO,
+            make_locked: UnsidedAtoms::ZERO,
+            reduce_unlocked: UnsidedAtoms::ZERO,
         }
     }
 
