@@ -1,16 +1,13 @@
 use crate::{
-    axis::leg::{leg_matcher::LegMatcher, Base, Leg, Pair, Quote},
+    axis::leg::leg_matcher::LegMatcher,
     goblin_error::GoblinError,
-    quantities::{
-        BaseLotsPerBaseUnit, DeltaAtoms, QuantityOps, QuoteLotsPerBaseUnitPerTick, Ticks,
-    },
-    require,
+    quantities::{QuoteLotsPerBaseUnitPerTick, Ticks},
     settlement::{
         local_delta::{Deposits, LocalMakerDeltas},
-        sender_delta::{SidedSenderDeltaPairV2, SidedSenderDeltaV2, SidedTakeDeltaV2},
-        CheckedAdd, ConstZero, MatchedLots,
+        sender_delta::{SidedSenderDeltaPairV2, SidedTakeDeltaV2},
+        CheckedAdd, ConstZero,
     },
-    types::{Address, StoreReader, Tuple},
+    types::Address,
 };
 
 pub struct LocalDelta {
@@ -44,10 +41,11 @@ impl LocalDelta {
     where
         In: LegMatcher,
     {
+        let delta = In::get_leg_mut(&mut self.local_sender_delta);
         let take_out = In::matching_lots_out(take_in, tick_size, price);
+        let matched = SidedTakeDeltaV2::<In> { take_in, take_out };
 
-        let leg_delta = In::get_leg_mut(&mut self.local_sender_delta);
-        leg_delta.take = SidedTakeDeltaV2::<In> { take_in, take_out };
+        delta.take = matched;
 
         let maker_delta_pair = self
             .local_maker_deltas
@@ -56,27 +54,9 @@ impl LocalDelta {
 
         let maker_delta = In::get_leg_mut(maker_delta_pair);
         maker_delta
-            .checked_add(leg_delta.take)
+            .checked_add(matched)
             .ok_or(GoblinError::DeltaOverflow)?;
 
-        Ok(())
-    }
-
-    /// Validate whether minimum lots are matched
-    pub fn verify_min_match<In>(
-        &self,
-        min_lots: In::Lots,
-        base_lot_size: BaseLotsPerBaseUnit,
-    ) -> Result<(), GoblinError>
-    where
-        In: LegMatcher,
-    {
-        let taker_delta = In::get_leg(&self.local_sender_delta.taker_delta_pair);
-        let min_lots = In::matching_lots_in(min_lots, base_lot_size);
-        require!(
-            taker_delta.taker_in >= min_lots,
-            GoblinError::InsufficientTakerFill
-        );
         Ok(())
     }
 }

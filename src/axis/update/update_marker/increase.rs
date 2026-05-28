@@ -59,7 +59,7 @@ impl UpdateMarker for Increase {
 
         writables
             .local_delta
-            .local_sender_delta
+            .sender
             .add_resting_order_deposit::<In>(
                 base_lots,
                 base_lot_size,

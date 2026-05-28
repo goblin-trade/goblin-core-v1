@@ -83,5 +83,6 @@ where
 
     writables
         .local_delta
+        .local_sender_delta
         .verify_min_match::<In>(min_lots_to_fill, base_lot_size)
 }

@@ -1,3 +1,5 @@
+use crate::settlement::CheckedAdd;
+
 use super::*;
 
 #[test]

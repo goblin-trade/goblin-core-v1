@@ -64,7 +64,7 @@ impl UpdateMarker for Decrease {
 
         writables
             .local_delta
-            .local_sender_delta
+            .sender
             .subtract_resting_order_deposit::<In>(
                 reduced_lots,
                 base_lot_size,
