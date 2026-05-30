@@ -53,9 +53,9 @@ impl LocalDelta {
             .ok_or(GoblinError::MakerListFull)?;
 
         let maker_delta = In::get_leg_mut(maker_delta_pair);
-        maker_delta
-            .checked_add(matched)
-            .ok_or(GoblinError::DeltaOverflow)?;
+        // maker_delta
+        //     .checked_add(matched)
+        //     .ok_or(GoblinError::DeltaOverflow)?;
 
         Ok(())
     }

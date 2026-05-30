@@ -8,7 +8,7 @@ use crate::{
         BaseLots, BaseLotsPerBaseUnit, QuantityOps, QuoteLots, QuoteLotsPerBaseUnitPerTick, Ticks,
     },
     settlement::{
-        sender_delta::{alias::SidedSenderDeltaV2, SidedTakeDeltaV2},
+        sender_delta::{SidedSenderDeltaV2, SidedTakeDeltaV2},
         CheckedAdd, ConstZero, MatchedLots,
     },
     types::{StoreReader, Tuple},
@@ -92,14 +92,14 @@ pub trait LegMatcher:
         price: Ticks,
     ) -> BaseLots;
 
-    /// Maker functions
+    // /// Maker functions
 
-    fn maker_deposit(
-        base_lots: BaseLots,
-        base_lot_size: BaseLotsPerBaseUnit,
-        tick_size: QuoteLotsPerBaseUnitPerTick,
-        price: Ticks,
-    ) -> <Self::Opposite as LegQuantities>::Lots;
+    // fn maker_deposit(
+    //     base_lots: BaseLots,
+    //     base_lot_size: BaseLotsPerBaseUnit,
+    //     tick_size: QuoteLotsPerBaseUnitPerTick,
+    //     price: Ticks,
+    // ) -> <Self::Opposite as LegQuantities>::Lots;
 
     // fn valid_open_price(market_state: &MarketState, price: Ticks) -> bool {
     //     let opposite_price = Self::Opposite::get(&market_state.last_coordinates).price;

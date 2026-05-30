@@ -1,17 +1,16 @@
 use crate::{
     axis::{
-        leg::{leg_matcher::LegMatcher, Base},
+        leg::leg_matcher::LegMatcher,
         market::{market_marker::MarketMarker, Readables, Writables},
         token::token_marker::TokenMarker,
         update::{update_marker::UpdateMarker, Increase},
     },
     goblin_error::GoblinError,
     instructions::{MakeReadables, PosHeader},
-    quantities::{QuantityOps, Ticks},
+    quantities::Ticks,
     require,
     settlement::CheckedAdd,
     state::{bitmap::alias::InnerBitmap, resting_order::preimage::RestingOrderPreimage, Preimage},
-    types::StoreReader,
 };
 
 impl UpdateMarker for Increase {
@@ -55,33 +54,23 @@ impl UpdateMarker for Increase {
         resting_order_key.store(&resting_order_state);
 
         // Update delta
-        let base_lot_size = Base::get(&market_and_key.market.lot_size_pair);
         let price = Ticks::from(position);
-
-        let amount = In::maker_deposit(
+        let amount = <In::Opposite as LegMatcher>::matching_lots_maker(
             base_lots,
-            base_lot_size,
             market_and_key.market.tick_size,
             price,
         );
 
         let delta = In::get_leg_mut(&mut writables.local_delta.local_sender_delta);
-        *delta.make.increase = delta
+
+        // TODO use generic getter to fetch increase & decrease fields
+        // MakeDelta should use Tuple
+        delta.make.increase = delta
             .make
             .increase
             .checked_add(amount)
             .ok_or(GoblinError::Overflow)?;
 
         Ok(())
-
-        // writables
-        //     .local_delta
-        //     .sender
-        //     .add_resting_order_deposit::<In>(
-        //         base_lots,
-        //         base_lot_size,
-        //         market_and_key.market.tick_size,
-        //         price,
-        //     )
     }
 }

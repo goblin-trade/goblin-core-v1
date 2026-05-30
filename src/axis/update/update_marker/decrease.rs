@@ -1,6 +1,6 @@
 use crate::{
     axis::{
-        leg::{leg_matcher::LegMatcher, Base},
+        leg::leg_matcher::LegMatcher,
         market::{market_marker::MarketMarker, Readables, Writables},
         token::token_marker::TokenMarker,
         update::{update_marker::UpdateMarker, Decrease},
@@ -9,8 +9,8 @@ use crate::{
     instructions::{MakeReadables, PosHeader},
     quantities::Ticks,
     require,
+    settlement::CheckedAdd,
     state::{bitmap::alias::InnerBitmap, resting_order::preimage::RestingOrderPreimage, Preimage},
-    types::StoreReader,
 };
 
 impl UpdateMarker for Decrease {
@@ -59,17 +59,21 @@ impl UpdateMarker for Decrease {
         };
 
         // Update delta
-        let base_lot_size = Base::get(&market_and_key.market.lot_size_pair);
         let price = Ticks::from(position);
+        let amount = <In::Opposite as LegMatcher>::matching_lots_maker(
+            reduced_lots,
+            market_and_key.market.tick_size,
+            price,
+        );
 
-        writables
-            .local_delta
-            .sender
-            .subtract_resting_order_deposit::<In>(
-                reduced_lots,
-                base_lot_size,
-                market_and_key.market.tick_size,
-                price,
-            )
+        let delta = In::get_leg_mut(&mut writables.local_delta.local_sender_delta);
+
+        delta.make.increase = delta
+            .make
+            .decrease
+            .checked_add(amount)
+            .ok_or(GoblinError::Overflow)?;
+
+        Ok(())
     }
 }

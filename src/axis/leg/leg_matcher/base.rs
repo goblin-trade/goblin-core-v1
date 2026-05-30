@@ -47,12 +47,12 @@ impl LegMatcher for Base {
         matching
     }
 
-    fn maker_deposit(
-        base_lots: BaseLots,
-        base_lot_size: BaseLotsPerBaseUnit,
-        tick_size: QuoteLotsPerBaseUnitPerTick,
-        price: Ticks,
-    ) -> <Self::Opposite as LegQuantities>::Lots {
-        tick_size * price * base_lots / base_lot_size
-    }
+    // fn maker_deposit(
+    //     base_lots: BaseLots,
+    //     base_lot_size: BaseLotsPerBaseUnit,
+    //     tick_size: QuoteLotsPerBaseUnitPerTick,
+    //     price: Ticks,
+    // ) -> <Self::Opposite as LegQuantities>::Lots {
+    //     tick_size * price * base_lots / base_lot_size
+    // }
 }
