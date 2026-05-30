@@ -58,14 +58,30 @@ impl UpdateMarker for Increase {
         let base_lot_size = Base::get(&market_and_key.market.lot_size_pair);
         let price = Ticks::from(position);
 
-        writables
-            .local_delta
-            .sender
-            .add_resting_order_deposit::<In>(
-                base_lots,
-                base_lot_size,
-                market_and_key.market.tick_size,
-                price,
-            )
+        let amount = In::maker_deposit(
+            base_lots,
+            base_lot_size,
+            market_and_key.market.tick_size,
+            price,
+        );
+
+        let delta = In::get_leg_mut(&mut writables.local_delta.local_sender_delta);
+        *delta.make.increase = delta
+            .make
+            .increase
+            .checked_add(amount)
+            .ok_or(GoblinError::Overflow)?;
+
+        Ok(())
+
+        // writables
+        //     .local_delta
+        //     .sender
+        //     .add_resting_order_deposit::<In>(
+        //         base_lots,
+        //         base_lot_size,
+        //         market_and_key.market.tick_size,
+        //         price,
+        //     )
     }
 }
