@@ -1,4 +1,4 @@
-use crate::types::Marker;
+use crate::types::{Marker, Tuple};
 
 /// Update axis
 #[derive(Default, Clone, Copy, PartialEq)]
@@ -22,3 +22,6 @@ impl From<bool> for UpdateEnum {
         }
     }
 }
+
+pub type UpdatePair<T0, T1> = Tuple<T0, T1, Update>;
+pub type SameUpdatePair<T> = UpdatePair<T, T>;

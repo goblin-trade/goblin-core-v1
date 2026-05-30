@@ -53,24 +53,13 @@ impl UpdateMarker for Increase {
             .ok_or(GoblinError::Overflow)?;
         resting_order_key.store(&resting_order_state);
 
-        // Update delta
         let price = Ticks::from(position);
-        let amount = <In::Opposite as LegMatcher>::matching_lots_maker(
+        let delta = In::get_leg_mut(&mut writables.local_delta.local_sender_delta);
+        Self::update_make_delta::<In>(
+            &mut delta.make,
             base_lots,
             market_and_key.market.tick_size,
             price,
-        );
-
-        let delta = In::get_leg_mut(&mut writables.local_delta.local_sender_delta);
-
-        // TODO use generic getter to fetch increase & decrease fields
-        // MakeDelta should use Tuple
-        delta.make.increase = delta
-            .make
-            .increase
-            .checked_add(amount)
-            .ok_or(GoblinError::Overflow)?;
-
-        Ok(())
+        )
     }
 }

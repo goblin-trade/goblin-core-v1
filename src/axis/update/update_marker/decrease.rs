@@ -9,7 +9,6 @@ use crate::{
     instructions::{MakeReadables, PosHeader},
     quantities::Ticks,
     require,
-    settlement::CheckedAdd,
     state::{bitmap::alias::InnerBitmap, resting_order::preimage::RestingOrderPreimage, Preimage},
 };
 
@@ -60,20 +59,12 @@ impl UpdateMarker for Decrease {
 
         // Update delta
         let price = Ticks::from(position);
-        let amount = <In::Opposite as LegMatcher>::matching_lots_maker(
+        let delta = In::get_leg_mut(&mut writables.local_delta.local_sender_delta);
+        Self::update_make_delta::<In>(
+            &mut delta.make,
             reduced_lots,
             market_and_key.market.tick_size,
             price,
-        );
-
-        let delta = In::get_leg_mut(&mut writables.local_delta.local_sender_delta);
-
-        delta.make.increase = delta
-            .make
-            .decrease
-            .checked_add(amount)
-            .ok_or(GoblinError::Overflow)?;
-
-        Ok(())
+        )
     }
 }

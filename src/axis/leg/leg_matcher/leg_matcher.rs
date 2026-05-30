@@ -91,18 +91,4 @@ pub trait LegMatcher:
         tick_size: QuoteLotsPerBaseUnitPerTick,
         price: Ticks,
     ) -> BaseLots;
-
-    // /// Maker functions
-
-    // fn maker_deposit(
-    //     base_lots: BaseLots,
-    //     base_lot_size: BaseLotsPerBaseUnit,
-    //     tick_size: QuoteLotsPerBaseUnitPerTick,
-    //     price: Ticks,
-    // ) -> <Self::Opposite as LegQuantities>::Lots;
-
-    // fn valid_open_price(market_state: &MarketState, price: Ticks) -> bool {
-    //     let opposite_price = Self::Opposite::get(&market_state.last_coordinates).price;
-    //     Self::closer_to_opposite_pole(opposite_price, price)
-    // }
 }
