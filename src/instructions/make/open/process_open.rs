@@ -3,10 +3,12 @@ use crate::{
         leg::{leg_matcher::LegMatcher, Base},
         market::{market_marker::MarketMarker, Readables, Writables},
         token::token_marker::TokenMarker,
+        update::Increase,
     },
     goblin_error::GoblinError,
     instructions::{MakeReadables, PosHeader},
     quantities::Ticks,
+    settlement::CheckedAdd,
     state::{
         resting_order::{preimage::RestingOrderPreimage, RestingOrder},
         Preimage,
@@ -24,6 +26,8 @@ where
     Q: TokenMarker,
     In: LegMatcher,
 {
+    // Can we share code with Increase?
+    // Code is similar. Just that instead of reading value from slot we overwrite it
     let Readables {
         msg_sender,
         market_readables,
@@ -46,16 +50,15 @@ where
     });
 
     // Update delta
-    let base_lot_size = Base::get(&market_readables.market.lot_size_pair);
-    let price = Ticks::from(position);
+    let amount = <In::Opposite as LegMatcher>::matching_lots_maker(
+        base_lots,
+        market_readables.market.tick_size,
+        position.into(),
+    );
 
-    writables
-        .local_delta
-        .sender
-        .add_resting_order_deposit::<In>(
-            base_lots,
-            base_lot_size,
-            market_readables.market.tick_size,
-            price,
-        )
+    let sided_make_delta = In::get_leg_mut(&mut writables.local_delta.local_sender_delta);
+    let delta = Increase::get_leg_mut(&mut sided_make_delta.make);
+    *delta = delta.checked_add(amount).ok_or(GoblinError::Overflow)?;
+
+    Ok(())
 }

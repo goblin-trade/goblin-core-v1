@@ -61,6 +61,12 @@ where
             base_lots,
         } = make_readables.pos_header;
 
+        // TODO share code with process_open()
+        // Define new axis Occupancy- Vacant / Occupied
+        //
+        // - Open will have 2 branches- vacant (open) and occupied (increase)
+        // - Decrease with Vacant is illegal
+
         let key_value = &mut RestingOrderPreimage {
             market_key: market_readables.market_key,
             position,
