@@ -34,4 +34,19 @@ impl OccupancyMarker for Vacant {
 
         Ok(base_lots)
     }
+
+    fn decrease<M, B, Q>(
+        _msg_sender: &Address,
+        _base_lots: BaseLots,
+        _inner_pos: InnerPos,
+        _inner_bitmap_state: &mut InnerBitmap,
+        _key: &SlotKey<RestingOrderPreimage<M, B, Q>>,
+    ) -> Result<BaseLots, GoblinError>
+    where
+        M: MarketMarker,
+        B: TokenMarker,
+        Q: TokenMarker,
+    {
+        unreachable!()
+    }
 }
