@@ -1,7 +1,4 @@
-use crate::{
-    axis::leg::leg_matcher::LegMatcher,
-    settlement::{global_delta::GlobalMakerUpdate, MatchedUnsidedAtoms},
-};
+use crate::{axis::leg::leg_matcher::LegMatcher, settlement::MatchedUnsidedAtoms};
 
 /// Maker delta for a token
 ///
@@ -19,15 +16,15 @@ impl UnsidedMakerDelta {
         }
     }
 
-    pub fn add_global_update<In: LegMatcher>(
-        &mut self,
-        global_update: &GlobalMakerUpdate<In>,
-    ) -> Option<()> {
-        let matched_unsided_atoms = MatchedUnsidedAtoms::from(&global_update.matched_atoms);
+    // pub fn add_global_update<In: LegMatcher>(
+    //     &mut self,
+    //     global_update: &GlobalMakerUpdate<In>,
+    // ) -> Option<()> {
+    //     let matched_unsided_atoms = MatchedUnsidedAtoms::from(&global_update.matched_atoms);
 
-        self.matched_unsided_atoms
-            .checked_add(matched_unsided_atoms)
-    }
+    //     self.matched_unsided_atoms
+    //         .checked_add(matched_unsided_atoms)
+    // }
 }
 
 // #[derive(Default)]

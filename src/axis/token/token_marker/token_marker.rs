@@ -7,7 +7,7 @@ use crate::{
     input_processor::Decodable,
     quantities::DeltaAtoms,
     settlement::{
-        global_delta::{ERC20Delta, GlobalSenderDelta, UnsidedSenderDelta},
+        global_delta::{ERC20Delta, GlobalSenderDelta},
         local_delta::Deposits,
     },
 };
@@ -25,7 +25,7 @@ pub trait TokenMarker: Clone + Copy + 'static {
     /// Data type representing pending deposit amount
     type Deposit: Clone + Copy + Default + Decodable;
 
-    type Delta;
+    // type Delta;
 
     fn token_index_to_address(
         token_index: Self::TokenIndex,
@@ -37,9 +37,9 @@ pub trait TokenMarker: Clone + Copy + 'static {
     where
         In: LegMatcher;
 
-    fn add_delta(
-        delta: Self::Delta,
-        token_index: Self::TokenIndex,
-        global_sender_delta: &mut GlobalSenderDelta,
-    );
+    // fn add_delta(
+    //     delta: Self::Delta,
+    //     token_index: Self::TokenIndex,
+    //     global_sender_delta: &mut GlobalSenderDelta,
+    // );
 }

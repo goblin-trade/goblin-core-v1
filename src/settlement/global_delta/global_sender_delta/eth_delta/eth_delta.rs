@@ -1,4 +1,4 @@
-use crate::settlement::global_delta::UnsidedSenderDelta;
+// use crate::settlement::global_delta::UnsidedSenderDelta;
 
 /// ETH atoms due to be deducted, locked or transferred out on settlement
 ///
@@ -6,14 +6,14 @@ use crate::settlement::global_delta::UnsidedSenderDelta;
 /// Use this struct during settlement.
 #[derive(Clone, Copy)]
 pub struct EthDelta {
-    /// Delta from trading
-    pub unsided_sender_delta: UnsidedSenderDelta,
+    // /// Delta from trading
+    // pub unsided_sender_delta: UnsidedSenderDelta,
 }
 
 impl EthDelta {
     pub const fn zero() -> Self {
         Self {
-            unsided_sender_delta: UnsidedSenderDelta::zero(),
+            // unsided_sender_delta: UnsidedSenderDelta::zero(),
         }
     }
 

@@ -20,7 +20,7 @@ impl TokenMarker for ETH {
     type TokenIndex = ();
     type Address = ();
     type Deposit = ();
-    type Delta = EthDelta;
+    // type Delta = EthDelta;
 
     fn token_index_to_address(
         _token_index: Self::TokenIndex,
@@ -32,12 +32,12 @@ impl TokenMarker for ETH {
     // Stub. ETH cannot be deposited.
     fn set_deposit<In: LegMatcher>(_deposits: &mut Deposits, _deposit_amount: Self::Deposit) {}
 
-    fn add_delta(
-        delta: Self::Delta,
-        token_index: Self::TokenIndex,
-        global_sender_delta: &mut GlobalSenderDelta,
-    ) {
-        let store = Self::get_leg_mut(global_sender_delta);
-        store.unsided_sender_delta.matched_unsided_atoms;
-    }
+    // fn add_delta(
+    //     delta: Self::Delta,
+    //     token_index: Self::TokenIndex,
+    //     global_sender_delta: &mut GlobalSenderDelta,
+    // ) {
+    //     let store = Self::get_leg_mut(global_sender_delta);
+    //     store.unsided_sender_delta.matched_unsided_atoms;
+    // }
 }

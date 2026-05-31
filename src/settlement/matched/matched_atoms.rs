@@ -3,7 +3,6 @@ use crate::{
         leg::{leg_matcher::LegMatcher, Base, Leg, Quote},
         market::LotSizePair,
     },
-    settlement::{MatchedLots, MatchedLotsPair},
     types::{StoreReader, Tuple},
 };
 
@@ -15,36 +14,4 @@ pub struct MatchedAtoms<In: LegMatcher> {
 
     /// Atoms obtained by taker and lost by maker
     pub taker_out: In::Atoms,
-}
-
-impl<In> MatchedAtoms<In>
-where
-    In: LegMatcher,
-    In::Opposite: StoreReader<
-        Tuple<MatchedLots<Base>, MatchedLots<Quote>, Leg>,
-        Result = MatchedLots<In::Opposite>,
-    >,
-{
-    pub fn new(matched_lots_pair: &MatchedLotsPair, lot_size_pair: &LotSizePair) -> Self {
-        let base_lot_size = Base::get(lot_size_pair);
-        let lot_size = *In::get_leg(lot_size_pair);
-        let atoms_per_lot = In::atoms_per_lot(lot_size);
-
-        let matched_lots = In::get_leg(matched_lots_pair);
-        let matched_lots_opposite = In::Opposite::get_leg(matched_lots_pair);
-
-        let taker_in =
-            In::matching_lots_to_atoms(matched_lots.taker_in, base_lot_size, atoms_per_lot);
-
-        let taker_out = In::matching_lots_to_atoms(
-            matched_lots_opposite.taker_out,
-            base_lot_size,
-            atoms_per_lot,
-        );
-
-        Self {
-            taker_in,
-            taker_out,
-        }
-    }
 }

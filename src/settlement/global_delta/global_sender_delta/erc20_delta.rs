@@ -2,7 +2,7 @@ use crate::{
     axis::leg::leg_matcher::LegMatcher,
     goblin_error::GoblinError,
     quantities::DeltaAtoms,
-    settlement::global_delta::{GlobalSenderUpdate, UnsidedSenderDelta},
+    // settlement::global_delta::{GlobalSenderUpdate, UnsidedSenderDelta},
 };
 
 /// ERC20 atoms due to be deducted, locked or transferred out on settlement
@@ -10,33 +10,32 @@ use crate::{
 pub struct ERC20Delta {
     /// Atoms to be deposited or withdrawn
     pub deposit_due: DeltaAtoms,
-
-    /// Delta from trading
-    pub unsided_sender_delta: UnsidedSenderDelta,
+    // /// Delta from trading
+    // pub unsided_sender_delta: UnsidedSenderDelta,
 }
 
 impl ERC20Delta {
     pub const fn zero() -> Self {
         Self {
             deposit_due: DeltaAtoms::ZERO,
-            unsided_sender_delta: UnsidedSenderDelta::zero(),
+            // unsided_sender_delta: UnsidedSenderDelta::zero(),
         }
     }
 
-    pub fn apply_global_update<In: LegMatcher>(
-        &mut self,
-        deposit_amount: DeltaAtoms,
-        global_update: &GlobalSenderUpdate<In>,
-    ) -> Result<(), GoblinError> {
-        self.deposit_due = self
-            .deposit_due
-            .checked_add(deposit_amount)
-            .ok_or(GoblinError::DeltaOverflow)?;
+    // pub fn apply_global_update<In: LegMatcher>(
+    //     &mut self,
+    //     deposit_amount: DeltaAtoms,
+    //     global_update: &GlobalSenderUpdate<In>,
+    // ) -> Result<(), GoblinError> {
+    //     self.deposit_due = self
+    //         .deposit_due
+    //         .checked_add(deposit_amount)
+    //         .ok_or(GoblinError::DeltaOverflow)?;
 
-        self.unsided_sender_delta
-            .add_global_update(global_update)
-            .ok_or(GoblinError::DeltaOverflow)
-    }
+    //     self.unsided_sender_delta
+    //         .add_global_update(global_update)
+    //         .ok_or(GoblinError::DeltaOverflow)
+    // }
     // TODO function to add to deposit_due
 
     // /// Update locked and free atoms of the store by applying the common delta

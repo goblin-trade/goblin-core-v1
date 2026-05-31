@@ -5,7 +5,7 @@ use crate::{
         token::token_marker::TokenMarker,
     },
     goblin_error::GoblinError,
-    settlement::{global_delta::GlobalDelta, local_delta::LocalDelta},
+    settlement::{global_delta::GlobalDelta, local_delta::LocalDelta, ConstZero},
     types::StoreReader,
 };
 
@@ -24,7 +24,7 @@ impl Delta {
     pub const fn zero() -> Self {
         Self {
             global: GlobalDelta::zero(),
-            local: LocalDelta::zero(),
+            local: LocalDelta::ZEROED,
         }
     }
 
