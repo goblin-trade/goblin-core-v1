@@ -1,6 +1,6 @@
 use crate::{
     axis::{
-        market::{market_locator::MarketLocator, CommonMarket, Dynamic, MarketAndKey},
+        market::{market_locator::MarketLocator, CommonMarket, Dynamic, MarketReadables},
         token::token_marker::{custom_erc20::custom_erc20_data::CustomERC20Data, TokenMarker},
     },
     goblin_error::GoblinError,
@@ -8,7 +8,7 @@ use crate::{
     state::Preimage,
 };
 
-impl<B, Q> MarketLocator<Dynamic, B, Q> for MarketAndKey<Dynamic, B, Q>
+impl<B, Q> MarketLocator<Dynamic, B, Q> for MarketReadables<Dynamic, B, Q>
 where
     B: TokenMarker,
     Q: TokenMarker,
@@ -21,13 +21,13 @@ where
         let preimage = common_market.get_preimage(erc20_list)?;
         let key = preimage.hash();
 
-        Ok(MarketAndKey {
+        Ok(MarketReadables {
             market: common_market,
             market_key: key,
         })
     }
 
-    fn locate_market(&self) -> Result<&MarketAndKey<Dynamic, B, Q>, GoblinError> {
+    fn locate_market(&self) -> Result<&MarketReadables<Dynamic, B, Q>, GoblinError> {
         Ok(self)
     }
 }

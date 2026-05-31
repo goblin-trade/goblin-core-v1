@@ -1,6 +1,6 @@
 use crate::{
     axis::{
-        market::{market_marker::MarketMarker, MarketAndKey},
+        market::{market_marker::MarketMarker, MarketReadables},
         token::token_marker::TokenMarker,
     },
     types::Address,
@@ -13,5 +13,5 @@ where
     Q: TokenMarker,
 {
     pub msg_sender: &'a Address,
-    pub market_and_key: &'a MarketAndKey<M, B, Q>,
+    pub market_readables: &'a MarketReadables<M, B, Q>,
 }

@@ -1,7 +1,7 @@
 use crate::axis::{
     market::{
         market_marker::hardcoded::hardcoded_market_index::HardcodedMarketIndex, Hardcoded,
-        MarketAndKey,
+        MarketReadables,
     },
     token::{CustomERC20, HardcodedERC20, ETH},
 };
@@ -13,25 +13,25 @@ use crate::axis::{
 use super::HardcodedMarkets;
 
 impl HardcodedMarkets<ETH, CustomERC20> for HardcodedMarketIndex<ETH, CustomERC20> {
-    const HARDCODED_MARKETS: &'static [MarketAndKey<Hardcoded, ETH, CustomERC20>] = &[];
+    const HARDCODED_MARKETS: &'static [MarketReadables<Hardcoded, ETH, CustomERC20>] = &[];
 }
 
 impl HardcodedMarkets<CustomERC20, ETH> for HardcodedMarketIndex<CustomERC20, ETH> {
-    const HARDCODED_MARKETS: &'static [MarketAndKey<Hardcoded, CustomERC20, ETH>] = &[];
+    const HARDCODED_MARKETS: &'static [MarketReadables<Hardcoded, CustomERC20, ETH>] = &[];
 }
 
 impl HardcodedMarkets<CustomERC20, CustomERC20> for HardcodedMarketIndex<CustomERC20, CustomERC20> {
-    const HARDCODED_MARKETS: &'static [MarketAndKey<Hardcoded, CustomERC20, CustomERC20>] = &[];
+    const HARDCODED_MARKETS: &'static [MarketReadables<Hardcoded, CustomERC20, CustomERC20>] = &[];
 }
 
 impl HardcodedMarkets<HardcodedERC20, CustomERC20>
     for HardcodedMarketIndex<HardcodedERC20, CustomERC20>
 {
-    const HARDCODED_MARKETS: &'static [MarketAndKey<Hardcoded, HardcodedERC20, CustomERC20>] = &[];
+    const HARDCODED_MARKETS: &'static [MarketReadables<Hardcoded, HardcodedERC20, CustomERC20>] = &[];
 }
 
 impl HardcodedMarkets<CustomERC20, HardcodedERC20>
     for HardcodedMarketIndex<CustomERC20, HardcodedERC20>
 {
-    const HARDCODED_MARKETS: &'static [MarketAndKey<Hardcoded, CustomERC20, HardcodedERC20>] = &[];
+    const HARDCODED_MARKETS: &'static [MarketReadables<Hardcoded, CustomERC20, HardcodedERC20>] = &[];
 }

@@ -53,7 +53,7 @@ pub trait UpdateMarker {
     {
         let Readables {
             msg_sender,
-            market_and_key,
+            market_readables,
         } = *make_readables.readables;
 
         let PosHeader {
@@ -62,7 +62,7 @@ pub trait UpdateMarker {
         } = make_readables.pos_header;
 
         let resting_order_key = RestingOrderPreimage {
-            market_key: market_and_key.market_key,
+            market_key: market_readables.market_key,
             position,
         }
         .hash();
@@ -83,7 +83,7 @@ pub trait UpdateMarker {
 
         let amount = <In::Opposite as LegMatcher>::matching_lots_maker(
             updated_base_lots,
-            market_and_key.market.tick_size,
+            market_readables.market.tick_size,
             position.into(),
         );
 

@@ -5,7 +5,7 @@ use crate::{
             market_marker::hardcoded::{
                 hardcoded_market_index::HardcodedMarketIndex, hardcoded_markets::HardcodedMarkets,
             },
-            Hardcoded, MarketAndKey,
+            Hardcoded, MarketReadables,
         },
         token::token_marker::TokenMarker,
     },
@@ -22,7 +22,7 @@ where
         HardcodedMarketIndex::<B, Q>::try_decode(ctx)
     }
 
-    fn locate_market(&self) -> Result<&MarketAndKey<Hardcoded, B, Q>, GoblinError>
+    fn locate_market(&self) -> Result<&MarketReadables<Hardcoded, B, Q>, GoblinError>
     where
         Self: HardcodedMarkets<B, Q>,
     {

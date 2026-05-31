@@ -38,13 +38,13 @@ where
     }
 
     let market_locator = M::MarketLocator::<B, Q>::decode_locator(ctx, erc20_list)?;
-    let market_and_key = market_locator.locate_market()?;
+    let market_readables = market_locator.locate_market()?;
 
-    let market_state = &mut market_and_key.market_key.load();
+    let market_state = &mut market_readables.market_key.load();
 
     let readables = &Readables {
         msg_sender,
-        market_and_key,
+        market_readables,
     };
 
     let writables = &mut Writables {
@@ -55,5 +55,5 @@ where
     market_header.execute_takes(ctx, readables, writables)?;
     market_header.execute_makes(ctx, readables, writables)?;
 
-    delta.commit_local_delta::<M, B, Q>(market_and_key.market.token_index_pair)
+    delta.commit_local_delta::<M, B, Q>(market_readables.market.token_index_pair)
 }

@@ -26,7 +26,7 @@ where
 {
     let Readables {
         msg_sender,
-        market_and_key,
+        market_readables,
     } = *make_readables.readables;
 
     let PosHeader {
@@ -35,7 +35,7 @@ where
     } = make_readables.pos_header;
 
     let resting_order_key = RestingOrderPreimage {
-        market_key: market_and_key.market_key,
+        market_key: market_readables.market_key,
         position,
     }
     .hash();
@@ -46,7 +46,7 @@ where
     });
 
     // Update delta
-    let base_lot_size = Base::get(&market_and_key.market.lot_size_pair);
+    let base_lot_size = Base::get(&market_readables.market.lot_size_pair);
     let price = Ticks::from(position);
 
     writables
@@ -55,7 +55,7 @@ where
         .add_resting_order_deposit::<In>(
             base_lots,
             base_lot_size,
-            market_and_key.market.tick_size,
+            market_readables.market.tick_size,
             price,
         )
 }

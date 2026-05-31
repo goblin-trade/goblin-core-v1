@@ -8,7 +8,7 @@ use crate::{
                 },
                 MarketMarker,
             },
-            MarketAndKey,
+            MarketReadables,
         },
         token::token_marker::TokenMarker,
     },
@@ -40,7 +40,7 @@ where
     ///
     /// - Hardcoded: Looks up market in static list using index
     /// - Dynamic: Returns reference to the already-constructed market
-    fn locate_market(&self) -> Result<&MarketAndKey<M, B, Q>, GoblinError>
+    fn locate_market(&self) -> Result<&MarketReadables<M, B, Q>, GoblinError>
     where
         HardcodedMarketIndex<B, Q>: HardcodedMarkets<B, Q>;
 }

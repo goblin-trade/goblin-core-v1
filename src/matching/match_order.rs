@@ -1,7 +1,7 @@
 use crate::{
     axis::{
         leg::{leg_matcher::LegMatcher, Base},
-        market::{market_marker::MarketMarker, MarketAndKey, Readables, Writables},
+        market::{market_marker::MarketMarker, MarketReadables, Readables, Writables},
         token::token_marker::TokenMarker,
     },
     goblin_error::GoblinError,
@@ -34,7 +34,7 @@ where
     Q: TokenMarker,
     In: LegMatcher,
 {
-    let MarketAndKey { market, market_key } = readables.market_and_key;
+    let MarketReadables { market, market_key } = readables.market_readables;
 
     let last_position_mut = In::get_leg_mut(&mut writables.market_state.last_positions);
 
