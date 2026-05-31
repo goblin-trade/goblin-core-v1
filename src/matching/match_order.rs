@@ -9,6 +9,7 @@ use crate::{
     matching::match_iterator::{match_iterator, RestingOrderEntry},
     quantities::{QuantityOps, Ticks},
     require,
+    state::resting_order::RestingOrder,
     types::StoreReader,
 };
 
@@ -50,32 +51,31 @@ where
 
     for RestingOrderEntry {
         position,
-        resting_order_key,
-        mut resting_order,
+        mut resting_order_key_value,
     } in iterator
     {
+        let RestingOrder { base_lots, maker } = resting_order_key_value.value;
+
         *last_position_mut = position;
         let price = Ticks::from(position);
 
         // TODO cleanup- common struct for base lots, tick size, price
         // also for matching lots, tick size, price
-        let quote = In::matching_lots_maker(resting_order.base_lots, market.tick_size, price);
+        let quote = In::matching_lots_maker(base_lots, market.tick_size, price);
 
         let matched = quote.min(budget);
         budget -= matched;
-        writables.local_delta.add_matched::<In>(
-            resting_order.maker,
-            matched,
-            market.tick_size,
-            price,
-        )?;
+        writables
+            .local_delta
+            .add_matched::<In>(maker, matched, market.tick_size, price)?;
 
         if budget == In::MatchingLots::ZERO {
             let residue = quote - matched;
             if residue > In::MatchingLots::ZERO {
-                resting_order.base_lots =
+                resting_order_key_value.value.base_lots =
                     In::base_lots_from_matching(residue, market.tick_size, price);
-                resting_order_key.store(&resting_order);
+
+                resting_order_key_value.store();
             }
             break;
         }

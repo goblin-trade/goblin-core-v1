@@ -6,8 +6,8 @@ use crate::{
     quantities::{Position, INNER_POS, POS_1},
     state::{
         bitmap::{bitmap_reader::BitmapReader, Bitmap},
-        resting_order::{preimage::RestingOrderPreimage, RestingOrder},
-        MarketPreimage, Preimage, SlotKey,
+        resting_order::preimage::RestingOrderPreimage,
+        KeyValue, MarketPreimage, Preimage, SlotKey,
     },
 };
 
@@ -18,8 +18,7 @@ where
     Q: TokenMarker,
 {
     pub position: Position,
-    pub resting_order_key: SlotKey<RestingOrderPreimage<M, B, Q>>,
-    pub resting_order: RestingOrder,
+    pub resting_order_key_value: KeyValue<RestingOrderPreimage<M, B, Q>>,
 }
 
 pub fn match_iterator<M, B, Q, In>(
@@ -38,17 +37,15 @@ where
         move |pos_2| {
             let position = pos_2.into();
 
-            let preimage = RestingOrderPreimage::<M, B, Q> {
+            let resting_order_key_value = RestingOrderPreimage::<M, B, Q> {
                 market_key,
                 position,
-            };
-            let resting_order_key = preimage.hash();
-            let resting_order = resting_order_key.load();
+            }
+            .key_value();
 
             RestingOrderEntry {
                 position,
-                resting_order_key,
-                resting_order,
+                resting_order_key_value,
             }
         },
     )
