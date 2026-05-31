@@ -1,6 +1,6 @@
 use crate::{
     hostio::hostio_helpers,
-    state::{PreimageSerializer, SlotKey, SlotState},
+    state::{KeyValue, PreimageSerializer, SlotKey, SlotState},
 };
 /// Preimage used to derive slot key. The slot key is then used
 /// to read SlotState
@@ -29,5 +29,12 @@ pub trait Preimage: Sized + Clone + Copy {
 
         let hash = hostio_helpers::native_keccak256(bytes);
         SlotKey::<Self>::new(hash)
+    }
+
+    /// Obtain the hash and slot state
+    fn key_value(self) -> KeyValue<Self> {
+        let key = self.hash();
+        let value = key.load();
+        KeyValue { key, value }
     }
 }
