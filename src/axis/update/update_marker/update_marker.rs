@@ -2,19 +2,19 @@ use crate::{
     axis::{
         leg::leg_matcher::LegMatcher,
         market::{market_marker::MarketMarker, Readables, Writables},
+        occupancy::occupancy_marker::OccupancyMarker,
         token::token_marker::TokenMarker,
         update::Update,
     },
     goblin_error::GoblinError,
     instructions::{MakeReadables, PosHeader},
     quantities::{BaseLots, InnerPos},
-    require,
     settlement::CheckedAdd,
     state::{
-        bitmap::alias::InnerBitmap, resting_order::preimage::RestingOrderPreimage, KeyValue,
-        Preimage,
+        bitmap::alias::InnerBitmap, resting_order::preimage::RestingOrderPreimage, Preimage,
+        SlotKey,
     },
-    types::{StoreReader, Tuple},
+    types::{Address, StoreReader, Tuple},
 };
 
 pub trait UpdateMarker<In>
@@ -29,18 +29,20 @@ where
         Result = <In::Opposite as LegMatcher>::MatchingLots,
     >,
 {
-    fn update_resting_order<'a, M, B, Q>(
+    fn update_resting_order<'a, M, B, Q, Oc>(
+        msg_sender: &Address,
         base_lots: BaseLots,
         inner_pos: InnerPos,
         inner_bitmap_state: &mut InnerBitmap,
-        key_value: &mut KeyValue<RestingOrderPreimage<M, B, Q>>,
+        key: &SlotKey<RestingOrderPreimage<M, B, Q>>,
     ) -> Result<BaseLots, GoblinError>
     where
         M: MarketMarker,
         B: TokenMarker,
-        Q: TokenMarker;
+        Q: TokenMarker,
+        Oc: OccupancyMarker;
 
-    fn process_update<'a, M, B, Q>(
+    fn process_update<'a, M, B, Q, Oc>(
         make_readables: &MakeReadables<M, B, Q>,
         writables: &mut Writables,
         inner_bitmap_state: &mut InnerBitmap,
@@ -50,6 +52,7 @@ where
         B: TokenMarker,
         Q: TokenMarker,
         In: LegMatcher,
+        Oc: OccupancyMarker,
     {
         let Readables {
             msg_sender,
@@ -61,28 +64,18 @@ where
             base_lots,
         } = make_readables.pos_header;
 
-        // TODO share code with process_open()
-        // Define new axis Occupancy- Vacant / Occupied
-        //
-        // - Open will have 2 branches- vacant (open) and occupied (increase)
-        // - Decrease with Vacant is illegal
-
-        let key_value = &mut RestingOrderPreimage {
+        let key = &mut &mut RestingOrderPreimage {
             market_key: market_readables.market_key,
             position,
         }
-        .key_value();
+        .hash();
 
-        require!(
-            key_value.value.maker == *msg_sender,
-            GoblinError::UnauthorizedMsgSender
-        );
-
-        let updated_base_lots = Self::update_resting_order::<M, B, Q>(
+        let updated_base_lots = Self::update_resting_order::<M, B, Q, Oc>(
+            msg_sender,
             base_lots,
             position.into(),
             inner_bitmap_state,
-            key_value,
+            key,
         )?;
 
         let amount = <In::Opposite as LegMatcher>::matching_lots_maker(

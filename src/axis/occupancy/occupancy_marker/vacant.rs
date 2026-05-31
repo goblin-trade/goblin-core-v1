@@ -18,8 +18,8 @@ impl OccupancyMarker for Vacant {
     fn increase<M, B, Q>(
         msg_sender: &Address,
         base_lots: BaseLots,
-        _inner_pos: InnerPos,
-        _inner_bitmap_state: &mut InnerBitmap,
+        inner_pos: InnerPos,
+        inner_bitmap_state: &mut InnerBitmap,
         key: &SlotKey<RestingOrderPreimage<M, B, Q>>,
     ) -> Result<BaseLots, GoblinError>
     where
@@ -27,6 +27,7 @@ impl OccupancyMarker for Vacant {
         B: TokenMarker,
         Q: TokenMarker,
     {
+        inner_bitmap_state.activate(inner_pos);
         key.store(&RestingOrder {
             maker: *msg_sender,
             base_lots,

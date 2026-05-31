@@ -2,6 +2,7 @@ use crate::{
     axis::{
         leg::{Base, LegEnum, Quote},
         market::{market_marker::MarketMarker, Writables},
+        occupancy::Occupied,
         token::token_marker::TokenMarker,
         update::{update_marker::UpdateMarker, Decrease, Increase, UpdateEnum},
     },
@@ -24,28 +25,28 @@ where
 {
     match (leg_in, update_enum) {
         (LegEnum::Base, UpdateEnum::Increase) => {
-            <Increase as UpdateMarker<Base>>::process_update::<M, B, Q>(
+            <Increase as UpdateMarker<Base>>::process_update::<M, B, Q, Occupied>(
                 make_readables,
                 writables,
                 inner_bitmap_state,
             )
         }
         (LegEnum::Quote, UpdateEnum::Increase) => {
-            <Increase as UpdateMarker<Quote>>::process_update::<M, B, Q>(
+            <Increase as UpdateMarker<Quote>>::process_update::<M, B, Q, Occupied>(
                 make_readables,
                 writables,
                 inner_bitmap_state,
             )
         }
         (LegEnum::Base, UpdateEnum::Decrease) => {
-            <Decrease as UpdateMarker<Base>>::process_update::<M, B, Q>(
+            <Decrease as UpdateMarker<Base>>::process_update::<M, B, Q, Occupied>(
                 make_readables,
                 writables,
                 inner_bitmap_state,
             )
         }
         (LegEnum::Quote, UpdateEnum::Decrease) => {
-            <Decrease as UpdateMarker<Quote>>::process_update::<M, B, Q>(
+            <Decrease as UpdateMarker<Quote>>::process_update::<M, B, Q, Occupied>(
                 make_readables,
                 writables,
                 inner_bitmap_state,
