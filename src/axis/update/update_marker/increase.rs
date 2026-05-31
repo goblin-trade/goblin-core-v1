@@ -11,8 +11,11 @@ use crate::{
     state::{bitmap::alias::InnerBitmap, resting_order::preimage::RestingOrderPreimage, KeyValue},
 };
 
-impl UpdateMarker for Increase {
-    fn update_resting_order<'a, M, B, Q, In>(
+impl<In> UpdateMarker<In> for Increase
+where
+    In: LegMatcher,
+{
+    fn update_resting_order<'a, M, B, Q>(
         base_lots: BaseLots,
         _inner_pos: InnerPos,
         _inner_bitmap_state: &mut InnerBitmap,
@@ -22,7 +25,6 @@ impl UpdateMarker for Increase {
         M: MarketMarker,
         B: TokenMarker,
         Q: TokenMarker,
-        In: LegMatcher,
     {
         let stored_base_lots = &mut key_value.value.base_lots;
         *stored_base_lots = stored_base_lots

@@ -17,8 +17,19 @@ use crate::{
     types::{StoreReader, Tuple},
 };
 
-pub trait UpdateMarker {
-    fn update_resting_order<'a, M, B, Q, In>(
+pub trait UpdateMarker<In>
+where
+    In: LegMatcher,
+    Self: StoreReader<
+        Tuple<
+            <In::Opposite as LegMatcher>::MatchingLots,
+            <In::Opposite as LegMatcher>::MatchingLots,
+            Update,
+        >,
+        Result = <In::Opposite as LegMatcher>::MatchingLots,
+    >,
+{
+    fn update_resting_order<'a, M, B, Q>(
         base_lots: BaseLots,
         inner_pos: InnerPos,
         inner_bitmap_state: &mut InnerBitmap,
@@ -27,10 +38,9 @@ pub trait UpdateMarker {
     where
         M: MarketMarker,
         B: TokenMarker,
-        Q: TokenMarker,
-        In: LegMatcher;
+        Q: TokenMarker;
 
-    fn process_update<'a, M, B, Q, In>(
+    fn process_update<'a, M, B, Q>(
         make_readables: &MakeReadables<M, B, Q>,
         writables: &mut Writables,
         inner_bitmap_state: &mut InnerBitmap,
@@ -40,14 +50,6 @@ pub trait UpdateMarker {
         B: TokenMarker,
         Q: TokenMarker,
         In: LegMatcher,
-        Self: StoreReader<
-            Tuple<
-                <In::Opposite as LegMatcher>::MatchingLots,
-                <In::Opposite as LegMatcher>::MatchingLots,
-                Update,
-            >,
-            Result = <In::Opposite as LegMatcher>::MatchingLots,
-        >,
     {
         let Readables {
             msg_sender,
@@ -70,7 +72,7 @@ pub trait UpdateMarker {
             GoblinError::UnauthorizedMsgSender
         );
 
-        let updated_base_lots = Self::update_resting_order::<M, B, Q, In>(
+        let updated_base_lots = Self::update_resting_order::<M, B, Q>(
             base_lots,
             position.into(),
             inner_bitmap_state,

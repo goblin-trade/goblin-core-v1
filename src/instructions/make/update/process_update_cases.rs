@@ -24,20 +24,32 @@ where
 {
     match (leg_in, update_enum) {
         (LegEnum::Base, UpdateEnum::Increase) => {
-            Increase::process_update::<M, B, Q, Base>(make_readables, writables, inner_bitmap_state)
+            <Increase as UpdateMarker<Base>>::process_update::<M, B, Q>(
+                make_readables,
+                writables,
+                inner_bitmap_state,
+            )
         }
-        (LegEnum::Quote, UpdateEnum::Increase) => Increase::process_update::<M, B, Q, Quote>(
-            make_readables,
-            writables,
-            inner_bitmap_state,
-        ),
+        (LegEnum::Quote, UpdateEnum::Increase) => {
+            <Increase as UpdateMarker<Quote>>::process_update::<M, B, Q>(
+                make_readables,
+                writables,
+                inner_bitmap_state,
+            )
+        }
         (LegEnum::Base, UpdateEnum::Decrease) => {
-            Decrease::process_update::<M, B, Q, Base>(make_readables, writables, inner_bitmap_state)
+            <Decrease as UpdateMarker<Base>>::process_update::<M, B, Q>(
+                make_readables,
+                writables,
+                inner_bitmap_state,
+            )
         }
-        (LegEnum::Quote, UpdateEnum::Decrease) => Decrease::process_update::<M, B, Q, Quote>(
-            make_readables,
-            writables,
-            inner_bitmap_state,
-        ),
+        (LegEnum::Quote, UpdateEnum::Decrease) => {
+            <Decrease as UpdateMarker<Quote>>::process_update::<M, B, Q>(
+                make_readables,
+                writables,
+                inner_bitmap_state,
+            )
+        }
     }
 }
