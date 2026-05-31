@@ -7,20 +7,15 @@ use crate::{
     },
     goblin_error::GoblinError,
     quantities::{BaseLots, InnerPos},
-    state::{
-        bitmap::alias::InnerBitmap,
-        resting_order::{preimage::RestingOrderPreimage, RestingOrder},
-        SlotKey,
-    },
+    state::{bitmap::alias::InnerBitmap, resting_order::preimage::RestingOrderPreimage, KeyValue},
 };
 
 impl UpdateMarker for Decrease {
     fn update_resting_order<'a, M, B, Q, In>(
-        resting_order_key: &SlotKey<RestingOrderPreimage<M, B, Q>>,
         base_lots: BaseLots,
         inner_pos: InnerPos,
-        resting_order_state: &mut RestingOrder,
         inner_bitmap_state: &mut InnerBitmap,
+        key_value: &mut KeyValue<RestingOrderPreimage<M, B, Q>>,
     ) -> Result<BaseLots, GoblinError>
     where
         M: MarketMarker,
@@ -28,15 +23,16 @@ impl UpdateMarker for Decrease {
         Q: TokenMarker,
         In: LegMatcher,
     {
-        let reduced_lots = if resting_order_state.base_lots > base_lots {
-            resting_order_state.base_lots -= base_lots;
-            resting_order_key.store(&resting_order_state);
+        let stored_base_lots = &mut key_value.value.base_lots;
+        let reduced_lots = if *stored_base_lots > base_lots {
+            *stored_base_lots -= base_lots;
+            key_value.store();
 
             base_lots
         } else {
             inner_bitmap_state.deactivate(inner_pos);
 
-            resting_order_state.base_lots
+            *stored_base_lots
         };
 
         Ok(reduced_lots)

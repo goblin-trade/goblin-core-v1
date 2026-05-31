@@ -8,20 +8,15 @@ use crate::{
     goblin_error::GoblinError,
     quantities::{BaseLots, InnerPos},
     settlement::CheckedAdd,
-    state::{
-        bitmap::alias::InnerBitmap,
-        resting_order::{preimage::RestingOrderPreimage, RestingOrder},
-        SlotKey,
-    },
+    state::{bitmap::alias::InnerBitmap, resting_order::preimage::RestingOrderPreimage, KeyValue},
 };
 
 impl UpdateMarker for Increase {
     fn update_resting_order<'a, M, B, Q, In>(
-        resting_order_key: &SlotKey<RestingOrderPreimage<M, B, Q>>,
         base_lots: BaseLots,
         _inner_pos: InnerPos,
-        resting_order_state: &mut RestingOrder,
         _inner_bitmap_state: &mut InnerBitmap,
+        key_value: &mut KeyValue<RestingOrderPreimage<M, B, Q>>,
     ) -> Result<BaseLots, GoblinError>
     where
         M: MarketMarker,
@@ -29,11 +24,12 @@ impl UpdateMarker for Increase {
         Q: TokenMarker,
         In: LegMatcher,
     {
-        resting_order_state.base_lots = resting_order_state
-            .base_lots
+        let stored_base_lots = &mut key_value.value.base_lots;
+        *stored_base_lots = stored_base_lots
             .checked_add(base_lots)
             .ok_or(GoblinError::Overflow)?;
-        resting_order_key.store(&resting_order_state);
+
+        key_value.store();
 
         Ok(base_lots)
     }
