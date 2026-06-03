@@ -1,7 +1,6 @@
 use crate::{axis::leg::SamePair, impl_checked_slot_state, quantities::Position};
 
 /// The market state slot
-/// We have 6 possible sub-types based on MarketVariant and PairShape
 #[repr(C)]
 pub struct MarketState {
     /// The last known price positions at the centre

@@ -14,10 +14,12 @@ where
     In: LegMatcher,
     In::Opposite: StoreReader<Tuple<Position, Position, Leg>, Result = Position>,
 {
+    let price = Ticks::from(position_2);
+
     // order and opposite last position cannot lie on the same price
     let opposite_last_position = In::Opposite::get(last_positions);
-    let price = Ticks::from(position_2);
     let opposite_last_price = Ticks::from(opposite_last_position);
+
     require!(price != opposite_last_price, GoblinError::InvalidOpenPrice);
 
     // Update last position in market state

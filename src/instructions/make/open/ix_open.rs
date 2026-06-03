@@ -39,6 +39,8 @@ where
         );
     } else {
         match leg_enum {
+            // TODO fix- this function updates last price
+            // this should not happen in a validator function
             LegEnum::Base => validate_open_in_spread::<Base>(
                 &mut writables.market_state.last_positions,
                 position,
