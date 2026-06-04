@@ -8,7 +8,7 @@ use crate::{
     },
     goblin_error::GoblinError,
     instructions::{MakeReadables, PosHeader},
-    quantities::{BaseLots, InnerPos},
+    quantities::{BaseLots, InnerPos, Ticks},
     settlement::CheckedAdd,
     state::{
         bitmap::alias::InnerBitmap, resting_order::preimage::RestingOrderPreimage, Preimage,
@@ -81,7 +81,7 @@ where
         let amount = <In::Opposite as LegMatcher>::matching_lots_maker(
             updated_base_lots,
             market_readables.market.tick_size,
-            position.into(),
+            Ticks::from(position),
         );
 
         let sided_make_delta = In::get_leg_mut(&mut writables.local_delta.local_sender_delta);

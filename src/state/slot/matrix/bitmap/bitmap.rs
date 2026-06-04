@@ -24,11 +24,6 @@ impl<const BITS: u16, const INNER_BITS: u16> Bitmap<BITS, INNER_BITS> {
         self.inner = CLOSED_SENTINEL
     }
 
-    // problem- outer bitmap has BITS=POS_0 but expects BITS=OUTER_POS
-    // Need to update all these functions
-    //
-    // Workaround- 2 generics for BITMAP.
-    // First value for key, second for inner lookup
     pub fn index_active(&self, pos: DerivedPosition<u8, INNER_BITS>) -> bool {
         let byte = self.inner[pos.byte_index()];
         let mask = 1 << pos.bit_index();
