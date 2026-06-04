@@ -5,9 +5,9 @@ use crate::{
         token::token_marker::TokenMarker,
     },
     goblin_error::GoblinError,
-    quantities::{BaseLots, InnerPos},
+    quantities::BaseLots,
     state::{
-        bitmap::alias::InnerBitmap,
+        bitmap::alias::InnerBitmapUpdater,
         resting_order::{preimage::RestingOrderPreimage, RestingOrder},
         SlotKey,
     },
@@ -15,19 +15,18 @@ use crate::{
 };
 
 impl OccupancyMarker for Vacant {
-    fn increase<M, B, Q>(
+    fn increase<'a, M, B, Q>(
         msg_sender: &Address,
         base_lots: BaseLots,
-        inner_pos: InnerPos,
-        inner_bitmap_state: &mut InnerBitmap,
         key: &SlotKey<RestingOrderPreimage<M, B, Q>>,
+        inner_bitmap_updater: &mut InnerBitmapUpdater<'a>,
     ) -> Result<BaseLots, GoblinError>
     where
         M: MarketMarker,
         B: TokenMarker,
         Q: TokenMarker,
     {
-        inner_bitmap_state.activate(inner_pos);
+        inner_bitmap_updater.activate();
         key.store(&RestingOrder {
             maker: *msg_sender,
             base_lots,
@@ -36,12 +35,11 @@ impl OccupancyMarker for Vacant {
         Ok(base_lots)
     }
 
-    fn decrease<M, B, Q>(
+    fn decrease<'a, M, B, Q>(
         _msg_sender: &Address,
         _base_lots: BaseLots,
-        _inner_pos: InnerPos,
-        _inner_bitmap_state: &mut InnerBitmap,
         _key: &SlotKey<RestingOrderPreimage<M, B, Q>>,
+        _inner_bitmap_updater: &mut InnerBitmapUpdater<'a>,
     ) -> Result<BaseLots, GoblinError>
     where
         M: MarketMarker,

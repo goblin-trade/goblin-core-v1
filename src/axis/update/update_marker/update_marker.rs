@@ -11,8 +11,9 @@ use crate::{
     quantities::{BaseLots, InnerPos, Ticks},
     settlement::CheckedAdd,
     state::{
-        bitmap::alias::InnerBitmap, resting_order::preimage::RestingOrderPreimage, Preimage,
-        SlotKey,
+        bitmap::alias::{InnerBitmap, InnerBitmapUpdater},
+        resting_order::preimage::RestingOrderPreimage,
+        Preimage, SlotKey,
     },
     types::{Address, StoreReader, Tuple},
 };
@@ -29,19 +30,6 @@ where
         Result = <In::Opposite as LegMatcher>::MatchingLots,
     >,
 {
-    fn update_resting_order<'a, M, B, Q, Oc>(
-        msg_sender: &Address,
-        base_lots: BaseLots,
-        inner_pos: InnerPos,
-        inner_bitmap_state: &mut InnerBitmap,
-        key: &SlotKey<RestingOrderPreimage<M, B, Q>>,
-    ) -> Result<BaseLots, GoblinError>
-    where
-        M: MarketMarker,
-        B: TokenMarker,
-        Q: TokenMarker,
-        Oc: OccupancyMarker;
-
     fn process_update<'a, M, B, Q, Oc>(
         make_readables: &MakeReadables<M, B, Q>,
         writables: &mut Writables,
@@ -51,7 +39,6 @@ where
         M: MarketMarker,
         B: TokenMarker,
         Q: TokenMarker,
-        In: LegMatcher,
         Oc: OccupancyMarker,
     {
         let Readables {
@@ -73,9 +60,11 @@ where
         let updated_base_lots = Self::update_resting_order::<M, B, Q, Oc>(
             msg_sender,
             base_lots,
-            position.into(),
-            inner_bitmap_state,
             key,
+            &mut InnerBitmapUpdater {
+                bitmap: inner_bitmap_state,
+                pos: InnerPos::from(position),
+            },
         )?;
 
         let amount = <In::Opposite as LegMatcher>::matching_lots_maker(
@@ -90,4 +79,16 @@ where
 
         Ok(())
     }
+
+    fn update_resting_order<'a, M, B, Q, Oc>(
+        msg_sender: &Address,
+        base_lots: BaseLots,
+        key: &SlotKey<RestingOrderPreimage<M, B, Q>>,
+        inner_bitmap_updater: &mut InnerBitmapUpdater<'a>,
+    ) -> Result<BaseLots, GoblinError>
+    where
+        M: MarketMarker,
+        B: TokenMarker,
+        Q: TokenMarker,
+        Oc: OccupancyMarker;
 }

@@ -7,8 +7,10 @@ use crate::{
         update::{update_marker::UpdateMarker, Decrease},
     },
     goblin_error::GoblinError,
-    quantities::{BaseLots, InnerPos},
-    state::{bitmap::alias::InnerBitmap, resting_order::preimage::RestingOrderPreimage, SlotKey},
+    quantities::BaseLots,
+    state::{
+        bitmap::alias::InnerBitmapUpdater, resting_order::preimage::RestingOrderPreimage, SlotKey,
+    },
     types::Address,
 };
 
@@ -19,9 +21,8 @@ where
     fn update_resting_order<'a, M, B, Q, Oc>(
         msg_sender: &Address,
         base_lots: BaseLots,
-        inner_pos: InnerPos,
-        inner_bitmap_state: &mut InnerBitmap,
         key: &SlotKey<RestingOrderPreimage<M, B, Q>>,
+        inner_bitmap_updater: &mut InnerBitmapUpdater<'a>,
     ) -> Result<BaseLots, GoblinError>
     where
         M: MarketMarker,
@@ -29,6 +30,6 @@ where
         Q: TokenMarker,
         Oc: OccupancyMarker,
     {
-        Oc::decrease(msg_sender, base_lots, inner_pos, inner_bitmap_state, key)
+        Oc::decrease(msg_sender, base_lots, key, inner_bitmap_updater)
     }
 }
