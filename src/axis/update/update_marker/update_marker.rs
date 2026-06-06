@@ -1,6 +1,6 @@
 use crate::{
     axis::{
-        leg::leg_matcher::LegMatcher,
+        leg::{leg_matcher::LegMatcher, leg_math::LegMath},
         market::{market_marker::MarketMarker, Readables, Writables},
         occupancy::occupancy_marker::OccupancyMarker,
         token::token_marker::TokenMarker,
@@ -23,11 +23,11 @@ where
     In: LegMatcher,
     Self: StoreReader<
         Tuple<
-            <In::Opposite as LegMatcher>::MatchingLots,
-            <In::Opposite as LegMatcher>::MatchingLots,
+            <In::Opposite as LegMath>::MatchingLots,
+            <In::Opposite as LegMath>::MatchingLots,
             Update,
         >,
-        Result = <In::Opposite as LegMatcher>::MatchingLots,
+        Result = <In::Opposite as LegMath>::MatchingLots,
     >,
 {
     fn process_update<'a, M, B, Q, Oc>(
@@ -67,7 +67,7 @@ where
             },
         )?;
 
-        let amount = <In::Opposite as LegMatcher>::matching_lots_maker(
+        let amount = <In::Opposite as LegMath>::matching_lots_maker(
             updated_base_lots,
             market_readables.market.tick_size,
             Ticks::from(position),
