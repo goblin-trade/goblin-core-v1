@@ -25,28 +25,28 @@ where
 {
     match (leg_in, update_enum) {
         (LegEnum::Base, UpdateEnum::Increase) => {
-            <Increase as UpdateMarker<Base>>::process_update::<M, B, Q, Occupied>(
+            Increase::process_update::<M, B, Q, Base, Occupied>(
                 make_readables,
                 writables,
                 inner_bitmap_state,
             )
         }
         (LegEnum::Quote, UpdateEnum::Increase) => {
-            <Increase as UpdateMarker<Quote>>::process_update::<M, B, Q, Occupied>(
+            Increase::process_update::<M, B, Q, Quote, Occupied>(
                 make_readables,
                 writables,
                 inner_bitmap_state,
             )
         }
         (LegEnum::Base, UpdateEnum::Decrease) => {
-            <Decrease as UpdateMarker<Base>>::process_update::<M, B, Q, Occupied>(
+            Decrease::process_update::<M, B, Q, Base, Occupied>(
                 make_readables,
                 writables,
                 inner_bitmap_state,
             )
         }
         (LegEnum::Quote, UpdateEnum::Decrease) => {
-            <Decrease as UpdateMarker<Quote>>::process_update::<M, B, Q, Occupied>(
+            Decrease::process_update::<M, B, Q, Quote, Occupied>(
                 make_readables,
                 writables,
                 inner_bitmap_state,

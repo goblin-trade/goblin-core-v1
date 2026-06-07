@@ -4,7 +4,7 @@ use crate::{
         market::{market_marker::MarketMarker, Readables, Writables},
         occupancy::occupancy_marker::OccupancyMarker,
         token::token_marker::TokenMarker,
-        update::Update,
+        update::update_reader::UpdateReader,
     },
     goblin_error::GoblinError,
     instructions::{MakeReadables, PosHeader},
@@ -15,22 +15,11 @@ use crate::{
         resting_order::preimage::RestingOrderPreimage,
         Preimage, SlotKey,
     },
-    types::{Address, StoreReader, Tuple},
+    types::Address,
 };
 
-pub trait UpdateMarker<In>
-where
-    In: LegMatcher,
-    Self: StoreReader<
-        Tuple<
-            <In::Opposite as LegMath>::MatchingLots,
-            <In::Opposite as LegMath>::MatchingLots,
-            Update,
-        >,
-        Result = <In::Opposite as LegMath>::MatchingLots,
-    >,
-{
-    fn process_update<'a, M, B, Q, Oc>(
+pub trait UpdateMarker {
+    fn process_update<'a, M, B, Q, In, Oc>(
         make_readables: &MakeReadables<M, B, Q>,
         writables: &mut Writables,
         inner_bitmap_state: &mut InnerBitmap,
@@ -39,7 +28,9 @@ where
         M: MarketMarker,
         B: TokenMarker,
         Q: TokenMarker,
+        In: LegMatcher,
         Oc: OccupancyMarker,
+        Self: UpdateReader<In>,
     {
         let Readables {
             msg_sender,
@@ -57,7 +48,7 @@ where
         }
         .hash();
 
-        let updated_base_lots = Self::update_resting_order::<M, B, Q, Oc>(
+        let updated_base_lots = Self::update_resting_order::<M, B, Q, In, Oc>(
             msg_sender,
             base_lots,
             key,
@@ -74,13 +65,14 @@ where
         );
 
         let sided_make_delta = In::get_leg_mut(&mut writables.local_delta.local_sender_delta);
+
         let delta = Self::get_leg_mut(&mut sided_make_delta.make);
         *delta = delta.checked_add(amount).ok_or(GoblinError::Overflow)?;
 
         Ok(())
     }
 
-    fn update_resting_order<'a, M, B, Q, Oc>(
+    fn update_resting_order<'a, M, B, Q, In, Oc>(
         msg_sender: &Address,
         base_lots: BaseLots,
         key: &SlotKey<RestingOrderPreimage<M, B, Q>>,
@@ -90,5 +82,6 @@ where
         M: MarketMarker,
         B: TokenMarker,
         Q: TokenMarker,
+        In: LegMatcher,
         Oc: OccupancyMarker;
 }

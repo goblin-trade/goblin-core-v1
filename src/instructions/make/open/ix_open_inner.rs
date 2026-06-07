@@ -33,9 +33,5 @@ where
         *last_position = position;
     }
 
-    <Increase as UpdateMarker<In>>::process_update::<M, B, Q, Vacant>(
-        make_readables,
-        writables,
-        inner_bitmap_state,
-    )
+    Increase::process_update::<M, B, Q, In, Vacant>(make_readables, writables, inner_bitmap_state)
 }

@@ -14,11 +14,8 @@ use crate::{
     types::Address,
 };
 
-impl<In> UpdateMarker<In> for Decrease
-where
-    In: LegMatcher,
-{
-    fn update_resting_order<'a, M, B, Q, Oc>(
+impl UpdateMarker for Decrease {
+    fn update_resting_order<'a, M, B, Q, In, Oc>(
         msg_sender: &Address,
         base_lots: BaseLots,
         key: &SlotKey<RestingOrderPreimage<M, B, Q>>,
@@ -28,6 +25,7 @@ where
         M: MarketMarker,
         B: TokenMarker,
         Q: TokenMarker,
+        In: LegMatcher,
         Oc: OccupancyMarker,
     {
         Oc::decrease(msg_sender, base_lots, key, inner_bitmap_updater)
