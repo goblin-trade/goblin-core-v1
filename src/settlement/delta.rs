@@ -1,8 +1,8 @@
 use crate::{
     axis::{
-        leg::{Base, Pair},
+        leg::{Base, Pair, Quote},
         market::market_marker::MarketMarker,
-        token::token_marker::TokenMarker,
+        token::{token_marker::TokenMarker, ETH},
     },
     goblin_error::GoblinError,
     settlement::{global_delta::GlobalDelta, local_delta::LocalDelta, ConstZero},
@@ -41,6 +41,14 @@ impl Delta {
         B: TokenMarker,
         Q: TokenMarker,
     {
+        // 1. Sender- deposits, taker delta, maker delta
+        // need to call 3 times for ETH, hardcoded token and custom token
+
+        B::add_delta::<Base>(self);
+        Q::add_delta::<Quote>(self);
+
+        // self.global.global_sender_delta;
+
         // Steps
         // 1. Deposits
         // 2. msg_sender

@@ -12,7 +12,7 @@ use crate::{
     },
     goblin_error::GoblinError,
     quantities::DeltaAtoms,
-    settlement::local_delta::Deposits,
+    settlement::{local_delta::Deposits, Delta},
     types::Address,
 };
 
@@ -39,5 +39,12 @@ impl TokenMarker for HardcodedERC20 {
         In: LegMatcher,
     {
         *In::get_leg_mut(deposits) = deposit_amount;
+    }
+
+    fn add_delta<In>(delta: &mut Delta)
+    where
+        In: LegMatcher,
+    {
+        todo!()
     }
 }

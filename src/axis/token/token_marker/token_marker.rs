@@ -7,8 +7,9 @@ use crate::{
     input_processor::Decodable,
     quantities::DeltaAtoms,
     settlement::{
-        global_delta::{ERC20Delta, GlobalSenderDelta},
+        global_delta::{ERC20Delta, GlobalDelta, GlobalSenderDelta},
         local_delta::Deposits,
+        Delta,
     },
 };
 
@@ -37,9 +38,11 @@ pub trait TokenMarker: Clone + Copy + 'static {
     where
         In: LegMatcher;
 
-    // fn add_delta(
-    //     delta: Self::Delta,
-    //     token_index: Self::TokenIndex,
-    //     global_sender_delta: &mut GlobalSenderDelta,
-    // );
+    fn add_delta<In>(
+        delta: &mut Delta,
+        // delta: Self::Delta,
+        // token_index: Self::TokenIndex,
+        // global_sender_delta: &mut GlobalSenderDelta,
+    ) where
+        In: LegMatcher;
 }

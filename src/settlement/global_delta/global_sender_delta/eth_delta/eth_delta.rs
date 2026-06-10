@@ -1,22 +1,24 @@
 // use crate::settlement::global_delta::UnsidedSenderDelta;
 
+use crate::settlement::{ConstZero, UnsidedSenderDeltaV2};
+
 /// ETH atoms due to be deducted, locked or transferred out on settlement
 ///
 /// msg_value and eth_out_due are stored in global_header.eth_transfers.
 /// Use this struct during settlement.
 #[derive(Clone, Copy)]
 pub struct EthDelta {
-    // /// Delta from trading
-    // pub unsided_sender_delta: UnsidedSenderDelta,
+    /// Delta from trading
+    pub unsided_sender_delta: UnsidedSenderDeltaV2,
+}
+
+impl ConstZero for EthDelta {
+    const ZEROED: Self = Self {
+        unsided_sender_delta: UnsidedSenderDeltaV2::ZEROED,
+    };
 }
 
 impl EthDelta {
-    pub const fn zero() -> Self {
-        Self {
-            // unsided_sender_delta: UnsidedSenderDelta::zero(),
-        }
-    }
-
     // /// Update locked and free atoms of the store by applying the common delta
     // fn apply_common_delta(&self, store_mut: &mut EthStore) -> Option<()> {
     //     store_mut.atoms_locked = store_mut

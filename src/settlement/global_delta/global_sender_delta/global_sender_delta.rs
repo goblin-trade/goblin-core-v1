@@ -1,7 +1,10 @@
 use crate::{
     axis::token::{token_marker::hardcoded_erc20::HARDCODED_TOKENS, Token},
-    settlement::global_delta::{
-        ERC20Delta, EthDelta, SenderCustomDeltas, SenderHardcodedDeltas, MAX_CUSTOM_DELTAS,
+    settlement::{
+        global_delta::{
+            ERC20Delta, EthDelta, SenderCustomDeltas, SenderHardcodedDeltas, MAX_CUSTOM_DELTAS,
+        },
+        ConstZero,
     },
     types::Triple,
 };
@@ -15,7 +18,7 @@ pub type GlobalSenderDelta = Triple<EthDelta, SenderHardcodedDeltas, SenderCusto
 impl GlobalSenderDelta {
     pub const fn zero() -> Self {
         Self::new(
-            EthDelta::zero(),
+            EthDelta::ZEROED,
             [ERC20Delta::zero(); HARDCODED_TOKENS.len()],
             [ERC20Delta::zero(); MAX_CUSTOM_DELTAS],
         )
