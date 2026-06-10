@@ -7,6 +7,7 @@ use crate::{
 pub type Unsided<L, U, A> = Quantity<SidedDim<L, U, A>>;
 pub type UnsidedAtoms = Unsided<Z0, Z0, P1>;
 
+// TODO remove AsUnsided, use From instead
 pub trait AsUnsided<S: LegQuantities, L: Exp, U: Exp, A: Exp> {
     fn unsided(self) -> Unsided<L, U, A>;
 }
