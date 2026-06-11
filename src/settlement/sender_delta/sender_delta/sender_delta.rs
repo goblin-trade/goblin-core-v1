@@ -10,13 +10,6 @@ where
     O: Clone + Copy + ConstZero + CheckedAdd,
 {
     pub take: TakeDelta<I, O>,
-
-    // TODO fix, LocalSenderDelta uses Lots instead of MatchLots
-    //
-    // Options
-    // - Try to simplify SenderDelta trait. But we want to avoid more generic fields
-    // - MakerDelta to store MatchLots. Convert it when moving to global delta.
-    // Use decode_matching_lots(matching_lots, base_lot_size)
     pub make: MakeDelta<O>,
 }
 
