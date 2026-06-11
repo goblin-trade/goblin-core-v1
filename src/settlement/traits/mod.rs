@@ -1,7 +1,7 @@
 pub mod checked_add;
 pub mod const_zero;
-pub mod into_unsided;
+pub mod unside_delta;
 
 pub use checked_add::*;
 pub use const_zero::*;
-pub use into_unsided::*;
+pub use unside_delta::*;

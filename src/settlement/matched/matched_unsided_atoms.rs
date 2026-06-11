@@ -1,6 +1,6 @@
 use crate::{
     axis::leg::leg_matcher::LegMatcher,
-    quantities::{AsUnsided, QuantityOps, UnsidedAtoms},
+    quantities::{UnsideQuantity, QuantityOps, UnsidedAtoms},
     settlement::{CheckedAdd, MatchedAtoms},
 };
 

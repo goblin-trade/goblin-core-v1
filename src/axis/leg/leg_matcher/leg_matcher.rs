@@ -7,7 +7,7 @@ use crate::{
         },
         market::LotSizePair,
     },
-    quantities::{AsUnsided, UnsidedAtoms},
+    quantities::{UnsideQuantity, UnsidedAtoms},
     types::StoreReader,
 };
 
