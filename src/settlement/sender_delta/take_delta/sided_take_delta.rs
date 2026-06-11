@@ -9,19 +9,17 @@ use crate::{
 pub type SidedTakeDeltaV2<In> =
     TakeDelta<<In as LegMath>::MatchingLots, <<In as LegMath>::Opposite as LegMath>::MatchingLots>;
 
-impl<In> UnsideDelta<In> for SidedTakeDeltaV2<In>
-where
-    In: LegMatcher,
-{
-    type Unsided = UnsidedTakeDeltaV2;
+// impl<In> UnsideDelta<In> for SidedTakeDeltaV2<In>
+// where
+//     In: LegMatcher,
+// {
+//     type Unsided = UnsidedTakeDeltaV2;
 
-    fn unside(&self, lot_size_pair: &LotSizePair) -> Self::Unsided {
-        UnsidedTakeDeltaV2 {
-            take_in: In::matching_lots_to_unsided_atoms(self.take_in, lot_size_pair),
-            take_out: <<In as LegMath>::Opposite as LegMatcher>::matching_lots_to_unsided_atoms(
-                self.take_out,
-                lot_size_pair,
-            ),
-        }
-    }
-}
+//     fn unside(&self, lot_size_pair: &LotSizePair) -> Self::Unsided {
+//         todo!()
+//         // UnsidedTakeDeltaV2 {
+//         //     take_in: self.take_in.unside(lot_size_pair),
+//         //     take_out: self.take_out.unside(lot_size_pair),
+//         // }
+//     }
+// }
