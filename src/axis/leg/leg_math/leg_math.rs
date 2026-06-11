@@ -38,17 +38,6 @@ pub trait LegMath: LegQuantities {
         base_lot_size: BaseLotsPerBaseUnit,
     ) -> Self::Lots;
 
-    fn matching_lots_to_atoms(
-        matching_lots: Self::MatchingLots,
-        base_lot_size: BaseLotsPerBaseUnit,
-        atoms_per_lot: Self::AtomsPerLot,
-    ) -> Self::Atoms {
-        let lots = Self::decode_matching_lots(matching_lots, base_lot_size);
-        let atoms: Self::Atoms = lots * atoms_per_lot;
-
-        atoms
-    }
-
     // ------------
 
     /// Obtain MatchingLots from a resting order
