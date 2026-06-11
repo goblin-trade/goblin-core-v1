@@ -1,13 +1,14 @@
 use crate::{
-    axis::leg::leg_quantities::LegQuantities,
+    axis::leg::{leg_matcher::LegMatcher, leg_quantities::LegQuantities},
     quantities::{BaseLots, BaseLotsPerBaseUnit, QuantityOps, QuoteLotsPerBaseUnitPerTick, Ticks},
     settlement::{CheckedAdd, ConstZero},
 };
 
 pub trait LegMath: LegQuantities {
-    /// The opposite side
-    /// Opposite of opposite is Self
-    type Opposite: LegMath<Opposite = Self>;
+    /// The opposite side. Opposite of opposite is Self.
+    ///
+    /// We can LegMatcher directly without circular dependency issues.
+    type Opposite: LegMatcher<Opposite = Self>;
 
     /// The intermediary unit used for matching
     ///
