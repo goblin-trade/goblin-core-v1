@@ -1,6 +1,7 @@
 use crate::{
     axis::{
-        leg::leg_matcher::LegMatcher, market::market_marker::MarketMarker,
+        leg::leg_matcher::LegMatcher,
+        market::{market_marker::MarketMarker, LotSizePair},
         token::token_marker::custom_erc20::custom_erc20_data::CustomERC20Data,
     },
     goblin_error::GoblinError,
@@ -9,7 +10,8 @@ use crate::{
     settlement::{
         global_delta::{ERC20Delta, GlobalDelta, GlobalSenderDelta},
         local_delta::Deposits,
-        Delta,
+        Delta, SidedMakeDeltaV2, SidedSenderDeltaV2, SidedTakeDeltaV2, UnsideDelta,
+        UnsidedMakeDeltaV2, UnsidedSenderDeltaV2, UnsidedTakeDeltaV2,
     },
 };
 
@@ -40,9 +42,12 @@ pub trait TokenMarker: Clone + Copy + 'static {
 
     fn add_delta<In>(
         delta: &mut Delta,
-        // delta: Self::Delta,
-        // token_index: Self::TokenIndex,
-        // global_sender_delta: &mut GlobalSenderDelta,
+        lot_size_pair: &LotSizePair, // delta: Self::Delta,
+                                     // token_index: Self::TokenIndex,
+                                     // global_sender_delta: &mut GlobalSenderDelta,
     ) where
-        In: LegMatcher;
+        In: LegMatcher,
+        // SidedTakeDeltaV2<In>: UnsideDelta<In, Unsided = UnsidedTakeDeltaV2>,
+        // SidedMakeDeltaV2<In>: UnsideDelta<In, Unsided = UnsidedMakeDeltaV2>,
+        SidedSenderDeltaV2<In>: UnsideDelta<In, Unsided = UnsidedSenderDeltaV2>;
 }

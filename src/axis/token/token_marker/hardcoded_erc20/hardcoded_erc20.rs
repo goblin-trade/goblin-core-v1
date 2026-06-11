@@ -1,6 +1,7 @@
 use crate::{
     axis::{
         leg::leg_matcher::LegMatcher,
+        market::LotSizePair,
         token::{
             token_marker::{
                 custom_erc20::custom_erc20_data::CustomERC20Data,
@@ -12,7 +13,9 @@ use crate::{
     },
     goblin_error::GoblinError,
     quantities::DeltaAtoms,
-    settlement::{local_delta::Deposits, Delta},
+    settlement::{
+        local_delta::Deposits, Delta, SidedSenderDeltaV2, UnsideDelta, UnsidedSenderDeltaV2,
+    },
     types::Address,
 };
 
@@ -41,9 +44,10 @@ impl TokenMarker for HardcodedERC20 {
         *In::get_leg_mut(deposits) = deposit_amount;
     }
 
-    fn add_delta<In>(delta: &mut Delta)
+    fn add_delta<In>(delta: &mut Delta, lot_size_pair: &LotSizePair)
     where
         In: LegMatcher,
+        SidedSenderDeltaV2<In>: UnsideDelta<In, Unsided = UnsidedSenderDeltaV2>,
     {
         todo!()
     }
