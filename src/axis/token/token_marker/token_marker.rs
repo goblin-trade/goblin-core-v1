@@ -45,7 +45,8 @@ pub trait TokenMarker: Clone + Copy + 'static {
         lot_size_pair: &LotSizePair, // delta: Self::Delta,
                                      // token_index: Self::TokenIndex,
                                      // global_sender_delta: &mut GlobalSenderDelta,
-    ) where
+    ) -> Result<(), GoblinError>
+    where
         In: LegMatcher,
         // SidedTakeDeltaV2<In>: UnsideDelta<In, Unsided = UnsidedTakeDeltaV2>,
         // SidedMakeDeltaV2<In>: UnsideDelta<In, Unsided = UnsidedMakeDeltaV2>,

@@ -44,7 +44,7 @@ impl TokenMarker for CustomERC20 {
         *In::get_leg_mut(deposits) = deposit_amount;
     }
 
-    fn add_delta<In>(delta: &mut Delta, lot_size_pair: &LotSizePair)
+    fn add_delta<In>(delta: &mut Delta, lot_size_pair: &LotSizePair) -> Result<(), GoblinError>
     where
         In: LegMatcher,
         SidedSenderDeltaV2<In>: UnsideDelta<In, Unsided = UnsidedSenderDeltaV2>,

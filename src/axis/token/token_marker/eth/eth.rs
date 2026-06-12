@@ -11,7 +11,7 @@ use crate::{
     settlement::{
         global_delta::{EthDelta, GlobalDelta, GlobalSenderDelta},
         local_delta::Deposits,
-        Delta, SidedMakeDeltaV2, SidedSenderDeltaV2, SidedTakeDeltaV2, UnsideDelta,
+        CheckedAdd, Delta, SidedMakeDeltaV2, SidedSenderDeltaV2, SidedTakeDeltaV2, UnsideDelta,
         UnsidedMakeDeltaV2, UnsidedSenderDeltaV2, UnsidedTakeDeltaV2,
     },
     types::StoreReader,
@@ -40,7 +40,8 @@ impl TokenMarker for ETH {
         lot_size_pair: &LotSizePair, // delta: Self::Delta,
                                      // token_index: Self::TokenIndex,
                                      // global_sender_delta: &mut GlobalSenderDelta,
-    ) where
+    ) -> Result<(), GoblinError>
+    where
         In: LegMatcher,
         SidedSenderDeltaV2<In>: UnsideDelta<In, Unsided = UnsidedSenderDeltaV2>,
     {
@@ -49,7 +50,11 @@ impl TokenMarker for ETH {
 
         let global_eth_delta = Self::get_leg_mut(&mut delta.global.global_sender_delta);
 
-        global_eth_delta.unsided_sender_delta;
-        // TODO add to global
+        global_eth_delta.unsided_sender_delta = global_eth_delta
+            .unsided_sender_delta
+            .checked_add(unsided_sender_delta)
+            .ok_or(GoblinError::Overflow)?;
+
+        Ok(())
     }
 }
