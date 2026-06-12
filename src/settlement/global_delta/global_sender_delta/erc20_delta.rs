@@ -1,7 +1,6 @@
 use crate::{
-    axis::leg::leg_matcher::LegMatcher,
-    goblin_error::GoblinError,
     quantities::DeltaAtoms,
+    settlement::{ConstZero, UnsidedSenderDeltaV2},
     // settlement::global_delta::{GlobalSenderUpdate, UnsidedSenderDelta},
 };
 
@@ -10,15 +9,16 @@ use crate::{
 pub struct ERC20Delta {
     /// Atoms to be deposited or withdrawn
     pub deposit_due: DeltaAtoms,
-    // /// Delta from trading
-    // pub unsided_sender_delta: UnsidedSenderDelta,
+
+    /// Delta from trading
+    pub unsided_sender_delta: UnsidedSenderDeltaV2,
 }
 
 impl ERC20Delta {
     pub const fn zero() -> Self {
         Self {
             deposit_due: DeltaAtoms::ZERO,
-            // unsided_sender_delta: UnsidedSenderDelta::zero(),
+            unsided_sender_delta: UnsidedSenderDeltaV2::ZEROED,
         }
     }
 
