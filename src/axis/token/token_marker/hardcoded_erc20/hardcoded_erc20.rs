@@ -47,8 +47,8 @@ impl TokenMarker for HardcodedERC20 {
 
     fn add_delta<In>(
         delta: &mut Delta,
-        lot_size_pair: &LotSizePair,
         token_index: Self::TokenIndex,
+        lot_size_pair: &LotSizePair,
     ) -> Result<(), GoblinError>
     where
         In: LegMatcher,

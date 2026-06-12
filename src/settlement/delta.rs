@@ -1,7 +1,7 @@
 use crate::{
     axis::{
         leg::{Base, Pair, Quote},
-        market::{market_marker::MarketMarker, LotSizePair},
+        market::{market_marker::MarketMarker, LotSizePair, TokenIndexPair},
         token::{token_marker::TokenMarker, ETH},
     },
     goblin_error::GoblinError,
@@ -34,7 +34,7 @@ impl Delta {
 
     pub fn commit_local_delta<M, B, Q>(
         &mut self,
-        token_index_pair: &Pair<B::TokenIndex, Q::TokenIndex>,
+        token_index_pair: &TokenIndexPair<B, Q>,
         lot_size_pair: &LotSizePair,
     ) -> Result<(), GoblinError>
     where
@@ -45,8 +45,8 @@ impl Delta {
         // 1. Sender- deposits, taker delta, maker delta
         // need to call 3 times for ETH, hardcoded token and custom token
 
-        B::add_delta::<Base>(self, lot_size_pair);
-        Q::add_delta::<Quote>(self, lot_size_pair);
+        B::add_delta::<Base>(self, Base::get(token_index_pair), lot_size_pair)?;
+        Q::add_delta::<Quote>(self, Quote::get(token_index_pair), lot_size_pair)?;
 
         // self.global.global_sender_delta;
 

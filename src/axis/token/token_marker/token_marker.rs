@@ -42,10 +42,11 @@ pub trait TokenMarker: Clone + Copy + 'static {
 
     fn add_delta<In>(
         delta: &mut Delta,
+        token_index: Self::TokenIndex,
         lot_size_pair: &LotSizePair,
-        token_index: Self::TokenIndex, // delta: Self::Delta,
-                                       // token_index: Self::TokenIndex,
-                                       // global_sender_delta: &mut GlobalSenderDelta,
+        // delta: Self::Delta,
+        // token_index: Self::TokenIndex,
+        // global_sender_delta: &mut GlobalSenderDelta,
     ) -> Result<(), GoblinError>
     where
         In: LegMatcher,

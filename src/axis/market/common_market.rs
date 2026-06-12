@@ -15,9 +15,15 @@ use crate::{
 pub type LotSizePair =
     Pair<<Base as LegQuantities>::LotsPerUnit, <Quote as LegQuantities>::LotsPerUnit>;
 
+pub type TokenIndexPair<B, Q>
+where
+    B: TokenMarker,
+    Q: TokenMarker,
+= Pair<B::TokenIndex, Q::TokenIndex>;
+
 pub struct CommonMarket<M: MarketMarker, B: TokenMarker, Q: TokenMarker> {
     /// The token pair
-    pub token_index_pair: Pair<B::TokenIndex, Q::TokenIndex>,
+    pub token_index_pair: TokenIndexPair<B, Q>,
 
     /// Lot sizes (one per side)
     pub lot_size_pair: LotSizePair,

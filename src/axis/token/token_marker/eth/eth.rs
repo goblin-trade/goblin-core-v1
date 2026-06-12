@@ -37,10 +37,10 @@ impl TokenMarker for ETH {
 
     fn add_delta<In>(
         delta: &mut Delta,
-        lot_size_pair: &LotSizePair,
-        _token_index: Self::TokenIndex, // delta: Self::Delta,
-                                        // token_index: Self::TokenIndex,
-                                        // global_sender_delta: &mut GlobalSenderDelta,
+        _token_index: Self::TokenIndex,
+        lot_size_pair: &LotSizePair, // delta: Self::Delta,
+                                     // token_index: Self::TokenIndex,
+                                     // global_sender_delta: &mut GlobalSenderDelta,
     ) -> Result<(), GoblinError>
     where
         In: LegMatcher,
@@ -55,6 +55,8 @@ impl TokenMarker for ETH {
             .unsided_sender_delta
             .checked_add(unsided_sender_delta)
             .ok_or(GoblinError::Overflow)?;
+
+        // Maker deltas
 
         Ok(())
     }
