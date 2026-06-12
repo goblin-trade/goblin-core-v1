@@ -44,11 +44,12 @@ impl TokenMarker for ETH {
         In: LegMatcher,
         SidedSenderDeltaV2<In>: UnsideDelta<In, Unsided = UnsidedSenderDeltaV2>,
     {
-        let global_eth_delta = Self::get_leg_mut(&mut delta.global.global_sender_delta);
         let local_sender_delta = In::get_leg(&delta.local.local_sender_delta);
-
         let unsided_sender_delta = local_sender_delta.unside(lot_size_pair);
 
+        let global_eth_delta = Self::get_leg_mut(&mut delta.global.global_sender_delta);
+
+        global_eth_delta.unsided_sender_delta;
         // TODO add to global
     }
 }

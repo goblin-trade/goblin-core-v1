@@ -55,5 +55,8 @@ where
     market_header.execute_takes(ctx, readables, writables)?;
     market_header.execute_makes(ctx, readables, writables)?;
 
-    delta.commit_local_delta::<M, B, Q>(market_readables.market.token_index_pair)
+    delta.commit_local_delta::<M, B, Q>(
+        &market_readables.market.token_index_pair,
+        &market_readables.market.lot_size_pair,
+    )
 }
