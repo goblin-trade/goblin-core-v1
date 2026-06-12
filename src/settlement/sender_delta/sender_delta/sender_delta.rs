@@ -23,3 +23,16 @@ where
         make: MakeDelta::ZEROED,
     };
 }
+
+impl<I, O> CheckedAdd for SenderDelta<I, O>
+where
+    I: Clone + Copy + ConstZero + CheckedAdd,
+    O: Clone + Copy + ConstZero + CheckedAdd,
+{
+    fn checked_add(self, rhs: Self) -> Option<Self> {
+        Some(Self {
+            take: self.take.checked_add(rhs.take)?,
+            make: self.make.checked_add(rhs.make)?,
+        })
+    }
+}
