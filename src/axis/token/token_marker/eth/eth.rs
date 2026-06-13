@@ -45,6 +45,7 @@ impl TokenMarker for ETH {
     where
         In: LegMatcher,
         SidedSenderDeltaV2<In>: UnsideDelta<In, Unsided = UnsidedSenderDeltaV2>,
+        SidedTakeDeltaV2<In>: UnsideDelta<In, Unsided = UnsidedTakeDeltaV2>,
     {
         let local_sender_delta = In::get_leg(&delta.local.local_sender_delta);
         let unsided_sender_delta = local_sender_delta.unside(lot_size_pair);
@@ -65,12 +66,19 @@ impl TokenMarker for ETH {
                 maker: *maker,
                 token_index: (),
             };
+
+            // Namespaced by- maker > leg > take_in/take_out
             let maker_store = global_maker_delta
                 .get_or_insert_mut(maker_delta_key)
                 .ok_or(GoblinError::GlobalMakerListFull)?;
 
-            maker_store.matched_unsided_atoms;
-            // let maker = maker_delta.0;
+            let maker_delta = In::get_leg(delta_pair);
+            let maker_delta_unsided = maker_delta.unside(lot_size_pair);
+
+            maker_store.matched_unsided_atoms = maker_store
+                .matched_unsided_atoms
+                .checked_add(maker_delta_unsided)
+                .ok_or(GoblinError::Overflow)?;
         }
 
         Ok(())

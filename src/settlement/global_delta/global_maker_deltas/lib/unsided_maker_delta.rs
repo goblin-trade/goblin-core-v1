@@ -1,20 +1,20 @@
 use crate::{
     axis::leg::leg_matcher::LegMatcher,
-    settlement::{ConstZero, MatchedUnsidedAtoms},
+    settlement::{ConstZero, UnsidedTakeDeltaV2},
 };
 
 /// Maker delta for a token
 ///
 /// Unlike `MakerDelta` which is namespaced by market and tracks state of two tokens,
 /// this delta tracks updates for a single token.
-#[derive(Default, Clone, Copy, PartialEq)]
+#[derive(Default, Clone, Copy)]
 pub struct UnsidedMakerDelta {
-    pub matched_unsided_atoms: MatchedUnsidedAtoms,
+    pub matched_unsided_atoms: UnsidedTakeDeltaV2,
 }
 
 impl ConstZero for UnsidedMakerDelta {
     const ZEROED: Self = Self {
-        matched_unsided_atoms: MatchedUnsidedAtoms::zero(),
+        matched_unsided_atoms: UnsidedTakeDeltaV2::ZEROED,
     };
 }
 
