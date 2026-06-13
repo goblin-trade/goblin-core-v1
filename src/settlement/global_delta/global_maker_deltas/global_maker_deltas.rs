@@ -1,47 +1,18 @@
 use crate::{
-    axis::token::{
-        token_marker::{
-            custom_erc20::custom_erc20_index::CustomERC20Index,
-            hardcoded_erc20::hardcoded_erc20_index::HardcodedERC20Index,
-        },
-        Token,
-    },
-    settlement::{
-        global_delta::{
-            maker_custom_deltas::MakerCustomDeltas, maker_hardcoded_deltas::MakerHardcodedDeltas,
-            ETHMakerDeltas, MakerDeltaKey,
-        },
-        ConstZero, UnsidedTakeDeltaV2,
-    },
-    types::{FixedMap, Triple},
+    axis::token::{CustomERC20, HardcodedERC20, Token, ETH},
+    settlement::{global_delta::MakerDeltaMap, ConstZero},
+    types::Triple,
 };
 
 /// Global deltas of makers that matched against msg.sender
-pub type GlobalMakerDeltas = Triple<ETHMakerDeltas, MakerHardcodedDeltas, MakerCustomDeltas, Token>;
+pub type GlobalMakerDeltas =
+    Triple<MakerDeltaMap<ETH>, MakerDeltaMap<HardcodedERC20>, MakerDeltaMap<CustomERC20>, Token>;
 
 impl ConstZero for GlobalMakerDeltas {
     const ZEROED: Self = Self::new(
-        ETHMakerDeltas::zero(),
-        FixedMap {
-            entries: [(
-                MakerDeltaKey {
-                    maker: [0u8; 20],
-                    token_index: HardcodedERC20Index(0),
-                },
-                UnsidedTakeDeltaV2::ZEROED,
-            ); 16],
-            len: 0,
-        },
-        FixedMap {
-            entries: [(
-                MakerDeltaKey {
-                    maker: [0u8; 20],
-                    token_index: CustomERC20Index(0),
-                },
-                UnsidedTakeDeltaV2::ZEROED,
-            ); 16],
-            len: 0,
-        },
+        MakerDeltaMap::ZEROED,
+        MakerDeltaMap::ZEROED,
+        MakerDeltaMap::ZEROED,
     );
 }
 

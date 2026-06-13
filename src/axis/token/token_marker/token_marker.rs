@@ -10,6 +10,7 @@ use crate::{
     settlement::{
         global_delta::{
             ERC20Delta, GlobalDelta, GlobalMakerDeltas, GlobalSenderDelta, MakerDeltaKey,
+            MakerDeltaMap,
         },
         local_delta::Deposits,
         ConstZero, Delta, SidedMakeDeltaV2, SidedSenderDeltaV2, SidedTakeDeltaV2, UnsideDelta,
@@ -20,11 +21,7 @@ use crate::{
 
 /// Marker class for 'Token'. We have 3 variants- ETH, HardcodedERC20 and CustomERC20
 pub trait TokenMarker:
-    Clone
-    + Copy
-    + PartialEq
-    + 'static
-    + StoreReader<GlobalMakerDeltas, Result = FixedMap<MakerDeltaKey<Self>, UnsidedTakeDeltaV2, 16>>
+    Clone + Copy + PartialEq + 'static + StoreReader<GlobalMakerDeltas, Result = MakerDeltaMap<Self>>
 {
     const DISCRIMINATOR: u8;
 
