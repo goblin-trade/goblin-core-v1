@@ -47,8 +47,8 @@ impl Delta {
         B: TokenMarker,
         Q: TokenMarker,
     {
-        B::commit_sender_delta::<Base>(self, Base::get(token_index_pair), lot_size_pair)?;
-        Q::commit_sender_delta::<Quote>(self, Quote::get(token_index_pair), lot_size_pair)?;
+        // B::commit_sender_delta::<Base>(self, Base::get(token_index_pair), lot_size_pair)?;
+        // Q::commit_sender_delta::<Quote>(self, Quote::get(token_index_pair), lot_size_pair)?;
 
         for (maker, delta_pair) in self.local.local_maker_deltas.iter() {
             Self::commit_maker_delta::<B, Base>(

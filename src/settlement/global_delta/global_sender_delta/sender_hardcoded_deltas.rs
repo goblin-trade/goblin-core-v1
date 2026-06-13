@@ -1,7 +1,11 @@
 use crate::{
-    axis::token::token_marker::hardcoded_erc20::HARDCODED_TOKENS,
-    settlement::global_delta::ERC20Delta,
+    axis::token::{token_marker::hardcoded_erc20::HARDCODED_TOKENS, HardcodedERC20},
+    settlement::{global_delta::SenderTokenStore, ConstZero},
 };
 
 /// Deltas of hardcoded tokens
-pub type SenderHardcodedDeltas = [ERC20Delta; HARDCODED_TOKENS.len()];
+pub type SenderHardcodedDeltas = [SenderTokenStore<HardcodedERC20>; HARDCODED_TOKENS.len()];
+
+impl ConstZero for SenderHardcodedDeltas {
+    const ZEROED: Self = [SenderTokenStore::ZEROED; HARDCODED_TOKENS.len()];
+}

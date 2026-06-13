@@ -3,7 +3,8 @@ use crate::{
     settlement::{ConstZero, UnsidedSenderDeltaV2},
 };
 
-pub struct SenderDeltaStore<T: TokenMarker> {
+#[derive(Clone, Copy)]
+pub struct SenderTokenStore<T: TokenMarker> {
     /// Atoms to be deposited or withdrawn
     pub deposit_due: T::Deposit,
 
@@ -11,7 +12,7 @@ pub struct SenderDeltaStore<T: TokenMarker> {
     pub unsided_sender_delta: UnsidedSenderDeltaV2,
 }
 
-impl<T: TokenMarker> ConstZero for SenderDeltaStore<T> {
+impl<T: TokenMarker> ConstZero for SenderTokenStore<T> {
     const ZEROED: Self = Self {
         deposit_due: <T as TokenMarker>::Deposit::ZEROED,
         unsided_sender_delta: UnsidedSenderDeltaV2::ZEROED,

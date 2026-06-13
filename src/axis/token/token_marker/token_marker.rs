@@ -6,7 +6,7 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::Decodable,
     settlement::{
-        global_delta::{GlobalMakerDeltas, MakerDeltaMap},
+        global_delta::{GlobalMakerDeltas, MakerDeltaMap, SenderTokenStore},
         local_delta::Deposits,
         ConstZero, Delta, SidedSenderDeltaV2, UnsideDelta, UnsidedSenderDeltaV2,
     },
@@ -43,7 +43,7 @@ pub trait TokenMarker:
     fn get_global_delta<In>(
         token_index: Self::TokenIndex,
         delta: &mut Delta,
-    ) -> Result<&mut UnsidedSenderDeltaV2, GoblinError>
+    ) -> Result<&mut SenderTokenStore<Self>, GoblinError>
     where
         In: LegMatcher;
 

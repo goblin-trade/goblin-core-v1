@@ -9,8 +9,8 @@ use crate::{
     },
     goblin_error::GoblinError,
     settlement::{
-        local_delta::Deposits, CheckedAdd, Delta, SidedSenderDeltaV2, UnsideDelta,
-        UnsidedSenderDeltaV2,
+        global_delta::SenderTokenStore, local_delta::Deposits, CheckedAdd, Delta,
+        SidedSenderDeltaV2, UnsideDelta, UnsidedSenderDeltaV2,
     },
     types::StoreReader,
 };
@@ -36,14 +36,12 @@ impl TokenMarker for ETH {
     fn get_global_delta<In>(
         _token_index: Self::TokenIndex,
         delta: &mut Delta,
-    ) -> Result<&mut UnsidedSenderDeltaV2, GoblinError>
+    ) -> Result<&mut SenderTokenStore<Self>, GoblinError>
     where
         In: LegMatcher,
     {
-        let eth_delta = Self::get_leg_mut(&mut delta.global.global_sender_delta);
-
-        // TODO can we unify EthDelta with ERC20Delta?
-        Ok(&mut eth_delta.unsided_sender_delta)
+        let store = Self::get_leg_mut(&mut delta.global.global_sender_delta);
+        Ok(store)
     }
 
     fn commit_sender_delta<In>(
