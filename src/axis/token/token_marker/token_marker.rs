@@ -8,19 +8,28 @@ use crate::{
     input_processor::Decodable,
     quantities::DeltaAtoms,
     settlement::{
-        global_delta::{ERC20Delta, GlobalDelta, GlobalSenderDelta},
+        global_delta::{
+            ERC20Delta, GlobalDelta, GlobalMakerDeltas, GlobalSenderDelta, MakerDeltaKey,
+        },
         local_delta::Deposits,
         ConstZero, Delta, SidedMakeDeltaV2, SidedSenderDeltaV2, SidedTakeDeltaV2, UnsideDelta,
         UnsidedMakeDeltaV2, UnsidedSenderDeltaV2, UnsidedTakeDeltaV2,
     },
+    types::{FixedMap, StoreReader, Triple},
 };
 
 /// Marker class for 'Token'. We have 3 variants- ETH, HardcodedERC20 and CustomERC20
-pub trait TokenMarker: Clone + Copy + 'static {
+pub trait TokenMarker:
+    Clone
+    + Copy
+    + PartialEq
+    + 'static
+    + StoreReader<GlobalMakerDeltas, Result = FixedMap<MakerDeltaKey<Self>, UnsidedTakeDeltaV2, 16>>
+{
     const DISCRIMINATOR: u8;
 
     /// Index to lookup token address
-    type TokenIndex: Clone + Copy + Decodable + ConstZero;
+    type TokenIndex: Clone + Copy + Decodable + ConstZero + PartialEq;
 
     /// Token address
     type Address: Clone + Copy + Sized + Default;

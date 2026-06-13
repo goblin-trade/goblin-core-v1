@@ -53,9 +53,6 @@ impl Delta {
         Q::add_delta::<Quote>(self, Quote::get(token_index_pair), lot_size_pair)?;
 
         // Maker deltas
-
-        let global_maker_delta = B::get_leg_mut(&mut self.global.maker_deltas);
-
         // let global_maker_delta = B::get_leg_mut(&mut self.global.maker_deltas);
 
         for (maker, delta_pair) in self.local.local_maker_deltas.iter() {
