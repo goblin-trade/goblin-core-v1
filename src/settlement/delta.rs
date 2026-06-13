@@ -1,12 +1,16 @@
 use crate::{
     axis::{
-        leg::{Base, Pair, Quote},
+        leg::{leg_matcher::LegMatcher, Base, Pair, Quote},
         market::{market_marker::MarketMarker, LotSizePair, TokenIndexPair},
         token::{token_marker::TokenMarker, ETH},
     },
     goblin_error::GoblinError,
-    settlement::{global_delta::GlobalDelta, local_delta::LocalDelta, ConstZero},
-    types::StoreReader,
+    settlement::{
+        global_delta::{GlobalDelta, GlobalMakerDeltas, MakerDeltaKey},
+        local_delta::LocalDelta,
+        ConstZero, SidedTakeDeltaPairV2,
+    },
+    types::{Address, StoreReader},
 };
 
 /// Global static mut Delta, initially zero filled.
@@ -48,29 +52,65 @@ impl Delta {
         B::add_delta::<Base>(self, Base::get(token_index_pair), lot_size_pair)?;
         Q::add_delta::<Quote>(self, Quote::get(token_index_pair), lot_size_pair)?;
 
-        // self.global.global_sender_delta;
+        // Maker deltas
 
-        // Steps
-        // 1. Deposits
-        // 2. msg_sender
-        // 3. Makers
+        let global_maker_delta = B::get_leg_mut(&mut self.global.maker_deltas);
 
-        // Deposit goes into global_delta.global_sender_delta
-        // Deposit only for ERC20 token. ETH deposit is a stub
+        // let global_maker_delta = B::get_leg_mut(&mut self.global.maker_deltas);
 
-        // Reaching deposit store
-        // 1. Use B and Q to lookup in GlobalSenderDelta triple. Either by adding a function
-        // on Tokenmarker or defining a common trait
+        for (maker, delta_pair) in self.local.local_maker_deltas.iter() {
+            Self::commit_maker_delta::<B, Base>(
+                *maker,
+                delta_pair,
+                Base::get(token_index_pair),
+                lot_size_pair,
+                &mut self.global.maker_deltas,
+            )?;
 
-        // let gg =
+            // let maker_delta_key = MakerDeltaKey::<B> {
+            //     maker: *maker,
+            //     token_index: Base::get(token_index_pair),
+            // };
 
-        // let local_deposit = self.local.deposits;
-        // let base_deposit = Base::get(&self.local.deposits);
+            // // Namespaced by- maker > leg > take_in/take_out
+            // let maker_store = global_maker_delta
+            //     .get_or_insert_mut(maker_delta_key)
+            //     .ok_or(GoblinError::GlobalMakerListFull)?;
 
-        // let global_base_deposit = B::get_leg_mut(&mut self.global.global_sender_delta);
+            // let maker_delta = In::get_leg(delta_pair);
+            // let maker_delta_unsided = maker_delta.unside(lot_size_pair);
+
+            // *maker_store = maker_store
+            //     .checked_add(maker_delta_unsided)
+            //     .ok_or(GoblinError::Overflow)?;
+        }
 
         // // Reset local delta for reuse
         // self.local.deposits.reset::<B, Q>();
+        Ok(())
+    }
+
+    pub fn commit_maker_delta<T, In>(
+        // &mut self,
+        maker: Address,
+        delta_pair: &SidedTakeDeltaPairV2,
+        token_index: T::TokenIndex,
+        lot_size_pair: &LotSizePair,
+        global_maker_deltas: &mut GlobalMakerDeltas,
+    ) -> Result<(), GoblinError>
+    where
+        T: TokenMarker,
+        In: LegMatcher,
+    {
+        let maker_delta_key = MakerDeltaKey::<T> { maker, token_index };
+
+        let global_maker_delta = T::get_leg_mut(global_maker_deltas);
+
+        // Namespaced by- maker > leg > take_in/take_out
+        let maker_store = global_maker_delta
+            .get_or_insert_mut(maker_delta_key)
+            .ok_or(GoblinError::GlobalMakerListFull)?;
+
         Ok(())
     }
 }
