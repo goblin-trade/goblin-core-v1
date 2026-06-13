@@ -1,14 +1,11 @@
 use crate::{
     axis::token::ETH,
-    settlement::{
-        global_delta::{MakerDeltaKey, UnsidedMakerDelta},
-        ConstZero,
-    },
+    settlement::{global_delta::MakerDeltaKey, ConstZero, UnsidedTakeDeltaV2},
     types::FixedMap,
 };
 
 /// Global maker deltas for ETH
-pub type ETHMakerDeltas = FixedMap<MakerDeltaKey<ETH>, UnsidedMakerDelta, 16>;
+pub type ETHMakerDeltas = FixedMap<MakerDeltaKey<ETH>, UnsidedTakeDeltaV2, 16>;
 
 impl ETHMakerDeltas {
     pub const fn zero() -> Self {
@@ -18,7 +15,7 @@ impl ETHMakerDeltas {
                     maker: [0u8; 20],
                     token_index: (),
                 },
-                UnsidedMakerDelta::ZEROED,
+                UnsidedTakeDeltaV2::ZEROED,
             ); 16],
             len: 0,
         }

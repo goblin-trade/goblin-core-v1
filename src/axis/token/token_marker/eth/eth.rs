@@ -61,6 +61,8 @@ impl TokenMarker for ETH {
 
         let global_maker_delta = Self::get_leg_mut(&mut delta.global.maker_deltas);
 
+        // Break into separate step?
+        // Currently we are iterating through maker list twice, once for Base and again for Quote
         for (maker, delta_pair) in delta.local.local_maker_deltas.iter() {
             let maker_delta_key = MakerDeltaKey::<ETH> {
                 maker: *maker,
@@ -75,8 +77,7 @@ impl TokenMarker for ETH {
             let maker_delta = In::get_leg(delta_pair);
             let maker_delta_unsided = maker_delta.unside(lot_size_pair);
 
-            maker_store.matched_unsided_atoms = maker_store
-                .matched_unsided_atoms
+            *maker_store = maker_store
                 .checked_add(maker_delta_unsided)
                 .ok_or(GoblinError::Overflow)?;
         }

@@ -9,9 +9,9 @@ use crate::{
     settlement::{
         global_delta::{
             maker_custom_deltas::MakerCustomDeltas, maker_hardcoded_deltas::MakerHardcodedDeltas,
-            ETHMakerDeltas, MakerDeltaKey, UnsidedMakerDelta,
+            ETHMakerDeltas, MakerDeltaKey,
         },
-        ConstZero,
+        ConstZero, UnsidedTakeDeltaV2,
     },
     types::{FixedMap, Triple},
 };
@@ -28,7 +28,7 @@ impl ConstZero for GlobalMakerDeltas {
                     maker: [0u8; 20],
                     token_index: HardcodedERC20Index(0),
                 },
-                UnsidedMakerDelta::ZEROED,
+                UnsidedTakeDeltaV2::ZEROED,
             ); 16],
             len: 0,
         },
@@ -38,7 +38,7 @@ impl ConstZero for GlobalMakerDeltas {
                     maker: [0u8; 20],
                     token_index: CustomERC20Index(0),
                 },
-                UnsidedMakerDelta::ZEROED,
+                UnsidedTakeDeltaV2::ZEROED,
             ); 16],
             len: 0,
         },
