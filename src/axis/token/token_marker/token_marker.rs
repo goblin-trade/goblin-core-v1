@@ -46,7 +46,7 @@ pub trait TokenMarker:
     where
         In: LegMatcher;
 
-    fn add_delta<In>(
+    fn commit_sender_delta<In>(
         delta: &mut Delta,
         token_index: Self::TokenIndex,
         lot_size_pair: &LotSizePair,

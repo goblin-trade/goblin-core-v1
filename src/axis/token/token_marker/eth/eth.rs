@@ -35,7 +35,7 @@ impl TokenMarker for ETH {
     // Stub. ETH cannot be deposited.
     fn set_deposit<In: LegMatcher>(_deposits: &mut Deposits, _deposit_amount: Self::Deposit) {}
 
-    fn add_delta<In>(
+    fn commit_sender_delta<In>(
         delta: &mut Delta,
         _token_index: Self::TokenIndex,
         lot_size_pair: &LotSizePair, // delta: Self::Delta,
@@ -56,31 +56,6 @@ impl TokenMarker for ETH {
             .unsided_sender_delta
             .checked_add(unsided_sender_delta)
             .ok_or(GoblinError::Overflow)?;
-
-        // Maker deltas
-
-        let global_maker_delta = Self::get_leg_mut(&mut delta.global.maker_deltas);
-
-        // Break into separate step?
-        // Currently we are iterating through maker list twice, once for Base and again for Quote
-        for (maker, delta_pair) in delta.local.local_maker_deltas.iter() {
-            let maker_delta_key = MakerDeltaKey::<ETH> {
-                maker: *maker,
-                token_index: (),
-            };
-
-            // Namespaced by- maker > leg > take_in/take_out
-            let maker_store = global_maker_delta
-                .get_or_insert_mut(maker_delta_key)
-                .ok_or(GoblinError::GlobalMakerListFull)?;
-
-            let maker_delta = In::get_leg(delta_pair);
-            let maker_delta_unsided = maker_delta.unside(lot_size_pair);
-
-            *maker_store = maker_store
-                .checked_add(maker_delta_unsided)
-                .ok_or(GoblinError::Overflow)?;
-        }
 
         Ok(())
     }

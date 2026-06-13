@@ -45,7 +45,7 @@ impl TokenMarker for CustomERC20 {
         *In::get_leg_mut(deposits) = deposit_amount;
     }
 
-    fn add_delta<In>(
+    fn commit_sender_delta<In>(
         delta: &mut Delta,
         token_index: Self::TokenIndex,
         lot_size_pair: &LotSizePair,
