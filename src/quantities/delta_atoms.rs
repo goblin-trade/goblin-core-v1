@@ -1,6 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
+    settlement::ConstZero,
 };
 
 #[derive(Default, Clone, Copy, PartialEq)]
@@ -8,9 +9,11 @@ pub struct DeltaAtoms {
     inner: i64,
 }
 
-impl DeltaAtoms {
-    pub const ZERO: Self = DeltaAtoms { inner: 0 };
+impl ConstZero for DeltaAtoms {
+    const ZEROED: Self = DeltaAtoms { inner: 0 };
+}
 
+impl DeltaAtoms {
     pub fn new(inner: i64) -> Self {
         Self { inner }
     }

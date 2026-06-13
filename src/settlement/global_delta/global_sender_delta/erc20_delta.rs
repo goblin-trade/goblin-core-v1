@@ -16,7 +16,7 @@ pub struct ERC20Delta {
 
 impl ConstZero for ERC20Delta {
     const ZEROED: Self = Self {
-        deposit_due: DeltaAtoms::ZERO,
+        deposit_due: DeltaAtoms::ZEROED,
         unsided_sender_delta: UnsidedSenderDeltaV2::ZEROED,
     };
 }

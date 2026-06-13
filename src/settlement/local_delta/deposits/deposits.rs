@@ -16,7 +16,7 @@ use crate::{
 pub type Deposits = SamePair<DeltaAtoms>;
 
 impl ConstZero for Deposits {
-    const ZEROED: Self = Pair::new(DeltaAtoms::ZERO, DeltaAtoms::ZERO);
+    const ZEROED: Self = Pair::new(DeltaAtoms::ZEROED, DeltaAtoms::ZEROED);
 }
 
 impl Deposits {

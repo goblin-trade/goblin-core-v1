@@ -26,7 +26,7 @@ pub trait TokenMarker:
     type Address: Clone + Copy + Sized + Default;
 
     /// Data type representing pending deposit amount
-    type Deposit: Clone + Copy + Default + Decodable;
+    type Deposit: Clone + Copy + Default + Decodable + ConstZero;
 
     // type Delta;
 
