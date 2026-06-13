@@ -14,14 +14,14 @@ pub struct ERC20Delta {
     pub unsided_sender_delta: UnsidedSenderDeltaV2,
 }
 
-impl ERC20Delta {
-    pub const fn zero() -> Self {
-        Self {
-            deposit_due: DeltaAtoms::ZERO,
-            unsided_sender_delta: UnsidedSenderDeltaV2::ZEROED,
-        }
-    }
+impl ConstZero for ERC20Delta {
+    const ZEROED: Self = Self {
+        deposit_due: DeltaAtoms::ZERO,
+        unsided_sender_delta: UnsidedSenderDeltaV2::ZEROED,
+    };
+}
 
+impl ERC20Delta {
     // pub fn apply_global_update<In: LegMatcher>(
     //     &mut self,
     //     deposit_amount: DeltaAtoms,

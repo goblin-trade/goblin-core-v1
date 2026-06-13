@@ -10,17 +10,12 @@ use crate::{
 };
 
 /// The global delta for msg.sender. Stores deltas of ETH and ERC20 tokens.
-///
-/// TODO remove deposit?
-/// Deposit is handled elsewhere. Can we use UnsidedSenderDelta directly?
 pub type GlobalSenderDelta = Triple<EthDelta, SenderHardcodedDeltas, SenderCustomDeltas, Token>;
 
-impl GlobalSenderDelta {
-    pub const fn zero() -> Self {
-        Self::new(
-            EthDelta::ZEROED,
-            [ERC20Delta::zero(); HARDCODED_TOKENS.len()],
-            [ERC20Delta::zero(); MAX_CUSTOM_DELTAS],
-        )
-    }
+impl ConstZero for GlobalSenderDelta {
+    const ZEROED: Self = Self::new(
+        EthDelta::ZEROED,
+        [ERC20Delta::ZEROED; HARDCODED_TOKENS.len()],
+        [ERC20Delta::ZEROED; MAX_CUSTOM_DELTAS],
+    );
 }

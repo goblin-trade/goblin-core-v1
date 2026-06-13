@@ -9,7 +9,7 @@ use crate::{
     },
     goblin_error::GoblinError,
     settlement::{
-        global_delta::{EthDelta, GlobalDelta, GlobalSenderDelta},
+        global_delta::{EthDelta, GlobalDelta, GlobalSenderDelta, MakerDeltaKey},
         local_delta::Deposits,
         CheckedAdd, Delta, SidedMakeDeltaV2, SidedSenderDeltaV2, SidedTakeDeltaV2, UnsideDelta,
         UnsidedMakeDeltaV2, UnsidedSenderDeltaV2, UnsidedTakeDeltaV2,
@@ -57,6 +57,21 @@ impl TokenMarker for ETH {
             .ok_or(GoblinError::Overflow)?;
 
         // Maker deltas
+
+        let global_maker_delta = Self::get_leg_mut(&mut delta.global.maker_deltas);
+
+        for (maker, delta_pair) in delta.local.local_maker_deltas.iter() {
+            let maker_delta_key = MakerDeltaKey::<ETH> {
+                maker: *maker,
+                token_index: (),
+            };
+            let maker_store = global_maker_delta
+                .get_or_insert_mut(maker_delta_key)
+                .ok_or(GoblinError::GlobalMakerListFull)?;
+
+            maker_store.matched_unsided_atoms;
+            // let maker = maker_delta.0;
+        }
 
         Ok(())
     }

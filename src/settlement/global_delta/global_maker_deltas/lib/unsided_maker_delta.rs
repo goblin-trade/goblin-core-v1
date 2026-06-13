@@ -1,4 +1,7 @@
-use crate::{axis::leg::leg_matcher::LegMatcher, settlement::MatchedUnsidedAtoms};
+use crate::{
+    axis::leg::leg_matcher::LegMatcher,
+    settlement::{ConstZero, MatchedUnsidedAtoms},
+};
 
 /// Maker delta for a token
 ///
@@ -9,13 +12,13 @@ pub struct UnsidedMakerDelta {
     pub matched_unsided_atoms: MatchedUnsidedAtoms,
 }
 
-impl UnsidedMakerDelta {
-    pub const fn zero() -> Self {
-        Self {
-            matched_unsided_atoms: MatchedUnsidedAtoms::zero(),
-        }
-    }
+impl ConstZero for UnsidedMakerDelta {
+    const ZEROED: Self = Self {
+        matched_unsided_atoms: MatchedUnsidedAtoms::zero(),
+    };
+}
 
+impl UnsidedMakerDelta {
     // pub fn add_global_update<In: LegMatcher>(
     //     &mut self,
     //     global_update: &GlobalMakerUpdate<In>,

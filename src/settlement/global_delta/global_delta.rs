@@ -1,7 +1,10 @@
 use crate::{
     axis::leg::leg_matcher::LegMatcher,
     goblin_error::GoblinError,
-    settlement::global_delta::{GlobalMakerDeltas, GlobalSenderDelta},
+    settlement::{
+        global_delta::{GlobalMakerDeltas, GlobalSenderDelta},
+        ConstZero,
+    },
 };
 
 /// The top level delta. Tracks pending token balance updates.
@@ -12,14 +15,14 @@ pub struct GlobalDelta {
     pub maker_deltas: GlobalMakerDeltas,
 }
 
-impl GlobalDelta {
-    pub const fn zero() -> Self {
-        GlobalDelta {
-            global_sender_delta: GlobalSenderDelta::zero(),
-            maker_deltas: GlobalMakerDeltas::zero(),
-        }
-    }
+impl ConstZero for GlobalDelta {
+    const ZEROED: Self = Self {
+        global_sender_delta: GlobalSenderDelta::ZEROED,
+        maker_deltas: GlobalMakerDeltas::ZEROED,
+    };
+}
 
+impl GlobalDelta {
     fn apply_side_updates<In>() -> Result<(), GoblinError>
     where
         In: LegMatcher,

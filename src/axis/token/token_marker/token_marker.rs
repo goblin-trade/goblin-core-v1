@@ -10,7 +10,7 @@ use crate::{
     settlement::{
         global_delta::{ERC20Delta, GlobalDelta, GlobalSenderDelta},
         local_delta::Deposits,
-        Delta, SidedMakeDeltaV2, SidedSenderDeltaV2, SidedTakeDeltaV2, UnsideDelta,
+        ConstZero, Delta, SidedMakeDeltaV2, SidedSenderDeltaV2, SidedTakeDeltaV2, UnsideDelta,
         UnsidedMakeDeltaV2, UnsidedSenderDeltaV2, UnsidedTakeDeltaV2,
     },
 };
@@ -20,7 +20,7 @@ pub trait TokenMarker: Clone + Copy + 'static {
     const DISCRIMINATOR: u8;
 
     /// Index to lookup token address
-    type TokenIndex: Clone + Copy + Decodable;
+    type TokenIndex: Clone + Copy + Decodable + ConstZero;
 
     /// Token address
     type Address: Clone + Copy + Sized + Default;

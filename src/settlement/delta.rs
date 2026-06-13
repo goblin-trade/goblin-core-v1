@@ -13,21 +13,21 @@ use crate::{
 ///
 /// `static mut` allows us to take advantage of the fact that lienar memory is zero filled.
 /// We get an empty starting buffer without the cost of zeroing.
-static mut DELTA: Delta = Delta::zero();
+static mut DELTA: Delta = Delta::ZEROED;
 
 pub struct Delta {
     pub global: GlobalDelta,
     pub local: LocalDelta,
 }
 
-impl Delta {
-    pub const fn zero() -> Self {
-        Self {
-            global: GlobalDelta::zero(),
-            local: LocalDelta::ZEROED,
-        }
-    }
+impl ConstZero for Delta {
+    const ZEROED: Self = Self {
+        global: GlobalDelta::ZEROED,
+        local: LocalDelta::ZEROED,
+    };
+}
 
+impl Delta {
     pub fn get_static() -> &'static mut Self {
         unsafe { &mut DELTA }
     }

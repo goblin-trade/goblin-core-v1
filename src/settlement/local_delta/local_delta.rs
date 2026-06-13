@@ -50,7 +50,7 @@ impl LocalDelta {
         let maker_delta_pair = self
             .local_maker_deltas
             .get_or_insert_mut(maker)
-            .ok_or(GoblinError::MakerListFull)?;
+            .ok_or(GoblinError::LocalMakerListFull)?;
 
         let maker_delta = In::get_leg_mut(maker_delta_pair);
         // maker_delta

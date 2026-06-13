@@ -6,9 +6,12 @@ use crate::{
         },
         Token,
     },
-    settlement::global_delta::{
-        maker_custom_deltas::MakerCustomDeltas, maker_hardcoded_deltas::MakerHardcodedDeltas,
-        ETHMakerDeltas, MakerDeltaKey, UnsidedMakerDelta,
+    settlement::{
+        global_delta::{
+            maker_custom_deltas::MakerCustomDeltas, maker_hardcoded_deltas::MakerHardcodedDeltas,
+            ETHMakerDeltas, MakerDeltaKey, UnsidedMakerDelta,
+        },
+        ConstZero,
     },
     types::{FixedMap, Triple},
 };
@@ -16,32 +19,30 @@ use crate::{
 /// Global deltas of makers that matched against msg.sender
 pub type GlobalMakerDeltas = Triple<ETHMakerDeltas, MakerHardcodedDeltas, MakerCustomDeltas, Token>;
 
-impl GlobalMakerDeltas {
-    pub const fn zero() -> Self {
-        Self::new(
-            ETHMakerDeltas::zero(),
-            FixedMap {
-                entries: [(
-                    MakerDeltaKey {
-                        maker: [0u8; 20],
-                        token_index: HardcodedERC20Index(0),
-                    },
-                    UnsidedMakerDelta::zero(),
-                ); 16],
-                len: 0,
-            },
-            FixedMap {
-                entries: [(
-                    MakerDeltaKey {
-                        maker: [0u8; 20],
-                        token_index: CustomERC20Index(0),
-                    },
-                    UnsidedMakerDelta::zero(),
-                ); 16],
-                len: 0,
-            },
-        )
-    }
+impl ConstZero for GlobalMakerDeltas {
+    const ZEROED: Self = Self::new(
+        ETHMakerDeltas::zero(),
+        FixedMap {
+            entries: [(
+                MakerDeltaKey {
+                    maker: [0u8; 20],
+                    token_index: HardcodedERC20Index(0),
+                },
+                UnsidedMakerDelta::ZEROED,
+            ); 16],
+            len: 0,
+        },
+        FixedMap {
+            entries: [(
+                MakerDeltaKey {
+                    maker: [0u8; 20],
+                    token_index: CustomERC20Index(0),
+                },
+                UnsidedMakerDelta::ZEROED,
+            ); 16],
+            len: 0,
+        },
+    );
 }
 
 // const GLOBAL_MAKER_DELTA_COUNT: usize = 16;
