@@ -9,10 +9,8 @@ use crate::{
     },
     goblin_error::GoblinError,
     settlement::{
-        global_delta::{EthDelta, GlobalDelta, GlobalSenderDelta, MakerDeltaKey},
-        local_delta::Deposits,
-        CheckedAdd, Delta, SidedMakeDeltaV2, SidedSenderDeltaV2, SidedTakeDeltaV2, UnsideDelta,
-        UnsidedMakeDeltaV2, UnsidedSenderDeltaV2, UnsidedTakeDeltaV2,
+        local_delta::Deposits, CheckedAdd, Delta, SidedSenderDeltaV2, UnsideDelta,
+        UnsidedSenderDeltaV2,
     },
     types::StoreReader,
 };
@@ -35,22 +33,35 @@ impl TokenMarker for ETH {
     // Stub. ETH cannot be deposited.
     fn set_deposit<In: LegMatcher>(_deposits: &mut Deposits, _deposit_amount: Self::Deposit) {}
 
-    fn commit_sender_delta<In>(
-        delta: &mut Delta,
+    fn get_global_delta<In>(
         _token_index: Self::TokenIndex,
-        lot_size_pair: &LotSizePair, // delta: Self::Delta,
-                                     // token_index: Self::TokenIndex,
-                                     // global_sender_delta: &mut GlobalSenderDelta,
+        delta: &mut Delta,
+    ) -> Result<&mut UnsidedSenderDeltaV2, GoblinError>
+    where
+        In: LegMatcher,
+    {
+        let eth_delta = Self::get_leg_mut(&mut delta.global.global_sender_delta);
+
+        // TODO can we unify EthDelta with ERC20Delta?
+        Ok(&mut eth_delta.unsided_sender_delta)
+    }
+
+    fn commit_sender_delta<In>(
+        _token_index: Self::TokenIndex,
+        lot_size_pair: &LotSizePair,
+        delta: &mut Delta,
     ) -> Result<(), GoblinError>
     where
         In: LegMatcher,
         SidedSenderDeltaV2<In>: UnsideDelta<In, Unsided = UnsidedSenderDeltaV2>,
-        SidedTakeDeltaV2<In>: UnsideDelta<In, Unsided = UnsidedTakeDeltaV2>,
     {
+        let eth_delta = Self::get_leg_mut(&mut delta.global.global_sender_delta);
+
+        // 1. Credit deposit amount- stub. ETH cannot be deposited in the middle
+
+        // 2. Credit sender delta
         let local_sender_delta = In::get_leg(&delta.local.local_sender_delta);
         let unsided_sender_delta = local_sender_delta.unside(lot_size_pair);
-
-        let eth_delta = Self::get_leg_mut(&mut delta.global.global_sender_delta);
 
         eth_delta.unsided_sender_delta = eth_delta
             .unsided_sender_delta

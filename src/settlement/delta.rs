@@ -47,14 +47,8 @@ impl Delta {
         B: TokenMarker,
         Q: TokenMarker,
     {
-        // 1. Sender- deposits, taker delta, maker delta
-        // need to call 3 times for ETH, hardcoded token and custom token
-
         B::commit_sender_delta::<Base>(self, Base::get(token_index_pair), lot_size_pair)?;
         Q::commit_sender_delta::<Quote>(self, Quote::get(token_index_pair), lot_size_pair)?;
-
-        // Maker deltas
-        // let global_maker_delta = B::get_leg_mut(&mut self.global.maker_deltas);
 
         for (maker, delta_pair) in self.local.local_maker_deltas.iter() {
             Self::commit_maker_delta::<B, Base>(
@@ -95,8 +89,6 @@ impl Delta {
         SidedTakeDeltaV2<In>: UnsideDelta<In, Unsided = UnsidedTakeDeltaV2>,
     {
         let global_maker_delta = T::get_leg_mut(global_maker_deltas);
-
-        // let maker_delta_key = MakerDeltaKey::<T> { maker, token_index };
 
         // Namespaced by- maker > leg > take_in/take_out
         let maker_store = global_maker_delta

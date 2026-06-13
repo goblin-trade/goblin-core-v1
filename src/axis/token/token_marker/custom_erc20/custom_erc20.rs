@@ -45,22 +45,31 @@ impl TokenMarker for CustomERC20 {
         *In::get_leg_mut(deposits) = deposit_amount;
     }
 
-    fn commit_sender_delta<In>(
+    fn get_global_delta<In>(
+        token_index: Self::TokenIndex,
         delta: &mut Delta,
+    ) -> Result<&mut UnsidedSenderDeltaV2, GoblinError>
+    where
+        In: LegMatcher,
+    {
+        let delta_list = Self::get_leg_mut(&mut delta.global.global_sender_delta);
+        let erc20_delta = &mut delta_list[token_index.0];
+        Ok(&mut erc20_delta.unsided_sender_delta)
+    }
+
+    fn commit_sender_delta<In>(
         token_index: Self::TokenIndex,
         lot_size_pair: &LotSizePair,
+        delta: &mut Delta,
     ) -> Result<(), GoblinError>
     where
         In: LegMatcher,
         SidedSenderDeltaV2<In>: UnsideDelta<In, Unsided = UnsidedSenderDeltaV2>,
     {
-        let local_sender_delta = In::get_leg(&delta.local.local_sender_delta);
-        let unsided_sender_delta = local_sender_delta.unside(lot_size_pair);
-
         let delta_list = Self::get_leg_mut(&mut delta.global.global_sender_delta);
         let erc20_delta = &mut delta_list[token_index.0];
 
-        // Credit deposit amount
+        // 1. Credit deposit amount
         let deposit = In::get(&delta.local.deposits);
 
         erc20_delta.deposit_due = erc20_delta
@@ -68,7 +77,10 @@ impl TokenMarker for CustomERC20 {
             .checked_add(deposit)
             .ok_or(GoblinError::Overflow)?;
 
-        // Credit sender delta
+        // 2. Credit sender delta
+        let local_sender_delta = In::get_leg(&delta.local.local_sender_delta);
+        let unsided_sender_delta = local_sender_delta.unside(lot_size_pair);
+
         erc20_delta.unsided_sender_delta = erc20_delta
             .unsided_sender_delta
             .checked_add(unsided_sender_delta)

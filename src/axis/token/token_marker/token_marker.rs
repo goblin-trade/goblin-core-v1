@@ -1,22 +1,16 @@
 use crate::{
     axis::{
-        leg::leg_matcher::LegMatcher,
-        market::{market_marker::MarketMarker, LotSizePair},
+        leg::leg_matcher::LegMatcher, market::LotSizePair,
         token::token_marker::custom_erc20::custom_erc20_data::CustomERC20Data,
     },
     goblin_error::GoblinError,
     input_processor::Decodable,
-    quantities::DeltaAtoms,
     settlement::{
-        global_delta::{
-            ERC20Delta, GlobalDelta, GlobalMakerDeltas, GlobalSenderDelta, MakerDeltaKey,
-            MakerDeltaMap,
-        },
+        global_delta::{GlobalMakerDeltas, MakerDeltaMap},
         local_delta::Deposits,
-        ConstZero, Delta, SidedMakeDeltaV2, SidedSenderDeltaV2, SidedTakeDeltaV2, UnsideDelta,
-        UnsidedMakeDeltaV2, UnsidedSenderDeltaV2, UnsidedTakeDeltaV2,
+        ConstZero, Delta, SidedSenderDeltaV2, UnsideDelta, UnsidedSenderDeltaV2,
     },
-    types::{FixedMap, StoreReader, Triple},
+    types::StoreReader,
 };
 
 /// Marker class for 'Token'. We have 3 variants- ETH, HardcodedERC20 and CustomERC20
@@ -46,17 +40,19 @@ pub trait TokenMarker:
     where
         In: LegMatcher;
 
-    fn commit_sender_delta<In>(
+    fn get_global_delta<In>(
+        token_index: Self::TokenIndex,
         delta: &mut Delta,
+    ) -> Result<&mut UnsidedSenderDeltaV2, GoblinError>
+    where
+        In: LegMatcher;
+
+    fn commit_sender_delta<In>(
         token_index: Self::TokenIndex,
         lot_size_pair: &LotSizePair,
-        // delta: Self::Delta,
-        // token_index: Self::TokenIndex,
-        // global_sender_delta: &mut GlobalSenderDelta,
+        delta: &mut Delta,
     ) -> Result<(), GoblinError>
     where
         In: LegMatcher,
-        // SidedTakeDeltaV2<In>: UnsideDelta<In, Unsided = UnsidedTakeDeltaV2>,
-        // SidedMakeDeltaV2<In>: UnsideDelta<In, Unsided = UnsidedMakeDeltaV2>,
         SidedSenderDeltaV2<In>: UnsideDelta<In, Unsided = UnsidedSenderDeltaV2>;
 }
