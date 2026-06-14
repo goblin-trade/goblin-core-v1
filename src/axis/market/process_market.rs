@@ -34,7 +34,7 @@ where
 {
     let market_header = MarketHeader::<M, B, Q>::try_decode(ctx)?;
     if market_header.decode_deposit_amounts {
-        delta.local.deposits.set_deposits::<B, Q>(ctx)?;
+        delta.local.deposits.read_deposits::<B, Q>(ctx)?;
     }
 
     let market_locator = M::MarketLocator::<B, Q>::decode_locator(ctx, erc20_list)?;

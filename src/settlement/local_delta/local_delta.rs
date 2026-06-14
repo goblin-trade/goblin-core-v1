@@ -3,7 +3,7 @@ use crate::{
     goblin_error::GoblinError,
     quantities::{QuoteLotsPerBaseUnitPerTick, Ticks},
     settlement::{
-        local_delta::{Deposits, LocalMakerDeltas},
+        local_delta::{LocalDeposits, LocalMakerDeltas},
         sender_delta::{SidedSenderDeltaPairV2, SidedTakeDeltaV2},
         CheckedAdd, ConstZero,
     },
@@ -12,7 +12,7 @@ use crate::{
 
 pub struct LocalDelta {
     /// Deposits of the market's token pair
-    pub deposits: Deposits,
+    pub deposits: LocalDeposits,
 
     /// Delta for msg.sender
     pub local_sender_delta: SidedSenderDeltaPairV2,
@@ -23,7 +23,7 @@ pub struct LocalDelta {
 
 impl ConstZero for LocalDelta {
     const ZEROED: Self = Self {
-        deposits: Deposits::ZEROED,
+        deposits: LocalDeposits::ZEROED,
         local_sender_delta: SidedSenderDeltaPairV2::ZEROED,
         local_maker_deltas: LocalMakerDeltas::ZEROED,
     };
