@@ -1,17 +1,17 @@
 use crate::{
     axis::{
-        leg::{leg_matcher::LegMatcher, Base, Pair, Quote},
+        leg::{leg_matcher::LegMatcher, Base, Quote},
         market::{market_marker::MarketMarker, LotSizePair, TokenIndexPair},
-        token::{token_marker::TokenMarker, ETH},
+        token::token_marker::TokenMarker,
     },
     goblin_error::GoblinError,
     settlement::{
         global_delta::{GlobalDelta, GlobalMakerDeltas, MakerDeltaKey},
         local_delta::LocalDelta,
-        CheckedAdd, ConstZero, SidedSenderDeltaV2, SidedTakeDeltaPairV2, SidedTakeDeltaV2,
-        UnsideDelta, UnsidedSenderDeltaV2, UnsidedTakeDeltaV2,
+        CheckedAdd, ConstZero, SidedTakeDeltaPairV2, SidedTakeDeltaV2, UnsideDelta,
+        UnsidedTakeDeltaV2,
     },
-    types::{Address, StoreReader},
+    types::StoreReader,
 };
 
 /// Global static mut Delta, initially zero filled.
@@ -47,14 +47,17 @@ impl Delta {
         B: TokenMarker,
         Q: TokenMarker,
     {
-        // B::commit_sender_delta::<Base>(self, Base::get(token_index_pair), lot_size_pair)?;
-        // Q::commit_sender_delta::<Quote>(self, Quote::get(token_index_pair), lot_size_pair)?;
+        let base_token_index = Base::get(token_index_pair);
+        let quote_token_index = Quote::get(token_index_pair);
+
+        B::commit_sender_delta::<Base>(base_token_index, lot_size_pair, self)?;
+        Q::commit_sender_delta::<Quote>(quote_token_index, lot_size_pair, self)?;
 
         for (maker, delta_pair) in self.local.local_maker_deltas.iter() {
             Self::commit_maker_delta::<B, Base>(
                 MakerDeltaKey {
                     maker: *maker,
-                    token_index: Base::get(token_index_pair),
+                    token_index: base_token_index,
                 },
                 delta_pair,
                 lot_size_pair,
@@ -64,7 +67,7 @@ impl Delta {
             Self::commit_maker_delta::<Q, Quote>(
                 MakerDeltaKey {
                     maker: *maker,
-                    token_index: Quote::get(token_index_pair),
+                    token_index: quote_token_index,
                 },
                 delta_pair,
                 lot_size_pair,

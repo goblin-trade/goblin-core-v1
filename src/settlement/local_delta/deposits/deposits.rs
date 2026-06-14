@@ -28,8 +28,8 @@ impl Deposits {
         let base_deposit = B::Deposit::try_decode(ctx)?;
         let quote_deposit = Q::Deposit::try_decode(ctx)?;
 
-        B::set_deposit::<Base>(self, base_deposit);
-        Q::set_deposit::<Quote>(self, quote_deposit);
+        B::set_local_deposit::<Base>(self, base_deposit);
+        Q::set_local_deposit::<Quote>(self, quote_deposit);
 
         Ok(())
     }
@@ -39,7 +39,7 @@ impl Deposits {
         B: TokenMarker,
         Q: TokenMarker,
     {
-        B::set_deposit::<Base>(self, B::Deposit::default());
-        Q::set_deposit::<Quote>(self, Q::Deposit::default());
+        B::set_local_deposit::<Base>(self, B::Deposit::default());
+        Q::set_local_deposit::<Quote>(self, Q::Deposit::default());
     }
 }

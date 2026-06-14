@@ -1,7 +1,6 @@
 use crate::{
     axis::{
-        leg::{leg_matcher::LegMatcher, SamePair},
-        market::LotSizePair,
+        leg::leg_matcher::LegMatcher, market::LotSizePair,
         token::token_marker::custom_erc20::custom_erc20_data::CustomERC20Data,
     },
     goblin_error::GoblinError,
@@ -10,7 +9,7 @@ use crate::{
     settlement::{
         global_delta::{GlobalMakerDeltas, MakerDeltaMap, SenderTokenStore},
         local_delta::Deposits,
-        ConstZero, Delta, SidedSenderDeltaV2, UnsideDelta, UnsidedSenderDeltaV2,
+        CheckedAdd, ConstZero, Delta, SidedSenderDeltaV2, UnsideDelta, UnsidedSenderDeltaV2,
     },
     types::StoreReader,
 };
@@ -30,15 +29,20 @@ pub trait TokenMarker:
     /// Data type representing pending deposit amount
     type Deposit: Clone + Copy + Default + Decodable + ConstZero;
 
-    // type Delta;
-
     fn token_index_to_address(
         token_index: Self::TokenIndex,
         custom_erc20_list: &[CustomERC20Data],
     ) -> Result<Self::Address, GoblinError>;
 
     /// Save deposit amount in deposit store
-    fn set_deposit<In>(deposits: &mut Deposits, deposit_amount: Self::Deposit)
+    fn set_local_deposit<In>(deposits: &mut Deposits, deposit_amount: Self::Deposit)
+    where
+        In: LegMatcher;
+
+    fn add_global_deposit<In>(
+        deposit: DeltaAtoms,
+        global_delta: &mut SenderTokenStore<Self>,
+    ) -> Result<(), GoblinError>
     where
         In: LegMatcher;
 
@@ -49,23 +53,7 @@ pub trait TokenMarker:
     where
         In: LegMatcher;
 
-    fn add_deposit<In>(
-        deposit: DeltaAtoms,
-        global_delta: &mut SenderTokenStore<Self>,
-    ) -> Result<(), GoblinError>
-    where
-        In: LegMatcher;
-
     fn commit_sender_delta<In>(
-        token_index: Self::TokenIndex,
-        lot_size_pair: &LotSizePair,
-        delta: &mut Delta,
-    ) -> Result<(), GoblinError>
-    where
-        In: LegMatcher,
-        SidedSenderDeltaV2<In>: UnsideDelta<In, Unsided = UnsidedSenderDeltaV2>;
-
-    fn commit_sender_delta_v2<In>(
         token_index: Self::TokenIndex,
         lot_size_pair: &LotSizePair,
         delta: &mut Delta,
@@ -75,9 +63,19 @@ pub trait TokenMarker:
         SidedSenderDeltaV2<In>: UnsideDelta<In, Unsided = UnsidedSenderDeltaV2>,
     {
         let deposit = In::get(&delta.local.deposits);
+        let local_sender_delta = In::get_leg(&delta.local.local_sender_delta);
+        let unsided_sender_delta = local_sender_delta.unside(lot_size_pair);
 
         let global_delta = Self::get_global_delta::<In>(token_index, delta)?;
-        Self::add_deposit::<In>(deposit, global_delta)?;
+
+        // 1. Add deposit
+        Self::add_global_deposit::<In>(deposit, global_delta)?;
+
+        // 2. Add sender delta
+        global_delta.unsided_sender_delta = global_delta
+            .unsided_sender_delta
+            .checked_add(unsided_sender_delta)
+            .ok_or(GoblinError::Overflow)?;
 
         Ok(())
     }
