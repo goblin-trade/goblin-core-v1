@@ -1,10 +1,12 @@
 use crate::{
     axis::{
-        leg::leg_matcher::LegMatcher, market::LotSizePair,
+        leg::{leg_matcher::LegMatcher, SamePair},
+        market::LotSizePair,
         token::token_marker::custom_erc20::custom_erc20_data::CustomERC20Data,
     },
     goblin_error::GoblinError,
     input_processor::Decodable,
+    quantities::DeltaAtoms,
     settlement::{
         global_delta::{GlobalMakerDeltas, MakerDeltaMap, SenderTokenStore},
         local_delta::Deposits,
@@ -47,6 +49,13 @@ pub trait TokenMarker:
     where
         In: LegMatcher;
 
+    fn add_deposit<In>(
+        deposit: DeltaAtoms,
+        global_delta: &mut SenderTokenStore<Self>,
+    ) -> Result<(), GoblinError>
+    where
+        In: LegMatcher;
+
     fn commit_sender_delta<In>(
         token_index: Self::TokenIndex,
         lot_size_pair: &LotSizePair,
@@ -55,4 +64,21 @@ pub trait TokenMarker:
     where
         In: LegMatcher,
         SidedSenderDeltaV2<In>: UnsideDelta<In, Unsided = UnsidedSenderDeltaV2>;
+
+    fn commit_sender_delta_v2<In>(
+        token_index: Self::TokenIndex,
+        lot_size_pair: &LotSizePair,
+        delta: &mut Delta,
+    ) -> Result<(), GoblinError>
+    where
+        In: LegMatcher,
+        SidedSenderDeltaV2<In>: UnsideDelta<In, Unsided = UnsidedSenderDeltaV2>,
+    {
+        let deposit = In::get(&delta.local.deposits);
+
+        let global_delta = Self::get_global_delta::<In>(token_index, delta)?;
+        Self::add_deposit::<In>(deposit, global_delta)?;
+
+        Ok(())
+    }
 }

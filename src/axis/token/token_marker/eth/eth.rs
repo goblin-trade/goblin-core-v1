@@ -1,6 +1,6 @@
 use crate::{
     axis::{
-        leg::leg_matcher::LegMatcher,
+        leg::{leg_matcher::LegMatcher, SamePair},
         market::LotSizePair,
         token::{
             token_marker::{custom_erc20::custom_erc20_data::CustomERC20Data, TokenMarker},
@@ -8,6 +8,7 @@ use crate::{
         },
     },
     goblin_error::GoblinError,
+    quantities::DeltaAtoms,
     settlement::{
         global_delta::SenderTokenStore, local_delta::Deposits, CheckedAdd, Delta,
         SidedSenderDeltaV2, UnsideDelta, UnsidedSenderDeltaV2,
@@ -42,6 +43,18 @@ impl TokenMarker for ETH {
     {
         let store = Self::get_leg_mut(&mut delta.global.global_sender_delta);
         Ok(store)
+    }
+
+    fn add_deposit<In>(
+        _deposit: DeltaAtoms,
+        _global_delta: &mut SenderTokenStore<Self>,
+    ) -> Result<(), GoblinError>
+    where
+        In: LegMatcher,
+    {
+        // Stub function. ETH is deposited at the start of the function call. It cannot
+        // be deposited at runtime using call parameters.
+        Ok(())
     }
 
     fn commit_sender_delta<In>(

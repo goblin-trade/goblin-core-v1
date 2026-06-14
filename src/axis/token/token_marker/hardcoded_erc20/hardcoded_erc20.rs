@@ -1,6 +1,6 @@
 use crate::{
     axis::{
-        leg::leg_matcher::LegMatcher,
+        leg::{leg_matcher::LegMatcher, SamePair},
         market::LotSizePair,
         token::{
             token_marker::{
@@ -55,6 +55,20 @@ impl TokenMarker for HardcodedERC20 {
         let list = Self::get_leg_mut(&mut delta.global.global_sender_delta);
         let store = &mut list[token_index.0];
         Ok(store)
+    }
+
+    fn add_deposit<In>(
+        deposit: DeltaAtoms,
+        global_delta: &mut SenderTokenStore<Self>,
+    ) -> Result<(), GoblinError>
+    where
+        In: LegMatcher,
+    {
+        global_delta.deposit_due = global_delta
+            .deposit_due
+            .checked_add(deposit)
+            .ok_or(GoblinError::Overflow)?;
+        Ok(())
     }
 
     fn commit_sender_delta<In>(
