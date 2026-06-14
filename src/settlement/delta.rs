@@ -1,15 +1,14 @@
 use crate::{
     axis::{
-        leg::{leg_matcher::LegMatcher, Base, Quote},
+        leg::{Base, Quote},
         market::{market_marker::MarketMarker, LotSizePair, TokenIndexPair},
         token::token_marker::TokenMarker,
     },
     goblin_error::GoblinError,
     settlement::{
-        global_delta::{GlobalDelta, GlobalMakerDeltas, MakerDeltaKey},
+        global_delta::{GlobalDelta, MakerDeltaKey},
         local_delta::LocalDelta,
-        CheckedAdd, ConstZero, SidedTakeDeltaPairV2, SidedTakeDeltaV2, UnsideDelta,
-        UnsidedTakeDeltaV2,
+        ConstZero,
     },
     types::StoreReader,
 };
@@ -54,57 +53,27 @@ impl Delta {
         Q::commit_sender_delta::<Quote>(quote_token_index, lot_size_pair, self)?;
 
         for (maker, delta_pair) in self.local.local_maker_deltas.iter() {
-            Self::commit_maker_delta::<B, Base>(
+            self.global.maker_deltas.commit::<B, Base>(
                 MakerDeltaKey {
                     maker: *maker,
                     token_index: base_token_index,
                 },
                 delta_pair,
                 lot_size_pair,
-                &mut self.global.maker_deltas,
             )?;
 
-            Self::commit_maker_delta::<Q, Quote>(
+            self.global.maker_deltas.commit::<Q, Quote>(
                 MakerDeltaKey {
                     maker: *maker,
                     token_index: quote_token_index,
                 },
                 delta_pair,
                 lot_size_pair,
-                &mut self.global.maker_deltas,
             )?;
         }
 
         // // Reset local delta for reuse
         // self.local.deposits.reset::<B, Q>();
-        Ok(())
-    }
-
-    pub fn commit_maker_delta<T, In>(
-        maker_delta_key: MakerDeltaKey<T>,
-        delta_pair: &SidedTakeDeltaPairV2,
-        lot_size_pair: &LotSizePair,
-        global_maker_deltas: &mut GlobalMakerDeltas,
-    ) -> Result<(), GoblinError>
-    where
-        T: TokenMarker,
-        In: LegMatcher,
-        SidedTakeDeltaV2<In>: UnsideDelta<In, Unsided = UnsidedTakeDeltaV2>,
-    {
-        let global_maker_delta = T::get_leg_mut(global_maker_deltas);
-
-        // Namespaced by- maker > leg > take_in/take_out
-        let maker_store = global_maker_delta
-            .get_or_insert_mut(maker_delta_key)
-            .ok_or(GoblinError::GlobalMakerListFull)?;
-
-        let sided_delta = In::get_leg(delta_pair);
-        let unsided_delta = sided_delta.unside(lot_size_pair);
-
-        *maker_store = maker_store
-            .checked_add(unsided_delta)
-            .ok_or(GoblinError::Overflow)?;
-
         Ok(())
     }
 }
