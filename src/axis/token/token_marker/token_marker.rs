@@ -8,7 +8,6 @@ use crate::{
     quantities::DeltaAtoms,
     settlement::{
         global_delta::{GlobalMakerDeltas, MakerDeltaMap, SenderTokenStore},
-        local_delta::Deposits,
         CheckedAdd, ConstZero, Delta, SidedSenderDeltaV2, UnsideDelta, UnsidedSenderDeltaV2,
     },
     types::StoreReader,
@@ -27,24 +26,19 @@ pub trait TokenMarker:
     type Address: Clone + Copy + Sized + Default;
 
     /// Data type representing pending deposit amount
-    type Deposit: Clone + Copy + Default + Decodable + ConstZero;
+    type Deposit: Clone
+        + Copy
+        + Default
+        + Decodable
+        + ConstZero
+        + CheckedAdd
+        + Into<DeltaAtoms>
+        + From<DeltaAtoms>;
 
     fn token_index_to_address(
         token_index: Self::TokenIndex,
         custom_erc20_list: &[CustomERC20Data],
     ) -> Result<Self::Address, GoblinError>;
-
-    /// Save deposit amount in deposit store
-    fn set_local_deposit<In>(deposits: &mut Deposits, deposit_amount: Self::Deposit)
-    where
-        In: LegMatcher;
-
-    fn add_global_deposit<In>(
-        deposit: DeltaAtoms,
-        global_delta: &mut SenderTokenStore<Self>,
-    ) -> Result<(), GoblinError>
-    where
-        In: LegMatcher;
 
     fn get_global_delta<In>(
         token_index: Self::TokenIndex,
@@ -69,7 +63,10 @@ pub trait TokenMarker:
         let global_delta = Self::get_global_delta::<In>(token_index, delta)?;
 
         // 1. Add deposit
-        Self::add_global_deposit::<In>(deposit, global_delta)?;
+        global_delta.deposit_due = global_delta
+            .deposit_due
+            .checked_add(deposit.into())
+            .ok_or(GoblinError::Overflow)?;
 
         // 2. Add sender delta
         global_delta.unsided_sender_delta = global_delta

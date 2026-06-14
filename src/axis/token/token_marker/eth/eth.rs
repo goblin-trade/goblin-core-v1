@@ -8,9 +8,27 @@ use crate::{
     },
     goblin_error::GoblinError,
     quantities::DeltaAtoms,
-    settlement::{global_delta::SenderTokenStore, local_delta::Deposits, Delta},
+    settlement::{global_delta::SenderTokenStore, CheckedAdd, ConstZero, Delta},
     types::StoreReader,
 };
+
+impl From<()> for DeltaAtoms {
+    fn from(_value: ()) -> Self {
+        DeltaAtoms::ZEROED
+    }
+}
+
+impl From<DeltaAtoms> for () {
+    fn from(_value: DeltaAtoms) -> Self {
+        ()
+    }
+}
+
+impl CheckedAdd for () {
+    fn checked_add(self, _rhs: Self) -> Option<Self> {
+        Some(())
+    }
+}
 
 impl TokenMarker for ETH {
     const DISCRIMINATOR: u8 = 0;
@@ -24,21 +42,6 @@ impl TokenMarker for ETH {
         _token_index: Self::TokenIndex,
         _custom_erc20_list: &[CustomERC20Data],
     ) -> Result<Self::Address, GoblinError> {
-        Ok(())
-    }
-
-    // Stub. ETH cannot be deposited.
-    fn set_local_deposit<In: LegMatcher>(_deposits: &mut Deposits, _deposit_amount: Self::Deposit) {
-    }
-
-    // Stub. ETH cannot be deposited.
-    fn add_global_deposit<In>(
-        _deposit: DeltaAtoms,
-        _global_delta: &mut SenderTokenStore<Self>,
-    ) -> Result<(), GoblinError>
-    where
-        In: LegMatcher,
-    {
         Ok(())
     }
 

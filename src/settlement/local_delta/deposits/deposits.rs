@@ -7,6 +7,7 @@ use crate::{
     input_processor::{Decodable, DecodeCtx},
     quantities::DeltaAtoms,
     settlement::ConstZero,
+    types::StoreReader,
 };
 
 /// ERC20 deposits for base and quote token for a given market.
@@ -28,18 +29,13 @@ impl Deposits {
         let base_deposit = B::Deposit::try_decode(ctx)?;
         let quote_deposit = Q::Deposit::try_decode(ctx)?;
 
-        B::set_local_deposit::<Base>(self, base_deposit);
-        Q::set_local_deposit::<Quote>(self, quote_deposit);
+        *Base::get_leg_mut(self) = base_deposit.into();
+        *Quote::get_leg_mut(self) = quote_deposit.into();
 
         Ok(())
     }
 
-    pub fn reset<B, Q>(&mut self)
-    where
-        B: TokenMarker,
-        Q: TokenMarker,
-    {
-        B::set_local_deposit::<Base>(self, B::Deposit::default());
-        Q::set_local_deposit::<Quote>(self, Q::Deposit::default());
+    pub fn reset(&mut self) {
+        *self = Self::ZEROED;
     }
 }

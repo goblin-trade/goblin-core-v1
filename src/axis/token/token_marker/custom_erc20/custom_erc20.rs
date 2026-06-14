@@ -13,7 +13,7 @@ use crate::{
     },
     goblin_error::GoblinError,
     quantities::DeltaAtoms,
-    settlement::{global_delta::SenderTokenStore, local_delta::Deposits, Delta},
+    settlement::{global_delta::SenderTokenStore, Delta},
     types::{Address, StoreReader},
 };
 
@@ -32,27 +32,6 @@ impl TokenMarker for CustomERC20 {
             .get(token_index.0)
             .ok_or(GoblinError::InvalidCustomTokenIndex)?;
         Ok(data.address)
-    }
-
-    fn set_local_deposit<In>(deposits: &mut Deposits, deposit_amount: Self::Deposit)
-    where
-        In: LegMatcher,
-    {
-        *In::get_leg_mut(deposits) = deposit_amount;
-    }
-
-    fn add_global_deposit<In>(
-        deposit: DeltaAtoms,
-        global_delta: &mut SenderTokenStore<Self>,
-    ) -> Result<(), GoblinError>
-    where
-        In: LegMatcher,
-    {
-        global_delta.deposit_due = global_delta
-            .deposit_due
-            .checked_add(deposit)
-            .ok_or(GoblinError::Overflow)?;
-        Ok(())
     }
 
     fn get_global_delta<In>(
