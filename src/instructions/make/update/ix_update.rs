@@ -1,7 +1,7 @@
 use crate::{
     axis::{
         market::{market_marker::MarketMarker, Writables},
-        token::token_reader::TokenReader,
+        token::token_marker::TokenMarker,
         update::UpdateEnum,
     },
     goblin_error::GoblinError,
@@ -19,8 +19,8 @@ pub fn ix_update<M, B, Q>(
 ) -> Result<(), GoblinError>
 where
     M: MarketMarker,
-    B: TokenReader,
-    Q: TokenReader,
+    B: TokenMarker,
+    Q: TokenMarker,
 {
     let position = make_readables.pos_header.position;
     let region = MakeRegion::new(&writables.market_state.last_positions, position);

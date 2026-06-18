@@ -7,7 +7,7 @@ use crate::{
             Hardcoded, MarketReadables,
         },
         token::{
-            token_reader::{
+            token_marker::{
                 eth::ETHStub, hardcoded_erc20::hardcoded_erc20_index::HardcodedERC20Index,
             },
             HardcodedERC20, ETH,

@@ -1,5 +1,5 @@
 use crate::{
-    axis::{leg::SamePair, market::market_marker::MarketMarker, token::token_reader::TokenReader},
+    axis::{leg::SamePair, market::market_marker::MarketMarker, token::token_marker::TokenMarker},
     matching::region::make_region::MakeRegion,
     quantities::{Position, SafePosition, OUTER_POS, POS_0},
     state::{
@@ -16,8 +16,8 @@ impl Bitmap<POS_0, OUTER_POS> {
     ) -> (SlotKey<BitmapPreimage<M, B, Q, POS_0, OUTER_POS>>, Self)
     where
         M: MarketMarker,
-        B: TokenReader,
-        Q: TokenReader,
+        B: TokenMarker,
+        Q: TokenMarker,
     {
         let key = BitmapPreimage::<M, B, Q, POS_0, OUTER_POS> {
             market_key,

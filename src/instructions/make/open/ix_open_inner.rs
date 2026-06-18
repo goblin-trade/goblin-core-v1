@@ -3,7 +3,7 @@ use crate::{
         leg::leg_matcher::LegMatcher,
         market::{market_marker::MarketMarker, Writables},
         occupancy::Vacant,
-        token::token_reader::TokenReader,
+        token::token_marker::TokenMarker,
         update::{update_marker::UpdateMarker, Increase},
     },
     goblin_error::GoblinError,
@@ -20,8 +20,8 @@ pub fn ix_open_inner<M, B, Q, In>(
 ) -> Result<(), GoblinError>
 where
     M: MarketMarker,
-    B: TokenReader,
-    Q: TokenReader,
+    B: TokenMarker,
+    Q: TokenMarker,
     In: LegMatcher,
 {
     let position = make_readables.pos_header.position;

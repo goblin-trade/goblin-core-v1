@@ -1,5 +1,5 @@
 use crate::{
-    axis::{market::market_marker::MarketMarker, token::token_reader::TokenReader},
+    axis::{market::market_marker::MarketMarker, token::token_marker::TokenMarker},
     goblin_error::GoblinError,
     quantities::BaseLots,
     state::{
@@ -17,8 +17,8 @@ pub trait OccupancyMarker {
     ) -> Result<BaseLots, GoblinError>
     where
         M: MarketMarker,
-        B: TokenReader,
-        Q: TokenReader;
+        B: TokenMarker,
+        Q: TokenMarker;
 
     fn decrease<'a, M, B, Q>(
         msg_sender: &Address,
@@ -28,6 +28,6 @@ pub trait OccupancyMarker {
     ) -> Result<BaseLots, GoblinError>
     where
         M: MarketMarker,
-        B: TokenReader,
-        Q: TokenReader;
+        B: TokenMarker,
+        Q: TokenMarker;
 }

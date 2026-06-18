@@ -1,7 +1,7 @@
 use core::marker::PhantomData;
 
 use crate::{
-    axis::token::token_reader::TokenReader,
+    axis::token::token_marker::TokenMarker,
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
 };
@@ -12,8 +12,8 @@ use crate::{
 #[derive(Clone, Copy)]
 pub struct HardcodedMarketIndex<B, Q>
 where
-    B: TokenReader,
-    Q: TokenReader,
+    B: TokenMarker,
+    Q: TokenMarker,
 {
     pub inner: usize,
     _marker: PhantomData<(B, Q)>,
@@ -21,8 +21,8 @@ where
 
 impl<B, Q> HardcodedMarketIndex<B, Q>
 where
-    B: TokenReader,
-    Q: TokenReader,
+    B: TokenMarker,
+    Q: TokenMarker,
 {
     pub fn new(inner: usize) -> Self {
         Self {
@@ -34,8 +34,8 @@ where
 
 impl<B, Q> Decodable for HardcodedMarketIndex<B, Q>
 where
-    B: TokenReader,
-    Q: TokenReader,
+    B: TokenMarker,
+    Q: TokenMarker,
 {
     fn try_decode(ctx: &DecodeCtx) -> Result<Self, GoblinError> {
         let market_index_raw = u8::try_decode(ctx)? as usize;

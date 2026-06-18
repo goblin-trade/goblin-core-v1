@@ -1,5 +1,5 @@
 use crate::{
-    axis::{market::market_marker::MarketMarker, token::token_reader::TokenReader},
+    axis::{market::market_marker::MarketMarker, token::token_marker::TokenMarker},
     quantities::{OUTER_POS, POS_0},
     state::{
         bitmap::{preimage::BitmapPreimage, Bitmap},
@@ -14,8 +14,8 @@ impl Bitmap<POS_0, OUTER_POS> {
         key: &SlotKey<BitmapPreimage<M, B, Q, POS_0, OUTER_POS>>,
     ) where
         M: MarketMarker,
-        B: TokenReader,
-        Q: TokenReader,
+        B: TokenMarker,
+        Q: TokenMarker,
     {
         if *clone == *self {
             return;

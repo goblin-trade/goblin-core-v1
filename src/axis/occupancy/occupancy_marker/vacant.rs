@@ -2,7 +2,7 @@ use crate::{
     axis::{
         market::market_marker::MarketMarker,
         occupancy::{occupancy_marker::OccupancyMarker, Vacant},
-        token::token_reader::TokenReader,
+        token::token_marker::TokenMarker,
     },
     goblin_error::GoblinError,
     quantities::BaseLots,
@@ -23,8 +23,8 @@ impl OccupancyMarker for Vacant {
     ) -> Result<BaseLots, GoblinError>
     where
         M: MarketMarker,
-        B: TokenReader,
-        Q: TokenReader,
+        B: TokenMarker,
+        Q: TokenMarker,
     {
         inner_bitmap_updater.activate();
         key.store(&RestingOrder {
@@ -43,8 +43,8 @@ impl OccupancyMarker for Vacant {
     ) -> Result<BaseLots, GoblinError>
     where
         M: MarketMarker,
-        B: TokenReader,
-        Q: TokenReader,
+        B: TokenMarker,
+        Q: TokenMarker,
     {
         unreachable!()
     }

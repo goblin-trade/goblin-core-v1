@@ -2,7 +2,7 @@ use crate::{
     axis::{
         leg::leg_matcher::LegMatcher,
         market::LotSizePair,
-        token::{token_reader::TokenReader, CustomERC20, HardcodedERC20, Token, ETH},
+        token::{token_marker::TokenMarker, CustomERC20, HardcodedERC20, Token, ETH},
     },
     goblin_error::GoblinError,
     settlement::{
@@ -33,7 +33,7 @@ impl GlobalMakerDeltas {
         lot_size_pair: &LotSizePair,
     ) -> Result<(), GoblinError>
     where
-        T: TokenReader,
+        T: TokenMarker,
         In: LegMatcher,
         SidedTakeDeltaV2<In>: UnsideDelta<In, Unsided = UnsidedTakeDeltaV2>,
     {

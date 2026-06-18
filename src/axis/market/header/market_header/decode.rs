@@ -1,6 +1,6 @@
 use super::MarketHeader;
 use crate::{
-    axis::{market::market_marker::MarketMarker, token::token_reader::TokenReader},
+    axis::{market::market_marker::MarketMarker, token::token_marker::TokenMarker},
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
     types::Tuple,
@@ -9,8 +9,8 @@ use crate::{
 impl<M, B, Q> Decodable for MarketHeader<M, B, Q>
 where
     M: MarketMarker,
-    B: TokenReader,
-    Q: TokenReader,
+    B: TokenMarker,
+    Q: TokenMarker,
 {
     fn try_decode(ctx: &DecodeCtx) -> Result<Self, GoblinError> {
         let byte_0 = u8::try_decode(ctx)?;

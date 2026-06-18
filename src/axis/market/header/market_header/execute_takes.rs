@@ -3,7 +3,7 @@ use crate::{
     axis::{
         leg::{Base, Quote},
         market::{market_marker::MarketMarker, Readables, Writables},
-        token::token_reader::TokenReader,
+        token::token_marker::TokenMarker,
     },
     goblin_error::GoblinError,
     input_processor::DecodeCtx,
@@ -14,8 +14,8 @@ use crate::{
 impl<M, B, Q> MarketHeader<M, B, Q>
 where
     M: MarketMarker,
-    B: TokenReader,
-    Q: TokenReader,
+    B: TokenMarker,
+    Q: TokenMarker,
 {
     pub fn execute_takes(
         &self,

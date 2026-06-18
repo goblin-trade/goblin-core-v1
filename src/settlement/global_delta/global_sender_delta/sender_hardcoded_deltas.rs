@@ -1,5 +1,5 @@
 use crate::{
-    axis::token::{token_reader::hardcoded_erc20::HARDCODED_TOKENS, HardcodedERC20},
+    axis::token::{token_marker::hardcoded_erc20::HARDCODED_TOKENS, HardcodedERC20},
     settlement::{global_delta::SenderTokenStore, ConstZero},
 };
 

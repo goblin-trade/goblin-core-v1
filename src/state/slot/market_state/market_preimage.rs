@@ -4,7 +4,7 @@ use crate::{
     axis::{
         leg::Pair,
         market::{market_marker::MarketMarker, LotSizePair},
-        token::token_reader::TokenReader,
+        token::token_marker::TokenMarker,
     },
     quantities::QuoteLotsPerBaseUnitPerTick,
     state::{MarketState, Preimage},
@@ -19,8 +19,8 @@ use crate::{
 pub struct MarketPreimage<M, B, Q>
 where
     M: MarketMarker,
-    B: TokenReader,
-    Q: TokenReader,
+    B: TokenMarker,
+    Q: TokenMarker,
 {
     lot_size_pair: LotSizePair,
     tick_size: QuoteLotsPerBaseUnitPerTick,
@@ -31,8 +31,8 @@ where
 impl<M, B, Q> MarketPreimage<M, B, Q>
 where
     M: MarketMarker,
-    B: TokenReader,
-    Q: TokenReader,
+    B: TokenMarker,
+    Q: TokenMarker,
 {
     pub fn new(
         lot_size_pair: LotSizePair,
@@ -51,8 +51,8 @@ where
 impl<M, B, Q> Preimage for MarketPreimage<M, B, Q>
 where
     M: MarketMarker,
-    B: TokenReader,
-    Q: TokenReader,
+    B: TokenMarker,
+    Q: TokenMarker,
 {
     const SLOT_DISCRIMINATOR: u8 = M::DISCRIMINATOR + B::DISCRIMINATOR << 3 + Q::DISCRIMINATOR << 4;
 

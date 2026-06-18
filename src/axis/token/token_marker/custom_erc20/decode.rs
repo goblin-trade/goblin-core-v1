@@ -1,12 +1,12 @@
 use crate::{
-    axis::token::token_reader::hardcoded_erc20::hardcoded_erc20_index::HardcodedERC20Index,
+    axis::token::token_marker::custom_erc20::custom_erc20_index::CustomERC20Index,
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
 };
 
-impl Decodable for HardcodedERC20Index {
+impl Decodable for CustomERC20Index {
     fn try_decode(ctx: &DecodeCtx) -> Result<Self, GoblinError> {
         let index_raw = u8::try_decode(ctx)? as usize;
-        Ok(HardcodedERC20Index(index_raw))
+        Ok(CustomERC20Index(index_raw))
     }
 }

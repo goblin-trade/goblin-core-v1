@@ -3,7 +3,7 @@ use crate::{
         leg::{Base, LegEnum, Quote},
         market::{market_marker::MarketMarker, Writables},
         occupancy::Occupied,
-        token::token_reader::TokenReader,
+        token::token_marker::TokenMarker,
         update::{update_marker::UpdateMarker, Decrease, Increase, UpdateEnum},
     },
     goblin_error::GoblinError,
@@ -20,8 +20,8 @@ pub(super) fn process_update_cases<M, B, Q>(
 ) -> Result<(), GoblinError>
 where
     M: MarketMarker,
-    B: TokenReader,
-    Q: TokenReader,
+    B: TokenMarker,
+    Q: TokenMarker,
 {
     match (leg_in, update_enum) {
         (LegEnum::Base, UpdateEnum::Increase) => {

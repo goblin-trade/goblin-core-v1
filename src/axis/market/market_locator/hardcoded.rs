@@ -7,7 +7,7 @@ use crate::{
             },
             Hardcoded, MarketReadables,
         },
-        token::token_reader::TokenReader,
+        token::token_marker::TokenMarker,
     },
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
@@ -15,8 +15,8 @@ use crate::{
 
 impl<B, Q> MarketLocator<Hardcoded, B, Q> for HardcodedMarketIndex<B, Q>
 where
-    B: TokenReader,
-    Q: TokenReader,
+    B: TokenMarker,
+    Q: TokenMarker,
 {
     fn decode_locator<'a>(ctx: &DecodeCtx, _erc20_list: ()) -> Result<Self, GoblinError> {
         HardcodedMarketIndex::<B, Q>::try_decode(ctx)

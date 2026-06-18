@@ -1,4 +1,4 @@
-use crate::axis::token::token_reader::hardcoded_erc20::hardcoded_erc20_data::HardcodedERC20Data;
+use crate::axis::token::token_marker::hardcoded_erc20::hardcoded_erc20_data::HardcodedERC20Data;
 
 pub const HARDCODED_TOKENS: [HardcodedERC20Data; 2] = [
     HardcodedERC20Data {

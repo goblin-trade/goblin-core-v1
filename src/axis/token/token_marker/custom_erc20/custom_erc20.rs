@@ -2,12 +2,13 @@ use crate::{
     axis::{
         leg::leg_matcher::LegMatcher,
         token::{
-            token_reader::{
-                custom_erc20::custom_erc20_data::CustomERC20Data,
-                hardcoded_erc20::{hardcoded_erc20_index::HardcodedERC20Index, HARDCODED_TOKENS},
-                TokenReader,
+            token_marker::{
+                custom_erc20::{
+                    custom_erc20_data::CustomERC20Data, custom_erc20_index::CustomERC20Index,
+                },
+                TokenMarker,
             },
-            HardcodedERC20,
+            CustomERC20,
         },
     },
     goblin_error::GoblinError,
@@ -16,21 +17,20 @@ use crate::{
     types::{Address, StoreReader},
 };
 
-impl TokenReader for HardcodedERC20 {
-    const DISCRIMINATOR: u8 = 1;
+impl TokenMarker for CustomERC20 {
+    const DISCRIMINATOR: u8 = 2;
 
-    type TokenIndex = HardcodedERC20Index;
+    type TokenIndex = CustomERC20Index;
     type Address = Address;
     type Deposit = DeltaAtoms;
 
     fn token_index_to_address(
         token_index: Self::TokenIndex,
-        _custom_erc20_list: &[CustomERC20Data],
+        custom_erc20_list: &[CustomERC20Data],
     ) -> Result<Self::Address, GoblinError> {
-        let data = HARDCODED_TOKENS
+        let data = custom_erc20_list
             .get(token_index.0)
-            .ok_or(GoblinError::InvalidHardcodedTokenIndex)?;
-
+            .ok_or(GoblinError::InvalidCustomTokenIndex)?;
         Ok(data.address)
     }
 
