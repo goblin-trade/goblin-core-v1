@@ -10,7 +10,7 @@ use crate::{
         local_delta::DepositTriple,
         CheckedAdd, ConstZero, Delta,
     },
-    types::StoreReader,
+    types::{Address, StoreReader},
 };
 
 /// Marker class for 'Token'. We have 3 variants- ETH, HardcodedERC20 and CustomERC20
@@ -44,4 +44,11 @@ pub trait TokenMarker:
     ) -> Result<&mut SenderTokenStore<Self>, GoblinError>
     where
         In: LegMatcher;
+
+    fn settle_deposit(
+        deposit: Self::Deposit,
+        token_index: Self::TokenIndex,
+        custom_erc20_list: &[CustomERC20Data],
+        msg_sender: &Address,
+    ) -> Result<(), GoblinError>;
 }

@@ -1,6 +1,7 @@
-pub mod hostio_unsafe;
-
+pub mod erc20_hostio;
+pub mod eth_hostio;
 pub mod hostio_helpers;
+pub mod hostio_unsafe;
 
 pub use hostio_helpers::*;
 

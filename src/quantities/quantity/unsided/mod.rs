@@ -1,5 +1,8 @@
-pub mod alias;
 pub mod unside_quantity;
+pub mod unsided_atoms;
 
-pub use alias::*;
 pub use unside_quantity::*;
+pub use unsided_atoms::*;
+
+#[cfg(test)]
+mod test;
