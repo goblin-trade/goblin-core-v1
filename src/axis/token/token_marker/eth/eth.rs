@@ -2,34 +2,29 @@ use crate::{
     axis::{
         leg::leg_matcher::LegMatcher,
         token::{
-            token_marker::{custom_erc20::custom_erc20_data::CustomERC20Data, TokenMarker},
+            token_marker::{
+                custom_erc20::custom_erc20_data::CustomERC20Data, eth::ETHStub, TokenMarker,
+            },
             ETH,
         },
     },
     goblin_error::GoblinError,
-    settlement::{global_delta::SenderTokenStore, CheckedAdd, Delta},
+    settlement::{global_delta::SenderTokenStore, Delta},
     types::StoreReader,
 };
-
-impl CheckedAdd for () {
-    fn checked_add(self, _rhs: Self) -> Option<Self> {
-        Some(())
-    }
-}
 
 impl TokenMarker for ETH {
     const DISCRIMINATOR: u8 = 0;
 
-    type TokenIndex = ();
-    type Address = ();
-    type Deposit = ();
-    // type Delta = EthDelta;
+    type TokenIndex = ETHStub;
+    type Address = ETHStub;
+    type Deposit = ETHStub;
 
     fn token_index_to_address(
         _token_index: Self::TokenIndex,
         _custom_erc20_list: &[CustomERC20Data],
     ) -> Result<Self::Address, GoblinError> {
-        Ok(())
+        Ok(ETHStub)
     }
 
     fn get_global_delta<In>(
