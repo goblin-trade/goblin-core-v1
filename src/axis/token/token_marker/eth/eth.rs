@@ -7,22 +7,9 @@ use crate::{
         },
     },
     goblin_error::GoblinError,
-    quantities::DeltaAtoms,
-    settlement::{global_delta::SenderTokenStore, CheckedAdd, ConstZero, Delta},
+    settlement::{global_delta::SenderTokenStore, CheckedAdd, Delta},
     types::StoreReader,
 };
-
-impl From<()> for DeltaAtoms {
-    fn from(_value: ()) -> Self {
-        DeltaAtoms::ZEROED
-    }
-}
-
-impl From<DeltaAtoms> for () {
-    fn from(_value: DeltaAtoms) -> Self {
-        ()
-    }
-}
 
 impl CheckedAdd for () {
     fn checked_add(self, _rhs: Self) -> Option<Self> {

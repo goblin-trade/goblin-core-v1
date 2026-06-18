@@ -73,7 +73,7 @@ impl Delta {
         }
 
         // Reset local delta for reuse
-        self.local.deposits.reset();
+        self.local.deposits.reset::<B, Q>();
         Ok(())
     }
 }
