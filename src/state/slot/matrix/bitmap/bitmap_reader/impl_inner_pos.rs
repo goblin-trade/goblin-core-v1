@@ -1,7 +1,7 @@
 use crate::{
     axis::{
         leg::leg_matcher::LegMatcher, market::market_marker::MarketMarker,
-        token::token_marker::TokenMarker,
+        token::token_reader::TokenReader,
     },
     quantities::{Pos2, Position, SafePosition, INNER_POS, OUTER_POS, POS_0, POS_1, POS_2},
     state::{
@@ -22,8 +22,8 @@ impl BitmapReader<POS_2> for Bitmap<POS_1, INNER_POS> {
     ) -> impl Iterator<Item = SafePosition<POS_2>>
     where
         M: MarketMarker,
-        B: TokenMarker,
-        Q: TokenMarker,
+        B: TokenReader,
+        Q: TokenReader,
         In: LegMatcher,
     {
         // outer iterator ignores inner bits in range endpoints — no complement needed

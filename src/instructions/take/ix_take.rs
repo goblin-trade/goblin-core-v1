@@ -2,7 +2,7 @@ use crate::{
     axis::{
         leg::leg_matcher::LegMatcher,
         market::{market_marker::MarketMarker, Readables, Writables},
-        token::token_marker::TokenMarker,
+        token::token_reader::TokenReader,
     },
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
@@ -17,8 +17,8 @@ pub fn ix_take<M, B, Q, In>(
 ) -> Result<(), GoblinError>
 where
     M: MarketMarker,
-    B: TokenMarker,
-    Q: TokenMarker,
+    B: TokenReader,
+    Q: TokenReader,
     In: LegMatcher,
 {
     let header = TakeHeader::<In>::try_decode(ctx)?;

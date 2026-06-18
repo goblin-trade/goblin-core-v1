@@ -2,7 +2,7 @@ use crate::{
     axis::{
         leg::{leg_matcher::LegMatcher, Base},
         market::{market_marker::MarketMarker, MarketReadables, Readables, Writables},
-        token::token_marker::TokenMarker,
+        token::token_reader::TokenReader,
     },
     goblin_error::GoblinError,
     instructions::TakeHeader,
@@ -31,8 +31,8 @@ pub fn match_order<M, B, Q, In>(
 ) -> Result<(), GoblinError>
 where
     M: MarketMarker,
-    B: TokenMarker,
-    Q: TokenMarker,
+    B: TokenReader,
+    Q: TokenReader,
     In: LegMatcher,
 {
     let MarketReadables { market, market_key } = readables.market_readables;

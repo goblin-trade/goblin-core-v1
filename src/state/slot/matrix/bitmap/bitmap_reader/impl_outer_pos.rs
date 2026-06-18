@@ -1,7 +1,7 @@
 use crate::{
     axis::{
         leg::leg_matcher::LegMatcher, market::market_marker::MarketMarker,
-        token::token_marker::TokenMarker,
+        token::token_reader::TokenReader,
     },
     quantities::{Position, SafePosition, OUTER_POS, POS_0, POS_1},
     state::{
@@ -18,8 +18,8 @@ impl BitmapReader<POS_1> for Bitmap<POS_0, OUTER_POS> {
     ) -> impl Iterator<Item = SafePosition<POS_1>>
     where
         M: MarketMarker,
-        B: TokenMarker,
-        Q: TokenMarker,
+        B: TokenReader,
+        Q: TokenReader,
         In: LegMatcher,
     {
         In::outer_bitmap_index_iter(range.clone())

@@ -10,7 +10,7 @@ use crate::{
             },
             MarketReadables,
         },
-        token::token_marker::TokenMarker,
+        token::token_reader::TokenReader,
     },
     goblin_error::GoblinError,
     input_processor::DecodeCtx,
@@ -24,8 +24,8 @@ pub trait MarketLocator<M, B, Q>
 where
     Self: Sized,
     M: MarketMarker,
-    B: TokenMarker,
-    Q: TokenMarker,
+    B: TokenReader,
+    Q: TokenReader,
 {
     /// Decode market locator from input args.
     ///

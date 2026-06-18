@@ -1,10 +1,10 @@
 use crate::{
-    axis::token::token_marker::TokenMarker,
+    axis::token::token_reader::TokenReader,
     settlement::{ConstZero, UnsidedSenderDeltaV2},
 };
 
 #[derive(Clone, Copy)]
-pub struct SenderTokenStore<T: TokenMarker> {
+pub struct SenderTokenStore<T: TokenReader> {
     /// Atoms to be deposited or withdrawn
     pub deposit_due: T::Deposit,
 
@@ -12,9 +12,9 @@ pub struct SenderTokenStore<T: TokenMarker> {
     pub unsided_sender_delta: UnsidedSenderDeltaV2,
 }
 
-impl<T: TokenMarker> ConstZero for SenderTokenStore<T> {
+impl<T: TokenReader> ConstZero for SenderTokenStore<T> {
     const ZEROED: Self = Self {
-        deposit_due: <T as TokenMarker>::Deposit::ZEROED,
+        deposit_due: <T as TokenReader>::Deposit::ZEROED,
         unsided_sender_delta: UnsidedSenderDeltaV2::ZEROED,
     };
 }

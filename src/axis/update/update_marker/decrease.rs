@@ -3,7 +3,7 @@ use crate::{
         leg::leg_matcher::LegMatcher,
         market::market_marker::MarketMarker,
         occupancy::occupancy_marker::OccupancyMarker,
-        token::token_marker::TokenMarker,
+        token::token_reader::TokenReader,
         update::{update_marker::UpdateMarker, Decrease},
     },
     goblin_error::GoblinError,
@@ -23,8 +23,8 @@ impl UpdateMarker for Decrease {
     ) -> Result<BaseLots, GoblinError>
     where
         M: MarketMarker,
-        B: TokenMarker,
-        Q: TokenMarker,
+        B: TokenReader,
+        Q: TokenReader,
         In: LegMatcher,
         Oc: OccupancyMarker,
     {

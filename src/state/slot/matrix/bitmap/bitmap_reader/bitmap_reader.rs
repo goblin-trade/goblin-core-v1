@@ -1,7 +1,7 @@
 use crate::{
     axis::{
         leg::leg_matcher::LegMatcher, market::market_marker::MarketMarker,
-        token::token_marker::TokenMarker,
+        token::token_reader::TokenReader,
     },
     quantities::{Position, SafePosition},
     state::{MarketPreimage, SlotKey},
@@ -16,7 +16,7 @@ pub trait BitmapReader<const BITS: u16> {
     ) -> impl Iterator<Item = SafePosition<BITS>>
     where
         M: MarketMarker,
-        B: TokenMarker,
-        Q: TokenMarker,
+        B: TokenReader,
+        Q: TokenReader,
         In: LegMatcher;
 }

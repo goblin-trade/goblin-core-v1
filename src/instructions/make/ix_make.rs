@@ -3,7 +3,7 @@ use crate::{
         market::{
             header::make_header::MakeHeader, market_marker::MarketMarker, Readables, Writables,
         },
-        token::token_marker::TokenMarker,
+        token::token_reader::TokenReader,
     },
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
@@ -24,8 +24,8 @@ pub fn ix_make<M, B, Q>(
 ) -> Result<(), GoblinError>
 where
     M: MarketMarker,
-    B: TokenMarker,
-    Q: TokenMarker,
+    B: TokenReader,
+    Q: TokenReader,
 {
     let MakeHeader {
         inner_pos,

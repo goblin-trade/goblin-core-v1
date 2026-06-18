@@ -2,8 +2,8 @@ use crate::{
     axis::{
         leg::leg_matcher::LegMatcher,
         token::{
-            token_marker::{
-                custom_erc20::custom_erc20_data::CustomERC20Data, eth::ETHStub, TokenMarker,
+            token_reader::{
+                custom_erc20::custom_erc20_data::CustomERC20Data, eth::ETHStub, TokenReader,
             },
             ETH,
         },
@@ -13,7 +13,7 @@ use crate::{
     types::StoreReader,
 };
 
-impl TokenMarker for ETH {
+impl TokenReader for ETH {
     const DISCRIMINATOR: u8 = 0;
 
     type TokenIndex = ETHStub;

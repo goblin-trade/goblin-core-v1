@@ -1,10 +1,10 @@
 use crate::axis::{
     market::{Hardcoded, MarketReadables},
-    token::token_marker::TokenMarker,
+    token::token_reader::TokenReader,
 };
 
 /// Trait to store hardcoded market lists for each B, Q combination.
 /// Used with MarketLocator trait
-pub trait HardcodedMarkets<B: TokenMarker, Q: TokenMarker> {
+pub trait HardcodedMarkets<B: TokenReader, Q: TokenReader> {
     const HARDCODED_MARKETS: &'static [MarketReadables<Hardcoded, B, Q>];
 }

@@ -1,7 +1,7 @@
 use crate::{
     axis::{
         leg::leg_matcher::LegMatcher, market::market_marker::MarketMarker,
-        token::token_marker::TokenMarker,
+        token::token_reader::TokenReader,
     },
     quantities::{Position, INNER_POS, POS_1},
     state::{
@@ -14,8 +14,8 @@ use crate::{
 pub struct RestingOrderEntry<M, B, Q>
 where
     M: MarketMarker,
-    B: TokenMarker,
-    Q: TokenMarker,
+    B: TokenReader,
+    Q: TokenReader,
 {
     pub position: Position,
     pub resting_order_key_value: KeyValue<RestingOrderPreimage<M, B, Q>>,
@@ -28,8 +28,8 @@ pub fn match_iterator<M, B, Q, In>(
 ) -> impl Iterator<Item = RestingOrderEntry<M, B, Q>>
 where
     M: MarketMarker,
-    B: TokenMarker,
-    Q: TokenMarker,
+    B: TokenReader,
+    Q: TokenReader,
     In: LegMatcher,
 {
     let range = In::get_range(last_position, limit);

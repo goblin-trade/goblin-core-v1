@@ -2,7 +2,7 @@ use crate::{
     axis::{
         leg::{Base, LegEnum, Quote},
         market::{market_marker::MarketMarker, Writables},
-        token::token_marker::TokenMarker,
+        token::token_reader::TokenReader,
     },
     goblin_error::GoblinError,
     instructions::{open::ix_open_inner::ix_open_inner, MakeReadables},
@@ -18,8 +18,8 @@ pub fn ix_open<M, B, Q>(
 ) -> Result<(), GoblinError>
 where
     M: MarketMarker,
-    B: TokenMarker,
-    Q: TokenMarker,
+    B: TokenReader,
+    Q: TokenReader,
 {
     let position = make_readables.pos_header.position;
     let region = MakeRegion::new(&writables.market_state.last_positions, position);

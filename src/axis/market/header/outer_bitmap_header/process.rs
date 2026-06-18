@@ -7,7 +7,7 @@ use crate::{
             market_marker::MarketMarker,
             Readables, Writables,
         },
-        token::token_marker::TokenMarker,
+        token::token_reader::TokenReader,
     },
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
@@ -23,8 +23,8 @@ impl OuterBitmapHeader {
     ) -> Result<(), GoblinError>
     where
         M: MarketMarker,
-        B: TokenMarker,
-        Q: TokenMarker,
+        B: TokenReader,
+        Q: TokenReader,
     {
         let Self {
             outer_bitmap_index,

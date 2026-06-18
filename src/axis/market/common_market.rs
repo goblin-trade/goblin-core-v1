@@ -4,7 +4,7 @@ use crate::{
     axis::{
         leg::{leg_quantities::LegQuantities, Base, Pair, Quote},
         market::market_marker::MarketMarker,
-        token::token_marker::{custom_erc20::custom_erc20_data::CustomERC20Data, TokenMarker},
+        token::token_reader::{custom_erc20::custom_erc20_data::CustomERC20Data, TokenReader},
     },
     goblin_error::GoblinError,
     quantities::QuoteLotsPerBaseUnitPerTick,
@@ -17,11 +17,11 @@ pub type LotSizePair =
 
 pub type TokenIndexPair<B, Q>
 where
-    B: TokenMarker,
-    Q: TokenMarker,
+    B: TokenReader,
+    Q: TokenReader,
 = Pair<B::TokenIndex, Q::TokenIndex>;
 
-pub struct CommonMarket<M: MarketMarker, B: TokenMarker, Q: TokenMarker> {
+pub struct CommonMarket<M: MarketMarker, B: TokenReader, Q: TokenReader> {
     /// The token pair
     pub token_index_pair: TokenIndexPair<B, Q>,
 
@@ -34,7 +34,7 @@ pub struct CommonMarket<M: MarketMarker, B: TokenMarker, Q: TokenMarker> {
     _marker: PhantomData<M>,
 }
 
-impl<M: MarketMarker, B: TokenMarker, Q: TokenMarker> CommonMarket<M, B, Q> {
+impl<M: MarketMarker, B: TokenReader, Q: TokenReader> CommonMarket<M, B, Q> {
     pub const fn new(
         token_index_pair: Pair<B::TokenIndex, Q::TokenIndex>,
         lot_size_pair: LotSizePair,

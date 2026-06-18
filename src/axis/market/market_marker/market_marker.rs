@@ -1,4 +1,4 @@
-use crate::axis::{market::market_locator::MarketLocator, token::token_marker::TokenMarker};
+use crate::axis::{market::market_locator::MarketLocator, token::token_reader::TokenReader};
 
 ///! We have 2 market variants
 ///!
@@ -20,6 +20,6 @@ pub trait MarketMarker: Sized + Clone + Copy {
     /// - Dynamic: The complete MarketAndKey (acts as its own locator)
     type MarketLocator<B, Q>: MarketLocator<Self, B, Q>
     where
-        B: TokenMarker,
-        Q: TokenMarker;
+        B: TokenReader,
+        Q: TokenReader;
 }

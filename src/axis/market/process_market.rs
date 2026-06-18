@@ -12,7 +12,7 @@ use crate::{
             },
             Readables, Writables,
         },
-        token::token_marker::TokenMarker,
+        token::token_reader::TokenReader,
     },
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
@@ -28,8 +28,8 @@ pub fn process_market<'a, M, B, Q>(
 ) -> Result<(), GoblinError>
 where
     M: MarketMarker,
-    B: TokenMarker,
-    Q: TokenMarker,
+    B: TokenReader,
+    Q: TokenReader,
     HardcodedMarketIndex<B, Q>: HardcodedMarkets<B, Q>,
 {
     let market_header = MarketHeader::<M, B, Q>::try_decode(ctx)?;

@@ -1,6 +1,6 @@
 use crate::axis::{
     market::{market_marker::MarketMarker, Dynamic, MarketReadables},
-    token::token_marker::{custom_erc20::custom_erc20_data::CustomERC20Data, TokenMarker},
+    token::token_reader::{custom_erc20::custom_erc20_data::CustomERC20Data, TokenReader},
 };
 
 impl MarketMarker for Dynamic {
@@ -11,6 +11,6 @@ impl MarketMarker for Dynamic {
     type MarketLocator<B, Q>
         = MarketReadables<Self, B, Q>
     where
-        B: TokenMarker,
-        Q: TokenMarker;
+        B: TokenReader,
+        Q: TokenReader;
 }

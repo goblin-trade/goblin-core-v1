@@ -1,7 +1,7 @@
 use crate::{
     axis::{
         market::{market_locator::MarketLocator, CommonMarket, Dynamic, MarketReadables},
-        token::token_marker::{custom_erc20::custom_erc20_data::CustomERC20Data, TokenMarker},
+        token::token_reader::{custom_erc20::custom_erc20_data::CustomERC20Data, TokenReader},
     },
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
@@ -10,8 +10,8 @@ use crate::{
 
 impl<B, Q> MarketLocator<Dynamic, B, Q> for MarketReadables<Dynamic, B, Q>
 where
-    B: TokenMarker,
-    Q: TokenMarker,
+    B: TokenReader,
+    Q: TokenReader,
 {
     fn decode_locator<'a>(
         ctx: &DecodeCtx,

@@ -1,5 +1,5 @@
 use crate::{
-    axis::token::token_marker::custom_erc20::custom_erc20_data::CustomERC20Data,
+    axis::token::token_reader::custom_erc20::custom_erc20_data::CustomERC20Data,
     goblin_error::GoblinError,
     input_processor::{DecodablePrimitive, DecodeCtx},
     require,

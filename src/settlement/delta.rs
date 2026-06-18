@@ -2,7 +2,7 @@ use crate::{
     axis::{
         leg::{Base, Quote},
         market::{market_marker::MarketMarker, LotSizePair, TokenIndexPair},
-        token::token_marker::TokenMarker,
+        token::token_reader::TokenReader,
     },
     goblin_error::GoblinError,
     settlement::{
@@ -43,8 +43,8 @@ impl Delta {
     ) -> Result<(), GoblinError>
     where
         M: MarketMarker,
-        B: TokenMarker,
-        Q: TokenMarker,
+        B: TokenReader,
+        Q: TokenReader,
     {
         let base_token_index = Base::get(token_index_pair);
         let quote_token_index = Quote::get(token_index_pair);

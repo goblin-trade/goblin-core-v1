@@ -1,14 +1,14 @@
 use core::marker::PhantomData;
 
 use crate::axis::{
-    leg::SamePair, market::market_marker::MarketMarker, token::token_marker::TokenMarker,
+    leg::SamePair, market::market_marker::MarketMarker, token::token_reader::TokenReader,
 };
 
 pub struct MarketHeader<M, B, Q>
 where
     M: MarketMarker,
-    B: TokenMarker,
-    Q: TokenMarker,
+    B: TokenReader,
+    Q: TokenReader,
 {
     /// Whether to decode deposit amounts
     pub decode_deposit_amounts: bool,
@@ -25,8 +25,8 @@ where
 impl<M, B, Q> MarketHeader<M, B, Q>
 where
     M: MarketMarker,
-    B: TokenMarker,
-    Q: TokenMarker,
+    B: TokenReader,
+    Q: TokenReader,
 {
     pub fn new(
         decode_deposit_amounts: bool,

@@ -2,7 +2,7 @@ use crate::{
     axis::{
         market::market_marker::MarketMarker,
         occupancy::{occupancy_marker::OccupancyMarker, Occupied},
-        token::token_marker::TokenMarker,
+        token::token_reader::TokenReader,
     },
     goblin_error::GoblinError,
     quantities::BaseLots,
@@ -23,8 +23,8 @@ impl OccupancyMarker for Occupied {
     ) -> Result<BaseLots, GoblinError>
     where
         M: MarketMarker,
-        B: TokenMarker,
-        Q: TokenMarker,
+        B: TokenReader,
+        Q: TokenReader,
     {
         let mut resting_order = key.load();
 
@@ -51,8 +51,8 @@ impl OccupancyMarker for Occupied {
     ) -> Result<BaseLots, GoblinError>
     where
         M: MarketMarker,
-        B: TokenMarker,
-        Q: TokenMarker,
+        B: TokenReader,
+        Q: TokenReader,
     {
         let mut resting_order = key.load();
 

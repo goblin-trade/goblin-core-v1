@@ -1,7 +1,7 @@
 use crate::{
     axis::{
         leg::{leg_matcher::LegMatcher, Base, Pair, Quote, SamePair},
-        token::token_marker::TokenMarker,
+        token::token_reader::TokenReader,
     },
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
@@ -18,8 +18,8 @@ impl ConstZero for LocalDeposits {
 impl LocalDeposits {
     pub fn read_deposits<'a, B, Q>(&mut self, ctx: &DecodeCtx) -> Result<(), GoblinError>
     where
-        B: TokenMarker,
-        Q: TokenMarker,
+        B: TokenReader,
+        Q: TokenReader,
     {
         let base_deposit = B::Deposit::try_decode(ctx)?;
         let quote_deposit = Q::Deposit::try_decode(ctx)?;
@@ -32,8 +32,8 @@ impl LocalDeposits {
 
     pub fn reset<B, Q>(&mut self)
     where
-        B: TokenMarker,
-        Q: TokenMarker,
+        B: TokenReader,
+        Q: TokenReader,
     {
         self.set_side_deposit::<B, Base>(B::Deposit::default());
         self.set_side_deposit::<Q, Quote>(Q::Deposit::default());
@@ -41,7 +41,7 @@ impl LocalDeposits {
 
     fn set_side_deposit<T, In>(&mut self, deposit: T::Deposit)
     where
-        T: TokenMarker,
+        T: TokenReader,
         In: LegMatcher,
     {
         let leg_deposits = In::get_leg_mut(self);

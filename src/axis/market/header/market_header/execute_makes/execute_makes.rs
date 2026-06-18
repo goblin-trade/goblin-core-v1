@@ -5,7 +5,7 @@ use crate::{
             market_marker::MarketMarker,
             Readables, Writables,
         },
-        token::token_marker::TokenMarker,
+        token::token_reader::TokenReader,
     },
     goblin_error::GoblinError,
     input_processor::DecodeCtx,
@@ -14,8 +14,8 @@ use crate::{
 impl<M, B, Q> MarketHeader<M, B, Q>
 where
     M: MarketMarker,
-    B: TokenMarker,
-    Q: TokenMarker,
+    B: TokenReader,
+    Q: TokenReader,
 {
     pub fn execute_makes(
         &self,

@@ -3,7 +3,7 @@ use crate::axis::{
         market_marker::{hardcoded::hardcoded_market_index::HardcodedMarketIndex, MarketMarker},
         Hardcoded,
     },
-    token::token_marker::TokenMarker,
+    token::token_reader::TokenReader,
 };
 
 impl MarketMarker for Hardcoded {
@@ -14,6 +14,6 @@ impl MarketMarker for Hardcoded {
     type MarketLocator<B, Q>
         = HardcodedMarketIndex<B, Q>
     where
-        B: TokenMarker,
-        Q: TokenMarker;
+        B: TokenReader,
+        Q: TokenReader;
 }
