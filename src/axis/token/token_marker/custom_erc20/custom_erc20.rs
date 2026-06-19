@@ -13,7 +13,7 @@ use crate::{
     },
     goblin_error::GoblinError,
     quantities::DeltaAtoms,
-    settlement::{global_delta::SenderTokenStore, Delta},
+    settlement::{global_delta::SenderTokenStore, Delta, Settleable},
     types::{Address, StoreReader},
 };
 
@@ -44,5 +44,15 @@ impl TokenMarker for CustomERC20 {
         let list = Self::get_leg_mut(&mut delta.global.global_sender_delta);
         let store = &mut list[token_index.0];
         Ok(store)
+    }
+
+    fn settle_deposit(
+        deposit: Self::Deposit,
+        token_index: Self::TokenIndex,
+        custom_erc20_list: &[CustomERC20Data],
+        msg_sender: &Address,
+    ) -> Result<(), GoblinError> {
+        let token_address = Self::token_index_to_address(token_index, custom_erc20_list)?;
+        deposit.settle(&token_address, msg_sender)
     }
 }

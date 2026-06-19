@@ -3,7 +3,6 @@ use crate::{
     hostio,
     input_processor::{DecodablePrimitive, DecodeCtx, HeaderFlags},
     quantities::{QuantityOps, UnsidedAtoms},
-    types::NATIVE_TOKEN_DECIMALS,
 };
 
 /// The amount of ETH transfered in through msg_value and the amount due to be
@@ -29,7 +28,7 @@ impl EthTransfers {
     pub fn new(ctx: &DecodeCtx, flags: &HeaderFlags) -> Result<Self, GoblinError> {
         let msg_value = if flags.track_msg_value {
             let msg_value_raw = hostio::msg_value();
-            UnsidedAtoms::from_raw_atoms(&msg_value_raw, NATIVE_TOKEN_DECIMALS)?
+            UnsidedAtoms::try_from(msg_value_raw)?
         } else {
             UnsidedAtoms::ZERO
         };

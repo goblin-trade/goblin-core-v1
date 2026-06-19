@@ -7,10 +7,10 @@ use crate::{
     types::Address,
 };
 
-pub fn call_contract(
+pub fn call_contract<const D: u8>(
     contract: &Address,
     calldata: &[u8],
-    eth: &RawAtoms,
+    eth: &RawAtoms<D>,
 ) -> Result<(), GoblinError> {
     // Use max gas to follow EVM's CALL 63/64 rule. The VM will decide how much gas to use
     let gas = u64::MAX;

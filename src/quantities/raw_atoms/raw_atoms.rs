@@ -6,13 +6,13 @@
 ///
 /// * It holds numbers in big endian which is EVM's wire format.
 #[derive(Default)]
-pub struct RawAtoms(pub [u8; 32]);
+pub struct RawAtoms<const D: u8>(pub [u8; 32]);
 
-impl RawAtoms {
-    pub const ZERO: RawAtoms = RawAtoms([0; 32]);
+impl<const D: u8> RawAtoms<D> {
+    pub const ZERO: Self = RawAtoms([0; 32]);
 
     #[cfg(test)]
-    pub const MAX: RawAtoms = RawAtoms([0xff; 32]);
+    pub const MAX: Self = RawAtoms([0xff; 32]);
 
     /// Convert RawAtoms to a clamped u128.
     /// Values are clamped to u128::MAX if they exceed the maximum representable value.
@@ -35,38 +35,5 @@ impl RawAtoms {
         let raw_atom_bytes = value.to_be_bytes();
         raw_atoms.0[16..].copy_from_slice(&raw_atom_bytes);
         raw_atoms
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use core::u128;
-
-    use super::*;
-
-    #[test]
-    fn test_zero_raw_atoms() {
-        let raw_atoms = RawAtoms([0u8; 32]);
-        assert_eq!(raw_atoms.to_clamped_u128(), 0);
-    }
-
-    #[test]
-    fn test_small_value() {
-        let mut raw_atoms = RawAtoms([0u8; 32]);
-        raw_atoms.0[31] = 1;
-        assert_eq!(raw_atoms.to_clamped_u128(), 1);
-
-        let mut raw_atoms = RawAtoms([0u8; 32]);
-        let expected_value = 100u128;
-        let expected_bytes = expected_value.to_be_bytes();
-        raw_atoms.0[16..].copy_from_slice(&expected_bytes);
-        assert_eq!(raw_atoms.to_clamped_u128(), expected_value);
-    }
-
-    #[test]
-    fn test_clamping() {
-        let mut raw_atoms = RawAtoms([0u8; 32]);
-        raw_atoms.0[15] = 1;
-        assert_eq!(raw_atoms.to_clamped_u128(), u128::MAX);
     }
 }

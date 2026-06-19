@@ -18,10 +18,10 @@ pub fn decimals(contract: &Address) -> Result<u8, GoblinError> {
     Ok(decimals)
 }
 
-pub fn transfer(
+pub fn transfer<const D: u8>(
     contract: &Address,
     recipient: &Address,
-    amount: &RawAtoms,
+    amount: &RawAtoms<D>,
 ) -> Result<(), GoblinError> {
     let mut calldata = [0u8; 4 + 32 * 2];
 
@@ -38,11 +38,11 @@ pub fn transfer(
     call_and_check(contract, &calldata)
 }
 
-pub fn transfer_from(
+pub fn transfer_from<const D: u8>(
     contract: &Address,
     sender: &Address,
     recipient: &Address,
-    amount: &RawAtoms,
+    amount: &RawAtoms<D>,
 ) -> Result<(), GoblinError> {
     let mut calldata = [0u8; 4 + 32 * 3];
 
@@ -65,7 +65,7 @@ pub fn transfer_from(
 ///
 /// msg.value is zero
 fn call_and_check(contract: &Address, calldata: &[u8]) -> Result<(), GoblinError> {
-    hostio::call_contract(contract, &calldata, &RawAtoms::ZERO)?;
+    hostio::call_contract(contract, &calldata, &RawAtoms::<8>::ZERO)?;
 
     // Ensure call succeeded
     let result_byte = hostio::read_return_data::<u8>(31);
