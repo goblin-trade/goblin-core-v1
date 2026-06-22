@@ -10,7 +10,7 @@ use crate::{
 // in the side namespace.
 impl<E> QuantityOps for Quantity<E>
 where
-    E: Exp + Copy + PartialEq + Default + PartialOrd + Ord,
+    E: Exp,
 {
     const MIN: Self = Self::new(u64::MIN);
     const MAX: Self = Self::new(u64::MAX);
@@ -19,14 +19,14 @@ where
 
 impl<E> ConstZero for Quantity<E>
 where
-    E: Exp + Copy + PartialEq + Default + PartialOrd + Ord,
+    E: Exp,
 {
     const ZEROED: Self = Self::new(0);
 }
 
 impl<E> CheckedOps for Quantity<E>
 where
-    E: Exp + Copy + PartialEq + Default + PartialOrd + Ord,
+    E: Exp,
 {
     fn checked_add(self, rhs: Self) -> Option<Self> {
         self.inner.checked_add(rhs.inner).map(Quantity::new)
