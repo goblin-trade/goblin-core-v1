@@ -26,5 +26,5 @@
 ///
 use crate::quantities::{Quantity, SidedDim, P1, Z0};
 
-pub type Unsided<L, U, A> = Quantity<SidedDim<L, U, A>>;
-pub type UnsidedAtoms = Unsided<Z0, Z0, P1>;
+pub type Unsided<L, U, A, I> = Quantity<SidedDim<L, U, A>, I>;
+pub type UnsidedAtoms = Unsided<Z0, Z0, P1, u64>;

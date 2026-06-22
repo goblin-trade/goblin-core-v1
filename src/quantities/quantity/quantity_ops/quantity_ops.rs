@@ -20,7 +20,7 @@ pub trait QuantityOps:
     + PartialOrd
     + Ord
     + ConstZero
-    + CheckedOps
+    + CheckedOps // TODO add DecodePrimitive
 {
     const MIN: Self;
     const MAX: Self;

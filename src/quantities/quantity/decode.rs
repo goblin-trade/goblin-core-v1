@@ -3,7 +3,10 @@ use crate::{
     quantities::{Exp, Quantity},
 };
 
-impl<E: Exp> DecodablePrimitive for Quantity<E> {
+impl<E> DecodablePrimitive for Quantity<E, u64>
+where
+    E: Exp,
+{
     fn decode_unchecked_no_advance(ctx: &DecodeCtx) -> Self {
         Self::new(u64::decode_unchecked_no_advance(ctx))
     }

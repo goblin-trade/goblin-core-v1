@@ -5,7 +5,7 @@ pub trait LegQuantities: Default + Sized + PartialEq + PartialOrd + Clone + Copy
     // Basic quantities
     type Lots: QuantityOps + From<u64> + Mul<Self::AtomsPerLot, Output = Self::Atoms>;
     type Units: QuantityOps;
-    type Atoms: QuantityOps + UnsideQuantity<Self, Z0, Z0, P1>;
+    type Atoms: QuantityOps + UnsideQuantity<Self, Z0, Z0, P1, u64>;
 
     // Ratios
     type LotsPerUnit: QuantityOps;

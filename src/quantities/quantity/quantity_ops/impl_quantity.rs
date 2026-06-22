@@ -8,25 +8,28 @@ use crate::{
 //
 // Multiplication and division operations are asymmetric and happen
 // in the side namespace.
-impl<E> QuantityOps for Quantity<E>
+impl<E, I> QuantityOps for Quantity<E, I>
 where
     E: Exp,
+    I: QuantityOps,
 {
-    const MIN: Self = Self::new(u64::MIN);
-    const MAX: Self = Self::new(u64::MAX);
-    const ONE: Self = Self::new(1);
+    const MIN: Self = Self::new(I::MIN);
+    const MAX: Self = Self::new(I::MAX);
+    const ONE: Self = Self::new(I::ONE);
 }
 
-impl<E> ConstZero for Quantity<E>
+impl<E, I> ConstZero for Quantity<E, I>
 where
     E: Exp,
+    I: QuantityOps,
 {
-    const ZEROED: Self = Self::new(0);
+    const ZEROED: Self = Self::new(I::ZEROED);
 }
 
-impl<E> CheckedOps for Quantity<E>
+impl<E, I> CheckedOps for Quantity<E, I>
 where
     E: Exp,
+    I: QuantityOps,
 {
     fn checked_add(self, rhs: Self) -> Option<Self> {
         self.inner.checked_add(rhs.inner).map(Quantity::new)
