@@ -1,19 +1,26 @@
 use core::marker::PhantomData;
-use core::u64;
 
-use crate::quantities::Exp;
+use crate::quantities::{Exp, QuantityOps};
 
 //
 // Quantity type: value + Dim
 //
 #[derive(Default, Clone, Copy, PartialEq, PartialOrd, Eq, Ord)]
-pub struct Quantity<E: Exp> {
-    pub inner: u64,
+pub struct Quantity<E, I>
+where
+    E: Exp,
+    I: QuantityOps,
+{
+    pub inner: I,
     _marker: PhantomData<E>,
 }
 
-impl<E: Exp> Quantity<E> {
-    pub const fn new(value: u64) -> Self {
+impl<E, I> Quantity<E, I>
+where
+    E: Exp,
+    I: QuantityOps,
+{
+    pub const fn new(value: I) -> Self {
         Self {
             inner: value,
             _marker: PhantomData,
@@ -21,8 +28,12 @@ impl<E: Exp> Quantity<E> {
     }
 }
 
-impl<E: Exp> From<u64> for Quantity<E> {
-    fn from(value: u64) -> Self {
+impl<E, I> From<I> for Quantity<E, I>
+where
+    E: Exp,
+    I: QuantityOps,
+{
+    fn from(value: I) -> Self {
         Self::new(value)
     }
 }

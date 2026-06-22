@@ -4,6 +4,9 @@ use crate::settlement::{CheckedOps, ConstZero};
 
 /// Blanket trait for all supported Quantity operations
 ///
+/// Mul, Div and Mod is only implemented on a subset of Exp, so we cannot have a blanket
+/// bound here.
+///
 /// Hack- implement QuantityOps on i64 and u64 for clean API
 pub trait QuantityOps:
     Copy

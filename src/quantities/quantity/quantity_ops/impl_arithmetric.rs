@@ -1,8 +1,12 @@
-use crate::quantities::{add_exp::AddExp, sub_exp::SubExp, Exp, Quantity};
+use crate::quantities::{add_exp::AddExp, sub_exp::SubExp, Exp, Quantity, QuantityOps};
 use core::ops::{Add, AddAssign, Div, Mul, Rem, Sub, SubAssign};
 
 /// Addition
-impl<E: Exp> Add for Quantity<E> {
+impl<E, I> Add for Quantity<E, I>
+where
+    E: Exp,
+    I: QuantityOps,
+{
     type Output = Self;
     fn add(self, rhs: Self) -> Self::Output {
         Quantity::new(self.inner + rhs.inner)
@@ -10,7 +14,11 @@ impl<E: Exp> Add for Quantity<E> {
 }
 
 /// Subtraction
-impl<E: Exp> Sub for Quantity<E> {
+impl<E, I> Sub for Quantity<E, I>
+where
+    E: Exp,
+    I: QuantityOps,
+{
     type Output = Self;
     fn sub(self, rhs: Self) -> Self::Output {
         Quantity::new(self.inner - rhs.inner)
@@ -18,47 +26,64 @@ impl<E: Exp> Sub for Quantity<E> {
 }
 
 /// Multiplication
-impl<E0: Exp, E1: Exp> Mul<Quantity<E1>> for Quantity<E0>
+impl<E0, E1, I> Mul<Quantity<E1, I>> for Quantity<E0, I>
 where
-    E0: AddExp<E1>,
+    E0: Exp + AddExp<E1>,
+    E1: Exp,
+    I: QuantityOps + Mul<Output = I>,
 {
-    type Output = Quantity<<E0 as AddExp<E1>>::Output>;
+    type Output = Quantity<<E0 as AddExp<E1>>::Output, I>;
 
-    fn mul(self, rhs: Quantity<E1>) -> Self::Output {
+    fn mul(self, rhs: Quantity<E1, I>) -> Self::Output {
         Quantity::new(self.inner * rhs.inner)
     }
 }
 
 /// Division
-impl<E0: Exp, E1: Exp> Div<Quantity<E1>> for Quantity<E0>
+impl<E0, E1, I> Div<Quantity<E1, I>> for Quantity<E0, I>
 where
-    E0: SubExp<E1>,
+    E0: Exp + SubExp<E1>,
+    E1: Exp,
+    I: QuantityOps + Div<Output = I>,
 {
-    type Output = Quantity<<E0 as SubExp<E1>>::Output>;
+    type Output = Quantity<<E0 as SubExp<E1>>::Output, I>;
 
-    fn div(self, rhs: Quantity<E1>) -> Self::Output {
+    fn div(self, rhs: Quantity<E1, I>) -> Self::Output {
         Quantity::new(self.inner / rhs.inner)
     }
 }
 
 /// Remainder or Modulo
-impl<E0: Exp, E1: Exp> Rem<Quantity<E1>> for Quantity<E0> {
+impl<E0, E1, I> Rem<Quantity<E1, I>> for Quantity<E0, I>
+where
+    E0: Exp,
+    E1: Exp,
+    I: QuantityOps + Rem<Output = I>,
+{
     type Output = Self;
 
-    fn rem(self, rhs: Quantity<E1>) -> Self::Output {
+    fn rem(self, rhs: Quantity<E1, I>) -> Self::Output {
         Quantity::new(self.inner % rhs.inner)
     }
 }
 
 /// AddAssign
-impl<E: Exp> AddAssign for Quantity<E> {
+impl<E, I> AddAssign for Quantity<E, I>
+where
+    E: Exp,
+    I: QuantityOps,
+{
     fn add_assign(&mut self, rhs: Self) {
         self.inner += rhs.inner;
     }
 }
 
 /// SubAssign
-impl<E: Exp> SubAssign for Quantity<E> {
+impl<E, I> SubAssign for Quantity<E, I>
+where
+    E: Exp,
+    I: QuantityOps,
+{
     fn sub_assign(&mut self, rhs: Self) {
         self.inner -= rhs.inner;
     }
