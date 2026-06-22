@@ -7,7 +7,7 @@ use crate::{
     goblin_error::GoblinError,
     quantities::BaseLots,
     require,
-    settlement::CheckedAdd,
+    settlement::CheckedOps,
     state::{
         bitmap::alias::InnerBitmapUpdater, resting_order::preimage::RestingOrderPreimage, SlotKey,
     },

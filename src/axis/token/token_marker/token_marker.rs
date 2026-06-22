@@ -8,7 +8,7 @@ use crate::{
     settlement::{
         global_delta::{GlobalMakerDeltas, MakerDeltaMap, SenderTokenStore},
         local_delta::DepositTriple,
-        CheckedAdd, ConstZero, Delta,
+        CheckedOps, ConstZero, Delta,
     },
     types::{Address, StoreReader},
 };
@@ -31,7 +31,7 @@ pub trait TokenMarker:
     type Address: Clone + Copy + Sized + Default;
 
     /// Data type representing pending deposit amount
-    type Deposit: Clone + Copy + Default + Decodable + ConstZero + CheckedAdd;
+    type Deposit: Clone + Copy + Default + Decodable + ConstZero + CheckedOps;
 
     fn token_index_to_address(
         token_index: Self::TokenIndex,

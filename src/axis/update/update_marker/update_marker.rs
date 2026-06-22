@@ -9,7 +9,7 @@ use crate::{
     goblin_error::GoblinError,
     instructions::{MakeReadables, PosHeader},
     quantities::{BaseLots, InnerPos, Ticks},
-    settlement::CheckedAdd,
+    settlement::CheckedOps,
     state::{
         bitmap::alias::{InnerBitmap, InnerBitmapUpdater},
         resting_order::preimage::RestingOrderPreimage,

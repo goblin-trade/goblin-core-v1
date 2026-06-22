@@ -1,7 +1,7 @@
 use crate::{
     axis::leg::leg_matcher::LegMatcher,
     quantities::{QuantityOps, UnsideQuantity, UnsidedAtoms},
-    settlement::{CheckedAdd, MatchedAtoms},
+    settlement::{CheckedOps, MatchedAtoms},
 };
 
 // #[derive(Default, Clone, Copy, PartialEq)]

@@ -7,7 +7,7 @@ use crate::{
     goblin_error::GoblinError,
     settlement::{
         global_delta::{MakerDeltaKey, MakerDeltaMap},
-        CheckedAdd, ConstZero, SidedTakeDeltaPairV2, SidedTakeDeltaV2, UnsideDelta,
+        CheckedOps, ConstZero, SidedTakeDeltaPairV2, SidedTakeDeltaV2, UnsideDelta,
         UnsidedTakeDeltaV2,
     },
     types::Triple,

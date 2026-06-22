@@ -1,4 +1,4 @@
-use crate::settlement::CheckedAdd;
+use crate::settlement::CheckedOps;
 
 use super::*;
 

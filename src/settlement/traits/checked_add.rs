@@ -1,3 +1,7 @@
-pub trait CheckedAdd: Sized {
+// TODO upgrade to CheckedOps
+// we need CheckedSub in QuantityOps
+pub trait CheckedOps: Sized {
     fn checked_add(self, rhs: Self) -> Option<Self>;
+
+    fn checked_sub(self, rhs: Self) -> Option<Self>;
 }

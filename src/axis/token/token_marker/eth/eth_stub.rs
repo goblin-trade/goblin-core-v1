@@ -1,7 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
-    settlement::{CheckedAdd, ConstZero},
+    settlement::{CheckedOps, ConstZero},
 };
 
 /// Stub type for ETH token index, address and deposit
@@ -20,8 +20,12 @@ impl Decodable for ETHStub {
     }
 }
 
-impl CheckedAdd for ETHStub {
+impl CheckedOps for ETHStub {
     fn checked_add(self, _rhs: Self) -> Option<Self> {
+        Some(ETHStub)
+    }
+
+    fn checked_sub(self, _rhs: Self) -> Option<Self> {
         Some(ETHStub)
     }
 }

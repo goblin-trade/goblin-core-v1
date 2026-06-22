@@ -5,7 +5,7 @@ use crate::{
         token::{token_marker::TokenMarker, CustomERC20, HardcodedERC20, ETH},
     },
     goblin_error::GoblinError,
-    settlement::{CheckedAdd, Delta, SidedSenderDeltaV2, UnsideDelta, UnsidedSenderDeltaV2},
+    settlement::{CheckedOps, Delta, SidedSenderDeltaV2, UnsideDelta, UnsidedSenderDeltaV2},
 };
 
 pub trait TokenDeltaManager: TokenMarker {

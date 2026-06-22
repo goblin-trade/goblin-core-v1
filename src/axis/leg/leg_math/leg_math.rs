@@ -1,7 +1,6 @@
 use crate::{
     axis::leg::{leg_matcher::LegMatcher, leg_quantities::LegQuantities},
     quantities::{BaseLots, BaseLotsPerBaseUnit, QuantityOps, QuoteLotsPerBaseUnitPerTick, Ticks},
-    settlement::{CheckedAdd, ConstZero},
 };
 
 pub trait LegMath: LegQuantities {
@@ -18,7 +17,7 @@ pub trait LegMath: LegQuantities {
     /// * Quote in (Bid) case- MatchingLots = AdjustedQuoteLots, Opposite::MatchingLots = BaseLots
     ///
     /// Use Self::MatchingLots to track amount consumed and Opposite::MatchingLots to get the output
-    type MatchingLots: QuantityOps + ConstZero + CheckedAdd;
+    type MatchingLots: QuantityOps;
 
     /// Obtain MatchingLots from taker amount in
     fn matching_lots_in(

@@ -5,7 +5,7 @@ use crate::{
     settlement::{
         local_delta::{LocalDeposits, LocalMakerDeltas},
         sender_delta::{SidedSenderDeltaPairV2, SidedTakeDeltaV2},
-        CheckedAdd, ConstZero,
+        CheckedOps, ConstZero,
     },
     types::Address,
 };
