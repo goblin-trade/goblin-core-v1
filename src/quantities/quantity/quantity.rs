@@ -7,21 +7,21 @@ use crate::quantities::Exp;
 // Quantity type: value + Dim
 //
 #[derive(Default, Clone, Copy, PartialEq, PartialOrd, Eq, Ord)]
-pub struct Quantity<D: Exp> {
+pub struct Quantity<E: Exp> {
     pub inner: u64,
-    _phantom: PhantomData<D>,
+    _marker: PhantomData<E>,
 }
 
-impl<D: Exp> Quantity<D> {
+impl<E: Exp> Quantity<E> {
     pub const fn new(value: u64) -> Self {
         Self {
             inner: value,
-            _phantom: PhantomData,
+            _marker: PhantomData,
         }
     }
 }
 
-impl<D: Exp> From<u64> for Quantity<D> {
+impl<E: Exp> From<u64> for Quantity<E> {
     fn from(value: u64) -> Self {
         Self::new(value)
     }
