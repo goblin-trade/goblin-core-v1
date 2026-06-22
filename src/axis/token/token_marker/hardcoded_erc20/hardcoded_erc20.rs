@@ -53,6 +53,8 @@ impl TokenMarker for HardcodedERC20 {
         msg_sender: &Address,
     ) -> Result<(), GoblinError> {
         let token_address = Self::token_index_to_address(token_index, custom_erc20_list)?;
-        deposit.settle(&token_address, msg_sender)
+
+        Ok(())
+        // deposit.settle(&token_address, msg_sender)
     }
 }
