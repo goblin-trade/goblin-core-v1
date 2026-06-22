@@ -1,4 +1,5 @@
 use crate::{
+    input_processor::{DecodablePrimitive, DecodeCtx},
     quantities::{Exp, Quantity, QuantityOps},
     settlement::{CheckedOps, ConstZero},
 };
@@ -37,5 +38,15 @@ where
 
     fn checked_sub(self, rhs: Self) -> Option<Self> {
         self.inner.checked_sub(rhs.inner).map(Quantity::new)
+    }
+}
+
+impl<E, I> DecodablePrimitive for Quantity<E, I>
+where
+    E: Exp,
+    I: QuantityOps,
+{
+    fn decode_unchecked_no_advance(ctx: &DecodeCtx) -> Self {
+        Self::new(I::decode_unchecked_no_advance(ctx))
     }
 }

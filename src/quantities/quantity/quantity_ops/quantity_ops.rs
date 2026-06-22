@@ -1,6 +1,9 @@
 use core::ops::{Add, AddAssign, Sub, SubAssign};
 
-use crate::settlement::{CheckedOps, ConstZero};
+use crate::{
+    input_processor::DecodablePrimitive,
+    settlement::{CheckedOps, ConstZero},
+};
 
 /// Blanket trait for all supported Quantity operations
 ///
@@ -20,7 +23,8 @@ pub trait QuantityOps:
     + PartialOrd
     + Ord
     + ConstZero
-    + CheckedOps // TODO add DecodePrimitive
+    + CheckedOps
+    + DecodablePrimitive
 {
     const MIN: Self;
     const MAX: Self;
