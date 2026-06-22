@@ -7,8 +7,9 @@ use crate::{
     goblin_error::GoblinError,
     instructions::TakeHeader,
     matching::match_iterator::{match_iterator, RestingOrderEntry},
-    quantities::{QuantityOps, Ticks},
+    quantities::Ticks,
     require,
+    settlement::ConstZero,
     state::resting_order::RestingOrder,
     types::StoreReader,
 };
@@ -69,9 +70,9 @@ where
             .local_delta
             .add_matched::<In>(maker, matched, market.tick_size, price)?;
 
-        if budget == In::MatchingLots::ZERO {
+        if budget == In::MatchingLots::ZEROED {
             let residue = quote - matched;
-            if residue > In::MatchingLots::ZERO {
+            if residue > In::MatchingLots::ZEROED {
                 resting_order_key_value.value.base_lots =
                     In::base_lots_from_matching(residue, market.tick_size, price);
 

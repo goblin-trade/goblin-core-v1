@@ -1,4 +1,4 @@
-use crate::{axis::leg::leg_constants::LegConstants, quantities::QuantityOps};
+use crate::{axis::leg::leg_constants::LegConstants, settlement::ConstZero};
 
 pub trait LegValidator: LegConstants {
     /// Ensure that market has an integer number of atoms per lot
@@ -9,7 +9,7 @@ pub trait LegValidator: LegConstants {
     ///
     /// lots_per_unit is also called lot_size
     fn lots_per_unit_valid(lots_per_unit: Self::LotsPerUnit) -> bool {
-        Self::ATOMS_PER_UNIT % lots_per_unit == Self::AtomsPerUnit::ZERO
+        Self::ATOMS_PER_UNIT % lots_per_unit == Self::AtomsPerUnit::ZEROED
     }
 
     /// The number of atoms per lot

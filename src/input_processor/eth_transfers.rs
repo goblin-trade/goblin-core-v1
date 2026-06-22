@@ -2,7 +2,8 @@ use crate::{
     goblin_error::GoblinError,
     hostio,
     input_processor::{DecodablePrimitive, DecodeCtx, HeaderFlags},
-    quantities::{QuantityOps, UnsidedAtoms},
+    quantities::UnsidedAtoms,
+    settlement::ConstZero,
 };
 
 /// The amount of ETH transfered in through msg_value and the amount due to be
@@ -30,13 +31,13 @@ impl EthTransfers {
             let msg_value_raw = hostio::msg_value();
             UnsidedAtoms::try_from(msg_value_raw)?
         } else {
-            UnsidedAtoms::ZERO
+            UnsidedAtoms::ZEROED
         };
 
         let eth_out_due = if flags.withdraw_eth {
             UnsidedAtoms::decode_unchecked_no_advance(ctx)
         } else {
-            UnsidedAtoms::ZERO
+            UnsidedAtoms::ZEROED
         };
 
         Ok(Self {

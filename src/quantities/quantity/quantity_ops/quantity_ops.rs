@@ -7,6 +7,7 @@ use crate::{
 
 /// Blanket trait for all supported Quantity operations
 ///
+/// Hack- implement QuantityOps on i64 and u64 for clean API
 pub trait QuantityOps:
     Copy
     + Sized
@@ -18,10 +19,10 @@ pub trait QuantityOps:
     + SubAssign
     + PartialOrd
     + Ord
+    + ConstZero
 {
     const MIN: Self;
     const MAX: Self;
-    const ZERO: Self;
     const ONE: Self;
 
     fn checked_sub(self, rhs: Self) -> Option<Self>;
@@ -38,7 +39,6 @@ where
 {
     const MIN: Self = Self::new(u64::MIN);
     const MAX: Self = Self::new(u64::MAX);
-    const ZERO: Self = Self::new(0);
     const ONE: Self = Self::new(1);
 
     fn checked_sub(self, rhs: Self) -> Option<Self> {
@@ -50,7 +50,7 @@ impl<D> ConstZero for Quantity<D>
 where
     D: Exp + Copy + PartialEq + Default + PartialOrd + Ord,
 {
-    const ZEROED: Self = Self::ZERO;
+    const ZEROED: Self = Self::new(0);
 }
 
 impl<D> CheckedAdd for Quantity<D>
