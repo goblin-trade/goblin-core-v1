@@ -21,8 +21,8 @@ impl LocalDeposits {
         B: TokenMarker,
         Q: TokenMarker,
     {
-        let base_deposit = B::Deposit::try_decode(ctx)?;
-        let quote_deposit = Q::Deposit::try_decode(ctx)?;
+        let base_deposit = B::GlobalDeposit::try_decode(ctx)?;
+        let quote_deposit = Q::GlobalDeposit::try_decode(ctx)?;
 
         self.set_side_deposit::<B, Base>(base_deposit);
         self.set_side_deposit::<Q, Quote>(quote_deposit);
@@ -35,11 +35,11 @@ impl LocalDeposits {
         B: TokenMarker,
         Q: TokenMarker,
     {
-        self.set_side_deposit::<B, Base>(B::Deposit::default());
-        self.set_side_deposit::<Q, Quote>(Q::Deposit::default());
+        self.set_side_deposit::<B, Base>(B::GlobalDeposit::default());
+        self.set_side_deposit::<Q, Quote>(Q::GlobalDeposit::default());
     }
 
-    fn set_side_deposit<T, In>(&mut self, deposit: T::Deposit)
+    fn set_side_deposit<T, In>(&mut self, deposit: T::GlobalDeposit)
     where
         T: TokenMarker,
         In: LegMatcher,

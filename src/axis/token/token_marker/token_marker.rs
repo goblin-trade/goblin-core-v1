@@ -20,7 +20,7 @@ pub trait TokenMarker:
     + Copy
     + PartialEq
     + StoreReader<GlobalMakerDeltas, Result = MakerDeltaMap<Self>>
-    + StoreReader<DepositTriple, Result = Self::Deposit>
+    + StoreReader<DepositTriple, Result = Self::GlobalDeposit>
 {
     const DISCRIMINATOR: u8;
 
@@ -30,8 +30,11 @@ pub trait TokenMarker:
     /// Token address
     type Address: Clone + Copy + Sized + Default;
 
-    /// Data type representing pending deposit amount
-    type Deposit: Clone + Copy + Default + Decodable + ConstZero + CheckedOps;
+    /// Pending deposit amount in local namespace
+    type LocalDeposit<In: LegMatcher>: Clone + Copy + Default + Decodable + ConstZero + CheckedOps;
+
+    /// Pending deposit amount in global namespace
+    type GlobalDeposit: Clone + Copy + Default + Decodable + ConstZero + CheckedOps;
 
     fn token_index_to_address(
         token_index: Self::TokenIndex,
@@ -46,7 +49,7 @@ pub trait TokenMarker:
         In: LegMatcher;
 
     fn settle_deposit(
-        deposit: Self::Deposit,
+        deposit: Self::GlobalDeposit,
         token_index: Self::TokenIndex,
         custom_erc20_list: &[CustomERC20Data],
         msg_sender: &Address,

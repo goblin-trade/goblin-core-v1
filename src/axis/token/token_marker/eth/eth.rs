@@ -18,7 +18,8 @@ impl TokenMarker for ETH {
 
     type TokenIndex = ETHStub;
     type Address = ETHStub;
-    type Deposit = ETHStub;
+    type LocalDeposit<In: LegMatcher> = ETHStub;
+    type GlobalDeposit = ETHStub;
 
     fn token_index_to_address(
         _token_index: Self::TokenIndex,
@@ -39,7 +40,7 @@ impl TokenMarker for ETH {
     }
 
     fn settle_deposit(
-        _deposit: Self::Deposit,
+        _deposit: Self::GlobalDeposit,
         _token_index: Self::TokenIndex,
         _custom_erc20_list: &[CustomERC20Data],
         _msg_sender: &Address,

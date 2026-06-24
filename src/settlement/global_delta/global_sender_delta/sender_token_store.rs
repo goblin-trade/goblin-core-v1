@@ -6,7 +6,7 @@ use crate::{
 #[derive(Clone, Copy)]
 pub struct SenderTokenStore<T: TokenMarker> {
     /// Atoms to be deposited or withdrawn
-    pub deposit_due: T::Deposit,
+    pub deposit_due: T::GlobalDeposit,
 
     /// Delta from trading
     pub unsided_sender_delta: UnsidedSenderDeltaV2,
@@ -14,7 +14,7 @@ pub struct SenderTokenStore<T: TokenMarker> {
 
 impl<T: TokenMarker> ConstZero for SenderTokenStore<T> {
     const ZEROED: Self = Self {
-        deposit_due: <T as TokenMarker>::Deposit::ZEROED,
+        deposit_due: <T as TokenMarker>::GlobalDeposit::ZEROED,
         unsided_sender_delta: UnsidedSenderDeltaV2::ZEROED,
     };
 }

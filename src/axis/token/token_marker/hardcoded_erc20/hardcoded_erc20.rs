@@ -21,7 +21,9 @@ impl TokenMarker for HardcodedERC20 {
 
     type TokenIndex = HardcodedERC20Index;
     type Address = Address;
-    type Deposit = DeltaAtoms;
+
+    type LocalDeposit<In: LegMatcher> = In::Lots;
+    type GlobalDeposit = DeltaAtoms;
 
     fn token_index_to_address(
         token_index: Self::TokenIndex,
@@ -47,7 +49,7 @@ impl TokenMarker for HardcodedERC20 {
     }
 
     fn settle_deposit(
-        deposit: Self::Deposit,
+        deposit: Self::GlobalDeposit,
         token_index: Self::TokenIndex,
         custom_erc20_list: &[CustomERC20Data],
         msg_sender: &Address,
