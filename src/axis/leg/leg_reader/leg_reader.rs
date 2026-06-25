@@ -3,7 +3,10 @@ use crate::{
     quantities::{
         BaseLots, BaseLotsPerBaseUnit, DeltaAtoms, Position, QuoteLots, QuoteLotsPerQuoteUnit,
     },
-    settlement::{local_delta::DepositTriple, SidedSenderDeltaV2, SidedTakeDeltaV2},
+    settlement::{
+        local_delta::DepositTriple, local_delta_v3::DepositTripleV3, SidedSenderDeltaV2,
+        SidedTakeDeltaV2,
+    },
     types::{StoreReader, Tuple},
 };
 
@@ -19,6 +22,10 @@ pub trait LegReader: LegMath
         Tuple<SidedTakeDeltaV2<Base>, SidedTakeDeltaV2<Quote>, Leg>,
         Result = SidedTakeDeltaV2<Self>,
     > + StoreReader<Tuple<DepositTriple, DepositTriple, Leg>, Result = DepositTriple>
+    + StoreReader<
+        Tuple<DepositTripleV3<Base>, DepositTripleV3<Quote>, Leg>,
+        Result = DepositTripleV3<Self>,
+    >
 {
 }
 
