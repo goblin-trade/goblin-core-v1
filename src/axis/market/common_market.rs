@@ -12,6 +12,8 @@ use crate::{
     types::{StoreReader, Tuple},
 };
 
+// TODO validate LotSizes.
+// Currently LegValidator::lots_per_unit_valid() is unused
 pub type LotSizePair =
     Pair<<Base as LegQuantities>::LotsPerUnit, <Quote as LegQuantities>::LotsPerUnit>;
 

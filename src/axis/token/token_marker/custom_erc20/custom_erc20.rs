@@ -23,7 +23,7 @@ impl TokenMarker for CustomERC20 {
     type TokenIndex = CustomERC20Index;
     type Address = Address;
 
-    type LocalDeposit<In: LegQuantities> = In::Lots;
+    type LocalDeposit<In: LegQuantities> = In::DeltaLots;
     type GlobalDeposit = DeltaAtoms;
 
     fn token_index_to_address(

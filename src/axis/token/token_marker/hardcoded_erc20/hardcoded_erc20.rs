@@ -22,7 +22,7 @@ impl TokenMarker for HardcodedERC20 {
     type TokenIndex = HardcodedERC20Index;
     type Address = Address;
 
-    type LocalDeposit<In: LegQuantities> = In::Lots;
+    type LocalDeposit<In: LegQuantities> = In::DeltaLots;
     type GlobalDeposit = DeltaAtoms;
 
     fn token_index_to_address(
