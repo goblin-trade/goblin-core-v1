@@ -29,5 +29,6 @@ use crate::quantities::{Quantity, SidedDim, N1, P1, Z0};
 pub type Unsided<L, U, A, I> = Quantity<SidedDim<L, U, A>, I>;
 pub type UnsidedAtoms = Unsided<Z0, Z0, P1, u64>;
 pub type DeltaAtoms = Unsided<Z0, Z0, P1, i64>;
+pub type DeltaLots = Unsided<P1, Z0, Z0, i64>;
 
 pub type UnsidedDeltaAtomsPerUnit = Unsided<Z0, N1, P1, i64>;

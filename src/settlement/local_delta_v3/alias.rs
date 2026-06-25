@@ -1,14 +1,7 @@
-use crate::{
-    axis::leg::{leg_quantities::LegQuantities, Base, Pair, Quote},
-    settlement::ConstZero,
-};
+use crate::{axis::leg::Pair, quantities::DeltaLots, settlement::ConstZero};
 
-pub type DeltaLotsPair =
-    Pair<<Base as LegQuantities>::DeltaLots, <Quote as LegQuantities>::DeltaLots>;
+pub type DeltaLotsPair = Pair<DeltaLots, DeltaLots>;
 
 impl ConstZero for DeltaLotsPair {
-    const ZEROED: Self = Pair::new(
-        <Base as LegQuantities>::DeltaLots::ZEROED,
-        <Quote as LegQuantities>::DeltaLots::ZEROED,
-    );
+    const ZEROED: Self = Pair::new(DeltaLots::ZEROED, DeltaLots::ZEROED);
 }
