@@ -8,6 +8,7 @@ pub trait LegQuantities: Default + Sized + PartialEq + PartialOrd + Clone + Copy
     type Atoms: QuantityOps + UnsideQuantity<Self, Z0, Z0, P1, u64>;
 
     // Deltas
+    // TODO remove, unused
     type DeltaLots: QuantityOps;
 
     // Ratios

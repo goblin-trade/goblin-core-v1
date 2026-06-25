@@ -1,6 +1,6 @@
 use crate::{
     axis::{
-        leg::{leg_matcher::LegMatcher, leg_quantities::LegQuantities},
+        leg::leg_matcher::LegMatcher,
         token::{
             token_marker::{
                 custom_erc20::custom_erc20_data::CustomERC20Data,
@@ -11,7 +11,7 @@ use crate::{
         },
     },
     goblin_error::GoblinError,
-    quantities::DeltaAtoms,
+    quantities::{DeltaAtoms, DeltaLots},
     settlement::{global_delta::SenderTokenStore, Delta, Settleable},
     types::{Address, StoreReader},
 };
@@ -22,7 +22,7 @@ impl TokenMarker for HardcodedERC20 {
     type TokenIndex = HardcodedERC20Index;
     type Address = Address;
 
-    type LocalDeposit<In: LegQuantities> = In::DeltaLots;
+    type LocalDeposit = DeltaLots;
     type GlobalDeposit = DeltaAtoms;
 
     fn token_index_to_address(

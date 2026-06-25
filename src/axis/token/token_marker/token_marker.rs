@@ -8,6 +8,7 @@ use crate::{
     settlement::{
         global_delta::{GlobalMakerDeltas, MakerDeltaMap, SenderTokenStore},
         local_delta::DepositTriple,
+        local_delta_v3::DepositTripleV3,
         CheckedOps, ConstZero, Delta,
     },
     types::{Address, StoreReader},
@@ -21,6 +22,7 @@ pub trait TokenMarker:
     + PartialEq
     + StoreReader<GlobalMakerDeltas, Result = MakerDeltaMap<Self>>
     + StoreReader<DepositTriple, Result = Self::GlobalDeposit>
+    + StoreReader<DepositTripleV3, Result = Self::LocalDeposit>
 {
     const DISCRIMINATOR: u8;
 
@@ -31,12 +33,7 @@ pub trait TokenMarker:
     type Address: Clone + Copy + Sized + Default;
 
     /// Pending deposit amount in local namespace
-    type LocalDeposit<In: LegQuantities>: Clone
-        + Copy
-        + Default
-        + Decodable
-        + ConstZero
-        + CheckedOps;
+    type LocalDeposit: Clone + Copy + Default + Decodable + ConstZero + CheckedOps;
 
     /// Pending deposit amount in global namespace
     type GlobalDeposit: Clone + Copy + Default + Decodable + ConstZero + CheckedOps;

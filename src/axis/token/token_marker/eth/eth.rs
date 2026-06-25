@@ -1,6 +1,6 @@
 use crate::{
     axis::{
-        leg::{leg_matcher::LegMatcher, leg_quantities::LegQuantities},
+        leg::leg_matcher::LegMatcher,
         token::{
             token_marker::{
                 custom_erc20::custom_erc20_data::CustomERC20Data, eth::ETHStub, TokenMarker,
@@ -18,7 +18,8 @@ impl TokenMarker for ETH {
 
     type TokenIndex = ETHStub;
     type Address = ETHStub;
-    type LocalDeposit<In: LegQuantities> = ETHStub;
+
+    type LocalDeposit = ETHStub;
     type GlobalDeposit = ETHStub;
 
     fn token_index_to_address(

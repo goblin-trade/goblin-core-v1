@@ -22,10 +22,7 @@ pub trait LegReader: LegMath
         Tuple<SidedTakeDeltaV2<Base>, SidedTakeDeltaV2<Quote>, Leg>,
         Result = SidedTakeDeltaV2<Self>,
     > + StoreReader<Tuple<DepositTriple, DepositTriple, Leg>, Result = DepositTriple>
-    + StoreReader<
-        Tuple<DepositTripleV3<Base>, DepositTripleV3<Quote>, Leg>,
-        Result = DepositTripleV3<Self>,
-    >
+    + StoreReader<Tuple<DepositTripleV3, DepositTripleV3, Leg>, Result = DepositTripleV3>
 {
 }
 
