@@ -1,6 +1,6 @@
 use crate::{
     axis::{
-        leg::leg_matcher::LegMatcher,
+        leg::{leg_matcher::LegMatcher, leg_quantities::LegQuantities},
         token::token_marker::custom_erc20::custom_erc20_data::CustomERC20Data,
     },
     goblin_error::GoblinError,
@@ -31,7 +31,12 @@ pub trait TokenMarker:
     type Address: Clone + Copy + Sized + Default;
 
     /// Pending deposit amount in local namespace
-    type LocalDeposit<In: LegMatcher>: Clone + Copy + Default + Decodable + ConstZero + CheckedOps;
+    type LocalDeposit<In: LegQuantities>: Clone
+        + Copy
+        + Default
+        + Decodable
+        + ConstZero
+        + CheckedOps;
 
     /// Pending deposit amount in global namespace
     type GlobalDeposit: Clone + Copy + Default + Decodable + ConstZero + CheckedOps;

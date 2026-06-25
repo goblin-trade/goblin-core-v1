@@ -1,6 +1,6 @@
 use crate::{
     axis::{
-        leg::leg_matcher::LegMatcher,
+        leg::{leg_matcher::LegMatcher, leg_quantities::LegQuantities},
         token::{
             token_marker::{
                 custom_erc20::custom_erc20_data::CustomERC20Data,
@@ -22,7 +22,7 @@ impl TokenMarker for HardcodedERC20 {
     type TokenIndex = HardcodedERC20Index;
     type Address = Address;
 
-    type LocalDeposit<In: LegMatcher> = In::Lots;
+    type LocalDeposit<In: LegQuantities> = In::Lots;
     type GlobalDeposit = DeltaAtoms;
 
     fn token_index_to_address(
