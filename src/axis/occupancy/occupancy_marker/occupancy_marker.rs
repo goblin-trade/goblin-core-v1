@@ -9,7 +9,7 @@ use crate::{
 };
 
 pub trait OccupancyMarker {
-    fn increase<'a, M, B, Q>(
+    fn increase_resting_order<'a, M, B, Q>(
         msg_sender: &Address,
         base_lots: BaseLots,
         key: &SlotKey<RestingOrderPreimage<M, B, Q>>,
@@ -20,7 +20,7 @@ pub trait OccupancyMarker {
         B: TokenMarker,
         Q: TokenMarker;
 
-    fn decrease<'a, M, B, Q>(
+    fn decrease_resting_order<'a, M, B, Q>(
         msg_sender: &Address,
         base_lots: BaseLots,
         key: &SlotKey<RestingOrderPreimage<M, B, Q>>,

@@ -13,12 +13,10 @@ use crate::{
     },
     types::Address,
 };
-use core::ops::Neg;
 
 impl UpdateMarker for Increase {
     fn delta_lots(lots: UnsidedLots) -> Result<DeltaLots, GoblinError> {
-        // Positive delta for decrease. Decreasing frees up lots.
-        DeltaLots::try_from(lots).map(|lots| lots.neg())
+        DeltaLots::try_from(lots)
     }
 
     fn update_resting_order<'a, M, B, Q, In, Oc>(
@@ -34,6 +32,7 @@ impl UpdateMarker for Increase {
         In: LegMatcher,
         Oc: OccupancyMarker,
     {
-        Oc::increase(msg_sender, base_lots, key, inner_bitmap_updater)
+        // increase store, i.e. decrease resting order
+        Oc::decrease_resting_order(msg_sender, base_lots, key, inner_bitmap_updater)
     }
 }

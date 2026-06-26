@@ -18,6 +18,7 @@ use crate::{
     types::Address,
 };
 
+/// Marker tracking increase or decrease in free atoms from store
 pub trait UpdateMarker {
     fn delta_lots(lots: UnsidedLots) -> Result<DeltaLots, GoblinError>;
 

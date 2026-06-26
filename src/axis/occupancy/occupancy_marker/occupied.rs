@@ -15,7 +15,7 @@ use crate::{
 };
 
 impl OccupancyMarker for Occupied {
-    fn increase<'a, M, B, Q>(
+    fn increase_resting_order<'a, M, B, Q>(
         msg_sender: &Address,
         base_lots: BaseLots,
         key: &SlotKey<RestingOrderPreimage<M, B, Q>>,
@@ -43,7 +43,7 @@ impl OccupancyMarker for Occupied {
         Ok(base_lots)
     }
 
-    fn decrease<'a, M, B, Q>(
+    fn decrease_resting_order<'a, M, B, Q>(
         msg_sender: &Address,
         base_lots: BaseLots,
         key: &SlotKey<RestingOrderPreimage<M, B, Q>>,

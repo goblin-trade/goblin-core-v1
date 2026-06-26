@@ -9,7 +9,10 @@ pub type Decrease = Marker<Update, 1>;
 
 #[derive(Clone, Copy)]
 pub enum UpdateEnum {
+    /// Increase store balance by decreasing resting order
     Increase,
+
+    /// Decrease store balance by increasing resting order
     Decrease,
 }
 
