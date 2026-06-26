@@ -1,5 +1,6 @@
 pub mod delta;
 pub mod global_delta;
+pub mod global_delta_v3;
 pub mod local_delta;
 pub mod local_delta_v3;
 pub mod matched;
