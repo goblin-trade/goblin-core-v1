@@ -7,7 +7,7 @@ use crate::{
         update::{update_marker::UpdateMarker, Decrease},
     },
     goblin_error::GoblinError,
-    quantities::BaseLots,
+    quantities::{BaseLots, DeltaLots, UnsidedLots},
     state::{
         bitmap::alias::InnerBitmapUpdater, resting_order::preimage::RestingOrderPreimage, SlotKey,
     },
@@ -15,6 +15,11 @@ use crate::{
 };
 
 impl UpdateMarker for Decrease {
+    fn delta_lots(lots: UnsidedLots) -> Result<DeltaLots, GoblinError> {
+        // Positive delta for decrease. Decreasing frees up lots.
+        DeltaLots::try_from(lots)
+    }
+
     fn update_resting_order<'a, M, B, Q, In, Oc>(
         msg_sender: &Address,
         base_lots: BaseLots,

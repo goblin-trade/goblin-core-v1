@@ -8,7 +8,7 @@ use crate::{
     },
     goblin_error::GoblinError,
     instructions::{MakeReadables, PosHeader},
-    quantities::{BaseLots, InnerPos, Ticks},
+    quantities::{BaseLots, DeltaLots, InnerPos, Ticks, UnsidedLots},
     settlement::CheckedOps,
     state::{
         bitmap::alias::{InnerBitmap, InnerBitmapUpdater},
@@ -19,6 +19,8 @@ use crate::{
 };
 
 pub trait UpdateMarker {
+    fn delta_lots(lots: UnsidedLots) -> Result<DeltaLots, GoblinError>;
+
     fn process_update<'a, M, B, Q, In, Oc>(
         make_readables: &MakeReadables<M, B, Q>,
         writables: &mut Writables,
@@ -58,6 +60,8 @@ pub trait UpdateMarker {
             },
         )?;
 
+        // TODO use Lots
+
         let amount = <In::Opposite as LegMath>::matching_lots_maker(
             updated_base_lots,
             market_readables.market.tick_size,
@@ -66,6 +70,8 @@ pub trait UpdateMarker {
 
         let sided_make_delta = In::get_leg_mut(&mut writables.local_delta.local_sender_delta);
 
+        // This function is common to both Increase and Decrease arms
+        // Credit to either increase or decrease arm depending on `Self`
         let delta = Self::get_leg_mut(&mut sided_make_delta.make);
         *delta = delta.checked_add(amount).ok_or(GoblinError::Overflow)?;
 

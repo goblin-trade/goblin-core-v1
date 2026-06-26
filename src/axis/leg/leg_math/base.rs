@@ -1,5 +1,5 @@
-use crate::axis::leg::leg_math::LegMath;
 ///! LegMarker for input base, also known as ask / sell
+use crate::axis::leg::leg_math::LegMath;
 use crate::axis::leg::{Base, Quote};
 use crate::quantities::{BaseLots, BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, Ticks};
 

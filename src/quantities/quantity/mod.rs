@@ -1,6 +1,7 @@
 pub mod alias;
 pub mod dim;
 pub mod exp;
+mod impl_neg;
 mod impl_try_from;
 pub mod quantity;
 pub mod quantity_ops;

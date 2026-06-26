@@ -18,7 +18,7 @@ pub struct LocalTake {
 
 impl LocalTake {
     /// Add matched lots to taker and maker deltas
-    pub fn add_matched<In: LegMatcher>(
+    pub fn add_take<In: LegMatcher>(
         &mut self,
         maker: &Address,
         take_in: In::MatchingLots,

@@ -53,4 +53,15 @@ pub trait LegMath: LegQuantities {
         tick_size: QuoteLotsPerBaseUnitPerTick,
         price: Ticks,
     ) -> BaseLots;
+
+    fn opposite_lots_consumed_on_make(
+        base_lots: BaseLots,
+        base_lot_size: BaseLotsPerBaseUnit,
+        tick_size: QuoteLotsPerBaseUnitPerTick,
+        price: Ticks,
+    ) -> <Self::Opposite as LegQuantities>::Lots {
+        let matching_lots =
+            <Self::Opposite as LegMath>::matching_lots_maker(base_lots, tick_size, price);
+        <Self::Opposite as LegMath>::decode_matching_lots(matching_lots, base_lot_size)
+    }
 }
