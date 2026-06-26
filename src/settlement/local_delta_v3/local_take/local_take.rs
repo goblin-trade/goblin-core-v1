@@ -1,9 +1,10 @@
 use crate::{
-    axis::leg::leg_matcher::LegMatcher,
-    goblin_error::GoblinError,
-    quantities::{
-        BaseLotsPerBaseUnit, DeltaLots, QuoteLotsPerBaseUnitPerTick, Ticks, UnsideQuantity,
+    axis::{
+        leg::leg_matcher::LegMatcher,
+        update::{update_marker::UpdateMarker, Decrease, Increase},
     },
+    goblin_error::GoblinError,
+    quantities::{BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, Ticks, UnsideQuantity},
     settlement::{
         local_delta_v3::{local_take::TakeCounterparties, DeltaLotsPair},
         CheckedOps,
@@ -31,12 +32,15 @@ impl LocalTake {
             .get_or_insert_mut(*maker)
             .ok_or(GoblinError::LocalMakerListFull)?;
 
-        // problem- direction
-        // subtract taker_in and add taker_out
-        Self::add_for_leg::<In>(&mut self.sender, take_in, base_lot_size, maker_delta_pair)?;
+        Self::add_for_leg::<In, Decrease>(
+            &mut self.sender,
+            take_in,
+            base_lot_size,
+            maker_delta_pair,
+        )?;
 
         let take_out = In::matching_lots_out(take_in, tick_size, price);
-        Self::add_for_leg::<In::Opposite>(
+        Self::add_for_leg::<In::Opposite, Increase>(
             &mut self.sender,
             take_out,
             base_lot_size,
@@ -46,19 +50,14 @@ impl LocalTake {
         Ok(())
     }
 
-    fn add_for_leg<In: LegMatcher>(
+    fn add_for_leg<In: LegMatcher, U: UpdateMarker>(
         sender: &mut DeltaLotsPair,
         matching_lots: In::MatchingLots,
         base_lot_size: BaseLotsPerBaseUnit,
         maker_delta_pair: &mut DeltaLotsPair,
     ) -> Result<(), GoblinError> {
         let unsided_lots = In::decode_matching_lots(matching_lots, base_lot_size).unsided();
-
-        // increase and decrease follows Maker convention
-        // increase = increase resting order, i.e. decrease from store
-
-        let delta_lots =
-            DeltaLots::try_from(In::decode_matching_lots(matching_lots, base_lot_size).unsided())?;
+        let delta_lots = U::delta_lots(unsided_lots)?;
 
         let sender_store = In::get_leg_mut(sender);
         *sender_store = sender_store
