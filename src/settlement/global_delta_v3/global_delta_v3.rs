@@ -1,6 +1,6 @@
 use crate::{
     axis::{
-        leg::{leg_matcher::LegMatcher, Base},
+        leg::{leg_matcher::LegMatcher, Base, Quote},
         market::{LotSizePair, TokenIndexPair},
         token::token_delta_manager::TokenDeltaManager,
     },
@@ -37,20 +37,13 @@ impl GlobalDeltaV3 {
         Q: TokenDeltaManager,
     {
         let base_token_index = Base::get(token_index_pair);
-        Ok(())
-    }
+        let quote_token_index = Quote::get(token_index_pair);
 
-    fn commit_side<In, T>(
-        &mut self,
-        token_index: T::TokenIndex,
-        lot_size_pair: &LotSizePair,
-        local_delta: &LocalDeltaV3,
-    ) -> Result<(), GoblinError>
-    where
-        In: LegMatcher,
-        T: TokenDeltaManager,
-    {
-        // 1. Deposit
+        self.sender
+            .commit_side::<Base, B>(base_token_index, lot_size_pair, local_delta)?;
+        self.sender
+            .commit_side::<Quote, Q>(quote_token_index, lot_size_pair, local_delta)?;
+
         Ok(())
     }
 }
