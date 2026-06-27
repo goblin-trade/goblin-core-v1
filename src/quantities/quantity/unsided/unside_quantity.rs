@@ -6,6 +6,9 @@ use crate::{
 /// Trait to unside quantity
 /// We cannot use From for base and quote forms because compiler cannot prove
 /// there is no overlap.
+///
+/// TODO remove, replace with TryIntoDelta
+/// Unside and add delta in one step
 pub trait UnsideQuantity<S, L, U, A, I>
 where
     S: LegQuantities,
