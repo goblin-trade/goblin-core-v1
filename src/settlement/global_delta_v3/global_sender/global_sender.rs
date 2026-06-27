@@ -9,7 +9,7 @@ use crate::{
         },
     },
     goblin_error::GoblinError,
-    quantities::{UnsideQuantity, UnsidedDeltaAtomsPerLot},
+    quantities::{TryIntoUnsidedDelta, UnsideQuantity, UnsidedDeltaAtomsPerLot},
     settlement::{
         global_delta_v3::TokenDeltaV3, local_delta_v3::LocalDeltaV3, CheckedOps, ConstZero,
     },
@@ -47,8 +47,7 @@ impl GlobalSender {
     {
         let lot_size = In::get(lot_size_pair);
         let atoms_per_lot = In::atoms_per_lot(lot_size);
-        let unsided_delta_atoms_per_lot =
-            UnsidedDeltaAtomsPerLot::try_from(atoms_per_lot.unsided())?;
+        let unsided_delta_atoms_per_lot = atoms_per_lot.try_unsided()?;
 
         let delta = TokenDeltaV3::from_local_delta::<In>(unsided_delta_atoms_per_lot, local_delta);
 

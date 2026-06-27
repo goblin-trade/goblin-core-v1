@@ -6,5 +6,5 @@ pub use alias::*;
 pub use constants::*;
 pub use unside_quantity::*;
 
-pub mod try_into_delta;
-pub use try_into_delta::*;
+pub mod try_into_unsided_delta;
+pub use try_into_unsided_delta::*;
