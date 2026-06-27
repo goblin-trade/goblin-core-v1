@@ -8,7 +8,7 @@ use crate::{
     },
     goblin_error::GoblinError,
     instructions::{MakeReadables, PosHeader},
-    quantities::{BaseLots, DeltaLots, InnerPos, Ticks, UnsidedLots},
+    quantities::{BaseLots, InnerPos, Ticks},
     settlement::CheckedOps,
     state::{
         bitmap::alias::{InnerBitmap, InnerBitmapUpdater},
@@ -20,7 +20,7 @@ use crate::{
 
 /// Marker tracking increase or decrease in free atoms from store
 pub trait UpdateMarker {
-    fn delta_lots(lots: UnsidedLots) -> Result<DeltaLots, GoblinError>;
+    const SIGN: i64;
 
     fn process_update<'a, M, B, Q, In, Oc>(
         make_readables: &MakeReadables<M, B, Q>,

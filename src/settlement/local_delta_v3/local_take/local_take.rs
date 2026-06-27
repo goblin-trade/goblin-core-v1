@@ -4,7 +4,10 @@ use crate::{
         update::{update_marker::UpdateMarker, Decrease, Increase},
     },
     goblin_error::GoblinError,
-    quantities::{BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, Ticks, UnsideQuantity},
+    quantities::{
+        BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, Ticks, TryIntoUnsidedDelta,
+        UnsideQuantity,
+    },
     settlement::{
         local_delta_v3::{local_take::TakeCounterparties, DeltaLotsPair},
         CheckedOps,
@@ -56,8 +59,8 @@ impl LocalTake {
         base_lot_size: BaseLotsPerBaseUnit,
         maker_delta_pair: &mut DeltaLotsPair,
     ) -> Result<(), GoblinError> {
-        let unsided_lots = In::decode_matching_lots(matching_lots, base_lot_size).unsided();
-        let delta_lots = U::delta_lots(unsided_lots)?;
+        let delta_lots =
+            In::decode_matching_lots(matching_lots, base_lot_size).try_into_unsided_delta::<U>()?;
 
         let sender_store = In::get_leg_mut(sender);
         *sender_store = sender_store

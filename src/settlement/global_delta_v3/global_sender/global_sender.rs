@@ -7,6 +7,7 @@ use crate::{
             token_marker::hardcoded_erc20::HARDCODED_TOKENS, CustomERC20, HardcodedERC20, Token,
             ETH,
         },
+        update::Increase,
     },
     goblin_error::GoblinError,
     quantities::{TryIntoUnsidedDelta, UnsideQuantity, UnsidedDeltaAtomsPerLot},
@@ -47,7 +48,7 @@ impl GlobalSender {
     {
         let lot_size = In::get(lot_size_pair);
         let atoms_per_lot = In::atoms_per_lot(lot_size);
-        let unsided_delta_atoms_per_lot = atoms_per_lot.try_unsided()?;
+        let unsided_delta_atoms_per_lot = atoms_per_lot.try_into_unsided_delta::<Increase>()?;
 
         let delta = TokenDeltaV3::from_local_delta::<In>(unsided_delta_atoms_per_lot, local_delta);
 

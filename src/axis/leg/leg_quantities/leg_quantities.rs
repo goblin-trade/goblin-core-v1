@@ -6,7 +6,6 @@ pub trait LegQuantities: Default + Sized + PartialEq + PartialOrd + Clone + Copy
     type Lots: QuantityOps
         + From<u64>
         + Mul<Self::AtomsPerLot, Output = Self::Atoms>
-        + UnsideQuantity<Self, P1, Z0, Z0, u64>
         + TryIntoUnsidedDelta<Self, P1, Z0, Z0>;
     type Units: QuantityOps;
     type Atoms: QuantityOps
