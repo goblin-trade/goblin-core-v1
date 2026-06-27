@@ -1,6 +1,6 @@
 use crate::{
     axis::{
-        leg::leg_matcher::LegMatcher,
+        leg::{leg_matcher::LegMatcher, SamePair},
         token::{
             token_marker::{hardcoded_erc20::HARDCODED_TOKENS, TokenMarker},
             CustomERC20, HardcodedERC20, Token, ETH,
@@ -36,14 +36,14 @@ impl GlobalSender {
     pub fn commit_side<T, In>(
         &mut self,
         token_index: T::TokenIndex,
-        unsided_delta_atoms_per_lot: UnsidedDeltaAtomsPerLot,
+        atoms_per_lot_pair: &SamePair<UnsidedDeltaAtomsPerLot>,
         local_delta: &LocalDeltaV3,
     ) -> Result<(), GoblinError>
     where
         T: TokenMarker,
         In: LegMatcher,
     {
-        let delta = TokenDeltaV3::from_local_delta::<In>(unsided_delta_atoms_per_lot, local_delta);
+        let delta = TokenDeltaV3::from_local_delta::<In>(atoms_per_lot_pair, local_delta);
 
         let delta_store = T::get_token_delta_v3(token_index, self);
         *delta_store = delta_store

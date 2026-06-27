@@ -1,5 +1,8 @@
 use crate::{
-    axis::{leg::leg_matcher::LegMatcher, token::token_marker::TokenMarker},
+    axis::{
+        leg::{leg_matcher::LegMatcher, leg_reader::LegReader, SamePair},
+        token::token_marker::TokenMarker,
+    },
     quantities::{DeltaAtoms, UnsidedDeltaAtomsPerLot},
     settlement::local_delta_v3::LocalDeltaV3,
 };
@@ -12,18 +15,20 @@ pub struct TokenDeltaV3<T: TokenMarker> {
 }
 
 impl<T: TokenMarker> TokenDeltaV3<T> {
-    pub fn from_local_delta<In: LegMatcher>(
-        unsided_delta_atoms_per_lot: UnsidedDeltaAtomsPerLot,
+    pub fn from_local_delta<In: LegReader>(
+        atoms_per_lot_pair: &SamePair<UnsidedDeltaAtomsPerLot>,
         local_delta: &LocalDeltaV3,
     ) -> Self {
+        let atoms_per_lot = In::get(atoms_per_lot_pair);
+
         let local_deposit = T::get(In::get_leg(&local_delta.deposits));
-        let deposit = T::get_global_deposit(local_deposit, unsided_delta_atoms_per_lot);
+        let deposit = T::get_global_deposit(local_deposit, atoms_per_lot);
 
         let local_take = In::get(&local_delta.take.sender);
-        let take = local_take * unsided_delta_atoms_per_lot;
+        let take = local_take * atoms_per_lot;
 
         let local_make = In::get(&local_delta.make.inner);
-        let make = local_make * unsided_delta_atoms_per_lot;
+        let make = local_make * atoms_per_lot;
 
         Self {
             deposit,
