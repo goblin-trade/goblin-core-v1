@@ -1,6 +1,14 @@
 use crate::{
-    axis::token::{CustomERC20, HardcodedERC20, Token, ETH},
-    settlement::{global_delta_v3::CounterpartyMap, ConstZero},
+    axis::{
+        leg::leg_matcher::LegMatcher,
+        market::LotSizePair,
+        token::{token_marker::TokenMarker, CustomERC20, HardcodedERC20, Token, ETH},
+    },
+    goblin_error::GoblinError,
+    settlement::{
+        global_delta_v3::{CounterpartyMap, CounterpartyTokenKey},
+        local_delta_v3::{delta_lots_pair, DeltaLotsPair},
+    },
     types::Triple,
 };
 
@@ -11,10 +19,19 @@ pub type Counterparties = Triple<
     Token,
 >;
 
-impl ConstZero for Counterparties {
-    const ZEROED: Self = Self::new(
-        CounterpartyMap::ZEROED,
-        CounterpartyMap::ZEROED,
-        CounterpartyMap::ZEROED,
-    );
+impl Counterparties {
+    pub fn commit_side<T, In>(
+        &mut self,
+        counterparty_token_key: &CounterpartyTokenKey<T>,
+        delta_lots_pair: &DeltaLotsPair,
+        lot_size_pair: &LotSizePair,
+    ) -> Result<(), GoblinError>
+    where
+        T: TokenMarker,
+        In: LegMatcher,
+    {
+        let delta_lots = In::get(delta_lots_pair);
+
+        Ok(())
+    }
 }

@@ -16,6 +16,9 @@ pub use readables::*;
 pub mod writables;
 pub use writables::*;
 
+pub mod lot_size_pair;
+pub use lot_size_pair::*;
+
 // Submodules
 pub mod header;
 pub mod market_counts;

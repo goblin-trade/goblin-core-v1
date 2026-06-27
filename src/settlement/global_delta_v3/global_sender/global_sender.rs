@@ -1,16 +1,13 @@
 use crate::{
     axis::{
         leg::leg_matcher::LegMatcher,
-        market::LotSizePair,
         token::{
-            token_delta_manager::TokenDeltaManager,
-            token_marker::hardcoded_erc20::HARDCODED_TOKENS, CustomERC20, HardcodedERC20, Token,
-            ETH,
+            token_marker::{hardcoded_erc20::HARDCODED_TOKENS, TokenMarker},
+            CustomERC20, HardcodedERC20, Token, ETH,
         },
-        update::Increase,
     },
     goblin_error::GoblinError,
-    quantities::{TryIntoUnsidedDelta, UnsideQuantity, UnsidedDeltaAtomsPerLot},
+    quantities::UnsidedDeltaAtomsPerLot,
     settlement::{
         global_delta_v3::TokenDeltaV3, local_delta_v3::LocalDeltaV3, CheckedOps, ConstZero,
     },
@@ -36,20 +33,16 @@ impl ConstZero for GlobalSender {
 }
 
 impl GlobalSender {
-    pub fn commit_side<In, T>(
+    pub fn commit_side<T, In>(
         &mut self,
         token_index: T::TokenIndex,
-        lot_size_pair: &LotSizePair,
+        unsided_delta_atoms_per_lot: UnsidedDeltaAtomsPerLot,
         local_delta: &LocalDeltaV3,
     ) -> Result<(), GoblinError>
     where
+        T: TokenMarker,
         In: LegMatcher,
-        T: TokenDeltaManager,
     {
-        let lot_size = In::get(lot_size_pair);
-        let atoms_per_lot = In::atoms_per_lot(lot_size);
-        let unsided_delta_atoms_per_lot = atoms_per_lot.try_into_unsided_delta::<Increase>()?;
-
         let delta = TokenDeltaV3::from_local_delta::<In>(unsided_delta_atoms_per_lot, local_delta);
 
         let delta_store = T::get_token_delta_v3(token_index, self);

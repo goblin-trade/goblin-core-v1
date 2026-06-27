@@ -2,8 +2,8 @@ use core::marker::PhantomData;
 
 use crate::{
     axis::{
-        leg::{leg_quantities::LegQuantities, Base, Pair, Quote},
-        market::market_marker::MarketMarker,
+        leg::{Base, Pair, Quote},
+        market::{market_marker::MarketMarker, LotSizePair},
         token::token_marker::{custom_erc20::custom_erc20_data::CustomERC20Data, TokenMarker},
     },
     goblin_error::GoblinError,
@@ -11,11 +11,6 @@ use crate::{
     state::MarketPreimage,
     types::{StoreReader, Tuple},
 };
-
-// TODO validate LotSizes.
-// Currently LegValidator::lots_per_unit_valid() is unused
-pub type LotSizePair =
-    Pair<<Base as LegQuantities>::LotsPerUnit, <Quote as LegQuantities>::LotsPerUnit>;
 
 pub type TokenIndexPair<B, Q> =
     Pair<<B as TokenMarker>::TokenIndex, <Q as TokenMarker>::TokenIndex>;

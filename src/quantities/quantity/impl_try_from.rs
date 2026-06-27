@@ -3,6 +3,7 @@ use crate::{
     quantities::{Exp, Quantity},
 };
 
+/// TODO remove, unused
 impl<E> TryFrom<Quantity<E, u64>> for Quantity<E, i64>
 where
     E: Exp,

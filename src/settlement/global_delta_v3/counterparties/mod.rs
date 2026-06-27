@@ -5,3 +5,5 @@ pub mod counterparty_token_key;
 pub use counterparties::*;
 pub use counterparty_map::*;
 pub use counterparty_token_key::*;
+
+mod impl_const_zero;
