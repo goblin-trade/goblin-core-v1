@@ -34,3 +34,5 @@ pub type DeltaAtoms = Unsided<Z0, Z0, P1, i64>;
 pub type DeltaLots = Unsided<P1, Z0, Z0, i64>;
 
 pub type UnsidedDeltaAtomsPerUnit = Unsided<Z0, N1, P1, i64>;
+pub type UnsidedDeltaAtomsPerLot = Unsided<N1, Z0, P1, i64>;
+pub type UnsidedDeltaLotsPerUnit = Unsided<P1, N1, Z0, i64>;

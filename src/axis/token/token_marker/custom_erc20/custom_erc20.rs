@@ -12,8 +12,12 @@ use crate::{
         },
     },
     goblin_error::GoblinError,
-    quantities::{DeltaAtoms, DeltaLots},
-    settlement::{global_delta::SenderTokenStore, Delta, Settleable},
+    quantities::{DeltaAtoms, DeltaLots, UnsidedDeltaAtomsPerLot},
+    settlement::{
+        global_delta::SenderTokenStore,
+        global_delta_v3::{GlobalSender, TokenDeltaV3},
+        Delta,
+    },
     types::{Address, StoreReader},
 };
 
@@ -36,6 +40,13 @@ impl TokenMarker for CustomERC20 {
         Ok(data.address)
     }
 
+    fn get_global_deposit(
+        local_deposit: Self::LocalDeposit,
+        atoms_per_lot: UnsidedDeltaAtomsPerLot,
+    ) -> Self::GlobalDeposit {
+        local_deposit * atoms_per_lot
+    }
+
     fn get_global_delta<In>(
         token_index: Self::TokenIndex,
         delta: &mut Delta,
@@ -46,6 +57,15 @@ impl TokenMarker for CustomERC20 {
         let list = Self::get_leg_mut(&mut delta.global.global_sender_delta);
         let store = &mut list[token_index.0];
         Ok(store)
+    }
+
+    fn get_token_delta_v3(
+        token_index: Self::TokenIndex,
+        global_sender: &mut GlobalSender,
+    ) -> &mut TokenDeltaV3<Self> {
+        let list = Self::get_leg_mut(global_sender);
+        let token_delta = &mut list[token_index.0];
+        token_delta
     }
 
     fn settle_deposit(

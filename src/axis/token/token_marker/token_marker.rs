@@ -5,8 +5,10 @@ use crate::{
     },
     goblin_error::GoblinError,
     input_processor::Decodable,
+    quantities::UnsidedDeltaAtomsPerLot,
     settlement::{
         global_delta::{GlobalMakerDeltas, MakerDeltaMap, SenderTokenStore},
+        global_delta_v3::{GlobalSender, TokenDeltaV3},
         local_delta::DepositTriple,
         local_delta_v3::DepositTripleV3,
         CheckedOps, ConstZero, Delta,
@@ -43,12 +45,23 @@ pub trait TokenMarker:
         custom_erc20_list: &[CustomERC20Data],
     ) -> Result<Self::Address, GoblinError>;
 
+    fn get_global_deposit(
+        local_deposit: Self::LocalDeposit,
+        atoms_per_lot: UnsidedDeltaAtomsPerLot,
+    ) -> Self::GlobalDeposit;
+
+    // TODO remove, replaced by get_token_delta_v3()
     fn get_global_delta<In>(
         token_index: Self::TokenIndex,
         delta: &mut Delta,
     ) -> Result<&mut SenderTokenStore<Self>, GoblinError>
     where
         In: LegMatcher;
+
+    fn get_token_delta_v3(
+        token_index: Self::TokenIndex,
+        global_sender: &mut GlobalSender,
+    ) -> &mut TokenDeltaV3<Self>;
 
     fn settle_deposit(
         deposit: Self::GlobalDeposit,

@@ -1,4 +1,4 @@
-use crate::quantities::{QuantityOps, UnsideQuantity, P1, Z0};
+use crate::quantities::{QuantityOps, UnsideQuantity, N1, P1, Z0};
 use core::ops::{Div, Mul, Rem};
 
 pub trait LegQuantities: Default + Sized + PartialEq + PartialOrd + Clone + Copy {
@@ -16,8 +16,9 @@ pub trait LegQuantities: Default + Sized + PartialEq + PartialOrd + Clone + Copy
 
     // Ratios
     type LotsPerUnit: QuantityOps;
+
     type AtomsPerUnit: QuantityOps
         + Rem<Self::LotsPerUnit, Output = Self::AtomsPerUnit>
         + Div<Self::LotsPerUnit, Output = Self::AtomsPerLot>;
-    type AtomsPerLot: QuantityOps;
+    type AtomsPerLot: QuantityOps + UnsideQuantity<Self, N1, Z0, P1, u64>;
 }

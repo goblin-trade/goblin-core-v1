@@ -5,10 +5,25 @@ use crate::{
         token::{token_marker::TokenMarker, CustomERC20, HardcodedERC20, ETH},
     },
     goblin_error::GoblinError,
-    settlement::{CheckedOps, Delta, SidedSenderDeltaV2, UnsideDelta, UnsidedSenderDeltaV2},
+    settlement::{
+        local_delta_v3::LocalDeltaV3, CheckedOps, Delta, SidedSenderDeltaV2, UnsideDelta,
+        UnsidedSenderDeltaV2,
+    },
 };
 
 pub trait TokenDeltaManager: TokenMarker {
+    // fn commit_sender_delta_v3<In>(
+    //     token_index: Self::TokenIndex,
+    //     lot_size_pair: &LotSizePair,
+    //     local_delta: &LocalDeltaV3,
+    //     global_delta:
+    // ) -> Result<(), GoblinError>
+    // where
+    //     In: LegMatcher,
+    // {
+    //     Ok(())
+    // }
+
     fn commit_sender_delta<In>(
         token_index: Self::TokenIndex,
         lot_size_pair: &LotSizePair,

@@ -9,7 +9,12 @@ use crate::{
         },
     },
     goblin_error::GoblinError,
-    settlement::{global_delta::SenderTokenStore, Delta},
+    quantities::UnsidedDeltaAtomsPerLot,
+    settlement::{
+        global_delta::SenderTokenStore,
+        global_delta_v3::{GlobalSender, TokenDeltaV3},
+        Delta,
+    },
     types::{Address, StoreReader},
 };
 
@@ -29,6 +34,13 @@ impl TokenMarker for ETH {
         Ok(ETHStub)
     }
 
+    fn get_global_deposit(
+        _local_deposit: Self::LocalDeposit,
+        _atoms_per_lot: UnsidedDeltaAtomsPerLot,
+    ) -> Self::GlobalDeposit {
+        ETHStub
+    }
+
     fn get_global_delta<In>(
         _token_index: Self::TokenIndex,
         delta: &mut Delta,
@@ -38,6 +50,13 @@ impl TokenMarker for ETH {
     {
         let store = Self::get_leg_mut(&mut delta.global.global_sender_delta);
         Ok(store)
+    }
+
+    fn get_token_delta_v3(
+        _token_index: Self::TokenIndex,
+        global_sender: &mut GlobalSender,
+    ) -> &mut TokenDeltaV3<Self> {
+        Self::get_leg_mut(global_sender)
     }
 
     fn settle_deposit(
