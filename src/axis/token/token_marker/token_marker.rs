@@ -1,17 +1,14 @@
 use crate::{
-    axis::{
-        leg::{leg_matcher::LegMatcher, leg_quantities::LegQuantities},
-        token::token_marker::custom_erc20::custom_erc20_data::CustomERC20Data,
-    },
+    axis::token::token_marker::custom_erc20::custom_erc20_data::CustomERC20Data,
     goblin_error::GoblinError,
     input_processor::Decodable,
     quantities::UnsidedDeltaAtomsPerLot,
     settlement::{
-        global_delta::{GlobalMakerDeltas, MakerDeltaMap, SenderTokenStore},
+        global_delta::{GlobalMakerDeltas, MakerDeltaMap},
         global_delta_v3::{CounterpartyMap, CounterpartyTriple, GlobalSender, TokenDeltaV3},
         local_delta::DepositTriple,
         local_delta_v3::DepositTripleV3,
-        CheckedOps, ConstZero, Delta,
+        CheckedOps, ConstZero,
     },
     types::{Address, StoreReader},
 };
@@ -50,14 +47,6 @@ pub trait TokenMarker:
         local_deposit: Self::LocalDeposit,
         atoms_per_lot: UnsidedDeltaAtomsPerLot,
     ) -> Self::GlobalDeposit;
-
-    // TODO remove, replaced by get_token_delta_v3()
-    fn get_global_delta<In>(
-        token_index: Self::TokenIndex,
-        delta: &mut Delta,
-    ) -> Result<&mut SenderTokenStore<Self>, GoblinError>
-    where
-        In: LegMatcher;
 
     fn get_token_delta_v3(
         token_index: Self::TokenIndex,

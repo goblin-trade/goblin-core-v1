@@ -12,11 +12,11 @@ use crate::{
             },
             Readables, Writables,
         },
-        token::{token_delta_manager::TokenDeltaManager, token_marker::TokenMarker},
+        token::token_marker::TokenMarker,
     },
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
-    settlement::Delta,
+    settlement::DeltaV3,
     types::Address,
 };
 
@@ -24,12 +24,12 @@ pub fn process_market<'a, M, B, Q>(
     msg_sender: &Address,
     ctx: &DecodeCtx,
     erc20_list: M::ERC20List<'a>,
-    delta: &mut Delta,
+    delta: &mut DeltaV3,
 ) -> Result<(), GoblinError>
 where
     M: MarketMarker,
-    B: TokenDeltaManager,
-    Q: TokenDeltaManager,
+    B: TokenMarker,
+    Q: TokenMarker,
     HardcodedMarketIndex<B, Q>: HardcodedMarkets<B, Q>,
 {
     let market_header = MarketHeader::<M, B, Q>::try_decode(ctx)?;
@@ -55,7 +55,7 @@ where
     market_header.execute_takes(ctx, readables, writables)?;
     market_header.execute_makes(ctx, readables, writables)?;
 
-    delta.commit_local_delta::<M, B, Q>(
+    delta.commit_local_delta::<B, Q>(
         &market_readables.market.token_index_pair,
         &market_readables.market.lot_size_pair,
     )

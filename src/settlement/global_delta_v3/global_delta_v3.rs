@@ -2,7 +2,7 @@ use crate::{
     axis::{
         leg::{Base, Quote, SamePair},
         market::{LotSizePair, TokenIndexPair},
-        token::{token_delta_manager::TokenDeltaManager, token_marker::TokenMarker},
+        token::token_marker::TokenMarker,
     },
     goblin_error::GoblinError,
     quantities::UnsidedDeltaAtomsPerLot,

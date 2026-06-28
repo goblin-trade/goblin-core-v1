@@ -1,23 +1,16 @@
 use crate::{
-    axis::{
-        leg::leg_matcher::LegMatcher,
-        token::{
-            token_marker::{
-                custom_erc20::{
-                    custom_erc20_data::CustomERC20Data, custom_erc20_index::CustomERC20Index,
-                },
-                TokenMarker,
+    axis::token::{
+        token_marker::{
+            custom_erc20::{
+                custom_erc20_data::CustomERC20Data, custom_erc20_index::CustomERC20Index,
             },
-            CustomERC20,
+            TokenMarker,
         },
+        CustomERC20,
     },
     goblin_error::GoblinError,
     quantities::{DeltaAtoms, DeltaLots, UnsidedDeltaAtomsPerLot},
-    settlement::{
-        global_delta::SenderTokenStore,
-        global_delta_v3::{GlobalSender, TokenDeltaV3},
-        Delta,
-    },
+    settlement::global_delta_v3::{GlobalSender, TokenDeltaV3},
     types::{Address, StoreReader},
 };
 
@@ -45,18 +38,6 @@ impl TokenMarker for CustomERC20 {
         atoms_per_lot: UnsidedDeltaAtomsPerLot,
     ) -> Self::GlobalDeposit {
         local_deposit * atoms_per_lot
-    }
-
-    fn get_global_delta<In>(
-        token_index: Self::TokenIndex,
-        delta: &mut Delta,
-    ) -> Result<&mut SenderTokenStore<Self>, GoblinError>
-    where
-        In: LegMatcher,
-    {
-        let list = Self::get_leg_mut(&mut delta.global.global_sender_delta);
-        let store = &mut list[token_index.0];
-        Ok(store)
     }
 
     fn get_token_delta_v3(

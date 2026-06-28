@@ -1,6 +1,6 @@
 use crate::{
     axis::{
-        leg::{leg_matcher::LegMatcher, leg_math::LegMath},
+        leg::{leg_matcher::LegMatcher, Base},
         market::{market_marker::MarketMarker, Readables, Writables},
         occupancy::occupancy_marker::OccupancyMarker,
         token::token_marker::TokenMarker,
@@ -9,17 +9,16 @@ use crate::{
     goblin_error::GoblinError,
     instructions::{MakeReadables, PosHeader},
     quantities::{BaseLots, InnerPos, Ticks},
-    settlement::CheckedOps,
     state::{
         bitmap::alias::{InnerBitmap, InnerBitmapUpdater},
         resting_order::preimage::RestingOrderPreimage,
         Preimage, SlotKey,
     },
-    types::Address,
+    types::{Address, StoreReader},
 };
 
 /// Marker tracking increase or decrease in free atoms from store
-pub trait UpdateMarker {
+pub trait UpdateMarker: Sized {
     const SIGN: i64;
 
     fn process_update<'a, M, B, Q, In, Oc>(
@@ -45,7 +44,7 @@ pub trait UpdateMarker {
             base_lots,
         } = make_readables.pos_header;
 
-        let key = &mut &mut RestingOrderPreimage {
+        let key = &mut RestingOrderPreimage {
             market_key: market_readables.market_key,
             position,
         }
@@ -61,22 +60,16 @@ pub trait UpdateMarker {
             },
         )?;
 
-        // TODO use Lots
+        let base_lot_size = Base::get(&market_readables.market.lot_size_pair);
+        let tick_size = market_readables.market.tick_size;
+        let price = Ticks::from(position);
 
-        let amount = <In::Opposite as LegMath>::matching_lots_maker(
+        writables.local_delta.make.add_make::<In, Self>(
             updated_base_lots,
-            market_readables.market.tick_size,
-            Ticks::from(position),
-        );
-
-        let sided_make_delta = In::get_leg_mut(&mut writables.local_delta.local_sender_delta);
-
-        // This function is common to both Increase and Decrease arms
-        // Credit to either increase or decrease arm depending on `Self`
-        let delta = Self::get_leg_mut(&mut sided_make_delta.make);
-        *delta = delta.checked_add(amount).ok_or(GoblinError::Overflow)?;
-
-        Ok(())
+            base_lot_size,
+            tick_size,
+            price,
+        )
     }
 
     fn update_resting_order<'a, M, B, Q, In, Oc>(

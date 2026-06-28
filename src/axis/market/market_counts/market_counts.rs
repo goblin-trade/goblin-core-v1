@@ -1,5 +1,5 @@
 use crate::{
-    goblin_error::GoblinError, input_processor::DecodeCtx, settlement::Delta, types::Address,
+    goblin_error::GoblinError, input_processor::DecodeCtx, settlement::DeltaV3, types::Address,
 };
 
 pub trait MarketCounts {
@@ -8,6 +8,6 @@ pub trait MarketCounts {
         &self,
         msg_sender: &Address,
         ctx: &DecodeCtx,
-        delta: &mut Delta,
+        delta: &mut DeltaV3,
     ) -> Result<(), GoblinError>;
 }

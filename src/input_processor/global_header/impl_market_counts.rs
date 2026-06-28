@@ -2,7 +2,7 @@ use crate::{
     axis::market::{market_counts::MarketCounts, Dynamic, Hardcoded},
     goblin_error::GoblinError,
     input_processor::{DecodeCtx, GlobalHeader},
-    settlement::Delta,
+    settlement::DeltaV3,
     types::{Address, StoreReader},
 };
 
@@ -11,7 +11,7 @@ impl<'a> MarketCounts for GlobalHeader<'a> {
         &self,
         msg_sender: &Address,
         ctx: &DecodeCtx,
-        delta: &mut Delta,
+        delta: &mut DeltaV3,
     ) -> Result<(), GoblinError> {
         let hardcoded_counts = Hardcoded::get_leg(&self.market_counts);
         hardcoded_counts.process(msg_sender, ctx, delta)?;
