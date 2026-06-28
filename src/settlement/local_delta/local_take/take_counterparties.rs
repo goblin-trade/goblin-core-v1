@@ -1,5 +1,5 @@
 use crate::{
-    settlement::{local_delta_v3::DeltaLotsPair, ConstZero},
+    settlement::{local_delta::DeltaLotsPair, ConstZero},
     types::{Address, FixedMap},
 };
 

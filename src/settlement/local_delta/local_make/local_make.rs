@@ -4,7 +4,7 @@ use crate::{
     quantities::{
         BaseLots, BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, Ticks, TryIntoUnsidedDelta,
     },
-    settlement::{local_delta_v3::DeltaLotsPair, CheckedOps},
+    settlement::{local_delta::DeltaLotsPair, CheckedOps},
     types::StoreReader,
 };
 

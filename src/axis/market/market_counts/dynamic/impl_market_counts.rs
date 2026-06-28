@@ -6,7 +6,7 @@ use crate::{
     },
     goblin_error::GoblinError,
     input_processor::DecodeCtx,
-    settlement::DeltaV3,
+    settlement::Delta,
     types::Address,
 };
 
@@ -15,7 +15,7 @@ impl<'a> MarketCounts for DynamicCounts<'a> {
         &self,
         msg_sender: &Address,
         ctx: &DecodeCtx,
-        delta: &mut DeltaV3,
+        delta: &mut Delta,
     ) -> Result<(), GoblinError> {
         // Dynamic with hardcoded ERC20 (3)
         for _ in 0..self.market_counts[0] {

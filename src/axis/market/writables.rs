@@ -1,6 +1,6 @@
-use crate::{settlement::local_delta_v3::LocalDeltaV3, state::MarketState};
+use crate::{settlement::local_delta::LocalDelta, state::MarketState};
 
 pub struct Writables<'a> {
-    pub local_delta: &'a mut LocalDeltaV3,
+    pub local_delta: &'a mut LocalDelta,
     pub market_state: &'a mut MarketState,
 }

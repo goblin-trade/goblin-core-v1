@@ -1,5 +1,5 @@
 use crate::settlement::{
-    local_delta_v3::{DeltaLotsPair, LocalMake},
+    local_delta::{DeltaLotsPair, LocalMake},
     ConstZero,
 };
 

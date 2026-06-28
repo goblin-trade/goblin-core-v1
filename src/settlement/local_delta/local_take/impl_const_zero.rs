@@ -1,5 +1,5 @@
 use crate::settlement::{
-    local_delta_v3::{
+    local_delta::{
         local_take::{LocalTake, TakeCounterparties},
         DeltaLotsPair,
     },

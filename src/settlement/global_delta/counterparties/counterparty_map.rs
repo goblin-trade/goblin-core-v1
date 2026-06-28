@@ -1,7 +1,7 @@
 use crate::{
     axis::token::token_marker::TokenMarker,
     settlement::{
-        global_delta_v3::{CounterpartyTokenKey, DeltaAtomsPair},
+        global_delta::{CounterpartyTokenKey, DeltaAtomsPair},
         ConstZero,
     },
     types::FixedMap,

@@ -7,7 +7,7 @@ use crate::{
     },
     goblin_error::GoblinError,
     quantities::UnsidedDeltaAtomsPerLot,
-    settlement::global_delta_v3::{GlobalSender, TokenDeltaV3},
+    settlement::global_delta::{GlobalSender, TokenDelta},
     types::{Address, StoreReader},
 };
 
@@ -34,10 +34,10 @@ impl TokenMarker for ETH {
         ETHStub
     }
 
-    fn get_token_delta_v3(
+    fn get_global_token_delta(
         _token_index: Self::TokenIndex,
         global_sender: &mut GlobalSender,
-    ) -> &mut TokenDeltaV3<Self> {
+    ) -> &mut TokenDelta<Self> {
         Self::get_leg_mut(global_sender)
     }
 

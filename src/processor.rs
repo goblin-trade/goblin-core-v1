@@ -4,7 +4,7 @@ use crate::{
     hostio::{self},
     input_processor::{DecodeCtx, GlobalHeader},
     require,
-    settlement::DeltaV3,
+    settlement::Delta,
 };
 
 pub const CONTRACT_ADDRESS: [u8; 20] = [
@@ -17,7 +17,7 @@ pub fn processor(len: usize) -> Result<(), GoblinError> {
     require!(!msg_reentrant, GoblinError::Reentrant);
 
     let msg_sender = &hostio::msg_sender();
-    let delta = DeltaV3::get_static();
+    let delta = Delta::get_static();
     let ctx = &mut DecodeCtx::new(len);
 
     let global_header = GlobalHeader::new(ctx)?;

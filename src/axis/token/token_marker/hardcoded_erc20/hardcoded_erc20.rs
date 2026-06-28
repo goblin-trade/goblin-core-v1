@@ -9,7 +9,7 @@ use crate::{
     },
     goblin_error::GoblinError,
     quantities::{DeltaAtoms, DeltaLots, UnsidedDeltaAtomsPerLot},
-    settlement::global_delta_v3::{GlobalSender, TokenDeltaV3},
+    settlement::global_delta::{GlobalSender, TokenDelta},
     types::{Address, StoreReader},
 };
 
@@ -40,10 +40,10 @@ impl TokenMarker for HardcodedERC20 {
         local_deposit * atoms_per_lot
     }
 
-    fn get_token_delta_v3(
+    fn get_global_token_delta(
         token_index: Self::TokenIndex,
         global_sender: &mut GlobalSender,
-    ) -> &mut TokenDeltaV3<Self> {
+    ) -> &mut TokenDelta<Self> {
         let list = Self::get_leg_mut(global_sender);
         let token_delta = &mut list[token_index.0];
         token_delta

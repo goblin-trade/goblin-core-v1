@@ -6,7 +6,7 @@ use crate::{
     },
     goblin_error::GoblinError,
     input_processor::DecodeCtx,
-    settlement::DeltaV3,
+    settlement::Delta,
     types::Address,
 };
 
@@ -15,7 +15,7 @@ impl MarketCounts for HardcodedCounts {
         &self,
         msg_sender: &Address,
         ctx: &DecodeCtx,
-        delta: &mut DeltaV3,
+        delta: &mut Delta,
     ) -> Result<(), GoblinError> {
         for _ in 0..self.inner[0] {
             process_market::<Hardcoded, ETH, HardcodedERC20>(msg_sender, ctx, (), delta)?;

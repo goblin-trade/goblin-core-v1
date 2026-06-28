@@ -1,9 +1,9 @@
 use crate::{
     axis::token::token_marker::TokenMarker,
-    settlement::{global_delta_v3::TokenDeltaV3, CheckedOps},
+    settlement::{global_delta::TokenDelta, CheckedOps},
 };
 
-impl<T: TokenMarker> CheckedOps for TokenDeltaV3<T> {
+impl<T: TokenMarker> CheckedOps for TokenDelta<T> {
     fn checked_add(self, rhs: Self) -> Option<Self> {
         Some(Self {
             deposit: self.deposit.checked_add(rhs.deposit)?,

@@ -6,7 +6,7 @@ use crate::{
     goblin_error::GoblinError,
     quantities::{BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, Ticks, TryIntoUnsidedDelta},
     settlement::{
-        local_delta_v3::{local_take::TakeCounterparties, DeltaLotsPair},
+        local_delta::{local_take::TakeCounterparties, DeltaLotsPair},
         CheckedOps,
     },
     types::Address,

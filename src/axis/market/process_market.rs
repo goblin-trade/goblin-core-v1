@@ -16,7 +16,7 @@ use crate::{
     },
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
-    settlement::DeltaV3,
+    settlement::Delta,
     types::Address,
 };
 
@@ -24,7 +24,7 @@ pub fn process_market<'a, M, B, Q>(
     msg_sender: &Address,
     ctx: &DecodeCtx,
     erc20_list: M::ERC20List<'a>,
-    delta: &mut DeltaV3,
+    delta: &mut Delta,
 ) -> Result<(), GoblinError>
 where
     M: MarketMarker,

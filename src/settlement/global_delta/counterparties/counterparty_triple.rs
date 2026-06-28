@@ -6,8 +6,8 @@ use crate::{
     goblin_error::GoblinError,
     quantities::UnsidedDeltaAtomsPerLot,
     settlement::{
-        global_delta_v3::{CounterpartyMap, CounterpartyTokenKey},
-        local_delta_v3::DeltaLotsPair,
+        global_delta::{CounterpartyMap, CounterpartyTokenKey},
+        local_delta::DeltaLotsPair,
         CheckedOps,
     },
     types::Triple,

@@ -1,23 +1,23 @@
 use crate::{
     axis::{
-        leg::{leg_matcher::LegMatcher, leg_reader::LegReader, SamePair},
+        leg::{leg_reader::LegReader, SamePair},
         token::token_marker::TokenMarker,
     },
     quantities::{DeltaAtoms, UnsidedDeltaAtomsPerLot},
-    settlement::local_delta_v3::LocalDeltaV3,
+    settlement::local_delta::LocalDelta,
 };
 
 #[derive(Clone, Copy)]
-pub struct TokenDeltaV3<T: TokenMarker> {
+pub struct TokenDelta<T: TokenMarker> {
     pub deposit: T::GlobalDeposit,
     pub take: DeltaAtoms,
     pub make: DeltaAtoms,
 }
 
-impl<T: TokenMarker> TokenDeltaV3<T> {
+impl<T: TokenMarker> TokenDelta<T> {
     pub fn from_local_delta<In: LegReader>(
         atoms_per_lot_pair: &SamePair<UnsidedDeltaAtomsPerLot>,
-        local_delta: &LocalDeltaV3,
+        local_delta: &LocalDelta,
     ) -> Self {
         let atoms_per_lot = In::get(atoms_per_lot_pair);
 

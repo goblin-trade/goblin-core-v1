@@ -7,23 +7,23 @@ use crate::{
     goblin_error::GoblinError,
     quantities::UnsidedDeltaAtomsPerLot,
     settlement::{
-        global_delta_v3::{CounterpartyTokenKey, CounterpartyTriple, GlobalSender},
-        local_delta_v3::LocalDeltaV3,
+        global_delta::{CounterpartyTokenKey, CounterpartyTriple, GlobalSender},
+        local_delta::LocalDelta,
     },
     types::StoreReader,
 };
 
-pub struct GlobalDeltaV3 {
+pub struct GlobalDelta {
     pub sender: GlobalSender,
     pub counterparties: CounterpartyTriple,
 }
 
-impl GlobalDeltaV3 {
+impl GlobalDelta {
     pub fn commit_local_delta<B, Q>(
         &mut self,
         token_index_pair: &TokenIndexPair<B, Q>,
         lot_size_pair: &LotSizePair,
-        local_delta: &LocalDeltaV3,
+        local_delta: &LocalDelta,
     ) -> Result<(), GoblinError>
     where
         B: TokenMarker,

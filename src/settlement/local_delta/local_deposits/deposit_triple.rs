@@ -7,14 +7,14 @@ use crate::{
 /// Local market deposits for a given side. The triple covers the 3 possible token
 /// variants per side
 ///
-pub type DepositTripleV3 = Triple<
+pub type DepositTriple = Triple<
     <ETH as TokenMarker>::LocalDeposit,
     <HardcodedERC20 as TokenMarker>::LocalDeposit,
     <CustomERC20 as TokenMarker>::LocalDeposit,
     Token,
 >;
 
-impl ConstZero for DepositTripleV3 {
+impl ConstZero for DepositTriple {
     const ZEROED: Self = Triple::new(
         <ETH as TokenMarker>::LocalDeposit::ZEROED,
         <HardcodedERC20 as TokenMarker>::LocalDeposit::ZEROED,

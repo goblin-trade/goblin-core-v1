@@ -8,27 +8,25 @@ use crate::{
     },
     goblin_error::GoblinError,
     quantities::UnsidedDeltaAtomsPerLot,
-    settlement::{
-        global_delta_v3::TokenDeltaV3, local_delta_v3::LocalDeltaV3, CheckedOps, ConstZero,
-    },
+    settlement::{global_delta::TokenDelta, local_delta::LocalDelta, CheckedOps, ConstZero},
     types::Triple,
 };
 
-pub const MAX_HARDCODED_DELTAS_V3: usize = HARDCODED_TOKENS.len();
-pub const MAX_CUSTOM_DELTAS_V3: usize = 8;
+pub const MAX_HARDCODED_DELTAS: usize = HARDCODED_TOKENS.len();
+pub const MAX_CUSTOM_DELTAS: usize = 8;
 
 pub type GlobalSender = Triple<
-    TokenDeltaV3<ETH>,
-    [TokenDeltaV3<HardcodedERC20>; MAX_HARDCODED_DELTAS_V3],
-    [TokenDeltaV3<CustomERC20>; MAX_CUSTOM_DELTAS_V3],
+    TokenDelta<ETH>,
+    [TokenDelta<HardcodedERC20>; MAX_HARDCODED_DELTAS],
+    [TokenDelta<CustomERC20>; MAX_CUSTOM_DELTAS],
     Token,
 >;
 
 impl ConstZero for GlobalSender {
     const ZEROED: Self = Self::new(
-        TokenDeltaV3::ZEROED,
-        [TokenDeltaV3::ZEROED; MAX_HARDCODED_DELTAS_V3],
-        [TokenDeltaV3::ZEROED; MAX_CUSTOM_DELTAS_V3],
+        TokenDelta::ZEROED,
+        [TokenDelta::ZEROED; MAX_HARDCODED_DELTAS],
+        [TokenDelta::ZEROED; MAX_CUSTOM_DELTAS],
     );
 }
 
@@ -37,15 +35,15 @@ impl GlobalSender {
         &mut self,
         token_index: T::TokenIndex,
         atoms_per_lot_pair: &SamePair<UnsidedDeltaAtomsPerLot>,
-        local_delta: &LocalDeltaV3,
+        local_delta: &LocalDelta,
     ) -> Result<(), GoblinError>
     where
         T: TokenMarker,
         In: LegMatcher,
     {
-        let delta = TokenDeltaV3::from_local_delta::<In>(atoms_per_lot_pair, local_delta);
+        let delta = TokenDelta::from_local_delta::<In>(atoms_per_lot_pair, local_delta);
 
-        let delta_store = T::get_token_delta_v3(token_index, self);
+        let delta_store = T::get_global_token_delta(token_index, self);
         *delta_store = delta_store
             .checked_add(delta)
             .ok_or(GoblinError::DeltaOverflow)?;

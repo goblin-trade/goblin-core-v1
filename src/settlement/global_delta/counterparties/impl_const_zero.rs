@@ -1,5 +1,5 @@
 use crate::settlement::{
-    global_delta_v3::{CounterpartyMap, CounterpartyTriple},
+    global_delta::{CounterpartyMap, CounterpartyTriple},
     ConstZero,
 };
 

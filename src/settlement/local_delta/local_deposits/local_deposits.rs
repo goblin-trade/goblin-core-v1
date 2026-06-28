@@ -5,17 +5,17 @@ use crate::{
     },
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
-    settlement::{local_delta_v3::DepositTripleV3, ConstZero},
+    settlement::{local_delta::DepositTriple, ConstZero},
 };
 
 /// Local deposits for a market
-pub type LocalDepositsV3 = SamePair<DepositTripleV3>;
+pub type LocalDeposits = SamePair<DepositTriple>;
 
-impl ConstZero for LocalDepositsV3 {
-    const ZEROED: Self = Pair::new(DepositTripleV3::ZEROED, DepositTripleV3::ZEROED);
+impl ConstZero for LocalDeposits {
+    const ZEROED: Self = Pair::new(DepositTriple::ZEROED, DepositTriple::ZEROED);
 }
 
-impl LocalDepositsV3 {
+impl LocalDeposits {
     pub fn read_deposits<'a, B, Q>(&mut self, ctx: &DecodeCtx) -> Result<(), GoblinError>
     where
         B: TokenMarker,

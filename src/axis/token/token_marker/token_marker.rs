@@ -4,8 +4,8 @@ use crate::{
     input_processor::Decodable,
     quantities::UnsidedDeltaAtomsPerLot,
     settlement::{
-        global_delta_v3::{CounterpartyMap, CounterpartyTriple, GlobalSender, TokenDeltaV3},
-        local_delta_v3::DepositTripleV3,
+        global_delta::{CounterpartyMap, CounterpartyTriple, GlobalSender, TokenDelta},
+        local_delta::DepositTriple,
         CheckedOps, ConstZero,
     },
     types::{Address, StoreReader},
@@ -17,7 +17,7 @@ pub trait TokenMarker:
     + Clone
     + Copy
     + PartialEq
-    + StoreReader<DepositTripleV3, Result = Self::LocalDeposit>
+    + StoreReader<DepositTriple, Result = Self::LocalDeposit>
     + StoreReader<CounterpartyTriple, Result = CounterpartyMap<Self>>
 {
     const DISCRIMINATOR: u8;
@@ -44,10 +44,10 @@ pub trait TokenMarker:
         atoms_per_lot: UnsidedDeltaAtomsPerLot,
     ) -> Self::GlobalDeposit;
 
-    fn get_token_delta_v3(
+    fn get_global_token_delta(
         token_index: Self::TokenIndex,
         global_sender: &mut GlobalSender,
-    ) -> &mut TokenDeltaV3<Self>;
+    ) -> &mut TokenDelta<Self>;
 
     fn settle_deposit(
         deposit: Self::GlobalDeposit,
