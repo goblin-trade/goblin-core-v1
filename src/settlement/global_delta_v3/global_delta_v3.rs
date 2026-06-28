@@ -2,7 +2,7 @@ use crate::{
     axis::{
         leg::{Base, Quote, SamePair},
         market::{LotSizePair, TokenIndexPair},
-        token::token_delta_manager::TokenDeltaManager,
+        token::{token_delta_manager::TokenDeltaManager, token_marker::TokenMarker},
     },
     goblin_error::GoblinError,
     quantities::UnsidedDeltaAtomsPerLot,
@@ -26,8 +26,8 @@ impl GlobalDeltaV3 {
         local_delta: &LocalDeltaV3,
     ) -> Result<(), GoblinError>
     where
-        B: TokenDeltaManager,
-        Q: TokenDeltaManager,
+        B: TokenMarker,
+        Q: TokenMarker,
     {
         let base_token_index = Base::get(token_index_pair);
         let quote_token_index = Quote::get(token_index_pair);
