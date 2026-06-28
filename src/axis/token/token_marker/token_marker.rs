@@ -4,9 +4,7 @@ use crate::{
     input_processor::Decodable,
     quantities::UnsidedDeltaAtomsPerLot,
     settlement::{
-        global_delta::{GlobalMakerDeltas, MakerDeltaMap},
         global_delta_v3::{CounterpartyMap, CounterpartyTriple, GlobalSender, TokenDeltaV3},
-        local_delta::DepositTriple,
         local_delta_v3::DepositTripleV3,
         CheckedOps, ConstZero,
     },
@@ -19,8 +17,6 @@ pub trait TokenMarker:
     + Clone
     + Copy
     + PartialEq
-    + StoreReader<GlobalMakerDeltas, Result = MakerDeltaMap<Self>>
-    + StoreReader<DepositTriple, Result = Self::GlobalDeposit>
     + StoreReader<DepositTripleV3, Result = Self::LocalDeposit>
     + StoreReader<CounterpartyTriple, Result = CounterpartyMap<Self>>
 {
