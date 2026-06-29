@@ -24,7 +24,7 @@ where
 {
     lot_size_pair: LotSizePair,
     tick_size: QuoteLotsPerBaseUnitPerTick,
-    token_address_pair: Pair<B::Address, Q::Address>,
+    token_address_pair: Pair<B::TokenAddress, Q::TokenAddress>,
     _marker: PhantomData<M>,
 }
 
@@ -37,7 +37,7 @@ where
     pub fn new(
         lot_size_pair: LotSizePair,
         tick_size: QuoteLotsPerBaseUnitPerTick,
-        token_address_pair: Pair<B::Address, Q::Address>,
+        token_address_pair: Pair<B::TokenAddress, Q::TokenAddress>,
     ) -> Self {
         Self {
             lot_size_pair,

@@ -1,3 +1,5 @@
-pub mod erc20_store;
-pub mod eth_store;
-pub mod maker_store;
+pub mod store;
+pub mod store_preimage;
+
+pub use store::*;
+pub use store_preimage::*;

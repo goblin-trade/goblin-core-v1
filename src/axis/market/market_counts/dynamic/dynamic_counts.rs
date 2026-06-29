@@ -1,5 +1,7 @@
 use crate::{
-    axis::token::token_marker::custom_erc20::custom_erc20_data::CustomERC20Data,
+    axis::token::token_marker::custom_erc20::{
+        custom_erc20_data::CustomERC20Data, custom_erc20_list::CustomERC20List,
+    },
     goblin_error::GoblinError,
     input_processor::{DecodablePrimitive, DecodeCtx},
     require,
@@ -14,7 +16,7 @@ pub struct DynamicCounts<'a> {
     pub market_counts: [u8; 8],
 
     /// Addresses of custom erc20 tokens to use
-    pub custom_erc20_list: &'a [CustomERC20Data],
+    pub custom_erc20_list: CustomERC20List<'a>,
 }
 
 impl<'a> DynamicCounts<'a> {
@@ -51,8 +53,9 @@ impl<'a> DynamicCounts<'a> {
             GoblinError::InvalidPayload
         );
 
-        let custom_erc20_list =
-            ctx.zero_copy_slice_unchecked::<CustomERC20Data>(custom_erc20_count);
+        let custom_erc20_list = CustomERC20List {
+            inner: ctx.zero_copy_slice_unchecked::<CustomERC20Data>(custom_erc20_count),
+        };
 
         Ok(Self {
             market_counts,

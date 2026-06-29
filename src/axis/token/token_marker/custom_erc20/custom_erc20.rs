@@ -3,6 +3,7 @@ use crate::{
         token_marker::{
             custom_erc20::{
                 custom_erc20_data::CustomERC20Data, custom_erc20_index::CustomERC20Index,
+                custom_erc20_list::CustomERC20List,
             },
             TokenMarker,
         },
@@ -18,19 +19,18 @@ impl TokenMarker for CustomERC20 {
     const DISCRIMINATOR: u8 = 2;
 
     type TokenIndex = CustomERC20Index;
-    type Address = Address;
+    type TokenAddress = Address;
+    type StoredDecimals = u8;
+    type StoredPadding = [u8; 16 - size_of::<Self::StoredDecimals>()];
 
     type LocalDeposit = DeltaLots;
     type GlobalDeposit = DeltaAtoms;
 
     fn token_index_to_address(
         token_index: Self::TokenIndex,
-        custom_erc20_list: &[CustomERC20Data],
-    ) -> Result<Self::Address, GoblinError> {
-        let data = custom_erc20_list
-            .get(token_index.0)
-            .ok_or(GoblinError::InvalidCustomTokenIndex)?;
-        Ok(data.address)
+        custom_erc20_list: CustomERC20List,
+    ) -> Result<Self::TokenAddress, GoblinError> {
+        custom_erc20_list.token_index_to_address(token_index)
     }
 
     fn get_global_deposit(
@@ -52,7 +52,7 @@ impl TokenMarker for CustomERC20 {
     fn settle_deposit(
         deposit: Self::GlobalDeposit,
         token_index: Self::TokenIndex,
-        custom_erc20_list: &[CustomERC20Data],
+        custom_erc20_list: CustomERC20List,
         msg_sender: &Address,
     ) -> Result<(), GoblinError> {
         let token_address = Self::token_index_to_address(token_index, custom_erc20_list)?;

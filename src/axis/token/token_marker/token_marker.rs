@@ -1,5 +1,5 @@
 use crate::{
-    axis::token::token_marker::custom_erc20::custom_erc20_data::CustomERC20Data,
+    axis::token::token_marker::custom_erc20::custom_erc20_list::CustomERC20List,
     goblin_error::GoblinError,
     input_processor::Decodable,
     quantities::UnsidedDeltaAtomsPerLot,
@@ -26,7 +26,15 @@ pub trait TokenMarker:
     type TokenIndex: Clone + Copy + Decodable + ConstZero + PartialEq;
 
     /// Token address
-    type Address: Clone + Copy + Sized + Default;
+    type TokenAddress: Clone + Copy + Sized + Default;
+
+    /// Decimals stored in `Store`
+    /// Decimals are stored as u8 for ERC20 tokens but not for ETH
+    type StoredDecimals: Clone + Copy;
+
+    /// Padding to pad `Store` to 32 bytes
+    /// ERC20 store has less padding to accomodate `decimals: u8`
+    type StoredPadding: Clone + Copy;
 
     /// Pending deposit amount in local namespace
     type LocalDeposit: Clone + Copy + Default + Decodable + ConstZero + CheckedOps;
@@ -36,8 +44,8 @@ pub trait TokenMarker:
 
     fn token_index_to_address(
         token_index: Self::TokenIndex,
-        custom_erc20_list: &[CustomERC20Data],
-    ) -> Result<Self::Address, GoblinError>;
+        custom_erc20_list: CustomERC20List,
+    ) -> Result<Self::TokenAddress, GoblinError>;
 
     fn get_global_deposit(
         local_deposit: Self::LocalDeposit,
@@ -52,7 +60,7 @@ pub trait TokenMarker:
     fn settle_deposit(
         deposit: Self::GlobalDeposit,
         token_index: Self::TokenIndex,
-        custom_erc20_list: &[CustomERC20Data],
+        custom_erc20_list: CustomERC20List,
         msg_sender: &Address,
     ) -> Result<(), GoblinError>;
 }

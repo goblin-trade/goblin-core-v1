@@ -2,14 +2,22 @@ use crate::{
     axis::{
         leg::{leg_matcher::LegMatcher, SamePair},
         token::{
-            token_marker::{hardcoded_erc20::HARDCODED_TOKENS, TokenMarker},
+            token_marker::{
+                custom_erc20::{
+                    custom_erc20_data::CustomERC20Data, custom_erc20_list::CustomERC20List,
+                },
+                hardcoded_erc20::HARDCODED_TOKENS,
+                TokenMarker,
+            },
             CustomERC20, HardcodedERC20, Token, ETH,
         },
+        update::Increase,
     },
     goblin_error::GoblinError,
-    quantities::UnsidedDeltaAtomsPerLot,
+    quantities::{TryIntoUnsidedDelta, UnsidedDeltaAtomsPerLot},
     settlement::{global_delta::TokenDelta, local_delta::LocalDelta, CheckedOps, ConstZero},
-    types::Triple,
+    state::{Preimage, StorePreimage},
+    types::{Address, StoreReader, Triple},
 };
 
 pub const MAX_HARDCODED_DELTAS: usize = HARDCODED_TOKENS.len();
@@ -48,6 +56,29 @@ impl GlobalSender {
             .checked_add(delta)
             .ok_or(GoblinError::DeltaOverflow)?;
 
+        Ok(())
+    }
+
+    fn settle(
+        &self,
+        trader: Address,
+        custom_erc20_list: CustomERC20List,
+    ) -> Result<(), GoblinError> {
+        let custom_deltas = CustomERC20::get(self);
+
+        for (token_index, token_address) in custom_erc20_list.iter() {
+            let delta = custom_deltas[token_index.0];
+
+            let store_hash = StorePreimage::<CustomERC20> {
+                trader,
+                token: token_address,
+            }
+            .hash();
+
+            let store = store_hash.load();
+
+            // let free_delta = store.atoms_free.try_into_unsided_delta::<Increase>()?;
+        }
         Ok(())
     }
 }

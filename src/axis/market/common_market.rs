@@ -4,7 +4,12 @@ use crate::{
     axis::{
         leg::{Base, Pair, Quote},
         market::{market_marker::MarketMarker, LotSizePair},
-        token::token_marker::{custom_erc20::custom_erc20_data::CustomERC20Data, TokenMarker},
+        token::token_marker::{
+            custom_erc20::{
+                custom_erc20_data::CustomERC20Data, custom_erc20_list::CustomERC20List,
+            },
+            TokenMarker,
+        },
     },
     goblin_error::GoblinError,
     quantities::QuoteLotsPerBaseUnitPerTick,
@@ -45,7 +50,7 @@ impl<M: MarketMarker, B: TokenMarker, Q: TokenMarker> CommonMarket<M, B, Q> {
     /// Map to market preimage which is used to read market state
     pub fn get_preimage(
         &self,
-        custom_erc20_list: &[CustomERC20Data],
+        custom_erc20_list: CustomERC20List,
     ) -> Result<MarketPreimage<M, B, Q>, GoblinError> {
         let base_token_index = Base::get(&self.token_index_pair);
         let quote_token_index = Quote::get(&self.token_index_pair);
