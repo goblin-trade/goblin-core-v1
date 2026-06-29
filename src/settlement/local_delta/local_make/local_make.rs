@@ -1,8 +1,8 @@
 use crate::{
-    axis::{leg::leg_matcher::LegMatcher, update::update_marker::UpdateMarker},
+    axis::{leg::leg_matcher::LegMatcher, update::update_sign::UpdateSign},
     goblin_error::GoblinError,
     quantities::{
-        BaseLots, BaseLotsPerBaseUnit, QuantityToUnsidedDelta, QuoteLotsPerBaseUnitPerTick, Ticks,
+        BaseLots, BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, Ticks, TryIntoUnsidedDelta,
     },
     settlement::{local_delta::DeltaLotsPair, CheckedOps},
     types::StoreReader,
@@ -25,7 +25,7 @@ impl LocalMake {
     ) -> Result<(), GoblinError>
     where
         In: LegMatcher,
-        U: UpdateMarker,
+        U: UpdateSign,
     {
         let lots = In::opposite_lots_consumed_on_make(base_lots, base_lot_size, tick_size, price);
         let delta_lots = lots.try_into_unsided_delta::<U>()?;

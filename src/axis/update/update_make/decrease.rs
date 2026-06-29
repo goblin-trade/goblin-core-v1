@@ -4,7 +4,7 @@ use crate::{
         market::market_marker::MarketMarker,
         occupancy::occupancy_marker::OccupancyMarker,
         token::token_marker::TokenMarker,
-        update::{update_marker::UpdateMarker, Increase},
+        update::{update_make::UpdateMake, Decrease},
     },
     goblin_error::GoblinError,
     quantities::BaseLots,
@@ -14,9 +14,7 @@ use crate::{
     types::Address,
 };
 
-impl UpdateMarker for Increase {
-    const SIGN: i64 = 1;
-
+impl UpdateMake for Decrease {
     fn update_resting_order<'a, M, B, Q, In, Oc>(
         msg_sender: &Address,
         base_lots: BaseLots,
@@ -30,7 +28,7 @@ impl UpdateMarker for Increase {
         In: LegMatcher,
         Oc: OccupancyMarker,
     {
-        // increase store, i.e. decrease resting order
-        Oc::decrease_resting_order(msg_sender, base_lots, key, inner_bitmap_updater)
+        // decrease store, i.e. increase resting order
+        Oc::increase_resting_order(msg_sender, base_lots, key, inner_bitmap_updater)
     }
 }

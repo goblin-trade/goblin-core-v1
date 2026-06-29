@@ -4,7 +4,7 @@ use crate::{
         market::{market_marker::MarketMarker, Writables},
         occupancy::Vacant,
         token::token_marker::TokenMarker,
-        update::{update_marker::UpdateMarker, Decrease, Increase},
+        update::{update_make::UpdateMake, Decrease},
     },
     goblin_error::GoblinError,
     instructions::{open::validate_region::validate_region, MakeReadables},
@@ -33,5 +33,5 @@ where
         *last_position = position;
     }
 
-    Decrease::process_update::<M, B, Q, In, Vacant>(make_readables, writables, inner_bitmap_state)
+    Decrease::process_make::<M, B, Q, In, Vacant>(make_readables, writables, inner_bitmap_state)
 }

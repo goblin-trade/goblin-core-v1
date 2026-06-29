@@ -14,7 +14,7 @@ use crate::{
         update::Increase,
     },
     goblin_error::GoblinError,
-    quantities::{TryIntoUnsidedDelta, UnsidedDeltaAtoms, UnsidedDeltaAtomsPerLot},
+    quantities::{TryIntoUnsidedDelta, UnsidedAtoms, UnsidedDeltaAtoms, UnsidedDeltaAtomsPerLot},
     settlement::{global_delta::TokenDelta, local_delta::LocalDelta, CheckedOps, ConstZero},
     state::{Preimage, StorePreimage},
     types::{Address, StoreReader, Triple},
@@ -88,6 +88,8 @@ impl GlobalSender {
             store.atoms_locked = UnsidedAtoms::try_from(atoms_locked_delta)?;
 
             store_hash.store(&store);
+
+            if delta.deposit > UnsidedDeltaAtoms::ZEROED {}
         }
         Ok(())
     }
