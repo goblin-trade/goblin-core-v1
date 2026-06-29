@@ -1,13 +1,14 @@
 pub mod alias;
+pub mod delta;
 pub mod dim;
 pub mod exp;
-mod impl_neg;
-mod impl_try_from;
+
 pub mod quantity;
 pub mod quantity_ops;
 pub mod unsided;
 
 pub use alias::*;
+pub use delta::*;
 pub use dim::*;
 pub use exp::*;
 pub use quantity::*;

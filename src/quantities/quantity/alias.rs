@@ -28,11 +28,3 @@ pub type QuoteLotsPerBaseUnitPerTick =
 pub type QuoteLotsPerBaseLotPerTick =
     Quantity<Dim<BaseDim<N1, Z0, Z0>, QuoteDim<P1, Z0, Z0>, N1>, u64>;
 pub type AdjustedQuoteLots = Quantity<Dim<BaseDim<P1, N1, Z0>, QuoteDim<P1, Z0, Z0>, Z0>, u64>;
-
-/////////////////////////////
-
-pub type BaseDeltaAtoms = Quantity<Dim<BaseDim<Z0, Z0, P1>, QuoteDim<Z0, Z0, Z0>, Z0>, i64>;
-pub type QuoteDeltaAtoms = Quantity<Dim<BaseDim<Z0, Z0, Z0>, QuoteDim<Z0, Z0, P1>, Z0>, i64>;
-
-pub type BaseDeltaLots = Quantity<Dim<BaseDim<P1, Z0, Z0>, QuoteDim<Z0, Z0, Z0>, Z0>, i64>;
-pub type QuoteDeltaLots = Quantity<Dim<BaseDim<Z0, Z0, Z0>, QuoteDim<P1, Z0, Z0>, Z0>, i64>;

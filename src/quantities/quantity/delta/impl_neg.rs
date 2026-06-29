@@ -1,8 +1,7 @@
+use crate::quantities::{Exp, Quantity};
 use core::ops::Neg;
 
-use crate::quantities::{Exp, Quantity};
-
-impl<E> Neg for &Quantity<E, i64>
+impl<E> Neg for Quantity<E, i64>
 where
     E: Exp,
 {

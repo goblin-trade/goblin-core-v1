@@ -11,11 +11,19 @@ use crate::{
             },
             CustomERC20, HardcodedERC20, Token, ETH,
         },
-        update::Increase,
+        update::{Decrease, Increase, UpdateERC20},
     },
     goblin_error::GoblinError,
-    quantities::{TryIntoUnsidedDelta, UnsidedAtoms, UnsidedDeltaAtoms, UnsidedDeltaAtomsPerLot},
-    settlement::{global_delta::TokenDelta, local_delta::LocalDelta, CheckedOps, ConstZero},
+    hostio::erc20_hostio,
+    quantities::{
+        IntoAbs, RawAtoms, TryIntoUnsidedDelta, UnsidedAtoms, UnsidedDeltaAtoms,
+        UnsidedDeltaAtomsPerLot,
+    },
+    settlement::{
+        global_delta::{transfer_deposit, TokenDelta},
+        local_delta::LocalDelta,
+        CheckedOps, ConstZero,
+    },
     state::{Preimage, StorePreimage},
     types::{Address, StoreReader, Triple},
 };
@@ -61,7 +69,7 @@ impl GlobalSender {
 
     fn settle(
         &self,
-        trader: Address,
+        trader: &Address,
         custom_erc20_list: CustomERC20List,
     ) -> Result<(), GoblinError> {
         let custom_deltas = CustomERC20::get(self);
@@ -70,7 +78,7 @@ impl GlobalSender {
             let delta = custom_deltas[token_index.0];
 
             let store_hash = StorePreimage::<CustomERC20> {
-                trader,
+                trader: *trader,
                 token: token_address,
             }
             .hash();
@@ -89,7 +97,18 @@ impl GlobalSender {
 
             store_hash.store(&store);
 
-            if delta.deposit > UnsidedDeltaAtoms::ZEROED {}
+            if delta.deposit == UnsidedDeltaAtoms::ZEROED {
+                continue;
+            }
+
+            let deposit_abs = delta.deposit.abs();
+            let decimals = erc20_hostio::decimals(&token_address)?;
+
+            if delta.deposit > UnsidedDeltaAtoms::ZEROED {
+                transfer_deposit::<Increase>(deposit_abs, decimals, &token_address, trader)?;
+            } else {
+                transfer_deposit::<Decrease>(deposit_abs, decimals, &token_address, trader)?;
+            }
         }
         Ok(())
     }
