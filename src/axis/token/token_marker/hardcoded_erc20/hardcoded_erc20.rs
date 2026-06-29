@@ -8,7 +8,7 @@ use crate::{
         HardcodedERC20,
     },
     goblin_error::GoblinError,
-    quantities::{DeltaAtoms, DeltaLots, UnsidedDeltaAtomsPerLot},
+    quantities::{UnsidedDeltaAtoms, UnsidedDeltaAtomsPerLot, UnsidedDeltaLots},
     settlement::global_delta::{GlobalSender, TokenDelta},
     types::{Address, StoreReader},
 };
@@ -21,8 +21,8 @@ impl TokenMarker for HardcodedERC20 {
     type StoredDecimals = u8;
     type StoredPadding = [u8; 16 - size_of::<Self::StoredDecimals>()];
 
-    type LocalDeposit = DeltaLots;
-    type GlobalDeposit = DeltaAtoms;
+    type LocalDeposit = UnsidedDeltaLots;
+    type GlobalDeposit = UnsidedDeltaAtoms;
 
     fn token_index_to_address(
         token_index: Self::TokenIndex,

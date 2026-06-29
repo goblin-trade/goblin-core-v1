@@ -1,13 +1,13 @@
 use crate::{
     axis::token::token_marker::TokenMarker,
-    quantities::DeltaAtoms,
+    quantities::UnsidedDeltaAtoms,
     settlement::{global_delta::TokenDelta, ConstZero},
 };
 
 impl<T: TokenMarker> ConstZero for TokenDelta<T> {
     const ZEROED: Self = Self {
         deposit: <T as TokenMarker>::GlobalDeposit::ZEROED,
-        take: DeltaAtoms::ZEROED,
-        make: DeltaAtoms::ZEROED,
+        take: UnsidedDeltaAtoms::ZEROED,
+        make: UnsidedDeltaAtoms::ZEROED,
     };
 }

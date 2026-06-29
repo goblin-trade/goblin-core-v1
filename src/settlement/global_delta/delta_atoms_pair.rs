@@ -1,11 +1,11 @@
 use crate::{
     axis::leg::{Pair, SamePair},
-    quantities::DeltaAtoms,
+    quantities::UnsidedDeltaAtoms,
     settlement::ConstZero,
 };
 
-pub type DeltaAtomsPair = SamePair<DeltaAtoms>;
+pub type DeltaAtomsPair = SamePair<UnsidedDeltaAtoms>;
 
 impl ConstZero for DeltaAtomsPair {
-    const ZEROED: Self = Pair::new(DeltaAtoms::ZEROED, DeltaAtoms::ZEROED);
+    const ZEROED: Self = Pair::new(UnsidedDeltaAtoms::ZEROED, UnsidedDeltaAtoms::ZEROED);
 }

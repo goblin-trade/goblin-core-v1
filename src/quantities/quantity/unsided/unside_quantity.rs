@@ -7,7 +7,7 @@ use crate::{
 /// We cannot use From for base and quote forms because compiler cannot prove
 /// there is no overlap.
 ///
-/// TODO remove, replace with TryIntoDelta
+/// TODO remove, replace with TryIntoUnsidedDelta
 /// Unside and add delta in one step
 pub trait UnsideQuantity<S, L, U, A, I>
 where

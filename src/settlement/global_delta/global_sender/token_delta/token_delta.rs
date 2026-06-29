@@ -4,7 +4,7 @@ use crate::{
         token::token_marker::TokenMarker,
     },
     goblin_error::GoblinError,
-    quantities::{DeltaAtoms, UnsidedDeltaAtomsPerLot},
+    quantities::{UnsidedDeltaAtoms, UnsidedDeltaAtomsPerLot},
     settlement::local_delta::LocalDelta,
     state::Store,
 };
@@ -12,8 +12,8 @@ use crate::{
 #[derive(Clone, Copy)]
 pub struct TokenDelta<T: TokenMarker> {
     pub deposit: T::GlobalDeposit,
-    pub take: DeltaAtoms,
-    pub make: DeltaAtoms,
+    pub take: UnsidedDeltaAtoms,
+    pub make: UnsidedDeltaAtoms,
 }
 
 impl<T: TokenMarker> TokenDelta<T> {

@@ -4,7 +4,7 @@ use crate::{
         update::{update_marker::UpdateMarker, Decrease, Increase},
     },
     goblin_error::GoblinError,
-    quantities::{BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, Ticks, TryIntoUnsidedDelta},
+    quantities::{BaseLotsPerBaseUnit, QuantityToUnsidedDelta, QuoteLotsPerBaseUnitPerTick, Ticks
     settlement::{
         local_delta::{local_take::TakeCounterparties, DeltaLotsPair},
         CheckedOps,

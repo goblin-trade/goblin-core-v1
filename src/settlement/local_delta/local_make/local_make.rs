@@ -2,7 +2,7 @@ use crate::{
     axis::{leg::leg_matcher::LegMatcher, update::update_marker::UpdateMarker},
     goblin_error::GoblinError,
     quantities::{
-        BaseLots, BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, Ticks, TryIntoUnsidedDelta,
+        BaseLots, BaseLotsPerBaseUnit, QuantityToUnsidedDelta, QuoteLotsPerBaseUnitPerTick, Ticks,
     },
     settlement::{local_delta::DeltaLotsPair, CheckedOps},
     types::StoreReader,

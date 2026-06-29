@@ -1,7 +1,7 @@
-use crate::{axis::leg::Pair, quantities::DeltaLots, settlement::ConstZero};
+use crate::{axis::leg::Pair, quantities::UnsidedDeltaLots, settlement::ConstZero};
 
-pub type DeltaLotsPair = Pair<DeltaLots, DeltaLots>;
+pub type DeltaLotsPair = Pair<UnsidedDeltaLots, UnsidedDeltaLots>;
 
 impl ConstZero for DeltaLotsPair {
-    const ZEROED: Self = Pair::new(DeltaLots::ZEROED, DeltaLots::ZEROED);
+    const ZEROED: Self = Pair::new(UnsidedDeltaLots::ZEROED, UnsidedDeltaLots::ZEROED);
 }
