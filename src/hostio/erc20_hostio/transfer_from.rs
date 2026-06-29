@@ -6,7 +6,7 @@ use super::call_and_check::call_and_check;
 const TRANSFER_FROM_SELECTOR: [u8; 4] = [0x23, 0xb8, 0x72, 0xdd];
 
 pub fn transfer_from<const D: u8>(
-    contract: &Address,
+    token_address: &Address,
     sender: &Address,
     recipient: &Address,
     amount: &RawAtoms<D>,
@@ -25,5 +25,5 @@ pub fn transfer_from<const D: u8>(
     let amount_as_be_bytes: &[u8; 32] = unsafe { &*(amount.0.as_ptr() as *const [u8; 32]) };
     calldata[68..100].copy_from_slice(amount_as_be_bytes);
 
-    call_and_check(contract, &calldata)
+    call_and_check(token_address, &calldata)
 }

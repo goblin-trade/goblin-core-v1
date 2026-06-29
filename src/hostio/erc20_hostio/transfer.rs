@@ -5,7 +5,7 @@ use crate::{goblin_error::GoblinError, quantities::RawAtoms, types::Address};
 const TRANSFER_SELECTOR: [u8; 4] = [0xa9, 0x05, 0x9c, 0xbb];
 
 pub fn transfer<const D: u8>(
-    contract: &Address,
+    token_address: &Address,
     recipient: &Address,
     amount: &RawAtoms<D>,
 ) -> Result<(), GoblinError> {
@@ -21,5 +21,5 @@ pub fn transfer<const D: u8>(
     let amount_as_be_bytes: &[u8; 32] = unsafe { &*(amount.0.as_ptr() as *const [u8; 32]) };
     calldata[36..68].copy_from_slice(amount_as_be_bytes);
 
-    call_and_check(contract, &calldata)
+    call_and_check(token_address, &calldata)
 }
