@@ -39,6 +39,7 @@ pub enum GoblinError {
     UnauthorizedMsgSender = 35,
     InvalidOpenPrice = 36,
     PositionOccupied = 37,
+    NoUpdate = 38,
 }
 
 impl GoblinError {

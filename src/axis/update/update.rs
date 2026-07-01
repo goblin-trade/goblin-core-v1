@@ -1,4 +1,9 @@
-use crate::types::{Marker, Tuple};
+use crate::{
+    goblin_error::GoblinError,
+    quantities::{Exp, Quantity},
+    settlement::ConstZero,
+    types::{Marker, Tuple},
+};
 
 /// Update axis
 #[derive(Default, Clone, Copy, PartialEq)]
@@ -16,12 +21,14 @@ pub enum UpdateEnum {
     Decrease,
 }
 
-impl From<bool> for UpdateEnum {
-    fn from(value: bool) -> Self {
-        if value {
-            UpdateEnum::Increase
+impl UpdateEnum {
+    pub fn from_delta<E: Exp>(value: Quantity<E, i64>) -> Option<Self> {
+        if value > Quantity::ZEROED {
+            Some(Self::Increase)
+        } else if value < Quantity::ZEROED {
+            Some(Self::Decrease)
         } else {
-            UpdateEnum::Decrease
+            None
         }
     }
 }

@@ -3,24 +3,20 @@ use crate::{
         leg::{leg_matcher::LegMatcher, SamePair},
         token::{
             token_marker::{
-                custom_erc20::{
-                    custom_erc20_data::CustomERC20Data, custom_erc20_list::CustomERC20List,
-                },
-                hardcoded_erc20::HARDCODED_TOKENS,
-                TokenMarker,
+                custom_erc20::custom_erc20_list::CustomERC20List,
+                hardcoded_erc20::HARDCODED_TOKENS, TokenMarker,
             },
             CustomERC20, HardcodedERC20, Token, ETH,
         },
-        update::{Decrease, Increase, UpdateERC20},
+        update::{Decrease, Increase, UpdateEnum},
     },
     goblin_error::GoblinError,
     hostio::erc20_hostio,
     quantities::{
-        DecimalAction, IntoAbs, RawAtoms, TryIntoUnsidedDelta, UnsidedAtoms, UnsidedDeltaAtoms,
-        UnsidedDeltaAtomsPerLot,
+        DecimalAction, IntoAbs, UnsidedAtoms, UnsidedDeltaAtoms, UnsidedDeltaAtomsPerLot,
     },
     settlement::{
-        global_delta::{transfer_deposit, TokenDelta, TransferDeposit},
+        global_delta::{TokenDelta, TransferDeposit},
         local_delta::LocalDelta,
         CheckedOps, ConstZero,
     },
@@ -67,7 +63,7 @@ impl GlobalSender {
         Ok(())
     }
 
-    fn settle(
+    pub fn settle(
         &self,
         trader: &Address,
         custom_erc20_list: CustomERC20List,
@@ -97,19 +93,22 @@ impl GlobalSender {
 
             store_hash.store(&store);
 
-            if delta.deposit == UnsidedDeltaAtoms::ZEROED {
+            let Some(update_enum) = UpdateEnum::from_delta(delta.deposit) else {
                 continue;
-            }
+            };
 
             let deposit = delta.deposit.abs();
             let decimals = erc20_hostio::decimals(&token_address)?;
 
-            if delta.deposit > UnsidedDeltaAtoms::ZEROED {
-                TransferDeposit::<Increase>::new(deposit, &token_address, &trader)
-                    .dispatch(decimals)?;
-            } else {
-                TransferDeposit::<Decrease>::new(deposit, &token_address, &trader)
-                    .dispatch(decimals)?;
+            match update_enum {
+                UpdateEnum::Increase => {
+                    TransferDeposit::<Increase>::new(deposit, &token_address, &trader)
+                        .dispatch(decimals)?
+                }
+                UpdateEnum::Decrease => {
+                    TransferDeposit::<Decrease>::new(deposit, &token_address, &trader)
+                        .dispatch(decimals)?
+                }
             }
         }
         Ok(())
