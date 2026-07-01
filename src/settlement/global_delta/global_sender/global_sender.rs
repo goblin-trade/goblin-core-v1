@@ -16,11 +16,11 @@ use crate::{
     goblin_error::GoblinError,
     hostio::erc20_hostio,
     quantities::{
-        IntoAbs, RawAtoms, TryIntoUnsidedDelta, UnsidedAtoms, UnsidedDeltaAtoms,
+        DecimalAction, IntoAbs, RawAtoms, TryIntoUnsidedDelta, UnsidedAtoms, UnsidedDeltaAtoms,
         UnsidedDeltaAtomsPerLot,
     },
     settlement::{
-        global_delta::{transfer_deposit, TokenDelta},
+        global_delta::{transfer_deposit, TokenDelta, TransferDeposit},
         local_delta::LocalDelta,
         CheckedOps, ConstZero,
     },
@@ -101,13 +101,15 @@ impl GlobalSender {
                 continue;
             }
 
-            let deposit_abs = delta.deposit.abs();
+            let deposit = delta.deposit.abs();
             let decimals = erc20_hostio::decimals(&token_address)?;
 
             if delta.deposit > UnsidedDeltaAtoms::ZEROED {
-                transfer_deposit::<Increase>(deposit_abs, decimals, &token_address, trader)?;
+                TransferDeposit::<Increase>::new(deposit, &token_address, &trader)
+                    .dispatch(decimals)?;
             } else {
-                transfer_deposit::<Decrease>(deposit_abs, decimals, &token_address, trader)?;
+                TransferDeposit::<Decrease>::new(deposit, &token_address, &trader)
+                    .dispatch(decimals)?;
             }
         }
         Ok(())
