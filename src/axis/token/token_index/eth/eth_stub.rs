@@ -1,6 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
+    quantities::UnsidedDeltaAtoms,
     settlement::{CheckedOps, ConstZero},
 };
 
@@ -27,5 +28,11 @@ impl CheckedOps for ETHStub {
 
     fn checked_sub(self, _rhs: Self) -> Option<Self> {
         Some(ETHStub)
+    }
+}
+
+impl Into<UnsidedDeltaAtoms> for ETHStub {
+    fn into(self) -> UnsidedDeltaAtoms {
+        UnsidedDeltaAtoms::ZEROED
     }
 }

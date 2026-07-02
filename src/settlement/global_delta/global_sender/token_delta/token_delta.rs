@@ -15,6 +15,10 @@ pub struct TokenDelta<T: TokenDeltas> {
 }
 
 impl<T: TokenDeltas> TokenDelta<T> {
+    pub fn total(&self) -> UnsidedDeltaAtoms {
+        self.deposit.into() + self.take + self.make
+    }
+
     pub fn from_local_delta<In: LegReader>(
         atoms_per_lot_pair: &SamePair<UnsidedDeltaAtomsPerLot>,
         local_delta: &LocalDelta,

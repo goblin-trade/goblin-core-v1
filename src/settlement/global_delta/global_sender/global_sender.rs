@@ -3,7 +3,8 @@ use crate::{
         leg::{leg_matcher::LegMatcher, SamePair},
         token::{
             token_index::{
-                CustomERC20List, HardcodedERC20Data, HARDCODED_TOKENS, MAX_HARDCODED_DELTAS,
+                CustomERC20List, ETHStub, HardcodedERC20Data, HARDCODED_TOKENS,
+                MAX_HARDCODED_DELTAS,
             },
             token_marker::TokenMarker,
             CustomERC20, HardcodedERC20, Token, ETH,
@@ -67,8 +68,27 @@ impl GlobalSender {
         trader: &Address,
         custom_erc20_list: CustomERC20List,
     ) -> Result<(), GoblinError> {
-        // TODO repeat for ETH and hardcoded
+        // 1. ETH
+        let delta = ETH::get_leg(self);
 
+        let store_hash = StorePreimage::<ETH> {
+            trader: *trader,
+            token: ETHStub,
+        }
+        .hash();
+
+        let mut store = store_hash.load();
+        let atoms_free_delta = UnsidedDeltaAtoms::try_from(store.atoms_free)? + delta.total();
+
+        let atoms_locked_delta = UnsidedDeltaAtoms::try_from(store.atoms_locked)? - delta.make;
+
+        // Return error if free atoms > 0 or if we overflow
+        store.atoms_free = UnsidedAtoms::try_from(atoms_free_delta)?;
+        store.atoms_locked = UnsidedAtoms::try_from(atoms_locked_delta)?;
+
+        store_hash.store(&store);
+
+        // 2. Hardcoded
         let hardcoded_deltas = HardcodedERC20::get_leg(self);
         for (
             token_index,
@@ -87,10 +107,7 @@ impl GlobalSender {
             .hash();
 
             let mut store = store_hash.load();
-            let atoms_free_delta = UnsidedDeltaAtoms::try_from(store.atoms_free)?
-                + delta.deposit
-                + delta.make
-                + delta.take;
+            let atoms_free_delta = UnsidedDeltaAtoms::try_from(store.atoms_free)? + delta.total();
 
             let atoms_locked_delta = UnsidedDeltaAtoms::try_from(store.atoms_locked)? - delta.make;
 
@@ -118,6 +135,7 @@ impl GlobalSender {
             }
         }
 
+        // 3. Custom
         let custom_deltas = CustomERC20::get_leg(self);
         for (token_index, token_address) in custom_erc20_list.typed_iter() {
             let delta = custom_deltas[token_index.0];
@@ -129,10 +147,7 @@ impl GlobalSender {
             .hash();
 
             let mut store = store_hash.load();
-            let atoms_free_delta = UnsidedDeltaAtoms::try_from(store.atoms_free)?
-                + delta.deposit
-                + delta.make
-                + delta.take;
+            let atoms_free_delta = UnsidedDeltaAtoms::try_from(store.atoms_free)? + delta.total();
 
             let atoms_locked_delta = UnsidedDeltaAtoms::try_from(store.atoms_locked)? - delta.make;
 

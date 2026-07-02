@@ -1,7 +1,7 @@
 use crate::{
     axis::token::token_index::TokenIndex,
     input_processor::Decodable,
-    quantities::UnsidedDeltaAtomsPerLot,
+    quantities::{UnsidedDeltaAtoms, UnsidedDeltaAtomsPerLot},
     settlement::{
         global_delta::{CounterpartyMap, CounterpartyTriple, GlobalSender, TokenDelta},
         local_delta::DepositTriple,
@@ -24,7 +24,13 @@ pub trait TokenDeltas:
     type LocalDeposit: Clone + Copy + Default + Decodable + ConstZero + CheckedOps;
 
     /// Pending deposit amount in global namespace
-    type GlobalDeposit: Clone + Copy + Default + Decodable + ConstZero + CheckedOps;
+    type GlobalDeposit: Clone
+        + Copy
+        + Default
+        + Decodable
+        + ConstZero
+        + CheckedOps
+        + Into<UnsidedDeltaAtoms>;
 
     fn get_global_deposit(
         local_deposit: Self::LocalDeposit,
