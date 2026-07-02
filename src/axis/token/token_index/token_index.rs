@@ -1,6 +1,6 @@
 use crate::{
-    axis::token::token_marker::custom_erc20::custom_erc20_list::CustomERC20List,
-    goblin_error::GoblinError, input_processor::Decodable, settlement::ConstZero,
+    axis::token::token_index::CustomERC20List, goblin_error::GoblinError,
+    input_processor::Decodable, settlement::ConstZero,
 };
 
 pub trait TokenIndex: Clone + Copy + Decodable + ConstZero + PartialEq {

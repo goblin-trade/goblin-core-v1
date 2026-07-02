@@ -1,8 +1,5 @@
 use crate::{
-    axis::token::{
-        token_deltas::TokenDeltas, token_marker::hardcoded_erc20::HardcodedERC20Index,
-        HardcodedERC20,
-    },
+    axis::token::{token_deltas::TokenDeltas, token_index::HardcodedERC20Index, HardcodedERC20},
     quantities::{UnsidedDeltaAtoms, UnsidedDeltaAtomsPerLot, UnsidedDeltaLots},
     settlement::global_delta::{GlobalSender, TokenDelta},
     types::StoreReader,

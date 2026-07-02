@@ -1,4 +1,4 @@
-use crate::axis::token::{token_marker::eth::ETHStub, token_slot_store::TokenSlotStore, ETH};
+use crate::axis::token::{token_index::ETHStub, token_slot_store::TokenSlotStore, ETH};
 
 impl TokenSlotStore for ETH {
     type StoredDecimals = ETHStub;

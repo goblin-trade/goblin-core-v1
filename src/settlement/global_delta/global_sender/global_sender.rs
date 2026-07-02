@@ -2,14 +2,10 @@ use crate::{
     axis::{
         leg::{leg_matcher::LegMatcher, SamePair},
         token::{
-            token_marker::{
-                custom_erc20::custom_erc20_list::CustomERC20List,
-                hardcoded_erc20::{
-                    hardcoded_erc20_data::HardcodedERC20Data, HARDCODED_TOKENS,
-                    MAX_HARDCODED_DELTAS,
-                },
-                TokenMarker,
+            token_index::{
+                CustomERC20List, HardcodedERC20Data, HARDCODED_TOKENS, MAX_HARDCODED_DELTAS,
             },
+            token_marker::TokenMarker,
             CustomERC20, HardcodedERC20, Token, ETH,
         },
         update::{Decrease, Increase, UpdateEnum},

@@ -1,6 +1,6 @@
 use crate::axis::{
     market::{market_marker::MarketMarker, Dynamic, MarketReadables},
-    token::token_marker::{custom_erc20::custom_erc20_list::CustomERC20List, TokenMarker},
+    token::{token_index::CustomERC20List, token_marker::TokenMarker},
 };
 
 impl MarketMarker for Dynamic {

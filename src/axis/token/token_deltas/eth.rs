@@ -1,5 +1,5 @@
 use crate::{
-    axis::token::{token_deltas::TokenDeltas, token_marker::eth::ETHStub, ETH},
+    axis::token::{token_deltas::TokenDeltas, token_index::ETHStub, ETH},
     quantities::UnsidedDeltaAtomsPerLot,
     settlement::global_delta::{GlobalSender, TokenDelta},
     types::StoreReader,

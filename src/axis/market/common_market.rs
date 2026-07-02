@@ -6,8 +6,8 @@ use crate::{
         market::{market_marker::MarketMarker, LotSizePair},
         token::{
             token_deltas::TokenDeltas,
-            token_index::TokenIndex,
-            token_marker::{custom_erc20::custom_erc20_list::CustomERC20List, TokenMarker},
+            token_index::{CustomERC20List, TokenIndex},
+            token_marker::TokenMarker,
         },
     },
     goblin_error::GoblinError,

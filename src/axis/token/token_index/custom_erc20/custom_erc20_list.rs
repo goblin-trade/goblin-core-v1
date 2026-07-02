@@ -1,7 +1,5 @@
 use crate::{
-    axis::token::token_marker::custom_erc20::{
-        custom_erc20_data::CustomERC20Data, custom_erc20_index::CustomERC20Index,
-    },
+    axis::token::token_index::{CustomERC20Data, CustomERC20Index},
     goblin_error::GoblinError,
     types::Address,
 };
