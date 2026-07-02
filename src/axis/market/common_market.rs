@@ -5,6 +5,7 @@ use crate::{
         leg::{Base, Pair, Quote},
         market::{market_marker::MarketMarker, LotSizePair},
         token::{
+            token_deltas::TokenDeltas,
             token_index::TokenIndex,
             token_marker::{custom_erc20::custom_erc20_list::CustomERC20List, TokenMarker},
         },
@@ -16,7 +17,7 @@ use crate::{
 };
 
 pub type TokenIndexPair<B, Q> =
-    Pair<<B as TokenMarker>::TokenIndex, <Q as TokenMarker>::TokenIndex>;
+    Pair<<B as TokenDeltas>::TokenIndex, <Q as TokenDeltas>::TokenIndex>;
 
 pub struct CommonMarket<M: MarketMarker, B: TokenMarker, Q: TokenMarker> {
     /// The token pair

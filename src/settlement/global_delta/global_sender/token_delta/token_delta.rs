@@ -1,22 +1,20 @@
 use crate::{
     axis::{
         leg::{leg_reader::LegReader, SamePair},
-        token::token_marker::TokenMarker,
+        token::token_deltas::TokenDeltas,
     },
-    goblin_error::GoblinError,
     quantities::{UnsidedDeltaAtoms, UnsidedDeltaAtomsPerLot},
     settlement::local_delta::LocalDelta,
-    state::Store,
 };
 
 #[derive(Clone, Copy)]
-pub struct TokenDelta<T: TokenMarker> {
+pub struct TokenDelta<T: TokenDeltas> {
     pub deposit: T::GlobalDeposit,
     pub take: UnsidedDeltaAtoms,
     pub make: UnsidedDeltaAtoms,
 }
 
-impl<T: TokenMarker> TokenDelta<T> {
+impl<T: TokenDeltas> TokenDelta<T> {
     pub fn from_local_delta<In: LegReader>(
         atoms_per_lot_pair: &SamePair<UnsidedDeltaAtomsPerLot>,
         local_delta: &LocalDelta,

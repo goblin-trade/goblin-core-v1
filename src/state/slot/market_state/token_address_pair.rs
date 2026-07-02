@@ -1,9 +1,9 @@
 use crate::axis::{
     leg::Pair,
-    token::{token_index::TokenIndex, token_marker::TokenMarker},
+    token::{token_deltas::TokenDeltas, token_index::TokenIndex},
 };
 
 pub type TokenAddressPair<B, Q> = Pair<
-    <<B as TokenMarker>::TokenIndex as TokenIndex>::TokenAddress,
-    <<Q as TokenMarker>::TokenIndex as TokenIndex>::TokenAddress,
+    <<B as TokenDeltas>::TokenIndex as TokenIndex>::TokenAddress,
+    <<Q as TokenDeltas>::TokenIndex as TokenIndex>::TokenAddress,
 >;

@@ -1,36 +1,8 @@
-use crate::{
-    axis::token::{
-        token_marker::{hardcoded_erc20::hardcoded_erc20_index::HardcodedERC20Index, TokenMarker},
-        HardcodedERC20,
-    },
-    quantities::{UnsidedDeltaAtoms, UnsidedDeltaAtomsPerLot, UnsidedDeltaLots},
-    settlement::global_delta::{GlobalSender, TokenDelta},
-    types::StoreReader,
-};
+use crate::axis::token::{token_marker::TokenMarker, HardcodedERC20};
 
 impl TokenMarker for HardcodedERC20 {
     const DISCRIMINATOR: u8 = 1;
 
-    type TokenIndex = HardcodedERC20Index;
     type StoredDecimals = u8;
     type StoredPadding = [u8; 16 - size_of::<Self::StoredDecimals>()];
-
-    type LocalDeposit = UnsidedDeltaLots;
-    type GlobalDeposit = UnsidedDeltaAtoms;
-
-    fn get_global_deposit(
-        local_deposit: Self::LocalDeposit,
-        atoms_per_lot: UnsidedDeltaAtomsPerLot,
-    ) -> Self::GlobalDeposit {
-        local_deposit * atoms_per_lot
-    }
-
-    fn get_global_token_delta(
-        token_index: Self::TokenIndex,
-        global_sender: &mut GlobalSender,
-    ) -> &mut TokenDelta<Self> {
-        let list = Self::get_leg_mut(global_sender);
-        let token_delta = &mut list[token_index.0];
-        token_delta
-    }
 }
