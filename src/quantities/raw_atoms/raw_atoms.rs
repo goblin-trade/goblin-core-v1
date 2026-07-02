@@ -8,6 +8,9 @@
 #[derive(Default)]
 pub struct RawAtoms<const D: u8>(pub [u8; 32]);
 
+pub const NATIVE_TOKEN_DECIMALS: u8 = 18;
+pub type ETHAtoms = RawAtoms<NATIVE_TOKEN_DECIMALS>;
+
 impl<const D: u8> RawAtoms<D> {
     pub const ZERO: Self = RawAtoms([0; 32]);
 

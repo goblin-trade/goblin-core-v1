@@ -2,7 +2,7 @@ use crate::{
     goblin_error::GoblinError,
     hostio,
     input_processor::{DecodablePrimitive, DecodeCtx, HeaderFlags},
-    quantities::UnsidedAtoms,
+    quantities::{UnsidedAtoms, UnsidedDeltaAtoms},
     settlement::ConstZero,
 };
 
@@ -12,7 +12,7 @@ use crate::{
 /// The unit of measurement is `UnsidedAtoms` obtained by downscaling RawAtoms
 ///
 #[derive(Clone, Copy)]
-pub struct EthTransfers {
+pub struct ETHTransfers {
     /// ETH atoms deposited via msg_value
     pub msg_value: UnsidedAtoms,
 
@@ -25,7 +25,7 @@ pub struct EthTransfers {
     pub eth_out_due: UnsidedAtoms,
 }
 
-impl EthTransfers {
+impl ETHTransfers {
     pub fn new(ctx: &DecodeCtx, flags: &HeaderFlags) -> Result<Self, GoblinError> {
         let msg_value = if flags.track_msg_value {
             let msg_value_raw = hostio::msg_value();
@@ -44,5 +44,10 @@ impl EthTransfers {
             msg_value,
             eth_out_due,
         })
+    }
+
+    pub fn net_delta(&self) -> Result<UnsidedDeltaAtoms, GoblinError> {
+        Ok(UnsidedDeltaAtoms::try_from(self.msg_value)?
+            - UnsidedDeltaAtoms::try_from(self.eth_out_due)?)
     }
 }

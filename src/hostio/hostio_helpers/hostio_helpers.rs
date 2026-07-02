@@ -1,8 +1,7 @@
 ///! Safe helpers for hostio interaction
 use crate::{
     hostio::{hostio_helpers::buffered_call, hostio_unsafe},
-    quantities::RawAtoms,
-    types::NATIVE_TOKEN_DECIMALS,
+    quantities::ETHAtoms,
 };
 
 // Find keccak hash for a slice of bytes
@@ -18,7 +17,7 @@ pub fn native_keccak256(bytes: &[u8]) -> [u8; 32] {
     unsafe { buffered_call(|f| hostio_unsafe::native_keccak256(bytes.as_ptr(), bytes.len(), f)) }
 }
 
-pub fn msg_value() -> RawAtoms<NATIVE_TOKEN_DECIMALS> {
+pub fn msg_value() -> ETHAtoms {
     unsafe { buffered_call(|f| hostio_unsafe::msg_value(f)) }
 }
 

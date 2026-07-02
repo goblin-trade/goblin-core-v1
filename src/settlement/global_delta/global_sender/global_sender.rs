@@ -9,12 +9,13 @@ use crate::{
             token_marker::TokenMarker,
             CustomERC20, HardcodedERC20, Token, ETH,
         },
-        update::{Decrease, Increase, UpdateEnum},
+        update::{Decrease, Increase, UpdateETH, UpdateEnum},
     },
     goblin_error::GoblinError,
     hostio::erc20_hostio,
+    input_processor::ETHTransfers,
     quantities::{
-        DecimalAction, IntoAbs, UnsidedAtoms, UnsidedDeltaAtoms, UnsidedDeltaAtomsPerLot,
+        DecimalAction, ETHAtoms, IntoAbs, UnsidedAtoms, UnsidedDeltaAtoms, UnsidedDeltaAtomsPerLot,
     },
     settlement::{
         global_delta::{TokenDelta, TransferDeposit},
@@ -67,6 +68,7 @@ impl GlobalSender {
         &self,
         trader: &Address,
         custom_erc20_list: CustomERC20List,
+        eth_transfers: ETHTransfers,
     ) -> Result<(), GoblinError> {
         // 1. ETH
         let delta = ETH::get_leg(self);
@@ -78,7 +80,9 @@ impl GlobalSender {
         .hash();
 
         let mut store = store_hash.load();
-        let atoms_free_delta = UnsidedDeltaAtoms::try_from(store.atoms_free)? + delta.total();
+        let atoms_free_delta = UnsidedDeltaAtoms::try_from(store.atoms_free)?
+            + eth_transfers.net_delta()?
+            + delta.total();
 
         let atoms_locked_delta = UnsidedDeltaAtoms::try_from(store.atoms_locked)? - delta.make;
 
@@ -87,6 +91,11 @@ impl GlobalSender {
         store.atoms_locked = UnsidedAtoms::try_from(atoms_locked_delta)?;
 
         store_hash.store(&store);
+
+        if eth_transfers.eth_out_due > UnsidedAtoms::ZEROED {
+            let raw_atoms = ETHAtoms::try_from(eth_transfers.eth_out_due)?;
+            Decrease::update_eth(trader, &raw_atoms)?;
+        }
 
         // 2. Hardcoded
         let hardcoded_deltas = HardcodedERC20::get_leg(self);

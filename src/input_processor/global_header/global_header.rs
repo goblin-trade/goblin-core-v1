@@ -4,7 +4,7 @@ use crate::{
         MarketVariantPair,
     },
     goblin_error::GoblinError,
-    input_processor::{Decodable, DecodeCtx, EthTransfers, HeaderFlags},
+    input_processor::{Decodable, DecodeCtx, ETHTransfers, HeaderFlags},
     types::{Address, Tuple},
 };
 
@@ -14,7 +14,7 @@ pub struct GlobalHeader<'a> {
     pub flags: HeaderFlags,
 
     /// Amount of ETH transferred in and due to be transferred out
-    pub eth_transfers: EthTransfers,
+    pub eth_transfers: ETHTransfers,
 
     /// Optional custom recipient
     pub recipient: Option<&'a Address>,
@@ -26,7 +26,7 @@ pub struct GlobalHeader<'a> {
 impl<'a> GlobalHeader<'a> {
     pub fn new(ctx: &'a DecodeCtx) -> Result<Self, GoblinError> {
         let flags = HeaderFlags::try_decode(ctx)?;
-        let eth_transfers = EthTransfers::new(ctx, &flags)?;
+        let eth_transfers = ETHTransfers::new(ctx, &flags)?;
 
         let recipient = if flags.recipient_provided {
             Some(ctx.zero_copy_unchecked::<Address>())
