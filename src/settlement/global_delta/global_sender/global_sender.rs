@@ -74,9 +74,52 @@ impl GlobalSender {
         // TODO repeat for ETH and hardcoded
 
         let hardcoded_deltas = HardcodedERC20::get_leg(self);
-
-        for (token_index, HardcodedERC20Data { address, decimals }) in HARDCODED_TOKENS.typed_iter()
+        for (
+            token_index,
+            HardcodedERC20Data {
+                address: token_address,
+                decimals,
+            },
+        ) in HARDCODED_TOKENS.typed_iter()
         {
+            let delta = hardcoded_deltas[token_index.0];
+
+            let store_hash = StorePreimage::<CustomERC20> {
+                trader: *trader,
+                token: token_address,
+            }
+            .hash();
+
+            let mut store = store_hash.load();
+            let atoms_free_delta = UnsidedDeltaAtoms::try_from(store.atoms_free)?
+                + delta.deposit
+                + delta.make
+                + delta.take;
+
+            let atoms_locked_delta = UnsidedDeltaAtoms::try_from(store.atoms_locked)? - delta.make;
+
+            // Return error if free atoms > 0 or if we overflow
+            store.atoms_free = UnsidedAtoms::try_from(atoms_free_delta)?;
+            store.atoms_locked = UnsidedAtoms::try_from(atoms_locked_delta)?;
+
+            store_hash.store(&store);
+
+            let Some(update_enum) = UpdateEnum::from_delta(delta.deposit) else {
+                continue;
+            };
+
+            let deposit = delta.deposit.abs();
+
+            match update_enum {
+                UpdateEnum::Increase => {
+                    TransferDeposit::<Increase>::new(deposit, &token_address, &trader)
+                        .dispatch(decimals)?
+                }
+                UpdateEnum::Decrease => {
+                    TransferDeposit::<Decrease>::new(deposit, &token_address, &trader)
+                        .dispatch(decimals)?
+                }
+            }
         }
 
         let custom_deltas = CustomERC20::get_leg(self);
