@@ -4,13 +4,12 @@ use crate::{
         token_marker::custom_erc20::{
             custom_erc20_index::CustomERC20Index, custom_erc20_list::CustomERC20List,
         },
-        CustomERC20,
     },
     goblin_error::GoblinError,
     types::Address,
 };
 
-impl TokenIndex<CustomERC20> for CustomERC20Index {
+impl TokenIndex for CustomERC20Index {
     type TokenAddress = Address;
 
     fn get_address(

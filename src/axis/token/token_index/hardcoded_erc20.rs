@@ -5,13 +5,12 @@ use crate::{
             custom_erc20::custom_erc20_list::CustomERC20List,
             hardcoded_erc20::{HardcodedERC20Index, HARDCODED_TOKENS},
         },
-        HardcodedERC20,
     },
     goblin_error::GoblinError,
     types::Address,
 };
 
-impl TokenIndex<HardcodedERC20> for HardcodedERC20Index {
+impl TokenIndex for HardcodedERC20Index {
     type TokenAddress = Address;
 
     fn get_address(

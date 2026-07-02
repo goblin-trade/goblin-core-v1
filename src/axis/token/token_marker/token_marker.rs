@@ -25,7 +25,7 @@ pub trait TokenMarker:
     const DISCRIMINATOR: u8;
 
     /// Index to lookup token address
-    type TokenIndex: TokenIndex<Self>;
+    type TokenIndex: TokenIndex;
 
     /// Decimals stored in `Store`
     /// Decimals are stored as u8 for ERC20 tokens but not for ETH

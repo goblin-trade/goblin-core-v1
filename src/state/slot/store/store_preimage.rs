@@ -8,7 +8,7 @@ use crate::{
 #[derive(Clone, Copy)]
 pub struct StorePreimage<T: TokenMarker> {
     pub trader: Address,
-    pub token: <T::TokenIndex as TokenIndex<T>>::TokenAddress,
+    pub token: <T::TokenIndex as TokenIndex>::TokenAddress,
 }
 
 impl<T: TokenMarker> Preimage for StorePreimage<T> {

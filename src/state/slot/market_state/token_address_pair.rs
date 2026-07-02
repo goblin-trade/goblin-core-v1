@@ -4,6 +4,6 @@ use crate::axis::{
 };
 
 pub type TokenAddressPair<B, Q> = Pair<
-    <<B as TokenMarker>::TokenIndex as TokenIndex<B>>::TokenAddress,
-    <<Q as TokenMarker>::TokenIndex as TokenIndex<Q>>::TokenAddress,
+    <<B as TokenMarker>::TokenIndex as TokenIndex>::TokenAddress,
+    <<Q as TokenMarker>::TokenIndex as TokenIndex>::TokenAddress,
 >;
