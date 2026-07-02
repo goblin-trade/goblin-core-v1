@@ -2,8 +2,7 @@ use crate::{
     axis::token::{
         token_marker::{
             custom_erc20::{
-                custom_erc20_data::CustomERC20Data, custom_erc20_index::CustomERC20Index,
-                custom_erc20_list::CustomERC20List,
+                custom_erc20_index::CustomERC20Index, custom_erc20_list::CustomERC20List,
             },
             TokenMarker,
         },
@@ -47,17 +46,5 @@ impl TokenMarker for CustomERC20 {
         let list = Self::get_leg_mut(global_sender);
         let token_delta = &mut list[token_index.0];
         token_delta
-    }
-
-    fn settle_deposit(
-        deposit: Self::GlobalDeposit,
-        token_index: Self::TokenIndex,
-        custom_erc20_list: CustomERC20List,
-        msg_sender: &Address,
-    ) -> Result<(), GoblinError> {
-        let token_address = Self::token_index_to_address(token_index, custom_erc20_list)?;
-
-        Ok(())
-        // deposit.settle(&token_address, msg_sender)
     }
 }

@@ -56,11 +56,4 @@ pub trait TokenMarker:
         token_index: Self::TokenIndex,
         global_sender: &mut GlobalSender,
     ) -> &mut TokenDelta<Self>;
-
-    fn settle_deposit(
-        deposit: Self::GlobalDeposit,
-        token_index: Self::TokenIndex,
-        custom_erc20_list: CustomERC20List,
-        msg_sender: &Address,
-    ) -> Result<(), GoblinError>;
 }

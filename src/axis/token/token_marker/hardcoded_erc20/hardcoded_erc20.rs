@@ -47,16 +47,4 @@ impl TokenMarker for HardcodedERC20 {
         let token_delta = &mut list[token_index.0];
         token_delta
     }
-
-    fn settle_deposit(
-        deposit: Self::GlobalDeposit,
-        token_index: Self::TokenIndex,
-        custom_erc20_list: CustomERC20List,
-        msg_sender: &Address,
-    ) -> Result<(), GoblinError> {
-        let token_address = Self::token_index_to_address(token_index, custom_erc20_list)?;
-
-        Ok(())
-        // deposit.settle(&token_address, msg_sender)
-    }
 }

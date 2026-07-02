@@ -3,7 +3,6 @@ use crate::{
     input_processor::{Decodable, DecodeCtx},
     settlement::{CheckedOps, ConstZero},
 };
-use core::ops::Neg;
 
 /// Stub type for ETH token index, address and deposit
 ///
