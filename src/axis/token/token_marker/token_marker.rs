@@ -1,5 +1,7 @@
 use crate::{
-    axis::token::token_marker::custom_erc20::custom_erc20_list::CustomERC20List,
+    axis::token::{
+        token_index::TokenIndex, token_marker::custom_erc20::custom_erc20_list::CustomERC20List,
+    },
     goblin_error::GoblinError,
     input_processor::Decodable,
     quantities::UnsidedDeltaAtomsPerLot,
@@ -23,7 +25,7 @@ pub trait TokenMarker:
     const DISCRIMINATOR: u8;
 
     /// Index to lookup token address
-    type TokenIndex: Clone + Copy + Decodable + ConstZero + PartialEq;
+    type TokenIndex: TokenIndex<Self>;
 
     /// Token address
     type TokenAddress: Clone + Copy + Sized + Default;

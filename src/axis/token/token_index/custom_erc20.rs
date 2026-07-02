@@ -11,7 +11,12 @@ use crate::{
 };
 
 impl TokenIndex<CustomERC20> for CustomERC20Index {
-    fn get_address(&self, custom_erc20_list: CustomERC20List) -> Result<Address, GoblinError> {
+    type TokenAddress = Address;
+
+    fn get_address(
+        &self,
+        custom_erc20_list: CustomERC20List,
+    ) -> Result<Self::TokenAddress, GoblinError> {
         custom_erc20_list.token_index_to_address(*self)
     }
 }

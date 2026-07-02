@@ -8,7 +8,12 @@ use crate::{
 };
 
 impl TokenIndex<ETH> for ETHStub {
-    fn get_address(&self, _custom_erc20_list: CustomERC20List) -> Result<ETHStub, GoblinError> {
+    type TokenAddress = ETHStub;
+
+    fn get_address(
+        &self,
+        _custom_erc20_list: CustomERC20List,
+    ) -> Result<Self::TokenAddress, GoblinError> {
         Ok(ETHStub)
     }
 }
