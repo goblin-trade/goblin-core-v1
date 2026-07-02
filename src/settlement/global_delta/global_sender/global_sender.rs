@@ -4,7 +4,8 @@ use crate::{
         token::{
             token_marker::{
                 custom_erc20::custom_erc20_list::CustomERC20List,
-                hardcoded_erc20::HARDCODED_TOKENS, TokenMarker,
+                hardcoded_erc20::{hardcoded_erc20_data::HardcodedERC20Data, HARDCODED_TOKENS},
+                TokenMarker,
             },
             CustomERC20, HardcodedERC20, Token, ETH,
         },
@@ -68,9 +69,16 @@ impl GlobalSender {
         trader: &Address,
         custom_erc20_list: CustomERC20List,
     ) -> Result<(), GoblinError> {
-        let custom_deltas = CustomERC20::get(self);
+        // TODO repeat for ETH and hardcoded
 
-        for (token_index, token_address) in custom_erc20_list.iter() {
+        let hardcoded_deltas = HardcodedERC20::get_leg(self);
+
+        for (token_index, HardcodedERC20Data { address, decimals }) in
+            HARDCODED_TOKENS.iter().enumerate()
+        {}
+
+        let custom_deltas = CustomERC20::get_leg(self);
+        for (token_index, token_address) in custom_erc20_list.typed_iter() {
             let delta = custom_deltas[token_index.0];
 
             let store_hash = StorePreimage::<CustomERC20> {

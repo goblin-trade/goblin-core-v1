@@ -16,3 +16,6 @@ pub const HARDCODED_TOKENS: [HardcodedERC20Data; 2] = [
         decimals: 18,
     },
 ];
+
+// TODO wrapper struct
+// .iter() function should return HardcodedIndex

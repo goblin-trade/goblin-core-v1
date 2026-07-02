@@ -27,7 +27,7 @@ impl<'a> CustomERC20List<'a> {
         (0..self.inner.len()).map(CustomERC20Index::from)
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = (CustomERC20Index, Address)> + 'a {
+    pub fn typed_iter(&self) -> impl Iterator<Item = (CustomERC20Index, Address)> + 'a {
         self.inner
             .iter()
             .enumerate()
