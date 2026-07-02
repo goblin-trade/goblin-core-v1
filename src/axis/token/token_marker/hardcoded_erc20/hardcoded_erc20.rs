@@ -28,10 +28,7 @@ impl TokenMarker for HardcodedERC20 {
         token_index: Self::TokenIndex,
         _custom_erc20_list: CustomERC20List,
     ) -> Result<Self::TokenAddress, GoblinError> {
-        let data = HARDCODED_TOKENS
-            .get(token_index.0)
-            .ok_or(GoblinError::InvalidHardcodedTokenIndex)?;
-
+        let data = HARDCODED_TOKENS.get(token_index)?;
         Ok(data.address)
     }
 

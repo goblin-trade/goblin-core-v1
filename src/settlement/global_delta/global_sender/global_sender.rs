@@ -4,7 +4,10 @@ use crate::{
         token::{
             token_marker::{
                 custom_erc20::custom_erc20_list::CustomERC20List,
-                hardcoded_erc20::{hardcoded_erc20_data::HardcodedERC20Data, HARDCODED_TOKENS},
+                hardcoded_erc20::{
+                    hardcoded_erc20_data::HardcodedERC20Data, HARDCODED_TOKENS,
+                    MAX_HARDCODED_DELTAS,
+                },
                 TokenMarker,
             },
             CustomERC20, HardcodedERC20, Token, ETH,
@@ -25,7 +28,6 @@ use crate::{
     types::{Address, StoreReader, Triple},
 };
 
-pub const MAX_HARDCODED_DELTAS: usize = HARDCODED_TOKENS.len();
 pub const MAX_CUSTOM_DELTAS: usize = 8;
 
 pub type GlobalSender = Triple<
@@ -73,9 +75,9 @@ impl GlobalSender {
 
         let hardcoded_deltas = HardcodedERC20::get_leg(self);
 
-        for (token_index, HardcodedERC20Data { address, decimals }) in
-            HARDCODED_TOKENS.iter().enumerate()
-        {}
+        for (token_index, HardcodedERC20Data { address, decimals }) in HARDCODED_TOKENS.typed_iter()
+        {
+        }
 
         let custom_deltas = CustomERC20::get_leg(self);
         for (token_index, token_address) in custom_erc20_list.typed_iter() {
