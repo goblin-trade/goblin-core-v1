@@ -4,11 +4,9 @@ use crate::{
     axis::{
         leg::{Base, Pair, Quote},
         market::{market_marker::MarketMarker, LotSizePair},
-        token::token_marker::{
-            custom_erc20::{
-                custom_erc20_data::CustomERC20Data, custom_erc20_list::CustomERC20List,
-            },
-            TokenMarker,
+        token::{
+            token_index::TokenIndex,
+            token_marker::{custom_erc20::custom_erc20_list::CustomERC20List, TokenMarker},
         },
     },
     goblin_error::GoblinError,
@@ -54,8 +52,9 @@ impl<M: MarketMarker, B: TokenMarker, Q: TokenMarker> CommonMarket<M, B, Q> {
     ) -> Result<MarketPreimage<M, B, Q>, GoblinError> {
         let base_token_index = Base::get(&self.token_index_pair);
         let quote_token_index = Quote::get(&self.token_index_pair);
-        let base_token_address = B::token_index_to_address(base_token_index, custom_erc20_list)?;
-        let quote_token_address = Q::token_index_to_address(quote_token_index, custom_erc20_list)?;
+
+        let base_token_address = base_token_index.get_address(custom_erc20_list)?;
+        let quote_token_address = quote_token_index.get_address(custom_erc20_list)?;
 
         Ok(MarketPreimage::<M, B, Q>::new(
             self.lot_size_pair,

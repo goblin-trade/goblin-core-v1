@@ -1,36 +1,22 @@
 use crate::{
     axis::token::{
-        token_marker::{
-            custom_erc20::{
-                custom_erc20_index::CustomERC20Index, custom_erc20_list::CustomERC20List,
-            },
-            TokenMarker,
-        },
+        token_marker::{custom_erc20::custom_erc20_index::CustomERC20Index, TokenMarker},
         CustomERC20,
     },
-    goblin_error::GoblinError,
     quantities::{UnsidedDeltaAtoms, UnsidedDeltaAtomsPerLot, UnsidedDeltaLots},
     settlement::global_delta::{GlobalSender, TokenDelta},
-    types::{Address, StoreReader},
+    types::StoreReader,
 };
 
 impl TokenMarker for CustomERC20 {
     const DISCRIMINATOR: u8 = 2;
 
     type TokenIndex = CustomERC20Index;
-    type TokenAddress = Address;
     type StoredDecimals = u8;
     type StoredPadding = [u8; 16 - size_of::<Self::StoredDecimals>()];
 
     type LocalDeposit = UnsidedDeltaLots;
     type GlobalDeposit = UnsidedDeltaAtoms;
-
-    fn token_index_to_address(
-        token_index: Self::TokenIndex,
-        custom_erc20_list: CustomERC20List,
-    ) -> Result<Self::TokenAddress, GoblinError> {
-        custom_erc20_list.token_index_to_address(token_index)
-    }
 
     fn get_global_deposit(
         local_deposit: Self::LocalDeposit,

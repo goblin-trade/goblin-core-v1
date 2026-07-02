@@ -27,9 +27,6 @@ pub trait TokenMarker:
     /// Index to lookup token address
     type TokenIndex: TokenIndex<Self>;
 
-    /// Token address
-    type TokenAddress: Clone + Copy + Sized + Default;
-
     /// Decimals stored in `Store`
     /// Decimals are stored as u8 for ERC20 tokens but not for ETH
     type StoredDecimals: Clone + Copy;
@@ -43,11 +40,6 @@ pub trait TokenMarker:
 
     /// Pending deposit amount in global namespace
     type GlobalDeposit: Clone + Copy + Default + Decodable + ConstZero + CheckedOps;
-
-    fn token_index_to_address(
-        token_index: Self::TokenIndex,
-        custom_erc20_list: CustomERC20List,
-    ) -> Result<Self::TokenAddress, GoblinError>;
 
     fn get_global_deposit(
         local_deposit: Self::LocalDeposit,

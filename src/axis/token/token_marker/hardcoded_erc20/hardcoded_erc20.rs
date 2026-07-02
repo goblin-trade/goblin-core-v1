@@ -1,36 +1,22 @@
 use crate::{
     axis::token::{
-        token_marker::{
-            custom_erc20::custom_erc20_list::CustomERC20List,
-            hardcoded_erc20::{hardcoded_erc20_index::HardcodedERC20Index, HARDCODED_TOKENS},
-            TokenMarker,
-        },
+        token_marker::{hardcoded_erc20::hardcoded_erc20_index::HardcodedERC20Index, TokenMarker},
         HardcodedERC20,
     },
-    goblin_error::GoblinError,
     quantities::{UnsidedDeltaAtoms, UnsidedDeltaAtomsPerLot, UnsidedDeltaLots},
     settlement::global_delta::{GlobalSender, TokenDelta},
-    types::{Address, StoreReader},
+    types::StoreReader,
 };
 
 impl TokenMarker for HardcodedERC20 {
     const DISCRIMINATOR: u8 = 1;
 
     type TokenIndex = HardcodedERC20Index;
-    type TokenAddress = Address;
     type StoredDecimals = u8;
     type StoredPadding = [u8; 16 - size_of::<Self::StoredDecimals>()];
 
     type LocalDeposit = UnsidedDeltaLots;
     type GlobalDeposit = UnsidedDeltaAtoms;
-
-    fn token_index_to_address(
-        token_index: Self::TokenIndex,
-        _custom_erc20_list: CustomERC20List,
-    ) -> Result<Self::TokenAddress, GoblinError> {
-        let data = HARDCODED_TOKENS.get(token_index)?;
-        Ok(data.address)
-    }
 
     fn get_global_deposit(
         local_deposit: Self::LocalDeposit,

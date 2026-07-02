@@ -1,14 +1,12 @@
-use core::marker::PhantomData;
-
 use crate::{
     axis::{
-        leg::Pair,
         market::{market_marker::MarketMarker, LotSizePair},
         token::token_marker::TokenMarker,
     },
     quantities::QuoteLotsPerBaseUnitPerTick,
-    state::{MarketState, Preimage},
+    state::{MarketState, Preimage, TokenAddressPair},
 };
+use core::marker::PhantomData;
 
 /// Key preimage to read MarketState from slot
 ///
@@ -24,7 +22,7 @@ where
 {
     lot_size_pair: LotSizePair,
     tick_size: QuoteLotsPerBaseUnitPerTick,
-    token_address_pair: Pair<B::TokenAddress, Q::TokenAddress>,
+    token_address_pair: TokenAddressPair<B, Q>,
     _marker: PhantomData<M>,
 }
 
@@ -37,7 +35,7 @@ where
     pub fn new(
         lot_size_pair: LotSizePair,
         tick_size: QuoteLotsPerBaseUnitPerTick,
-        token_address_pair: Pair<B::TokenAddress, Q::TokenAddress>,
+        token_address_pair: TokenAddressPair<B, Q>,
     ) -> Self {
         Self {
             lot_size_pair,
