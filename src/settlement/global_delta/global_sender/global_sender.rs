@@ -134,14 +134,18 @@ impl GlobalSender {
             let deposit = delta.deposit.abs();
 
             match update_enum {
-                UpdateEnum::Increase => {
-                    TransferDeposit::<Increase>::new(deposit, &token_address, &trader)
-                        .dispatch(decimals)?
-                }
-                UpdateEnum::Decrease => {
-                    TransferDeposit::<Decrease>::new(deposit, &token_address, &trader)
-                        .dispatch(decimals)?
-                }
+                UpdateEnum::Increase => TransferDeposit::<HardcodedERC20, Increase>::new(
+                    deposit,
+                    &token_address,
+                    &trader,
+                )
+                .dispatch(decimals)?,
+                UpdateEnum::Decrease => TransferDeposit::<HardcodedERC20, Decrease>::new(
+                    deposit,
+                    &token_address,
+                    &trader,
+                )
+                .dispatch(decimals)?,
             }
         }
 
@@ -177,11 +181,11 @@ impl GlobalSender {
 
             match update_enum {
                 UpdateEnum::Increase => {
-                    TransferDeposit::<Increase>::new(deposit, &token_address, &trader)
+                    TransferDeposit::<CustomERC20, Increase>::new(deposit, &token_address, &trader)
                         .dispatch(decimals)?
                 }
                 UpdateEnum::Decrease => {
-                    TransferDeposit::<Decrease>::new(deposit, &token_address, &trader)
+                    TransferDeposit::<CustomERC20, Decrease>::new(deposit, &token_address, &trader)
                         .dispatch(decimals)?
                 }
             }

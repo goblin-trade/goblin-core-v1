@@ -1,7 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
-    quantities::UnsidedDeltaAtoms,
+    quantities::{UnsidedDeltaAtoms, NATIVE_TOKEN_DECIMALS},
     settlement::{CheckedOps, ConstZero},
 };
 
@@ -34,5 +34,11 @@ impl CheckedOps for ETHStub {
 impl Into<UnsidedDeltaAtoms> for ETHStub {
     fn into(self) -> UnsidedDeltaAtoms {
         UnsidedDeltaAtoms::ZEROED
+    }
+}
+
+impl Into<u8> for ETHStub {
+    fn into(self) -> u8 {
+        NATIVE_TOKEN_DECIMALS
     }
 }
