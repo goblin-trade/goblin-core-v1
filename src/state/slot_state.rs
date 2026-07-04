@@ -3,6 +3,11 @@ pub unsafe trait SlotState: Sized {
         core::mem::size_of::<Self>() == 32,
         "SlotState must be exactly 32 bytes"
     );
+
+    fn is_empty(&self) -> bool {
+        let bytes: &[u8; 32] = unsafe { &*(self as *const Self as *const [u8; 32]) };
+        *bytes == [0u8; 32]
+    }
 }
 
 #[macro_export]

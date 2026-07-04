@@ -12,7 +12,7 @@ use crate::{
     goblin_error::GoblinError,
     quantities::{IntoAbs, UnsidedAtoms, UnsidedDeltaAtoms, UnsidedDeltaAtomsPerLot},
     settlement::local_delta::LocalDelta,
-    state::{Preimage, StorePreimage},
+    state::{Preimage, SlotState, StorePreimage},
     types::Address,
 };
 
@@ -64,6 +64,8 @@ impl<T: TokenMarker> TokenDelta<T> {
         .hash();
 
         let mut store = store_hash.load();
+        let store_empty = store.is_empty();
+
         let atoms_free_delta = UnsidedDeltaAtoms::try_from(store.atoms_free)?
             + self.net_delta()
             + global_transfer.net_delta()?;
@@ -73,6 +75,8 @@ impl<T: TokenMarker> TokenDelta<T> {
         // Return error if free atoms > 0 or if we overflow
         store.atoms_free = UnsidedAtoms::try_from(atoms_free_delta)?;
         store.atoms_locked = UnsidedAtoms::try_from(atoms_locked_delta)?;
+
+        // TODO store decimals if empty
         store_hash.store(&store);
 
         let net_deposit = self.deposit.into() + global_transfer.net_delta()?;
@@ -82,6 +86,14 @@ impl<T: TokenMarker> TokenDelta<T> {
         };
 
         let deposit = net_deposit.abs();
+
+        // TODO move StoredDecimals on TokenIndex trait so we can perform read
+
+        // let decimals = if store_empty {
+        //     // TODO hostio / default
+        // } else {
+        //     store.decimals
+        // };
 
         // match update_enum {
         //     UpdateEnum::Increase => {
