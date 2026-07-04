@@ -1,5 +1,8 @@
 use crate::{
-    axis::token::{token_index::TokenIndex, token_marker::TokenMarker},
+    axis::token::{
+        token_global_transfer::TokenGlobalTransfer, token_index::TokenIndex,
+        token_marker::TokenMarker,
+    },
     input_processor::Decodable,
     quantities::{UnsidedDeltaAtoms, UnsidedDeltaAtomsPerLot},
     settlement::{
@@ -22,6 +25,8 @@ pub trait TokenDeltas:
 
     /// Pending deposit amount in local namespace
     type LocalDeposit: Clone + Copy + Default + Decodable + ConstZero + CheckedOps;
+
+    type TokenGlobalTransfer: TokenGlobalTransfer;
 
     /// Pending deposit amount in global namespace
     type GlobalDeposit: Clone

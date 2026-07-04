@@ -1,5 +1,7 @@
 use crate::{
-    axis::token::{token_deltas::TokenDeltas, token_index::ETHStub, ETH},
+    axis::token::{
+        token_deltas::TokenDeltas, token_global_transfer::ETHTransfers, token_index::ETHStub, ETH,
+    },
     quantities::UnsidedDeltaAtomsPerLot,
     settlement::global_delta::{GlobalSender, TokenDelta},
     types::StoreReader,
@@ -9,6 +11,8 @@ impl TokenDeltas for ETH {
     type TokenIndex = ETHStub;
     type LocalDeposit = ETHStub;
     type GlobalDeposit = ETHStub;
+
+    type TokenGlobalTransfer = ETHTransfers;
 
     fn get_global_deposit(
         _local_deposit: Self::LocalDeposit,

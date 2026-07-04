@@ -1,11 +1,11 @@
 use crate::{
-    axis::token::token_global_deposit::TokenGlobalDeposit, goblin_error::GoblinError,
+    axis::token::token_global_transfer::TokenGlobalTransfer, goblin_error::GoblinError,
     quantities::UnsidedDeltaAtoms, settlement::ConstZero,
 };
 
-pub struct HardcodedERC20Stub;
+pub struct CustomERC20Stub;
 
-impl TokenGlobalDeposit for HardcodedERC20Stub {
+impl TokenGlobalTransfer for CustomERC20Stub {
     fn net_delta(&self) -> Result<UnsidedDeltaAtoms, GoblinError> {
         Ok(UnsidedDeltaAtoms::ZEROED)
     }

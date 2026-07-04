@@ -3,7 +3,7 @@ use crate::{
         market_counts::{dynamic::DynamicCounts, hardcoded::HardcodedCounts},
         MarketVariantPair,
     },
-    axis::token::token_global_deposit::ETHTransfers,
+    axis::token::token_global_transfer::ETHTransfers,
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx, HeaderFlags},
     types::{Address, Tuple},

@@ -2,12 +2,15 @@ use crate::{
     axis::{
         leg::{leg_reader::LegReader, SamePair},
         token::{
-            token_deltas::TokenDeltas, token_global_deposit::ETHTransfers, token_index::TokenIndex,
+            token_deltas::TokenDeltas,
+            token_global_transfer::{ETHTransfers, TokenGlobalTransfer},
+            token_index::TokenIndex,
             token_marker::TokenMarker,
         },
+        update::UpdateEnum,
     },
     goblin_error::GoblinError,
-    quantities::{UnsidedDeltaAtoms, UnsidedDeltaAtomsPerLot},
+    quantities::{IntoAbs, UnsidedAtoms, UnsidedDeltaAtoms, UnsidedDeltaAtomsPerLot},
     settlement::local_delta::LocalDelta,
     state::{Preimage, StorePreimage},
     types::Address,
@@ -52,7 +55,7 @@ impl<T: TokenMarker> TokenDelta<T> {
         token_index: T::TokenIndex,
         token_address: <T::TokenIndex as TokenIndex>::TokenAddress,
         trader: Address,
-        eth_transfers: ETHTransfers,
+        global_transfer: T::TokenGlobalTransfer,
     ) -> Result<(), GoblinError> {
         let store_hash = StorePreimage::<T> {
             trader,
@@ -61,7 +64,35 @@ impl<T: TokenMarker> TokenDelta<T> {
         .hash();
 
         let mut store = store_hash.load();
-        let atoms_free_delta = UnsidedDeltaAtoms::try_from(store.atoms_free)? + self.net_delta();
+        let atoms_free_delta = UnsidedDeltaAtoms::try_from(store.atoms_free)?
+            + self.net_delta()
+            + global_transfer.net_delta()?;
+
+        let atoms_locked_delta = UnsidedDeltaAtoms::try_from(store.atoms_locked)? - self.make;
+
+        // Return error if free atoms > 0 or if we overflow
+        store.atoms_free = UnsidedAtoms::try_from(atoms_free_delta)?;
+        store.atoms_locked = UnsidedAtoms::try_from(atoms_locked_delta)?;
+        store_hash.store(&store);
+
+        let net_deposit = self.deposit.into() + global_transfer.net_delta()?;
+
+        let Some(update_enum) = UpdateEnum::from_delta(net_deposit) else {
+            return Ok(());
+        };
+
+        let deposit = net_deposit.abs();
+
+        // match update_enum {
+        //     UpdateEnum::Increase => {
+        //         TransferDeposit::<Increase>::new(deposit, &token_address, &trader)
+        //             .dispatch(decimals)?
+        //     }
+        //     UpdateEnum::Decrease => {
+        //         TransferDeposit::<Decrease>::new(deposit, &token_address, &trader)
+        //             .dispatch(decimals)?
+        //     }
+        // }
 
         // Handling special ETH case
         //

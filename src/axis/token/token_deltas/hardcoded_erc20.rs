@@ -1,5 +1,8 @@
 use crate::{
-    axis::token::{token_deltas::TokenDeltas, token_index::HardcodedERC20Index, HardcodedERC20},
+    axis::token::{
+        token_deltas::TokenDeltas, token_global_transfer::HardcodedERC20Stub,
+        token_index::HardcodedERC20Index, HardcodedERC20,
+    },
     quantities::{UnsidedDeltaAtoms, UnsidedDeltaAtomsPerLot, UnsidedDeltaLots},
     settlement::global_delta::{GlobalSender, TokenDelta},
     types::StoreReader,
@@ -7,8 +10,11 @@ use crate::{
 
 impl TokenDeltas for HardcodedERC20 {
     type TokenIndex = HardcodedERC20Index;
+
     type LocalDeposit = UnsidedDeltaLots;
     type GlobalDeposit = UnsidedDeltaAtoms;
+
+    type TokenGlobalTransfer = HardcodedERC20Stub;
 
     fn get_global_deposit(
         local_deposit: Self::LocalDeposit,

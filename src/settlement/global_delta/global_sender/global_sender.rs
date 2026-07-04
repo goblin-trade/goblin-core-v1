@@ -2,7 +2,7 @@ use crate::{
     axis::{
         leg::{leg_matcher::LegMatcher, SamePair},
         token::{
-            token_global_deposit::ETHTransfers,
+            token_global_transfer::ETHTransfers,
             token_index::{
                 CustomERC20List, ETHStub, HardcodedERC20Data, HARDCODED_TOKENS,
                 MAX_HARDCODED_DELTAS,
