@@ -5,6 +5,7 @@ use crate::{
 };
 
 impl TokenIndex for CustomERC20Index {
+    const DISCRIMINATOR: u8 = 2;
     type TokenAddress = Address;
 
     fn get_address(

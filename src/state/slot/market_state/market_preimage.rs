@@ -1,7 +1,7 @@
 use crate::{
     axis::{
         market::{market_marker::MarketMarker, LotSizePair},
-        token::token_marker::TokenMarker,
+        token::{token_index::TokenIndex, token_marker::TokenMarker},
     },
     quantities::QuoteLotsPerBaseUnitPerTick,
     state::{MarketState, Preimage, TokenAddressPair},
@@ -52,7 +52,9 @@ where
     B: TokenMarker,
     Q: TokenMarker,
 {
-    const SLOT_DISCRIMINATOR: u8 = M::DISCRIMINATOR + B::DISCRIMINATOR << 3 + Q::DISCRIMINATOR << 4;
+    const SLOT_DISCRIMINATOR: u8 = M::DISCRIMINATOR + <B::TokenIndex as TokenIndex>::DISCRIMINATOR
+        << 3 + <Q::TokenIndex as TokenIndex>::DISCRIMINATOR
+        << 4;
 
     type SlotState = MarketState;
 }

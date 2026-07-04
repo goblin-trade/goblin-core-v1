@@ -2,6 +2,7 @@ use crate::{
     axis::{
         leg::{leg_matcher::LegMatcher, SamePair},
         token::{
+            token_global_deposit::ETHTransfers,
             token_index::{
                 CustomERC20List, ETHStub, HardcodedERC20Data, HARDCODED_TOKENS,
                 MAX_HARDCODED_DELTAS,
@@ -13,7 +14,6 @@ use crate::{
     },
     goblin_error::GoblinError,
     hostio::erc20_hostio,
-    input_processor::ETHTransfers,
     quantities::{
         DecimalAction, ETHAtoms, IntoAbs, UnsidedAtoms, UnsidedDeltaAtoms, UnsidedDeltaAtomsPerLot,
     },
@@ -75,14 +75,14 @@ impl GlobalSender {
 
         let store_hash = StorePreimage::<ETH> {
             trader: *trader,
-            token: ETHStub,
+            token_address: ETHStub,
         }
         .hash();
 
         let mut store = store_hash.load();
         let atoms_free_delta = UnsidedDeltaAtoms::try_from(store.atoms_free)?
-            + eth_transfers.net_delta()?
-            + delta.total();
+            + delta.net_delta()
+            + eth_transfers.net_delta()?;
 
         let atoms_locked_delta = UnsidedDeltaAtoms::try_from(store.atoms_locked)? - delta.make;
 
@@ -111,12 +111,13 @@ impl GlobalSender {
 
             let store_hash = StorePreimage::<CustomERC20> {
                 trader: *trader,
-                token: token_address,
+                token_address,
             }
             .hash();
 
             let mut store = store_hash.load();
-            let atoms_free_delta = UnsidedDeltaAtoms::try_from(store.atoms_free)? + delta.total();
+            let atoms_free_delta =
+                UnsidedDeltaAtoms::try_from(store.atoms_free)? + delta.net_delta();
 
             let atoms_locked_delta = UnsidedDeltaAtoms::try_from(store.atoms_locked)? - delta.make;
 
@@ -151,12 +152,13 @@ impl GlobalSender {
 
             let store_hash = StorePreimage::<CustomERC20> {
                 trader: *trader,
-                token: token_address,
+                token_address,
             }
             .hash();
 
             let mut store = store_hash.load();
-            let atoms_free_delta = UnsidedDeltaAtoms::try_from(store.atoms_free)? + delta.total();
+            let atoms_free_delta =
+                UnsidedDeltaAtoms::try_from(store.atoms_free)? + delta.net_delta();
 
             let atoms_locked_delta = UnsidedDeltaAtoms::try_from(store.atoms_locked)? - delta.make;
 

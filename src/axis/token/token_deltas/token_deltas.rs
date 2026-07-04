@@ -1,5 +1,5 @@
 use crate::{
-    axis::token::token_index::TokenIndex,
+    axis::token::{token_index::TokenIndex, token_marker::TokenMarker},
     input_processor::Decodable,
     quantities::{UnsidedDeltaAtoms, UnsidedDeltaAtomsPerLot},
     settlement::{
@@ -40,5 +40,7 @@ pub trait TokenDeltas:
     fn get_global_token_delta(
         token_index: Self::TokenIndex,
         global_sender: &mut GlobalSender,
-    ) -> &mut TokenDelta<Self>;
+    ) -> &mut TokenDelta<Self>
+    where
+        Self: TokenMarker;
 }

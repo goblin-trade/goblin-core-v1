@@ -4,6 +4,7 @@ use crate::{
 };
 
 impl TokenIndex for ETHStub {
+    const DISCRIMINATOR: u8 = 0;
     type TokenAddress = ETHStub;
 
     fn get_address(

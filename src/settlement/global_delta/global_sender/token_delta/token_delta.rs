@@ -1,21 +1,27 @@
 use crate::{
     axis::{
         leg::{leg_reader::LegReader, SamePair},
-        token::token_deltas::TokenDeltas,
+        token::{
+            token_deltas::TokenDeltas, token_global_deposit::ETHTransfers, token_index::TokenIndex,
+            token_marker::TokenMarker,
+        },
     },
+    goblin_error::GoblinError,
     quantities::{UnsidedDeltaAtoms, UnsidedDeltaAtomsPerLot},
     settlement::local_delta::LocalDelta,
+    state::{Preimage, StorePreimage},
+    types::Address,
 };
 
 #[derive(Clone, Copy)]
-pub struct TokenDelta<T: TokenDeltas> {
+pub struct TokenDelta<T: TokenMarker> {
     pub deposit: T::GlobalDeposit,
     pub take: UnsidedDeltaAtoms,
     pub make: UnsidedDeltaAtoms,
 }
 
-impl<T: TokenDeltas> TokenDelta<T> {
-    pub fn total(&self) -> UnsidedDeltaAtoms {
+impl<T: TokenMarker> TokenDelta<T> {
+    pub fn net_delta(&self) -> UnsidedDeltaAtoms {
         self.deposit.into() + self.take + self.make
     }
 
@@ -39,5 +45,33 @@ impl<T: TokenDeltas> TokenDelta<T> {
             take,
             make,
         }
+    }
+
+    pub fn settle(
+        &self,
+        token_index: T::TokenIndex,
+        token_address: <T::TokenIndex as TokenIndex>::TokenAddress,
+        trader: Address,
+        eth_transfers: ETHTransfers,
+    ) -> Result<(), GoblinError> {
+        let store_hash = StorePreimage::<T> {
+            trader,
+            token_address,
+        }
+        .hash();
+
+        let mut store = store_hash.load();
+        let atoms_free_delta = UnsidedDeltaAtoms::try_from(store.atoms_free)? + self.net_delta();
+
+        // Handling special ETH case
+        //
+        // - GlobalTransfers type. It is stub for ERC20. It has net_delta()
+        //
+        // - Transfer in / out: convert eth_transfers.eth_out_due to delta and add to delta.deposit,
+        // find update enum and perform increase / decrease accordingly. ETH deposit branch will be unreachable.
+        //
+        // - TransferDeposit: add TokenMarker generic parameter to get rid of token address in ETH branch.
+        // Call it on ETH branch with decimals = 18. It will get monomorphized.
+        Ok(())
     }
 }

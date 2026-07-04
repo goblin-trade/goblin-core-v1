@@ -4,6 +4,8 @@ use crate::{
 };
 
 pub trait TokenIndex: Clone + Copy + Decodable + ConstZero + PartialEq {
+    const DISCRIMINATOR: u8;
+
     type TokenAddress: Clone + Copy + Sized + Default;
 
     fn get_address(

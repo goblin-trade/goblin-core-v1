@@ -7,6 +7,7 @@ use crate::{
 };
 
 impl TokenIndex for HardcodedERC20Index {
+    const DISCRIMINATOR: u8 = 1;
     type TokenAddress = Address;
 
     fn get_address(

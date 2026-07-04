@@ -8,10 +8,10 @@ use crate::{
 #[derive(Clone, Copy)]
 pub struct StorePreimage<T: TokenMarker> {
     pub trader: Address,
-    pub token: <T::TokenIndex as TokenIndex>::TokenAddress,
+    pub token_address: <T::TokenIndex as TokenIndex>::TokenAddress,
 }
 
 impl<T: TokenMarker> Preimage for StorePreimage<T> {
-    const SLOT_DISCRIMINATOR: u8 = 2 + T::DISCRIMINATOR;
+    const SLOT_DISCRIMINATOR: u8 = 2 + <T::TokenIndex as TokenIndex>::DISCRIMINATOR;
     type SlotState = Store<T>;
 }

@@ -3,8 +3,9 @@ use crate::{
         market_counts::{dynamic::DynamicCounts, hardcoded::HardcodedCounts},
         MarketVariantPair,
     },
+    axis::token::token_global_deposit::ETHTransfers,
     goblin_error::GoblinError,
-    input_processor::{Decodable, DecodeCtx, ETHTransfers, HeaderFlags},
+    input_processor::{Decodable, DecodeCtx, HeaderFlags},
     types::{Address, Tuple},
 };
 
