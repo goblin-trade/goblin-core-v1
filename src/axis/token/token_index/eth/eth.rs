@@ -7,6 +7,9 @@ impl TokenIndex for ETHStub {
     const DISCRIMINATOR: u8 = 0;
     type TokenAddress = ETHStub;
 
+    type StoredDecimals = ETHStub;
+    type StoredPadding = [u8; 16 - size_of::<Self::StoredDecimals>()];
+
     fn get_address(
         &self,
         _custom_erc20_list: CustomERC20List,

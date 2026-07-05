@@ -8,6 +8,14 @@ pub trait TokenIndex: Clone + Copy + Decodable + ConstZero + PartialEq {
 
     type TokenAddress: Clone + Copy + Sized + Default;
 
+    /// Decimals stored in `Store`
+    /// Decimals are stored as u8 for ERC20 tokens but not for ETH
+    type StoredDecimals: Clone + Copy + Into<u8>;
+
+    /// Padding to pad `Store` to 32 bytes
+    /// ERC20 store has less padding to accomodate `decimals: u8`
+    type StoredPadding: Clone + Copy;
+
     fn get_address(
         &self,
         custom_erc20_list: CustomERC20List,

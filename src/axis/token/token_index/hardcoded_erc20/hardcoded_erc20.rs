@@ -10,6 +10,9 @@ impl TokenIndex for HardcodedERC20Index {
     const DISCRIMINATOR: u8 = 1;
     type TokenAddress = Address;
 
+    type StoredDecimals = u8;
+    type StoredPadding = [u8; 16 - size_of::<Self::StoredDecimals>()];
+
     fn get_address(
         &self,
         _custom_erc20_list: CustomERC20List,
