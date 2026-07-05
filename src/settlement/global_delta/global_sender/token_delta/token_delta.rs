@@ -53,18 +53,21 @@ impl<T: TokenMarker> TokenDelta<T> {
     pub fn settle(
         &self,
         token_index: T::TokenIndex,
-        token_address: <T::TokenIndex as TokenIndex>::TokenAddress,
+        token_address: &<T::TokenIndex as TokenIndex>::TokenAddress,
         trader: Address,
         global_transfer: T::TokenGlobalTransfer,
     ) -> Result<(), GoblinError> {
         let store_hash = StorePreimage::<T> {
             trader,
-            token_address,
+            token_address: *token_address,
         }
         .hash();
 
         let mut store = store_hash.load();
-        let store_empty = store.is_empty();
+
+        if store.is_empty() {
+            store.decimals = token_index.get_decimals(token_address)?;
+        }
 
         let atoms_free_delta = UnsidedDeltaAtoms::try_from(store.atoms_free)?
             + self.net_delta()
@@ -76,7 +79,7 @@ impl<T: TokenMarker> TokenDelta<T> {
         store.atoms_free = UnsidedAtoms::try_from(atoms_free_delta)?;
         store.atoms_locked = UnsidedAtoms::try_from(atoms_locked_delta)?;
 
-        // TODO store decimals if empty
+        // TODO write only if values changed
         store_hash.store(&store);
 
         let net_deposit = self.deposit.into() + global_transfer.net_delta()?;
@@ -86,14 +89,6 @@ impl<T: TokenMarker> TokenDelta<T> {
         };
 
         let deposit = net_deposit.abs();
-
-        // TODO move StoredDecimals on TokenIndex trait so we can perform read
-
-        // let decimals = if store_empty {
-        //     // TODO hostio / default
-        // } else {
-        //     store.decimals
-        // };
 
         // match update_enum {
         //     UpdateEnum::Increase => {

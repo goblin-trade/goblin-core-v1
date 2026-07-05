@@ -20,4 +20,16 @@ pub trait TokenIndex: Clone + Copy + Decodable + ConstZero + PartialEq {
         &self,
         custom_erc20_list: CustomERC20List,
     ) -> Result<Self::TokenAddress, GoblinError>;
+
+    // problem-
+    //
+    // - CustomERC20: decimals is derived from address
+    // - HardcodedERC20: derived from token index (Self)
+    //
+    // But we don't want to pre-emptively read decimals from Hostio
+    // for CustomERC20. First check if stored in store
+    fn get_decimals(
+        &self,
+        address: &Self::TokenAddress,
+    ) -> Result<Self::StoredDecimals, GoblinError>;
 }

@@ -1,6 +1,7 @@
 use crate::{
     axis::token::token_index::{CustomERC20Index, CustomERC20List, TokenIndex},
     goblin_error::GoblinError,
+    hostio::erc20_hostio,
     types::Address,
 };
 
@@ -16,5 +17,12 @@ impl TokenIndex for CustomERC20Index {
         custom_erc20_list: CustomERC20List,
     ) -> Result<Self::TokenAddress, GoblinError> {
         custom_erc20_list.token_index_to_address(*self)
+    }
+
+    fn get_decimals(
+        &self,
+        address: &Self::TokenAddress,
+    ) -> Result<Self::StoredDecimals, GoblinError> {
+        erc20_hostio::decimals(address)
     }
 }

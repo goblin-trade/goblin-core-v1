@@ -19,4 +19,11 @@ impl TokenIndex for HardcodedERC20Index {
     ) -> Result<Self::TokenAddress, GoblinError> {
         HARDCODED_TOKENS.get(*self).map(|data| data.address)
     }
+
+    fn get_decimals(
+        &self,
+        _address: &Self::TokenAddress,
+    ) -> Result<Self::StoredDecimals, GoblinError> {
+        HARDCODED_TOKENS.get(*self).map(|data| data.decimals)
+    }
 }
