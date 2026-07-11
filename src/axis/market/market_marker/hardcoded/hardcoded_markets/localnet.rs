@@ -6,10 +6,7 @@ use crate::{
             market_marker::hardcoded::hardcoded_market_index::HardcodedMarketIndex, CommonMarket,
             Hardcoded, MarketReadables,
         },
-        token::{
-            token_index::{ETHStub, HardcodedERC20Index},
-            HardcodedERC20, ETH,
-        },
+        token::{token_index::HardcodedERC20Index, ETHStub, HardcodedERC20, ETH},
     },
     quantities::{BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit},
     state::SlotKey,

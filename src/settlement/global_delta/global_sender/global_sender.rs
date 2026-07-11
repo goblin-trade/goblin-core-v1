@@ -2,12 +2,10 @@ use crate::{
     axis::{
         leg::{leg_matcher::LegMatcher, SamePair},
         token::{
-            token_global_transfer::{CustomERC20Stub, ETHTransfers, HardcodedERC20Stub},
-            token_index::{
-                CustomERC20List, ETHStub, TokenData, HARDCODED_TOKENS, MAX_HARDCODED_DELTAS,
-            },
+            token_global_transfer::ETHTransfers,
+            token_index::{CustomERC20List, TokenData, HARDCODED_TOKENS, MAX_HARDCODED_DELTAS},
             token_marker::TokenMarker,
-            CustomERC20, HardcodedERC20, Token, ETH,
+            CustomERC20, CustomERC20Stub, ETHStub, HardcodedERC20, HardcodedERC20Stub, Token, ETH,
         },
     },
     goblin_error::GoblinError,
@@ -61,19 +59,31 @@ impl GlobalSender {
         eth_transfers: ETHTransfers,
     ) -> Result<(), GoblinError> {
         let eth_delta = ETH::get_leg(self);
-        eth_delta.settle(ETHStub, &ETHStub, trader, eth_transfers)?;
+        eth_delta.settle(trader, ETHStub, ETHStub, ETHStub, eth_transfers)?;
 
         let hardcoded_deltas = HardcodedERC20::get_leg(self);
         for (token_index, TokenData { address, decimals }) in HARDCODED_TOKENS.typed_iter() {
             let hardcoded_erc20_delta = hardcoded_deltas[token_index.0];
-            // TODO fix- address looked up twice for hardcoded case
-            hardcoded_erc20_delta.settle(token_index, &address, trader, HardcodedERC20Stub)?;
+
+            hardcoded_erc20_delta.settle(
+                trader,
+                token_index,
+                address,
+                decimals,
+                HardcodedERC20Stub,
+            )?;
         }
 
         let custom_deltas = CustomERC20::get_leg(self);
         for (token_index, address) in custom_erc20_list.typed_iter() {
             let custom_erc20_delta = custom_deltas[token_index.0];
-            custom_erc20_delta.settle(token_index, &address, trader, CustomERC20Stub)?;
+            custom_erc20_delta.settle(
+                trader,
+                token_index,
+                address,
+                CustomERC20Stub,
+                CustomERC20Stub,
+            )?;
         }
 
         Ok(())

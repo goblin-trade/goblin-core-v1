@@ -1,15 +1,13 @@
 use crate::{
     axis::{
         token::{
-            token_deltas::TokenDeltas,
-            token_global_transfer::ETHTransfers,
-            token_index::{ETHStub, TokenIndex},
-            ETH,
+            token_deltas::TokenDeltas, token_global_transfer::ETHTransfers,
+            token_index::TokenIndex, ETHStub, ETH,
         },
         update::UpdateMarker,
     },
     goblin_error::GoblinError,
-    quantities::{ETHAtoms, RawAtoms, UnsidedAtoms, UnsidedDeltaAtomsPerLot},
+    quantities::{ETHAtoms, UnsidedAtoms, UnsidedDeltaAtomsPerLot},
     settlement::global_delta::{GlobalSender, TokenDelta},
     types::{Address, StoreReader},
 };

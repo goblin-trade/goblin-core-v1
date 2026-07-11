@@ -1,5 +1,8 @@
 use crate::{
-    axis::token::token_index::{eth::ETHStub, CustomERC20List, TokenIndex},
+    axis::token::{
+        token_index::{CustomERC20List, TokenIndex},
+        ETHStub,
+    },
     goblin_error::GoblinError,
 };
 

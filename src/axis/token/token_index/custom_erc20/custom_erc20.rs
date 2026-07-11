@@ -1,7 +1,7 @@
 use crate::{
     axis::token::{
-        token_global_transfer::CustomERC20Stub,
         token_index::{CustomERC20Index, CustomERC20List, TokenIndex},
+        CustomERC20Stub,
     },
     goblin_error::GoblinError,
     hostio::erc20_hostio,

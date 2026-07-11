@@ -40,6 +40,7 @@ pub enum GoblinError {
     InvalidOpenPrice = 36,
     PositionOccupied = 37,
     NoUpdate = 38,
+    NoHardcodedDecimals = 39,
 }
 
 impl GoblinError {

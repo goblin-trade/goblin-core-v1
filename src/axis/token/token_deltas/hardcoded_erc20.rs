@@ -2,9 +2,8 @@ use crate::{
     axis::{
         token::{
             token_deltas::TokenDeltas,
-            token_global_transfer::HardcodedERC20Stub,
             token_index::{HardcodedERC20Index, TokenIndex},
-            HardcodedERC20,
+            HardcodedERC20, HardcodedERC20Stub,
         },
         update::UpdateMarker,
     },
