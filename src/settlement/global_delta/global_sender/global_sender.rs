@@ -2,7 +2,7 @@ use crate::{
     axis::{
         leg::{leg_matcher::LegMatcher, SamePair},
         token::{
-            token_global_transfer::ETHTransfers,
+            token_global_transfer::{CustomERC20Stub, ETHTransfers, HardcodedERC20Stub},
             token_index::{
                 CustomERC20List, ETHStub, HardcodedERC20Data, HARDCODED_TOKENS,
                 MAX_HARDCODED_DELTAS,
@@ -10,19 +10,10 @@ use crate::{
             token_marker::TokenMarker,
             CustomERC20, HardcodedERC20, Token, ETH,
         },
-        update::{Decrease, Increase, UpdateETH, UpdateEnum},
     },
     goblin_error::GoblinError,
-    hostio::erc20_hostio,
-    quantities::{
-        DecimalAction, ETHAtoms, IntoAbs, UnsidedAtoms, UnsidedDeltaAtoms, UnsidedDeltaAtomsPerLot,
-    },
-    settlement::{
-        global_delta::{TokenDelta, TransferDeposit},
-        local_delta::LocalDelta,
-        CheckedOps, ConstZero,
-    },
-    state::{Preimage, StorePreimage},
+    quantities::UnsidedDeltaAtomsPerLot,
+    settlement::{global_delta::TokenDelta, local_delta::LocalDelta, CheckedOps, ConstZero},
     types::{Address, StoreReader, Triple},
 };
 
@@ -70,126 +61,23 @@ impl GlobalSender {
         custom_erc20_list: CustomERC20List,
         eth_transfers: ETHTransfers,
     ) -> Result<(), GoblinError> {
-        // 1. ETH
-        let delta = ETH::get_leg(self);
+        let eth_delta = ETH::get_leg(self);
+        eth_delta.settle(ETHStub, &ETHStub, trader, eth_transfers)?;
 
-        let store_hash = StorePreimage::<ETH> {
-            trader: *trader,
-            token_address: ETHStub,
-        }
-        .hash();
-
-        let mut store = store_hash.load();
-        let atoms_free_delta = UnsidedDeltaAtoms::try_from(store.atoms_free)?
-            + delta.net_delta()
-            + eth_transfers.net_delta()?;
-
-        let atoms_locked_delta = UnsidedDeltaAtoms::try_from(store.atoms_locked)? - delta.make;
-
-        // Return error if free atoms > 0 or if we overflow
-        store.atoms_free = UnsidedAtoms::try_from(atoms_free_delta)?;
-        store.atoms_locked = UnsidedAtoms::try_from(atoms_locked_delta)?;
-
-        store_hash.store(&store);
-
-        if eth_transfers.eth_out_due > UnsidedAtoms::ZEROED {
-            let raw_atoms = ETHAtoms::try_from(eth_transfers.eth_out_due)?;
-            Decrease::update_eth(trader, &raw_atoms)?;
-        }
-
-        // 2. Hardcoded
         let hardcoded_deltas = HardcodedERC20::get_leg(self);
-        for (
-            token_index,
-            HardcodedERC20Data {
-                address: token_address,
-                decimals,
-            },
-        ) in HARDCODED_TOKENS.typed_iter()
+        for (token_index, HardcodedERC20Data { address, decimals }) in HARDCODED_TOKENS.typed_iter()
         {
-            let delta = hardcoded_deltas[token_index.0];
-
-            let store_hash = StorePreimage::<CustomERC20> {
-                trader: *trader,
-                token_address,
-            }
-            .hash();
-
-            let mut store = store_hash.load();
-            let atoms_free_delta =
-                UnsidedDeltaAtoms::try_from(store.atoms_free)? + delta.net_delta();
-
-            let atoms_locked_delta = UnsidedDeltaAtoms::try_from(store.atoms_locked)? - delta.make;
-
-            // Return error if free atoms > 0 or if we overflow
-            store.atoms_free = UnsidedAtoms::try_from(atoms_free_delta)?;
-            store.atoms_locked = UnsidedAtoms::try_from(atoms_locked_delta)?;
-
-            store_hash.store(&store);
-
-            let Some(update_enum) = UpdateEnum::from_delta(delta.deposit) else {
-                continue;
-            };
-
-            let deposit = delta.deposit.abs();
-
-            match update_enum {
-                UpdateEnum::Increase => TransferDeposit::<HardcodedERC20, Increase>::new(
-                    deposit,
-                    &token_address,
-                    &trader,
-                )
-                .dispatch(decimals)?,
-                UpdateEnum::Decrease => TransferDeposit::<HardcodedERC20, Decrease>::new(
-                    deposit,
-                    &token_address,
-                    &trader,
-                )
-                .dispatch(decimals)?,
-            }
+            let hardcoded_erc20_delta = hardcoded_deltas[token_index.0];
+            // TODO fix- address looked up twice for hardcoded case
+            hardcoded_erc20_delta.settle(token_index, &address, trader, HardcodedERC20Stub)?;
         }
 
-        // 3. Custom
         let custom_deltas = CustomERC20::get_leg(self);
-        for (token_index, token_address) in custom_erc20_list.typed_iter() {
-            let delta = custom_deltas[token_index.0];
-
-            let store_hash = StorePreimage::<CustomERC20> {
-                trader: *trader,
-                token_address,
-            }
-            .hash();
-
-            let mut store = store_hash.load();
-            let atoms_free_delta =
-                UnsidedDeltaAtoms::try_from(store.atoms_free)? + delta.net_delta();
-
-            let atoms_locked_delta = UnsidedDeltaAtoms::try_from(store.atoms_locked)? - delta.make;
-
-            // Return error if free atoms > 0 or if we overflow
-            store.atoms_free = UnsidedAtoms::try_from(atoms_free_delta)?;
-            store.atoms_locked = UnsidedAtoms::try_from(atoms_locked_delta)?;
-
-            store_hash.store(&store);
-
-            let Some(update_enum) = UpdateEnum::from_delta(delta.deposit) else {
-                continue;
-            };
-
-            let deposit = delta.deposit.abs();
-            let decimals = erc20_hostio::decimals(&token_address)?;
-
-            match update_enum {
-                UpdateEnum::Increase => {
-                    TransferDeposit::<CustomERC20, Increase>::new(deposit, &token_address, &trader)
-                        .dispatch(decimals)?
-                }
-                UpdateEnum::Decrease => {
-                    TransferDeposit::<CustomERC20, Decrease>::new(deposit, &token_address, &trader)
-                        .dispatch(decimals)?
-                }
-            }
+        for (token_index, address) in custom_erc20_list.typed_iter() {
+            let custom_erc20_delta = custom_deltas[token_index.0];
+            custom_erc20_delta.settle(token_index, &address, trader, CustomERC20Stub)?;
         }
+
         Ok(())
     }
 }

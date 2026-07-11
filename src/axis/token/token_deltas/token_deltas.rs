@@ -1,16 +1,20 @@
 use crate::{
-    axis::token::{
-        token_global_transfer::TokenGlobalTransfer, token_index::TokenIndex,
-        token_marker::TokenMarker,
+    axis::{
+        token::{
+            token_global_transfer::TokenGlobalTransfer, token_index::TokenIndex,
+            token_marker::TokenMarker,
+        },
+        update::UpdateMarker,
     },
+    goblin_error::GoblinError,
     input_processor::Decodable,
-    quantities::{UnsidedDeltaAtoms, UnsidedDeltaAtomsPerLot},
+    quantities::{RawAtoms, UnsidedAtoms, UnsidedDeltaAtoms, UnsidedDeltaAtomsPerLot},
     settlement::{
         global_delta::{CounterpartyMap, CounterpartyTriple, GlobalSender, TokenDelta},
         local_delta::DepositTriple,
         CheckedOps, ConstZero,
     },
-    types::StoreReader,
+    types::{Address, StoreReader},
 };
 
 pub trait TokenDeltas:
@@ -48,4 +52,14 @@ pub trait TokenDeltas:
     ) -> &mut TokenDelta<Self>
     where
         Self: TokenMarker;
+
+    // this gives a clean implementation for ETH
+    //
+    // However we don't want to duplicate decimal matching for hardcoded and custom ERC20
+    fn update<UM: UpdateMarker>(
+        deposit: UnsidedAtoms,
+        trader: &Address,
+        token_address: &<Self::TokenIndex as TokenIndex>::TokenAddress,
+        decimals: <Self::TokenIndex as TokenIndex>::StoredDecimals,
+    ) -> Result<(), GoblinError>;
 }

@@ -2,12 +2,10 @@ use crate::{
     axis::{
         leg::{leg_reader::LegReader, SamePair},
         token::{
-            token_deltas::TokenDeltas,
-            token_global_transfer::{ETHTransfers, TokenGlobalTransfer},
-            token_index::TokenIndex,
+            token_global_transfer::TokenGlobalTransfer, token_index::TokenIndex,
             token_marker::TokenMarker,
         },
-        update::UpdateEnum,
+        update::{Decrease, Increase, UpdateEnum},
     },
     goblin_error::GoblinError,
     quantities::{IntoAbs, UnsidedAtoms, UnsidedDeltaAtoms, UnsidedDeltaAtomsPerLot},
@@ -54,11 +52,11 @@ impl<T: TokenMarker> TokenDelta<T> {
         &self,
         token_index: T::TokenIndex,
         token_address: &<T::TokenIndex as TokenIndex>::TokenAddress,
-        trader: Address,
+        trader: &Address,
         global_transfer: T::TokenGlobalTransfer,
     ) -> Result<(), GoblinError> {
         let store_hash = StorePreimage::<T> {
-            trader,
+            trader: *trader,
             token_address: *token_address,
         }
         .hash();
@@ -90,26 +88,13 @@ impl<T: TokenMarker> TokenDelta<T> {
 
         let deposit = net_deposit.abs();
 
-        // match update_enum {
-        //     UpdateEnum::Increase => {
-        //         TransferDeposit::<Increase>::new(deposit, &token_address, &trader)
-        //             .dispatch(decimals)?
-        //     }
-        //     UpdateEnum::Decrease => {
-        //         TransferDeposit::<Decrease>::new(deposit, &token_address, &trader)
-        //             .dispatch(decimals)?
-        //     }
-        // }
-
-        // Handling special ETH case
-        //
-        // - GlobalTransfers type. It is stub for ERC20. It has net_delta()
-        //
-        // - Transfer in / out: convert eth_transfers.eth_out_due to delta and add to delta.deposit,
-        // find update enum and perform increase / decrease accordingly. ETH deposit branch will be unreachable.
-        //
-        // - TransferDeposit: add TokenMarker generic parameter to get rid of token address in ETH branch.
-        // Call it on ETH branch with decimals = 18. It will get monomorphized.
-        Ok(())
+        match update_enum {
+            UpdateEnum::Increase => {
+                T::update::<Increase>(deposit, &trader, token_address, store.decimals)
+            }
+            UpdateEnum::Decrease => {
+                T::update::<Decrease>(deposit, &trader, token_address, store.decimals)
+            }
+        }
     }
 }

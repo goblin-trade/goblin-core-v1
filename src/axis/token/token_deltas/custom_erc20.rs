@@ -1,11 +1,17 @@
 use crate::{
-    axis::token::{
-        token_deltas::TokenDeltas, token_global_transfer::CustomERC20Stub,
-        token_index::CustomERC20Index, CustomERC20,
+    axis::{
+        token::{
+            token_deltas::TokenDeltas,
+            token_global_transfer::CustomERC20Stub,
+            token_index::{CustomERC20Index, TokenIndex},
+            CustomERC20,
+        },
+        update::UpdateMarker,
     },
-    quantities::{UnsidedDeltaAtoms, UnsidedDeltaAtomsPerLot, UnsidedDeltaLots},
-    settlement::global_delta::{GlobalSender, TokenDelta},
-    types::StoreReader,
+    goblin_error::GoblinError,
+    quantities::{UnsidedAtoms, UnsidedDeltaAtoms, UnsidedDeltaAtomsPerLot, UnsidedDeltaLots},
+    settlement::global_delta::{GlobalSender, TokenDelta, TransferERC20},
+    types::{Address, StoreReader},
 };
 
 impl TokenDeltas for CustomERC20 {
@@ -30,5 +36,14 @@ impl TokenDeltas for CustomERC20 {
         let list = Self::get_leg_mut(global_sender);
         let token_delta = &mut list[token_index.0];
         token_delta
+    }
+
+    fn update<UM: UpdateMarker>(
+        deposit: UnsidedAtoms,
+        trader: &Address,
+        token_address: &<Self::TokenIndex as TokenIndex>::TokenAddress,
+        decimals: <Self::TokenIndex as TokenIndex>::StoredDecimals,
+    ) -> Result<(), GoblinError> {
+        TransferERC20::<UM>::new(deposit, trader, token_address, decimals).dispatch()
     }
 }
