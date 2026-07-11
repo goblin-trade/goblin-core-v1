@@ -8,6 +8,8 @@ pub trait TokenIndex: Clone + Copy + Decodable + ConstZero + PartialEq {
 
     type TokenAddress: Clone + Copy + Sized + Default;
 
+    type HardcodedDecimals: Clone + Copy;
+
     /// Decimals stored in `Store`
     /// Decimals are stored as u8 for ERC20 tokens but not for ETH
     type StoredDecimals: Clone + Copy + Into<u8>;

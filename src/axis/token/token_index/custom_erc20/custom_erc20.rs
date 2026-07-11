@@ -1,5 +1,8 @@
 use crate::{
-    axis::token::token_index::{CustomERC20Index, CustomERC20List, TokenIndex},
+    axis::token::{
+        token_global_transfer::CustomERC20Stub,
+        token_index::{CustomERC20Index, CustomERC20List, TokenIndex},
+    },
     goblin_error::GoblinError,
     hostio::erc20_hostio,
     types::Address,
@@ -8,6 +11,8 @@ use crate::{
 impl TokenIndex for CustomERC20Index {
     const DISCRIMINATOR: u8 = 2;
     type TokenAddress = Address;
+
+    type HardcodedDecimals = CustomERC20Stub;
 
     type StoredDecimals = u8;
     type StoredPadding = [u8; 16 - size_of::<Self::StoredDecimals>()];

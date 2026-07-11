@@ -3,6 +3,7 @@ use crate::{
     quantities::UnsidedDeltaAtoms, settlement::ConstZero,
 };
 
+#[derive(Clone, Copy)]
 pub struct HardcodedERC20Stub;
 
 impl TokenGlobalTransfer for HardcodedERC20Stub {

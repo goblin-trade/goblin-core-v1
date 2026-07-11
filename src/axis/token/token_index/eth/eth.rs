@@ -7,6 +7,8 @@ impl TokenIndex for ETHStub {
     const DISCRIMINATOR: u8 = 0;
     type TokenAddress = ETHStub;
 
+    type HardcodedDecimals = ETHStub;
+
     // Store 18 decimals in ETHStore for symmetry?
     type StoredDecimals = ETHStub;
     type StoredPadding = [u8; 16 - size_of::<Self::StoredDecimals>()];
