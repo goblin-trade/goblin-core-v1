@@ -1,5 +1,5 @@
 use crate::{
-    axis::token::token_index::{CustomERC20Data, CustomERC20List},
+    axis::token::token_index::{CustomERC20Index, CustomERC20List, TokenData},
     goblin_error::GoblinError,
     input_processor::{DecodablePrimitive, DecodeCtx},
     require,
@@ -52,7 +52,7 @@ impl<'a> DynamicCounts<'a> {
         );
 
         let custom_erc20_list = CustomERC20List {
-            inner: ctx.zero_copy_slice_unchecked::<CustomERC20Data>(custom_erc20_count),
+            inner: ctx.zero_copy_slice_unchecked::<TokenData<CustomERC20Index>>(custom_erc20_count),
         };
 
         Ok(Self {

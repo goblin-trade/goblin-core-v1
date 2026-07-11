@@ -1,17 +1,17 @@
-use crate::axis::token::token_index::{HardcodedERC20Data, HardcodedTokens};
+use crate::axis::token::token_index::{HardcodedTokens, TokenData};
 
 pub const MAX_HARDCODED_DELTAS: usize = 2;
 
 pub const HARDCODED_TOKENS: HardcodedTokens<MAX_HARDCODED_DELTAS> = HardcodedTokens {
     inner: [
-        HardcodedERC20Data {
+        TokenData {
             address: [
                 0xe1, 0x08, 0x02, 0x24, 0xb6, 0x32, 0xa9, 0x39, 0x51, 0xa7, 0xcf, 0xa3, 0x3e, 0xee,
                 0xa9, 0xfd, 0x81, 0x55, 0x8b, 0x5e,
             ],
             decimals: 18,
         },
-        HardcodedERC20Data {
+        TokenData {
             address: [
                 0x3f, 0x1e, 0xae, 0x7d, 0x46, 0xd8, 0x8f, 0x08, 0xfc, 0x2f, 0x8e, 0xd2, 0x7f, 0xcb,
                 0x2a, 0xb1, 0x83, 0xeb, 0x2d, 0x0e,
@@ -20,23 +20,3 @@ pub const HARDCODED_TOKENS: HardcodedTokens<MAX_HARDCODED_DELTAS> = HardcodedTok
         },
     ],
 };
-
-// pub const HARDCODED_TOKENS: [HardcodedERC20Data; 2] = [
-//     HardcodedERC20Data {
-//         address: [
-//             0xe1, 0x08, 0x02, 0x24, 0xb6, 0x32, 0xa9, 0x39, 0x51, 0xa7, 0xcf, 0xa3, 0x3e, 0xee,
-//             0xa9, 0xfd, 0x81, 0x55, 0x8b, 0x5e,
-//         ],
-//         decimals: 18,
-//     },
-//     HardcodedERC20Data {
-//         address: [
-//             0x3f, 0x1e, 0xae, 0x7d, 0x46, 0xd8, 0x8f, 0x08, 0xfc, 0x2f, 0x8e, 0xd2, 0x7f, 0xcb,
-//             0x2a, 0xb1, 0x83, 0xeb, 0x2d, 0x0e,
-//         ],
-//         decimals: 18,
-//     },
-// ];
-
-// TODO wrapper struct
-// .iter() function should return HardcodedIndex

@@ -4,8 +4,7 @@ use crate::{
         token::{
             token_global_transfer::{CustomERC20Stub, ETHTransfers, HardcodedERC20Stub},
             token_index::{
-                CustomERC20List, ETHStub, HardcodedERC20Data, HARDCODED_TOKENS,
-                MAX_HARDCODED_DELTAS,
+                CustomERC20List, ETHStub, TokenData, HARDCODED_TOKENS, MAX_HARDCODED_DELTAS,
             },
             token_marker::TokenMarker,
             CustomERC20, HardcodedERC20, Token, ETH,
@@ -65,8 +64,7 @@ impl GlobalSender {
         eth_delta.settle(ETHStub, &ETHStub, trader, eth_transfers)?;
 
         let hardcoded_deltas = HardcodedERC20::get_leg(self);
-        for (token_index, HardcodedERC20Data { address, decimals }) in HARDCODED_TOKENS.typed_iter()
-        {
+        for (token_index, TokenData { address, decimals }) in HARDCODED_TOKENS.typed_iter() {
             let hardcoded_erc20_delta = hardcoded_deltas[token_index.0];
             // TODO fix- address looked up twice for hardcoded case
             hardcoded_erc20_delta.settle(token_index, &address, trader, HardcodedERC20Stub)?;

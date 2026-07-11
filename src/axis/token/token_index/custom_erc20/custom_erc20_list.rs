@@ -1,12 +1,12 @@
 use crate::{
-    axis::token::token_index::{CustomERC20Data, CustomERC20Index},
+    axis::token::token_index::{CustomERC20Index, TokenData},
     goblin_error::GoblinError,
     types::Address,
 };
 
 #[derive(Clone, Copy)]
 pub struct CustomERC20List<'a> {
-    pub inner: &'a [CustomERC20Data],
+    pub inner: &'a [TokenData<CustomERC20Index>],
 }
 
 impl<'a> CustomERC20List<'a> {
