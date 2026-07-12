@@ -1,12 +1,15 @@
 use crate::{
-    axis::token::token_index::{CustomERC20Index, TokenData},
+    axis::token::{
+        token_index::{CustomERC20Index, TokenData},
+        CustomERC20,
+    },
     goblin_error::GoblinError,
     types::Address,
 };
 
 #[derive(Clone, Copy)]
 pub struct CustomERC20List<'a> {
-    pub inner: &'a [TokenData<CustomERC20Index>],
+    pub inner: &'a [TokenData<CustomERC20>],
 }
 
 impl<'a> CustomERC20List<'a> {
@@ -25,10 +28,12 @@ impl<'a> CustomERC20List<'a> {
         (0..self.inner.len()).map(CustomERC20Index::from)
     }
 
-    pub fn typed_iter(&self) -> impl Iterator<Item = (CustomERC20Index, Address)> + 'a {
+    pub fn typed_iter(
+        &self,
+    ) -> impl Iterator<Item = (CustomERC20Index, TokenData<CustomERC20>)> + 'a {
         self.inner
             .iter()
             .enumerate()
-            .map(|(i, data)| (CustomERC20Index::from(i), data.address))
+            .map(|(i, data)| (CustomERC20Index::from(i), *data))
     }
 }

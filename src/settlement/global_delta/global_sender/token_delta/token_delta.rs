@@ -2,7 +2,8 @@ use crate::{
     axis::{
         leg::{leg_reader::LegReader, SamePair},
         token::{
-            token_global_transfer::TokenGlobalTransfer, token_index::TokenIndex,
+            token_global_transfer::TokenGlobalTransfer,
+            token_index::{TokenData, TokenIndex},
             token_marker::TokenMarker,
         },
         update::{Decrease, Increase, UpdateEnum},
@@ -51,11 +52,11 @@ impl<T: TokenMarker> TokenDelta<T> {
     pub fn settle(
         &self,
         trader: &Address,
-        token_index: T::TokenIndex,
-        token_address: <T::TokenIndex as TokenIndex>::TokenAddress,
-        hardcoded_decimals: <T::TokenIndex as TokenIndex>::HardcodedDecimals,
+        (token_index, token_data): (T::TokenIndex, TokenData<T>),
         global_transfer: T::TokenGlobalTransfer,
     ) -> Result<(), GoblinError> {
+        let token_address = token_data.address;
+
         let store_hash = StorePreimage::<T> {
             trader: *trader,
             token_address,
@@ -65,7 +66,8 @@ impl<T: TokenMarker> TokenDelta<T> {
         let mut store = store_hash.load();
 
         if store.is_empty() {
-            store.decimals = hardcoded_decimals
+            store.decimals = token_data
+                .decimals
                 .try_into()
                 .or(token_index.get_decimals(&token_address))?;
         }
@@ -81,6 +83,7 @@ impl<T: TokenMarker> TokenDelta<T> {
         store.atoms_locked = UnsidedAtoms::try_from(atoms_locked_delta)?;
 
         // TODO write only if values changed
+        // Instead of comparing states, just check if delta is non-zero?
         store_hash.store(&store);
 
         let net_deposit = self.deposit.into() + global_transfer.net_delta()?;
