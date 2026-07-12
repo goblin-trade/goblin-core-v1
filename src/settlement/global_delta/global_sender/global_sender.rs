@@ -63,6 +63,7 @@ impl GlobalSender {
 
         let hardcoded_deltas = HardcodedERC20::get_leg(self);
         for (token_index, token_data) in HARDCODED_TOKENS.typed_iter() {
+            //  TODO use core::ops::Index trait
             let hardcoded_erc20_delta = hardcoded_deltas[token_index.0];
 
             hardcoded_erc20_delta.settle(trader, (token_index, token_data), HardcodedERC20Stub)?;
