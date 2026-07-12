@@ -2,13 +2,13 @@ use crate::{
     axis::{
         leg::{leg_matcher::LegMatcher, SamePair},
         token::{
-            token_global_transfer::ETHTransfers,
             token_index::{CustomERC20List, TokenData, HARDCODED_TOKENS, MAX_HARDCODED_DELTAS},
             token_marker::TokenMarker,
             CustomERC20, CustomERC20Stub, HardcodedERC20, HardcodedERC20Stub, Token, ETH,
         },
     },
     goblin_error::GoblinError,
+    input_processor::{msg_transfers::msg_transfers, ETHTransfers, MsgTransfers},
     quantities::UnsidedDeltaAtomsPerLot,
     settlement::{global_delta::TokenDelta, local_delta::LocalDelta, CheckedOps, ConstZero},
     types::{Address, StoreReader, Triple},
@@ -56,23 +56,23 @@ impl GlobalSender {
         &self,
         trader: &Address,
         custom_erc20_list: CustomERC20List,
-        eth_transfers: ETHTransfers,
+        msg_transfers: &MsgTransfers,
     ) -> Result<(), GoblinError> {
         let eth_delta = ETH::get_leg(self);
-        eth_delta.settle(trader, TokenData::ETH_STUB_PAIR, eth_transfers)?;
+        eth_delta.settle(trader, TokenData::ETH_STUB_PAIR, msg_transfers)?;
 
         let hardcoded_deltas = HardcodedERC20::get_leg(self);
         for (token_index, token_data) in HARDCODED_TOKENS.typed_iter() {
             //  TODO use core::ops::Index trait
             let hardcoded_erc20_delta = hardcoded_deltas[token_index.0];
 
-            hardcoded_erc20_delta.settle(trader, (token_index, token_data), HardcodedERC20Stub)?;
+            hardcoded_erc20_delta.settle(trader, (token_index, token_data), msg_transfers)?;
         }
 
         let custom_deltas = CustomERC20::get_leg(self);
         for (token_index, token_data) in custom_erc20_list.typed_iter() {
             let custom_erc20_delta = custom_deltas[token_index.0];
-            custom_erc20_delta.settle(trader, (token_index, token_data), CustomERC20Stub)?;
+            custom_erc20_delta.settle(trader, (token_index, token_data), msg_transfers)?;
         }
 
         Ok(())

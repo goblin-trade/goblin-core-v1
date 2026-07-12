@@ -1,13 +1,13 @@
 use crate::{
     axis::{
         token::{
-            token_global_transfer::TokenGlobalTransfer, token_index::TokenIndex,
-            token_marker::TokenMarker,
+            token_index::TokenIndex, token_marker::TokenMarker,
+            token_msg_transfer::TokenMsgTransfer,
         },
         update::UpdateMarker,
     },
     goblin_error::GoblinError,
-    input_processor::Decodable,
+    input_processor::{Decodable, MsgTransfers},
     quantities::{RawAtoms, UnsidedAtoms, UnsidedDeltaAtoms, UnsidedDeltaAtomsPerLot},
     settlement::{
         global_delta::{CounterpartyMap, CounterpartyTriple, GlobalSender, TokenDelta},
@@ -23,6 +23,7 @@ pub trait TokenDeltas:
     + PartialEq
     + StoreReader<DepositTriple, Result = Self::LocalDeposit>
     + StoreReader<CounterpartyTriple, Result = CounterpartyMap<Self>>
+    + StoreReader<MsgTransfers, Result = Self::TokenMsgTransfer>
 {
     /// Index to lookup token address
     type TokenIndex: TokenIndex;
@@ -30,7 +31,7 @@ pub trait TokenDeltas:
     /// Pending deposit amount in local namespace
     type LocalDeposit: Clone + Copy + Default + Decodable + ConstZero + CheckedOps;
 
-    type TokenGlobalTransfer: TokenGlobalTransfer;
+    type TokenMsgTransfer: TokenMsgTransfer;
 
     /// Pending deposit amount in global namespace
     type GlobalDeposit: Clone

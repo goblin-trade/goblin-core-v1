@@ -19,7 +19,7 @@ impl TokenDeltas for CustomERC20 {
     type LocalDeposit = UnsidedDeltaLots;
     type GlobalDeposit = UnsidedDeltaAtoms;
 
-    type TokenGlobalTransfer = CustomERC20Stub;
+    type TokenMsgTransfer = CustomERC20Stub;
 
     fn get_global_deposit(
         local_deposit: Self::LocalDeposit,

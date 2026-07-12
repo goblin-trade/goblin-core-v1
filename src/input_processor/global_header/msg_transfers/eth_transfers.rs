@@ -26,7 +26,7 @@ pub struct ETHTransfers {
 }
 
 impl ETHTransfers {
-    pub fn new(ctx: &DecodeCtx, flags: &HeaderFlags) -> Result<Self, GoblinError> {
+    pub fn try_new(ctx: &DecodeCtx, flags: &HeaderFlags) -> Result<Self, GoblinError> {
         let msg_value = if flags.track_msg_value {
             let msg_value_raw = hostio::msg_value();
             UnsidedAtoms::try_from(msg_value_raw)?

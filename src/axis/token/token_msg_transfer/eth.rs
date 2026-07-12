@@ -1,10 +1,9 @@
 use crate::{
-    axis::token::token_global_transfer::{ETHTransfers, TokenGlobalTransfer},
-    goblin_error::GoblinError,
-    quantities::UnsidedDeltaAtoms,
+    axis::token::token_msg_transfer::TokenMsgTransfer, goblin_error::GoblinError,
+    input_processor::ETHTransfers, quantities::UnsidedDeltaAtoms,
 };
 
-impl TokenGlobalTransfer for ETHTransfers {
+impl TokenMsgTransfer for ETHTransfers {
     fn net_delta(&self) -> Result<UnsidedDeltaAtoms, GoblinError> {
         Ok(UnsidedDeltaAtoms::try_from(self.msg_value)?
             - UnsidedDeltaAtoms::try_from(self.eth_out_due)?)

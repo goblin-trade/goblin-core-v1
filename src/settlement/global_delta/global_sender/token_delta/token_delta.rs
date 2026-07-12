@@ -2,13 +2,14 @@ use crate::{
     axis::{
         leg::{leg_reader::LegReader, SamePair},
         token::{
-            token_global_transfer::TokenGlobalTransfer,
             token_index::{TokenData, TokenIndex},
             token_marker::TokenMarker,
+            token_msg_transfer::TokenMsgTransfer,
         },
         update::{Decrease, Increase, UpdateEnum},
     },
     goblin_error::GoblinError,
+    input_processor::MsgTransfers,
     quantities::{IntoAbs, UnsidedAtoms, UnsidedDeltaAtoms, UnsidedDeltaAtomsPerLot},
     settlement::local_delta::LocalDelta,
     state::{Preimage, SlotState, StorePreimage},
@@ -53,9 +54,10 @@ impl<T: TokenMarker> TokenDelta<T> {
         &self,
         trader: &Address,
         (token_index, token_data): (T::TokenIndex, TokenData<T>),
-        global_transfer: T::TokenGlobalTransfer,
+        msg_transfers: &MsgTransfers,
     ) -> Result<(), GoblinError> {
         let token_address = token_data.address;
+        let msg_transfer = T::get(msg_transfers);
 
         let store_hash = StorePreimage::<T> {
             trader: *trader,
@@ -74,7 +76,7 @@ impl<T: TokenMarker> TokenDelta<T> {
 
         let atoms_free_delta = UnsidedDeltaAtoms::try_from(store.atoms_free)?
             + self.net_delta()
-            + global_transfer.net_delta()?;
+            + msg_transfer.net_delta()?;
 
         let atoms_locked_delta = UnsidedDeltaAtoms::try_from(store.atoms_locked)? - self.make;
 
@@ -86,7 +88,7 @@ impl<T: TokenMarker> TokenDelta<T> {
         // Instead of comparing states, just check if delta is non-zero?
         store_hash.store(&store);
 
-        let net_deposit = self.deposit.into() + global_transfer.net_delta()?;
+        let net_deposit = self.deposit.into() + msg_transfer.deposit_due()?;
 
         let Some(update_enum) = UpdateEnum::from_delta(net_deposit) else {
             return Ok(());
