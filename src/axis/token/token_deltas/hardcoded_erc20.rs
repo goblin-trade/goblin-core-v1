@@ -33,8 +33,7 @@ impl TokenDeltas for HardcodedERC20 {
         global_sender: &mut GlobalSender,
     ) -> &mut TokenDelta<Self> {
         let list = Self::get_leg_mut(global_sender);
-        let token_delta = &mut list[token_index.0];
-        token_delta
+        &mut list[token_index]
     }
 
     fn update<UM: UpdateMarker>(

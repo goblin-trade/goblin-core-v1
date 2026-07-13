@@ -1,0 +1,33 @@
+use crate::{
+    axis::token::{
+        token_index::{HardcodedERC20Index, MAX_HARDCODED_DELTAS},
+        HardcodedERC20,
+    },
+    settlement::{global_delta::TokenDelta, ConstZero},
+};
+use core::ops::{Index, IndexMut};
+
+#[derive(Clone, Copy)]
+pub struct HardcodedERC20Deltas {
+    pub inner: [TokenDelta<HardcodedERC20>; MAX_HARDCODED_DELTAS],
+}
+
+impl ConstZero for HardcodedERC20Deltas {
+    const ZEROED: Self = Self {
+        inner: [TokenDelta::ZEROED; MAX_HARDCODED_DELTAS],
+    };
+}
+
+impl Index<HardcodedERC20Index> for HardcodedERC20Deltas {
+    type Output = TokenDelta<HardcodedERC20>;
+
+    fn index(&self, index: HardcodedERC20Index) -> &Self::Output {
+        &self.inner[index.0]
+    }
+}
+
+impl IndexMut<HardcodedERC20Index> for HardcodedERC20Deltas {
+    fn index_mut(&mut self, index: HardcodedERC20Index) -> &mut Self::Output {
+        &mut self.inner[index.0]
+    }
+}

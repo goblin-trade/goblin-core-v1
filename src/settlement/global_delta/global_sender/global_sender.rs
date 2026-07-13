@@ -2,32 +2,29 @@ use crate::{
     axis::{
         leg::{leg_matcher::LegMatcher, SamePair},
         token::{
-            token_index::{CustomERC20List, TokenData, HARDCODED_TOKENS, MAX_HARDCODED_DELTAS},
+            token_index::{CustomERC20List, TokenData, HARDCODED_TOKENS},
             token_marker::TokenMarker,
-            CustomERC20, CustomERC20Stub, HardcodedERC20, HardcodedERC20Stub, Token, ETH,
+            CustomERC20, HardcodedERC20, Token, ETH,
         },
     },
     goblin_error::GoblinError,
-    input_processor::{msg_transfers::msg_transfers, ETHTransfers, MsgTransfers},
+    input_processor::MsgTransfers,
     quantities::UnsidedDeltaAtomsPerLot,
-    settlement::{global_delta::TokenDelta, local_delta::LocalDelta, CheckedOps, ConstZero},
+    settlement::{
+        global_delta::{CustomERC20Deltas, HardcodedERC20Deltas, TokenDelta},
+        local_delta::LocalDelta,
+        CheckedOps, ConstZero,
+    },
     types::{Address, StoreReader, Triple},
 };
 
-pub const MAX_CUSTOM_DELTAS: usize = 8;
-
-pub type GlobalSender = Triple<
-    TokenDelta<ETH>,
-    [TokenDelta<HardcodedERC20>; MAX_HARDCODED_DELTAS],
-    [TokenDelta<CustomERC20>; MAX_CUSTOM_DELTAS],
-    Token,
->;
+pub type GlobalSender = Triple<TokenDelta<ETH>, HardcodedERC20Deltas, CustomERC20Deltas, Token>;
 
 impl ConstZero for GlobalSender {
     const ZEROED: Self = Self::new(
         TokenDelta::ZEROED,
-        [TokenDelta::ZEROED; MAX_HARDCODED_DELTAS],
-        [TokenDelta::ZEROED; MAX_CUSTOM_DELTAS],
+        HardcodedERC20Deltas::ZEROED,
+        CustomERC20Deltas::ZEROED,
     );
 }
 
@@ -63,15 +60,13 @@ impl GlobalSender {
 
         let hardcoded_deltas = HardcodedERC20::get_leg(self);
         for (token_index, token_data) in HARDCODED_TOKENS.typed_iter() {
-            //  TODO use core::ops::Index trait
-            let hardcoded_erc20_delta = hardcoded_deltas[token_index.0];
-
+            let hardcoded_erc20_delta = hardcoded_deltas[token_index];
             hardcoded_erc20_delta.settle(trader, (token_index, token_data), msg_transfers)?;
         }
 
         let custom_deltas = CustomERC20::get_leg(self);
         for (token_index, token_data) in custom_erc20_list.typed_iter() {
-            let custom_erc20_delta = custom_deltas[token_index.0];
+            let custom_erc20_delta = custom_deltas[token_index];
             custom_erc20_delta.settle(trader, (token_index, token_data), msg_transfers)?;
         }
 
