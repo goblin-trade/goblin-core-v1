@@ -19,13 +19,4 @@ impl<const N: usize> HardcodedTokens<N> {
             .get(index.0)
             .ok_or(GoblinError::InvalidHardcodedTokenIndex)
     }
-
-    pub fn typed_iter(
-        &self,
-    ) -> impl Iterator<Item = (HardcodedERC20Index, TokenData<HardcodedERC20>)> + '_ {
-        self.inner
-            .iter()
-            .enumerate()
-            .map(|(index, data)| (HardcodedERC20Index::from(index), *data))
-    }
 }

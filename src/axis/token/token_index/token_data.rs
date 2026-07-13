@@ -1,9 +1,7 @@
-use crate::axis::token::{
-    token_deltas::TokenDeltas, token_index::TokenIndex, token_marker::TokenMarker, ETHStub, ETH,
-};
+use crate::axis::token::{token_deltas::TokenDeltas, token_index::TokenIndex, ETHStub, ETH};
 
 #[derive(Clone, Copy)]
-pub struct TokenData<T: TokenMarker> {
+pub struct TokenData<T: TokenDeltas> {
     pub address: <T::TokenIndex as TokenIndex>::TokenAddress,
     pub decimals: <T::TokenIndex as TokenIndex>::HardcodedDecimals,
 }

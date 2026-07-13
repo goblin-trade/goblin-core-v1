@@ -1,6 +1,10 @@
 use crate::{
     axis::{
-        token::{token_deltas::TokenDeltas, token_index::TokenIndex, ETHStub, ETH},
+        token::{
+            token_deltas::TokenDeltas,
+            token_index::{CustomERC20List, TokenData, TokenIndex},
+            ETHStub, ETH,
+        },
         update::UpdateMarker,
     },
     goblin_error::GoblinError,
@@ -18,6 +22,12 @@ impl TokenDeltas for ETH {
     type TokenMsgTransfer = ETHTransfers;
 
     type SenderDelta = ETHDelta;
+
+    fn token_index_data_iter(
+        _custom_erc20_list: CustomERC20List,
+    ) -> impl Iterator<Item = (Self::TokenIndex, TokenData<Self>)> {
+        core::iter::once(TokenData::ETH_STUB_PAIR)
+    }
 
     fn get_global_deposit(
         _local_deposit: Self::LocalDeposit,

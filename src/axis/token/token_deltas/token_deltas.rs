@@ -2,7 +2,10 @@ use core::ops::{Index, IndexMut};
 
 use crate::{
     axis::{
-        token::{token_index::TokenIndex, token_msg_transfer::TokenMsgTransfer},
+        token::{
+            token_index::{CustomERC20List, TokenData, TokenIndex},
+            token_msg_transfer::TokenMsgTransfer,
+        },
         update::UpdateMarker,
     },
     goblin_error::GoblinError,
@@ -46,6 +49,10 @@ pub trait TokenDeltas:
         + Copy
         + Index<Self::TokenIndex, Output = TokenDelta<Self>>
         + IndexMut<Self::TokenIndex>;
+
+    fn token_index_data_iter(
+        custom_erc20_list: CustomERC20List,
+    ) -> impl Iterator<Item = (Self::TokenIndex, TokenData<Self>)>;
 
     fn get_global_deposit(
         local_deposit: Self::LocalDeposit,

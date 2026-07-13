@@ -2,7 +2,9 @@ use crate::{
     axis::{
         token::{
             token_deltas::TokenDeltas,
-            token_index::{HardcodedERC20Index, TokenIndex},
+            token_index::{
+                CustomERC20List, HardcodedERC20Index, TokenData, TokenIndex, HARDCODED_TOKENS,
+            },
             HardcodedERC20, HardcodedERC20Stub,
         },
         update::UpdateMarker,
@@ -22,6 +24,16 @@ impl TokenDeltas for HardcodedERC20 {
     type TokenMsgTransfer = HardcodedERC20Stub;
 
     type SenderDelta = HardcodedERC20Deltas;
+
+    fn token_index_data_iter(
+        _custom_erc20_list: CustomERC20List,
+    ) -> impl Iterator<Item = (Self::TokenIndex, TokenData<Self>)> {
+        HARDCODED_TOKENS
+            .inner
+            .iter()
+            .enumerate()
+            .map(|(index, data)| (HardcodedERC20Index::from(index), *data))
+    }
 
     fn get_global_deposit(
         local_deposit: Self::LocalDeposit,

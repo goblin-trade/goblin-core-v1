@@ -51,26 +51,32 @@ impl GlobalSender {
         Ok(())
     }
 
+    fn settle_leg<T>(
+        &self,
+        trader: &Address,
+        custom_erc20_list: CustomERC20List,
+        msg_transfers: &MsgTransfers,
+    ) -> Result<(), GoblinError>
+    where
+        T: TokenMarker,
+    {
+        let delta_leg = T::get_leg(self);
+        for (token_index, token_data) in T::token_index_data_iter(custom_erc20_list) {
+            let delta = delta_leg[token_index];
+            delta.settle(trader, (token_index, token_data), msg_transfers)?;
+        }
+        Ok(())
+    }
+
     pub fn settle(
         &self,
         trader: &Address,
         custom_erc20_list: CustomERC20List,
         msg_transfers: &MsgTransfers,
     ) -> Result<(), GoblinError> {
-        let eth_delta = ETH::get_leg(self).inner;
-        eth_delta.settle(trader, TokenData::ETH_STUB_PAIR, msg_transfers)?;
-
-        let hardcoded_deltas = HardcodedERC20::get_leg(self);
-        for (token_index, token_data) in HARDCODED_TOKENS.typed_iter() {
-            let hardcoded_erc20_delta = hardcoded_deltas[token_index];
-            hardcoded_erc20_delta.settle(trader, (token_index, token_data), msg_transfers)?;
-        }
-
-        let custom_deltas = CustomERC20::get_leg(self);
-        for (token_index, token_data) in custom_erc20_list.typed_iter() {
-            let custom_erc20_delta = custom_deltas[token_index];
-            custom_erc20_delta.settle(trader, (token_index, token_data), msg_transfers)?;
-        }
+        self.settle_leg::<ETH>(trader, custom_erc20_list, msg_transfers)?;
+        self.settle_leg::<HardcodedERC20>(trader, custom_erc20_list, msg_transfers)?;
+        self.settle_leg::<CustomERC20>(trader, custom_erc20_list, msg_transfers)?;
 
         Ok(())
     }

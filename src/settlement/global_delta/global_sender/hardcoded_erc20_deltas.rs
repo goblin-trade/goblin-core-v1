@@ -18,6 +18,9 @@ impl ConstZero for HardcodedERC20Deltas {
     };
 }
 
+// TODO trait with settle function
+// This should settle all elements. It should also include Index and IndexMut traits
+
 impl Index<HardcodedERC20Index> for HardcodedERC20Deltas {
     type Output = TokenDelta<HardcodedERC20>;
 

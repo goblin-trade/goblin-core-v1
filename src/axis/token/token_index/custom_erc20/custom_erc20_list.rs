@@ -23,17 +23,4 @@ impl<'a> CustomERC20List<'a> {
             .ok_or(GoblinError::InvalidCustomTokenIndex)?;
         Ok(data.address)
     }
-
-    pub fn index_iter(&self) -> impl Iterator<Item = CustomERC20Index> {
-        (0..self.inner.len()).map(CustomERC20Index::from)
-    }
-
-    pub fn typed_iter(
-        &self,
-    ) -> impl Iterator<Item = (CustomERC20Index, TokenData<CustomERC20>)> + 'a {
-        self.inner
-            .iter()
-            .enumerate()
-            .map(|(i, data)| (CustomERC20Index::from(i), *data))
-    }
 }
