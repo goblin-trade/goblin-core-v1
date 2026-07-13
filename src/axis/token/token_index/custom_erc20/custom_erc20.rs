@@ -13,6 +13,7 @@ impl TokenIndex for CustomERC20Index {
     type TokenAddress = Address;
 
     type HardcodedDecimals = CustomERC20Stub;
+    type HostioDecimals = u8;
 
     type StoredDecimals = u8;
     type StoredPadding = [u8; 16 - size_of::<Self::StoredDecimals>()];
@@ -24,10 +25,10 @@ impl TokenIndex for CustomERC20Index {
         custom_erc20_list.token_index_to_address(*self)
     }
 
-    fn get_decimals(
+    fn get_hostio_decimals(
         &self,
         address: &Self::TokenAddress,
-    ) -> Result<Self::StoredDecimals, GoblinError> {
+    ) -> Result<Self::HostioDecimals, GoblinError> {
         erc20_hostio::decimals(address)
     }
 }

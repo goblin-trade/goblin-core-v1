@@ -9,6 +9,7 @@ use crate::{
         update::{Decrease, Increase, UpdateEnum},
     },
     goblin_error::GoblinError,
+    hostio::erc20_hostio,
     input_processor::MsgTransfers,
     quantities::{IntoAbs, UnsidedAtoms, UnsidedDeltaAtoms, UnsidedDeltaAtomsPerLot},
     settlement::local_delta::LocalDelta,
@@ -55,7 +56,11 @@ impl<T: TokenMarker> TokenDelta<T> {
         trader: &Address,
         (token_index, token_data): (T::TokenIndex, TokenData<T>),
         msg_transfers: &MsgTransfers,
-    ) -> Result<(), GoblinError> {
+    ) -> Result<(), GoblinError>
+// where
+    //     <T::TokenIndex as TokenIndex>::StoredDecimals:
+    //         TryFrom<<T::TokenIndex as TokenIndex>::HostioDecimals, Error = GoblinError>,
+    {
         let token_address = token_data.address;
         let msg_transfer = T::get(msg_transfers);
 
@@ -68,10 +73,29 @@ impl<T: TokenMarker> TokenDelta<T> {
         let mut store = store_hash.load();
 
         if store.is_empty() {
-            store.decimals = token_data
-                .decimals
-                .try_into()
-                .or(token_index.get_decimals(&token_address))?;
+            let hostio_decimals: <T::TokenIndex as TokenIndex>::HostioDecimals =
+                token_index.get_hostio_decimals(&token_address)?;
+            // .map(|gg| <T::TokenIndex as TokenIndex>::StoredDecimals::try_from(gg))?;
+
+            let stored_decimals =
+                <T::TokenIndex as TokenIndex>::StoredDecimals::try_from(hostio_decimals)
+                    .map_err(|_| GoblinError::NoHostioDecimals)?;
+
+            // spagetti code
+            // Hardcoded decimals are already present. Yet we need to define a getter function
+            // for hardcoded that never gets used.
+            //
+            // token_index.get_decimals() will perform hostio call for custom erc20
+            //
+            // General idea
+            //
+            // Try to convert hardcoded decimals into stored decimals.
+            // If this fails try to convert 'hostioDecimals' into 'stored decimals'
+            //
+            // Define a new generic and getter function
+            // store.decimals = token_data.decimals.try_into().or(token_index
+            //     .get_hostio_decimals(&token_address)
+            //     .map(|g| g.try_into())?)?;
         }
 
         let atoms_free_delta = UnsidedDeltaAtoms::try_from(store.atoms_free)?

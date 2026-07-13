@@ -41,6 +41,7 @@ pub enum GoblinError {
     PositionOccupied = 37,
     NoUpdate = 38,
     NoHardcodedDecimals = 39,
+    NoHostioDecimals = 40,
 }
 
 impl GoblinError {

@@ -8,11 +8,24 @@ pub trait TokenIndex: Clone + Copy + Decodable + ConstZero + PartialEq {
 
     type TokenAddress: Clone + Copy + Sized + Default;
 
+    /// Decimals hardcoded in the smart contract
     type HardcodedDecimals: Clone + Copy;
+
+    /// Decimals read from ERC20 hostio
+    /// Only present for custom tokens
+    type HostioDecimals: Clone + Copy;
 
     /// Decimals stored in `Store`
     /// Decimals are stored as u8 for ERC20 tokens but not for ETH
-    type StoredDecimals: Clone + Copy + Into<u8> + TryFrom<Self::HardcodedDecimals>;
+    ///
+    /// TODO fix spagetti code
+    /// We need a unified function
+    /// StoredDecimals = f(HardcodedDecimals, HostioDecimals)
+    type StoredDecimals: Clone
+        + Copy
+        + Into<u8>
+        + TryFrom<Self::HardcodedDecimals>
+        + TryFrom<Self::HostioDecimals>;
 
     /// Padding to pad `Store` to 32 bytes
     /// ERC20 store has less padding to accomodate `decimals: u8`
@@ -23,15 +36,8 @@ pub trait TokenIndex: Clone + Copy + Decodable + ConstZero + PartialEq {
         custom_erc20_list: CustomERC20List,
     ) -> Result<Self::TokenAddress, GoblinError>;
 
-    // problem-
-    //
-    // - CustomERC20: decimals is derived from address
-    // - HardcodedERC20: derived from token index (Self)
-    //
-    // But we don't want to pre-emptively read decimals from Hostio
-    // for CustomERC20. First check if stored in store
-    fn get_decimals(
+    fn get_hostio_decimals(
         &self,
         address: &Self::TokenAddress,
-    ) -> Result<Self::StoredDecimals, GoblinError>;
+    ) -> Result<Self::HostioDecimals, GoblinError>;
 }

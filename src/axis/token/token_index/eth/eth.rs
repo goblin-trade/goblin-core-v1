@@ -11,6 +11,7 @@ impl TokenIndex for ETHStub {
     type TokenAddress = ETHStub;
 
     type HardcodedDecimals = ETHStub;
+    type HostioDecimals = ETHStub;
 
     // Store 18 decimals in ETHStore for symmetry?
     type StoredDecimals = ETHStub;
@@ -23,10 +24,10 @@ impl TokenIndex for ETHStub {
         Ok(ETHStub)
     }
 
-    fn get_decimals(
+    fn get_hostio_decimals(
         &self,
         _address: &Self::TokenAddress,
-    ) -> Result<Self::StoredDecimals, GoblinError> {
+    ) -> Result<Self::HostioDecimals, GoblinError> {
         Ok(ETHStub)
     }
 }
