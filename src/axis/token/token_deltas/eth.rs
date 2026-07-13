@@ -6,8 +6,8 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::ETHTransfers,
     quantities::{ETHAtoms, UnsidedAtoms, UnsidedDeltaAtomsPerLot},
-    settlement::global_delta::{GlobalSender, TokenDelta},
-    types::{Address, StoreReader},
+    settlement::global_delta::ETHDelta,
+    types::Address,
 };
 
 impl TokenDeltas for ETH {
@@ -17,6 +17,8 @@ impl TokenDeltas for ETH {
 
     type TokenMsgTransfer = ETHTransfers;
 
+    type SenderDelta = ETHDelta;
+
     fn get_global_deposit(
         _local_deposit: Self::LocalDeposit,
         _atoms_per_lot: UnsidedDeltaAtomsPerLot,
@@ -24,12 +26,12 @@ impl TokenDeltas for ETH {
         ETHStub
     }
 
-    fn get_global_token_delta(
-        _token_index: Self::TokenIndex,
-        global_sender: &mut GlobalSender,
-    ) -> &mut TokenDelta<Self> {
-        Self::get_leg_mut(global_sender)
-    }
+    // fn get_global_token_delta(
+    //     _token_index: Self::TokenIndex,
+    //     global_sender: &mut GlobalSender,
+    // ) -> &mut TokenDelta<Self> {
+    //     Self::get_leg_mut(global_sender)
+    // }
 
     fn update<UM: UpdateMarker>(
         deposit: UnsidedAtoms,

@@ -11,18 +11,18 @@ use crate::{
     input_processor::MsgTransfers,
     quantities::UnsidedDeltaAtomsPerLot,
     settlement::{
-        global_delta::{CustomERC20Deltas, HardcodedERC20Deltas, TokenDelta},
+        global_delta::{CustomERC20Deltas, ETHDelta, HardcodedERC20Deltas, TokenDelta},
         local_delta::LocalDelta,
         CheckedOps, ConstZero,
     },
     types::{Address, StoreReader, Triple},
 };
 
-pub type GlobalSender = Triple<TokenDelta<ETH>, HardcodedERC20Deltas, CustomERC20Deltas, Token>;
+pub type GlobalSender = Triple<ETHDelta, HardcodedERC20Deltas, CustomERC20Deltas, Token>;
 
 impl ConstZero for GlobalSender {
     const ZEROED: Self = Self::new(
-        TokenDelta::ZEROED,
+        ETHDelta::ZEROED,
         HardcodedERC20Deltas::ZEROED,
         CustomERC20Deltas::ZEROED,
     );
@@ -39,11 +39,13 @@ impl GlobalSender {
         T: TokenMarker,
         In: LegMatcher,
     {
-        let delta = TokenDelta::from_local_delta::<In>(atoms_per_lot_pair, local_delta);
+        let new_delta = TokenDelta::<T>::from_local_delta::<In>(atoms_per_lot_pair, local_delta);
 
-        let delta_store = T::get_global_token_delta(token_index, self);
+        let deltas_list = T::get_leg_mut(self);
+        let delta_store = &mut deltas_list[token_index];
+
         *delta_store = delta_store
-            .checked_add(delta)
+            .checked_add(new_delta)
             .ok_or(GoblinError::DeltaOverflow)?;
 
         Ok(())
@@ -55,7 +57,7 @@ impl GlobalSender {
         custom_erc20_list: CustomERC20List,
         msg_transfers: &MsgTransfers,
     ) -> Result<(), GoblinError> {
-        let eth_delta = ETH::get_leg(self);
+        let eth_delta = ETH::get_leg(self).inner;
         eth_delta.settle(trader, TokenData::ETH_STUB_PAIR, msg_transfers)?;
 
         let hardcoded_deltas = HardcodedERC20::get_leg(self);

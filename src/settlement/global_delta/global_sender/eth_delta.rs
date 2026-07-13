@@ -4,6 +4,7 @@ use crate::{
 };
 use core::ops::{Index, IndexMut};
 
+#[derive(Clone, Copy)]
 pub struct ETHDelta {
     pub inner: TokenDelta<ETH>,
 }

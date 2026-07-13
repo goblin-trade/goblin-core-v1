@@ -9,8 +9,8 @@ use crate::{
     },
     goblin_error::GoblinError,
     quantities::{UnsidedAtoms, UnsidedDeltaAtoms, UnsidedDeltaAtomsPerLot, UnsidedDeltaLots},
-    settlement::global_delta::{GlobalSender, TokenDelta, TransferERC20},
-    types::{Address, StoreReader},
+    settlement::global_delta::{CustomERC20Deltas, TransferERC20},
+    types::Address,
 };
 
 impl TokenDeltas for CustomERC20 {
@@ -21,19 +21,13 @@ impl TokenDeltas for CustomERC20 {
 
     type TokenMsgTransfer = CustomERC20Stub;
 
+    type SenderDelta = CustomERC20Deltas;
+
     fn get_global_deposit(
         local_deposit: Self::LocalDeposit,
         atoms_per_lot: UnsidedDeltaAtomsPerLot,
     ) -> Self::GlobalDeposit {
         local_deposit * atoms_per_lot
-    }
-
-    fn get_global_token_delta(
-        token_index: Self::TokenIndex,
-        global_sender: &mut GlobalSender,
-    ) -> &mut TokenDelta<Self> {
-        let list = Self::get_leg_mut(global_sender);
-        &mut list[token_index]
     }
 
     fn update<UM: UpdateMarker>(

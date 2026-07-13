@@ -1,14 +1,13 @@
+use core::ops::{Index, IndexMut};
+
 use crate::{
     axis::{
-        token::{
-            token_index::TokenIndex, token_marker::TokenMarker,
-            token_msg_transfer::TokenMsgTransfer,
-        },
+        token::{token_index::TokenIndex, token_msg_transfer::TokenMsgTransfer},
         update::UpdateMarker,
     },
     goblin_error::GoblinError,
     input_processor::{Decodable, MsgTransfers},
-    quantities::{RawAtoms, UnsidedAtoms, UnsidedDeltaAtoms, UnsidedDeltaAtomsPerLot},
+    quantities::{UnsidedAtoms, UnsidedDeltaAtoms, UnsidedDeltaAtomsPerLot},
     settlement::{
         global_delta::{CounterpartyMap, CounterpartyTriple, GlobalSender, TokenDelta},
         local_delta::DepositTriple,
@@ -24,6 +23,7 @@ pub trait TokenDeltas:
     + StoreReader<DepositTriple, Result = Self::LocalDeposit>
     + StoreReader<CounterpartyTriple, Result = CounterpartyMap<Self>>
     + StoreReader<MsgTransfers, Result = Self::TokenMsgTransfer>
+    + StoreReader<GlobalSender, Result = Self::SenderDelta>
 {
     /// Index to lookup token address
     type TokenIndex: TokenIndex;
@@ -42,17 +42,15 @@ pub trait TokenDeltas:
         + CheckedOps
         + Into<UnsidedDeltaAtoms>;
 
+    type SenderDelta: Clone
+        + Copy
+        + Index<Self::TokenIndex, Output = TokenDelta<Self>>
+        + IndexMut<Self::TokenIndex>;
+
     fn get_global_deposit(
         local_deposit: Self::LocalDeposit,
         atoms_per_lot: UnsidedDeltaAtomsPerLot,
     ) -> Self::GlobalDeposit;
-
-    fn get_global_token_delta(
-        token_index: Self::TokenIndex,
-        global_sender: &mut GlobalSender,
-    ) -> &mut TokenDelta<Self>
-    where
-        Self: TokenMarker;
 
     // this gives a clean implementation for ETH
     //

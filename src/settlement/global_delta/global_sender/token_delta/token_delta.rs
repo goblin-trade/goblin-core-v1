@@ -2,6 +2,7 @@ use crate::{
     axis::{
         leg::{leg_reader::LegReader, SamePair},
         token::{
+            token_deltas::TokenDeltas,
             token_index::{TokenData, TokenIndex},
             token_marker::TokenMarker,
             token_msg_transfer::TokenMsgTransfer,
@@ -18,13 +19,13 @@ use crate::{
 };
 
 #[derive(Clone, Copy)]
-pub struct TokenDelta<T: TokenMarker> {
+pub struct TokenDelta<T: TokenDeltas> {
     pub deposit: T::GlobalDeposit,
     pub take: UnsidedDeltaAtoms,
     pub make: UnsidedDeltaAtoms,
 }
 
-impl<T: TokenMarker> TokenDelta<T> {
+impl<T: TokenDeltas> TokenDelta<T> {
     pub fn net_delta(&self) -> UnsidedDeltaAtoms {
         self.deposit.into() + self.take + self.make
     }
@@ -57,9 +58,10 @@ impl<T: TokenMarker> TokenDelta<T> {
         (token_index, token_data): (T::TokenIndex, TokenData<T>),
         msg_transfers: &MsgTransfers,
     ) -> Result<(), GoblinError>
-// where
-    //     <T::TokenIndex as TokenIndex>::StoredDecimals:
-    //         TryFrom<<T::TokenIndex as TokenIndex>::HostioDecimals, Error = GoblinError>,
+    where
+        T: TokenMarker, // where
+                        //     <T::TokenIndex as TokenIndex>::StoredDecimals:
+                        //         TryFrom<<T::TokenIndex as TokenIndex>::HostioDecimals, Error = GoblinError>,
     {
         let token_address = token_data.address;
         let msg_transfer = T::get(msg_transfers);
