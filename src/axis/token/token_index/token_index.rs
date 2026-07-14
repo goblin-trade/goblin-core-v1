@@ -33,6 +33,8 @@ pub trait TokenIndex: Clone + Copy + Decodable + ConstZero + PartialEq {
 
     // TODO replace custom function
     // Use Index trait
+    //
+    // TODO this is a safe function now as TokenIndex is bounds checked
     fn get_address(
         &self,
         custom_erc20_list: CustomERC20List,

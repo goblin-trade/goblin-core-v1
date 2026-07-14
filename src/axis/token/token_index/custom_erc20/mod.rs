@@ -1,5 +1,5 @@
 mod custom_erc20;
-mod decode;
+mod impl_decodable;
 
 pub mod custom_erc20_index;
 pub mod custom_erc20_list;
