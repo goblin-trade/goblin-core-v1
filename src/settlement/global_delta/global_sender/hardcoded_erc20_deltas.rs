@@ -1,6 +1,6 @@
 use crate::{
     axis::token::{
-        token_index::{HardcodedERC20Index, MAX_HARDCODED_DELTAS},
+        token_index::{HardcodedERC20Index, HARDCODED_TOKEN_COUNT},
         HardcodedERC20,
     },
     settlement::{global_delta::TokenDelta, ConstZero},
@@ -9,12 +9,12 @@ use core::ops::{Index, IndexMut};
 
 #[derive(Clone, Copy)]
 pub struct HardcodedERC20Deltas {
-    pub inner: [TokenDelta<HardcodedERC20>; MAX_HARDCODED_DELTAS],
+    pub inner: [TokenDelta<HardcodedERC20>; HARDCODED_TOKEN_COUNT],
 }
 
 impl ConstZero for HardcodedERC20Deltas {
     const ZEROED: Self = Self {
-        inner: [TokenDelta::ZEROED; MAX_HARDCODED_DELTAS],
+        inner: [TokenDelta::ZEROED; HARDCODED_TOKEN_COUNT],
     };
 }
 

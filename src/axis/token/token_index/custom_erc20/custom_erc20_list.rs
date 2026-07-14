@@ -12,6 +12,7 @@ pub struct CustomERC20List<'a> {
     pub inner: &'a [TokenData<CustomERC20>],
 }
 
+// TODO Index trait instead of custom function
 impl<'a> CustomERC20List<'a> {
     pub fn token_index_to_address(
         &self,

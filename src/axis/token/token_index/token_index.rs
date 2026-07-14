@@ -31,6 +31,8 @@ pub trait TokenIndex: Clone + Copy + Decodable + ConstZero + PartialEq {
     /// ERC20 store has less padding to accomodate `decimals: u8`
     type StoredPadding: Clone + Copy;
 
+    // TODO replace custom function
+    // Use Index trait
     fn get_address(
         &self,
         custom_erc20_list: CustomERC20List,

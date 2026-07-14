@@ -61,6 +61,13 @@ impl GlobalSender {
         T: TokenMarker,
     {
         let delta_leg = T::get_leg(self);
+
+        // problems
+        //
+        // 1. custom list can have length more than MAX_CUSTOM_DELTAS
+        // 2. We use fixed array instead of FixedMap which stores the number of active elements.
+        // There is no concept of active or inactive item. We must check whether delta is non-zero
+        // to save hostio calls.
         for (token_index, token_data) in T::token_index_data_iter(custom_erc20_list) {
             let delta = delta_leg[token_index];
             delta.settle(trader, (token_index, token_data), msg_transfers)?;

@@ -21,7 +21,10 @@ impl TokenIndex for HardcodedERC20Index {
         &self,
         _custom_erc20_list: CustomERC20List,
     ) -> Result<Self::TokenAddress, GoblinError> {
-        HARDCODED_TOKENS.get(*self).map(|data| data.address)
+        // TODO is HardcodedTokenIndex validated?
+        // Previously returned error from get()- GoblinError::InvalidHardcodedTokenIndex
+        Ok(HARDCODED_TOKENS[*self].address)
+        // HARDCODED_TOKENS.get(*self).map(|data| data.address)
     }
 
     fn get_hostio_decimals(
