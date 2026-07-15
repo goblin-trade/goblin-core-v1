@@ -1,7 +1,7 @@
 use crate::{
     axis::{
         token::{
-            token_index::{CustomERC20List, TokenData, TokenIndex},
+            token_index::{CustomERC20List, TokenData},
             token_marker::{eth::ETHDelta, TokenMarker},
             ETHStub, ETH,
         },
@@ -48,10 +48,34 @@ impl TokenMarker for ETH {
     fn update<UM: UpdateMarker>(
         deposit: UnsidedAtoms,
         trader: &Address,
-        _token_address: &<Self::TokenIndex as TokenIndex>::TokenAddress,
-        _decimals: <Self::TokenIndex as TokenIndex>::StoredDecimals,
+        _token_address: &Self::TokenAddress,
+        _decimals: Self::StoredDecimals,
     ) -> Result<(), GoblinError> {
         let amount = ETHAtoms::try_from(deposit)?;
         UM::update_eth(trader, &amount)
+    }
+
+    ////////////////////
+
+    type TokenAddress = ETHStub;
+
+    type HardcodedDecimals = ETHStub;
+    type HostioDecimals = ETHStub;
+
+    // Store 18 decimals in ETHStore for symmetry?
+    type StoredDecimals = ETHStub;
+    type StoredPadding = [u8; 16 - size_of::<Self::StoredDecimals>()];
+
+    fn get_address(
+        _token_index: Self::TokenIndex,
+        _custom_erc20_list: CustomERC20List,
+    ) -> Self::TokenAddress {
+        ETHStub
+    }
+
+    fn get_hostio_decimals(
+        _address: &Self::TokenAddress,
+    ) -> Result<Self::HostioDecimals, GoblinError> {
+        Ok(ETHStub)
     }
 }

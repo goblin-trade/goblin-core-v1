@@ -1,7 +1,5 @@
 use crate::{
-    axis::token::{
-        token_index::TokenIndex, token_marker::TokenMarker, CustomERC20, HardcodedERC20, ETH,
-    },
+    axis::token::{token_marker::TokenMarker, CustomERC20, HardcodedERC20, ETH},
     quantities::UnsidedAtoms,
     state::SlotState,
 };
@@ -10,8 +8,8 @@ use crate::{
 pub struct Store<T: TokenMarker> {
     pub atoms_locked: UnsidedAtoms,
     pub atoms_free: UnsidedAtoms,
-    pub decimals: <T::TokenIndex as TokenIndex>::StoredDecimals,
-    _padding: <T::TokenIndex as TokenIndex>::StoredPadding,
+    pub decimals: T::StoredDecimals,
+    _padding: T::StoredPadding,
 }
 
 unsafe impl<T: TokenMarker> SlotState for Store<T> {}

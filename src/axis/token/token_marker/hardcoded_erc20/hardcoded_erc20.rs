@@ -2,7 +2,7 @@ use crate::{
     axis::{
         token::{
             token_index::{
-                CustomERC20List, HardcodedERC20Index, HardcodedTokens, TokenData, TokenIndex,
+                CustomERC20List, HardcodedERC20Index, HardcodedTokens, TokenData,
                 HARDCODED_ERC20_COUNT, HARDCODED_TOKENS,
             },
             token_marker::{hardcoded_erc20::HardcodedERC20Deltas, TokenMarker},
@@ -57,9 +57,32 @@ impl TokenMarker for HardcodedERC20 {
     fn update<UM: UpdateMarker>(
         deposit: UnsidedAtoms,
         trader: &Address,
-        token_address: &<Self::TokenIndex as TokenIndex>::TokenAddress,
-        decimals: <Self::TokenIndex as TokenIndex>::StoredDecimals,
+        token_address: &Self::TokenAddress,
+        decimals: Self::StoredDecimals,
     ) -> Result<(), GoblinError> {
         TransferERC20::<UM>::new(deposit, trader, token_address, decimals).dispatch()
+    }
+
+    ///////////
+
+    type TokenAddress = Address;
+
+    type HardcodedDecimals = u8;
+    type HostioDecimals = HardcodedERC20Stub;
+
+    type StoredDecimals = u8;
+    type StoredPadding = [u8; 16 - size_of::<Self::StoredDecimals>()];
+
+    fn get_address(
+        token_index: Self::TokenIndex,
+        _custom_erc20_list: CustomERC20List,
+    ) -> Self::TokenAddress {
+        HARDCODED_TOKENS[token_index].address
+    }
+
+    fn get_hostio_decimals(
+        _address: &Self::TokenAddress,
+    ) -> Result<Self::HostioDecimals, GoblinError> {
+        Ok(HardcodedERC20Stub)
     }
 }

@@ -1,5 +1,5 @@
 use crate::{
-    axis::token::{token_index::TokenIndex, token_marker::TokenMarker},
+    axis::token::token_marker::TokenMarker,
     state::{Preimage, Store},
     types::Address,
 };
@@ -8,7 +8,7 @@ use crate::{
 #[derive(Clone, Copy)]
 pub struct StorePreimage<T: TokenMarker> {
     pub trader: Address,
-    pub token_address: <T::TokenIndex as TokenIndex>::TokenAddress,
+    pub token_address: T::TokenAddress,
 }
 
 impl<T: TokenMarker> Preimage for StorePreimage<T> {

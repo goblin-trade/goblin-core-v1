@@ -1,4 +1,3 @@
-mod custom_erc20;
 mod impl_decodable;
 mod impl_index;
 

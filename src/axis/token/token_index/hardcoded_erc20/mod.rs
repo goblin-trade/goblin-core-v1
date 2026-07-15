@@ -1,4 +1,3 @@
-pub mod hardcoded_erc20;
 pub mod hardcoded_erc20_index;
 pub mod hardcoded_tokens;
 

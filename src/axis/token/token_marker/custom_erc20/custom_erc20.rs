@@ -1,13 +1,14 @@
 use crate::{
     axis::{
         token::{
-            token_index::{CustomERC20Index, CustomERC20List, TokenData, TokenIndex},
+            token_index::{CustomERC20Index, CustomERC20List, TokenData},
             token_marker::{custom_erc20::CustomERC20Deltas, TokenMarker},
             CustomERC20, CustomERC20Stub,
         },
         update::UpdateMarker,
     },
     goblin_error::GoblinError,
+    hostio::erc20_hostio,
     quantities::{UnsidedAtoms, UnsidedDeltaAtoms, UnsidedDeltaAtomsPerLot, UnsidedDeltaLots},
     settlement::global_delta::TransferERC20,
     types::Address,
@@ -46,9 +47,32 @@ impl TokenMarker for CustomERC20 {
     fn update<UM: UpdateMarker>(
         deposit: UnsidedAtoms,
         trader: &Address,
-        token_address: &<Self::TokenIndex as TokenIndex>::TokenAddress,
-        decimals: <Self::TokenIndex as TokenIndex>::StoredDecimals,
+        token_address: &Self::TokenAddress,
+        decimals: Self::StoredDecimals,
     ) -> Result<(), GoblinError> {
         TransferERC20::<UM>::new(deposit, trader, token_address, decimals).dispatch()
+    }
+
+    ///////
+
+    type TokenAddress = Address;
+
+    type HardcodedDecimals = CustomERC20Stub;
+    type HostioDecimals = u8;
+
+    type StoredDecimals = u8;
+    type StoredPadding = [u8; 16 - size_of::<Self::StoredDecimals>()];
+
+    fn get_address(
+        token_index: Self::TokenIndex,
+        custom_erc20_list: CustomERC20List,
+    ) -> Self::TokenAddress {
+        custom_erc20_list[token_index].address
+    }
+
+    fn get_hostio_decimals(
+        address: &Self::TokenAddress,
+    ) -> Result<Self::HostioDecimals, GoblinError> {
+        erc20_hostio::decimals(address)
     }
 }

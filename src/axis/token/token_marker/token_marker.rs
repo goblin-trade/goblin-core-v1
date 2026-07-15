@@ -3,7 +3,7 @@ use core::ops::{Index, IndexMut};
 use crate::{
     axis::{
         token::{
-            token_index::{CustomERC20List, TokenData, TokenIndex},
+            token_index::{CustomERC20List, TokenData},
             token_msg_transfer::TokenMsgTransfer,
         },
         update::UpdateMarker,
@@ -32,7 +32,7 @@ pub trait TokenMarker:
     const DISCRIMINATOR: u8;
 
     /// Index to lookup token address
-    type TokenIndex: TokenIndex;
+    type TokenIndex: Clone + Copy + Decodable + ConstZero + PartialEq;
 
     /// Pending deposit amount in local namespace
     type LocalDeposit: Clone + Copy + Default + Decodable + ConstZero + CheckedOps;
@@ -70,7 +70,47 @@ pub trait TokenMarker:
     fn update<UM: UpdateMarker>(
         deposit: UnsidedAtoms,
         trader: &Address,
-        token_address: &<Self::TokenIndex as TokenIndex>::TokenAddress,
-        decimals: <Self::TokenIndex as TokenIndex>::StoredDecimals,
+        token_address: &Self::TokenAddress,
+        decimals: Self::StoredDecimals,
     ) -> Result<(), GoblinError>;
+
+    ////////////////////////
+
+    type TokenAddress: Clone + Copy + Sized + Default;
+
+    /// Decimals hardcoded in the smart contract
+    type HardcodedDecimals: Clone + Copy;
+
+    /// Decimals read from ERC20 hostio
+    /// Only present for custom tokens
+    type HostioDecimals: Clone + Copy;
+
+    /// Decimals stored in `Store`
+    /// Decimals are stored as u8 for ERC20 tokens but not for ETH
+    ///
+    /// TODO fix spagetti code
+    /// We need a unified function
+    /// StoredDecimals = f(HardcodedDecimals, HostioDecimals)
+    type StoredDecimals: Clone
+        + Copy
+        + Into<u8>
+        + TryFrom<Self::HardcodedDecimals>
+        + TryFrom<Self::HostioDecimals>;
+
+    /// Padding to pad `Store` to 32 bytes
+    /// ERC20 store has less padding to accomodate `decimals: u8`
+    type StoredPadding: Clone + Copy;
+
+    // TODO replace custom function
+    // Use Index trait
+    //
+    // TODO this is a safe function now as TokenIndex is bounds checked
+    fn get_address(
+        token_index: Self::TokenIndex,
+        custom_erc20_list: CustomERC20List,
+    ) -> Self::TokenAddress;
+
+    fn get_hostio_decimals(
+        address: &Self::TokenAddress,
+    ) -> Result<Self::HostioDecimals, GoblinError>;
 }

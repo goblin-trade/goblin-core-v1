@@ -2,9 +2,7 @@ use crate::{
     axis::{
         leg::{leg_reader::LegReader, SamePair},
         token::{
-            token_index::{TokenData, TokenIndex},
-            token_marker::TokenMarker,
-            token_msg_transfer::TokenMsgTransfer,
+            token_index::TokenData, token_marker::TokenMarker, token_msg_transfer::TokenMsgTransfer,
         },
         update::{Decrease, Increase, UpdateEnum},
     },
@@ -59,8 +57,7 @@ impl<T: TokenMarker> TokenDelta<T> {
     ) -> Result<(), GoblinError>
     where
         T: TokenMarker, // where
-                        //     <T::TokenIndex as TokenIndex>::StoredDecimals:
-                        //         TryFrom<<T::TokenIndex as TokenIndex>::HostioDecimals, Error = GoblinError>,
+                        // T::StoredDecimals: TryFrom<T::HostioDecimals, Error = GoblinError>,
     {
         let token_address = token_data.address;
         let msg_transfer = T::get(msg_transfers);
@@ -74,13 +71,10 @@ impl<T: TokenMarker> TokenDelta<T> {
         let mut store = store_hash.load();
 
         if store.is_empty() {
-            let hostio_decimals: <T::TokenIndex as TokenIndex>::HostioDecimals =
-                token_index.get_hostio_decimals(&token_address)?;
-            // .map(|gg| <T::TokenIndex as TokenIndex>::StoredDecimals::try_from(gg))?;
+            let hostio_decimals = T::get_hostio_decimals(&token_address)?;
 
-            let stored_decimals =
-                <T::TokenIndex as TokenIndex>::StoredDecimals::try_from(hostio_decimals)
-                    .map_err(|_| GoblinError::NoHostioDecimals)?;
+            let stored_decimals = T::StoredDecimals::try_from(hostio_decimals)
+                .map_err(|_| GoblinError::NoHostioDecimals)?;
 
             // spagetti code
             // Hardcoded decimals are already present. Yet we need to define a getter function
