@@ -23,13 +23,6 @@ impl TokenMarker for ETH {
     type TokenMsgTransfer = ETHTransfers;
 
     type SenderDelta = ETHDelta;
-    type DataList<'a> = ETHStub;
-
-    fn token_index_data_iter(
-        _custom_erc20_list: CustomERC20List,
-    ) -> impl Iterator<Item = (Self::TokenIndex, TokenData<Self>)> {
-        core::iter::once(TokenData::ETH_STUB_PAIR)
-    }
 
     fn get_global_deposit(
         _local_deposit: Self::LocalDeposit,
@@ -53,19 +46,26 @@ impl TokenMarker for ETH {
     type TokenAddress = ETHStub;
 
     type HardcodedDecimals = ETHStub;
-    type HostioDecimals = ETHStub;
 
     // Store 18 decimals in ETHStore for symmetry?
     type StoredDecimals = ETHStub;
     type StoredPadding = [u8; 16 - size_of::<Self::StoredDecimals>()];
 
+    fn get_stored_decimals(
+        _token_data: &TokenData<Self>,
+    ) -> Result<Self::StoredDecimals, GoblinError> {
+        Ok(ETHStub)
+    }
+
+    type DataList<'a> = ETHStub;
+
     fn get_data_list<'a>(_custom_erc20_list: CustomERC20List<'a>) -> Self::DataList<'a> {
         ETHStub
     }
 
-    fn get_hostio_decimals(
-        _address: &Self::TokenAddress,
-    ) -> Result<Self::HostioDecimals, GoblinError> {
-        Ok(ETHStub)
+    fn token_index_data_iter(
+        _custom_erc20_list: CustomERC20List,
+    ) -> impl Iterator<Item = (Self::TokenIndex, TokenData<Self>)> {
+        core::iter::once(TokenData::ETH_STUB_PAIR)
     }
 }

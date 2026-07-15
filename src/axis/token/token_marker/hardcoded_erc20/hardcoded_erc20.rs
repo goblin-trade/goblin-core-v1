@@ -61,18 +61,17 @@ impl TokenMarker for HardcodedERC20 {
     type TokenAddress = Address;
 
     type HardcodedDecimals = u8;
-    type HostioDecimals = HardcodedERC20Stub;
 
     type StoredDecimals = u8;
     type StoredPadding = [u8; 16 - size_of::<Self::StoredDecimals>()];
 
-    fn get_data_list<'a>(_custom_erc20_list: CustomERC20List<'a>) -> Self::DataList<'a> {
-        HARDCODED_TOKENS
+    fn get_stored_decimals(
+        token_data: &TokenData<Self>,
+    ) -> Result<Self::StoredDecimals, GoblinError> {
+        Ok(token_data.decimals)
     }
 
-    fn get_hostio_decimals(
-        _address: &Self::TokenAddress,
-    ) -> Result<Self::HostioDecimals, GoblinError> {
-        Ok(HardcodedERC20Stub)
+    fn get_data_list<'a>(_custom_erc20_list: CustomERC20List<'a>) -> Self::DataList<'a> {
+        HARDCODED_TOKENS
     }
 }

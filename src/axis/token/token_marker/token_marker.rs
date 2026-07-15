@@ -53,10 +53,6 @@ pub trait TokenMarker:
         + Index<Self::TokenIndex, Output = TokenDelta<Self>>
         + IndexMut<Self::TokenIndex>;
 
-    fn token_index_data_iter(
-        custom_erc20_list: CustomERC20List,
-    ) -> impl Iterator<Item = (Self::TokenIndex, TokenData<Self>)>;
-
     fn get_global_deposit(
         local_deposit: Self::LocalDeposit,
         atoms_per_lot: UnsidedDeltaAtomsPerLot,
@@ -79,21 +75,19 @@ pub trait TokenMarker:
     /// Decimals hardcoded in the smart contract
     type HardcodedDecimals: Clone + Copy;
 
-    /// Decimals read from ERC20 hostio
-    /// Only present for custom tokens
-    type HostioDecimals: Clone + Copy;
-
     /// Decimals stored in `Store`
     /// Decimals are stored as u8 for ERC20 tokens but not for ETH
+    type StoredDecimals: Clone + Copy + Into<u8>;
+
+    /// Try to obtain stored decimals
     ///
-    /// TODO fix spagetti code
-    /// We need a unified function
-    /// StoredDecimals = f(HardcodedDecimals, HostioDecimals)
-    type StoredDecimals: Clone
-        + Copy
-        + Into<u8>
-        + TryFrom<Self::HardcodedDecimals>
-        + TryFrom<Self::HostioDecimals>;
+    /// * ETH: Stub value
+    /// * Hardcoded: Use the hardcoded decimals
+    /// * Custom: Read from Hostio
+    ///
+    fn get_stored_decimals(
+        token_data: &TokenData<Self>,
+    ) -> Result<Self::StoredDecimals, GoblinError>;
 
     /// Padding to pad `Store` to 32 bytes
     /// ERC20 store has less padding to accomodate `decimals: u8`
@@ -103,7 +97,7 @@ pub trait TokenMarker:
 
     fn get_data_list<'a>(custom_erc20_list: CustomERC20List<'a>) -> Self::DataList<'a>;
 
-    fn get_hostio_decimals(
-        address: &Self::TokenAddress,
-    ) -> Result<Self::HostioDecimals, GoblinError>;
+    fn token_index_data_iter(
+        custom_erc20_list: CustomERC20List,
+    ) -> impl Iterator<Item = (Self::TokenIndex, TokenData<Self>)>;
 }

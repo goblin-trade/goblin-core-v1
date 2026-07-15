@@ -53,7 +53,7 @@ impl<T: TokenMarker> TokenDelta<T> {
     pub fn settle(
         &self,
         trader: &Address,
-        (token_index, token_data): (T::TokenIndex, TokenData<T>),
+        token_data: &TokenData<T>,
         msg_transfers: &MsgTransfers,
     ) -> Result<(), GoblinError>
     where
@@ -72,26 +72,7 @@ impl<T: TokenMarker> TokenDelta<T> {
         let mut store = store_hash.load();
 
         if store.is_empty() {
-            let hostio_decimals = T::get_hostio_decimals(&token_address)?;
-
-            let stored_decimals = T::StoredDecimals::try_from(hostio_decimals)
-                .map_err(|_| GoblinError::NoHostioDecimals)?;
-
-            // spagetti code
-            // Hardcoded decimals are already present. Yet we need to define a getter function
-            // for hardcoded that never gets used.
-            //
-            // token_index.get_decimals() will perform hostio call for custom erc20
-            //
-            // General idea
-            //
-            // Try to convert hardcoded decimals into stored decimals.
-            // If this fails try to convert 'hostioDecimals' into 'stored decimals'
-            //
-            // Define a new generic and getter function
-            // store.decimals = token_data.decimals.try_into().or(token_index
-            //     .get_hostio_decimals(&token_address)
-            //     .map(|g| g.try_into())?)?;
+            store.decimals = T::get_stored_decimals(token_data)?;
         }
 
         let atoms_free_delta = UnsidedDeltaAtoms::try_from(store.atoms_free)?
