@@ -1,4 +1,5 @@
 use crate::{
+    axis::token::{token_marker::TokenData, ETH},
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
     quantities::{UnsidedDeltaAtoms, NATIVE_TOKEN_DECIMALS},
@@ -45,9 +46,12 @@ impl Into<u8> for ETHStub {
 }
 
 impl Index<ETHStub> for ETHStub {
-    type Output = ETHStub;
+    type Output = TokenData<ETH>;
 
     fn index(&self, _index: ETHStub) -> &Self::Output {
-        &ETHStub
+        &TokenData {
+            address: ETHStub,
+            decimals: ETHStub,
+        }
     }
 }

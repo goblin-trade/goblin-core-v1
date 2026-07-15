@@ -28,7 +28,7 @@ impl TokenMarker for HardcodedERC20 {
     type TokenMsgTransfer = HardcodedERC20Stub;
 
     type SenderDelta = HardcodedERC20Deltas;
-    type DataList = HardcodedTokens<HARDCODED_ERC20_COUNT>;
+    type DataList<'a> = HardcodedTokens<HARDCODED_ERC20_COUNT>;
 
     fn token_index_data_iter(
         _custom_erc20_list: CustomERC20List,
@@ -46,14 +46,6 @@ impl TokenMarker for HardcodedERC20 {
     ) -> Self::GlobalDeposit {
         local_deposit * atoms_per_lot
     }
-
-    // fn get_global_token_delta(
-    //     token_index: Self::TokenIndex,
-    //     global_sender: &mut GlobalSender,
-    // ) -> &mut TokenDelta<Self> {
-    //     let list = Self::get_leg_mut(global_sender);
-    //     &mut list[token_index]
-    // }
 
     fn update<UM: UpdateMarker>(
         deposit: UnsidedAtoms,
@@ -74,11 +66,8 @@ impl TokenMarker for HardcodedERC20 {
     type StoredDecimals = u8;
     type StoredPadding = [u8; 16 - size_of::<Self::StoredDecimals>()];
 
-    fn get_address(
-        token_index: Self::TokenIndex,
-        _custom_erc20_list: CustomERC20List,
-    ) -> Self::TokenAddress {
-        HARDCODED_TOKENS[token_index].address
+    fn get_data_list<'a>(_custom_erc20_list: CustomERC20List<'a>) -> Self::DataList<'a> {
+        HARDCODED_TOKENS
     }
 
     fn get_hostio_decimals(

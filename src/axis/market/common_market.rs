@@ -50,8 +50,8 @@ impl<M: MarketMarker, B: TokenMarker, Q: TokenMarker> CommonMarket<M, B, Q> {
         let base_token_index = Base::get(&self.token_index_pair);
         let quote_token_index = Quote::get(&self.token_index_pair);
 
-        let base_token_address = B::get_address(base_token_index, custom_erc20_list);
-        let quote_token_address = Q::get_address(quote_token_index, custom_erc20_list);
+        let base_token_address = B::get_data_list(custom_erc20_list)[base_token_index].address;
+        let quote_token_address = Q::get_data_list(custom_erc20_list)[quote_token_index].address;
 
         Ok(MarketPreimage::<M, B, Q>::new(
             self.lot_size_pair,

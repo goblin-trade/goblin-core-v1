@@ -27,7 +27,7 @@ impl TokenMarker for CustomERC20 {
     type TokenMsgTransfer = CustomERC20Stub;
 
     type SenderDelta = CustomERC20Deltas;
-    type DataList = CustomERC20List<'static>;
+    type DataList<'a> = CustomERC20List<'a>;
 
     fn token_index_data_iter(
         custom_erc20_list: CustomERC20List,
@@ -65,11 +65,8 @@ impl TokenMarker for CustomERC20 {
     type StoredDecimals = u8;
     type StoredPadding = [u8; 16 - size_of::<Self::StoredDecimals>()];
 
-    fn get_address(
-        token_index: Self::TokenIndex,
-        custom_erc20_list: CustomERC20List,
-    ) -> Self::TokenAddress {
-        custom_erc20_list[token_index].address
+    fn get_data_list<'a>(custom_erc20_list: CustomERC20List<'a>) -> Self::DataList<'a> {
+        custom_erc20_list
     }
 
     fn get_hostio_decimals(

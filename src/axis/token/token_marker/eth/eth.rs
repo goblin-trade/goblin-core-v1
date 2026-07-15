@@ -23,7 +23,7 @@ impl TokenMarker for ETH {
     type TokenMsgTransfer = ETHTransfers;
 
     type SenderDelta = ETHDelta;
-    type DataList = ETHStub;
+    type DataList<'a> = ETHStub;
 
     fn token_index_data_iter(
         _custom_erc20_list: CustomERC20List,
@@ -37,13 +37,6 @@ impl TokenMarker for ETH {
     ) -> Self::GlobalDeposit {
         ETHStub
     }
-
-    // fn get_global_token_delta(
-    //     _token_index: Self::TokenIndex,
-    //     global_sender: &mut GlobalSender,
-    // ) -> &mut TokenDelta<Self> {
-    //     Self::get_leg_mut(global_sender)
-    // }
 
     fn update<UM: UpdateMarker>(
         deposit: UnsidedAtoms,
@@ -66,10 +59,7 @@ impl TokenMarker for ETH {
     type StoredDecimals = ETHStub;
     type StoredPadding = [u8; 16 - size_of::<Self::StoredDecimals>()];
 
-    fn get_address(
-        _token_index: Self::TokenIndex,
-        _custom_erc20_list: CustomERC20List,
-    ) -> Self::TokenAddress {
+    fn get_data_list<'a>(_custom_erc20_list: CustomERC20List<'a>) -> Self::DataList<'a> {
         ETHStub
     }
 

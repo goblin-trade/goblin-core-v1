@@ -53,8 +53,6 @@ pub trait TokenMarker:
         + Index<Self::TokenIndex, Output = TokenDelta<Self>>
         + IndexMut<Self::TokenIndex>;
 
-    type DataList: Index<Self::TokenIndex>;
-
     fn token_index_data_iter(
         custom_erc20_list: CustomERC20List,
     ) -> impl Iterator<Item = (Self::TokenIndex, TokenData<Self>)>;
@@ -101,14 +99,9 @@ pub trait TokenMarker:
     /// ERC20 store has less padding to accomodate `decimals: u8`
     type StoredPadding: Clone + Copy;
 
-    // TODO replace custom function
-    // Use Index trait
-    //
-    // TODO this is a safe function now as TokenIndex is bounds checked
-    fn get_address(
-        token_index: Self::TokenIndex,
-        custom_erc20_list: CustomERC20List,
-    ) -> Self::TokenAddress;
+    type DataList<'a>: Sized + Index<Self::TokenIndex, Output = TokenData<Self>>;
+
+    fn get_data_list<'a>(custom_erc20_list: CustomERC20List<'a>) -> Self::DataList<'a>;
 
     fn get_hostio_decimals(
         address: &Self::TokenAddress,
