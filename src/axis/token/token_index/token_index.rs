@@ -1,3 +1,5 @@
+use core::ops::Index;
+
 use crate::{
     axis::token::token_index::CustomERC20List, goblin_error::GoblinError,
     input_processor::Decodable, settlement::ConstZero,
@@ -5,6 +7,8 @@ use crate::{
 
 pub trait TokenIndex: Clone + Copy + Decodable + ConstZero + PartialEq {
     const DISCRIMINATOR: u8;
+
+    type DataList: Index<Self>;
 
     type TokenAddress: Clone + Copy + Sized + Default;
 

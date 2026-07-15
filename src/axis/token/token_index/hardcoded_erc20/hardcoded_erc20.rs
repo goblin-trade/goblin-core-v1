@@ -1,6 +1,9 @@
 use crate::{
     axis::token::{
-        token_index::{CustomERC20List, HardcodedERC20Index, TokenIndex, HARDCODED_TOKENS},
+        token_index::{
+            CustomERC20List, HardcodedERC20Index, HardcodedTokens, TokenIndex,
+            HARDCODED_ERC20_COUNT, HARDCODED_TOKENS,
+        },
         HardcodedERC20Stub,
     },
     goblin_error::GoblinError,
@@ -9,6 +12,9 @@ use crate::{
 
 impl TokenIndex for HardcodedERC20Index {
     const DISCRIMINATOR: u8 = 1;
+
+    type DataList = HardcodedTokens<HARDCODED_ERC20_COUNT>;
+
     type TokenAddress = Address;
 
     type HardcodedDecimals = u8;

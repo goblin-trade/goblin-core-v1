@@ -4,6 +4,7 @@ use crate::{
     quantities::{UnsidedDeltaAtoms, NATIVE_TOKEN_DECIMALS},
     settlement::{CheckedOps, ConstZero},
 };
+use core::ops::Index;
 
 /// Stub type for ETH token index, address and deposit
 ///
@@ -40,5 +41,13 @@ impl Into<UnsidedDeltaAtoms> for ETHStub {
 impl Into<u8> for ETHStub {
     fn into(self) -> u8 {
         NATIVE_TOKEN_DECIMALS
+    }
+}
+
+impl Index<ETHStub> for ETHStub {
+    type Output = ETHStub;
+
+    fn index(&self, _index: ETHStub) -> &Self::Output {
+        &ETHStub
     }
 }
