@@ -22,7 +22,8 @@ impl TokenMarker for ETH {
 
     type TokenMsgTransfer = ETHTransfers;
 
-    type SenderDelta = ETHDelta;
+    type SenderDeltaList = ETHDelta;
+    type DataList<'a> = ETHStub;
 
     fn get_global_deposit(
         _local_deposit: Self::LocalDeposit,
@@ -56,8 +57,6 @@ impl TokenMarker for ETH {
     ) -> Result<Self::StoredDecimals, GoblinError> {
         Ok(ETHStub)
     }
-
-    type DataList<'a> = ETHStub;
 
     fn get_data_list<'a>(_custom_erc20_list: CustomERC20List<'a>) -> Self::DataList<'a> {
         ETHStub

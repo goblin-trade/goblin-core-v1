@@ -27,7 +27,7 @@ pub trait TokenMarker:
     + StoreReader<DepositTriple, Result = Self::LocalDeposit>
     + StoreReader<CounterpartyTriple, Result = CounterpartyMap<Self>>
     + StoreReader<MsgTransfers, Result = Self::TokenMsgTransfer>
-    + StoreReader<GlobalSender, Result = Self::SenderDelta>
+    + StoreReader<GlobalSender, Result = Self::SenderDeltaList>
 {
     const DISCRIMINATOR: u8;
 
@@ -48,10 +48,13 @@ pub trait TokenMarker:
         + CheckedOps
         + Into<UnsidedDeltaAtoms>;
 
-    type SenderDelta: Clone
+    type SenderDeltaList: Clone
         + Copy
         + Index<Self::TokenIndex, Output = TokenDelta<Self>>
-        + IndexMut<Self::TokenIndex>;
+        + IndexMut<Self::TokenIndex>
+        + IntoIterator<Item = TokenDelta<Self>>;
+
+    type DataList<'a>: Sized + Index<Self::TokenIndex, Output = TokenData<Self>>;
 
     fn get_global_deposit(
         local_deposit: Self::LocalDeposit,
@@ -92,8 +95,6 @@ pub trait TokenMarker:
     /// Padding to pad `Store` to 32 bytes
     /// ERC20 store has less padding to accomodate `decimals: u8`
     type StoredPadding: Clone + Copy;
-
-    type DataList<'a>: Sized + Index<Self::TokenIndex, Output = TokenData<Self>>;
 
     fn get_data_list<'a>(custom_erc20_list: CustomERC20List<'a>) -> Self::DataList<'a>;
 

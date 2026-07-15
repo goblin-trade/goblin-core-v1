@@ -26,7 +26,7 @@ impl TokenMarker for CustomERC20 {
 
     type TokenMsgTransfer = CustomERC20Stub;
 
-    type SenderDelta = CustomERC20Deltas;
+    type SenderDeltaList = CustomERC20Deltas;
     type DataList<'a> = CustomERC20List<'a>;
 
     fn token_index_data_iter(

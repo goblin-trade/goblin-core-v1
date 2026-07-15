@@ -27,7 +27,7 @@ impl TokenMarker for HardcodedERC20 {
 
     type TokenMsgTransfer = HardcodedERC20Stub;
 
-    type SenderDelta = HardcodedERC20Deltas;
+    type SenderDeltaList = HardcodedERC20Deltas;
     type DataList<'a> = HardcodedTokens<HARDCODED_ERC20_COUNT>;
 
     fn token_index_data_iter(

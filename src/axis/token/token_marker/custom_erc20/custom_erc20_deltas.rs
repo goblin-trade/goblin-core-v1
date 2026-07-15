@@ -31,3 +31,12 @@ impl IndexMut<CustomERC20Index> for CustomERC20Deltas {
         &mut self.inner[index.0]
     }
 }
+
+impl IntoIterator for CustomERC20Deltas {
+    type Item = TokenDelta<CustomERC20>;
+    type IntoIter = core::array::IntoIter<TokenDelta<CustomERC20>, MAX_CUSTOM_ERC20_COUNT>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.inner.into_iter()
+    }
+}

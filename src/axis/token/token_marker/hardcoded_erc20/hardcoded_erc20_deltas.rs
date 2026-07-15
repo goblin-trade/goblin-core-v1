@@ -18,9 +18,6 @@ impl ConstZero for HardcodedERC20Deltas {
     };
 }
 
-// TODO trait with settle function
-// This should settle all elements. It should also include Index and IndexMut traits
-
 impl Index<HardcodedERC20Index> for HardcodedERC20Deltas {
     type Output = TokenDelta<HardcodedERC20>;
 
@@ -32,5 +29,14 @@ impl Index<HardcodedERC20Index> for HardcodedERC20Deltas {
 impl IndexMut<HardcodedERC20Index> for HardcodedERC20Deltas {
     fn index_mut(&mut self, index: HardcodedERC20Index) -> &mut Self::Output {
         &mut self.inner[index.0]
+    }
+}
+
+impl IntoIterator for HardcodedERC20Deltas {
+    type Item = TokenDelta<HardcodedERC20>;
+    type IntoIter = core::array::IntoIter<TokenDelta<HardcodedERC20>, HARDCODED_ERC20_COUNT>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.inner.into_iter()
     }
 }

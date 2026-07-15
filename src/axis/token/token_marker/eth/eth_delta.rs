@@ -28,3 +28,12 @@ impl IndexMut<ETHStub> for ETHDelta {
         &mut self.inner
     }
 }
+
+impl IntoIterator for ETHDelta {
+    type Item = TokenDelta<ETH>;
+    type IntoIter = core::iter::Once<TokenDelta<ETH>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        core::iter::once(self.inner)
+    }
+}

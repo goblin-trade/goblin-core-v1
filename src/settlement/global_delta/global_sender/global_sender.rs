@@ -59,23 +59,8 @@ impl GlobalSender {
     {
         let sender_delta_list = T::get_leg(self);
 
-        // run iter function now
-        //
-        // new strategy
-        //
-        // * keep trait monolitic. Split up later when API stabilizes
         let data_list = T::get_data_list(custom_erc20_list);
 
-        // zipping the two lists together
-        // We face problem with custom data list. Its length can be less than
-        // length of its delta list
-
-        // problems
-        //
-        // 1. custom list can have length more than MAX_CUSTOM_DELTAS
-        // 2. We use fixed array instead of FixedMap which stores the number of active elements.
-        // There is no concept of active or inactive item. We must check whether delta is non-zero
-        // to save hostio calls.
         for (token_index, token_data) in T::token_index_data_iter(custom_erc20_list) {
             let delta = sender_delta_list[token_index];
             delta.settle(trader, &token_data, msg_transfers)?;
