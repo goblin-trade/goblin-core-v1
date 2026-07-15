@@ -12,6 +12,6 @@ pub struct StorePreimage<T: TokenMarker> {
 }
 
 impl<T: TokenMarker> Preimage for StorePreimage<T> {
-    const SLOT_DISCRIMINATOR: u8 = 2 + <T::TokenIndex as TokenIndex>::DISCRIMINATOR;
+    const SLOT_DISCRIMINATOR: u8 = 2 + T::DISCRIMINATOR;
     type SlotState = Store<T>;
 }

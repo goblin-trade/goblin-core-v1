@@ -2,7 +2,8 @@ use crate::{
     axis::{
         token::{
             token_index::{
-                CustomERC20List, HardcodedERC20Index, TokenData, TokenIndex, HARDCODED_TOKENS,
+                CustomERC20List, HardcodedERC20Index, HardcodedTokens, TokenData, TokenIndex,
+                HARDCODED_ERC20_COUNT, HARDCODED_TOKENS,
             },
             token_marker::{hardcoded_erc20::HardcodedERC20Deltas, TokenMarker},
             HardcodedERC20, HardcodedERC20Stub,
@@ -16,6 +17,8 @@ use crate::{
 };
 
 impl TokenMarker for HardcodedERC20 {
+    const DISCRIMINATOR: u8 = 1;
+
     type TokenIndex = HardcodedERC20Index;
 
     type LocalDeposit = UnsidedDeltaLots;
@@ -24,6 +27,7 @@ impl TokenMarker for HardcodedERC20 {
     type TokenMsgTransfer = HardcodedERC20Stub;
 
     type SenderDelta = HardcodedERC20Deltas;
+    type DataList = HardcodedTokens<HARDCODED_ERC20_COUNT>;
 
     fn token_index_data_iter(
         _custom_erc20_list: CustomERC20List,

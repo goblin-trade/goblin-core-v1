@@ -1,8 +1,7 @@
 use crate::{
     axis::token::{
         token_index::{
-            CustomERC20List, HardcodedERC20Index, HardcodedTokens, TokenIndex,
-            HARDCODED_ERC20_COUNT, HARDCODED_TOKENS,
+            CustomERC20List, HardcodedERC20Index, HardcodedTokens, TokenIndex, HARDCODED_TOKENS,
         },
         HardcodedERC20Stub,
     },
@@ -11,10 +10,6 @@ use crate::{
 };
 
 impl TokenIndex for HardcodedERC20Index {
-    const DISCRIMINATOR: u8 = 1;
-
-    type DataList = HardcodedTokens<HARDCODED_ERC20_COUNT>;
-
     type TokenAddress = Address;
 
     type HardcodedDecimals = u8;

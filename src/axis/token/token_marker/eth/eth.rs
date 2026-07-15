@@ -14,6 +14,8 @@ use crate::{
 };
 
 impl TokenMarker for ETH {
+    const DISCRIMINATOR: u8 = 0;
+
     type TokenIndex = ETHStub;
     type LocalDeposit = ETHStub;
     type GlobalDeposit = ETHStub;
@@ -21,6 +23,7 @@ impl TokenMarker for ETH {
     type TokenMsgTransfer = ETHTransfers;
 
     type SenderDelta = ETHDelta;
+    type DataList = ETHStub;
 
     fn token_index_data_iter(
         _custom_erc20_list: CustomERC20List,

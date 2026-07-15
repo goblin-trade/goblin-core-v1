@@ -29,6 +29,8 @@ pub trait TokenMarker:
     + StoreReader<MsgTransfers, Result = Self::TokenMsgTransfer>
     + StoreReader<GlobalSender, Result = Self::SenderDelta>
 {
+    const DISCRIMINATOR: u8;
+
     /// Index to lookup token address
     type TokenIndex: TokenIndex;
 
@@ -50,6 +52,8 @@ pub trait TokenMarker:
         + Copy
         + Index<Self::TokenIndex, Output = TokenDelta<Self>>
         + IndexMut<Self::TokenIndex>;
+
+    type DataList: Index<Self::TokenIndex>;
 
     fn token_index_data_iter(
         custom_erc20_list: CustomERC20List,

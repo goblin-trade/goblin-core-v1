@@ -9,10 +9,6 @@ use crate::{
 };
 
 impl TokenIndex for CustomERC20Index {
-    const DISCRIMINATOR: u8 = 2;
-
-    type DataList = CustomERC20List<'static>;
-
     type TokenAddress = Address;
 
     type HardcodedDecimals = CustomERC20Stub;

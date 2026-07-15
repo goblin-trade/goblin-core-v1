@@ -14,6 +14,8 @@ use crate::{
 };
 
 impl TokenMarker for CustomERC20 {
+    const DISCRIMINATOR: u8 = 2;
+
     type TokenIndex = CustomERC20Index;
 
     type LocalDeposit = UnsidedDeltaLots;
@@ -22,6 +24,7 @@ impl TokenMarker for CustomERC20 {
     type TokenMsgTransfer = CustomERC20Stub;
 
     type SenderDelta = CustomERC20Deltas;
+    type DataList = CustomERC20List<'static>;
 
     fn token_index_data_iter(
         custom_erc20_list: CustomERC20List,

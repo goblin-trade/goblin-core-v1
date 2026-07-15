@@ -8,10 +8,6 @@ use crate::{
 };
 
 pub trait TokenIndex: Clone + Copy + Decodable + ConstZero + PartialEq {
-    const DISCRIMINATOR: u8;
-
-    type DataList: Index<Self>;
-
     type TokenAddress: Clone + Copy + Sized + Default;
 
     /// Decimals hardcoded in the smart contract

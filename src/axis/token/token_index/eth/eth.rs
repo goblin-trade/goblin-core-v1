@@ -7,10 +7,6 @@ use crate::{
 };
 
 impl TokenIndex for ETHStub {
-    const DISCRIMINATOR: u8 = 0;
-
-    type DataList = ETHStub;
-
     type TokenAddress = ETHStub;
 
     type HardcodedDecimals = ETHStub;
