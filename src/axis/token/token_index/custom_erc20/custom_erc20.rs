@@ -22,7 +22,7 @@ impl TokenIndex for CustomERC20Index {
         &self,
         custom_erc20_list: CustomERC20List,
     ) -> Result<Self::TokenAddress, GoblinError> {
-        custom_erc20_list.token_index_to_address(*self)
+        Ok(custom_erc20_list[*self].address)
     }
 
     fn get_hostio_decimals(

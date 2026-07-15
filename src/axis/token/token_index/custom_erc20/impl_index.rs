@@ -1,11 +1,14 @@
-use core::ops::{Index, IndexMut};
+use core::ops::Index;
 
-use crate::axis::token::token_index::{CustomERC20Index, CustomERC20List};
+use crate::axis::token::{
+    token_index::{CustomERC20Index, CustomERC20List, TokenData},
+    CustomERC20,
+};
 
-// impl Index<CustomERC20Index> for CustomERC20List {
-//     type Output = ;
+impl<'a> Index<CustomERC20Index> for CustomERC20List<'a> {
+    type Output = TokenData<CustomERC20>;
 
-//     fn index(&self, index: CustomERC20Index) -> &Self::Output {
-//         todo!()
-//     }
-// }
+    fn index(&self, index: CustomERC20Index) -> &Self::Output {
+        &self.inner[index.0]
+    }
+}
