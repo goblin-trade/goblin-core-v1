@@ -1,8 +1,10 @@
 use core::ops::Index;
 
 use crate::{
-    axis::token::token_index::CustomERC20List, goblin_error::GoblinError,
-    input_processor::Decodable, settlement::ConstZero,
+    axis::token::token_index::{CustomERC20List, TokenData},
+    goblin_error::GoblinError,
+    input_processor::Decodable,
+    settlement::ConstZero,
 };
 
 pub trait TokenIndex: Clone + Copy + Decodable + ConstZero + PartialEq {
@@ -35,14 +37,15 @@ pub trait TokenIndex: Clone + Copy + Decodable + ConstZero + PartialEq {
     /// ERC20 store has less padding to accomodate `decimals: u8`
     type StoredPadding: Clone + Copy;
 
+    // fn get_token_data(&self, custom_erc20_list: CustomERC20List) -> TokenData<Self> {
+
+    // }
+
     // TODO replace custom function
     // Use Index trait
     //
     // TODO this is a safe function now as TokenIndex is bounds checked
-    fn get_address(
-        &self,
-        custom_erc20_list: CustomERC20List,
-    ) -> Result<Self::TokenAddress, GoblinError>;
+    fn get_address(&self, custom_erc20_list: CustomERC20List) -> Self::TokenAddress;
 
     fn get_hostio_decimals(
         &self,

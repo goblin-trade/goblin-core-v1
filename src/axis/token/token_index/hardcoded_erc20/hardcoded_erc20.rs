@@ -23,14 +23,8 @@ impl TokenIndex for HardcodedERC20Index {
     type StoredDecimals = u8;
     type StoredPadding = [u8; 16 - size_of::<Self::StoredDecimals>()];
 
-    fn get_address(
-        &self,
-        _custom_erc20_list: CustomERC20List,
-    ) -> Result<Self::TokenAddress, GoblinError> {
-        // TODO is HardcodedTokenIndex validated?
-        // Previously returned error from get()- GoblinError::InvalidHardcodedTokenIndex
-        Ok(HARDCODED_TOKENS[*self].address)
-        // HARDCODED_TOKENS.get(*self).map(|data| data.address)
+    fn get_address(&self, _custom_erc20_list: CustomERC20List) -> Self::TokenAddress {
+        HARDCODED_TOKENS[*self].address
     }
 
     fn get_hostio_decimals(

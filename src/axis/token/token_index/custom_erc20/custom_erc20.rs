@@ -21,11 +21,8 @@ impl TokenIndex for CustomERC20Index {
     type StoredDecimals = u8;
     type StoredPadding = [u8; 16 - size_of::<Self::StoredDecimals>()];
 
-    fn get_address(
-        &self,
-        custom_erc20_list: CustomERC20List,
-    ) -> Result<Self::TokenAddress, GoblinError> {
-        Ok(custom_erc20_list[*self].address)
+    fn get_address(&self, custom_erc20_list: CustomERC20List) -> Self::TokenAddress {
+        custom_erc20_list[*self].address
     }
 
     fn get_hostio_decimals(
