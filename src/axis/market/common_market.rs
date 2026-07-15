@@ -4,7 +4,7 @@ use crate::{
     axis::{
         leg::{Base, Pair, Quote},
         market::{market_marker::MarketMarker, LotSizePair},
-        token::{token_index::CustomERC20List, token_marker::TokenMarker},
+        token::{token_marker::CustomERC20List, token_marker::TokenMarker},
     },
     goblin_error::GoblinError,
     quantities::QuoteLotsPerBaseUnitPerTick,

@@ -1,8 +1,8 @@
 use crate::{
     axis::{
         token::{
-            token_index::{CustomERC20List, TokenData},
-            token_marker::{eth::ETHDelta, TokenMarker},
+            token_marker::TokenData,
+            token_marker::{eth::ETHDelta, CustomERC20List, TokenMarker},
             ETHStub, ETH,
         },
         update::UpdateMarker,

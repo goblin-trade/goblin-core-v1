@@ -3,7 +3,7 @@ use core::ops::{Index, IndexMut};
 use crate::{
     axis::{
         token::{
-            token_index::{CustomERC20List, TokenData},
+            token_marker::CustomERC20List, token_marker::TokenData,
             token_msg_transfer::TokenMsgTransfer,
         },
         update::UpdateMarker,

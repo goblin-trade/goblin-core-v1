@@ -1,7 +1,7 @@
 use crate::{
     axis::{
         market::{market_locator::MarketLocator, CommonMarket, Dynamic, MarketReadables},
-        token::{token_index::CustomERC20List, token_marker::TokenMarker},
+        token::{token_marker::CustomERC20List, token_marker::TokenMarker},
     },
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},

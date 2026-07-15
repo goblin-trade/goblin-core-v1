@@ -1,11 +1,12 @@
 use crate::{
     axis::{
         token::{
-            token_index::{
-                CustomERC20List, HardcodedERC20Index, HardcodedTokens, TokenData,
-                HARDCODED_ERC20_COUNT, HARDCODED_TOKENS,
+            token_marker::{
+                hardcoded_erc20::HardcodedERC20Deltas, CustomERC20List, TokenData, TokenMarker,
             },
-            token_marker::{hardcoded_erc20::HardcodedERC20Deltas, TokenMarker},
+            token_marker::{
+                HardcodedERC20Index, HardcodedTokens, HARDCODED_ERC20_COUNT, HARDCODED_TOKENS,
+            },
             HardcodedERC20, HardcodedERC20Stub,
         },
         update::UpdateMarker,

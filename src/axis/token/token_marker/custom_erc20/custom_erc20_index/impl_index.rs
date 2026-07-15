@@ -1,7 +1,8 @@
 use core::ops::Index;
 
 use crate::axis::token::{
-    token_index::{CustomERC20Index, CustomERC20List, TokenData},
+    token_marker::TokenData,
+    token_marker::{CustomERC20Index, CustomERC20List},
     CustomERC20,
 };
 

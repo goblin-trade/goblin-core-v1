@@ -1,6 +1,6 @@
 use crate::{
     axis::token::{
-        token_index::{HardcodedERC20Index, HARDCODED_ERC20_COUNT},
+        token_marker::{HardcodedERC20Index, HARDCODED_ERC20_COUNT},
         HardcodedERC20,
     },
     settlement::{global_delta::TokenDelta, ConstZero},

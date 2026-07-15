@@ -2,7 +2,8 @@ use crate::{
     axis::{
         leg::{leg_reader::LegReader, SamePair},
         token::{
-            token_index::TokenData, token_marker::TokenMarker, token_msg_transfer::TokenMsgTransfer,
+            token_marker::TokenData, token_marker::TokenMarker,
+            token_msg_transfer::TokenMsgTransfer,
         },
         update::{Decrease, Increase, UpdateEnum},
     },

@@ -1,11 +1,5 @@
-pub mod hardcoded_erc20_index;
 pub mod hardcoded_tokens;
-
-pub use hardcoded_erc20_index::*;
 pub use hardcoded_tokens::*;
-
-mod impl_decodable;
-mod impl_index;
 
 #[cfg(feature = "localnet")]
 pub mod localnet;

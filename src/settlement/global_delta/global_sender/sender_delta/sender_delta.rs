@@ -1,5 +1,5 @@
 use crate::{
-    axis::token::{token_index::TokenData, token_marker::TokenMarker},
+    axis::token::{token_marker::TokenData, token_marker::TokenMarker},
     input_processor::MsgTransfers,
     types::Address,
 };
