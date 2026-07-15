@@ -1,8 +1,8 @@
 use crate::axis::token::token_index::{HardcodedTokens, TokenData};
 
-pub const HARDCODED_TOKEN_COUNT: usize = 2;
+pub const HARDCODED_ERC20_COUNT: usize = 2;
 
-pub const HARDCODED_TOKENS: HardcodedTokens<HARDCODED_TOKEN_COUNT> = HardcodedTokens {
+pub const HARDCODED_TOKENS: HardcodedTokens<HARDCODED_ERC20_COUNT> = HardcodedTokens {
     inner: [
         TokenData {
             address: [

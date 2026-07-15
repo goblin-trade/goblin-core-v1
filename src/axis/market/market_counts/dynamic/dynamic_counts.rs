@@ -1,12 +1,8 @@
 use crate::{
-    axis::token::{
-        token_index::{CustomERC20List, TokenData},
-        CustomERC20,
-    },
+    axis::token::token_index::CustomERC20List,
     goblin_error::GoblinError,
     input_processor::{DecodablePrimitive, DecodeCtx},
     require,
-    types::Address,
 };
 
 const BYTE_COUNT: usize = 5;
@@ -43,20 +39,11 @@ impl<'a> DynamicCounts<'a> {
             byte_3 & 0b0000_1111,
             byte_3 >> 4,
         ];
-
         let custom_erc20_count = byte_4 as usize;
 
         ctx.advance_offset(BYTE_COUNT);
 
-        let custom_erc20_list_len = custom_erc20_count * core::mem::size_of::<Address>();
-        require!(
-            ctx.len() >= ctx.offset.get() + custom_erc20_list_len,
-            GoblinError::InvalidPayload
-        );
-
-        let custom_erc20_list = CustomERC20List {
-            inner: ctx.zero_copy_slice_unchecked::<TokenData<CustomERC20>>(custom_erc20_count),
-        };
+        let custom_erc20_list = CustomERC20List::try_decode_no_advance(ctx, custom_erc20_count)?;
 
         Ok(Self {
             market_counts,

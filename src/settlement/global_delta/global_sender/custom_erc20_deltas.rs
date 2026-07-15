@@ -1,19 +1,20 @@
 use crate::{
-    axis::token::{token_index::CustomERC20Index, CustomERC20},
+    axis::token::{
+        token_index::{CustomERC20Index, MAX_CUSTOM_ERC20_COUNT},
+        CustomERC20,
+    },
     settlement::{global_delta::TokenDelta, ConstZero},
 };
 use core::ops::{Index, IndexMut};
 
-pub const MAX_CUSTOM_DELTAS: usize = 8;
-
 #[derive(Clone, Copy)]
 pub struct CustomERC20Deltas {
-    pub inner: [TokenDelta<CustomERC20>; MAX_CUSTOM_DELTAS],
+    pub inner: [TokenDelta<CustomERC20>; MAX_CUSTOM_ERC20_COUNT],
 }
 
 impl ConstZero for CustomERC20Deltas {
     const ZEROED: Self = Self {
-        inner: [TokenDelta::ZEROED; MAX_CUSTOM_DELTAS],
+        inner: [TokenDelta::ZEROED; MAX_CUSTOM_ERC20_COUNT],
     };
 }
 

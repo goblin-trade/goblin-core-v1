@@ -3,7 +3,7 @@
 pub enum GoblinError {
     Reentrant = 0,
     InvalidPayload = 1,
-    CustomTokenLimitExceeded = 2,
+    CustomERC20CountExceeded = 2,
     UnsupportedDecimals = 3,
     StaticCallFail = 4,
     CallFail = 5,
