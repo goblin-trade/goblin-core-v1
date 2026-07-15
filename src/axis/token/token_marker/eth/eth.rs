@@ -1,8 +1,8 @@
 use crate::{
     axis::{
         token::{
-            token_deltas::{eth::ETHDelta, TokenDeltas},
             token_index::{CustomERC20List, TokenData, TokenIndex},
+            token_marker::{eth::ETHDelta, TokenMarker},
             ETHStub, ETH,
         },
         update::UpdateMarker,
@@ -13,7 +13,7 @@ use crate::{
     types::Address,
 };
 
-impl TokenDeltas for ETH {
+impl TokenMarker for ETH {
     type TokenIndex = ETHStub;
     type LocalDeposit = ETHStub;
     type GlobalDeposit = ETHStub;

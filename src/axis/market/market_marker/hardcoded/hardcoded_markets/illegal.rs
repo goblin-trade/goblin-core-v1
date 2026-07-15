@@ -6,7 +6,7 @@ use crate::axis::{
     token::{CustomERC20, HardcodedERC20, ETH},
 };
 
-///! Stub implementations for illegal combinations of MarketVariant and TokenMarker
+///! Stub implementations for illegal combinations of MarketVariant and TokenMarkerInner
 ///! They are never used, but are needed for satisfying the compiler.
 ///!
 ///! Hardcoded markets only have HardcodedERC20. They cannot have CustomERC20.
@@ -27,11 +27,13 @@ impl HardcodedMarkets<CustomERC20, CustomERC20> for HardcodedMarketIndex<CustomE
 impl HardcodedMarkets<HardcodedERC20, CustomERC20>
     for HardcodedMarketIndex<HardcodedERC20, CustomERC20>
 {
-    const HARDCODED_MARKETS: &'static [MarketReadables<Hardcoded, HardcodedERC20, CustomERC20>] = &[];
+    const HARDCODED_MARKETS: &'static [MarketReadables<Hardcoded, HardcodedERC20, CustomERC20>] =
+        &[];
 }
 
 impl HardcodedMarkets<CustomERC20, HardcodedERC20>
     for HardcodedMarketIndex<CustomERC20, HardcodedERC20>
 {
-    const HARDCODED_MARKETS: &'static [MarketReadables<Hardcoded, CustomERC20, HardcodedERC20>] = &[];
+    const HARDCODED_MARKETS: &'static [MarketReadables<Hardcoded, CustomERC20, HardcodedERC20>] =
+        &[];
 }

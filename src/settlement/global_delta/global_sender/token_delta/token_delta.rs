@@ -2,7 +2,6 @@ use crate::{
     axis::{
         leg::{leg_reader::LegReader, SamePair},
         token::{
-            token_deltas::TokenDeltas,
             token_index::{TokenData, TokenIndex},
             token_marker::TokenMarker,
             token_msg_transfer::TokenMsgTransfer,
@@ -19,13 +18,13 @@ use crate::{
 };
 
 #[derive(Clone, Copy)]
-pub struct TokenDelta<T: TokenDeltas> {
+pub struct TokenDelta<T: TokenMarker> {
     pub deposit: T::GlobalDeposit,
     pub take: UnsidedDeltaAtoms,
     pub make: UnsidedDeltaAtoms,
 }
 
-impl<T: TokenDeltas> TokenDelta<T> {
+impl<T: TokenMarker> TokenDelta<T> {
     pub fn net_delta(&self) -> UnsidedDeltaAtoms {
         self.deposit.into() + self.take + self.make
     }

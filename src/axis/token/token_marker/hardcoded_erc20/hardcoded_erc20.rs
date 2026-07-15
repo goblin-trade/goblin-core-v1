@@ -1,10 +1,10 @@
 use crate::{
     axis::{
         token::{
-            token_deltas::{hardcoded_erc20::HardcodedERC20Deltas, TokenDeltas},
             token_index::{
                 CustomERC20List, HardcodedERC20Index, TokenData, TokenIndex, HARDCODED_TOKENS,
             },
+            token_marker::{hardcoded_erc20::HardcodedERC20Deltas, TokenMarker},
             HardcodedERC20, HardcodedERC20Stub,
         },
         update::UpdateMarker,
@@ -15,7 +15,7 @@ use crate::{
     types::Address,
 };
 
-impl TokenDeltas for HardcodedERC20 {
+impl TokenMarker for HardcodedERC20 {
     type TokenIndex = HardcodedERC20Index;
 
     type LocalDeposit = UnsidedDeltaLots;
