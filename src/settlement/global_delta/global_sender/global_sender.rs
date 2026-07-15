@@ -2,7 +2,8 @@ use crate::{
     axis::{
         leg::{leg_matcher::LegMatcher, SamePair},
         token::{
-            token_index::{CustomERC20List, TokenData, HARDCODED_TOKENS},
+            token_deltas::{CustomERC20Deltas, ETHDelta, HardcodedERC20Deltas},
+            token_index::CustomERC20List,
             token_marker::TokenMarker,
             CustomERC20, HardcodedERC20, Token, ETH,
         },
@@ -10,12 +11,8 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::MsgTransfers,
     quantities::UnsidedDeltaAtomsPerLot,
-    settlement::{
-        global_delta::{CustomERC20Deltas, ETHDelta, HardcodedERC20Deltas, TokenDelta},
-        local_delta::LocalDelta,
-        CheckedOps, ConstZero,
-    },
-    types::{Address, StoreReader, Triple},
+    settlement::{global_delta::TokenDelta, local_delta::LocalDelta, CheckedOps, ConstZero},
+    types::{Address, Triple},
 };
 
 pub type GlobalSender = Triple<ETHDelta, HardcodedERC20Deltas, CustomERC20Deltas, Token>;

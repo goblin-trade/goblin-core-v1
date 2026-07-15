@@ -1,38 +1,36 @@
 use crate::{
     axis::{
         token::{
-            token_deltas::TokenDeltas,
-            token_index::{
-                CustomERC20List, HardcodedERC20Index, TokenData, TokenIndex, HARDCODED_TOKENS,
-            },
-            HardcodedERC20, HardcodedERC20Stub,
+            token_deltas::{custom_erc20::CustomERC20Deltas, TokenDeltas},
+            token_index::{CustomERC20Index, CustomERC20List, TokenData, TokenIndex},
+            CustomERC20, CustomERC20Stub,
         },
         update::UpdateMarker,
     },
     goblin_error::GoblinError,
     quantities::{UnsidedAtoms, UnsidedDeltaAtoms, UnsidedDeltaAtomsPerLot, UnsidedDeltaLots},
-    settlement::global_delta::{HardcodedERC20Deltas, TransferERC20},
+    settlement::global_delta::TransferERC20,
     types::Address,
 };
 
-impl TokenDeltas for HardcodedERC20 {
-    type TokenIndex = HardcodedERC20Index;
+impl TokenDeltas for CustomERC20 {
+    type TokenIndex = CustomERC20Index;
 
     type LocalDeposit = UnsidedDeltaLots;
     type GlobalDeposit = UnsidedDeltaAtoms;
 
-    type TokenMsgTransfer = HardcodedERC20Stub;
+    type TokenMsgTransfer = CustomERC20Stub;
 
-    type SenderDelta = HardcodedERC20Deltas;
+    type SenderDelta = CustomERC20Deltas;
 
     fn token_index_data_iter(
-        _custom_erc20_list: CustomERC20List,
+        custom_erc20_list: CustomERC20List,
     ) -> impl Iterator<Item = (Self::TokenIndex, TokenData<Self>)> {
-        HARDCODED_TOKENS
+        custom_erc20_list
             .inner
             .iter()
             .enumerate()
-            .map(|(index, data)| (HardcodedERC20Index::from(index), *data))
+            .map(|(i, data)| (CustomERC20Index::from(i), *data))
     }
 
     fn get_global_deposit(
@@ -41,14 +39,6 @@ impl TokenDeltas for HardcodedERC20 {
     ) -> Self::GlobalDeposit {
         local_deposit * atoms_per_lot
     }
-
-    // fn get_global_token_delta(
-    //     token_index: Self::TokenIndex,
-    //     global_sender: &mut GlobalSender,
-    // ) -> &mut TokenDelta<Self> {
-    //     let list = Self::get_leg_mut(global_sender);
-    //     &mut list[token_index]
-    // }
 
     fn update<UM: UpdateMarker>(
         deposit: UnsidedAtoms,

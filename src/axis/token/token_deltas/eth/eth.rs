@@ -1,7 +1,7 @@
 use crate::{
     axis::{
         token::{
-            token_deltas::TokenDeltas,
+            token_deltas::{eth::ETHDelta, TokenDeltas},
             token_index::{CustomERC20List, TokenData, TokenIndex},
             ETHStub, ETH,
         },
@@ -10,7 +10,6 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::ETHTransfers,
     quantities::{ETHAtoms, UnsidedAtoms, UnsidedDeltaAtomsPerLot},
-    settlement::global_delta::ETHDelta,
     types::Address,
 };
 
