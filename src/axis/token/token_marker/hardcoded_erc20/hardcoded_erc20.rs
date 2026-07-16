@@ -28,7 +28,7 @@ impl TokenMarker for HardcodedERC20 {
     type TokenMsgTransfer = HardcodedERC20Stub;
 
     type SenderDeltaList = HardcodedERC20Deltas;
-    type DataList<'a> = HardcodedTokens<HARDCODED_ERC20_COUNT>;
+    type DataList<'a> = &'a HardcodedTokens<HARDCODED_ERC20_COUNT>;
 
     fn token_index_data_iter(
         _custom_erc20_list: CustomERC20List,
@@ -72,6 +72,6 @@ impl TokenMarker for HardcodedERC20 {
     }
 
     fn get_data_list<'a>(_custom_erc20_list: CustomERC20List<'a>) -> Self::DataList<'a> {
-        HARDCODED_TOKENS
+        &HARDCODED_TOKENS
     }
 }

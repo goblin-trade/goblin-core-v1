@@ -54,7 +54,9 @@ pub trait TokenMarker:
         + IndexMut<Self::TokenIndex>
         + IntoIterator<Item = TokenDelta<Self>>;
 
-    type DataList<'a>: Sized + Index<Self::TokenIndex, Output = TokenData<Self>>;
+    type DataList<'a>: Sized
+        + Index<Self::TokenIndex, Output = TokenData<Self>>
+        + IntoIterator<Item = TokenData<Self>>;
 
     fn get_global_deposit(
         local_deposit: Self::LocalDeposit,

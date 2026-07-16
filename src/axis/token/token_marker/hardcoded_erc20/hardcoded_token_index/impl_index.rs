@@ -12,3 +12,11 @@ impl<const N: usize> Index<HardcodedERC20Index> for HardcodedTokens<N> {
         &self.inner[index.0]
     }
 }
+
+impl<const N: usize> Index<HardcodedERC20Index> for &HardcodedTokens<N> {
+    type Output = TokenData<HardcodedERC20>;
+
+    fn index(&self, index: HardcodedERC20Index) -> &Self::Output {
+        &self.inner[index.0]
+    }
+}

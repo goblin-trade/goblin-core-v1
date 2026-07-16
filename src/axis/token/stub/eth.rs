@@ -55,3 +55,15 @@ impl Index<ETHStub> for ETHStub {
         }
     }
 }
+
+impl IntoIterator for ETHStub {
+    type Item = TokenData<ETH>;
+    type IntoIter = core::iter::Once<TokenData<ETH>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        core::iter::once(TokenData {
+            address: ETHStub,
+            decimals: ETHStub,
+        })
+    }
+}

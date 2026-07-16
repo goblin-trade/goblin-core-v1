@@ -1,5 +1,5 @@
 use crate::{
-    axis::token::{token_marker::CustomERC20Index, token_marker::TokenData, CustomERC20},
+    axis::token::{token_marker::TokenData, CustomERC20},
     goblin_error::GoblinError,
     input_processor::DecodeCtx,
     require,
@@ -32,15 +32,13 @@ impl<'a> CustomERC20List<'a> {
         let inner = ctx.zero_copy_slice_unchecked::<TokenData<CustomERC20>>(custom_erc20_count);
         Ok(CustomERC20List { inner })
     }
+}
 
-    pub fn token_index_to_address(
-        &self,
-        token_index: CustomERC20Index,
-    ) -> Result<Address, GoblinError> {
-        let data = self
-            .inner
-            .get(token_index.0)
-            .ok_or(GoblinError::InvalidCustomTokenIndex)?;
-        Ok(data.address)
+impl<'a> IntoIterator for CustomERC20List<'a> {
+    type Item = TokenData<CustomERC20>;
+    type IntoIter = core::iter::Copied<core::slice::Iter<'a, TokenData<CustomERC20>>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.inner.iter().copied()
     }
 }

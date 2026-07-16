@@ -57,14 +57,13 @@ impl GlobalSender {
     where
         T: TokenMarker,
     {
-        let sender_delta_list = T::get_leg(self);
+        let data_list_iter = T::get_data_list(custom_erc20_list).into_iter();
+        let sender_delta_list_iter = T::get_leg(self).into_iter();
 
-        let data_list = T::get_data_list(custom_erc20_list);
-
-        for (token_index, token_data) in T::token_index_data_iter(custom_erc20_list) {
-            let delta = sender_delta_list[token_index];
+        for (token_data, delta) in data_list_iter.zip(sender_delta_list_iter) {
             delta.settle(trader, &token_data, msg_transfers)?;
         }
+
         Ok(())
     }
 
