@@ -1,4 +1,4 @@
-use crate::axis::{leg::Pair, token::token_marker::TokenMarker};
+use crate::axis::{leg::Pair, token::token_quantity::TokenQuantity};
 
 pub type TokenAddressPair<B, Q> =
-    Pair<<B as TokenMarker>::TokenAddress, <Q as TokenMarker>::TokenAddress>;
+    Pair<<B as TokenQuantity>::TokenAddress, <Q as TokenQuantity>::TokenAddress>;

@@ -2,13 +2,13 @@ use crate::{
     axis::{
         leg::{leg_reader::LegReader, SamePair},
         token::{
-            token_marker::TokenData, token_marker::TokenMarker,
+            token_marker::{TokenData, TokenMarker},
             token_msg_transfer::TokenMsgTransfer,
+            token_quantity::TokenQuantity,
         },
         update::{Decrease, Increase, UpdateEnum},
     },
     goblin_error::GoblinError,
-    hostio::erc20_hostio,
     input_processor::MsgTransfers,
     quantities::{IntoAbs, UnsidedAtoms, UnsidedDeltaAtoms, UnsidedDeltaAtomsPerLot},
     settlement::local_delta::LocalDelta,
@@ -17,7 +17,7 @@ use crate::{
 };
 
 #[derive(Clone, Copy)]
-pub struct TokenDelta<T: TokenMarker> {
+pub struct TokenDelta<T: TokenQuantity> {
     pub deposit: T::GlobalDeposit,
     pub take: UnsidedDeltaAtoms,
     pub make: UnsidedDeltaAtoms,

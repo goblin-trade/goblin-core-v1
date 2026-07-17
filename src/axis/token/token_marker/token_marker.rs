@@ -3,8 +3,9 @@ use core::ops::{Index, IndexMut};
 use crate::{
     axis::{
         token::{
-            token_marker::CustomERC20List, token_marker::TokenData,
+            token_marker::{CustomERC20List, TokenData},
             token_msg_transfer::TokenMsgTransfer,
+            token_quantity::TokenQuantity,
         },
         update::UpdateMarker,
     },
@@ -24,43 +25,12 @@ pub trait TokenMarker:
     + Copy
     + PartialEq
     + 'static
+    + TokenQuantity
     + StoreReader<DepositTriple, Result = Self::LocalDeposit>
     + StoreReader<CounterpartyTriple, Result = CounterpartyMap<Self>>
     + StoreReader<MsgTransfers, Result = Self::TokenMsgTransfer>
     + StoreReader<GlobalSender, Result = Self::SenderDeltaList>
 {
-    const DISCRIMINATOR: u8;
-
-    /// Index to lookup token address
-    type TokenIndex: Clone + Copy + Decodable + ConstZero + PartialEq;
-
-    type TokenAddress: Clone + Copy + Sized + Default;
-
-    /// Decimals hardcoded in the smart contract
-    type HardcodedDecimals: Clone + Copy;
-
-    /// Decimals stored in `Store`
-    /// Decimals are stored as u8 for ERC20 tokens but not for ETH
-    type StoredDecimals: Clone + Copy + Into<u8>;
-
-    /// Padding to pad `Store` to 32 bytes
-    /// ERC20 store has less padding to accomodate `decimals: u8`
-    type StoredPadding: Clone + Copy;
-
-    /// Pending deposit amount in local namespace
-    type LocalDeposit: Clone + Copy + Default + Decodable + ConstZero + CheckedOps;
-
-    /// Pending deposit amount in global namespace
-    type GlobalDeposit: Clone
-        + Copy
-        + Default
-        + Decodable
-        + ConstZero
-        + CheckedOps
-        + Into<UnsidedDeltaAtoms>;
-
-    type TokenMsgTransfer: TokenMsgTransfer;
-
     type SenderDeltaList: Clone
         + Copy
         + Index<Self::TokenIndex, Output = TokenDelta<Self>>

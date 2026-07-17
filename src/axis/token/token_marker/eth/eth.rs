@@ -8,26 +8,11 @@ use crate::{
         update::UpdateMarker,
     },
     goblin_error::GoblinError,
-    input_processor::ETHTransfers,
     quantities::{ETHAtoms, UnsidedAtoms, UnsidedDeltaAtomsPerLot},
     types::Address,
 };
 
 impl TokenMarker for ETH {
-    const DISCRIMINATOR: u8 = 0;
-
-    type TokenIndex = ETHStub;
-    type TokenAddress = ETHStub;
-
-    type HardcodedDecimals = ETHStub;
-    type StoredDecimals = ETHStub;
-    type StoredPadding = [u8; 16 - size_of::<Self::StoredDecimals>()];
-
-    type LocalDeposit = ETHStub;
-    type GlobalDeposit = ETHStub;
-
-    type TokenMsgTransfer = ETHTransfers;
-
     type SenderDeltaList = ETHDelta;
     type DataList<'a> = ETHStub;
 

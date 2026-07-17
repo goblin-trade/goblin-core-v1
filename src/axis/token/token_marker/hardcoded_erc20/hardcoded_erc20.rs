@@ -4,34 +4,18 @@ use crate::{
             token_marker::{
                 hardcoded_erc20::HardcodedERC20Deltas, CustomERC20List, TokenData, TokenMarker,
             },
-            token_marker::{
-                HardcodedERC20Index, HardcodedTokens, HARDCODED_ERC20_COUNT, HARDCODED_TOKENS,
-            },
-            HardcodedERC20, HardcodedERC20Stub,
+            token_marker::{HardcodedTokens, HARDCODED_ERC20_COUNT, HARDCODED_TOKENS},
+            HardcodedERC20,
         },
         update::UpdateMarker,
     },
     goblin_error::GoblinError,
-    quantities::{UnsidedAtoms, UnsidedDeltaAtoms, UnsidedDeltaAtomsPerLot, UnsidedDeltaLots},
+    quantities::{UnsidedAtoms, UnsidedDeltaAtomsPerLot},
     settlement::global_delta::TransferERC20,
     types::Address,
 };
 
 impl TokenMarker for HardcodedERC20 {
-    const DISCRIMINATOR: u8 = 1;
-
-    type TokenIndex = HardcodedERC20Index;
-    type TokenAddress = Address;
-
-    type HardcodedDecimals = u8;
-    type StoredDecimals = u8;
-    type StoredPadding = [u8; 16 - size_of::<Self::StoredDecimals>()];
-
-    type LocalDeposit = UnsidedDeltaLots;
-    type GlobalDeposit = UnsidedDeltaAtoms;
-
-    type TokenMsgTransfer = HardcodedERC20Stub;
-
     type SenderDeltaList = HardcodedERC20Deltas;
     type DataList<'a> = &'a HardcodedTokens<HARDCODED_ERC20_COUNT>;
 

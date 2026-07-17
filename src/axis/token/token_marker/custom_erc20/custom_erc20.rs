@@ -2,35 +2,19 @@ use crate::{
     axis::{
         token::{
             token_marker::TokenData,
-            token_marker::{
-                custom_erc20::CustomERC20Deltas, CustomERC20Index, CustomERC20List, TokenMarker,
-            },
-            CustomERC20, CustomERC20Stub,
+            token_marker::{custom_erc20::CustomERC20Deltas, CustomERC20List, TokenMarker},
+            CustomERC20,
         },
         update::UpdateMarker,
     },
     goblin_error::GoblinError,
     hostio::erc20_hostio,
-    quantities::{UnsidedAtoms, UnsidedDeltaAtoms, UnsidedDeltaAtomsPerLot, UnsidedDeltaLots},
+    quantities::{UnsidedAtoms, UnsidedDeltaAtomsPerLot},
     settlement::global_delta::TransferERC20,
     types::Address,
 };
 
 impl TokenMarker for CustomERC20 {
-    const DISCRIMINATOR: u8 = 2;
-
-    type TokenIndex = CustomERC20Index;
-    type TokenAddress = Address;
-
-    type HardcodedDecimals = CustomERC20Stub;
-    type StoredDecimals = u8;
-    type StoredPadding = [u8; 16 - size_of::<Self::StoredDecimals>()];
-
-    type LocalDeposit = UnsidedDeltaLots;
-    type GlobalDeposit = UnsidedDeltaAtoms;
-
-    type TokenMsgTransfer = CustomERC20Stub;
-
     type SenderDeltaList = CustomERC20Deltas;
     type DataList<'a> = CustomERC20List<'a>;
 

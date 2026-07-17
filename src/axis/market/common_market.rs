@@ -4,7 +4,10 @@ use crate::{
     axis::{
         leg::{Base, Pair, Quote},
         market::{market_marker::MarketMarker, LotSizePair},
-        token::{token_marker::CustomERC20List, token_marker::TokenMarker},
+        token::{
+            token_marker::{CustomERC20List, TokenMarker},
+            token_quantity::TokenQuantity,
+        },
     },
     goblin_error::GoblinError,
     quantities::QuoteLotsPerBaseUnitPerTick,
@@ -13,7 +16,7 @@ use crate::{
 };
 
 pub type TokenIndexPair<B, Q> =
-    Pair<<B as TokenMarker>::TokenIndex, <Q as TokenMarker>::TokenIndex>;
+    Pair<<B as TokenQuantity>::TokenIndex, <Q as TokenQuantity>::TokenIndex>;
 
 pub struct CommonMarket<M: MarketMarker, B: TokenMarker, Q: TokenMarker> {
     /// The token pair
