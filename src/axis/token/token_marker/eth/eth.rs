@@ -17,6 +17,12 @@ impl TokenMarker for ETH {
     const DISCRIMINATOR: u8 = 0;
 
     type TokenIndex = ETHStub;
+    type TokenAddress = ETHStub;
+
+    type HardcodedDecimals = ETHStub;
+    type StoredDecimals = ETHStub;
+    type StoredPadding = [u8; 16 - size_of::<Self::StoredDecimals>()];
+
     type LocalDeposit = ETHStub;
     type GlobalDeposit = ETHStub;
 
@@ -43,14 +49,6 @@ impl TokenMarker for ETH {
     }
 
     ////////////////////
-
-    type TokenAddress = ETHStub;
-
-    type HardcodedDecimals = ETHStub;
-
-    // Store 18 decimals in ETHStore for symmetry?
-    type StoredDecimals = ETHStub;
-    type StoredPadding = [u8; 16 - size_of::<Self::StoredDecimals>()];
 
     fn get_stored_decimals(
         _token_data: &TokenData<Self>,

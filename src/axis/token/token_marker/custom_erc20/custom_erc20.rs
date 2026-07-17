@@ -20,6 +20,11 @@ impl TokenMarker for CustomERC20 {
     const DISCRIMINATOR: u8 = 2;
 
     type TokenIndex = CustomERC20Index;
+    type TokenAddress = Address;
+
+    type HardcodedDecimals = CustomERC20Stub;
+    type StoredDecimals = u8;
+    type StoredPadding = [u8; 16 - size_of::<Self::StoredDecimals>()];
 
     type LocalDeposit = UnsidedDeltaLots;
     type GlobalDeposit = UnsidedDeltaAtoms;
@@ -46,13 +51,6 @@ impl TokenMarker for CustomERC20 {
     }
 
     ///////
-
-    type TokenAddress = Address;
-
-    type HardcodedDecimals = CustomERC20Stub;
-
-    type StoredDecimals = u8;
-    type StoredPadding = [u8; 16 - size_of::<Self::StoredDecimals>()];
 
     fn get_stored_decimals(
         token_data: &TokenData<Self>,
