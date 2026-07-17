@@ -1,6 +1,3 @@
-pub mod hardcoded_tokens;
-pub use hardcoded_tokens::*;
-
 #[cfg(feature = "localnet")]
 pub mod localnet;
 
