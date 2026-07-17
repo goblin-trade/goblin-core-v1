@@ -34,8 +34,7 @@ pub trait TokenMarker:
     type SenderDeltaList: Clone
         + Copy
         + Index<Self::TokenIndex, Output = TokenDelta<Self>>
-        + IndexMut<Self::TokenIndex>
-        + IntoIterator<Item = TokenDelta<Self>>;
+        + IndexMut<Self::TokenIndex>;
 
     type DataList<'a>: Sized
         + Index<Self::TokenIndex, Output = TokenData<Self>>

@@ -56,13 +56,14 @@ impl GlobalSender {
     ) -> Result<(), GoblinError>
     where
         T: TokenMarker,
+        for<'a> &'a T::SenderDeltaList: IntoIterator<Item = &'a TokenDelta<T>>,
     {
         let data_list_iter = T::get_data_list(custom_erc20_list).into_iter();
         let sender_delta_list_iter = T::get_leg(self).into_iter();
 
-        for (token_data, delta) in data_list_iter.zip(sender_delta_list_iter) {
-            delta.settle(trader, &token_data, msg_transfers)?;
-        }
+        // for (token_data, delta) in data_list_iter.zip(sender_delta_list_iter) {
+        //     delta.settle(trader, &token_data, msg_transfers)?;
+        // }
 
         Ok(())
     }
