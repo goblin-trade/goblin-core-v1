@@ -11,3 +11,12 @@ impl IntoIterator for ETHDelta {
         core::iter::once(self.inner)
     }
 }
+
+impl<'a> IntoIterator for &'a ETHDelta {
+    type Item = &'a TokenDelta<ETH>;
+    type IntoIter = core::iter::Once<&'a TokenDelta<ETH>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        core::iter::once(&self.inner)
+    }
+}
