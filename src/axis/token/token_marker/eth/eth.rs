@@ -61,10 +61,4 @@ impl TokenMarker for ETH {
     fn get_data_list<'a>(_custom_erc20_list: CustomERC20List<'a>) -> Self::DataList<'a> {
         ETHStub
     }
-
-    fn token_index_data_iter(
-        _custom_erc20_list: CustomERC20List,
-    ) -> impl Iterator<Item = (Self::TokenIndex, TokenData<Self>)> {
-        core::iter::once(TokenData::ETH_STUB_PAIR)
-    }
 }

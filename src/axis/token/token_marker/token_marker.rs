@@ -99,8 +99,4 @@ pub trait TokenMarker:
     type StoredPadding: Clone + Copy;
 
     fn get_data_list<'a>(custom_erc20_list: CustomERC20List<'a>) -> Self::DataList<'a>;
-
-    fn token_index_data_iter(
-        custom_erc20_list: CustomERC20List,
-    ) -> impl Iterator<Item = (Self::TokenIndex, TokenData<Self>)>;
 }

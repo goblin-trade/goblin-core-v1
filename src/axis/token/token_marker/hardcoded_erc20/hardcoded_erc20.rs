@@ -30,16 +30,6 @@ impl TokenMarker for HardcodedERC20 {
     type SenderDeltaList = HardcodedERC20Deltas;
     type DataList<'a> = &'a HardcodedTokens<HARDCODED_ERC20_COUNT>;
 
-    fn token_index_data_iter(
-        _custom_erc20_list: CustomERC20List,
-    ) -> impl Iterator<Item = (Self::TokenIndex, TokenData<Self>)> {
-        HARDCODED_TOKENS
-            .inner
-            .iter()
-            .enumerate()
-            .map(|(index, data)| (HardcodedERC20Index::from(index), *data))
-    }
-
     fn get_global_deposit(
         local_deposit: Self::LocalDeposit,
         atoms_per_lot: UnsidedDeltaAtomsPerLot,

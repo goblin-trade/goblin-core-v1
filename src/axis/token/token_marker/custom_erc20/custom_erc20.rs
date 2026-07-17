@@ -29,16 +29,6 @@ impl TokenMarker for CustomERC20 {
     type SenderDeltaList = CustomERC20Deltas;
     type DataList<'a> = CustomERC20List<'a>;
 
-    fn token_index_data_iter(
-        custom_erc20_list: CustomERC20List,
-    ) -> impl Iterator<Item = (Self::TokenIndex, TokenData<Self>)> {
-        custom_erc20_list
-            .inner
-            .iter()
-            .enumerate()
-            .map(|(i, data)| (CustomERC20Index::from(i), *data))
-    }
-
     fn get_global_deposit(
         local_deposit: Self::LocalDeposit,
         atoms_per_lot: UnsidedDeltaAtomsPerLot,
