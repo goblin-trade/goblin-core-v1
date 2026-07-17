@@ -14,3 +14,12 @@ impl IntoIterator for CustomERC20Deltas {
         self.inner.into_iter()
     }
 }
+
+impl<'a> IntoIterator for &'a CustomERC20Deltas {
+    type Item = &'a TokenDelta<CustomERC20>;
+    type IntoIter = core::slice::Iter<'a, TokenDelta<CustomERC20>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.inner.iter()
+    }
+}
