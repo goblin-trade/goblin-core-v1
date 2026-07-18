@@ -1,36 +1,17 @@
-use core::ops::{Index, IndexMut};
-
 use crate::{
     axis::{
         token::{
-            token_list::{custom_erc20::CustomERC20List, TokenList},
-            token_marker::TokenData,
-            token_quantity::TokenQuantity,
+            token_list::custom_erc20::CustomERC20List, token_marker::TokenData,
+            token_reader::TokenReader,
         },
         update::UpdateMarker,
     },
     goblin_error::GoblinError,
-    input_processor::MsgTransfers,
     quantities::{UnsidedAtoms, UnsidedDeltaAtomsPerLot},
-    settlement::{
-        global_delta::{CounterpartyMap, CounterpartyTriple, GlobalSender, TokenDelta},
-        local_delta::DepositTriple,
-    },
-    types::{Address, StoreReader},
+    types::Address,
 };
 
-pub trait TokenMarker:
-    Clone
-    + Copy
-    + PartialEq
-    + 'static
-    + TokenQuantity
-    + TokenList
-    + StoreReader<DepositTriple, Result = Self::LocalDeposit>
-    + StoreReader<CounterpartyTriple, Result = CounterpartyMap<Self>>
-    + StoreReader<MsgTransfers, Result = Self::TokenMsgTransfer>
-    + StoreReader<GlobalSender, Result = Self::SenderDeltaList>
-{
+pub trait TokenMarker: Clone + Copy + PartialEq + 'static + TokenReader {
     fn get_global_deposit(
         local_deposit: Self::LocalDeposit,
         atoms_per_lot: UnsidedDeltaAtomsPerLot,
