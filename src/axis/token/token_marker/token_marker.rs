@@ -29,12 +29,10 @@ pub trait TokenMarker:
     + StoreReader<MsgTransfers, Result = Self::TokenMsgTransfer>
     + StoreReader<GlobalSender, Result = Self::SenderDeltaList>
 {
-    type SenderDeltaList: Clone
-        + Copy
-        + Index<Self::TokenIndex, Output = TokenDelta<Self>>
+    type SenderDeltaList: Index<Self::TokenIndex, Output = TokenDelta<Self>>
         + IndexMut<Self::TokenIndex>;
 
-    type DataList<'a>: Sized + Index<Self::TokenIndex, Output = TokenData<Self>> + IntoIterator;
+    type DataList<'a>: Index<Self::TokenIndex, Output = TokenData<Self>>;
 
     fn get_global_deposit(
         local_deposit: Self::LocalDeposit,
