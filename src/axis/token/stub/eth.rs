@@ -49,10 +49,7 @@ impl Index<ETHStub> for ETHStub {
     type Output = TokenData<ETH>;
 
     fn index(&self, _index: ETHStub) -> &Self::Output {
-        &TokenData {
-            address: ETHStub,
-            decimals: ETHStub,
-        }
+        &TokenData::ZEROED
     }
 }
 
@@ -67,3 +64,24 @@ impl IntoIterator for ETHStub {
         })
     }
 }
+
+impl<'a> IntoIterator for &'a TokenData<ETH> {
+    type Item = &'a TokenData<ETH>;
+    type IntoIter = core::iter::Once<&'a TokenData<ETH>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        core::iter::once(self)
+    }
+}
+
+// impl<'a> IntoIterator for &'a ETHStub {
+//     type Item = &'a TokenData<ETH>;
+//     type IntoIter = core::iter::Once<&'a TokenData<ETH>>;
+
+//     fn into_iter(self) -> Self::IntoIter {
+//         core::iter::once(TokenData {
+//             address: ETHStub,
+//             decimals: ETHStub,
+//         })
+//     }
+// }

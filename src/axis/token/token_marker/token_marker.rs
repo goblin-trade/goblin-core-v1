@@ -4,18 +4,16 @@ use crate::{
     axis::{
         token::{
             token_marker::{CustomERC20List, TokenData},
-            token_msg_transfer::TokenMsgTransfer,
             token_quantity::TokenQuantity,
         },
         update::UpdateMarker,
     },
     goblin_error::GoblinError,
-    input_processor::{Decodable, MsgTransfers},
-    quantities::{UnsidedAtoms, UnsidedDeltaAtoms, UnsidedDeltaAtomsPerLot},
+    input_processor::MsgTransfers,
+    quantities::{UnsidedAtoms, UnsidedDeltaAtomsPerLot},
     settlement::{
         global_delta::{CounterpartyMap, CounterpartyTriple, GlobalSender, TokenDelta},
         local_delta::DepositTriple,
-        CheckedOps, ConstZero,
     },
     types::{Address, StoreReader},
 };
@@ -36,9 +34,7 @@ pub trait TokenMarker:
         + Index<Self::TokenIndex, Output = TokenDelta<Self>>
         + IndexMut<Self::TokenIndex>;
 
-    type DataList<'a>: Sized
-        + Index<Self::TokenIndex, Output = TokenData<Self>>
-        + IntoIterator<Item = TokenData<Self>>;
+    type DataList<'a>: Sized + Index<Self::TokenIndex, Output = TokenData<Self>> + IntoIterator;
 
     fn get_global_deposit(
         local_deposit: Self::LocalDeposit,

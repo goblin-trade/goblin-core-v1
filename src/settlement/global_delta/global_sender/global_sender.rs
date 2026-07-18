@@ -3,7 +3,8 @@ use crate::{
         leg::{leg_matcher::LegMatcher, SamePair},
         token::{
             token_marker::{
-                CustomERC20Deltas, CustomERC20List, ETHDelta, HardcodedERC20Deltas, TokenMarker,
+                CustomERC20Deltas, CustomERC20List, ETHDelta, HardcodedERC20Deltas, TokenData,
+                TokenMarker,
             },
             CustomERC20, HardcodedERC20, Token, ETH,
         },
@@ -48,22 +49,23 @@ impl GlobalSender {
         Ok(())
     }
 
-    fn settle_leg<T>(
-        &self,
+    fn settle_leg<'a, T>(
+        &'a self,
         trader: &Address,
-        custom_erc20_list: CustomERC20List,
+        custom_erc20_list: CustomERC20List<'a>,
         msg_transfers: &MsgTransfers,
     ) -> Result<(), GoblinError>
     where
         T: TokenMarker,
-        for<'a> &'a T::SenderDeltaList: IntoIterator<Item = &'a TokenDelta<T>>,
+        &'a T::SenderDeltaList: IntoIterator<Item = &'a TokenDelta<T>>,
+        T::DataList<'a>: IntoIterator<Item = &'a TokenData<T>>,
     {
         let data_list_iter = T::get_data_list(custom_erc20_list).into_iter();
         let sender_delta_list_iter = T::get_leg(self).into_iter();
 
-        // for (token_data, delta) in data_list_iter.zip(sender_delta_list_iter) {
-        //     delta.settle(trader, &token_data, msg_transfers)?;
-        // }
+        for (token_data, delta) in data_list_iter.zip(sender_delta_list_iter) {
+            delta.settle(trader, &token_data, msg_transfers)?;
+        }
 
         Ok(())
     }

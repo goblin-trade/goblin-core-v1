@@ -1,8 +1,9 @@
 use crate::{
     axis::{
         token::{
-            token_marker::TokenData,
-            token_marker::{eth::ETHDelta, CustomERC20List, TokenMarker},
+            token_marker::{
+                eth::ETHDelta, CustomERC20List, TokenData, TokenMarker, ETH_TOKEN_DATA,
+            },
             ETHStub, ETH,
         },
         update::UpdateMarker,
@@ -14,7 +15,7 @@ use crate::{
 
 impl TokenMarker for ETH {
     type SenderDeltaList = ETHDelta;
-    type DataList<'a> = ETHStub;
+    type DataList<'a> = &'a TokenData<ETH>;
 
     fn get_global_deposit(
         _local_deposit: Self::LocalDeposit,
@@ -42,6 +43,6 @@ impl TokenMarker for ETH {
     }
 
     fn get_data_list<'a>(_custom_erc20_list: CustomERC20List<'a>) -> Self::DataList<'a> {
-        ETHStub
+        &ETH_TOKEN_DATA
     }
 }

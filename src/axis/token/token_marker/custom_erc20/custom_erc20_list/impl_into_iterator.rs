@@ -4,10 +4,10 @@ use crate::axis::token::{
 };
 
 impl<'a> IntoIterator for CustomERC20List<'a> {
-    type Item = TokenData<CustomERC20>;
-    type IntoIter = core::iter::Copied<core::slice::Iter<'a, TokenData<CustomERC20>>>;
+    type Item = &'a TokenData<CustomERC20>;
+    type IntoIter = core::slice::Iter<'a, TokenData<CustomERC20>>;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.inner.iter().copied()
+        self.inner.iter()
     }
 }
