@@ -5,7 +5,7 @@ use crate::{
         leg::{Base, Pair, Quote},
         market::{market_marker::MarketMarker, LotSizePair},
         token::{
-            token_marker::{CustomERC20List, TokenMarker},
+            token_list::custom_erc20::CustomERC20List, token_marker::TokenMarker,
             token_quantity::TokenQuantity,
         },
     },

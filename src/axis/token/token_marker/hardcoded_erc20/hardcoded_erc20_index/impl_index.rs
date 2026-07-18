@@ -1,6 +1,6 @@
 use crate::axis::token::{
-    token_marker::TokenData,
-    token_marker::{HardcodedERC20Index, HardcodedERC20List},
+    token_list::hardcoded_erc20::HardcodedERC20List,
+    token_marker::{HardcodedERC20Index, TokenData},
     HardcodedERC20,
 };
 use core::ops::Index;

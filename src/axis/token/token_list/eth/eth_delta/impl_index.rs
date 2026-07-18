@@ -1,7 +1,7 @@
 use core::ops::{Index, IndexMut};
 
 use crate::{
-    axis::token::{token_marker::ETHDelta, ETHStub, ETH},
+    axis::token::{token_list::eth::ETHDelta, ETHStub, ETH},
     settlement::global_delta::TokenDelta,
 };
 

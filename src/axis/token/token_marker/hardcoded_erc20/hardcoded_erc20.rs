@@ -1,10 +1,8 @@
 use crate::{
     axis::{
         token::{
-            token_marker::{
-                hardcoded_erc20::HardcodedERC20Deltas, CustomERC20List, TokenData, TokenMarker,
-            },
-            token_marker::{HardcodedERC20List, HARDCODED_ERC20_COUNT, HARDCODED_ERC20_LIST},
+            token_list::{custom_erc20::CustomERC20List, hardcoded_erc20::HARDCODED_ERC20_LIST},
+            token_marker::{TokenData, TokenMarker},
             HardcodedERC20,
         },
         update::UpdateMarker,
@@ -16,9 +14,6 @@ use crate::{
 };
 
 impl TokenMarker for HardcodedERC20 {
-    type SenderDeltaList = HardcodedERC20Deltas;
-    type DataList<'a> = &'a HardcodedERC20List<HARDCODED_ERC20_COUNT>;
-
     fn get_global_deposit(
         local_deposit: Self::LocalDeposit,
         atoms_per_lot: UnsidedDeltaAtomsPerLot,

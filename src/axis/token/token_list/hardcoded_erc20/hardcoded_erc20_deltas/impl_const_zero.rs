@@ -1,5 +1,5 @@
 use crate::{
-    axis::token::token_marker::{HardcodedERC20Deltas, HARDCODED_ERC20_COUNT},
+    axis::token::token_list::hardcoded_erc20::{HardcodedERC20Deltas, HARDCODED_ERC20_COUNT},
     settlement::{global_delta::TokenDelta, ConstZero},
 };
 

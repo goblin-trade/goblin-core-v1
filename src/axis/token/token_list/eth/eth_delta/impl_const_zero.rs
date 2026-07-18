@@ -1,5 +1,5 @@
 use crate::{
-    axis::token::token_marker::ETHDelta,
+    axis::token::token_list::eth::ETHDelta,
     settlement::{global_delta::TokenDelta, ConstZero},
 };
 

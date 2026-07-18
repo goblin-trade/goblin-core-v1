@@ -1,6 +1,5 @@
 use crate::axis::token::{
-    token_marker::{HardcodedERC20List, TokenData},
-    HardcodedERC20,
+    token_list::hardcoded_erc20::HardcodedERC20List, token_marker::TokenData, HardcodedERC20,
 };
 
 impl<'a, const N: usize> IntoIterator for &'a HardcodedERC20List<N> {

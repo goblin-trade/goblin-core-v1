@@ -3,7 +3,8 @@ use core::ops::{Index, IndexMut};
 use crate::{
     axis::{
         token::{
-            token_marker::{CustomERC20List, TokenData},
+            token_list::{custom_erc20::CustomERC20List, TokenList},
+            token_marker::TokenData,
             token_quantity::TokenQuantity,
         },
         update::UpdateMarker,
@@ -24,16 +25,12 @@ pub trait TokenMarker:
     + PartialEq
     + 'static
     + TokenQuantity
+    + TokenList
     + StoreReader<DepositTriple, Result = Self::LocalDeposit>
     + StoreReader<CounterpartyTriple, Result = CounterpartyMap<Self>>
     + StoreReader<MsgTransfers, Result = Self::TokenMsgTransfer>
     + StoreReader<GlobalSender, Result = Self::SenderDeltaList>
 {
-    type SenderDeltaList: Index<Self::TokenIndex, Output = TokenDelta<Self>>
-        + IndexMut<Self::TokenIndex>;
-
-    type DataList<'a>: Index<Self::TokenIndex, Output = TokenData<Self>>;
-
     fn get_global_deposit(
         local_deposit: Self::LocalDeposit,
         atoms_per_lot: UnsidedDeltaAtomsPerLot,

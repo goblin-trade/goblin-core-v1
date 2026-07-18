@@ -2,8 +2,7 @@ use core::ops::{Index, IndexMut};
 
 use crate::{
     axis::token::{
-        token_marker::{CustomERC20Deltas, CustomERC20Index},
-        CustomERC20,
+        token_list::custom_erc20::CustomERC20Deltas, token_marker::CustomERC20Index, CustomERC20,
     },
     settlement::global_delta::TokenDelta,
 };

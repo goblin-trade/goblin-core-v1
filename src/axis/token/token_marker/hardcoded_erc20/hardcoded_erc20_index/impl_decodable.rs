@@ -1,5 +1,7 @@
 use crate::{
-    axis::token::token_marker::{HardcodedERC20Index, HARDCODED_ERC20_COUNT},
+    axis::token::{
+        token_list::hardcoded_erc20::HARDCODED_ERC20_COUNT, token_marker::HardcodedERC20Index,
+    },
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
     require,

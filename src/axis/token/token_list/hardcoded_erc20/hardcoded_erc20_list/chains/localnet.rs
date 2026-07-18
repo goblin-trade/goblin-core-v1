@@ -1,4 +1,6 @@
-use crate::axis::token::token_marker::{HardcodedERC20List, TokenData};
+use crate::axis::token::{
+    token_list::hardcoded_erc20::HardcodedERC20List, token_marker::TokenData,
+};
 
 pub const HARDCODED_ERC20_COUNT: usize = 2;
 

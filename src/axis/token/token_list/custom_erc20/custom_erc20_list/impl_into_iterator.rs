@@ -1,6 +1,5 @@
 use crate::axis::token::{
-    token_marker::{CustomERC20List, TokenData},
-    CustomERC20,
+    token_list::custom_erc20::CustomERC20List, token_marker::TokenData, CustomERC20,
 };
 
 impl<'a> IntoIterator for CustomERC20List<'a> {
