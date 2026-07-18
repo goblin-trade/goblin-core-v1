@@ -60,7 +60,6 @@ impl GlobalSender {
     where
         T: TokenMarker,
         &'a T::SenderDeltaList: IntoIterator<Item = &'a TokenDelta<T>>,
-        T::DataList<'a>: IntoIterator<Item = &'a TokenData<T>>,
     {
         let data_list_iter = T::get_data_list(custom_erc20_list).into_iter();
         let sender_delta_list_iter = T::get_leg(self).into_iter();
