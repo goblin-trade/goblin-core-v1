@@ -1,6 +1,7 @@
 use crate::{
     axis::token::{
-        token_list::TokenList, token_quantity::TokenQuantity, CustomERC20, HardcodedERC20, ETH,
+        token_list::TokenList, token_quantity::TokenQuantity, token_reader::TokenDataTriple,
+        CustomERC20, HardcodedERC20, ETH,
     },
     input_processor::MsgTransfers,
     settlement::{
@@ -18,6 +19,12 @@ pub trait TokenReader:
     + StoreReader<MsgTransfers, Result = Self::TokenMsgTransfer>
     + StoreReader<GlobalSender, Result = Self::SenderDeltaList>
 {
+    fn get_token_data_list<'a>(store: TokenDataTriple<'a>) -> Self::DataList<'a>
+    where
+        Self: StoreReader<TokenDataTriple<'a>, Result = Self::DataList<'a>>,
+    {
+        Self::get(&store)
+    }
 }
 
 impl TokenReader for ETH {}
