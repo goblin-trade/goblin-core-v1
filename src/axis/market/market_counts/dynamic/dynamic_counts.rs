@@ -7,7 +7,7 @@ use crate::{
 const BYTE_COUNT: usize = 4;
 
 /// The number of dynamic markets to process and their associated custom token addresses
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default)]
 pub struct DynamicCounts {
     pub market_counts: [u8; 8],
 }

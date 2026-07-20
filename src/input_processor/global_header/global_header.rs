@@ -29,7 +29,7 @@ pub struct GlobalHeader<'a> {
     pub recipient: Option<&'a Address>,
 
     /// Number of hardcoded and dynamic markets to process
-    pub market_counts: MarketVariantPair<HardcodedCounts, Option<DynamicCounts>>,
+    pub market_counts: MarketVariantPair<HardcodedCounts, DynamicCounts>,
 
     pub custom_erc20_list: CustomERC20List<'a>,
 }
@@ -47,9 +47,9 @@ impl<'a> GlobalHeader<'a> {
 
         let hardcoded_counts = HardcodedCounts::try_decode(ctx)?;
         let dynamic_counts = if flags.process_dynamic_markets {
-            Some(DynamicCounts::new(ctx)?)
+            DynamicCounts::new(ctx)?
         } else {
-            None
+            DynamicCounts::default()
         };
 
         let market_counts = Tuple::new(hardcoded_counts, dynamic_counts);
@@ -78,9 +78,8 @@ impl<'a> GlobalHeader<'a> {
         let hardcoded_counts = Hardcoded::get_leg(&self.market_counts);
         hardcoded_counts.process(msg_sender, ctx, self.custom_erc20_list, delta)?;
 
-        if let Some(dynamic_counts) = Dynamic::get_leg(&self.market_counts) {
-            dynamic_counts.process(msg_sender, ctx, self.custom_erc20_list, delta)?;
-        }
+        let dynamic_counts = Dynamic::get_leg(&self.market_counts);
+        dynamic_counts.process(msg_sender, ctx, self.custom_erc20_list, delta)?;
         Ok(())
     }
 }
