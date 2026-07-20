@@ -23,7 +23,7 @@ use crate::{
 pub fn process_market<'a, M, B, Q>(
     msg_sender: &Address,
     ctx: &DecodeCtx,
-    token_data_triple: TokenDataTriple<'a>,
+    token_data_triple: &TokenDataTriple<'a>,
     delta: &mut Delta,
 ) -> Result<(), GoblinError>
 where

@@ -1,15 +1,11 @@
 use crate::{
     axis::{
-        token::{
-            token_list::custom_erc20::CustomERC20List,
-            token_marker::TokenData,
-            token_reader::{TokenDataTriple, TokenReader},
-        },
+        token::{token_marker::TokenData, token_reader::TokenReader},
         update::UpdateMarker,
     },
     goblin_error::GoblinError,
     quantities::{UnsidedAtoms, UnsidedDeltaAtomsPerLot},
-    types::{Address, StoreReader},
+    types::Address,
 };
 
 pub trait TokenMarker: Clone + Copy + PartialEq + 'static + TokenReader {
@@ -39,11 +35,4 @@ pub trait TokenMarker: Clone + Copy + PartialEq + 'static + TokenReader {
     fn get_stored_decimals(
         token_data: &TokenData<Self>,
     ) -> Result<Self::StoredDecimals, GoblinError>;
-
-    // Can't replace with TokenDataTriple<'a> and SlotReader
-    // Trait is added at top level
-    // There is no lifetime 'a at top level
-    //
-    // We'll have to import the bound everywhere
-    fn get_data_list<'a>(custom_erc20_list: CustomERC20List<'a>) -> Self::DataList<'a>;
 }

@@ -1,7 +1,6 @@
 use crate::{
     axis::{
         token::{
-            token_list::{custom_erc20::CustomERC20List, eth::ETH_TOKEN_DATA},
             token_marker::{TokenData, TokenMarker},
             ETHStub, ETH,
         },
@@ -36,9 +35,5 @@ impl TokenMarker for ETH {
         _token_data: &TokenData<Self>,
     ) -> Result<Self::StoredDecimals, GoblinError> {
         Ok(ETHStub)
-    }
-
-    fn get_data_list<'a>(_custom_erc20_list: CustomERC20List<'a>) -> Self::DataList<'a> {
-        &ETH_TOKEN_DATA
     }
 }

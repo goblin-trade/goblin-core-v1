@@ -33,7 +33,7 @@ where
     /// - Dynamic: Reads all parameters, constructs full MarketAndKey
     fn decode_locator(
         ctx: &DecodeCtx,
-        token_data_triple: TokenDataTriple,
+        token_data_triple: &TokenDataTriple,
     ) -> Result<Self, GoblinError>;
 
     /// Resolve the locator to obtain a reference to the market and its slot key.

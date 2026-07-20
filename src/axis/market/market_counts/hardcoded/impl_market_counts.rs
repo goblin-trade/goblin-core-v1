@@ -15,7 +15,7 @@ impl MarketCounts for HardcodedCounts {
         &self,
         msg_sender: &Address,
         ctx: &DecodeCtx,
-        token_data_triple: TokenDataTriple<'a>,
+        token_data_triple: &TokenDataTriple<'a>,
         delta: &mut Delta,
     ) -> Result<(), GoblinError> {
         for _ in 0..self.inner[0] {

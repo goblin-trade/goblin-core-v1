@@ -5,8 +5,7 @@ use crate::{
         leg::{Base, Pair, Quote},
         market::{market_marker::MarketMarker, LotSizePair},
         token::{
-            token_list::custom_erc20::CustomERC20List, token_marker::TokenMarker,
-            token_quantity::TokenQuantity, token_reader::TokenDataTriple,
+            token_marker::TokenMarker, token_quantity::TokenQuantity, token_reader::TokenDataTriple,
         },
     },
     goblin_error::GoblinError,
@@ -48,23 +47,16 @@ impl<M: MarketMarker, B: TokenMarker, Q: TokenMarker> CommonMarket<M, B, Q> {
     /// Map to market preimage which is used to read market state
     pub fn get_preimage<'a>(
         &self,
-        token_data_triple: TokenDataTriple<'a>,
-    ) -> Result<MarketPreimage<M, B, Q>, GoblinError>
-    where
-        B: StoreReader<TokenDataTriple<'a>, Result = B::DataList<'a>>,
-        Q: StoreReader<TokenDataTriple<'a>, Result = Q::DataList<'a>>,
-    {
+        token_data_triple: &TokenDataTriple<'a>,
+    ) -> Result<MarketPreimage<M, B, Q>, GoblinError> {
         let base_token_index = Base::get(&self.token_index_pair);
         let quote_token_index = Quote::get(&self.token_index_pair);
 
-        let base_data_list = B::get_token_data_list(token_data_triple);
-        let quote_data_list = Q::get_token_data_list(token_data_triple);
+        let base_data_list = B::get_with_lifetime(token_data_triple);
+        let quote_data_list = Q::get_with_lifetime(token_data_triple);
 
         let base_token_address = base_data_list[base_token_index].address;
         let quote_token_address = quote_data_list[quote_token_index].address;
-
-        // let base_token_address = B::get_data_list(custom_erc20_list)[base_token_index].address;
-        // let quote_token_address = Q::get_data_list(custom_erc20_list)[quote_token_index].address;
 
         Ok(MarketPreimage::<M, B, Q>::new(
             self.lot_size_pair,

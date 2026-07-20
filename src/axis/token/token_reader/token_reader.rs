@@ -8,7 +8,7 @@ use crate::{
         global_delta::{CounterpartyMap, CounterpartyTriple, GlobalSender},
         local_delta::DepositTriple,
     },
-    types::StoreReader,
+    types::{RefReader, StoreReader},
 };
 
 pub trait TokenReader:
@@ -18,13 +18,8 @@ pub trait TokenReader:
     + StoreReader<CounterpartyTriple, Result = CounterpartyMap<Self>>
     + StoreReader<MsgTransfers, Result = Self::TokenMsgTransfer>
     + StoreReader<GlobalSender, Result = Self::SenderDeltaList>
+    + for<'a> RefReader<'a, TokenDataTriple<'a>, Result = Self::DataList<'a>>
 {
-    fn get_token_data_list<'a>(store: TokenDataTriple<'a>) -> Self::DataList<'a>
-    where
-        Self: StoreReader<TokenDataTriple<'a>, Result = Self::DataList<'a>>,
-    {
-        Self::get(&store)
-    }
 }
 
 impl TokenReader for ETH {}

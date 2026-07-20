@@ -1,7 +1,6 @@
 use crate::{
     axis::{
         token::{
-            token_list::{custom_erc20::CustomERC20List, hardcoded_erc20::HARDCODED_ERC20_LIST},
             token_marker::{TokenData, TokenMarker},
             HardcodedERC20,
         },
@@ -36,9 +35,5 @@ impl TokenMarker for HardcodedERC20 {
         token_data: &TokenData<Self>,
     ) -> Result<Self::StoredDecimals, GoblinError> {
         Ok(token_data.decimals)
-    }
-
-    fn get_data_list<'a>(_custom_erc20_list: CustomERC20List<'a>) -> Self::DataList<'a> {
-        &HARDCODED_ERC20_LIST
     }
 }

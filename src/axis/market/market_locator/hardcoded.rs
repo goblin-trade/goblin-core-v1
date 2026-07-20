@@ -20,7 +20,7 @@ where
 {
     fn decode_locator(
         ctx: &DecodeCtx,
-        _token_data_triple: TokenDataTriple,
+        _token_data_triple: &TokenDataTriple,
     ) -> Result<Self, GoblinError> {
         HardcodedMarketIndex::<B, Q>::try_decode(ctx)
     }

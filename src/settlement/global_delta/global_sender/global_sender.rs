@@ -3,11 +3,11 @@ use crate::{
         leg::{leg_matcher::LegMatcher, SamePair},
         token::{
             token_list::{
-                custom_erc20::{CustomERC20Deltas, CustomERC20List},
-                eth::ETHDelta,
+                custom_erc20::CustomERC20Deltas, eth::ETHDelta,
                 hardcoded_erc20::HardcodedERC20Deltas,
             },
-            token_marker::{TokenData, TokenMarker},
+            token_marker::TokenMarker,
+            token_reader::TokenDataTriple,
             CustomERC20, HardcodedERC20, Token, ETH,
         },
     },
@@ -54,14 +54,14 @@ impl GlobalSender {
     fn settle_leg<'a, T>(
         &'a self,
         trader: &Address,
-        custom_erc20_list: CustomERC20List<'a>,
+        token_data_triple: &TokenDataTriple<'a>,
         msg_transfers: &MsgTransfers,
     ) -> Result<(), GoblinError>
     where
         T: TokenMarker,
         &'a T::SenderDeltaList: IntoIterator<Item = &'a TokenDelta<T>>,
     {
-        let data_list_iter = T::get_data_list(custom_erc20_list).into_iter();
+        let data_list_iter = T::get_with_lifetime(&token_data_triple).into_iter();
         let sender_delta_list_iter = T::get_leg(self).into_iter();
 
         for (token_data, delta) in data_list_iter.zip(sender_delta_list_iter) {
@@ -74,12 +74,12 @@ impl GlobalSender {
     pub fn settle(
         &self,
         trader: &Address,
-        custom_erc20_list: CustomERC20List,
+        token_data_triple: &TokenDataTriple,
         msg_transfers: &MsgTransfers,
     ) -> Result<(), GoblinError> {
-        self.settle_leg::<ETH>(trader, custom_erc20_list, msg_transfers)?;
-        self.settle_leg::<HardcodedERC20>(trader, custom_erc20_list, msg_transfers)?;
-        self.settle_leg::<CustomERC20>(trader, custom_erc20_list, msg_transfers)?;
+        self.settle_leg::<ETH>(trader, token_data_triple, msg_transfers)?;
+        self.settle_leg::<HardcodedERC20>(trader, token_data_triple, msg_transfers)?;
+        self.settle_leg::<CustomERC20>(trader, token_data_triple, msg_transfers)?;
 
         Ok(())
     }

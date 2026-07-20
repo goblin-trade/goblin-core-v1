@@ -15,7 +15,7 @@ impl MarketCounts for DynamicCounts {
         &self,
         msg_sender: &Address,
         ctx: &DecodeCtx,
-        token_data_triple: TokenDataTriple<'a>,
+        token_data_triple: &TokenDataTriple<'a>,
         delta: &mut Delta,
     ) -> Result<(), GoblinError> {
         // Dynamic with hardcoded ERC20 (3)

@@ -77,10 +77,10 @@ impl<'a> GlobalHeader<'a> {
         delta: &mut Delta,
     ) -> Result<(), GoblinError> {
         let hardcoded_counts = Hardcoded::get_leg(&self.market_counts);
-        hardcoded_counts.process(msg_sender, ctx, self.custom_erc20_list, delta)?;
+        hardcoded_counts.process(msg_sender, ctx, &self.token_data_triple, delta)?;
 
         let dynamic_counts = Dynamic::get_leg(&self.market_counts);
-        dynamic_counts.process(msg_sender, ctx, self.custom_erc20_list, delta)?;
+        dynamic_counts.process(msg_sender, ctx, &self.token_data_triple, delta)?;
         Ok(())
     }
 }

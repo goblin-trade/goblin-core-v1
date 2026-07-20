@@ -15,7 +15,7 @@ where
 {
     fn decode_locator(
         ctx: &DecodeCtx,
-        token_data_triple: TokenDataTriple,
+        token_data_triple: &TokenDataTriple,
     ) -> Result<Self, GoblinError> {
         let common_market = CommonMarket::<Dynamic, B, Q>::try_decode(ctx)?;
         let preimage = common_market.get_preimage(token_data_triple)?;
