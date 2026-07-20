@@ -14,7 +14,11 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::MsgTransfers,
     quantities::UnsidedDeltaAtomsPerLot,
-    settlement::{global_delta::TokenDelta, local_delta::LocalDelta, CheckedOps, ConstZero},
+    settlement::{
+        global_delta::{FromLocalDelta, TokenDelta},
+        local_delta::LocalDelta,
+        CheckedOps, ConstZero,
+    },
     types::{Address, Triple},
 };
 
@@ -31,7 +35,7 @@ impl GlobalSender {
         T: TokenMarker,
         In: LegMatcher,
     {
-        let new_delta = TokenDelta::<T>::from_local_delta::<In>(atoms_per_lot_pair, local_delta);
+        let new_delta = TokenDelta::from_local_delta::<In>(atoms_per_lot_pair, local_delta);
 
         let deltas_list = T::get_leg_mut(self);
         let delta_store = &mut deltas_list[token_index];
