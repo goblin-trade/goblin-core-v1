@@ -1,8 +1,9 @@
 use crate::{
+    axis::token::token_marker::TokenMarker,
     goblin_error::GoblinError,
-    quantities::{Exp, Quantity},
+    quantities::{Exp, IntoAbs, Quantity, UnsidedDeltaAtoms},
     settlement::ConstZero,
-    types::{Marker, Tuple},
+    types::{Address, Marker, Tuple},
 };
 
 /// Update axis
@@ -22,7 +23,24 @@ pub enum UpdateEnum {
 }
 
 impl UpdateEnum {
-    pub fn from_delta<E: Exp>(value: Quantity<E, i64>) -> Option<Self> {
+    pub fn transfer<T: TokenMarker>(
+        net_deposit: UnsidedDeltaAtoms,
+        trader: &Address,
+        token_address: &T::TokenAddress,
+        decimals: T::StoredDecimals,
+    ) -> Result<(), GoblinError> {
+        let Some(update_enum) = UpdateEnum::from_delta(net_deposit) else {
+            return Ok(());
+        };
+
+        let deposit = net_deposit.abs();
+        match update_enum {
+            UpdateEnum::Increase => T::update::<Increase>(deposit, trader, token_address, decimals),
+            UpdateEnum::Decrease => T::update::<Decrease>(deposit, trader, token_address, decimals),
+        }
+    }
+
+    fn from_delta<E: Exp>(value: Quantity<E, i64>) -> Option<Self> {
         if value > Quantity::ZEROED {
             Some(Self::Increase)
         } else if value < Quantity::ZEROED {

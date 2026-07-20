@@ -6,13 +6,13 @@ use crate::{
             token_msg_transfer::TokenMsgTransfer,
             token_quantity::TokenQuantity,
         },
-        update::{Decrease, Increase, UpdateEnum},
+        update::UpdateEnum,
     },
     goblin_error::GoblinError,
     input_processor::MsgTransfers,
-    quantities::{IntoAbs, UnsidedAtoms, UnsidedDeltaAtoms, UnsidedDeltaAtomsPerLot},
+    quantities::{UnsidedDeltaAtoms, UnsidedDeltaAtomsPerLot},
     settlement::local_delta::LocalDelta,
-    state::{Preimage, SlotState, StorePreimage},
+    state::{Preimage, StorePreimage},
     types::Address,
 };
 
@@ -55,55 +55,21 @@ impl<T: TokenMarker> TokenDelta<T> {
         trader: &Address,
         token_data: &TokenData<T>,
         msg_transfers: &MsgTransfers,
-    ) -> Result<(), GoblinError>
-    where
-        T: TokenMarker, // where
-                        // T::StoredDecimals: TryFrom<T::HostioDecimals, Error = GoblinError>,
-    {
-        let token_address = token_data.address;
-        let msg_transfer = T::get(msg_transfers);
+    ) -> Result<(), GoblinError> {
+        let msg_transfer = T::get_leg(msg_transfers);
 
+        // 1. Update store
         let store_hash = StorePreimage::<T> {
             trader: *trader,
-            token_address,
+            token_address: token_data.address,
         }
         .hash();
-
         let mut store = store_hash.load();
-
-        if store.is_empty() {
-            store.decimals = T::get_stored_decimals(token_data)?;
-        }
-
-        let atoms_free_delta = UnsidedDeltaAtoms::try_from(store.atoms_free)?
-            + self.net_delta()
-            + msg_transfer.net_delta()?;
-
-        let atoms_locked_delta = UnsidedDeltaAtoms::try_from(store.atoms_locked)? - self.make;
-
-        // Return error if free atoms > 0 or if we overflow
-        store.atoms_free = UnsidedAtoms::try_from(atoms_free_delta)?;
-        store.atoms_locked = UnsidedAtoms::try_from(atoms_locked_delta)?;
-
-        // TODO write only if values changed
-        // Instead of comparing states, just check if delta is non-zero?
+        store.update(token_data, self, msg_transfer)?;
         store_hash.store(&store);
 
+        // 2. Transfer tokens
         let net_deposit = self.deposit.into() + msg_transfer.deposit_due()?;
-
-        let Some(update_enum) = UpdateEnum::from_delta(net_deposit) else {
-            return Ok(());
-        };
-
-        let deposit = net_deposit.abs();
-
-        match update_enum {
-            UpdateEnum::Increase => {
-                T::update::<Increase>(deposit, trader, &token_address, store.decimals)
-            }
-            UpdateEnum::Decrease => {
-                T::update::<Decrease>(deposit, trader, &token_address, store.decimals)
-            }
-        }
+        UpdateEnum::transfer::<T>(net_deposit, trader, &token_data.address, store.decimals)
     }
 }
