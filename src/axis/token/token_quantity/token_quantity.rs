@@ -31,6 +31,7 @@ pub trait TokenQuantity: Clone + Copy + PartialEq + 'static {
     type GlobalDeposit: Clone
         + Copy
         + Default
+        + PartialEq
         + Decodable
         + ConstZero
         + CheckedOps

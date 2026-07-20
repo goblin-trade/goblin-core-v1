@@ -16,7 +16,7 @@ use crate::{
     types::Address,
 };
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 pub struct TokenDelta<T: TokenQuantity> {
     pub deposit: T::GlobalDeposit,
     pub take: UnsidedDeltaAtoms,

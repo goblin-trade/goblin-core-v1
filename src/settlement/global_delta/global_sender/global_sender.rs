@@ -20,14 +20,6 @@ use crate::{
 
 pub type GlobalSender = Triple<ETHDelta, HardcodedERC20Deltas, CustomERC20Deltas, Token>;
 
-impl ConstZero for GlobalSender {
-    const ZEROED: Self = Self::new(
-        ETHDelta::ZEROED,
-        HardcodedERC20Deltas::ZEROED,
-        CustomERC20Deltas::ZEROED,
-    );
-}
-
 impl GlobalSender {
     pub fn commit_side<T, In>(
         &mut self,
@@ -51,6 +43,19 @@ impl GlobalSender {
         Ok(())
     }
 
+    pub fn settle(
+        &self,
+        trader: &Address,
+        token_data_triple: &TokenDataTriple,
+        msg_transfers: &MsgTransfers,
+    ) -> Result<(), GoblinError> {
+        self.settle_leg::<ETH>(trader, token_data_triple, msg_transfers)?;
+        self.settle_leg::<HardcodedERC20>(trader, token_data_triple, msg_transfers)?;
+        self.settle_leg::<CustomERC20>(trader, token_data_triple, msg_transfers)?;
+
+        Ok(())
+    }
+
     fn settle_leg<'a, T>(
         &'a self,
         trader: &Address,
@@ -65,21 +70,10 @@ impl GlobalSender {
         let sender_delta_list_iter = T::get_leg(self).into_iter();
 
         for (token_data, delta) in data_list_iter.zip(sender_delta_list_iter) {
-            delta.settle(trader, &token_data, msg_transfers)?;
+            if *delta != TokenDelta::ZEROED {
+                delta.settle(trader, &token_data, msg_transfers)?;
+            }
         }
-
-        Ok(())
-    }
-
-    pub fn settle(
-        &self,
-        trader: &Address,
-        token_data_triple: &TokenDataTriple,
-        msg_transfers: &MsgTransfers,
-    ) -> Result<(), GoblinError> {
-        self.settle_leg::<ETH>(trader, token_data_triple, msg_transfers)?;
-        self.settle_leg::<HardcodedERC20>(trader, token_data_triple, msg_transfers)?;
-        self.settle_leg::<CustomERC20>(trader, token_data_triple, msg_transfers)?;
 
         Ok(())
     }
