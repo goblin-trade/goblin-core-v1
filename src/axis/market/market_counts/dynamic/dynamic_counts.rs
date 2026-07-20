@@ -1,23 +1,19 @@
 use crate::{
-    axis::token::token_list::custom_erc20::CustomERC20List,
     goblin_error::GoblinError,
     input_processor::{DecodablePrimitive, DecodeCtx},
     require,
 };
 
-const BYTE_COUNT: usize = 5;
+const BYTE_COUNT: usize = 4;
 
 /// The number of dynamic markets to process and their associated custom token addresses
 #[derive(Clone, Copy)]
-pub struct DynamicCounts<'a> {
+pub struct DynamicCounts {
     pub market_counts: [u8; 8],
-
-    /// Addresses of custom erc20 tokens to use
-    pub custom_erc20_list: CustomERC20List<'a>,
 }
 
-impl<'a> DynamicCounts<'a> {
-    pub fn new(ctx: &'a DecodeCtx) -> Result<Self, GoblinError> {
+impl DynamicCounts {
+    pub fn new(ctx: &DecodeCtx) -> Result<Self, GoblinError> {
         require!(
             ctx.len() >= ctx.offset.get() + BYTE_COUNT,
             GoblinError::InvalidPayload
@@ -27,7 +23,6 @@ impl<'a> DynamicCounts<'a> {
         let byte_1 = u8::decode_unchecked_no_advance(ctx);
         let byte_2 = u8::decode_unchecked_no_advance(ctx);
         let byte_3 = u8::decode_unchecked_no_advance(ctx);
-        let byte_4 = u8::decode_unchecked_no_advance(ctx);
 
         let market_counts = [
             byte_0 & 0b0000_1111,
@@ -39,15 +34,9 @@ impl<'a> DynamicCounts<'a> {
             byte_3 & 0b0000_1111,
             byte_3 >> 4,
         ];
-        let custom_erc20_count = byte_4 as usize;
 
         ctx.advance_offset(BYTE_COUNT);
 
-        let custom_erc20_list = CustomERC20List::try_decode_no_advance(ctx, custom_erc20_count)?;
-
-        Ok(Self {
-            market_counts,
-            custom_erc20_list,
-        })
+        Ok(Self { market_counts })
     }
 }

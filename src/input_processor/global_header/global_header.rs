@@ -1,11 +1,15 @@
 use crate::{
-    axis::market::{
-        market_counts::{dynamic::DynamicCounts, hardcoded::HardcodedCounts},
-        MarketVariantPair,
+    axis::{
+        market::{
+            market_counts::{dynamic::DynamicCounts, hardcoded::HardcodedCounts, MarketCounts},
+            Dynamic, Hardcoded, MarketVariantPair,
+        },
+        token::token_list::custom_erc20::CustomERC20List,
     },
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx, HeaderFlags, MsgTransfers},
-    types::{Address, Tuple},
+    settlement::Delta,
+    types::{Address, StoreReader, Tuple},
 };
 
 /// Arguments read from calldata
@@ -25,7 +29,9 @@ pub struct GlobalHeader<'a> {
     pub recipient: Option<&'a Address>,
 
     /// Number of hardcoded and dynamic markets to process
-    pub market_counts: MarketVariantPair<HardcodedCounts, Option<DynamicCounts<'a>>>,
+    pub market_counts: MarketVariantPair<HardcodedCounts, Option<DynamicCounts>>,
+
+    pub custom_erc20_list: CustomERC20List<'a>,
 }
 
 impl<'a> GlobalHeader<'a> {
@@ -48,11 +54,33 @@ impl<'a> GlobalHeader<'a> {
 
         let market_counts = Tuple::new(hardcoded_counts, dynamic_counts);
 
+        let custom_erc20_list = if flags.read_custom_erc20 {
+            CustomERC20List::try_decode(ctx)?
+        } else {
+            CustomERC20List::decode_empty(ctx)
+        };
+
         Ok(Self {
             flags,
-            market_counts,
             msg_transfers,
             recipient,
+            market_counts,
+            custom_erc20_list,
         })
+    }
+
+    pub fn process(
+        &self,
+        msg_sender: &Address,
+        ctx: &DecodeCtx,
+        delta: &mut Delta,
+    ) -> Result<(), GoblinError> {
+        let hardcoded_counts = Hardcoded::get_leg(&self.market_counts);
+        hardcoded_counts.process(msg_sender, ctx, self.custom_erc20_list, delta)?;
+
+        if let Some(dynamic_counts) = Dynamic::get_leg(&self.market_counts) {
+            dynamic_counts.process(msg_sender, ctx, self.custom_erc20_list, delta)?;
+        }
+        Ok(())
     }
 }

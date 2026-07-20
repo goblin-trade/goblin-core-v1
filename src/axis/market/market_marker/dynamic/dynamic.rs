@@ -1,12 +1,10 @@
 use crate::axis::{
     market::{market_marker::MarketMarker, Dynamic, MarketReadables},
-    token::{token_list::custom_erc20::CustomERC20List, token_marker::TokenMarker},
+    token::token_marker::TokenMarker,
 };
 
 impl MarketMarker for Dynamic {
     const DISCRIMINATOR: u8 = 4;
-
-    type ERC20List<'a> = CustomERC20List<'a>;
 
     type MarketLocator<B, Q>
         = MarketReadables<Self, B, Q>

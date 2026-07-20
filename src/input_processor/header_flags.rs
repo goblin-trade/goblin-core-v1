@@ -18,6 +18,9 @@ pub struct HeaderFlags {
     /// Whether to process dynamic markets
     pub process_dynamic_markets: bool,
 
+    /// Whether to read custom ERC20 tokens
+    pub read_custom_erc20: bool,
+
     /// Whether to read ETH withdraw amount from args and withdraw ETH
     pub withdraw_eth: bool,
 
@@ -35,11 +38,11 @@ impl Decodable for HeaderFlags {
             recipient_provided: (byte_0 & 0b0000_0001) != 0,
             track_msg_value: (byte_0 & 0b0000_0010) != 0,
             process_dynamic_markets: (byte_0 & 0b0000_0100) != 0,
-
-            withdraw_eth: (byte_0 & 0b0000_1000) != 0,
+            read_custom_erc20: (byte_0 & 0b0000_1000) != 0,
+            withdraw_eth: (byte_0 & 0b0001_0000) != 0,
 
             // Settlement flags
-            withdraw_internally: (byte_0 & 0b0001_0000) != 0,
+            withdraw_internally: (byte_0 & 0b0010_0000) != 0,
         };
         ctx.advance_offset(BYTE_COUNT);
 

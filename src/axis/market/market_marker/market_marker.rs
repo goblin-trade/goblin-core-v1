@@ -12,8 +12,6 @@ pub trait MarketMarker: Sized + Clone + Copy {
     /// Discriminator used to hash the market key
     const DISCRIMINATOR: u8;
 
-    type ERC20List<'a>;
-
     /// The intermediate representation used to locate a market.
     ///
     /// - Hardcoded: A market index for lookup
