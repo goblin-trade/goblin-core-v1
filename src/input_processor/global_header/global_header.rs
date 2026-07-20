@@ -4,7 +4,7 @@ use crate::{
             market_counts::{dynamic::DynamicCounts, hardcoded::HardcodedCounts, MarketCounts},
             Dynamic, Hardcoded, MarketVariantPair,
         },
-        token::token_list::custom_erc20::CustomERC20List,
+        token::{token_list::custom_erc20::CustomERC20List, token_reader::TokenDataTriple},
     },
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx, HeaderFlags, MsgTransfers},
@@ -31,7 +31,7 @@ pub struct GlobalHeader<'a> {
     /// Number of hardcoded and dynamic markets to process
     pub market_counts: MarketVariantPair<HardcodedCounts, DynamicCounts>,
 
-    pub custom_erc20_list: CustomERC20List<'a>,
+    pub token_data_triple: TokenDataTriple<'a>,
 }
 
 impl<'a> GlobalHeader<'a> {
@@ -59,13 +59,14 @@ impl<'a> GlobalHeader<'a> {
         } else {
             CustomERC20List::decode_empty(ctx)
         };
+        let token_data_triple = TokenDataTriple::from(custom_erc20_list);
 
         Ok(Self {
             flags,
             msg_transfers,
             recipient,
             market_counts,
-            custom_erc20_list,
+            token_data_triple,
         })
     }
 

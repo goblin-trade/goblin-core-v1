@@ -2,7 +2,7 @@ use super::HardcodedCounts;
 use crate::{
     axis::{
         market::{market_counts::MarketCounts, process_market, Hardcoded},
-        token::{token_list::custom_erc20::CustomERC20List, HardcodedERC20, ETH},
+        token::{token_reader::TokenDataTriple, HardcodedERC20, ETH},
     },
     goblin_error::GoblinError,
     input_processor::DecodeCtx,
@@ -15,14 +15,14 @@ impl MarketCounts for HardcodedCounts {
         &self,
         msg_sender: &Address,
         ctx: &DecodeCtx,
-        custom_erc20_list: CustomERC20List<'a>,
+        token_data_triple: TokenDataTriple<'a>,
         delta: &mut Delta,
     ) -> Result<(), GoblinError> {
         for _ in 0..self.inner[0] {
             process_market::<Hardcoded, ETH, HardcodedERC20>(
                 msg_sender,
                 ctx,
-                custom_erc20_list,
+                token_data_triple,
                 delta,
             )?;
         }
@@ -31,7 +31,7 @@ impl MarketCounts for HardcodedCounts {
             process_market::<Hardcoded, HardcodedERC20, ETH>(
                 msg_sender,
                 ctx,
-                custom_erc20_list,
+                token_data_triple,
                 delta,
             )?;
         }
@@ -40,7 +40,7 @@ impl MarketCounts for HardcodedCounts {
             process_market::<Hardcoded, HardcodedERC20, HardcodedERC20>(
                 msg_sender,
                 ctx,
-                custom_erc20_list,
+                token_data_triple,
                 delta,
             )?;
         }

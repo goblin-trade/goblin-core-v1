@@ -10,7 +10,7 @@ use crate::{
             },
             MarketReadables,
         },
-        token::{token_list::custom_erc20::CustomERC20List, token_marker::TokenMarker},
+        token::{token_marker::TokenMarker, token_reader::TokenDataTriple},
     },
     goblin_error::GoblinError,
     input_processor::DecodeCtx,
@@ -31,9 +31,9 @@ where
     ///
     /// - Hardcoded: Reads and returns just the market index
     /// - Dynamic: Reads all parameters, constructs full MarketAndKey
-    fn decode_locator<'a>(
+    fn decode_locator(
         ctx: &DecodeCtx,
-        erc20_list: CustomERC20List<'a>,
+        token_data_triple: TokenDataTriple,
     ) -> Result<Self, GoblinError>;
 
     /// Resolve the locator to obtain a reference to the market and its slot key.

@@ -2,7 +2,7 @@ use super::DynamicCounts;
 use crate::{
     axis::{
         market::{market_counts::MarketCounts, process_market, Dynamic},
-        token::{token_list::custom_erc20::CustomERC20List, CustomERC20, HardcodedERC20, ETH},
+        token::{token_reader::TokenDataTriple, CustomERC20, HardcodedERC20, ETH},
     },
     goblin_error::GoblinError,
     input_processor::DecodeCtx,
@@ -15,7 +15,7 @@ impl MarketCounts for DynamicCounts {
         &self,
         msg_sender: &Address,
         ctx: &DecodeCtx,
-        custom_erc20_list: CustomERC20List<'a>,
+        token_data_triple: TokenDataTriple<'a>,
         delta: &mut Delta,
     ) -> Result<(), GoblinError> {
         // Dynamic with hardcoded ERC20 (3)
@@ -23,7 +23,7 @@ impl MarketCounts for DynamicCounts {
             process_market::<Dynamic, ETH, HardcodedERC20>(
                 msg_sender,
                 ctx,
-                custom_erc20_list,
+                token_data_triple,
                 delta,
             )?;
         }
@@ -32,7 +32,7 @@ impl MarketCounts for DynamicCounts {
             process_market::<Dynamic, HardcodedERC20, ETH>(
                 msg_sender,
                 ctx,
-                custom_erc20_list,
+                token_data_triple,
                 delta,
             )?;
         }
@@ -41,25 +41,25 @@ impl MarketCounts for DynamicCounts {
             process_market::<Dynamic, HardcodedERC20, HardcodedERC20>(
                 msg_sender,
                 ctx,
-                custom_erc20_list,
+                token_data_triple,
                 delta,
             )?;
         }
 
         // Dynamic with custom ERC20 (3)
         for _ in 0..self.market_counts[3] {
-            process_market::<Dynamic, ETH, CustomERC20>(msg_sender, ctx, custom_erc20_list, delta)?;
+            process_market::<Dynamic, ETH, CustomERC20>(msg_sender, ctx, token_data_triple, delta)?;
         }
 
         for _ in 0..self.market_counts[4] {
-            process_market::<Dynamic, CustomERC20, ETH>(msg_sender, ctx, custom_erc20_list, delta)?;
+            process_market::<Dynamic, CustomERC20, ETH>(msg_sender, ctx, token_data_triple, delta)?;
         }
 
         for _ in 0..self.market_counts[5] {
             process_market::<Dynamic, CustomERC20, CustomERC20>(
                 msg_sender,
                 ctx,
-                custom_erc20_list,
+                token_data_triple,
                 delta,
             )?;
         }
@@ -69,7 +69,7 @@ impl MarketCounts for DynamicCounts {
             process_market::<Dynamic, HardcodedERC20, CustomERC20>(
                 msg_sender,
                 ctx,
-                custom_erc20_list,
+                token_data_triple,
                 delta,
             )?;
         }
@@ -78,7 +78,7 @@ impl MarketCounts for DynamicCounts {
             process_market::<Dynamic, CustomERC20, HardcodedERC20>(
                 msg_sender,
                 ctx,
-                custom_erc20_list,
+                token_data_triple,
                 delta,
             )?;
         }

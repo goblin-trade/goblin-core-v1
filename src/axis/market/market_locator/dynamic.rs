@@ -1,7 +1,7 @@
 use crate::{
     axis::{
         market::{market_locator::MarketLocator, CommonMarket, Dynamic, MarketReadables},
-        token::{token_list::custom_erc20::CustomERC20List, token_marker::TokenMarker},
+        token::{token_marker::TokenMarker, token_reader::TokenDataTriple},
     },
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
@@ -13,12 +13,12 @@ where
     B: TokenMarker,
     Q: TokenMarker,
 {
-    fn decode_locator<'a>(
+    fn decode_locator(
         ctx: &DecodeCtx,
-        erc20_list: CustomERC20List<'a>,
+        token_data_triple: TokenDataTriple,
     ) -> Result<Self, GoblinError> {
         let common_market = CommonMarket::<Dynamic, B, Q>::try_decode(ctx)?;
-        let preimage = common_market.get_preimage(erc20_list)?;
+        let preimage = common_market.get_preimage(token_data_triple)?;
         let key = preimage.hash();
 
         Ok(MarketReadables {

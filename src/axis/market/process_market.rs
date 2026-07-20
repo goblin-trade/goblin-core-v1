@@ -12,7 +12,7 @@ use crate::{
             },
             Readables, Writables,
         },
-        token::{token_list::custom_erc20::CustomERC20List, token_marker::TokenMarker},
+        token::{token_marker::TokenMarker, token_reader::TokenDataTriple},
     },
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
@@ -23,7 +23,7 @@ use crate::{
 pub fn process_market<'a, M, B, Q>(
     msg_sender: &Address,
     ctx: &DecodeCtx,
-    custom_erc20_list: CustomERC20List<'a>,
+    token_data_triple: TokenDataTriple<'a>,
     delta: &mut Delta,
 ) -> Result<(), GoblinError>
 where
@@ -37,7 +37,7 @@ where
         delta.local.deposits.read_deposits::<B, Q>(ctx)?;
     }
 
-    let market_locator = M::MarketLocator::<B, Q>::decode_locator(ctx, custom_erc20_list)?;
+    let market_locator = M::MarketLocator::<B, Q>::decode_locator(ctx, token_data_triple)?;
     let market_readables = market_locator.locate_market()?;
 
     let market_state = &mut market_readables.market_key.load();

@@ -1,5 +1,5 @@
 use crate::{
-    axis::token::token_list::custom_erc20::CustomERC20List, goblin_error::GoblinError,
+    axis::token::token_reader::TokenDataTriple, goblin_error::GoblinError,
     input_processor::DecodeCtx, settlement::Delta, types::Address,
 };
 
@@ -9,7 +9,7 @@ pub trait MarketCounts {
         &self,
         msg_sender: &Address,
         ctx: &DecodeCtx,
-        custom_erc20_list: CustomERC20List<'a>,
+        token_data_triple: TokenDataTriple<'a>,
         delta: &mut Delta,
     ) -> Result<(), GoblinError>;
 }
