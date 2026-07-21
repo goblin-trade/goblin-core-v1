@@ -38,7 +38,7 @@ impl GlobalDelta {
         self.sender
             .commit_side::<Q, Quote>(quote_token_index, atoms_per_lot_pair, local_delta)?;
 
-        for (counterparty, delta_lots_pair) in local_delta.take.counterparties.iter() {
+        for (counterparty, delta_lots_pair) in local_delta.take.counterparties.into_iter() {
             self.counterparties.commit_side::<B, Base>(
                 CounterpartyTokenKey {
                     counterparty: *counterparty,

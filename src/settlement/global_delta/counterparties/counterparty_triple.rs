@@ -47,4 +47,18 @@ impl CounterpartyTriple {
 
         Ok(())
     }
+
+    fn settle_token<T>(&self) -> Result<(), GoblinError>
+    where
+        T: TokenMarker,
+    {
+        let counterparty_map = T::get_leg(self);
+
+        for (counterparty_key, net_delta) in counterparty_map.into_iter() {
+            // Add the delta on slot
+            // Tokens cannot be transferred in or out. Fail if store has insufficient balance
+        }
+
+        Ok(())
+    }
 }

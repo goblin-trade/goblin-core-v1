@@ -72,12 +72,4 @@ impl<K: PartialEq + Clone + Copy, V: Default, const N: usize> FixedMap<K, V, N> 
     pub fn len(&self) -> usize {
         self.len
     }
-
-    pub fn iter(&self) -> impl Iterator<Item = &(K, V)> {
-        self.entries[..self.len].iter()
-    }
-
-    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut (K, V)> {
-        self.entries[..self.len].iter_mut()
-    }
 }
