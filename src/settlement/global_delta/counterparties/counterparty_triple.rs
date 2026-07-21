@@ -37,13 +37,11 @@ impl CounterpartyTriple {
 
         let counterparty_map = T::get_leg_mut(self);
 
-        let counterparty_tuple = counterparty_map
+        let net_delta = counterparty_map
             .get_or_insert_mut(key)
             .ok_or(GoblinError::GlobalMakerListFull)?;
 
-        let counterparty_store = In::get_leg_mut(counterparty_tuple);
-
-        *counterparty_store = counterparty_store
+        *net_delta = net_delta
             .checked_add(delta_atoms)
             .ok_or(GoblinError::DeltaOverflow)?;
 
