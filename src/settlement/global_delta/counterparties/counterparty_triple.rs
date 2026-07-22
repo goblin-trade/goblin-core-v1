@@ -1,7 +1,11 @@
 use crate::{
     axis::{
         leg::{leg_matcher::LegMatcher, SamePair},
-        token::{token_marker::TokenMarker, CustomERC20, HardcodedERC20, Token, ETH},
+        token::{
+            token_marker::TokenMarker,
+            token_reader::{token_data_triple, TokenDataTriple},
+            CustomERC20, HardcodedERC20, Token, ETH,
+        },
     },
     goblin_error::GoblinError,
     quantities::UnsidedDeltaAtomsPerLot,
@@ -48,15 +52,24 @@ impl CounterpartyTriple {
         Ok(())
     }
 
-    fn settle_token<T>(&self) -> Result<(), GoblinError>
+    fn settle_token<T>(&self, token_data_triple: &TokenDataTriple) -> Result<(), GoblinError>
     where
         T: TokenMarker,
     {
         let counterparty_map = T::get_leg(self);
 
         for (counterparty_key, net_delta) in counterparty_map.into_iter() {
-            // Add the delta on slot
-            // Tokens cannot be transferred in or out. Fail if store has insufficient balance
+            let store_hash = counterparty_key.get_store_hash(token_data_triple);
+
+            let mut store = store_hash.load();
+
+            // Working of counterparties
+            //
+            // * Update both base and quote token for counterparty
+            // * Counterparty gains 'In' token. Add to free.
+            // * Counterparty loses 'In::Opposite'. Subtract from free.
+            //
+            // Counterparty delta has no concept of negative?
         }
 
         Ok(())

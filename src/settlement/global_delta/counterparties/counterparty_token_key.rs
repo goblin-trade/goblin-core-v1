@@ -1,4 +1,14 @@
-use crate::{axis::token::token_quantity::TokenQuantity, settlement::ConstZero, types::Address};
+use crate::{
+    axis::token::{
+        token_marker::TokenMarker,
+        token_quantity::TokenQuantity,
+        token_reader::{token_data_triple, TokenDataTriple},
+    },
+    goblin_error::GoblinError,
+    settlement::ConstZero,
+    state::{Preimage, SlotKey, StorePreimage},
+    types::Address,
+};
 
 #[derive(PartialEq, Clone, Copy)]
 pub struct CounterpartyTokenKey<T: TokenQuantity> {
@@ -11,4 +21,18 @@ impl<T: TokenQuantity> ConstZero for CounterpartyTokenKey<T> {
         counterparty: Address::ZEROED,
         token_index: T::TokenIndex::ZEROED,
     };
+}
+
+impl<T: TokenMarker> CounterpartyTokenKey<T> {
+    pub fn get_store_hash(&self, token_data_triple: &TokenDataTriple) -> SlotKey<StorePreimage<T>> {
+        let token_data_list = T::get_with_lifetime(token_data_triple);
+        let token_data = token_data_list[self.token_index];
+
+        let preimage = StorePreimage {
+            trader: self.counterparty,
+            token_address: token_data.address,
+        };
+
+        preimage.hash()
+    }
 }
