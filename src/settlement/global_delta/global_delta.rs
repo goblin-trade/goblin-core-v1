@@ -5,7 +5,7 @@ use crate::{
         token::token_marker::TokenMarker,
     },
     goblin_error::GoblinError,
-    quantities::{UnsidedAtomsPerLot, UnsidedDeltaAtomsPerLot},
+    quantities::{UnsidedAtomsPerLot, UnsidedDeltaAtomsPerLot, ATOMS_PER_UNIT},
     settlement::{
         global_delta::{CounterpartyTokenKey, CounterpartyTriple, GlobalSender},
         local_delta::LocalDelta,
@@ -31,6 +31,10 @@ impl GlobalDelta {
     {
         let base_token_index = Base::get(token_index_pair);
         let quote_token_index = Quote::get(token_index_pair);
+
+        // problem- need unsider implemented on tuple
+        // But first we need to change the trait definition
+        // let gg = ATOMS_PER_UNIT / lot_size_pair;
 
         // TODO combine
         let atoms_per_lot_pair = &SamePair::<UnsidedAtomsPerLot>::from(lot_size_pair);
