@@ -10,7 +10,7 @@ use crate::{
     },
     settlement::{
         local_delta::{
-            local_take::{CounterpartyUpdate, TakeCounterparties},
+            local_take::{LocalCounterparty, TakeCounterparties},
             DeltaLotsPair,
         },
         CheckedOps,
@@ -36,7 +36,7 @@ impl LocalTake {
         let counterparty_pair = self
             .counterparties
             .get_or_insert_mut(*counterparty)
-            .ok_or(GoblinError::LocalMakerListFull)?;
+            .ok_or(GoblinError::LocalCounterpartyFull)?;
 
         Self::add_for_leg::<In, Decrease>(
             &mut self.sender,
@@ -60,7 +60,7 @@ impl LocalTake {
         sender: &mut DeltaLotsPair,
         matching_lots: In::MatchingLots,
         base_lot_size: BaseLotsPerBaseUnit,
-        counterparty_pair: &mut SamePair<CounterpartyUpdate>,
+        counterparty_pair: &mut SamePair<LocalCounterparty>,
     ) -> Result<(), GoblinError> {
         let lots = In::decode_matching_lots(matching_lots, base_lot_size);
 

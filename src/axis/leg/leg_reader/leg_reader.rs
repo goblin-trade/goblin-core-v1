@@ -4,7 +4,7 @@ use crate::{
         BaseLots, BaseLotsPerBaseUnit, Position, QuoteLots, QuoteLotsPerQuoteUnit,
         UnsidedDeltaAtoms, UnsidedDeltaAtomsPerLot, UnsidedDeltaLots,
     },
-    settlement::local_delta::{local_take::CounterpartyUpdate, DepositTriple},
+    settlement::local_delta::{local_take::LocalCounterparty, DepositTriple},
     types::{StoreReader, Tuple},
 };
 
@@ -16,7 +16,7 @@ pub trait LegReader: LegMath
     + StoreReader<Tuple<DepositTriple, DepositTriple, Leg>, Result = DepositTriple>
     + StoreReader<Tuple<UnsidedDeltaLots, UnsidedDeltaLots, Leg>, Result = UnsidedDeltaLots>
     + StoreReader<SamePair<UnsidedDeltaAtomsPerLot>, Result = UnsidedDeltaAtomsPerLot> // TODO remove
-    + StoreReader<SamePair<CounterpartyUpdate>, Result = CounterpartyUpdate>
+    + StoreReader<SamePair<LocalCounterparty>, Result = LocalCounterparty>
 {
 }
 
