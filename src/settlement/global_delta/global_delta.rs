@@ -33,17 +33,10 @@ impl GlobalDelta {
         let quote_token_index = Quote::get(token_index_pair);
 
         let unsided_lot_size_pair = lot_size_pair.unsided();
-        // let gg = ATOMS_PER_UNIT / unsided_lot_size_pair;
-
-        // TODO fix error
-        // the method unsided exists for reference &Tuple<Quantity<Dim<SidedDim<P1, N1, Z0>, ..., ...>, u64>, ..., ...>, but its trait bounds were not satisfied
-        // items from traits can only be used if the trait is implemented and in scope (rustc E0599)
-        // let lot_size_pair_unsided = <LotSizePair as UnsideQuantity<Base>>::unsided(*lot_size_pair);
-
-        // let gg = ATOMS_PER_UNIT / lot_size_pair;
+        let unsided_atoms_per_lot_pair = ATOMS_PER_UNIT / unsided_lot_size_pair;
 
         // TODO combine
-        let atoms_per_lot_pair = &SamePair::<UnsidedAtomsPerLot>::from(lot_size_pair);
+        // let atoms_per_lot_pair = &SamePair::<UnsidedAtomsPerLot>::from(lot_size_pair);
         let delta_atoms_per_lot_pair =
             &SamePair::<UnsidedDeltaAtomsPerLot>::try_from(lot_size_pair)?;
 
@@ -64,7 +57,7 @@ impl GlobalDelta {
                     counterparty: *counterparty,
                     token_index: base_token_index,
                 },
-                delta_atoms_per_lot_pair,
+                &unsided_atoms_per_lot_pair,
                 counterparty_pair,
             )?;
             self.counterparties.commit_side::<Q, Quote>(
@@ -72,7 +65,7 @@ impl GlobalDelta {
                     counterparty: *counterparty,
                     token_index: quote_token_index,
                 },
-                delta_atoms_per_lot_pair,
+                &unsided_atoms_per_lot_pair,
                 counterparty_pair,
             )?;
         }

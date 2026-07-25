@@ -8,7 +8,7 @@ use crate::{
         },
     },
     goblin_error::GoblinError,
-    quantities::UnsidedDeltaAtomsPerLot,
+    quantities::{UnsidedAtomsPerLot, UnsidedDeltaAtomsPerLot},
     settlement::{
         global_delta::{CounterpartyMap, CounterpartyTokenKey},
         local_delta::{local_take::LocalCounterparty, DeltaLotsPair},
@@ -28,7 +28,7 @@ impl CounterpartyTriple {
     pub fn commit_side<T, In>(
         &mut self,
         key: CounterpartyTokenKey<T>,
-        atoms_per_lot_pair: &SamePair<UnsidedDeltaAtomsPerLot>,
+        atoms_per_lot_pair: &SamePair<UnsidedAtomsPerLot>,
         local_counterparty_pair: &SamePair<LocalCounterparty>,
     ) -> Result<(), GoblinError>
     where

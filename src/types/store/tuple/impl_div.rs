@@ -1,6 +1,23 @@
 use core::ops::Div;
 
-use crate::types::Tuple;
+use crate::{
+    quantities::{Exp, Quantity, QuantityOps},
+    types::Tuple,
+};
+
+impl<E, I, T0, T1, K> Div<Tuple<T0, T1, K>> for Quantity<E, I>
+where
+    E: Exp,
+    I: QuantityOps,
+    Quantity<E, I>: Div<T0> + Div<T1>,
+{
+    type Output =
+        Tuple<<Quantity<E, I> as Div<T0>>::Output, <Quantity<E, I> as Div<T1>>::Output, K>;
+
+    fn div(self, rhs: Tuple<T0, T1, K>) -> Self::Output {
+        Tuple::new(self / rhs.0, self / rhs.1)
+    }
+}
 
 // impl<T0, T1, K, Lhs> Div<Tuple<T0, T1, K>> for Lhs
 // where

@@ -1,16 +1,18 @@
 use core::ops::Mul;
 
+use crate::quantities::{Exp, Quantity, QuantityOps};
 use crate::types::Tuple;
 
-impl<T0, T1, K, Rhs> Mul<Rhs> for Tuple<T0, T1, K>
+impl<E, I, T0, T1, K> Mul<Tuple<T0, T1, K>> for Quantity<E, I>
 where
-    T0: Mul<Rhs>,
-    T1: Mul<Rhs>,
-    Rhs: Copy,
+    E: Exp,
+    I: QuantityOps,
+    Quantity<E, I>: Mul<T0> + Mul<T1>,
 {
-    type Output = Tuple<T0::Output, T1::Output, K>;
+    type Output =
+        Tuple<<Quantity<E, I> as Mul<T0>>::Output, <Quantity<E, I> as Mul<T1>>::Output, K>;
 
-    fn mul(self, rhs: Rhs) -> Self::Output {
-        Tuple::new(self.0 * rhs, self.1 * rhs)
+    fn mul(self, rhs: Tuple<T0, T1, K>) -> Self::Output {
+        Tuple::new(self * rhs.0, self * rhs.1)
     }
 }
