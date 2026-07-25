@@ -81,6 +81,9 @@ impl<'a> GlobalHeader<'a> {
 
         let dynamic_counts = Dynamic::get_leg(&self.market_counts);
         dynamic_counts.process(msg_sender, ctx, &self.token_data_triple, delta)?;
-        Ok(())
+
+        delta
+            .global
+            .settle(msg_sender, &self.token_data_triple, &self.msg_transfers)
     }
 }

@@ -2,15 +2,16 @@ use crate::{
     axis::{
         leg::{Base, Quote},
         market::{LotSizePair, TokenIndexPair},
-        token::token_marker::TokenMarker,
+        token::{token_marker::TokenMarker, token_reader::TokenDataTriple},
     },
     goblin_error::GoblinError,
+    input_processor::MsgTransfers,
     quantities::{UnsideQuantity, ATOMS_PER_UNIT},
     settlement::{
         global_delta::{CounterpartyTokenKey, CounterpartyTriple, GlobalSender},
         local_delta::LocalDelta,
     },
-    types::StoreReader,
+    types::{Address, StoreReader},
 };
 
 pub struct GlobalDelta {
@@ -68,6 +69,18 @@ impl GlobalDelta {
                 counterparty_pair,
             )?;
         }
+        Ok(())
+    }
+
+    pub fn settle(
+        &self,
+        trader: &Address,
+        token_data_triple: &TokenDataTriple,
+        msg_transfers: &MsgTransfers,
+    ) -> Result<(), GoblinError> {
+        self.sender
+            .settle(trader, token_data_triple, msg_transfers)?;
+        self.counterparties.settle(token_data_triple)?;
         Ok(())
     }
 }
