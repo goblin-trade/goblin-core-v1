@@ -1,4 +1,4 @@
-use crate::quantities::{QuantityOps, TryIntoUnsidedDelta, UnsideQuantity, N1, P1, Z0};
+use crate::quantities::{QuantityOps, TryIntoUnsidedDelta, UnsideQuantity, Unsided, N1, P1, Z0};
 use core::ops::{Div, Mul, Rem};
 
 pub trait LegQuantities: Default + Sized + PartialEq + PartialOrd + Clone + Copy {
@@ -7,7 +7,7 @@ pub trait LegQuantities: Default + Sized + PartialEq + PartialOrd + Clone + Copy
         + From<u64>
         + Mul<Self::AtomsPerLot, Output = Self::Atoms>
         + TryIntoUnsidedDelta<Self, P1, Z0, Z0>
-        + UnsideQuantity<Self, P1, Z0, Z0, u64>;
+        + UnsideQuantity<Self, Output = Unsided<P1, Z0, Z0, u64>>;
     type Units: QuantityOps;
     type Atoms: QuantityOps + TryIntoUnsidedDelta<Self, Z0, Z0, P1>;
 

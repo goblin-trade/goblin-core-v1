@@ -5,7 +5,7 @@ use crate::{
         token::token_marker::TokenMarker,
     },
     goblin_error::GoblinError,
-    quantities::{UnsidedAtomsPerLot, UnsidedDeltaAtomsPerLot, ATOMS_PER_UNIT},
+    quantities::{UnsideQuantity, UnsidedAtomsPerLot, UnsidedDeltaAtomsPerLot, ATOMS_PER_UNIT},
     settlement::{
         global_delta::{CounterpartyTokenKey, CounterpartyTriple, GlobalSender},
         local_delta::LocalDelta,
@@ -32,8 +32,14 @@ impl GlobalDelta {
         let base_token_index = Base::get(token_index_pair);
         let quote_token_index = Quote::get(token_index_pair);
 
-        // problem- need unsider implemented on tuple
-        // But first we need to change the trait definition
+        let unsided_lot_size_pair = lot_size_pair.unsided();
+        // let gg = ATOMS_PER_UNIT / unsided_lot_size_pair;
+
+        // TODO fix error
+        // the method unsided exists for reference &Tuple<Quantity<Dim<SidedDim<P1, N1, Z0>, ..., ...>, u64>, ..., ...>, but its trait bounds were not satisfied
+        // items from traits can only be used if the trait is implemented and in scope (rustc E0599)
+        // let lot_size_pair_unsided = <LotSizePair as UnsideQuantity<Base>>::unsided(*lot_size_pair);
+
         // let gg = ATOMS_PER_UNIT / lot_size_pair;
 
         // TODO combine
