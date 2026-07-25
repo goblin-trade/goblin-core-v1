@@ -37,19 +37,15 @@ impl CounterpartyTriple {
     {
         let local_counterparty = In::get(local_counterparty_pair);
         let atoms_per_lot = In::get(atoms_per_lot_pair);
+        let atoms_pair = atoms_per_lot * local_counterparty;
 
-        // // first we need unsided atoms_per_lot_pair
-        // let atoms_pair = local_counterparty * atoms_per_lot;
+        let global_counterparty = T::get_leg_mut(self)
+            .get_or_insert_mut(key)
+            .ok_or(GoblinError::GlobalCounterpartyFull)?;
 
-        // let counterparty_map = T::get_leg_mut(self);
-
-        // let global_counterparty = counterparty_map
-        //     .get_or_insert_mut(key)
-        //     .ok_or(GoblinError::GlobalCounterpartyFull)?;
-
-        // *global_counterparty = global_counterparty
-        //     .checked_add(atoms_pair)
-        //     .ok_or(GoblinError::DeltaOverflow)?;
+        *global_counterparty = global_counterparty
+            .checked_add(atoms_pair)
+            .ok_or(GoblinError::DeltaOverflow)?;
 
         Ok(())
     }
