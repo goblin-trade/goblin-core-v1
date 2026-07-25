@@ -1,11 +1,11 @@
 use crate::{
     axis::{
-        leg::{Base, Quote, SamePair},
+        leg::{Base, Quote},
         market::{LotSizePair, TokenIndexPair},
         token::token_marker::TokenMarker,
     },
     goblin_error::GoblinError,
-    quantities::{UnsideQuantity, UnsidedAtomsPerLot, UnsidedDeltaAtomsPerLot, ATOMS_PER_UNIT},
+    quantities::{UnsideQuantity, ATOMS_PER_UNIT},
     settlement::{
         global_delta::{CounterpartyTokenKey, CounterpartyTriple, GlobalSender},
         local_delta::LocalDelta,
@@ -32,22 +32,17 @@ impl GlobalDelta {
         let base_token_index = Base::get(token_index_pair);
         let quote_token_index = Quote::get(token_index_pair);
 
-        let unsided_lot_size_pair = lot_size_pair.unsided();
-        let unsided_atoms_per_lot_pair = ATOMS_PER_UNIT / unsided_lot_size_pair;
-
-        // TODO combine
-        // let atoms_per_lot_pair = &SamePair::<UnsidedAtomsPerLot>::from(lot_size_pair);
-        let delta_atoms_per_lot_pair =
-            &SamePair::<UnsidedDeltaAtomsPerLot>::try_from(lot_size_pair)?;
+        let atoms_per_lot_pair = ATOMS_PER_UNIT / lot_size_pair.unsided();
+        let delta_atoms_per_lot_pair = atoms_per_lot_pair.try_into()?;
 
         self.sender.commit_side::<B, Base>(
             base_token_index,
-            delta_atoms_per_lot_pair,
+            &delta_atoms_per_lot_pair,
             local_delta,
         )?;
         self.sender.commit_side::<Q, Quote>(
             quote_token_index,
-            delta_atoms_per_lot_pair,
+            &delta_atoms_per_lot_pair,
             local_delta,
         )?;
 
@@ -57,7 +52,7 @@ impl GlobalDelta {
                     counterparty: *counterparty,
                     token_index: base_token_index,
                 },
-                &unsided_atoms_per_lot_pair,
+                &atoms_per_lot_pair,
                 counterparty_pair,
             )?;
             self.counterparties.commit_side::<Q, Quote>(
@@ -65,7 +60,7 @@ impl GlobalDelta {
                     counterparty: *counterparty,
                     token_index: quote_token_index,
                 },
-                &unsided_atoms_per_lot_pair,
+                &atoms_per_lot_pair,
                 counterparty_pair,
             )?;
         }
