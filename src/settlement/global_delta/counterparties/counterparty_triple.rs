@@ -2,16 +2,15 @@ use crate::{
     axis::{
         leg::{leg_matcher::LegMatcher, SamePair},
         token::{
-            token_marker::TokenMarker,
-            token_reader::{token_data_triple, TokenDataTriple},
-            CustomERC20, HardcodedERC20, Token, ETH,
+            token_marker::TokenMarker, token_reader::TokenDataTriple, CustomERC20, HardcodedERC20,
+            Token, ETH,
         },
     },
     goblin_error::GoblinError,
-    quantities::{UnsidedAtomsPerLot, UnsidedDeltaAtomsPerLot},
+    quantities::UnsidedAtomsPerLot,
     settlement::{
         global_delta::{CounterpartyMap, CounterpartyTokenKey},
-        local_delta::{local_take::LocalCounterparty, DeltaLotsPair},
+        local_delta::local_take::LocalCounterparty,
         CheckedOps,
     },
     types::Triple,
@@ -50,26 +49,25 @@ impl CounterpartyTriple {
         Ok(())
     }
 
-    fn settle_token<T>(&self, token_data_triple: &TokenDataTriple) -> Result<(), GoblinError>
+    pub fn settle(&self, token_data_triple: &TokenDataTriple) -> Result<(), GoblinError> {
+        self.settle_leg::<ETH>(token_data_triple)?;
+        self.settle_leg::<HardcodedERC20>(token_data_triple)?;
+        self.settle_leg::<CustomERC20>(token_data_triple)?;
+        Ok(())
+    }
+
+    fn settle_leg<T>(&self, token_data_triple: &TokenDataTriple) -> Result<(), GoblinError>
     where
         T: TokenMarker,
     {
         let counterparty_map = T::get_leg(self);
 
-        for (counterparty_key, net_delta) in counterparty_map.into_iter() {
+        for (counterparty_key, counterparty) in counterparty_map.into_iter() {
             let store_hash = counterparty_key.get_store_hash(token_data_triple);
-
             let mut store = store_hash.load();
-
-            // Working of counterparties
-            //
-            // * Update both base and quote token for counterparty
-            // * Counterparty gains 'In' token. Add to free.
-            // * Counterparty loses 'In::Opposite'. Subtract from free.
-            //
-            // Counterparty delta has no concept of negative?
+            store.update_counterparty(counterparty)?;
+            store_hash.store(&store);
         }
-
         Ok(())
     }
 }

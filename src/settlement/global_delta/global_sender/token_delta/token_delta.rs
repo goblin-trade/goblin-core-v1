@@ -41,7 +41,7 @@ impl<T: TokenMarker> TokenDelta<T> {
         }
         .hash();
         let mut store = store_hash.load();
-        store.update(token_data, self, msg_transfer)?;
+        store.update_sender(token_data, self, msg_transfer)?;
         store_hash.store(&store);
 
         // 2. Transfer tokens

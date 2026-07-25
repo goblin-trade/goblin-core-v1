@@ -35,6 +35,10 @@ impl GlobalDelta {
         let atoms_per_lot_pair = ATOMS_PER_UNIT / lot_size_pair.unsided();
         let delta_atoms_per_lot_pair = atoms_per_lot_pair.try_into()?;
 
+        // TODO code cleanup
+        // * Macro to call function on both limbs
+        // * Some way to connect B: TokenMarker to Base: LegMarker
+        // * Pass token_index_pair to commit_size without increased generic count
         self.sender.commit_side::<B, Base>(
             base_token_index,
             &delta_atoms_per_lot_pair,

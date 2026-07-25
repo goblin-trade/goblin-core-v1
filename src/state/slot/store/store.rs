@@ -1,13 +1,20 @@
 use crate::{
-    axis::token::{
-        token_marker::{TokenData, TokenMarker},
-        token_msg_transfer::TokenMsgTransfer,
-        CustomERC20, HardcodedERC20, ETH,
+    axis::{
+        token::{
+            token_marker::{TokenData, TokenMarker},
+            token_msg_transfer::TokenMsgTransfer,
+            CustomERC20, HardcodedERC20, ETH,
+        },
+        update::{Decrease, Increase},
     },
     goblin_error::GoblinError,
     quantities::{UnsidedAtoms, UnsidedDeltaAtoms},
-    settlement::global_delta::TokenDelta,
+    settlement::{
+        global_delta::{GlobalCounterparty, TokenDelta},
+        CheckedOps,
+    },
     state::SlotState,
+    types::StoreReader,
 };
 
 #[repr(C)]
@@ -19,7 +26,7 @@ pub struct Store<T: TokenMarker> {
 }
 
 impl<T: TokenMarker> Store<T> {
-    pub fn update(
+    pub fn update_sender(
         &mut self,
         token_data: &TokenData<T>,
         token_delta: &TokenDelta<T>,
@@ -38,6 +45,23 @@ impl<T: TokenMarker> Store<T> {
         // Return error if free atoms > 0 or if we overflow
         self.atoms_free = UnsidedAtoms::try_from(atoms_free_delta)?;
         self.atoms_locked = UnsidedAtoms::try_from(atoms_locked_delta)?;
+
+        Ok(())
+    }
+
+    pub fn update_counterparty(
+        &mut self,
+        counterparty: &GlobalCounterparty,
+    ) -> Result<(), GoblinError> {
+        self.atoms_locked = self
+            .atoms_locked
+            .checked_sub(Increase::get(counterparty))
+            .ok_or(GoblinError::Underflow)?;
+
+        self.atoms_free = self
+            .atoms_free
+            .checked_add(Decrease::get(counterparty))
+            .ok_or(GoblinError::Overflow)?;
 
         Ok(())
     }
