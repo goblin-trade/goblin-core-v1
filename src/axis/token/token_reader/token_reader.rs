@@ -14,11 +14,11 @@ use crate::{
 pub trait TokenReader:
     TokenQuantity
     + TokenList
+    + for<'a> RefReader<'a, TokenDataTriple<'a>, Result = Self::DataList<'a>>
     + StoreReader<DepositTriple, Result = Self::LocalDeposit>
     + StoreReader<CounterpartyTriple, Result = CounterpartyMap<Self>>
     + StoreReader<MsgTransfers, Result = Self::TokenMsgTransfer>
     + StoreReader<GlobalSender, Result = Self::SenderDeltaList>
-    + for<'a> RefReader<'a, TokenDataTriple<'a>, Result = Self::DataList<'a>>
 {
 }
 
