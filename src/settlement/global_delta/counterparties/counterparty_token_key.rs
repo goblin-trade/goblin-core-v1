@@ -25,7 +25,7 @@ impl<T: TokenQuantity> ConstZero for CounterpartyTokenKey<T> {
 
 impl<T: TokenMarker> CounterpartyTokenKey<T> {
     pub fn get_store_hash(&self, token_data_triple: &TokenDataTriple) -> SlotKey<StorePreimage<T>> {
-        let token_data_list = T::get_with_lifetime(token_data_triple);
+        let token_data_list = T::get_lifetimed(token_data_triple);
         let token_data = token_data_list[self.token_index];
 
         let preimage = StorePreimage {

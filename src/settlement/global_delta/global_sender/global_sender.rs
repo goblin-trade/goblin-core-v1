@@ -70,7 +70,7 @@ impl GlobalSender {
         T: TokenMarker,
         &'a T::SenderDeltaList: IntoIterator<Item = &'a TokenDelta<T>>,
     {
-        let data_list_iter = T::get_with_lifetime(&token_data_triple).into_iter();
+        let data_list_iter = T::get_lifetimed(&token_data_triple).into_iter();
         let sender_delta_list_iter = T::get_leg(self).into_iter();
 
         for (token_data, delta) in data_list_iter.zip(sender_delta_list_iter) {

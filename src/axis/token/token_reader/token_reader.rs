@@ -8,13 +8,13 @@ use crate::{
         global_delta::{CounterpartyMap, CounterpartyTriple, GlobalSender},
         local_delta::DepositTriple,
     },
-    types::{RefReader, StoreReader},
+    types::{LifetimedStoreReader, StoreReader},
 };
 
 pub trait TokenReader:
     TokenQuantity
     + TokenList
-    + for<'a> RefReader<'a, TokenDataTriple<'a>, Result = Self::DataList<'a>>
+    + for<'a> LifetimedStoreReader<'a, TokenDataTriple<'a>, Result = Self::DataList<'a>>
     + StoreReader<DepositTriple, Result = Self::LocalDeposit>
     + StoreReader<CounterpartyTriple, Result = CounterpartyMap<Self>>
     + StoreReader<MsgTransfers, Result = Self::TokenMsgTransfer>

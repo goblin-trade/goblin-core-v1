@@ -52,8 +52,8 @@ impl<M: MarketMarker, B: TokenMarker, Q: TokenMarker> CommonMarket<M, B, Q> {
         let base_token_index = Base::get(&self.token_index_pair);
         let quote_token_index = Quote::get(&self.token_index_pair);
 
-        let base_data_list = B::get_with_lifetime(token_data_triple);
-        let quote_data_list = Q::get_with_lifetime(token_data_triple);
+        let base_data_list = B::get_lifetimed(token_data_triple);
+        let quote_data_list = Q::get_lifetimed(token_data_triple);
 
         let base_token_address = base_data_list[base_token_index].address;
         let quote_token_address = quote_data_list[quote_token_index].address;
