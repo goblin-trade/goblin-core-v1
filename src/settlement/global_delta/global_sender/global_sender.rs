@@ -8,9 +8,10 @@ use crate::{
             },
             token_marker::TokenMarker,
             token_reader::TokenDataTriple,
-            CustomERC20, HardcodedERC20, Token, ETH,
+            Token, // CustomERC20, HardcodedERC20, Token, ETH,
         },
     },
+    for_axes,
     goblin_error::GoblinError,
     input_processor::MsgTransfers,
     quantities::UnsidedDeltaAtomsPerLot,
@@ -53,10 +54,7 @@ impl GlobalSender {
         token_data_triple: &TokenDataTriple,
         msg_transfers: &MsgTransfers,
     ) -> Result<(), GoblinError> {
-        self.settle_leg::<ETH>(trader, token_data_triple, msg_transfers)?;
-        self.settle_leg::<HardcodedERC20>(trader, token_data_triple, msg_transfers)?;
-        self.settle_leg::<CustomERC20>(trader, token_data_triple, msg_transfers)?;
-
+        for_axes!(|T: Token| self.settle_leg::<T>(trader, token_data_triple, msg_transfers)?);
         Ok(())
     }
 
