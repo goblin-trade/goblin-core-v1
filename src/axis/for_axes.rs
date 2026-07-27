@@ -17,8 +17,8 @@ macro_rules! for_axes {
         $crate::for_axes!(@peel [$($rest),*] [$crate::axis::token::CustomERC20]    [$($lm)*] [$($mm)*] [$($om)*] [$($um)*] { $($body)+ });
     };
 
-    // LM -> LegMatcher
-    (@peel [LM $(, $rest:ident)*] [$($tm:tt)*] [$($lm:tt)*] [$($mm:tt)*] [$($om:tt)*] [$($um:tt)*] { $($body:tt)+ }) => {
+    // In -> LegMatcher
+    (@peel [In $(, $rest:ident)*] [$($tm:tt)*] [$($lm:tt)*] [$($mm:tt)*] [$($om:tt)*] [$($um:tt)*] { $($body:tt)+ }) => {
         $crate::for_axes!(@peel [$($rest),*] [$($tm)*] [$crate::axis::leg::Base]  [$($mm)*] [$($om)*] [$($um)*] { $($body)+ });
         $crate::for_axes!(@peel [$($rest),*] [$($tm)*] [$crate::axis::leg::Quote] [$($mm)*] [$($om)*] [$($um)*] { $($body)+ });
     };
@@ -52,7 +52,7 @@ macro_rules! __for_axes_apply {
     ([$($tm:tt)*] [$($lm:tt)*] [$($mm:tt)*] [$($om:tt)*] [$($um:tt)*] [$($acc:tt)*] TM $($rest:tt)*) => {
         $crate::__for_axes_apply!([$($tm)*] [$($lm)*] [$($mm)*] [$($om)*] [$($um)*] [$($acc)* $($tm)*] $($rest)*)
     };
-    ([$($tm:tt)*] [$($lm:tt)*] [$($mm:tt)*] [$($om:tt)*] [$($um:tt)*] [$($acc:tt)*] LM $($rest:tt)*) => {
+    ([$($tm:tt)*] [$($lm:tt)*] [$($mm:tt)*] [$($om:tt)*] [$($um:tt)*] [$($acc:tt)*] In $($rest:tt)*) => {
         $crate::__for_axes_apply!([$($tm)*] [$($lm)*] [$($mm)*] [$($om)*] [$($um)*] [$($acc)* $($lm)*] $($rest)*)
     };
     ([$($tm:tt)*] [$($lm:tt)*] [$($mm:tt)*] [$($om:tt)*] [$($um:tt)*] [$($acc:tt)*] MM $($rest:tt)*) => {

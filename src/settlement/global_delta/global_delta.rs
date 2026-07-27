@@ -4,6 +4,7 @@ use crate::{
         market::{LotSizePair, TokenIndexPair},
         token::{token_marker::TokenMarker, token_reader::TokenDataTriple},
     },
+    for_axes,
     goblin_error::GoblinError,
     input_processor::MsgTransfers,
     quantities::{UnsideQuantity, ATOMS_PER_UNIT},
@@ -36,20 +37,11 @@ impl GlobalDelta {
         let atoms_per_lot_pair = ATOMS_PER_UNIT / lot_size_pair.unsided();
         let delta_atoms_per_lot_pair = atoms_per_lot_pair.try_into()?;
 
-        // TODO code cleanup
-        // * Macro to call function on both limbs
-        // * Some way to connect B: TokenMarker to Base: LegMarker
-        // * Pass token_index_pair to commit_size without increased generic count
-        self.sender.commit_side::<B, Base>(
-            base_token_index,
+        for_axes!(|In| self.sender.commit_side::<B, Q, In>(
+            token_index_pair,
             &delta_atoms_per_lot_pair,
             local_delta,
-        )?;
-        self.sender.commit_side::<Q, Quote>(
-            quote_token_index,
-            &delta_atoms_per_lot_pair,
-            local_delta,
-        )?;
+        )?);
 
         for (counterparty, counterparty_pair) in local_delta.take.counterparties.into_iter() {
             self.counterparties.commit_side::<B, Base>(

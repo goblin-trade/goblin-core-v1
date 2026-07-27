@@ -9,6 +9,7 @@ use crate::{
 };
 
 pub trait LegReader: LegMath
+    // Can't add TokenIndexPair<B, Q> bound because it contains generics
     + StoreReader<Tuple<BaseLotsPerBaseUnit, QuoteLotsPerQuoteUnit, Leg>, Result = Self::LotsPerUnit>
     + StoreReader<Tuple<QuoteLots, BaseLots, Leg>, Result = <Self::Opposite as LegQuantities>::Lots>
     + StoreReader<SamePair<Position>, Result = Position>

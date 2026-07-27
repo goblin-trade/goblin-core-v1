@@ -1,12 +1,14 @@
 use crate::{
     axis::{
-        leg::{leg_matcher::LegMatcher, SamePair},
+        leg::{leg_matcher::LegMatcher, leg_to_token::LegToToken, SamePair},
+        market::TokenIndexPair,
         token::{
             token_list::{
                 custom_erc20::CustomERC20Deltas, eth::ETHDelta,
-                hardcoded_erc20::HardcodedERC20Deltas,
+                hardcoded_erc20::HardcodedERC20Deltas, TokenList,
             },
             token_marker::TokenMarker,
+            token_quantity::TokenQuantity,
             token_reader::TokenDataTriple,
             Token,
         },
@@ -20,25 +22,29 @@ use crate::{
         local_delta::LocalDelta,
         CheckedOps, ConstZero,
     },
-    types::{Address, Triple},
+    types::{Address, StoreReader, Triple},
 };
 
 pub type GlobalSender = Triple<ETHDelta, HardcodedERC20Deltas, CustomERC20Deltas, Token>;
 
 impl GlobalSender {
-    pub fn commit_side<T, In>(
+    pub fn commit_side<B, Q, In>(
         &mut self,
-        token_index: T::TokenIndex,
+        token_index_pair: &TokenIndexPair<B, Q>,
         atoms_per_lot_pair: &SamePair<UnsidedDeltaAtomsPerLot>,
         local_delta: &LocalDelta,
     ) -> Result<(), GoblinError>
     where
-        T: TokenMarker,
-        In: LegMatcher,
+        B: TokenMarker,
+        Q: TokenMarker,
+        In: LegMatcher
+            + LegToToken<B, Q>
+            + StoreReader<TokenIndexPair<B, Q>, Result = <In::Selected as TokenQuantity>::TokenIndex>,
     {
         let new_delta = TokenDelta::from_local_delta::<In>(atoms_per_lot_pair, local_delta);
 
-        let deltas_list = T::get_leg_mut(self);
+        let token_index = In::get(token_index_pair);
+        let deltas_list = In::Selected::get_leg_mut(self);
         let delta_store = &mut deltas_list[token_index];
 
         *delta_store = delta_store
