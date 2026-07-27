@@ -5,7 +5,7 @@ use crate::{
         token::{
             token_list::{
                 custom_erc20::CustomERC20Deltas, eth::ETHDelta,
-                hardcoded_erc20::HardcodedERC20Deltas, TokenList,
+                hardcoded_erc20::HardcodedERC20Deltas,
             },
             token_marker::TokenMarker,
             token_quantity::TokenQuantity,
@@ -13,7 +13,6 @@ use crate::{
             Token,
         },
     },
-    for_axes,
     goblin_error::GoblinError,
     input_processor::MsgTransfers,
     quantities::UnsidedDeltaAtomsPerLot,

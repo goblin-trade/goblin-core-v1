@@ -70,10 +70,17 @@ impl GlobalDelta {
         token_data_triple: &TokenDataTriple,
         msg_transfers: &MsgTransfers,
     ) -> Result<(), GoblinError> {
+        // TODO convert sender and counterparty to new axis
+        // This way both global and local deltas can become tuples
+        // we will have uniform function API
+        //
+        // Sender needs trader and msg_transfers but counterparty doesn't
+        //
         for_axes!(|TM| self
             .sender
             .settle_leg::<TM>(trader, token_data_triple, msg_transfers)?);
-        self.counterparties.settle(token_data_triple)?;
+        for_axes!(|TM| self.counterparties.settle_leg::<TM>(token_data_triple)?);
+
         Ok(())
     }
 }

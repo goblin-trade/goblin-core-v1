@@ -49,14 +49,7 @@ impl CounterpartyTriple {
         Ok(())
     }
 
-    pub fn settle(&self, token_data_triple: &TokenDataTriple) -> Result<(), GoblinError> {
-        self.settle_leg::<ETH>(token_data_triple)?;
-        self.settle_leg::<HardcodedERC20>(token_data_triple)?;
-        self.settle_leg::<CustomERC20>(token_data_triple)?;
-        Ok(())
-    }
-
-    fn settle_leg<T>(&self, token_data_triple: &TokenDataTriple) -> Result<(), GoblinError>
+    pub fn settle_leg<T>(&self, token_data_triple: &TokenDataTriple) -> Result<(), GoblinError>
     where
         T: TokenMarker,
     {
