@@ -1,9 +1,10 @@
 use crate::{
     axis::{
-        leg::{leg_matcher::LegMatcher, SamePair},
+        leg::{leg_matcher::LegMatcher, leg_to_token::LegToToken, SamePair},
+        market::TokenIndexPair,
         token::{
-            token_marker::TokenMarker, token_reader::TokenDataTriple, CustomERC20, HardcodedERC20,
-            Token, ETH,
+            token_marker::TokenMarker, token_quantity::TokenQuantity,
+            token_reader::TokenDataTriple, CustomERC20, HardcodedERC20, Token, ETH,
         },
     },
     goblin_error::GoblinError,
@@ -13,7 +14,7 @@ use crate::{
         local_delta::local_take::LocalCounterparty,
         CheckedOps,
     },
-    types::Triple,
+    types::{Address, StoreReader, Triple},
 };
 
 pub type CounterpartyTriple = Triple<
@@ -24,22 +25,28 @@ pub type CounterpartyTriple = Triple<
 >;
 
 impl CounterpartyTriple {
-    pub fn commit_side<T, In>(
+    pub fn commit_side<B, Q, In>(
         &mut self,
-        key: CounterpartyTokenKey<T>,
+        counterparty_data: &(Address, SamePair<LocalCounterparty>),
+        token_index_pair: &TokenIndexPair<B, Q>,
         atoms_per_lot_pair: &SamePair<UnsidedAtomsPerLot>,
-        local_counterparty_pair: &SamePair<LocalCounterparty>,
     ) -> Result<(), GoblinError>
     where
-        T: TokenMarker,
-        In: LegMatcher,
+        B: TokenMarker,
+        Q: TokenMarker,
+        In: LegMatcher
+            + LegToToken<B, Q>
+            + StoreReader<TokenIndexPair<B, Q>, Result = <In::Selected as TokenQuantity>::TokenIndex>,
     {
-        let local_counterparty = In::get(local_counterparty_pair);
+        let local_counterparty = In::get(&counterparty_data.1);
         let atoms_per_lot = In::get(atoms_per_lot_pair);
         let atoms_pair = atoms_per_lot * local_counterparty;
 
-        let global_counterparty = T::get_leg_mut(self)
-            .get_or_insert_mut(key)
+        let global_counterparty = In::Selected::get_leg_mut(self)
+            .get_or_insert_mut(CounterpartyTokenKey {
+                counterparty: counterparty_data.0,
+                token_index: In::get(token_index_pair),
+            })
             .ok_or(GoblinError::GlobalCounterpartyFull)?;
 
         *global_counterparty = global_counterparty

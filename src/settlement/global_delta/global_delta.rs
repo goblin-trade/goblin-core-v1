@@ -1,6 +1,5 @@
 use crate::{
     axis::{
-        leg::{Base, Quote},
         market::{LotSizePair, TokenIndexPair},
         token::{token_marker::TokenMarker, token_reader::TokenDataTriple},
     },
@@ -9,10 +8,10 @@ use crate::{
     input_processor::MsgTransfers,
     quantities::{UnsideQuantity, ATOMS_PER_UNIT},
     settlement::{
-        global_delta::{CounterpartyTokenKey, CounterpartyTriple, GlobalSender},
+        global_delta::{CounterpartyTriple, GlobalSender},
         local_delta::LocalDelta,
     },
-    types::{Address, StoreReader},
+    types::Address,
 };
 
 pub struct GlobalDelta {
@@ -31,35 +30,20 @@ impl GlobalDelta {
         B: TokenMarker,
         Q: TokenMarker,
     {
-        let base_token_index = Base::get(token_index_pair);
-        let quote_token_index = Quote::get(token_index_pair);
-
         let atoms_per_lot_pair = ATOMS_PER_UNIT / lot_size_pair.unsided();
-        let delta_atoms_per_lot_pair = atoms_per_lot_pair.try_into()?;
 
         for_axes!(|In| self.sender.commit_side::<B, Q, In>(
-            token_index_pair,
-            &delta_atoms_per_lot_pair,
             local_delta,
+            token_index_pair,
+            &atoms_per_lot_pair,
         )?);
 
-        for (counterparty, counterparty_pair) in local_delta.take.counterparties.into_iter() {
-            self.counterparties.commit_side::<B, Base>(
-                CounterpartyTokenKey {
-                    counterparty: *counterparty,
-                    token_index: base_token_index,
-                },
+        for counterparty_data in local_delta.take.counterparties.into_iter() {
+            for_axes!(|In| self.counterparties.commit_side::<B, Q, In>(
+                counterparty_data,
+                token_index_pair,
                 &atoms_per_lot_pair,
-                counterparty_pair,
-            )?;
-            self.counterparties.commit_side::<Q, Quote>(
-                CounterpartyTokenKey {
-                    counterparty: *counterparty,
-                    token_index: quote_token_index,
-                },
-                &atoms_per_lot_pair,
-                counterparty_pair,
-            )?;
+            )?);
         }
         Ok(())
     }
@@ -70,11 +54,13 @@ impl GlobalDelta {
         token_data_triple: &TokenDataTriple,
         msg_transfers: &MsgTransfers,
     ) -> Result<(), GoblinError> {
-        // TODO convert sender and counterparty to new axis
+        // TODO convert sender and counterparty to new axis TR = Trader
         // This way both global and local deltas can become tuples
         // we will have uniform function API
         //
-        // Sender needs trader and msg_transfers but counterparty doesn't
+        // Sender needs trader and msg_transfers but counterparty doesn't.
+        //
+        // We can combine it into a single for_axes!(|TM, TR|)
         //
         for_axes!(|TM| self
             .sender

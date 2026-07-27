@@ -15,7 +15,7 @@ use crate::{
     },
     goblin_error::GoblinError,
     input_processor::MsgTransfers,
-    quantities::UnsidedDeltaAtomsPerLot,
+    quantities::UnsidedAtomsPerLot,
     settlement::{
         global_delta::{FromLocalDelta, TokenDelta},
         local_delta::LocalDelta,
@@ -29,9 +29,9 @@ pub type GlobalSender = Triple<ETHDelta, HardcodedERC20Deltas, CustomERC20Deltas
 impl GlobalSender {
     pub fn commit_side<B, Q, In>(
         &mut self,
-        token_index_pair: &TokenIndexPair<B, Q>,
-        atoms_per_lot_pair: &SamePair<UnsidedDeltaAtomsPerLot>,
         local_delta: &LocalDelta,
+        token_index_pair: &TokenIndexPair<B, Q>,
+        atoms_per_lot_pair: &SamePair<UnsidedAtomsPerLot>,
     ) -> Result<(), GoblinError>
     where
         B: TokenMarker,
@@ -40,7 +40,8 @@ impl GlobalSender {
             + LegToToken<B, Q>
             + StoreReader<TokenIndexPair<B, Q>, Result = <In::Selected as TokenQuantity>::TokenIndex>,
     {
-        let new_delta = TokenDelta::from_local_delta::<In>(atoms_per_lot_pair, local_delta);
+        let delta_atoms_per_lot_pair = atoms_per_lot_pair.try_into()?;
+        let new_delta = TokenDelta::from_local_delta::<In>(&delta_atoms_per_lot_pair, local_delta);
 
         let token_index = In::get(token_index_pair);
         let deltas_list = In::Selected::get_leg_mut(self);
