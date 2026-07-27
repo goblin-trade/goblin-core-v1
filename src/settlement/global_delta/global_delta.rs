@@ -70,8 +70,9 @@ impl GlobalDelta {
         token_data_triple: &TokenDataTriple,
         msg_transfers: &MsgTransfers,
     ) -> Result<(), GoblinError> {
-        self.sender
-            .settle(trader, token_data_triple, msg_transfers)?;
+        for_axes!(|TM| self
+            .sender
+            .settle_leg::<TM>(trader, token_data_triple, msg_transfers)?);
         self.counterparties.settle(token_data_triple)?;
         Ok(())
     }

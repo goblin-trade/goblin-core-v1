@@ -54,17 +54,7 @@ impl GlobalSender {
         Ok(())
     }
 
-    pub fn settle(
-        &self,
-        trader: &Address,
-        token_data_triple: &TokenDataTriple,
-        msg_transfers: &MsgTransfers,
-    ) -> Result<(), GoblinError> {
-        for_axes!(|TM| self.settle_leg::<TM>(trader, token_data_triple, msg_transfers)?);
-        Ok(())
-    }
-
-    fn settle_leg<'a, T>(
+    pub fn settle_leg<'a, T>(
         &'a self,
         trader: &Address,
         token_data_triple: &TokenDataTriple<'a>,
