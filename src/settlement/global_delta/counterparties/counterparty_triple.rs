@@ -25,7 +25,7 @@ pub type CounterpartyTriple = Triple<
 >;
 
 impl CounterpartyTriple {
-    pub fn commit_side<B, Q, In>(
+    pub fn commit_leg<B, Q, In>(
         &mut self,
         counterparty_data: &(Address, SamePair<LocalCounterparty>),
         token_index_pair: &TokenIndexPair<B, Q>,

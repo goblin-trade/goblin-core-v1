@@ -27,7 +27,7 @@ use crate::{
 pub type GlobalSender = Triple<ETHDelta, HardcodedERC20Deltas, CustomERC20Deltas, Token>;
 
 impl GlobalSender {
-    pub fn commit_side<B, Q, In>(
+    pub fn commit_leg<B, Q, In>(
         &mut self,
         local_delta: &LocalDelta,
         token_index_pair: &TokenIndexPair<B, Q>,

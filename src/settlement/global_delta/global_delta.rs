@@ -32,14 +32,14 @@ impl GlobalDelta {
     {
         let atoms_per_lot_pair = ATOMS_PER_UNIT / lot_size_pair.unsided();
 
-        for_axes!(|In| self.sender.commit_side::<B, Q, In>(
+        for_axes!(|In| self.sender.commit_leg::<B, Q, In>(
             local_delta,
             token_index_pair,
             &atoms_per_lot_pair,
         )?);
 
         for counterparty_data in local_delta.take.counterparties.into_iter() {
-            for_axes!(|In| self.counterparties.commit_side::<B, Q, In>(
+            for_axes!(|In| self.counterparties.commit_leg::<B, Q, In>(
                 counterparty_data,
                 token_index_pair,
                 &atoms_per_lot_pair,
