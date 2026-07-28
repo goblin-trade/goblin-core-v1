@@ -1,11 +1,15 @@
 use crate::{
     axis::{
-        leg::{leg_matcher::LegMatcher, leg_to_token::LegToToken, Base, Quote, SamePair},
+        leg::{leg_matcher::LegMatcher, leg_to_token::LegToToken, SamePair},
         token::{token_marker::TokenMarker, token_quantity::TokenQuantity},
     },
+    for_axes,
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
-    settlement::{local_delta::DepositTriple, ConstZero},
+    settlement::{
+        local_delta::{DepositPair, DepositTriple},
+        ConstZero,
+    },
     types::StoreReader,
 };
 
@@ -13,41 +17,13 @@ use crate::{
 pub type LocalDeposits = SamePair<DepositTriple>;
 
 impl LocalDeposits {
-    // TODO this should set pair
-    // Read externally from ctx
-    pub fn set_leg<B, Q, In>(&mut self, ctx: &DecodeCtx) -> Result<(), GoblinError>
-    where
-        B: TokenMarker,
-        Q: TokenMarker,
-        In: LegMatcher + LegToToken<B, Q>,
-    {
-        let deposit_store = In::Selected::get_leg_mut(In::get_leg_mut(self));
-        *deposit_store = <In::Selected as TokenQuantity>::LocalDeposit::try_decode(ctx)?;
-
-        Ok(())
-    }
-
-    fn set_leg_deposit_deprecated<T, In>(&mut self, deposit: T::LocalDeposit)
-    where
-        In: LegMatcher,
-        T: TokenMarker,
-    {
-        let leg_deposits = In::get_leg_mut(self);
-        let token_variant_deposit = T::get_leg_mut(leg_deposits);
-
-        *token_variant_deposit = deposit;
-    }
-
-    pub fn read_deposits<'a, B, Q>(&mut self, ctx: &DecodeCtx) -> Result<(), GoblinError>
+    pub fn decode_and_set<'a, B, Q>(&mut self, ctx: &DecodeCtx) -> Result<(), GoblinError>
     where
         B: TokenMarker,
         Q: TokenMarker,
     {
-        let base_deposit = B::LocalDeposit::try_decode(ctx)?;
-        let quote_deposit = Q::LocalDeposit::try_decode(ctx)?;
-
-        self.set_leg_deposit_deprecated::<B, Base>(base_deposit);
-        self.set_leg_deposit_deprecated::<Q, Quote>(quote_deposit);
+        let deposit_pair = DepositPair::<B, Q>::try_decode(ctx)?;
+        for_axes!(|In| self.set_leg::<B, Q, In>(&deposit_pair));
 
         Ok(())
     }
@@ -56,7 +32,19 @@ impl LocalDeposits {
         B: TokenMarker,
         Q: TokenMarker,
     {
-        self.set_leg_deposit_deprecated::<B, Base>(B::LocalDeposit::ZEROED);
-        self.set_leg_deposit_deprecated::<Q, Quote>(Q::LocalDeposit::ZEROED);
+        for_axes!(|In| self.set_leg::<B, Q, In>(&DepositPair::<B, Q>::ZEROED));
+    }
+
+    fn set_leg<B, Q, In>(&mut self, deposit_pair: &DepositPair<B, Q>)
+    where
+        B: TokenMarker,
+        Q: TokenMarker,
+        In: LegMatcher
+            + LegToToken<B, Q>
+            + StoreReader<DepositPair<B, Q>, Result = <In::Selected as TokenQuantity>::LocalDeposit>,
+    {
+        let deposit_store = In::Selected::get_leg_mut(In::get_leg_mut(self));
+        let deposit = In::get(deposit_pair);
+        *deposit_store = deposit;
     }
 }

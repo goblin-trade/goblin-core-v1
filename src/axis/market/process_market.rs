@@ -14,10 +14,9 @@ use crate::{
         },
         token::{token_marker::TokenMarker, token_reader::TokenDataTriple},
     },
-    for_axes,
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
-    settlement::{local_delta::DepositPair, ConstZero, Delta},
+    settlement::Delta,
     types::Address,
 };
 
@@ -36,11 +35,7 @@ where
     let market_header = MarketHeader::<M, B, Q>::try_decode(ctx)?;
 
     if market_header.decode_deposit_amounts {
-        // let gg = DepositPair::<B, Q>::ZEROED;
-
-        for_axes!(|In| delta.local.deposits.set_leg::<B, Q, In>(ctx)?);
-
-        // delta.local.deposits.read_deposits::<B, Q>(ctx)?;
+        delta.local.deposits.decode_and_set::<B, Q>(ctx)?;
     }
 
     let market_locator = M::MarketLocator::<B, Q>::decode_locator(ctx, token_data_triple)?;
@@ -58,6 +53,7 @@ where
         market_state,
     };
 
+    // TODO convert to axis- make and take?
     market_header.execute_takes(ctx, readables, writables)?;
     market_header.execute_makes(ctx, readables, writables)?;
 
@@ -66,6 +62,7 @@ where
         &market_readables.market.lot_size_pair,
     )?;
 
+    // Clear deposit amounts so that store can be used for the next market
     delta.local.deposits.reset::<B, Q>();
 
     Ok(())
