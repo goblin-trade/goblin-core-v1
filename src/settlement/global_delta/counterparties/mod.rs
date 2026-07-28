@@ -7,5 +7,3 @@ pub use counterparty_map::*;
 pub use counterparty_token_key::*;
 pub use counterparty_triple::*;
 pub use global_counterparty::*;
-
-mod impl_const_zero;

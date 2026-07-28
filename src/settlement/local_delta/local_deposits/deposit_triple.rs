@@ -1,6 +1,5 @@
 use crate::{
     axis::token::{token_quantity::TokenQuantity, CustomERC20, HardcodedERC20, Token, ETH},
-    settlement::ConstZero,
     types::Triple,
 };
 
@@ -13,11 +12,3 @@ pub type DepositTriple = Triple<
     <CustomERC20 as TokenQuantity>::LocalDeposit,
     Token,
 >;
-
-impl ConstZero for DepositTriple {
-    const ZEROED: Self = Triple::new(
-        <ETH as TokenQuantity>::LocalDeposit::ZEROED,
-        <HardcodedERC20 as TokenQuantity>::LocalDeposit::ZEROED,
-        <CustomERC20 as TokenQuantity>::LocalDeposit::ZEROED,
-    );
-}
