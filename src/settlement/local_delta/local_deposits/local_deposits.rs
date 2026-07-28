@@ -43,6 +43,7 @@ impl LocalDeposits {
             + LegToToken<B, Q>
             + StoreReader<DepositPair<B, Q>, Result = <In::Selected as TokenQuantity>::LocalDeposit>,
     {
+        // TODO nested StoreReader utility
         let deposit_store = In::Selected::get_leg_mut(In::get_leg_mut(self));
         let deposit = In::get(deposit_pair);
         *deposit_store = deposit;
