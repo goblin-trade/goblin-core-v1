@@ -1,6 +1,6 @@
 use crate::{
     axis::{
-        leg::{leg_matcher::LegMatcher, leg_to_token::LegToToken, Base, Pair, Quote, SamePair},
+        leg::{leg_matcher::LegMatcher, leg_to_token::LegToToken, Base, Quote, SamePair},
         token::{token_marker::TokenMarker, token_quantity::TokenQuantity},
     },
     goblin_error::GoblinError,
@@ -11,10 +11,6 @@ use crate::{
 
 /// Local deposits for a market
 pub type LocalDeposits = SamePair<DepositTriple>;
-
-impl ConstZero for LocalDeposits {
-    const ZEROED: Self = Pair::new(DepositTriple::ZEROED, DepositTriple::ZEROED);
-}
 
 impl LocalDeposits {
     // TODO this should set pair

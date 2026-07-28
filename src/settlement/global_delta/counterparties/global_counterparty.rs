@@ -1,8 +1,4 @@
-use crate::{
-    axis::update::{SameUpdatePair, UpdatePair},
-    quantities::UnsidedAtoms,
-    settlement::ConstZero,
-};
+use crate::{axis::update::SameUpdatePair, quantities::UnsidedAtoms};
 
 /// Pending counterparty update for a token
 ///
@@ -16,7 +12,3 @@ use crate::{
 /// Since increase and decrease affects different state variables, we cannot use
 /// an i64 delta for netting
 pub type GlobalCounterparty = SameUpdatePair<UnsidedAtoms>;
-
-impl ConstZero for GlobalCounterparty {
-    const ZEROED: Self = UpdatePair::new(UnsidedAtoms::ZEROED, UnsidedAtoms::ZEROED);
-}
