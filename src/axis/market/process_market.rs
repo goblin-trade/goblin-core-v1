@@ -14,9 +14,10 @@ use crate::{
         },
         token::{token_marker::TokenMarker, token_reader::TokenDataTriple},
     },
+    for_axes,
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
-    settlement::Delta,
+    settlement::{local_delta::DepositPair, ConstZero, Delta},
     types::Address,
 };
 
@@ -35,7 +36,11 @@ where
     let market_header = MarketHeader::<M, B, Q>::try_decode(ctx)?;
 
     if market_header.decode_deposit_amounts {
-        delta.local.deposits.read_deposits::<B, Q>(ctx)?;
+        // let gg = DepositPair::<B, Q>::ZEROED;
+
+        for_axes!(|In| delta.local.deposits.set_leg::<B, Q, In>(ctx)?);
+
+        // delta.local.deposits.read_deposits::<B, Q>(ctx)?;
     }
 
     let market_locator = M::MarketLocator::<B, Q>::decode_locator(ctx, token_data_triple)?;
