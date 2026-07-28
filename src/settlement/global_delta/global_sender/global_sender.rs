@@ -41,7 +41,7 @@ impl GlobalSender {
             + StoreReader<TokenIndexPair<B, Q>, Result = <In::Selected as TokenQuantity>::TokenIndex>,
     {
         let delta_atoms_per_lot_pair = atoms_per_lot_pair.try_into()?;
-        let new_delta = TokenDelta::from_local_delta::<In>(&delta_atoms_per_lot_pair, local_delta);
+        let new_delta = TokenDelta::from_local_delta::<In>(local_delta, &delta_atoms_per_lot_pair);
 
         let token_index = In::get(token_index_pair);
         let deltas_list = In::Selected::get_leg_mut(self);
