@@ -30,6 +30,7 @@ impl LocalDeposits {
         Ok(())
     }
 
+    // TODO unused, is this needed?
     pub fn reset<B, Q>(&mut self)
     where
         B: TokenMarker,

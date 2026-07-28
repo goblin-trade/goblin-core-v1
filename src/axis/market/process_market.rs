@@ -33,6 +33,7 @@ where
     HardcodedMarketIndex<B, Q>: HardcodedMarkets<B, Q>,
 {
     let market_header = MarketHeader::<M, B, Q>::try_decode(ctx)?;
+
     if market_header.decode_deposit_amounts {
         delta.local.deposits.read_deposits::<B, Q>(ctx)?;
     }
@@ -58,5 +59,9 @@ where
     delta.commit_local_delta::<B, Q>(
         &market_readables.market.token_index_pair,
         &market_readables.market.lot_size_pair,
-    )
+    )?;
+
+    delta.local.deposits.reset::<B, Q>();
+
+    Ok(())
 }

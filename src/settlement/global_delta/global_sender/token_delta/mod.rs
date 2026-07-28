@@ -1,7 +1,7 @@
-pub mod from_local_delta;
+pub mod impl_from_local_delta;
 pub mod token_delta;
 
-pub use from_local_delta::*;
+pub use impl_from_local_delta::*;
 pub use token_delta::*;
 
 mod impl_checked_ops;
