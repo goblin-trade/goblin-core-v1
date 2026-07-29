@@ -1,6 +1,6 @@
 use crate::{
     axis::{
-        leg::{leg_matcher::LegMatcher, leg_to_token::LegToToken, SamePair},
+        leg::{leg_matcher::LegMatcher, leg_to_token::LegToToken, Pair, SamePair},
         market::TokenIndexPair,
         token::{
             token_marker::TokenMarker, token_quantity::TokenQuantity,
@@ -35,7 +35,7 @@ impl CounterpartyTriple {
         B: TokenMarker,
         Q: TokenMarker,
         In: LegMatcher
-            + LegToToken<B, Q>
+            + LegToToken<Pair<B, Q>>
             + StoreReader<TokenIndexPair<B, Q>, Result = <In::Selected as TokenQuantity>::TokenIndex>,
     {
         let local_counterparty = In::get(&counterparty_data.1);

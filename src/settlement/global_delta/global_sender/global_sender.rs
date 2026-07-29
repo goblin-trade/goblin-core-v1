@@ -1,6 +1,6 @@
 use crate::{
     axis::{
-        leg::{leg_matcher::LegMatcher, leg_to_token::LegToToken, SamePair},
+        leg::{leg_matcher::LegMatcher, leg_to_token::LegToToken, Pair, SamePair},
         market::TokenIndexPair,
         token::{
             token_list::{
@@ -37,7 +37,7 @@ impl GlobalSender {
         B: TokenMarker,
         Q: TokenMarker,
         In: LegMatcher
-            + LegToToken<B, Q>
+            + LegToToken<Pair<B, Q>>
             + StoreReader<TokenIndexPair<B, Q>, Result = <In::Selected as TokenQuantity>::TokenIndex>,
     {
         let delta_atoms_per_lot_pair = atoms_per_lot_pair.try_into()?;

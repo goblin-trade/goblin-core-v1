@@ -1,7 +1,8 @@
 use crate::{
     axis::{
         leg::{leg_matcher::LegMatcher, leg_to_token::LegToToken, SamePair},
-        token::{token_marker::TokenMarker, token_quantity::TokenQuantity},
+        market::token_pair::TokenPair,
+        token::token_quantity::TokenQuantity,
     },
     for_axes,
     goblin_error::GoblinError,
@@ -17,31 +18,25 @@ use crate::{
 pub type LocalDeposits = SamePair<DepositTriple>;
 
 impl LocalDeposits {
-    pub fn decode_and_set<'a, B, Q>(&mut self, ctx: &DecodeCtx) -> Result<(), GoblinError>
-    where
-        B: TokenMarker,
-        Q: TokenMarker,
-    {
-        let deposit_pair = DepositPair::<B, Q>::try_decode(ctx)?;
-        for_axes!(|In| self.set_leg::<B, Q, In>(&deposit_pair));
+    pub fn decode_and_set<'a, TP: TokenPair>(
+        &mut self,
+        ctx: &DecodeCtx,
+    ) -> Result<(), GoblinError> {
+        let deposit_pair = DepositPair::<TP>::try_decode(ctx)?;
+        for_axes!(|In| self.set_leg::<TP, In>(&deposit_pair));
 
         Ok(())
     }
-    pub fn reset<B, Q>(&mut self)
-    where
-        B: TokenMarker,
-        Q: TokenMarker,
-    {
-        for_axes!(|In| self.set_leg::<B, Q, In>(&DepositPair::<B, Q>::ZEROED));
+    pub fn reset<TP: TokenPair>(&mut self) {
+        for_axes!(|In| self.set_leg::<TP, In>(&DepositPair::<TP>::ZEROED));
     }
 
-    fn set_leg<B, Q, In>(&mut self, deposit_pair: &DepositPair<B, Q>)
+    fn set_leg<TP, In>(&mut self, deposit_pair: &DepositPair<TP>)
     where
-        B: TokenMarker,
-        Q: TokenMarker,
+        TP: TokenPair,
         In: LegMatcher
-            + LegToToken<B, Q>
-            + StoreReader<DepositPair<B, Q>, Result = <In::Selected as TokenQuantity>::LocalDeposit>,
+            + LegToToken<TP>
+            + StoreReader<DepositPair<TP>, Result = <In::Selected as TokenQuantity>::LocalDeposit>,
     {
         let deposit_triple = In::get_leg_mut(self);
         let deposit_store = In::Selected::get_leg_mut(deposit_triple);

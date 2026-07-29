@@ -34,9 +34,9 @@ where
 {
     let market_header = MarketHeader::<MS>::try_decode(ctx)?;
 
-    // if market_header.decode_deposit_amounts {
-    //     delta.local.deposits.decode_and_set::<B, Q>(ctx)?;
-    // }
+    if market_header.decode_deposit_amounts {
+        delta.local.deposits.decode_and_set::<MS::Pair>(ctx)?;
+    }
 
     // let market_locator = M::MarketLocator::<B, Q>::decode_locator(ctx, token_data_triple)?;
     // let market_readables = market_locator.locate_market()?;
