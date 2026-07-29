@@ -1,8 +1,5 @@
 use crate::{
-    axis::{
-        market::{LotSizePair, TokenIndexPair},
-        token::token_marker::TokenMarker,
-    },
+    axis::market::{token_pair::TokenPair, LotSizePair, TokenIndexPair},
     goblin_error::GoblinError,
     settlement::{global_delta::GlobalDelta, local_delta::LocalDelta, ConstZero},
 };
@@ -26,16 +23,12 @@ impl Delta {
         unsafe { &mut DELTA }
     }
 
-    pub fn commit_local_delta<B, Q>(
+    pub fn commit_local_delta<TP: TokenPair>(
         &mut self,
-        token_index_pair: &TokenIndexPair<B, Q>,
+        token_index_pair: &TokenIndexPair<TP>,
         lot_size_pair: &LotSizePair,
-    ) -> Result<(), GoblinError>
-    where
-        B: TokenMarker,
-        Q: TokenMarker,
-    {
+    ) -> Result<(), GoblinError> {
         self.global
-            .commit_local_delta::<B, Q>(token_index_pair, lot_size_pair, &self.local)
+            .commit_local_delta::<TP>(token_index_pair, lot_size_pair, &self.local)
     }
 }

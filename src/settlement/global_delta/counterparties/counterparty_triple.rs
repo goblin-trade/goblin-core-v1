@@ -1,7 +1,7 @@
 use crate::{
     axis::{
-        leg::{leg_matcher::LegMatcher, leg_to_token::LegToToken, Pair, SamePair},
-        market::TokenIndexPair,
+        leg::{leg_matcher::LegMatcher, leg_to_token::LegToToken, SamePair},
+        market::{token_pair::TokenPair, TokenIndexPair},
         token::{
             token_marker::TokenMarker, token_quantity::TokenQuantity,
             token_reader::TokenDataTriple, CustomERC20, HardcodedERC20, Token, ETH,
@@ -25,18 +25,17 @@ pub type CounterpartyTriple = Triple<
 >;
 
 impl CounterpartyTriple {
-    pub fn commit_leg<B, Q, In>(
+    pub fn commit_leg<TP, In>(
         &mut self,
         counterparty_data: &(Address, SamePair<LocalCounterparty>),
-        token_index_pair: &TokenIndexPair<B, Q>,
+        token_index_pair: &TokenIndexPair<TP>,
         atoms_per_lot_pair: &SamePair<UnsidedAtomsPerLot>,
     ) -> Result<(), GoblinError>
     where
-        B: TokenMarker,
-        Q: TokenMarker,
+        TP: TokenPair,
         In: LegMatcher
-            + LegToToken<Pair<B, Q>>
-            + StoreReader<TokenIndexPair<B, Q>, Result = <In::Selected as TokenQuantity>::TokenIndex>,
+            + LegToToken<TP>
+            + StoreReader<TokenIndexPair<TP>, Result = <In::Selected as TokenQuantity>::TokenIndex>,
     {
         let local_counterparty = In::get(&counterparty_data.1);
         let atoms_per_lot = In::get(atoms_per_lot_pair);

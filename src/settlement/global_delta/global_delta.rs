@@ -1,7 +1,7 @@
 use crate::{
     axis::{
-        market::{LotSizePair, TokenIndexPair},
-        token::{token_marker::TokenMarker, token_reader::TokenDataTriple},
+        market::{token_pair::TokenPair, LotSizePair, TokenIndexPair},
+        token::token_reader::TokenDataTriple,
     },
     for_axes,
     goblin_error::GoblinError,
@@ -20,26 +20,22 @@ pub struct GlobalDelta {
 }
 
 impl GlobalDelta {
-    pub fn commit_local_delta<B, Q>(
+    pub fn commit_local_delta<TP: TokenPair>(
         &mut self,
-        token_index_pair: &TokenIndexPair<B, Q>,
+        token_index_pair: &TokenIndexPair<TP>,
         lot_size_pair: &LotSizePair,
         local_delta: &LocalDelta,
-    ) -> Result<(), GoblinError>
-    where
-        B: TokenMarker,
-        Q: TokenMarker,
-    {
+    ) -> Result<(), GoblinError> {
         let atoms_per_lot_pair = ATOMS_PER_UNIT / lot_size_pair.unsided();
 
-        for_axes!(|In| self.sender.commit_leg::<B, Q, In>(
+        for_axes!(|In| self.sender.commit_leg::<TP, In>(
             local_delta,
             token_index_pair,
             &atoms_per_lot_pair,
         )?);
 
         for counterparty_data in local_delta.take.counterparties.into_iter() {
-            for_axes!(|In| self.counterparties.commit_leg::<B, Q, In>(
+            for_axes!(|In| self.counterparties.commit_leg::<TP, In>(
                 counterparty_data,
                 token_index_pair,
                 &atoms_per_lot_pair,

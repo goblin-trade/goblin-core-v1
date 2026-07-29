@@ -2,9 +2,9 @@ use core::marker::PhantomData;
 
 use crate::{
     axis::{
-        leg::{Base, Pair, Quote},
-        market::{market_spec::MarketSpec, LotSizePair},
-        token::{token_quantity::TokenQuantity, token_reader::TokenDataTriple},
+        leg::{Base, Quote},
+        market::{market_spec::MarketSpec, token_pair::TokenPair, LotSizePair, TokenIndexPair},
+        token::token_reader::TokenDataTriple,
     },
     goblin_error::GoblinError,
     quantities::QuoteLotsPerBaseUnitPerTick,
@@ -12,12 +12,9 @@ use crate::{
     types::{LifetimedStoreReader, StoreReader, Tuple},
 };
 
-pub type TokenIndexPair<B, Q> =
-    Pair<<B as TokenQuantity>::TokenIndex, <Q as TokenQuantity>::TokenIndex>;
-
 pub struct CommonMarket<MS: MarketSpec> {
     /// The token pair
-    pub token_index_pair: TokenIndexPair<MS::Base, MS::Quote>,
+    pub token_index_pair: TokenIndexPair<MS::Pair>,
 
     /// Lot sizes (one per side)
     pub lot_size_pair: LotSizePair,
@@ -30,7 +27,7 @@ pub struct CommonMarket<MS: MarketSpec> {
 
 impl<MS: MarketSpec> CommonMarket<MS> {
     pub const fn new(
-        token_index_pair: TokenIndexPair<MS::Base, MS::Quote>,
+        token_index_pair: TokenIndexPair<MS::Pair>,
         lot_size_pair: LotSizePair,
         tick_size: QuoteLotsPerBaseUnitPerTick,
     ) -> Self {
@@ -47,12 +44,11 @@ impl<MS: MarketSpec> CommonMarket<MS> {
         &self,
         token_data_triple: &TokenDataTriple<'a>,
     ) -> Result<MarketPreimage<MS>, GoblinError> {
-        // TODO reduce with for_axes!
         let base_token_index = Base::get(&self.token_index_pair);
         let quote_token_index = Quote::get(&self.token_index_pair);
 
-        let base_data_list = MS::Base::get_lifetimed(token_data_triple);
-        let quote_data_list = MS::Quote::get_lifetimed(token_data_triple);
+        let base_data_list = <MS::Pair as TokenPair>::Base::get_lifetimed(token_data_triple);
+        let quote_data_list = <MS::Pair as TokenPair>::Quote::get_lifetimed(token_data_triple);
 
         let base_token_address = base_data_list[base_token_index].address;
         let quote_token_address = quote_data_list[quote_token_index].address;
