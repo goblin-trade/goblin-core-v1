@@ -13,7 +13,7 @@ use crate::{
             },
             market_spec::MarketSpec,
             token_pair::TokenPair,
-            Readables, Writables,
+            MarketReadables, Readables, Writables,
         },
         token::{token_marker::TokenMarker, token_reader::TokenDataTriple},
     },
@@ -31,6 +31,7 @@ pub fn process_market<'a, MS>(
 where
     MS: MarketSpec,
     HardcodedMarketIndex<MS::Pair>: HardcodedMarkets<MS::Pair>,
+    // (<MS as MarketSpec>::Market, <MS as MarketSpec>::Pair): MarketSpec,
 {
     let market_header = MarketHeader::<MS>::try_decode(ctx)?;
 
@@ -38,24 +39,27 @@ where
         delta.local.deposits.decode_and_set::<MS::Pair>(ctx)?;
     }
 
-    // let market_locator = M::MarketLocator::<B, Q>::decode_locator(ctx, token_data_triple)?;
-    // let market_readables = market_locator.locate_market()?;
+    let market_locator = <MS::Market as MarketMarker>::MarketLocator::<MS::Pair>::decode_locator(
+        ctx,
+        token_data_triple,
+    )?;
+    let market_readables: &MarketReadables<MS> = market_locator.locate_market()?;
 
-    // let market_state = &mut market_readables.market_key.load();
+    let market_state = &mut market_readables.market_key.load();
 
-    // let readables = &Readables {
-    //     msg_sender,
-    //     market_readables,
-    // };
+    let readables = &Readables::<MS> {
+        msg_sender,
+        market_readables,
+    };
 
-    // let writables = &mut Writables {
-    //     local_delta: &mut delta.local,
-    //     market_state,
-    // };
+    let writables = &mut Writables {
+        local_delta: &mut delta.local,
+        market_state,
+    };
 
-    // // TODO convert to axis- make and take?
-    // market_header.execute_takes(ctx, readables, writables)?;
-    // market_header.execute_makes(ctx, readables, writables)?;
+    // TODO convert to axis- make and take?
+    market_header.execute_takes(ctx, readables, writables)?;
+    market_header.execute_makes(ctx, readables, writables)?;
 
     // delta.commit_local_delta::<B, Q>(
     //     &market_readables.market.token_index_pair,
