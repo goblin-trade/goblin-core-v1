@@ -1,15 +1,7 @@
+use crate::axis::{leg::SamePair, market::market_spec::MarketSpec};
 use core::marker::PhantomData;
 
-use crate::axis::{
-    leg::SamePair, market::market_marker::MarketMarker, token::token_marker::TokenMarker,
-};
-
-pub struct MarketHeader<M, B, Q>
-where
-    M: MarketMarker,
-    B: TokenMarker,
-    Q: TokenMarker,
-{
+pub struct MarketHeader<MS: MarketSpec> {
     /// Whether to decode deposit amounts
     pub decode_deposit_amounts: bool,
 
@@ -19,15 +11,10 @@ where
     /// Number of outer bitmaps to traverse
     pub outer_bitmap_count: u8,
 
-    _marker: PhantomData<(M, B, Q)>,
+    _marker: PhantomData<MS>,
 }
 
-impl<M, B, Q> MarketHeader<M, B, Q>
-where
-    M: MarketMarker,
-    B: TokenMarker,
-    Q: TokenMarker,
-{
+impl<MS: MarketSpec> MarketHeader<MS> {
     pub fn new(
         decode_deposit_amounts: bool,
         execute_takes: SamePair<bool>,

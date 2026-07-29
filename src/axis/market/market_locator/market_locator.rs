@@ -1,16 +1,13 @@
 use crate::{
     axis::{
         market::{
-            market_marker::{
-                hardcoded::{
-                    hardcoded_market_index::HardcodedMarketIndex,
-                    hardcoded_markets::HardcodedMarkets,
-                },
-                MarketMarker,
+            market_marker::hardcoded::{
+                hardcoded_market_index::HardcodedMarketIndex, hardcoded_markets::HardcodedMarkets,
             },
+            market_spec::MarketSpec,
             MarketReadables,
         },
-        token::{token_marker::TokenMarker, token_reader::TokenDataTriple},
+        token::token_reader::TokenDataTriple,
     },
     goblin_error::GoblinError,
     input_processor::DecodeCtx,
@@ -20,12 +17,9 @@ use crate::{
 ///
 /// - Hardcoded: A market index for lookup
 /// - Dynamic: The complete MarketAndKey (acts as its own locator)
-pub trait MarketLocator<M, B, Q>
+pub trait MarketLocator<MS: MarketSpec>
 where
     Self: Sized,
-    M: MarketMarker,
-    B: TokenMarker,
-    Q: TokenMarker,
 {
     /// Decode market locator from input args.
     ///
@@ -40,7 +34,7 @@ where
     ///
     /// - Hardcoded: Looks up market in static list using index
     /// - Dynamic: Returns reference to the already-constructed market
-    fn locate_market(&self) -> Result<&MarketReadables<M, B, Q>, GoblinError>
+    fn locate_market(&self) -> Result<&MarketReadables<MS>, GoblinError>
     where
-        HardcodedMarketIndex<B, Q>: HardcodedMarkets<B, Q>;
+        HardcodedMarketIndex<MS::Base, MS::Quote>: HardcodedMarkets<MS::Base, MS::Quote>;
 }

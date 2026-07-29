@@ -32,7 +32,7 @@ where
     MS: MarketSpec,
     HardcodedMarketIndex<MS::Base, MS::Quote>: HardcodedMarkets<MS::Base, MS::Quote>,
 {
-    // let market_header = MarketHeader::<M, B, Q>::try_decode(ctx)?;
+    let market_header = MarketHeader::try_decode(ctx)?;
 
     // if market_header.decode_deposit_amounts {
     //     delta.local.deposits.decode_and_set::<B, Q>(ctx)?;

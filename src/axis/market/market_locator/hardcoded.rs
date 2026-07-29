@@ -1,5 +1,6 @@
 use crate::{
     axis::{
+        leg::Pair,
         market::{
             market_locator::MarketLocator,
             market_marker::hardcoded::{
@@ -13,7 +14,7 @@ use crate::{
     input_processor::{Decodable, DecodeCtx},
 };
 
-impl<B, Q> MarketLocator<Hardcoded, B, Q> for HardcodedMarketIndex<B, Q>
+impl<B, Q> MarketLocator<(Hardcoded, Pair<B, Q>)> for HardcodedMarketIndex<B, Q>
 where
     B: TokenMarker,
     Q: TokenMarker,
@@ -25,7 +26,7 @@ where
         HardcodedMarketIndex::<B, Q>::try_decode(ctx)
     }
 
-    fn locate_market(&self) -> Result<&MarketReadables<Hardcoded, B, Q>, GoblinError>
+    fn locate_market(&self) -> Result<&MarketReadables<(Hardcoded, Pair<B, Q>)>, GoblinError>
     where
         Self: HardcodedMarkets<B, Q>,
     {

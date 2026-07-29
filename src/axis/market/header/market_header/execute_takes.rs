@@ -2,7 +2,7 @@ use super::MarketHeader;
 use crate::{
     axis::{
         leg::{Base, Quote},
-        market::{market_marker::MarketMarker, Readables, Writables},
+        market::{market_marker::MarketMarker, market_spec::MarketSpec, Readables, Writables},
         token::token_marker::TokenMarker,
     },
     goblin_error::GoblinError,
@@ -11,16 +11,11 @@ use crate::{
     types::StoreReader,
 };
 
-impl<M, B, Q> MarketHeader<M, B, Q>
-where
-    M: MarketMarker,
-    B: TokenMarker,
-    Q: TokenMarker,
-{
+impl<MS: MarketSpec> MarketHeader<MS> {
     pub fn execute_takes(
         &self,
         ctx: &DecodeCtx,
-        readables: &Readables<M, B, Q>,
+        readables: &Readables<MS>,
         writables: &mut Writables,
     ) -> Result<(), GoblinError> {
         if Base::get(&self.execute_takes) {

@@ -1,7 +1,6 @@
 use crate::{
-    axis::{
-        market::{market_marker::MarketMarker, LotSizePair},
-        token::token_marker::TokenMarker,
+    axis::market::{
+        market_marker::MarketMarker, market_spec::MarketSpec, token_pair::TokenPair, LotSizePair,
     },
     quantities::QuoteLotsPerBaseUnitPerTick,
     state::{MarketState, Preimage, TokenAddressPair},
@@ -14,28 +13,18 @@ use core::marker::PhantomData;
 /// a pair of token addresses
 #[repr(C)]
 #[derive(Clone, Copy)]
-pub struct MarketPreimage<M, B, Q>
-where
-    M: MarketMarker,
-    B: TokenMarker,
-    Q: TokenMarker,
-{
+pub struct MarketPreimage<MS: MarketSpec> {
     lot_size_pair: LotSizePair,
     tick_size: QuoteLotsPerBaseUnitPerTick,
-    token_address_pair: TokenAddressPair<B, Q>,
-    _marker: PhantomData<M>,
+    token_address_pair: TokenAddressPair<MS::Base, MS::Quote>,
+    _marker: PhantomData<MS>,
 }
 
-impl<M, B, Q> MarketPreimage<M, B, Q>
-where
-    M: MarketMarker,
-    B: TokenMarker,
-    Q: TokenMarker,
-{
+impl<MS: MarketSpec> MarketPreimage<MS> {
     pub fn new(
         lot_size_pair: LotSizePair,
         tick_size: QuoteLotsPerBaseUnitPerTick,
-        token_address_pair: TokenAddressPair<B, Q>,
+        token_address_pair: TokenAddressPair<MS::Base, MS::Quote>,
     ) -> Self {
         Self {
             lot_size_pair,
@@ -46,13 +35,8 @@ where
     }
 }
 
-impl<M, B, Q> Preimage for MarketPreimage<M, B, Q>
-where
-    M: MarketMarker,
-    B: TokenMarker,
-    Q: TokenMarker,
-{
-    const SLOT_DISCRIMINATOR: u8 = M::DISCRIMINATOR + B::DISCRIMINATOR << 3 + Q::DISCRIMINATOR << 4;
+impl<MS: MarketSpec> Preimage for MarketPreimage<MS> {
+    const SLOT_DISCRIMINATOR: u8 = MS::Market::DISCRIMINATOR + MS::Pair::DISCRIMINATOR;
 
     type SlotState = MarketState;
 }

@@ -1,17 +1,9 @@
 use crate::{
-    axis::{
-        market::{market_marker::MarketMarker, MarketReadables},
-        token::token_marker::TokenMarker,
-    },
+    axis::market::{market_spec::MarketSpec, MarketReadables},
     types::Address,
 };
 
-pub struct Readables<'a, M, B, Q>
-where
-    M: MarketMarker,
-    B: TokenMarker,
-    Q: TokenMarker,
-{
+pub struct Readables<'a, MS: MarketSpec> {
     pub msg_sender: &'a Address,
-    pub market_readables: &'a MarketReadables<M, B, Q>,
+    pub market_readables: &'a MarketReadables<MS>,
 }
