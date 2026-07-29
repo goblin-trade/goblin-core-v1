@@ -1,9 +1,8 @@
 use crate::{
     axis::{
         leg::{Base, LegEnum, Quote},
-        market::{market_marker::MarketMarker, Writables},
+        market::{market_spec::MarketSpec, Writables},
         occupancy::Occupied,
-        token::token_marker::TokenMarker,
         update::{update_make::UpdateMake, Decrease, Increase, UpdateEnum},
     },
     goblin_error::GoblinError,
@@ -11,42 +10,34 @@ use crate::{
     state::bitmap::alias::InnerBitmap,
 };
 
-pub(super) fn process_update_cases<M, B, Q>(
-    make_readables: &MakeReadables<M, B, Q>,
+pub(super) fn process_update_cases<MS: MarketSpec>(
+    make_readables: &MakeReadables<MS>,
     update_enum: UpdateEnum,
     leg_in: LegEnum,
     writables: &mut Writables,
     inner_bitmap_state: &mut InnerBitmap,
-) -> Result<(), GoblinError>
-where
-    M: MarketMarker,
-    B: TokenMarker,
-    Q: TokenMarker,
-{
+) -> Result<(), GoblinError> {
+    // TODO use for_axes!
     match (leg_in, update_enum) {
-        (LegEnum::Base, UpdateEnum::Increase) => Increase::process_make::<M, B, Q, Base, Occupied>(
+        (LegEnum::Base, UpdateEnum::Increase) => Increase::process_make::<MS, Base, Occupied>(
             make_readables,
             writables,
             inner_bitmap_state,
         ),
-        (LegEnum::Quote, UpdateEnum::Increase) => {
-            Increase::process_make::<M, B, Q, Quote, Occupied>(
-                make_readables,
-                writables,
-                inner_bitmap_state,
-            )
-        }
-        (LegEnum::Base, UpdateEnum::Decrease) => Decrease::process_make::<M, B, Q, Base, Occupied>(
+        (LegEnum::Quote, UpdateEnum::Increase) => Increase::process_make::<MS, Quote, Occupied>(
             make_readables,
             writables,
             inner_bitmap_state,
         ),
-        (LegEnum::Quote, UpdateEnum::Decrease) => {
-            Decrease::process_make::<M, B, Q, Quote, Occupied>(
-                make_readables,
-                writables,
-                inner_bitmap_state,
-            )
-        }
+        (LegEnum::Base, UpdateEnum::Decrease) => Decrease::process_make::<MS, Base, Occupied>(
+            make_readables,
+            writables,
+            inner_bitmap_state,
+        ),
+        (LegEnum::Quote, UpdateEnum::Decrease) => Decrease::process_make::<MS, Quote, Occupied>(
+            make_readables,
+            writables,
+            inner_bitmap_state,
+        ),
     }
 }

@@ -1,9 +1,8 @@
 use crate::{
     axis::{
         leg::{leg_matcher::LegMatcher, Base},
-        market::{market_marker::MarketMarker, Readables, Writables},
+        market::{market_spec::MarketSpec, Readables, Writables},
         occupancy::occupancy_marker::OccupancyMarker,
-        token::token_marker::TokenMarker,
         update::{update_reader::UpdateReader, update_sign::UpdateSign},
     },
     goblin_error::GoblinError,
@@ -17,15 +16,13 @@ use crate::{
     types::{Address, StoreReader},
 };
 pub trait UpdateMake: UpdateSign {
-    fn process_make<'a, M, B, Q, In, Oc>(
-        make_readables: &MakeReadables<M, B, Q>,
+    fn process_make<'a, MS, In, Oc>(
+        make_readables: &MakeReadables<MS>,
         writables: &mut Writables,
         inner_bitmap_state: &mut InnerBitmap,
     ) -> Result<(), GoblinError>
     where
-        M: MarketMarker,
-        B: TokenMarker,
-        Q: TokenMarker,
+        MS: MarketSpec,
         In: LegMatcher,
         Oc: OccupancyMarker,
         Self: UpdateReader<In>,
@@ -46,7 +43,7 @@ pub trait UpdateMake: UpdateSign {
         }
         .hash();
 
-        let updated_base_lots = Self::update_resting_order::<M, B, Q, In, Oc>(
+        let updated_base_lots = Self::update_resting_order::<MS, In, Oc>(
             msg_sender,
             base_lots,
             key,
@@ -68,16 +65,14 @@ pub trait UpdateMake: UpdateSign {
         )
     }
 
-    fn update_resting_order<'a, M, B, Q, In, Oc>(
+    fn update_resting_order<'a, MS, In, Oc>(
         msg_sender: &Address,
         base_lots: BaseLots,
-        key: &SlotKey<RestingOrderPreimage<M, B, Q>>,
+        key: &SlotKey<RestingOrderPreimage<MS>>,
         inner_bitmap_updater: &mut InnerBitmapUpdater<'a>,
     ) -> Result<BaseLots, GoblinError>
     where
-        M: MarketMarker,
-        B: TokenMarker,
-        Q: TokenMarker,
+        MS: MarketSpec,
         In: LegMatcher,
         Oc: OccupancyMarker;
 }

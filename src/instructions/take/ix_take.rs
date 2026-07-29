@@ -1,8 +1,7 @@
 use crate::{
     axis::{
         leg::leg_matcher::LegMatcher,
-        market::{market_marker::MarketMarker, Readables, Writables},
-        token::token_marker::TokenMarker,
+        market::{market_spec::MarketSpec, Readables, Writables},
     },
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
@@ -10,17 +9,11 @@ use crate::{
     matching::match_order,
 };
 
-pub fn ix_take<M, B, Q, In>(
+pub fn ix_take<MS: MarketSpec, In: LegMatcher>(
     ctx: &DecodeCtx,
-    readables: &Readables<M, B, Q>,
+    readables: &Readables<MS>,
     writables: &mut Writables,
-) -> Result<(), GoblinError>
-where
-    M: MarketMarker,
-    B: TokenMarker,
-    Q: TokenMarker,
-    In: LegMatcher,
-{
+) -> Result<(), GoblinError> {
     let header = TakeHeader::<In>::try_decode(ctx)?;
-    match_order::<M, B, Q, In>(header, readables, writables)
+    match_order(header, readables, writables)
 }

@@ -1,5 +1,5 @@
 use crate::{
-    axis::{market::market_marker::MarketMarker, token::token_marker::TokenMarker},
+    axis::market::market_spec::MarketSpec,
     goblin_error::GoblinError,
     quantities::BaseLots,
     state::{
@@ -9,25 +9,17 @@ use crate::{
 };
 
 pub trait OccupancyMarker {
-    fn increase_resting_order<'a, M, B, Q>(
+    fn increase_resting_order<'a, MS: MarketSpec>(
         msg_sender: &Address,
         base_lots: BaseLots,
-        key: &SlotKey<RestingOrderPreimage<M, B, Q>>,
+        key: &SlotKey<RestingOrderPreimage<MS>>,
         inner_bitmap_updater: &mut InnerBitmapUpdater<'a>,
-    ) -> Result<BaseLots, GoblinError>
-    where
-        M: MarketMarker,
-        B: TokenMarker,
-        Q: TokenMarker;
+    ) -> Result<BaseLots, GoblinError>;
 
-    fn decrease_resting_order<'a, M, B, Q>(
+    fn decrease_resting_order<'a, MS: MarketSpec>(
         msg_sender: &Address,
         base_lots: BaseLots,
-        key: &SlotKey<RestingOrderPreimage<M, B, Q>>,
+        key: &SlotKey<RestingOrderPreimage<MS>>,
         inner_bitmap_updater: &mut InnerBitmapUpdater<'a>,
-    ) -> Result<BaseLots, GoblinError>
-    where
-        M: MarketMarker,
-        B: TokenMarker,
-        Q: TokenMarker;
+    ) -> Result<BaseLots, GoblinError>;
 }

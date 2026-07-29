@@ -1,8 +1,7 @@
 use crate::{
     axis::{
         leg::{Base, LegEnum, Quote},
-        market::{market_marker::MarketMarker, Writables},
-        token::token_marker::TokenMarker,
+        market::{market_spec::MarketSpec, Writables},
     },
     goblin_error::GoblinError,
     instructions::{open::ix_open_inner::ix_open_inner, MakeReadables},
@@ -10,26 +9,22 @@ use crate::{
     state::bitmap::alias::InnerBitmap,
 };
 
-pub fn ix_open<M, B, Q>(
-    make_readables: &MakeReadables<M, B, Q>,
+pub fn ix_open<MS: MarketSpec>(
+    make_readables: &MakeReadables<MS>,
     leg_enum: LegEnum,
     writables: &mut Writables,
     inner_bitmap_state: &mut InnerBitmap,
-) -> Result<(), GoblinError>
-where
-    M: MarketMarker,
-    B: TokenMarker,
-    Q: TokenMarker,
-{
+) -> Result<(), GoblinError> {
     let position = make_readables.pos_header.position;
     let region = MakeRegion::new(&writables.market_state.last_positions, position);
 
+    // TODO use for_axes!
     match leg_enum {
         LegEnum::Base => {
-            ix_open_inner::<M, B, Q, Base>(region, make_readables, writables, inner_bitmap_state)
+            ix_open_inner::<MS, Base>(region, make_readables, writables, inner_bitmap_state)
         }
         LegEnum::Quote => {
-            ix_open_inner::<M, B, Q, Quote>(region, make_readables, writables, inner_bitmap_state)
+            ix_open_inner::<MS, Quote>(region, make_readables, writables, inner_bitmap_state)
         }
     }
 }

@@ -1,9 +1,8 @@
 use crate::{
     axis::{
         leg::leg_matcher::LegMatcher,
-        market::{market_marker::MarketMarker, Writables},
+        market::{market_spec::MarketSpec, Writables},
         occupancy::Vacant,
-        token::token_marker::TokenMarker,
         update::{update_make::UpdateMake, Decrease},
     },
     goblin_error::GoblinError,
@@ -12,18 +11,12 @@ use crate::{
     state::bitmap::alias::InnerBitmap,
 };
 
-pub fn ix_open_inner<M, B, Q, In>(
+pub fn ix_open_inner<MS: MarketSpec, In: LegMatcher>(
     region: MakeRegion,
-    make_readables: &MakeReadables<M, B, Q>,
+    make_readables: &MakeReadables<MS>,
     writables: &mut Writables,
     inner_bitmap_state: &mut InnerBitmap,
-) -> Result<(), GoblinError>
-where
-    M: MarketMarker,
-    B: TokenMarker,
-    Q: TokenMarker,
-    In: LegMatcher,
-{
+) -> Result<(), GoblinError> {
     let position = make_readables.pos_header.position;
     validate_region::<In>(region, position, inner_bitmap_state)?;
 
@@ -33,5 +26,5 @@ where
         *last_position = position;
     }
 
-    Decrease::process_make::<M, B, Q, In, Vacant>(make_readables, writables, inner_bitmap_state)
+    Decrease::process_make::<MS, In, Vacant>(make_readables, writables, inner_bitmap_state)
 }

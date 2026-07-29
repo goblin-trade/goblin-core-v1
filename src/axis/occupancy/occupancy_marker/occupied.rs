@@ -1,8 +1,7 @@
 use crate::{
     axis::{
-        market::market_marker::MarketMarker,
+        market::market_spec::MarketSpec,
         occupancy::{occupancy_marker::OccupancyMarker, Occupied},
-        token::token_marker::TokenMarker,
     },
     goblin_error::GoblinError,
     quantities::BaseLots,
@@ -15,17 +14,12 @@ use crate::{
 };
 
 impl OccupancyMarker for Occupied {
-    fn increase_resting_order<'a, M, B, Q>(
+    fn increase_resting_order<'a, MS: MarketSpec>(
         msg_sender: &Address,
         base_lots: BaseLots,
-        key: &SlotKey<RestingOrderPreimage<M, B, Q>>,
+        key: &SlotKey<RestingOrderPreimage<MS>>,
         _inner_bitmap_updater: &mut InnerBitmapUpdater<'a>,
-    ) -> Result<BaseLots, GoblinError>
-    where
-        M: MarketMarker,
-        B: TokenMarker,
-        Q: TokenMarker,
-    {
+    ) -> Result<BaseLots, GoblinError> {
         let mut resting_order = key.load();
 
         require!(
@@ -43,17 +37,12 @@ impl OccupancyMarker for Occupied {
         Ok(base_lots)
     }
 
-    fn decrease_resting_order<'a, M, B, Q>(
+    fn decrease_resting_order<'a, MS: MarketSpec>(
         msg_sender: &Address,
         base_lots: BaseLots,
-        key: &SlotKey<RestingOrderPreimage<M, B, Q>>,
+        key: &SlotKey<RestingOrderPreimage<MS>>,
         inner_bitmap_updater: &mut InnerBitmapUpdater<'a>,
-    ) -> Result<BaseLots, GoblinError>
-    where
-        M: MarketMarker,
-        B: TokenMarker,
-        Q: TokenMarker,
-    {
+    ) -> Result<BaseLots, GoblinError> {
         let mut resting_order = key.load();
 
         require!(

@@ -1,11 +1,11 @@
 use crate::{
     axis::{
-        market::market_marker::MarketMarker,
+        market::market_spec::MarketSpec,
         occupancy::{occupancy_marker::OccupancyMarker, Vacant},
-        token::token_marker::TokenMarker,
     },
     goblin_error::GoblinError,
     quantities::BaseLots,
+    settlement::ConstZero,
     state::{
         bitmap::alias::InnerBitmapUpdater,
         resting_order::{preimage::RestingOrderPreimage, RestingOrder},
@@ -15,17 +15,12 @@ use crate::{
 };
 
 impl OccupancyMarker for Vacant {
-    fn increase_resting_order<'a, M, B, Q>(
+    fn increase_resting_order<'a, MS: MarketSpec>(
         msg_sender: &Address,
         base_lots: BaseLots,
-        key: &SlotKey<RestingOrderPreimage<M, B, Q>>,
+        key: &SlotKey<RestingOrderPreimage<MS>>,
         inner_bitmap_updater: &mut InnerBitmapUpdater<'a>,
-    ) -> Result<BaseLots, GoblinError>
-    where
-        M: MarketMarker,
-        B: TokenMarker,
-        Q: TokenMarker,
-    {
+    ) -> Result<BaseLots, GoblinError> {
         inner_bitmap_updater.activate();
         key.store(&RestingOrder {
             maker: *msg_sender,
@@ -35,17 +30,13 @@ impl OccupancyMarker for Vacant {
         Ok(base_lots)
     }
 
-    fn decrease_resting_order<'a, M, B, Q>(
+    fn decrease_resting_order<'a, MS: MarketSpec>(
         _msg_sender: &Address,
         _base_lots: BaseLots,
-        _key: &SlotKey<RestingOrderPreimage<M, B, Q>>,
+        _key: &SlotKey<RestingOrderPreimage<MS>>,
         _inner_bitmap_updater: &mut InnerBitmapUpdater<'a>,
-    ) -> Result<BaseLots, GoblinError>
-    where
-        M: MarketMarker,
-        B: TokenMarker,
-        Q: TokenMarker,
-    {
-        unreachable!()
+    ) -> Result<BaseLots, GoblinError> {
+        // Unreachable stub
+        Ok(BaseLots::ZEROED)
     }
 }

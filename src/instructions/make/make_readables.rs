@@ -1,17 +1,9 @@
 use crate::{
-    axis::{
-        market::{market_marker::MarketMarker, Readables},
-        token::token_marker::TokenMarker,
-    },
+    axis::market::{market_spec::MarketSpec, Readables},
     instructions::PosHeader,
 };
 
-pub struct MakeReadables<'a, M, B, Q>
-where
-    M: MarketMarker,
-    B: TokenMarker,
-    Q: TokenMarker,
-{
-    pub readables: &'a Readables<'a, M, B, Q>,
+pub struct MakeReadables<'a, MS: MarketSpec> {
+    pub readables: &'a Readables<'a, MS>,
     pub pos_header: PosHeader,
 }

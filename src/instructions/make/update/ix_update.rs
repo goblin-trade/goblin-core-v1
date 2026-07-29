@@ -1,7 +1,6 @@
 use crate::{
     axis::{
-        market::{market_marker::MarketMarker, Writables},
-        token::token_marker::TokenMarker,
+        market::{market_spec::MarketSpec, Writables},
         update::UpdateEnum,
     },
     goblin_error::GoblinError,
@@ -11,17 +10,12 @@ use crate::{
     state::bitmap::alias::InnerBitmap,
 };
 
-pub fn ix_update<M, B, Q>(
-    make_readables: &MakeReadables<M, B, Q>,
+pub fn ix_update<MS: MarketSpec>(
+    make_readables: &MakeReadables<MS>,
     update_enum: UpdateEnum,
     writables: &mut Writables,
     inner_bitmap_state: &mut InnerBitmap,
-) -> Result<(), GoblinError>
-where
-    M: MarketMarker,
-    B: TokenMarker,
-    Q: TokenMarker,
-{
+) -> Result<(), GoblinError> {
     let position = make_readables.pos_header.position;
     let region = MakeRegion::new(&writables.market_state.last_positions, position);
 

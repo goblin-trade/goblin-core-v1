@@ -1,8 +1,5 @@
 use crate::{
-    axis::{
-        leg::leg_matcher::LegMatcher, market::market_marker::MarketMarker,
-        token::token_marker::TokenMarker,
-    },
+    axis::{leg::leg_matcher::LegMatcher, market::market_spec::MarketSpec},
     quantities::{Position, INNER_POS, POS_1},
     state::{
         bitmap::{bitmap_reader::BitmapReader, Bitmap},
@@ -11,42 +8,29 @@ use crate::{
     },
 };
 
-pub struct RestingOrderEntry<M, B, Q>
-where
-    M: MarketMarker,
-    B: TokenMarker,
-    Q: TokenMarker,
-{
+pub struct RestingOrderEntry<MS: MarketSpec> {
     pub position: Position,
-    pub resting_order_key_value: KeyValue<RestingOrderPreimage<M, B, Q>>,
+    pub resting_order_key_value: KeyValue<RestingOrderPreimage<MS>>,
 }
 
-pub fn match_iterator<M, B, Q, In>(
-    market_key: SlotKey<MarketPreimage<M, B, Q>>,
+pub fn match_iterator<MS: MarketSpec, In: LegMatcher>(
+    market_key: SlotKey<MarketPreimage<MS>>,
     last_position: Position,
     limit: Position,
-) -> impl Iterator<Item = RestingOrderEntry<M, B, Q>>
-where
-    M: MarketMarker,
-    B: TokenMarker,
-    Q: TokenMarker,
-    In: LegMatcher,
-{
+) -> impl Iterator<Item = RestingOrderEntry<MS>> {
     let range = In::get_range(last_position, limit);
-    Bitmap::<POS_1, INNER_POS>::active_iterator::<M, B, Q, In>(market_key, range).map(
-        move |pos_2| {
-            let position = pos_2.into();
+    Bitmap::<POS_1, INNER_POS>::active_iterator::<MS, In>(market_key, range).map(move |pos_2| {
+        let position = pos_2.into();
 
-            let resting_order_key_value = RestingOrderPreimage::<M, B, Q> {
-                market_key,
-                position,
-            }
-            .key_value();
+        let resting_order_key_value = RestingOrderPreimage::<MS> {
+            market_key,
+            position,
+        }
+        .key_value();
 
-            RestingOrderEntry {
-                position,
-                resting_order_key_value,
-            }
-        },
-    )
+        RestingOrderEntry {
+            position,
+            resting_order_key_value,
+        }
+    })
 }

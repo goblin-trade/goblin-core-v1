@@ -1,9 +1,8 @@
 use crate::{
     axis::{
         leg::leg_matcher::LegMatcher,
-        market::market_marker::MarketMarker,
+        market::market_spec::MarketSpec,
         occupancy::occupancy_marker::OccupancyMarker,
-        token::token_marker::TokenMarker,
         update::{update_make::UpdateMake, Decrease},
     },
     goblin_error::GoblinError,
@@ -15,16 +14,14 @@ use crate::{
 };
 
 impl UpdateMake for Decrease {
-    fn update_resting_order<'a, M, B, Q, In, Oc>(
+    fn update_resting_order<'a, MS, In, Oc>(
         msg_sender: &Address,
         base_lots: BaseLots,
-        key: &SlotKey<RestingOrderPreimage<M, B, Q>>,
+        key: &SlotKey<RestingOrderPreimage<MS>>,
         inner_bitmap_updater: &mut InnerBitmapUpdater<'a>,
     ) -> Result<BaseLots, GoblinError>
     where
-        M: MarketMarker,
-        B: TokenMarker,
-        Q: TokenMarker,
+        MS: MarketSpec,
         In: LegMatcher,
         Oc: OccupancyMarker,
     {

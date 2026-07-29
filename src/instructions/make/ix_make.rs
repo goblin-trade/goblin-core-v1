@@ -1,9 +1,6 @@
 use crate::{
-    axis::{
-        market::{
-            header::make_header::MakeHeader, market_marker::MarketMarker, Readables, Writables,
-        },
-        token::token_marker::TokenMarker,
+    axis::market::{
+        header::make_header::MakeHeader, market_spec::MarketSpec, Readables, Writables,
     },
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
@@ -15,18 +12,13 @@ use crate::{
     state::bitmap::alias::InnerBitmap,
 };
 
-pub fn ix_make<M, B, Q>(
+pub fn ix_make<MS: MarketSpec>(
     ctx: &DecodeCtx,
-    readables: &Readables<M, B, Q>,
+    readables: &Readables<MS>,
     pos_1: SafePosition<POS_1>,
     writables: &mut Writables,
     inner_bitmap_state: &mut InnerBitmap,
-) -> Result<(), GoblinError>
-where
-    M: MarketMarker,
-    B: TokenMarker,
-    Q: TokenMarker,
-{
+) -> Result<(), GoblinError> {
     let MakeHeader {
         inner_pos,
         base_lots,
@@ -44,6 +36,7 @@ where
         },
     };
 
+    // TODO use for_axes! and generic
     match make_variant {
         MakeVariant::Update(update_enum) => {
             ix_update(make_readables, update_enum, writables, inner_bitmap_state)

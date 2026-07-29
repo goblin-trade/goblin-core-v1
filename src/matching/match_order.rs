@@ -1,8 +1,7 @@
 use crate::{
     axis::{
         leg::{leg_matcher::LegMatcher, Base},
-        market::{market_marker::MarketMarker, MarketReadables, Readables, Writables},
-        token::token_marker::TokenMarker,
+        market::{market_spec::MarketSpec, MarketReadables, Readables, Writables},
     },
     goblin_error::GoblinError,
     instructions::TakeHeader,
@@ -21,21 +20,15 @@ use crate::{
 /// * Price limit reached
 /// * All resting orders are popped
 ///
-pub fn match_order<M, B, Q, In>(
+pub fn match_order<MS: MarketSpec, In: LegMatcher>(
     TakeHeader {
         num_lots,
         min_lots_to_fill,
         limit,
     }: TakeHeader<In>,
-    readables: &Readables<M, B, Q>,
+    readables: &Readables<MS>,
     writables: &mut Writables,
-) -> Result<(), GoblinError>
-where
-    M: MarketMarker,
-    B: TokenMarker,
-    Q: TokenMarker,
-    In: LegMatcher,
-{
+) -> Result<(), GoblinError> {
     let MarketReadables { market, market_key } = readables.market_readables;
 
     let last_position_mut = In::get_leg_mut(&mut writables.market_state.last_positions);
@@ -45,7 +38,7 @@ where
         GoblinError::TakerPriceLimitReached
     );
 
-    let iterator = match_iterator::<M, B, Q, In>(*market_key, *last_position_mut, limit);
+    let iterator = match_iterator::<MS, In>(*market_key, *last_position_mut, limit);
 
     let base_lot_size = Base::get(&market.lot_size_pair);
     let input_budget = In::matching_lots_in(num_lots, base_lot_size);

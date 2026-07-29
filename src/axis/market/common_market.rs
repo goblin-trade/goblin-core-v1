@@ -47,7 +47,7 @@ impl<MS: MarketSpec> CommonMarket<MS> {
         &self,
         token_data_triple: &TokenDataTriple<'a>,
     ) -> Result<MarketPreimage<MS>, GoblinError> {
-        // TODO reduce with use_axes!
+        // TODO reduce with for_axes!
         let base_token_index = Base::get(&self.token_index_pair);
         let quote_token_index = Quote::get(&self.token_index_pair);
 
