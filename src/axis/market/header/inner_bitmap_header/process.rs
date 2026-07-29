@@ -1,10 +1,7 @@
 use crate::{
-    axis::{
-        market::{
-            header::inner_bitmap_header::InnerBitmapHeader, market_marker::MarketMarker, Readables,
-            Writables,
-        },
-        token::token_marker::TokenMarker,
+    axis::market::{
+        header::inner_bitmap_header::InnerBitmapHeader, market_spec::MarketSpec, Readables,
+        Writables,
     },
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
@@ -14,18 +11,13 @@ use crate::{
 };
 
 impl InnerBitmapHeader {
-    pub fn process<M, B, Q>(
+    pub fn process<MS: MarketSpec>(
         ctx: &DecodeCtx,
-        readables: &Readables<M, B, Q>,
+        readables: &Readables<MS>,
         pos_0: SafePosition<POS_0>,
         writables: &mut Writables,
         outer_bitmap_state: &mut OuterBitmap,
-    ) -> Result<(), GoblinError>
-    where
-        M: MarketMarker,
-        B: TokenMarker,
-        Q: TokenMarker,
-    {
+    ) -> Result<(), GoblinError> {
         let Self {
             outer_pos,
             update_count,

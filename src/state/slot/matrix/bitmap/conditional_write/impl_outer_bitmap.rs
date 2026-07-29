@@ -1,5 +1,5 @@
 use crate::{
-    axis::{market::market_marker::MarketMarker, token::token_marker::TokenMarker},
+    axis::market::market_spec::MarketSpec,
     quantities::{OUTER_POS, POS_0},
     state::{
         bitmap::{preimage::BitmapPreimage, Bitmap},
@@ -8,15 +8,11 @@ use crate::{
 };
 
 impl Bitmap<POS_0, OUTER_POS> {
-    pub fn conditional_write<M, B, Q>(
+    pub fn conditional_write<MS: MarketSpec>(
         &mut self,
         clone: &Self,
-        key: &SlotKey<BitmapPreimage<M, B, Q, POS_0, OUTER_POS>>,
-    ) where
-        M: MarketMarker,
-        B: TokenMarker,
-        Q: TokenMarker,
-    {
+        key: &SlotKey<BitmapPreimage<MS, POS_0, OUTER_POS>>,
+    ) {
         if *clone == *self {
             return;
         }

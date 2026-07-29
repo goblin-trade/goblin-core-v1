@@ -3,7 +3,7 @@ use crate::axis::{
     token::token_marker::TokenMarker,
 };
 
-pub trait MarketSpec {
+pub trait MarketSpec: Clone + Copy {
     type Market: MarketMarker;
     type Pair: TokenPair;
     type Base: TokenMarker;

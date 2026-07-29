@@ -1,5 +1,5 @@
 use crate::{
-    axis::{leg::SamePair, market::market_marker::MarketMarker, token::token_marker::TokenMarker},
+    axis::{leg::SamePair, market::market_spec::MarketSpec},
     matching::region::make_region::MakeRegion,
     quantities::{Position, SafePosition, OUTER_POS, POS_0},
     state::{
@@ -9,17 +9,12 @@ use crate::{
 };
 
 impl Bitmap<POS_0, OUTER_POS> {
-    pub fn conditional_read<M, B, Q>(
-        market_key: SlotKey<MarketPreimage<M, B, Q>>,
+    pub fn conditional_read<MS: MarketSpec>(
+        market_key: SlotKey<MarketPreimage<MS>>,
         last_positions: &SamePair<Position>,
         safe_position: SafePosition<POS_0>,
-    ) -> (SlotKey<BitmapPreimage<M, B, Q, POS_0, OUTER_POS>>, Self)
-    where
-        M: MarketMarker,
-        B: TokenMarker,
-        Q: TokenMarker,
-    {
-        let key = BitmapPreimage::<M, B, Q, POS_0, OUTER_POS> {
+    ) -> (SlotKey<BitmapPreimage<MS, POS_0, OUTER_POS>>, Self) {
+        let key = BitmapPreimage::<MS, POS_0, OUTER_POS> {
             market_key,
             safe_position,
         }

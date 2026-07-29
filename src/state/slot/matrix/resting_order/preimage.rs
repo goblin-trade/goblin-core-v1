@@ -1,26 +1,16 @@
 use crate::{
-    axis::{market::market_marker::MarketMarker, token::token_marker::TokenMarker},
+    axis::market::market_spec::MarketSpec,
     quantities::Position,
     state::{resting_order::RestingOrder, MarketPreimage, Preimage, SlotKey},
 };
 
 #[derive(Clone, Copy)]
-pub struct RestingOrderPreimage<M, B, Q>
-where
-    M: MarketMarker,
-    B: TokenMarker,
-    Q: TokenMarker,
-{
-    pub market_key: SlotKey<MarketPreimage<M, B, Q>>,
+pub struct RestingOrderPreimage<MS: MarketSpec> {
+    pub market_key: SlotKey<MarketPreimage<MS>>,
     pub position: Position,
 }
 
-impl<M, B, Q> Preimage for RestingOrderPreimage<M, B, Q>
-where
-    M: MarketMarker,
-    B: TokenMarker,
-    Q: TokenMarker,
-{
+impl<MS: MarketSpec> Preimage for RestingOrderPreimage<MS> {
     const SLOT_DISCRIMINATOR: u8 = 6;
     type SlotState = RestingOrder;
 }
