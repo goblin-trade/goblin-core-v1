@@ -1,5 +1,4 @@
 use crate::axis::{
-    leg::Pair,
     market::{market_marker::MarketMarker, token_pair::TokenPair},
     token::token_marker::TokenMarker,
 };
@@ -11,14 +10,21 @@ pub trait MarketSpec {
     type Quote: TokenMarker;
 }
 
-impl<M, B, Q> MarketSpec for (M, Pair<B, Q>)
-where
-    M: MarketMarker,
-    B: TokenMarker,
-    Q: TokenMarker,
-{
+impl<M: MarketMarker, TP: TokenPair> MarketSpec for (M, TP) {
     type Market = M;
-    type Pair = Pair<B, Q>;
-    type Base = B;
-    type Quote = Q;
+    type Pair = TP;
+    type Base = TP::Base;
+    type Quote = TP::Quote;
 }
+
+// impl<M, B, Q> MarketSpec for (M, Pair<B, Q>)
+// where
+//     M: MarketMarker,
+//     B: TokenMarker,
+//     Q: TokenMarker,
+// {
+//     type Market = M;
+//     type Pair = Pair<B, Q>;
+//     type Base = B;
+//     type Quote = Q;
+// }

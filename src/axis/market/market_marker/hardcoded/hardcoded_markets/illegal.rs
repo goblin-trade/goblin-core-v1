@@ -1,4 +1,5 @@
 use crate::axis::{
+    leg::Pair,
     market::{
         market_marker::hardcoded::hardcoded_market_index::HardcodedMarketIndex, Hardcoded,
         MarketReadables,
@@ -12,28 +13,37 @@ use crate::axis::{
 ///! Hardcoded markets only have HardcodedERC20. They cannot have CustomERC20.
 use super::HardcodedMarkets;
 
-impl HardcodedMarkets<ETH, CustomERC20> for HardcodedMarketIndex<ETH, CustomERC20> {
-    const HARDCODED_MARKETS: &'static [MarketReadables<Hardcoded, ETH, CustomERC20>] = &[];
+impl HardcodedMarkets<Pair<ETH, CustomERC20>> for HardcodedMarketIndex<Pair<ETH, CustomERC20>> {
+    const HARDCODED_MARKETS: &'static [MarketReadables<(Hardcoded, Pair<ETH, CustomERC20>)>] = &[];
 }
 
-impl HardcodedMarkets<CustomERC20, ETH> for HardcodedMarketIndex<CustomERC20, ETH> {
-    const HARDCODED_MARKETS: &'static [MarketReadables<Hardcoded, CustomERC20, ETH>] = &[];
+impl HardcodedMarkets<Pair<CustomERC20, ETH>> for HardcodedMarketIndex<Pair<CustomERC20, ETH>> {
+    const HARDCODED_MARKETS: &'static [MarketReadables<(Hardcoded, Pair<CustomERC20, ETH>)>] = &[];
 }
 
-impl HardcodedMarkets<CustomERC20, CustomERC20> for HardcodedMarketIndex<CustomERC20, CustomERC20> {
-    const HARDCODED_MARKETS: &'static [MarketReadables<Hardcoded, CustomERC20, CustomERC20>] = &[];
-}
-
-impl HardcodedMarkets<HardcodedERC20, CustomERC20>
-    for HardcodedMarketIndex<HardcodedERC20, CustomERC20>
+impl HardcodedMarkets<Pair<CustomERC20, CustomERC20>>
+    for HardcodedMarketIndex<Pair<CustomERC20, CustomERC20>>
 {
-    const HARDCODED_MARKETS: &'static [MarketReadables<Hardcoded, HardcodedERC20, CustomERC20>] =
-        &[];
+    const HARDCODED_MARKETS: &'static [MarketReadables<(
+        Hardcoded,
+        Pair<CustomERC20, CustomERC20>,
+    )>] = &[];
 }
 
-impl HardcodedMarkets<CustomERC20, HardcodedERC20>
-    for HardcodedMarketIndex<CustomERC20, HardcodedERC20>
+impl HardcodedMarkets<Pair<HardcodedERC20, CustomERC20>>
+    for HardcodedMarketIndex<Pair<HardcodedERC20, CustomERC20>>
 {
-    const HARDCODED_MARKETS: &'static [MarketReadables<Hardcoded, CustomERC20, HardcodedERC20>] =
-        &[];
+    const HARDCODED_MARKETS: &'static [MarketReadables<(
+        Hardcoded,
+        Pair<HardcodedERC20, CustomERC20>,
+    )>] = &[];
+}
+
+impl HardcodedMarkets<Pair<CustomERC20, HardcodedERC20>>
+    for HardcodedMarketIndex<Pair<CustomERC20, HardcodedERC20>>
+{
+    const HARDCODED_MARKETS: &'static [MarketReadables<(
+        Hardcoded,
+        Pair<CustomERC20, HardcodedERC20>,
+    )>] = &[];
 }

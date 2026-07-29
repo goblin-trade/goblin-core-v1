@@ -1,24 +1,22 @@
 use crate::{
     axis::{
-        leg::Pair,
-        market::{market_locator::MarketLocator, CommonMarket, Dynamic, MarketReadables},
-        token::{token_marker::TokenMarker, token_reader::TokenDataTriple},
+        market::{
+            market_locator::MarketLocator, token_pair::TokenPair, CommonMarket, Dynamic,
+            MarketReadables,
+        },
+        token::token_reader::TokenDataTriple,
     },
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodeCtx},
     state::Preimage,
 };
 
-impl<B, Q> MarketLocator<(Dynamic, Pair<B, Q>)> for MarketReadables<(Dynamic, Pair<B, Q>)>
-where
-    B: TokenMarker,
-    Q: TokenMarker,
-{
+impl<TP: TokenPair> MarketLocator<(Dynamic, TP)> for MarketReadables<(Dynamic, TP)> {
     fn decode_locator(
         ctx: &DecodeCtx,
         token_data_triple: &TokenDataTriple,
     ) -> Result<Self, GoblinError> {
-        let common_market = CommonMarket::<(Dynamic, Pair<B, Q>)>::try_decode(ctx)?;
+        let common_market = CommonMarket::<(Dynamic, TP)>::try_decode(ctx)?;
         let preimage = common_market.get_preimage(token_data_triple)?;
         let key = preimage.hash();
 
@@ -28,7 +26,7 @@ where
         })
     }
 
-    fn locate_market(&self) -> Result<&MarketReadables<(Dynamic, Pair<B, Q>)>, GoblinError> {
+    fn locate_market(&self) -> Result<&MarketReadables<(Dynamic, TP)>, GoblinError> {
         Ok(self)
     }
 }

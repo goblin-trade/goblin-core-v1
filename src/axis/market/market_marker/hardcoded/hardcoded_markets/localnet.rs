@@ -13,8 +13,10 @@ use crate::{
     types::Tuple,
 };
 
-impl HardcodedMarkets<ETH, HardcodedERC20> for HardcodedMarketIndex<ETH, HardcodedERC20> {
-    const HARDCODED_MARKETS: &'static [MarketReadables<Hardcoded, ETH, HardcodedERC20>] =
+impl HardcodedMarkets<Pair<ETH, HardcodedERC20>>
+    for HardcodedMarketIndex<Pair<ETH, HardcodedERC20>>
+{
+    const HARDCODED_MARKETS: &'static [MarketReadables<(Hardcoded, Pair<ETH, HardcodedERC20>)>] =
         &[MarketReadables {
             market: CommonMarket::new(
                 Pair::new(ETHStub, HardcodedERC20Index(0)),
@@ -28,8 +30,10 @@ impl HardcodedMarkets<ETH, HardcodedERC20> for HardcodedMarketIndex<ETH, Hardcod
         }];
 }
 
-impl HardcodedMarkets<HardcodedERC20, ETH> for HardcodedMarketIndex<HardcodedERC20, ETH> {
-    const HARDCODED_MARKETS: &'static [MarketReadables<Hardcoded, HardcodedERC20, ETH>] =
+impl HardcodedMarkets<Pair<HardcodedERC20, ETH>>
+    for HardcodedMarketIndex<Pair<HardcodedERC20, ETH>>
+{
+    const HARDCODED_MARKETS: &'static [MarketReadables<(Hardcoded, Pair<HardcodedERC20, ETH>)>] =
         &[MarketReadables {
             market: CommonMarket::new(
                 Pair::new(HardcodedERC20Index(1), ETHStub),
@@ -43,14 +47,13 @@ impl HardcodedMarkets<HardcodedERC20, ETH> for HardcodedMarketIndex<HardcodedERC
         }];
 }
 
-impl HardcodedMarkets<HardcodedERC20, HardcodedERC20>
-    for HardcodedMarketIndex<HardcodedERC20, HardcodedERC20>
+impl HardcodedMarkets<Pair<HardcodedERC20, HardcodedERC20>>
+    for HardcodedMarketIndex<Pair<HardcodedERC20, HardcodedERC20>>
 {
-    const HARDCODED_MARKETS: &'static [MarketReadables<
+    const HARDCODED_MARKETS: &'static [MarketReadables<(
         Hardcoded,
-        HardcodedERC20,
-        HardcodedERC20,
-    >] = &[MarketReadables {
+        Pair<HardcodedERC20, HardcodedERC20>,
+    )>] = &[MarketReadables {
         market: CommonMarket::new(
             Pair::new(HardcodedERC20Index(0), HardcodedERC20Index(1)),
             Tuple::new(

@@ -1,8 +1,8 @@
 use crate::{
     axis::{
         leg::Pair,
-        market::{CommonMarket, Dynamic},
-        token::token_marker::TokenMarker,
+        market::{token_pair::TokenPair, CommonMarket, Dynamic},
+        token::token_quantity::TokenQuantity,
     },
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodablePrimitive, DecodeCtx},
@@ -10,14 +10,10 @@ use crate::{
     require,
 };
 
-impl<B, Q> Decodable for CommonMarket<Dynamic, B, Q>
-where
-    B: TokenMarker,
-    Q: TokenMarker,
-{
+impl<TP: TokenPair> Decodable for CommonMarket<(Dynamic, TP)> {
     fn try_decode(ctx: &DecodeCtx) -> Result<Self, GoblinError> {
-        let base_token_index = B::TokenIndex::try_decode(ctx)?;
-        let quote_token_index = Q::TokenIndex::try_decode(ctx)?;
+        let base_token_index = <TP::Base as TokenQuantity>::TokenIndex::try_decode(ctx)?;
+        let quote_token_index = <TP::Quote as TokenQuantity>::TokenIndex::try_decode(ctx)?;
 
         let token_index_pair = Pair::new(base_token_index, quote_token_index);
 
@@ -34,7 +30,7 @@ where
 
         ctx.advance_offset(3);
 
-        Ok(CommonMarket::<Dynamic, B, Q>::new(
+        Ok(CommonMarket::<(Dynamic, TP)>::new(
             token_index_pair,
             lot_size_pair,
             tick_size,

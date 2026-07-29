@@ -1,14 +1,13 @@
 use crate::axis::{
-    market::{market_marker::MarketMarker, Dynamic, MarketReadables},
+    market::{
+        market_marker::MarketMarker, market_spec::MarketSpec, token_pair::TokenPair, Dynamic,
+        MarketReadables,
+    },
     token::token_marker::TokenMarker,
 };
 
 impl MarketMarker for Dynamic {
     const DISCRIMINATOR: u8 = 4;
 
-    type MarketLocator<B, Q>
-        = MarketReadables<Self, B, Q>
-    where
-        B: TokenMarker,
-        Q: TokenMarker;
+    type MarketLocator<TP: TokenPair> = MarketReadables<(Self, TP)>;
 }

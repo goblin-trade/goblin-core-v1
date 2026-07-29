@@ -36,5 +36,5 @@ where
     /// - Dynamic: Returns reference to the already-constructed market
     fn locate_market(&self) -> Result<&MarketReadables<MS>, GoblinError>
     where
-        HardcodedMarketIndex<MS::Base, MS::Quote>: HardcodedMarkets<MS::Base, MS::Quote>;
+        HardcodedMarketIndex<MS::Pair>: HardcodedMarkets<MS::Pair>;
 }

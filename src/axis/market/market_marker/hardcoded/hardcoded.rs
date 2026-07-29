@@ -1,17 +1,11 @@
-use crate::axis::{
-    market::{
-        market_marker::{hardcoded::hardcoded_market_index::HardcodedMarketIndex, MarketMarker},
-        Hardcoded,
-    },
-    token::token_marker::TokenMarker,
+use crate::axis::market::{
+    market_marker::{hardcoded::hardcoded_market_index::HardcodedMarketIndex, MarketMarker},
+    token_pair::TokenPair,
+    Hardcoded,
 };
 
 impl MarketMarker for Hardcoded {
     const DISCRIMINATOR: u8 = 3;
 
-    type MarketLocator<B, Q>
-        = HardcodedMarketIndex<B, Q>
-    where
-        B: TokenMarker,
-        Q: TokenMarker;
+    type MarketLocator<TP: TokenPair> = HardcodedMarketIndex<TP>;
 }

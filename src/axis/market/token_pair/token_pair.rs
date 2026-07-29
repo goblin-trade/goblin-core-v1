@@ -3,7 +3,7 @@ use crate::axis::{
     token::{token_marker::TokenMarker, token_quantity::TokenQuantity},
 };
 
-pub trait TokenPair {
+pub trait TokenPair: 'static + Clone + Copy {
     type Base: TokenMarker;
     type Quote: TokenMarker;
 
