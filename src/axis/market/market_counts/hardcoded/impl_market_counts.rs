@@ -20,7 +20,7 @@ impl MarketCounts for HardcodedCounts {
         delta: &mut Delta,
     ) -> Result<(), GoblinError> {
         for _ in 0..self.inner[0] {
-            process_market::<(Hardcoded, Pair<ETH, HardcodedERC20>)>(
+            process_market::<Hardcoded, Pair<ETH, HardcodedERC20>>(
                 msg_sender,
                 ctx,
                 token_data_triple,
@@ -29,7 +29,7 @@ impl MarketCounts for HardcodedCounts {
         }
 
         for _ in 0..self.inner[1] {
-            process_market::<(Hardcoded, Pair<HardcodedERC20, ETH>)>(
+            process_market::<Hardcoded, Pair<HardcodedERC20, ETH>>(
                 msg_sender,
                 ctx,
                 token_data_triple,
@@ -38,7 +38,7 @@ impl MarketCounts for HardcodedCounts {
         }
 
         for _ in 0..self.inner[2] {
-            process_market::<(Hardcoded, Pair<HardcodedERC20, HardcodedERC20>)>(
+            process_market::<Hardcoded, Pair<HardcodedERC20, HardcodedERC20>>(
                 msg_sender,
                 ctx,
                 token_data_triple,
