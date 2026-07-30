@@ -2,10 +2,11 @@ use crate::{
     axis::{
         market::{
             header::market_header::MarketHeader,
-            market_locator::{hardcoded::HardcodedMarkets, MarketLocator},
-            market_marker::{
-                hardcoded::hardcoded_market_index::HardcodedMarketIndex, MarketMarker,
+            market_locator::{
+                hardcoded::{HardcodedMarketIndex, HardcodedMarkets},
+                MarketLocator,
             },
+            market_marker::MarketMarker,
             token_pair::TokenPair,
             Readables, Writables,
         },

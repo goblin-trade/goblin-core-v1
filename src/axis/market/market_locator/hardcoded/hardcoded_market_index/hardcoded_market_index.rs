@@ -1,8 +1,4 @@
-use crate::{
-    axis::market::token_pair::TokenPair,
-    goblin_error::GoblinError,
-    input_processor::{Decodable, DecodeCtx},
-};
+use crate::axis::market::token_pair::TokenPair;
 use core::marker::PhantomData;
 
 /// Index to read a hardcoded market from the static list.
@@ -20,12 +16,5 @@ impl<TP: TokenPair> HardcodedMarketIndex<TP> {
             inner,
             _marker: PhantomData,
         }
-    }
-}
-
-impl<TP: TokenPair> Decodable for HardcodedMarketIndex<TP> {
-    fn try_decode(ctx: &DecodeCtx) -> Result<Self, GoblinError> {
-        let market_index_raw = u8::try_decode(ctx)? as usize;
-        Ok(HardcodedMarketIndex::new(market_index_raw))
     }
 }

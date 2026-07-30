@@ -1,7 +1,6 @@
 use crate::axis::market::{
-    market_marker::{hardcoded::hardcoded_market_index::HardcodedMarketIndex, MarketMarker},
-    token_pair::TokenPair,
-    Hardcoded,
+    market_locator::hardcoded::HardcodedMarketIndex, market_marker::MarketMarker,
+    token_pair::TokenPair, Hardcoded,
 };
 
 impl MarketMarker for Hardcoded {

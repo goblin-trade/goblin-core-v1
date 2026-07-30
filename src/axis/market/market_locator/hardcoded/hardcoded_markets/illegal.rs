@@ -1,9 +1,6 @@
 use crate::axis::{
     leg::Pair,
-    market::{
-        market_marker::hardcoded::hardcoded_market_index::HardcodedMarketIndex, Hardcoded,
-        MarketReadables,
-    },
+    market::{market_locator::hardcoded::HardcodedMarketIndex, Hardcoded, MarketReadables},
     token::{CustomERC20, HardcodedERC20, ETH},
 };
 

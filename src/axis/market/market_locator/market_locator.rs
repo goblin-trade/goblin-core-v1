@@ -1,9 +1,9 @@
 use crate::{
     axis::{
         market::{
-            market_locator::hardcoded::HardcodedMarkets,
-            market_marker::hardcoded::hardcoded_market_index::HardcodedMarketIndex,
-            market_spec::MarketSpec, MarketReadables,
+            market_locator::hardcoded::{HardcodedMarketIndex, HardcodedMarkets},
+            market_spec::MarketSpec,
+            MarketReadables,
         },
         token::token_reader::TokenDataTriple,
     },

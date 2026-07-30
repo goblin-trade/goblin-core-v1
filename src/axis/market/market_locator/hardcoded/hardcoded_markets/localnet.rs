@@ -3,8 +3,8 @@ use crate::{
     axis::{
         leg::Pair,
         market::{
-            market_marker::hardcoded::hardcoded_market_index::HardcodedMarketIndex, CommonMarket,
-            Hardcoded, MarketReadables,
+            market_locator::hardcoded::HardcodedMarketIndex, CommonMarket, Hardcoded,
+            MarketReadables,
         },
         token::{token_marker::HardcodedERC20Index, ETHStub, HardcodedERC20, ETH},
     },
