@@ -1,7 +1,7 @@
 use crate::{
     axis::{
         leg::Pair,
-        market::{token_pair::TokenPair, CommonMarket, Dynamic},
+        market::{market_marker::MarketMarker, token_pair::TokenPair, CommonMarket},
         token::token_quantity::TokenQuantity,
     },
     goblin_error::GoblinError,
@@ -10,7 +10,11 @@ use crate::{
     require,
 };
 
-impl<TP: TokenPair> Decodable for CommonMarket<(Dynamic, TP)> {
+/// Decode CommonMarket
+///
+/// While this is generically implemented on M, we only decode dynamic markets and not
+/// hardcoded markets.
+impl<M: MarketMarker, TP: TokenPair> Decodable for CommonMarket<(M, TP)> {
     fn try_decode(ctx: &DecodeCtx) -> Result<Self, GoblinError> {
         let base_token_index = <TP::Base as TokenQuantity>::TokenIndex::try_decode(ctx)?;
         let quote_token_index = <TP::Quote as TokenQuantity>::TokenIndex::try_decode(ctx)?;
@@ -30,7 +34,7 @@ impl<TP: TokenPair> Decodable for CommonMarket<(Dynamic, TP)> {
 
         ctx.advance_offset(3);
 
-        Ok(CommonMarket::<(Dynamic, TP)>::new(
+        Ok(CommonMarket::<(M, TP)>::new(
             token_index_pair,
             lot_size_pair,
             tick_size,
