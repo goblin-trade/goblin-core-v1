@@ -1,8 +1,8 @@
 use crate::axis::market::{
-    market_locator::hardcoded::{HardcodedMarketIndex, HardcodedMarkets},
+    market_locator::{hardcoded::HardcodedMarkets, MarketIndex},
     market_marker::MarketMarker,
     token_pair::TokenPair,
-    Dynamic, MarketReadables,
+    Dynamic, Hardcoded, MarketReadables,
 };
 
 impl MarketMarker for Dynamic {
@@ -12,5 +12,5 @@ impl MarketMarker for Dynamic {
         = MarketReadables<(Self, TP)>
     where
         TP: TokenPair,
-        HardcodedMarketIndex<TP>: HardcodedMarkets<TP>;
+        MarketIndex<(Hardcoded, TP)>: HardcodedMarkets<TP>;
 }

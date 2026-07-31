@@ -2,13 +2,10 @@ use crate::{
     axis::{
         market::{
             header::market_header::MarketHeader,
-            market_locator::{
-                hardcoded::{HardcodedMarketIndex, HardcodedMarkets},
-                MarketLocator,
-            },
+            market_locator::{hardcoded::HardcodedMarkets, MarketIndex, MarketLocator},
             market_marker::MarketMarker,
             token_pair::TokenPair,
-            Readables, Writables,
+            Hardcoded, Readables, Writables,
         },
         token::token_reader::TokenDataTriple,
     },
@@ -27,7 +24,7 @@ pub fn process_market<'a, M, TP>(
 where
     M: MarketMarker,
     TP: TokenPair,
-    HardcodedMarketIndex<TP>: HardcodedMarkets<TP>,
+    MarketIndex<(Hardcoded, TP)>: HardcodedMarkets<TP>,
 {
     let market_header = MarketHeader::<(M, TP)>::try_decode(ctx)?;
 

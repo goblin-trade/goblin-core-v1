@@ -1,9 +1,9 @@
 use crate::{
     axis::{
         market::{
-            market_locator::hardcoded::{HardcodedMarketIndex, HardcodedMarkets},
+            market_locator::{hardcoded::HardcodedMarkets, MarketIndex},
             market_spec::MarketSpec,
-            MarketReadables,
+            Hardcoded, MarketReadables,
         },
         token::token_reader::TokenDataTriple,
     },
@@ -37,5 +37,5 @@ where
     /// - Dynamic: Returns reference to the already-constructed market
     fn locate_market(&self) -> &MarketReadables<MS>
     where
-        HardcodedMarketIndex<MS::Pair>: HardcodedMarkets<MS::Pair>;
+        MarketIndex<(Hardcoded, MS::Pair)>: HardcodedMarkets<MS::Pair>;
 }

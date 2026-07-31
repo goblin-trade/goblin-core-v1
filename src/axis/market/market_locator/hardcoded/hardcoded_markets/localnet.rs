@@ -2,10 +2,7 @@ use super::HardcodedMarkets;
 use crate::{
     axis::{
         leg::Pair,
-        market::{
-            market_locator::hardcoded::HardcodedMarketIndex, CommonMarket, Hardcoded,
-            MarketReadables,
-        },
+        market::{market_locator::MarketIndex, CommonMarket, Hardcoded, MarketReadables},
         token::{token_marker::HardcodedERC20Index, ETHStub, HardcodedERC20, ETH},
     },
     quantities::{BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit},
@@ -14,7 +11,7 @@ use crate::{
 };
 
 impl HardcodedMarkets<Pair<ETH, HardcodedERC20>>
-    for HardcodedMarketIndex<Pair<ETH, HardcodedERC20>>
+    for MarketIndex<(Hardcoded, Pair<ETH, HardcodedERC20>)>
 {
     const HARDCODED_MARKETS: &'static [MarketReadables<(Hardcoded, Pair<ETH, HardcodedERC20>)>] =
         &[MarketReadables {
@@ -31,7 +28,7 @@ impl HardcodedMarkets<Pair<ETH, HardcodedERC20>>
 }
 
 impl HardcodedMarkets<Pair<HardcodedERC20, ETH>>
-    for HardcodedMarketIndex<Pair<HardcodedERC20, ETH>>
+    for MarketIndex<(Hardcoded, Pair<HardcodedERC20, ETH>)>
 {
     const HARDCODED_MARKETS: &'static [MarketReadables<(Hardcoded, Pair<HardcodedERC20, ETH>)>] =
         &[MarketReadables {
@@ -48,7 +45,7 @@ impl HardcodedMarkets<Pair<HardcodedERC20, ETH>>
 }
 
 impl HardcodedMarkets<Pair<HardcodedERC20, HardcodedERC20>>
-    for HardcodedMarketIndex<Pair<HardcodedERC20, HardcodedERC20>>
+    for MarketIndex<(Hardcoded, Pair<HardcodedERC20, HardcodedERC20>)>
 {
     const HARDCODED_MARKETS: &'static [MarketReadables<(
         Hardcoded,

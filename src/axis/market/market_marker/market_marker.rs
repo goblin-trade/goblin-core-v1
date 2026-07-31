@@ -1,9 +1,7 @@
 use crate::axis::market::{
-    market_locator::{
-        hardcoded::{HardcodedMarketIndex, HardcodedMarkets},
-        MarketLocator,
-    },
+    market_locator::{hardcoded::HardcodedMarkets, MarketIndex, MarketLocator},
     token_pair::TokenPair,
+    Hardcoded,
 };
 
 ///! We have 2 market variants
@@ -25,5 +23,5 @@ pub trait MarketMarker: Sized + Clone + Copy {
     type MarketLocator<TP>: MarketLocator<(Self, TP)>
     where
         TP: TokenPair,
-        HardcodedMarketIndex<TP>: HardcodedMarkets<TP>;
+        MarketIndex<(Hardcoded, TP)>: HardcodedMarkets<TP>;
 }
