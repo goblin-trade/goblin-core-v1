@@ -9,7 +9,7 @@ use crate::axis::market::{
 impl<MS> Index<MarketIndex<MS>> for &'static [MarketReadables<MS>]
 where
     MS: MarketSpec,
-    MS::Pair: HardcodedMarkets<MS::Pair>,
+    MS::Pair: HardcodedMarkets,
 {
     type Output = MarketReadables<MS>;
 

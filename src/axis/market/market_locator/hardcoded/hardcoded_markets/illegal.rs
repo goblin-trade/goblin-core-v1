@@ -10,29 +10,29 @@ use crate::axis::{
 ///! Hardcoded markets only have HardcodedERC20. They cannot have CustomERC20.
 use super::HardcodedMarkets;
 
-impl HardcodedMarkets<Pair<ETH, CustomERC20>> for Pair<ETH, CustomERC20> {
+impl HardcodedMarkets for Pair<ETH, CustomERC20> {
     const HARDCODED_MARKETS: &'static [MarketReadables<(Hardcoded, Pair<ETH, CustomERC20>)>] = &[];
 }
 
-impl HardcodedMarkets<Pair<CustomERC20, ETH>> for Pair<CustomERC20, ETH> {
+impl HardcodedMarkets for Pair<CustomERC20, ETH> {
     const HARDCODED_MARKETS: &'static [MarketReadables<(Hardcoded, Pair<CustomERC20, ETH>)>] = &[];
 }
 
-impl HardcodedMarkets<Pair<CustomERC20, CustomERC20>> for Pair<CustomERC20, CustomERC20> {
+impl HardcodedMarkets for Pair<CustomERC20, CustomERC20> {
     const HARDCODED_MARKETS: &'static [MarketReadables<(
         Hardcoded,
         Pair<CustomERC20, CustomERC20>,
     )>] = &[];
 }
 
-impl HardcodedMarkets<Pair<HardcodedERC20, CustomERC20>> for Pair<HardcodedERC20, CustomERC20> {
+impl HardcodedMarkets for Pair<HardcodedERC20, CustomERC20> {
     const HARDCODED_MARKETS: &'static [MarketReadables<(
         Hardcoded,
         Pair<HardcodedERC20, CustomERC20>,
     )>] = &[];
 }
 
-impl HardcodedMarkets<Pair<CustomERC20, HardcodedERC20>> for Pair<CustomERC20, HardcodedERC20> {
+impl HardcodedMarkets for Pair<CustomERC20, HardcodedERC20> {
     const HARDCODED_MARKETS: &'static [MarketReadables<(
         Hardcoded,
         Pair<CustomERC20, HardcodedERC20>,

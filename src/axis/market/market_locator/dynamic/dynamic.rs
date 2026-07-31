@@ -14,7 +14,7 @@ use crate::{
 
 impl<TP> MarketLocator<TP> for Dynamic
 where
-    TP: TokenPair + HardcodedMarkets<TP>,
+    TP: TokenPair + HardcodedMarkets,
 {
     type Locator = MarketReadables<(Self, TP)>;
 

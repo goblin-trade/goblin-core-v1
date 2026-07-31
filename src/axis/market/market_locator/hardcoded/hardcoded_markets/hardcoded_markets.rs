@@ -4,9 +4,10 @@ use crate::axis::market::{
 
 /// Trait to store hardcoded market lists for each B, Q combination.
 /// Used with MarketLocator trait
-pub trait HardcodedMarkets<TP: TokenPair>
+pub trait HardcodedMarkets
 where
-    (Hardcoded, TP): MarketSpec,
+    Self: TokenPair,
+    (Hardcoded, Self): MarketSpec,
 {
-    const HARDCODED_MARKETS: &'static [MarketReadables<(Hardcoded, TP)>];
+    const HARDCODED_MARKETS: &'static [MarketReadables<(Hardcoded, Self)>];
 }

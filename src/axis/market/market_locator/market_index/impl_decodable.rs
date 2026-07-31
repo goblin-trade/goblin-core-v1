@@ -11,14 +11,13 @@ use crate::{
 impl<MS> Decodable for MarketIndex<MS>
 where
     MS: MarketSpec,
-    MS::Pair: HardcodedMarkets<MS::Pair>,
+    MS::Pair: HardcodedMarkets,
 {
     fn try_decode(ctx: &DecodeCtx) -> Result<Self, GoblinError> {
         let market_index_raw = u8::try_decode(ctx)? as usize;
 
         require!(
-            (market_index_raw as usize)
-                < (<MS::Pair as HardcodedMarkets<MS::Pair>>::HARDCODED_MARKETS.len()),
+            (market_index_raw as usize) < (<MS::Pair as HardcodedMarkets>::HARDCODED_MARKETS.len()),
             GoblinError::InvalidHardcodedMarket
         );
 

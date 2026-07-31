@@ -10,7 +10,7 @@ use crate::{
     types::Tuple,
 };
 
-impl HardcodedMarkets<Pair<ETH, HardcodedERC20>> for Pair<ETH, HardcodedERC20> {
+impl HardcodedMarkets for Pair<ETH, HardcodedERC20> {
     const HARDCODED_MARKETS: &'static [MarketReadables<(Hardcoded, Pair<ETH, HardcodedERC20>)>] =
         &[MarketReadables {
             market: CommonMarket::new(
@@ -25,7 +25,7 @@ impl HardcodedMarkets<Pair<ETH, HardcodedERC20>> for Pair<ETH, HardcodedERC20> {
         }];
 }
 
-impl HardcodedMarkets<Pair<HardcodedERC20, ETH>> for Pair<HardcodedERC20, ETH> {
+impl HardcodedMarkets for Pair<HardcodedERC20, ETH> {
     const HARDCODED_MARKETS: &'static [MarketReadables<(Hardcoded, Pair<HardcodedERC20, ETH>)>] =
         &[MarketReadables {
             market: CommonMarket::new(
@@ -40,9 +40,7 @@ impl HardcodedMarkets<Pair<HardcodedERC20, ETH>> for Pair<HardcodedERC20, ETH> {
         }];
 }
 
-impl HardcodedMarkets<Pair<HardcodedERC20, HardcodedERC20>>
-    for Pair<HardcodedERC20, HardcodedERC20>
-{
+impl HardcodedMarkets for Pair<HardcodedERC20, HardcodedERC20> {
     const HARDCODED_MARKETS: &'static [MarketReadables<(
         Hardcoded,
         Pair<HardcodedERC20, HardcodedERC20>,

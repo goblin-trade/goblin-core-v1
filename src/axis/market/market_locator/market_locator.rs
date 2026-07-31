@@ -20,7 +20,7 @@ use crate::{
 pub trait MarketLocator<TP>
 where
     Self: MarketMarker,
-    TP: TokenPair + HardcodedMarkets<TP>,
+    TP: TokenPair + HardcodedMarkets,
     (Self, TP): MarketSpec,
 {
     type Locator;

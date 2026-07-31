@@ -13,8 +13,7 @@ use crate::{
 
 impl<TP> MarketLocator<TP> for Hardcoded
 where
-    TP: TokenPair,
-    TP: HardcodedMarkets<TP>,
+    TP: TokenPair + HardcodedMarkets,
 {
     type Locator = MarketIndex<(Self, TP)>;
 
