@@ -7,7 +7,7 @@ use core::marker::PhantomData;
 pub struct HardcodedMarketIndex<TP>
 where
     TP: TokenPair,
-    HardcodedMarketIndex<TP>: HardcodedMarkets<TP>,
+    Self: HardcodedMarkets<TP>,
 {
     pub inner: usize,
     _marker: PhantomData<TP>,
@@ -16,7 +16,7 @@ where
 impl<TP> HardcodedMarketIndex<TP>
 where
     TP: TokenPair,
-    HardcodedMarketIndex<TP>: HardcodedMarkets<TP>,
+    Self: HardcodedMarkets<TP>,
 {
     pub fn new(inner: usize) -> Self {
         Self {

@@ -13,6 +13,6 @@ where
     type Output = MarketReadables<(Hardcoded, TP)>;
 
     fn index(&self, index: HardcodedMarketIndex<TP>) -> &Self::Output {
-        &self.get(index.inner).unwrap()
+        self.get(index.inner).unwrap()
     }
 }
