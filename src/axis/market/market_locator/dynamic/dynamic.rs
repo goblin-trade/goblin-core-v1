@@ -11,11 +11,13 @@ use crate::{
     state::Preimage,
 };
 
-impl<TP: TokenPair> MarketLocator<(Dynamic, TP)> for MarketReadables<(Dynamic, TP)> {
+impl<TP: TokenPair> MarketLocator<TP> for Dynamic {
+    type Locator = MarketReadables<(Self, TP)>;
+
     fn decode_locator(
         ctx: &DecodeCtx,
         token_data_triple: &TokenDataTriple,
-    ) -> Result<Self, GoblinError> {
+    ) -> Result<Self::Locator, GoblinError> {
         let common_market = CommonMarket::<(Dynamic, TP)>::try_decode(ctx)?;
         let preimage = common_market.get_preimage(token_data_triple)?;
         let key = preimage.hash();
@@ -26,7 +28,7 @@ impl<TP: TokenPair> MarketLocator<(Dynamic, TP)> for MarketReadables<(Dynamic, T
         })
     }
 
-    fn locate_market(&self) -> &MarketReadables<(Dynamic, TP)> {
-        self
+    fn locate_market(locator: &Self::Locator) -> &MarketReadables<(Dynamic, TP)> {
+        locator
     }
 }

@@ -16,12 +16,12 @@ pub trait MarketMarker: Sized + Clone + Copy {
     /// Discriminator used to hash the market key
     const DISCRIMINATOR: u8;
 
-    /// The intermediate representation used to locate a market.
-    ///
-    /// - Hardcoded: A market index for lookup
-    /// - Dynamic: The complete MarketAndKey (acts as its own locator)
-    type MarketLocator<TP>: MarketLocator<(Self, TP)>
-    where
-        TP: TokenPair,
-        MarketIndex<(Hardcoded, TP)>: HardcodedMarkets<TP>;
+    // /// The intermediate representation used to locate a market.
+    // ///
+    // /// - Hardcoded: A market index for lookup
+    // /// - Dynamic: The complete MarketAndKey (acts as its own locator)
+    // type MarketLocator<TP>: MarketLocator<(Self, TP)>
+    // where
+    //     TP: TokenPair,
+    //     MarketIndex<(Hardcoded, TP)>: HardcodedMarkets<TP>;
 }

@@ -11,19 +11,21 @@ use crate::{
     input_processor::{Decodable, DecodeCtx},
 };
 
-impl<TP> MarketLocator<(Hardcoded, TP)> for MarketIndex<(Hardcoded, TP)>
+impl<TP> MarketLocator<TP> for Hardcoded
 where
     TP: TokenPair,
-    Self: HardcodedMarkets<TP>,
+    MarketIndex<(Self, TP)>: HardcodedMarkets<TP>,
 {
+    type Locator = MarketIndex<(Self, TP)>;
+
     fn decode_locator(
         ctx: &DecodeCtx,
         _token_data_triple: &TokenDataTriple,
-    ) -> Result<Self, GoblinError> {
+    ) -> Result<Self::Locator, GoblinError> {
         MarketIndex::<(Hardcoded, TP)>::try_decode(ctx)
     }
 
-    fn locate_market(&self) -> &MarketReadables<(Hardcoded, TP)> {
-        &Self::HARDCODED_MARKETS[*self]
+    fn locate_market(locator: &Self::Locator) -> &MarketReadables<(Hardcoded, TP)> {
+        &Self::HARDCODED_MARKETS[*locator]
     }
 }

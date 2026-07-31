@@ -8,9 +8,9 @@ use crate::axis::market::{
 impl MarketMarker for Hardcoded {
     const DISCRIMINATOR: u8 = 3;
 
-    type MarketLocator<TP>
-        = MarketIndex<(Hardcoded, TP)>
-    where
-        TP: TokenPair,
-        MarketIndex<(Hardcoded, TP)>: HardcodedMarkets<TP>;
+    // type MarketLocator<TP>
+    //     = MarketIndex<(Hardcoded, TP)>
+    // where
+    //     TP: TokenPair,
+    //     MarketIndex<(Hardcoded, TP)>: HardcodedMarkets<TP>;
 }
