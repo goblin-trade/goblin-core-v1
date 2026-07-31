@@ -14,7 +14,7 @@ use crate::{
 impl<TP> MarketLocator<TP> for Hardcoded
 where
     TP: TokenPair,
-    MarketIndex<(Self, TP)>: HardcodedMarkets<TP>,
+    TP: HardcodedMarkets<TP>,
 {
     type Locator = MarketIndex<(Self, TP)>;
 
@@ -26,6 +26,6 @@ where
     }
 
     fn locate_market(locator: &Self::Locator) -> &MarketReadables<(Hardcoded, TP)> {
-        &Self::HARDCODED_MARKETS[*locator]
+        &TP::HARDCODED_MARKETS[*locator]
     }
 }

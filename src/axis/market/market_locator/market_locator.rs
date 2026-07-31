@@ -1,12 +1,10 @@
 use crate::{
     axis::{
         market::{
-            market_locator::{hardcoded::HardcodedMarkets, MarketIndex},
-            market_marker::MarketMarker,
-            market_spec::MarketSpec,
-            Hardcoded, MarketReadables, TokenPair,
+            market_locator::hardcoded::HardcodedMarkets, market_marker::MarketMarker,
+            market_spec::MarketSpec, MarketReadables, TokenPair,
         },
-        token::{token_marker::TokenMarker, token_reader::TokenDataTriple},
+        token::token_reader::TokenDataTriple,
     },
     goblin_error::GoblinError,
     input_processor::DecodeCtx,
@@ -19,14 +17,10 @@ use crate::{
 ///
 /// We perform two operations to avoid copying static hardcoded market data
 /// onto the stack
-///
-/// TODO refactor- move on MarketMarker with + instead of putting it on a field.
-///
-/// Then the locator itself will become a type on this trait
 pub trait MarketLocator<TP>
 where
-    TP: TokenPair,
-    Self: Sized + MarketMarker,
+    Self: MarketMarker,
+    TP: TokenPair + HardcodedMarkets<TP>,
     (Self, TP): MarketSpec,
 {
     type Locator;
@@ -44,7 +38,5 @@ where
     ///
     /// - Hardcoded: Looks up market in static list using index
     /// - Dynamic: Returns reference to the already-constructed market
-    fn locate_market(locator: &Self::Locator) -> &MarketReadables<(Self, TP)>
-    where
-        MarketIndex<(Hardcoded, TP)>: HardcodedMarkets<TP>;
+    fn locate_market(locator: &Self::Locator) -> &MarketReadables<(Self, TP)>;
 }

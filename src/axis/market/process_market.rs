@@ -2,10 +2,10 @@ use crate::{
     axis::{
         market::{
             header::market_header::MarketHeader,
-            market_locator::{hardcoded::HardcodedMarkets, MarketIndex, MarketLocator},
+            market_locator::{hardcoded::HardcodedMarkets, MarketLocator},
             market_marker::MarketMarker,
             token_pair::TokenPair,
-            Hardcoded, Readables, Writables,
+            Readables, Writables,
         },
         token::token_reader::TokenDataTriple,
     },
@@ -22,9 +22,8 @@ pub fn process_market<'a, M, TP>(
     delta: &mut Delta,
 ) -> Result<(), GoblinError>
 where
-    M: MarketMarker,
-    TP: TokenPair,
-    MarketIndex<(Hardcoded, TP)>: HardcodedMarkets<TP>,
+    M: MarketMarker + MarketLocator<TP>,
+    TP: TokenPair + HardcodedMarkets<TP>,
 {
     let market_header = MarketHeader::<(M, TP)>::try_decode(ctx)?;
 
@@ -32,9 +31,8 @@ where
         delta.local.deposits.decode_and_set::<TP>(ctx)?;
     }
 
-    let market_locator =
-        <M as MarketMarker>::MarketLocator::<TP>::decode_locator(ctx, token_data_triple)?;
-    let market_readables = market_locator.locate_market();
+    let market_locator = M::decode_locator(ctx, token_data_triple)?;
+    let market_readables = M::locate_market(&market_locator);
 
     let readables = &Readables {
         msg_sender,

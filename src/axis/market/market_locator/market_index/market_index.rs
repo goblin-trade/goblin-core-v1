@@ -6,7 +6,7 @@ use crate::axis::market::{market_locator::hardcoded::HardcodedMarkets, market_sp
 pub struct MarketIndex<MS>
 where
     MS: MarketSpec,
-    Self: HardcodedMarkets<MS::Pair>,
+    MS::Pair: HardcodedMarkets<MS::Pair>,
 {
     pub inner: usize,
     _marker: PhantomData<MS>,
@@ -15,7 +15,7 @@ where
 impl<MS> MarketIndex<MS>
 where
     MS: MarketSpec,
-    Self: HardcodedMarkets<MS::Pair>,
+    MS::Pair: HardcodedMarkets<MS::Pair>,
 {
     pub fn new(inner: usize) -> Self {
         Self {
