@@ -1,16 +1,23 @@
-use crate::axis::market::token_pair::TokenPair;
+use crate::axis::market::{market_locator::hardcoded::HardcodedMarkets, token_pair::TokenPair};
 use core::marker::PhantomData;
 
 /// Index to read a hardcoded market from the static list.
-/// This index has NOT been validated for bounds. Bound check happens when reading
-/// the market.
+/// This index is validated for bounds during decoding
 #[derive(Clone, Copy)]
-pub struct HardcodedMarketIndex<TP: TokenPair> {
+pub struct HardcodedMarketIndex<TP>
+where
+    TP: TokenPair,
+    HardcodedMarketIndex<TP>: HardcodedMarkets<TP>,
+{
     pub inner: usize,
     _marker: PhantomData<TP>,
 }
 
-impl<TP: TokenPair> HardcodedMarketIndex<TP> {
+impl<TP> HardcodedMarketIndex<TP>
+where
+    TP: TokenPair,
+    HardcodedMarketIndex<TP>: HardcodedMarkets<TP>,
+{
     pub fn new(inner: usize) -> Self {
         Self {
             inner,

@@ -37,7 +37,7 @@ where
 
     let market_locator =
         <M as MarketMarker>::MarketLocator::<TP>::decode_locator(ctx, token_data_triple)?;
-    let market_readables = market_locator.locate_market()?;
+    let market_readables = market_locator.locate_market();
 
     let readables = &Readables {
         msg_sender,

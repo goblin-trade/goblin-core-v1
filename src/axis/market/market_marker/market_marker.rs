@@ -1,4 +1,10 @@
-use crate::axis::market::{market_locator::MarketLocator, token_pair::TokenPair};
+use crate::axis::market::{
+    market_locator::{
+        hardcoded::{HardcodedMarketIndex, HardcodedMarkets},
+        MarketLocator,
+    },
+    token_pair::TokenPair,
+};
 
 ///! We have 2 market variants
 ///!
@@ -16,5 +22,8 @@ pub trait MarketMarker: Sized + Clone + Copy {
     ///
     /// - Hardcoded: A market index for lookup
     /// - Dynamic: The complete MarketAndKey (acts as its own locator)
-    type MarketLocator<TP: TokenPair>: MarketLocator<(Self, TP)>;
+    type MarketLocator<TP>: MarketLocator<(Self, TP)>
+    where
+        TP: TokenPair,
+        HardcodedMarketIndex<TP>: HardcodedMarkets<TP>;
 }

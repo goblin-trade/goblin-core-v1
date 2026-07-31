@@ -26,7 +26,7 @@ impl<TP: TokenPair> MarketLocator<(Dynamic, TP)> for MarketReadables<(Dynamic, T
         })
     }
 
-    fn locate_market(&self) -> Result<&MarketReadables<(Dynamic, TP)>, GoblinError> {
-        Ok(self)
+    fn locate_market(&self) -> &MarketReadables<(Dynamic, TP)> {
+        self
     }
 }

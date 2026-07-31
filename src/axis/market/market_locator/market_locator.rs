@@ -15,6 +15,9 @@ use crate::{
 ///
 /// - Hardcoded: A market index for lookup
 /// - Dynamic: The complete MarketAndKey (acts as its own locator)
+///
+/// We perform two operations to avoid copying static hardcoded market data
+/// onto the stack
 pub trait MarketLocator<MS: MarketSpec>
 where
     Self: Sized,
@@ -32,7 +35,7 @@ where
     ///
     /// - Hardcoded: Looks up market in static list using index
     /// - Dynamic: Returns reference to the already-constructed market
-    fn locate_market(&self) -> Result<&MarketReadables<MS>, GoblinError>
+    fn locate_market(&self) -> &MarketReadables<MS>
     where
         HardcodedMarketIndex<MS::Pair>: HardcodedMarkets<MS::Pair>;
 }
