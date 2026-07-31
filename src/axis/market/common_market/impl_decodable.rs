@@ -1,12 +1,8 @@
 use crate::{
-    axis::{
-        leg::Pair,
-        market::{market_marker::MarketMarker, token_pair::TokenPair, CommonMarket},
-        token::token_quantity::TokenQuantity,
-    },
+    axis::market::{market_spec::MarketSpec, CommonMarket, LotSizePair, TokenIndexPair},
     goblin_error::GoblinError,
     input_processor::{Decodable, DecodablePrimitive, DecodeCtx},
-    quantities::{BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit},
+    quantities::QuoteLotsPerBaseUnitPerTick,
     require,
 };
 
@@ -14,27 +10,23 @@ use crate::{
 ///
 /// While this is generically implemented on M, we only decode dynamic markets and not
 /// hardcoded markets.
-impl<M: MarketMarker, TP: TokenPair> Decodable for CommonMarket<(M, TP)> {
+impl<MS: MarketSpec> Decodable for CommonMarket<MS> {
     fn try_decode(ctx: &DecodeCtx) -> Result<Self, GoblinError> {
-        let base_token_index = <TP::Base as TokenQuantity>::TokenIndex::try_decode(ctx)?;
-        let quote_token_index = <TP::Quote as TokenQuantity>::TokenIndex::try_decode(ctx)?;
+        // Checked decode for token index pair as generics have diferent sizes.
+        // ETH has 0 size.
+        let token_index_pair = TokenIndexPair::<MS::Pair>::try_decode(ctx)?;
 
-        let token_index_pair = Pair::new(base_token_index, quote_token_index);
-
+        // Batch decode and advance bounds
         require!(
             ctx.len() >= ctx.offset.get() + 3,
             GoblinError::InvalidPayload
         );
-
-        let lot_size_pair = Pair::new(
-            BaseLotsPerBaseUnit::decode_unchecked_no_advance(ctx),
-            QuoteLotsPerQuoteUnit::decode_unchecked_no_advance(ctx),
-        );
+        let lot_size_pair = LotSizePair::decode_unchecked_no_advance(ctx);
         let tick_size = QuoteLotsPerBaseUnitPerTick::decode_unchecked_no_advance(ctx);
 
         ctx.advance_offset(3);
 
-        Ok(CommonMarket::<(M, TP)>::new(
+        Ok(CommonMarket::new(
             token_index_pair,
             lot_size_pair,
             tick_size,
