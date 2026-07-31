@@ -1,7 +1,7 @@
 use crate::{
     axis::{
         market::{
-            market_locator::{hardcoded::HardcodedMarkets, MarketLocator},
+            market_locator::{hardcoded::HardcodedMarketList, MarketLocator},
             token_pair::TokenPair,
             CommonMarket, Dynamic, MarketReadables,
         },
@@ -14,7 +14,7 @@ use crate::{
 
 impl<TP> MarketLocator<TP> for Dynamic
 where
-    TP: TokenPair + HardcodedMarkets,
+    TP: TokenPair + HardcodedMarketList,
 {
     type Locator = MarketReadables<(Self, TP)>;
 

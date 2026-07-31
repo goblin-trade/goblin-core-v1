@@ -1,8 +1,8 @@
 use crate::{
     axis::{
         market::{
-            market_locator::hardcoded::HardcodedMarkets, market_marker::MarketMarker,
-            market_spec::MarketSpec, MarketReadables, TokenPair,
+            market_locator::hardcoded::HardcodedMarketList, market_marker::MarketMarker,
+            MarketReadables, TokenPair,
         },
         token::token_reader::TokenDataTriple,
     },
@@ -20,8 +20,7 @@ use crate::{
 pub trait MarketLocator<TP>
 where
     Self: MarketMarker,
-    TP: TokenPair + HardcodedMarkets,
-    (Self, TP): MarketSpec,
+    TP: TokenPair + HardcodedMarketList,
 {
     type Locator;
 

@@ -1,9 +1,3 @@
-use crate::axis::market::{
-    market_locator::{hardcoded::HardcodedMarkets, MarketIndex, MarketLocator},
-    token_pair::TokenPair,
-    Hardcoded,
-};
-
 ///! We have 2 market variants
 ///!
 ///! * Hardcoded market- has hardcoded tokens

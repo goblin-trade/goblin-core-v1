@@ -2,7 +2,7 @@ use crate::{
     axis::{
         market::{
             header::market_header::MarketHeader,
-            market_locator::{hardcoded::HardcodedMarkets, MarketLocator},
+            market_locator::{hardcoded::HardcodedMarketList, MarketLocator},
             market_marker::MarketMarker,
             token_pair::TokenPair,
             Readables, Writables,
@@ -23,7 +23,7 @@ pub fn process_market<'a, M, TP>(
 ) -> Result<(), GoblinError>
 where
     M: MarketMarker + MarketLocator<TP>,
-    TP: TokenPair + HardcodedMarkets,
+    TP: TokenPair + HardcodedMarketList,
 {
     let market_header = MarketHeader::<(M, TP)>::try_decode(ctx)?;
 

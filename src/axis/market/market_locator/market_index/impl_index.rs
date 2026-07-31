@@ -1,7 +1,7 @@
 use core::ops::Index;
 
 use crate::axis::market::{
-    market_locator::{hardcoded::HardcodedMarkets, MarketIndex},
+    market_locator::{hardcoded::HardcodedMarketList, MarketIndex},
     market_spec::MarketSpec,
     MarketReadables,
 };
@@ -9,7 +9,7 @@ use crate::axis::market::{
 impl<MS> Index<MarketIndex<MS>> for &'static [MarketReadables<MS>]
 where
     MS: MarketSpec,
-    MS::Pair: HardcodedMarkets,
+    MS::Pair: HardcodedMarketList,
 {
     type Output = MarketReadables<MS>;
 
