@@ -8,19 +8,6 @@ use crate::input_processor::DecodeCtx;
 pub trait DecodablePrimitive: Sized {
     /// Decode without bound checks without offset advancement
     fn decode_unchecked_no_advance(ctx: &DecodeCtx) -> Self;
-
-    /// Decode without bounds check and advance the offset
-    ///
-    /// # Safety
-    ///
-    /// Externally check for bounds
-    fn decode_unchecked(ctx: &DecodeCtx) -> Self {
-        let value = Self::decode_unchecked_no_advance(ctx);
-        let size = core::mem::size_of::<Self>();
-        ctx.advance_offset(size);
-
-        value
-    }
 }
 
 impl DecodablePrimitive for u8 {

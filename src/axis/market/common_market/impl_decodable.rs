@@ -28,39 +28,27 @@ impl<MS: MarketSpec> Decodable for CommonMarket<MS> {
         // Cases
         // - Simple decode. Construct complex struct from simple units.
         // - Advanced: interpret bits. This needs custom implementation.
-        let size = core::mem::size_of::<Self>();
+        // let size = core::mem::size_of::<Self>();
 
-        require!(
-            ctx.len() >= ctx.offset.get() + size,
-            GoblinError::InvalidPayload
-        );
+        // require!(
+        //     ctx.len() >= ctx.offset.get() + size,
+        //     GoblinError::InvalidPayload
+        // );
 
-        ctx.advance_offset(size);
+        // ctx.advance_offset(size);
 
-        todo!()
+        // todo!()
 
         // Ok(CommonMarket::)
 
-        // // Checked decode for token index pair as generics have diferent sizes.
-        // // ETH has 0 size.
-        // let token_index_pair = Pair::new(
-        //     <<MS::Pair as TokenPair>::Base as TokenQuantity>::TokenIndex::decode_unchecked(ctx)?,
-        //     <<MS::Pair as TokenPair>::Quote as TokenQuantity>::TokenIndex::try_decode(ctx)?,
-        // );
+        let token_index_pair = TokenIndexPair::<MS::Pair>::try_decode(ctx)?;
+        let lot_size_pair = LotSizePair::try_decode(ctx)?;
+        let tick_size = QuoteLotsPerBaseUnitPerTick::try_decode(ctx)?;
 
-        // let lot_size_pair = Pair::new(
-        //     <Base as LegQuantities>::LotsPerUnit::decode_unchecked(ctx)?,
-        //     <<MS::Pair as TokenPair>::Quote as TokenQuantity>::TokenIndex::try_decode(ctx)?,
-        // );
-        // let lot_size_pair = LotSizePair::decode_unchecked_no_advance(ctx);
-        // let tick_size = QuoteLotsPerBaseUnitPerTick::decode_unchecked_no_advance(ctx);
-
-        // ctx.advance_offset(3);
-
-        // Ok(CommonMarket::new(
-        //     token_index_pair,
-        //     lot_size_pair,
-        //     tick_size,
-        // ))
+        Ok(CommonMarket::new(
+            token_index_pair,
+            lot_size_pair,
+            tick_size,
+        ))
     }
 }
