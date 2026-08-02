@@ -15,6 +15,7 @@ use crate::{
     types::Address,
 };
 
+#[inline(never)]
 pub fn process_market<'a, M, TP>(
     msg_sender: &Address,
     ctx: &DecodeCtx,
