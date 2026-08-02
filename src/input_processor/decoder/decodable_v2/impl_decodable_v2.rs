@@ -1,35 +1,49 @@
 use crate::input_processor::{DecodableV2, DecodeCtx};
 
 impl DecodableV2 for u8 {
-    const SIZE: usize = 1;
-    fn decode_unchecked(ctx: &DecodeCtx, offset: usize) -> Self {
-        ctx.args[offset]
+    const ENCODED_SIZE: usize = size_of::<Self>();
+
+    fn decode_raw(ctx: &DecodeCtx) -> Self {
+        let offset = ctx.offset.get();
+        let value = ctx.args[offset];
+        ctx.advance_offset(1);
+        value
     }
 }
 
 impl DecodableV2 for u16 {
-    const SIZE: usize = 2;
-    fn decode_unchecked(ctx: &DecodeCtx, offset: usize) -> Self {
-        u16::from_le_bytes([ctx.args[offset], ctx.args[offset + 1]])
+    const ENCODED_SIZE: usize = size_of::<Self>();
+
+    fn decode_raw(ctx: &DecodeCtx) -> Self {
+        let offset = ctx.offset.get();
+        let value = u16::from_le_bytes([ctx.args[offset], ctx.args[offset + 1]]);
+        ctx.advance_offset(2);
+        value
     }
 }
 
 impl DecodableV2 for u32 {
-    const SIZE: usize = 4;
-    fn decode_unchecked(ctx: &DecodeCtx, offset: usize) -> Self {
-        u32::from_le_bytes([
+    const ENCODED_SIZE: usize = size_of::<Self>();
+
+    fn decode_raw(ctx: &DecodeCtx) -> Self {
+        let offset = ctx.offset.get();
+        let value = u32::from_le_bytes([
             ctx.args[offset],
             ctx.args[offset + 1],
             ctx.args[offset + 2],
             ctx.args[offset + 3],
-        ])
+        ]);
+        ctx.advance_offset(4);
+        value
     }
 }
 
 impl DecodableV2 for u64 {
-    const SIZE: usize = 8;
-    fn decode_unchecked(ctx: &DecodeCtx, offset: usize) -> Self {
-        u64::from_le_bytes([
+    const ENCODED_SIZE: usize = size_of::<Self>();
+
+    fn decode_raw(ctx: &DecodeCtx) -> Self {
+        let offset = ctx.offset.get();
+        let value = u64::from_le_bytes([
             ctx.args[offset],
             ctx.args[offset + 1],
             ctx.args[offset + 2],
@@ -38,14 +52,18 @@ impl DecodableV2 for u64 {
             ctx.args[offset + 5],
             ctx.args[offset + 6],
             ctx.args[offset + 7],
-        ])
+        ]);
+        ctx.advance_offset(8);
+        value
     }
 }
 
 impl DecodableV2 for i64 {
-    const SIZE: usize = 8;
-    fn decode_unchecked(ctx: &DecodeCtx, offset: usize) -> Self {
-        i64::from_le_bytes([
+    const ENCODED_SIZE: usize = size_of::<Self>();
+
+    fn decode_raw(ctx: &DecodeCtx) -> Self {
+        let offset = ctx.offset.get();
+        let value = i64::from_le_bytes([
             ctx.args[offset],
             ctx.args[offset + 1],
             ctx.args[offset + 2],
@@ -54,6 +72,8 @@ impl DecodableV2 for i64 {
             ctx.args[offset + 5],
             ctx.args[offset + 6],
             ctx.args[offset + 7],
-        ])
+        ]);
+        ctx.advance_offset(8);
+        value
     }
 }

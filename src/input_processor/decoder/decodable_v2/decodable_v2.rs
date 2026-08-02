@@ -1,21 +1,30 @@
 use crate::{goblin_error::GoblinError, input_processor::DecodeCtx, require};
 
+/// Decode fixed-size values from a byte buffer.
+///
+/// All implementors have a known, constant encoded size (`SIZE`) and can be
+/// decoded without per-field bounds checks once the caller has verified
+/// enough bytes remain (see `try_decode`, which does that check for you).
+///
+/// `decode_unchecked` MUST advance `ctx`'s offset by exactly `SIZE` bytes
+/// before returning, so that struct fields decoded in sequence naturally
+/// read from the correct positions.
 pub trait DecodableV2: Sized {
     /// Encoded size in bytes. Not necessarily `core::mem::size_of::<Self>()` —
     /// this is the *wire* size, which may differ from in-memory layout.
-    const SIZE: usize;
+    const ENCODED_SIZE: usize;
 
-    /// Pure function of (ctx, offset) — does NOT touch ctx.offset.
-    fn decode_unchecked(ctx: &DecodeCtx, offset: usize) -> Self;
+    /// Decode assuming `SIZE` bytes are available at the current offset.
+    /// Advances `ctx`'s offset by `SIZE`.
+    fn decode_raw(ctx: &DecodeCtx) -> Self;
 
+    /// Bounds-checked decode. Default implementation: check once, then
+    /// decode unchecked.
     fn try_decode(ctx: &DecodeCtx) -> Result<Self, GoblinError> {
-        let offset = ctx.offset.get();
         require!(
-            ctx.len() >= offset + Self::SIZE,
+            ctx.len() >= ctx.offset.get() + Self::ENCODED_SIZE,
             GoblinError::InvalidPayload
         );
-        let value = Self::decode_unchecked(ctx, offset);
-        ctx.advance_offset(Self::SIZE);
-        Ok(value)
+        Ok(Self::decode_raw(ctx))
     }
 }
