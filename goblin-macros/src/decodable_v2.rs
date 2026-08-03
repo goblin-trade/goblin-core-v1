@@ -41,27 +41,28 @@ pub fn expand(input: DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
         .collect();
     let field_types: Vec<_> = fields.iter().map(|f| f.ty.clone()).collect();
 
+    // Fully-qualified path to the trait, so callers never need to import it.
+    let trait_path = quote! { crate::input_processor::DecodableV2 };
+    let ctx_path = quote! { crate::input_processor::DecodeCtx };
+
     let size_terms = field_types
         .iter()
-        .map(|ty| quote! { <#ty as DecodableV2>::ENCODED_SIZE });
+        .map(|ty| quote! { <#ty as #trait_path>::ENCODED_SIZE });
 
-    // Decoded in declaration order: each `decode_raw` call advances the
-    // shared `ctx` offset, so the next field naturally starts where the
-    // previous one left off.
     let decode_stmts = field_names
         .iter()
         .zip(field_types.iter())
         .map(|(field, ty)| {
             quote! {
-                let #field = <#ty as DecodableV2>::decode_raw(ctx);
+                let #field = <#ty as #trait_path>::decode_raw(ctx);
             }
         });
 
     let expanded = quote! {
-        impl #impl_generics DecodableV2 for #name #ty_generics #where_clause {
+        impl #impl_generics #trait_path for #name #ty_generics #where_clause {
             const ENCODED_SIZE: usize = 0 #(+ #size_terms)*;
 
-            fn decode_raw(ctx: &DecodeCtx) -> Self {
+            fn decode_raw(ctx: &#ctx_path) -> Self {
                 #(#decode_stmts)*
                 Self {
                     #(#field_names),*

@@ -669,6 +669,7 @@ dependencies = [
  "brotli2",
  "eyre",
  "glob",
+ "goblin-macros",
  "hex",
  "hex-literal",
  "rayon",
@@ -679,7 +680,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "goblin_macros"
+name = "goblin-macros"
 version = "0.1.0"
 dependencies = [
  "proc-macro2",

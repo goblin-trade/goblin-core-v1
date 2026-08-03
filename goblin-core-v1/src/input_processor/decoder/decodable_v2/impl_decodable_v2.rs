@@ -1,4 +1,21 @@
+use core::marker::PhantomData;
+
 use crate::input_processor::{DecodableV2, DecodeCtx};
+use goblin_macros::DecodableV2;
+
+#[derive(DecodableV2, Default)]
+pub struct Gg<M> {
+    inner: u8,
+    _marker: PhantomData<M>,
+}
+
+impl<T> DecodableV2 for PhantomData<T> {
+    const ENCODED_SIZE: usize = 0;
+
+    fn decode_raw(_ctx: &DecodeCtx) -> Self {
+        PhantomData
+    }
+}
 
 impl DecodableV2 for u8 {
     const ENCODED_SIZE: usize = size_of::<Self>();
