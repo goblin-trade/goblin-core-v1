@@ -36,6 +36,11 @@ pub struct GlobalHeader<'a> {
 
 impl<'a> GlobalHeader<'a> {
     pub fn new(ctx: &'a DecodeCtx) -> Result<Self, GoblinError> {
+        // This function decodes + performs hostio calls
+        // msg_transfers holds msg_value for ETH as read from hostio
+        //
+        // TODO define conditional_decode(ctx, &flags);
+        // Turn it into a trait ConditionalDecode
         let flags = HeaderFlags::try_decode(ctx)?;
         let msg_transfers = MsgTransfers::try_new(ctx, &flags)?;
 
