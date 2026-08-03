@@ -1,7 +1,7 @@
 use core::ops::{Add, AddAssign, Sub, SubAssign};
 
 use crate::{
-    input_processor::{Decodable, DecodablePrimitive},
+    input_processor::{Decodable, DecodablePrimitive, DecodableV2},
     settlement::{CheckedOps, ConstZero},
 };
 
@@ -24,6 +24,7 @@ pub trait QuantityOps:
     + CheckedOps
     + DecodablePrimitive
     + Decodable
+    + DecodableV2
 {
     const MIN: Self;
     const MAX: Self;
