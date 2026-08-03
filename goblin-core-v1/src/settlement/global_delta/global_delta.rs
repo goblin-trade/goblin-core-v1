@@ -46,7 +46,7 @@ impl GlobalDelta {
 
     pub fn settle(
         &self,
-        trader: &Address,
+        recipient: &Address,
         token_data_triple: &TokenDataTriple,
         msg_transfers: &MsgTransfers,
     ) -> Result<(), GoblinError> {
@@ -58,9 +58,11 @@ impl GlobalDelta {
         //
         // We can combine it into a single for_axes!(|TM, TR|)
         //
-        for_axes!(|TM| self
-            .sender
-            .settle_leg::<TM>(trader, token_data_triple, msg_transfers)?);
+        for_axes!(|TM| self.sender.settle_leg::<TM>(
+            recipient,
+            token_data_triple,
+            msg_transfers
+        )?);
         for_axes!(|TM| self.counterparties.settle_leg::<TM>(token_data_triple)?);
 
         Ok(())
