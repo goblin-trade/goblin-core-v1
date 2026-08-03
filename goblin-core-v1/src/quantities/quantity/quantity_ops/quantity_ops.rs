@@ -24,7 +24,7 @@ pub trait QuantityOps:
     + CheckedOps
     + DecodablePrimitive
     + Decodable
-    + DecodableV2
+    + for<'a> DecodableV2<'a>
 {
     const MIN: Self;
     const MAX: Self;

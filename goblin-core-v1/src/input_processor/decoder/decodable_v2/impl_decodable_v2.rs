@@ -1,15 +1,8 @@
 use core::marker::PhantomData;
 
 use crate::input_processor::{DecodableV2, DecodeCtx};
-use goblin_macros::DecodableV2;
 
-#[derive(DecodableV2, Default)]
-pub struct Gg<M> {
-    inner: u8,
-    _marker: PhantomData<M>,
-}
-
-impl<T> DecodableV2 for PhantomData<T> {
+impl<'a, T> DecodableV2<'a> for PhantomData<T> {
     const ENCODED_SIZE: usize = 0;
 
     fn decode_raw(_ctx: &DecodeCtx) -> Self {
@@ -17,7 +10,7 @@ impl<T> DecodableV2 for PhantomData<T> {
     }
 }
 
-impl DecodableV2 for u8 {
+impl<'a> DecodableV2<'a> for u8 {
     const ENCODED_SIZE: usize = size_of::<Self>();
 
     fn decode_raw(ctx: &DecodeCtx) -> Self {
@@ -28,7 +21,7 @@ impl DecodableV2 for u8 {
     }
 }
 
-impl DecodableV2 for u16 {
+impl<'a> DecodableV2<'a> for u16 {
     const ENCODED_SIZE: usize = size_of::<Self>();
 
     fn decode_raw(ctx: &DecodeCtx) -> Self {
@@ -39,7 +32,7 @@ impl DecodableV2 for u16 {
     }
 }
 
-impl DecodableV2 for u32 {
+impl<'a> DecodableV2<'a> for u32 {
     const ENCODED_SIZE: usize = size_of::<Self>();
 
     fn decode_raw(ctx: &DecodeCtx) -> Self {
@@ -55,7 +48,7 @@ impl DecodableV2 for u32 {
     }
 }
 
-impl DecodableV2 for u64 {
+impl<'a> DecodableV2<'a> for u64 {
     const ENCODED_SIZE: usize = size_of::<Self>();
 
     fn decode_raw(ctx: &DecodeCtx) -> Self {
@@ -75,7 +68,7 @@ impl DecodableV2 for u64 {
     }
 }
 
-impl DecodableV2 for i64 {
+impl<'a> DecodableV2<'a> for i64 {
     const ENCODED_SIZE: usize = size_of::<Self>();
 
     fn decode_raw(ctx: &DecodeCtx) -> Self {

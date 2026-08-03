@@ -1,26 +1,29 @@
 use crate::{goblin_error::GoblinError, input_processor::DecodeCtx, require};
 
-/// Decode fixed-size values from a byte buffer.
+/// Decode values from a byte buffer borrowed for lifetime `'a`.
 ///
-/// All implementors have a known, constant encoded size (`SIZE`) and can be
-/// decoded without per-field bounds checks once the caller has verified
-/// enough bytes remain (see `try_decode`, which does that check for you).
+/// The `'a` parameter ties the lifetime of the decoded value to the lifetime
+/// of the `DecodeCtx` reference it was decoded from. Types that own their
+/// data (all integers, fixed byte arrays, etc.) simply ignore `'a` and
+/// implement `DecodableV2<'a>` for every `'a`. Types that borrow directly
+/// from the underlying buffer (e.g. `GlobalHeader<'a>`) tie their own
+/// lifetime parameter to it.
 ///
-/// `decode_unchecked` MUST advance `ctx`'s offset by exactly `SIZE` bytes
+/// `decode_raw` MUST advance `ctx`'s offset by exactly `ENCODED_SIZE` bytes
 /// before returning, so that struct fields decoded in sequence naturally
 /// read from the correct positions.
-pub trait DecodableV2: Sized {
+pub trait DecodableV2<'a>: Sized {
     /// Encoded size in bytes. Not necessarily `core::mem::size_of::<Self>()` —
     /// this is the *wire* size, which may differ from in-memory layout.
     const ENCODED_SIZE: usize;
 
-    /// Decode assuming `SIZE` bytes are available at the current offset.
-    /// Advances `ctx`'s offset by `SIZE`.
-    fn decode_raw(ctx: &DecodeCtx) -> Self;
+    /// Decode assuming `ENCODED_SIZE` bytes are available at the current
+    /// offset. Advances `ctx`'s offset by `ENCODED_SIZE`.
+    fn decode_raw(ctx: &'a DecodeCtx) -> Self;
 
     /// Bounds-checked decode. Default implementation: check once, then
     /// decode unchecked.
-    fn try_decode(ctx: &DecodeCtx) -> Result<Self, GoblinError> {
+    fn try_decode(ctx: &'a DecodeCtx) -> Result<Self, GoblinError> {
         require!(
             ctx.len() >= ctx.offset.get() + Self::ENCODED_SIZE,
             GoblinError::InvalidPayload
