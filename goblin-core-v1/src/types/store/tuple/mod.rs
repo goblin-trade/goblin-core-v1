@@ -5,6 +5,7 @@ mod impl_checked_ops;
 mod impl_const_zero;
 mod impl_decodable;
 mod impl_decodable_primitive;
+mod impl_decodable_v2;
 mod impl_div;
 mod impl_mul;
 mod impl_store_reader;

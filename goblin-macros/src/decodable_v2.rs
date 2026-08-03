@@ -1,17 +1,29 @@
-use quote::quote;
+use quote::{format_ident, quote};
 use syn::{Data, DeriveInput, Fields, GenericParam, Lifetime, LifetimeParam, spanned::Spanned};
 
 pub fn expand(input: DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
     let name = &input.ident;
 
-    let fields = match &input.data {
+    let (field_names, field_types, is_tuple): (Vec<_>, Vec<_>, bool) = match &input.data {
         Data::Struct(data) => match &data.fields {
-            Fields::Named(fields) => &fields.named,
-            Fields::Unnamed(_) => {
-                return Err(syn::Error::new(
-                    data.fields.span(),
-                    "DecodableV2 can only be derived for structs with named fields, not tuple structs",
-                ));
+            Fields::Named(fields) => {
+                let names = fields
+                    .named
+                    .iter()
+                    .map(|f| f.ident.clone().expect("named field"))
+                    .collect();
+                let types = fields.named.iter().map(|f| f.ty.clone()).collect();
+                (names, types, false)
+            }
+            Fields::Unnamed(fields) => {
+                // Tuple structs have no field idents, so synthesize bindings
+                // (`field_0`, `field_1`, ...) to use in the decode statements
+                // and in the final `Self(...)` constructor.
+                let names = (0..fields.unnamed.len())
+                    .map(|i| format_ident!("field_{}", i))
+                    .collect();
+                let types = fields.unnamed.iter().map(|f| f.ty.clone()).collect();
+                (names, types, true)
             }
             Fields::Unit => {
                 return Err(syn::Error::new(
@@ -33,12 +45,6 @@ pub fn expand(input: DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
             ));
         }
     };
-
-    let field_names: Vec<_> = fields
-        .iter()
-        .map(|f| f.ident.clone().expect("named field"))
-        .collect();
-    let field_types: Vec<_> = fields.iter().map(|f| f.ty.clone()).collect();
 
     // Figure out which lifetime ties Self to the `&DecodeCtx` input:
     // - struct already has one (e.g. `Wrapper<'a>`) -> reuse it
@@ -86,15 +92,22 @@ pub fn expand(input: DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
             }
         });
 
+    // Named structs build `Self { a, b, c }`; tuple structs build
+    // `Self(field_0, field_1, field_2)` — field order matches declaration
+    // order in both cases, which is what makes sequential decoding correct.
+    let constructor = if is_tuple {
+        quote! { Self(#(#field_names),*) }
+    } else {
+        quote! { Self { #(#field_names),* } }
+    };
+
     let expanded = quote! {
         impl #impl_generics #trait_path<#ctx_lifetime> for #name #ty_generics #where_clause {
             const ENCODED_SIZE: usize = 0 #(+ #size_terms)*;
 
             fn decode_raw(ctx: &#ctx_lifetime #ctx_path) -> Self {
                 #(#decode_stmts)*
-                Self {
-                    #(#field_names),*
-                }
+                #constructor
             }
         }
     };
