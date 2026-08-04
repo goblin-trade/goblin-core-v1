@@ -46,7 +46,7 @@ impl<'a> GlobalHeader<'a> {
         // But this breaks symmetric type MsgTransfers::ETHTransfers which has
         // msg_value from calldata and eth_out from ctx
         //
-        // However if we perform a clean split, we can use #[derive(DecodableV2)]
+        // However if we perform a clean split, we can use #[derive(FixedDecode)]
 
         // This function decodes + performs hostio calls
         // msg_transfers holds msg_value for ETH as read from hostio

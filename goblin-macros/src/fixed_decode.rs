@@ -28,20 +28,20 @@ pub fn expand(input: DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
             Fields::Unit => {
                 return Err(syn::Error::new(
                     data.fields.span(),
-                    "DecodableV2 can only be derived for structs with at least one field",
+                    "FixedDecode can only be derived for structs with at least one field",
                 ));
             }
         },
         Data::Enum(data) => {
             return Err(syn::Error::new(
                 data.enum_token.span(),
-                "DecodableV2 cannot be derived for enums",
+                "FixedDecode cannot be derived for enums",
             ));
         }
         Data::Union(data) => {
             return Err(syn::Error::new(
                 data.union_token.span(),
-                "DecodableV2 cannot be derived for unions",
+                "FixedDecode cannot be derived for unions",
             ));
         }
     };
@@ -65,7 +65,7 @@ pub fn expand(input: DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
         _ => {
             return Err(syn::Error::new(
                 input.generics.span(),
-                "DecodableV2 can only be derived for structs with zero or one lifetime parameter",
+                "FixedDecode can only be derived for structs with zero or one lifetime parameter",
             ));
         }
     };
@@ -76,7 +76,7 @@ pub fn expand(input: DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
     let (_, ty_generics, _) = input.generics.split_for_impl();
 
     // Fully-qualified path to the trait, so callers never need to import it.
-    let trait_path = quote! { crate::input_processor::DecodableV2 };
+    let trait_path = quote! { crate::input_processor::FixedDecode };
     let ctx_path = quote! { crate::input_processor::DecodeCtx };
 
     let size_terms = field_types

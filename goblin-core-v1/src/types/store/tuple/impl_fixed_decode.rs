@@ -1,9 +1,9 @@
-use crate::{input_processor::DecodableV2, types::Tuple};
+use crate::{input_processor::FixedDecode, types::Tuple};
 
-impl<'a, T0, T1, K> DecodableV2<'a> for Tuple<T0, T1, K>
+impl<'a, T0, T1, K> FixedDecode<'a> for Tuple<T0, T1, K>
 where
-    T0: DecodableV2<'a>,
-    T1: DecodableV2<'a>,
+    T0: FixedDecode<'a>,
+    T1: FixedDecode<'a>,
 {
     const ENCODED_SIZE: usize = T0::ENCODED_SIZE + T1::ENCODED_SIZE;
 

@@ -5,14 +5,14 @@ use crate::{goblin_error::GoblinError, input_processor::DecodeCtx, require};
 /// The `'a` parameter ties the lifetime of the decoded value to the lifetime
 /// of the `DecodeCtx` reference it was decoded from. Types that own their
 /// data (all integers, fixed byte arrays, etc.) simply ignore `'a` and
-/// implement `DecodableV2<'a>` for every `'a`. Types that borrow directly
+/// implement `FixedDecode<'a>` for every `'a`. Types that borrow directly
 /// from the underlying buffer (e.g. `GlobalHeader<'a>`) tie their own
 /// lifetime parameter to it.
 ///
 /// `decode_raw` MUST advance `ctx`'s offset by exactly `ENCODED_SIZE` bytes
 /// before returning, so that struct fields decoded in sequence naturally
 /// read from the correct positions.
-pub trait DecodableV2<'a>: Sized {
+pub trait FixedDecode<'a>: Sized {
     /// Encoded size in bytes. Not necessarily `core::mem::size_of::<Self>()` —
     /// this is the *wire* size, which may differ from in-memory layout.
     const ENCODED_SIZE: usize;

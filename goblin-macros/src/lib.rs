@@ -1,10 +1,10 @@
 use proc_macro::TokenStream;
-use syn::{parse_macro_input, DeriveInput};
+use syn::{DeriveInput, parse_macro_input};
 
-mod decodable_v2;
+mod fixed_decode;
 
-/// Derive `DecodableV2` for a fixed-size struct whose fields all implement
-/// `DecodableV2`.
+/// Derive `FixedDecode` for a fixed-size struct whose fields all implement
+/// `FixedDecode`.
 ///
 /// - `ENCODED_SIZE` is generated as the sum of each field's `ENCODED_SIZE`.
 /// - `decode_raw` decodes fields in declaration order, so each field reads
@@ -16,18 +16,18 @@ mod decodable_v2;
 /// structs.
 ///
 /// ```ignore
-/// #[derive(DecodableV2)]
+/// #[derive(FixedDecode)]
 /// struct Header {
 ///     kind: u8,
 ///     len: u16,
 ///     flags: u32,
 /// }
 /// ```
-#[proc_macro_derive(DecodableV2)]
+#[proc_macro_derive(FixedDecode)]
 pub fn derive_decodable_v2(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
-    match decodable_v2::expand(input) {
+    match fixed_decode::expand(input) {
         Ok(tokens) => tokens.into(),
         Err(err) => err.to_compile_error().into(),
     }
