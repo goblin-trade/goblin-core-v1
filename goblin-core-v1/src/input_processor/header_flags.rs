@@ -9,11 +9,11 @@ use crate::{
 const BYTE_COUNT: usize = 1;
 
 pub struct HeaderFlags {
-    /// Whether to read recipient address from payload. If false, use msg.sender as recipient.
-    pub recipient_provided: bool,
+    /// Whether to read custom recipient address from payload
+    pub read_custom_recipient: bool,
 
     /// Whether to read msg.value from hostio
-    pub track_msg_value: bool,
+    pub read_msg_value: bool,
 
     /// Whether to process dynamic markets
     pub process_dynamic_markets: bool,
@@ -35,8 +35,8 @@ impl Decodable for HeaderFlags {
         let byte_0 = u8::decode_unchecked_no_advance(ctx);
         let header = HeaderFlags {
             // Optional variables
-            recipient_provided: (byte_0 & 0b0000_0001) != 0,
-            track_msg_value: (byte_0 & 0b0000_0010) != 0,
+            read_custom_recipient: (byte_0 & 0b0000_0001) != 0,
+            read_msg_value: (byte_0 & 0b0000_0010) != 0,
             process_dynamic_markets: (byte_0 & 0b0000_0100) != 0,
             read_custom_erc20: (byte_0 & 0b0000_1000) != 0,
             withdraw_eth: (byte_0 & 0b0001_0000) != 0,
@@ -58,7 +58,7 @@ impl Decodable for HeaderFlags {
 impl HeaderFlags {
     pub fn payload_size(&self) -> usize {
         let size = BYTE_COUNT
-            + self.recipient_provided as usize * core::mem::size_of::<Address>()
+            + self.read_custom_recipient as usize * core::mem::size_of::<Address>()
             + self.withdraw_eth as usize * core::mem::size_of::<UnsidedAtoms>();
         size
     }

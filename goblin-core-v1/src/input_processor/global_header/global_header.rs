@@ -56,7 +56,7 @@ impl<'a> GlobalHeader<'a> {
         let flags = HeaderFlags::try_decode(ctx)?;
         let msg_transfers = MsgTransfers::try_new(ctx, &flags)?;
 
-        let recipient = if flags.recipient_provided {
+        let recipient = if flags.read_custom_recipient {
             Some(ctx.zero_copy_unchecked::<Address>())
         } else {
             None

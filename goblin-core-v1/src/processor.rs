@@ -2,7 +2,7 @@ use crate::{
     axis::market::market_counts::MarketCounts,
     goblin_error::GoblinError,
     hostio::{self},
-    input_processor::{DecodeCtx, GlobalHeader},
+    input_processor::{Decodable, DecodeCtx, GlobalHeader, HeaderFlags, HostioFields},
     require,
     settlement::Delta,
 };
@@ -19,6 +19,9 @@ pub fn processor(len: usize) -> Result<(), GoblinError> {
     let msg_sender = &hostio::msg_sender();
     let delta = Delta::get_static();
     let ctx = &mut DecodeCtx::new(len);
+
+    let flags = HeaderFlags::try_decode(ctx)?;
+    let hostio_fields = HostioFields::try_new(flags.read_msg_value);
 
     let global_header = GlobalHeader::new(ctx)?;
     global_header.process(msg_sender, ctx, delta)?;
