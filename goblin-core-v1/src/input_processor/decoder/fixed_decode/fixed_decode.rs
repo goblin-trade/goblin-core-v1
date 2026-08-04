@@ -19,15 +19,15 @@ pub trait FixedDecode<'a>: Sized {
 
     /// Decode assuming `ENCODED_SIZE` bytes are available at the current
     /// offset. Advances `ctx`'s offset by `ENCODED_SIZE`.
-    fn decode_raw(ctx: &'a DecodeCtx) -> Self;
+    fn raw_fixed_decode(ctx: &'a DecodeCtx) -> Self;
 
     /// Bounds-checked decode. Default implementation: check once, then
     /// decode unchecked.
-    fn try_decode(ctx: &'a DecodeCtx) -> Result<Self, GoblinError> {
+    fn try_fixed_decode(ctx: &'a DecodeCtx) -> Result<Self, GoblinError> {
         require!(
             ctx.len() >= ctx.offset.get() + Self::ENCODED_SIZE,
             GoblinError::InvalidPayload
         );
-        Ok(Self::decode_raw(ctx))
+        Ok(Self::raw_fixed_decode(ctx))
     }
 }

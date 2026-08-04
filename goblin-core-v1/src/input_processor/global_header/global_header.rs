@@ -7,23 +7,24 @@ use crate::{
         token::{token_list::custom_erc20::CustomERC20List, token_reader::TokenDataTriple},
     },
     goblin_error::GoblinError,
-    input_processor::{Decodable, DecodeCtx, HeaderFlags, MsgTransfers},
+    input_processor::{
+        Decodable, DecodablePrimitive, DecodeCtx, FixedDecode, HeaderFlags, MsgTransfers,
+        VariableDecode,
+    },
+    quantities::UnsidedAtoms,
     settlement::Delta,
     types::{Address, StoreReader, Tuple},
 };
 
 /// Arguments read from calldata
 pub struct GlobalHeader<'a> {
-    /// Flags and counts. Tells whether optional values should be read.
-    pub flags: HeaderFlags,
-
-    /// Tokens transferred at the top level through calldata
+    /// Amount of ETH atoms pending withdrawal, as read from global namespace header
     ///
-    /// * ETH is deposited via msg.value. ETH withdraw amount is namespaced at calldata level
-    /// not market namespace level.
+    /// The actual amount withdrawn is MIN(available, widthdrawal_due)
+    /// This allows us to withdraw max available amount by passing u64::MAX
     ///
-    /// * ERC20 tokens deltas are read at the market level. They are stubs in the calldata level.
-    pub msg_transfers: MsgTransfers,
+    /// The amount is transferred out internally (store credit) or externally (transfer call).
+    pub eth_out_due: UnsidedAtoms,
 
     /// Optional custom recipient
     pub custom_recipient: Option<&'a Address>,
@@ -34,25 +35,62 @@ pub struct GlobalHeader<'a> {
     pub token_data_triple: TokenDataTriple<'a>,
 }
 
+impl<'a> VariableDecode for GlobalHeader<'a> {
+    type Flags = HeaderFlags;
+
+    // TODO have structure similar to FixedDecode?
+    // variable_decode_raw() and try_variable_decode()
+    //
+    // try_variable_decode() will calculate total size and ensure it fits
+
+    fn raw_variable_decode(ctx: &DecodeCtx, flags: &Self::Flags) -> Self {
+        let eth_out_due = if flags.withdraw_eth {
+            UnsidedAtoms::raw_fixed_decode(ctx)
+        } else {
+            UnsidedAtoms::default()
+        };
+
+        let custom_recipient = if flags.read_custom_recipient {
+            Some(ctx.zero_copy_unchecked::<Address>())
+        } else {
+            None
+        };
+
+        // TODO account for 2 bytes
+        let hardcoded_counts = HardcodedCounts::raw_fixed_decode(ctx);
+
+        let dynamic_counts = if flags.process_dynamic_markets {
+            DynamicCounts::raw_fixed_decode(ctx)
+        } else {
+            DynamicCounts::default()
+        };
+
+        let market_counts = MarketVariantPair::new(hardcoded_counts, dynamic_counts);
+
+        // Dirty API
+        //
+        // * read custom_erc20_count only if read_custom_erc20 is true
+        // * but read_custom_erc20 is meaningful only if process_dynamic_markets is true,
+        // (small edge case where we want to deposit but not deal with markets)
+        //
+        // Use VariableDecode on CustomERC20List
+        // Keep the existing structure as it optimizes for hot paths
+        //
+        // * Only hardcoded: don't read custom count (1 byte)
+        // * Dynamic but with hardcoded tokens: option not to read custom  token count (1 byte)
+        let custom_erc20_list = if flags.read_custom_erc20 {
+            CustomERC20List::try_decode(ctx)?
+        } else {
+            CustomERC20List::decode_empty(ctx)
+        };
+        let token_data_triple = TokenDataTriple::from(custom_erc20_list);
+
+        todo!()
+    }
+}
+
 impl<'a> GlobalHeader<'a> {
     pub fn new(ctx: &'a DecodeCtx) -> Result<Self, GoblinError> {
-        // TODO decode msg_sender here
-        //
-        // problem with DecodeV2 definition
-        // Trait assumes we read purely from ctx
-        // However this function performs hostio calls too
-        //
-        // We should separate hostio and calldata components?
-        // But this breaks symmetric type MsgTransfers::ETHTransfers which has
-        // msg_value from calldata and eth_out from ctx
-        //
-        // However if we perform a clean split, we can use #[derive(FixedDecode)]
-
-        // This function decodes + performs hostio calls
-        // msg_transfers holds msg_value for ETH as read from hostio
-        //
-        // TODO define conditional_decode(ctx, &flags);
-        // Turn it into a trait ConditionalDecode
         let flags = HeaderFlags::try_decode(ctx)?;
         let msg_transfers = MsgTransfers::try_new(ctx, &flags)?;
 
@@ -62,7 +100,10 @@ impl<'a> GlobalHeader<'a> {
             None
         };
 
+        // 2 bytes
         let hardcoded_counts = HardcodedCounts::try_decode(ctx)?;
+
+        // 4 bytes but conditional
         let dynamic_counts = if flags.process_dynamic_markets {
             DynamicCounts::new(ctx)?
         } else {

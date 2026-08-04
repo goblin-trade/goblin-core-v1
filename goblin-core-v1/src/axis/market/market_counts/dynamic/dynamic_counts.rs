@@ -12,6 +12,7 @@ pub struct DynamicCounts {
     pub market_counts: [u8; 8],
 }
 
+// TODO remove
 impl DynamicCounts {
     pub fn new(ctx: &DecodeCtx) -> Result<Self, GoblinError> {
         require!(
