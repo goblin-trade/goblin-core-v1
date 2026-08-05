@@ -9,7 +9,7 @@ const BYTE_COUNT: usize = 4;
 /// The number of dynamic markets to process and their associated custom token addresses
 #[derive(Clone, Copy, Default)]
 pub struct DynamicCounts {
-    pub market_counts: [u8; 8],
+    pub inner: [u8; 8],
 }
 
 // TODO remove
@@ -38,6 +38,8 @@ impl DynamicCounts {
 
         ctx.advance_offset(BYTE_COUNT);
 
-        Ok(Self { market_counts })
+        Ok(Self {
+            inner: market_counts,
+        })
     }
 }

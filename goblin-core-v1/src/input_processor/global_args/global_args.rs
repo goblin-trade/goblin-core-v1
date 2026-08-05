@@ -6,7 +6,7 @@ use crate::{
         DecodeCtx, ETHTransfers, FixedDecode, HeaderFlags, MsgTransfers, VariableDecode,
     },
     settlement::Delta,
-    types::{Address, StoreReader},
+    types::Address,
 };
 
 pub struct GlobalArgs<'a> {
@@ -29,16 +29,17 @@ impl<'a> GlobalArgs<'a> {
     }
 
     pub fn process(&'a self, ctx: &DecodeCtx, delta: &mut Delta) -> Result<(), GoblinError> {
-        let hardcoded_counts = Hardcoded::get_leg(&self.global_header.market_counts);
-        hardcoded_counts.process(
+        // TODO remove duplication along with internal count reads
+        Hardcoded::process(
+            &self.global_header.market_counts,
             &self.hostio_fields.msg_sender,
             ctx,
             &self.global_header.token_data_triple,
             delta,
         )?;
 
-        let dynamic_counts = Dynamic::get_leg(&self.global_header.market_counts);
-        dynamic_counts.process(
+        Dynamic::process(
+            &self.global_header.market_counts,
             &self.hostio_fields.msg_sender,
             ctx,
             &self.global_header.token_data_triple,

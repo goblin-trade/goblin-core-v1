@@ -25,6 +25,8 @@ impl<'a> FixedDecode<'a> for DynamicCounts {
 
         ctx.advance_offset(Self::ENCODED_SIZE);
 
-        Self { market_counts }
+        Self {
+            inner: market_counts,
+        }
     }
 }
