@@ -4,7 +4,13 @@ use crate::{
             market_counts::{dynamic::DynamicCounts, hardcoded::HardcodedCounts, MarketCounts},
             Dynamic, Hardcoded, MarketVariantPair,
         },
-        token::{token_list::custom_erc20::CustomERC20List, token_reader::TokenDataTriple},
+        token::{
+            token_list::custom_erc20::{
+                custom_erc20_count::custom_erc20_count, custom_erc20_list::custom_erc20_list,
+                CustomERC20Count, CustomERC20List,
+            },
+            token_reader::TokenDataTriple,
+        },
     },
     goblin_error::GoblinError,
     input_processor::{
@@ -35,15 +41,21 @@ pub struct GlobalHeader<'a> {
     pub token_data_triple: TokenDataTriple<'a>,
 }
 
-impl<'a> VariableDecode for GlobalHeader<'a> {
+impl<'a> VariableDecode<'a> for GlobalHeader<'a> {
     type Flags = HeaderFlags;
 
-    // TODO have structure similar to FixedDecode?
-    // variable_decode_raw() and try_variable_decode()
-    //
-    // try_variable_decode() will calculate total size and ensure it fits
+    fn size(flags: &Self::Flags) -> usize {
+        (flags.withdraw_eth as usize * UnsidedAtoms::ENCODED_SIZE)
+            + (flags.read_custom_recipient as usize * core::mem::size_of::<Address>())
+            + HardcodedCounts::ENCODED_SIZE
+            + (flags.process_dynamic_markets as usize * DynamicCounts::ENCODED_SIZE)
+            + CustomERC20Count::size(flags)
+        // is logic wrong?
+        // we cannot get full size from flags because length of custom erc20 list depends
+        // on the value read from CustomERC20Count?
+    }
 
-    fn raw_variable_decode(ctx: &DecodeCtx, flags: &Self::Flags) -> Self {
+    fn raw_variable_decode(ctx: &'a DecodeCtx, flags: &Self::Flags) -> Self {
         let eth_out_due = if flags.withdraw_eth {
             UnsidedAtoms::raw_fixed_decode(ctx)
         } else {
@@ -67,25 +79,16 @@ impl<'a> VariableDecode for GlobalHeader<'a> {
 
         let market_counts = MarketVariantPair::new(hardcoded_counts, dynamic_counts);
 
-        // Dirty API
-        //
-        // * read custom_erc20_count only if read_custom_erc20 is true
-        // * but read_custom_erc20 is meaningful only if process_dynamic_markets is true,
-        // (small edge case where we want to deposit but not deal with markets)
-        //
-        // Use VariableDecode on CustomERC20List
-        // Keep the existing structure as it optimizes for hot paths
-        //
-        // * Only hardcoded: don't read custom count (1 byte)
-        // * Dynamic but with hardcoded tokens: option not to read custom  token count (1 byte)
-        let custom_erc20_list = if flags.read_custom_erc20 {
-            CustomERC20List::try_decode(ctx)?
-        } else {
-            CustomERC20List::decode_empty(ctx)
-        };
+        let custom_erc20_count = CustomERC20Count::raw_variable_decode(ctx, flags);
+        let custom_erc20_list = CustomERC20List::raw_variable_decode(ctx, &custom_erc20_count);
         let token_data_triple = TokenDataTriple::from(custom_erc20_list);
 
-        todo!()
+        Self {
+            eth_out_due,
+            custom_recipient,
+            market_counts,
+            token_data_triple,
+        }
     }
 }
 
