@@ -1,10 +1,7 @@
 use crate::{
-    axis::market::market_counts::MarketCounts,
     goblin_error::GoblinError,
     hostio::{self},
-    input_processor::{
-        Decodable, DecodeCtx, FixedDecode, GlobalHeader, HeaderFlags, HostioFields, VariableDecode,
-    },
+    input_processor::{DecodeCtx, GlobalArgs},
     require,
     settlement::Delta,
 };
@@ -15,18 +12,13 @@ pub const CONTRACT_ADDRESS: [u8; 20] = [
 ];
 
 pub fn processor(len: usize) -> Result<(), GoblinError> {
-    let msg_reentrant = hostio::msg_reentrant();
-    require!(!msg_reentrant, GoblinError::Reentrant);
+    require!(!hostio::msg_reentrant(), GoblinError::Reentrant);
 
-    let msg_sender = &hostio::msg_sender();
     let delta = Delta::get_static();
     let ctx = &mut DecodeCtx::new(len);
 
-    let flags = HeaderFlags::try_fixed_decode(ctx)?;
-    let hostio_fields = HostioFields::try_new(flags.read_msg_value);
-
-    let global_header = GlobalHeader::try_variable_decode(ctx, &flags)?;
-    // global_header.process(msg_sender, ctx, delta)?;
+    let global_args = GlobalArgs::try_new(ctx)?;
+    global_args.process(ctx, delta)?;
 
     // Write cache to trie
     // https://github.com/OffchainLabs/stylus-sdk-rs/blob/2c709a5a1a620ed7585c7d8af64fefabe3a0fc9a/stylus-sdk/src/storage/mod.rs#L81

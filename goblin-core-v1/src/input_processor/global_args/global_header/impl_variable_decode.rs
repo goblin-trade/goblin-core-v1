@@ -6,7 +6,9 @@ use crate::{
         },
         token::{token_list::custom_erc20::CustomERC20List, token_reader::TokenDataTriple},
     },
-    input_processor::{DecodeCtx, FixedDecode, GlobalHeader, HeaderFlags, VariableDecode},
+    input_processor::{
+        global_args::global_header::GlobalHeader, DecodeCtx, FixedDecode, HeaderFlags, VariableDecode,
+    },
     quantities::UnsidedAtoms,
     types::Address,
 };
