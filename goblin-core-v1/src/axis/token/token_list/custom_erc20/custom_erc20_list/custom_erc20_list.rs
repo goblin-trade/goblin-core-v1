@@ -6,7 +6,8 @@ use crate::{
     types::Address,
 };
 
-pub const MAX_CUSTOM_ERC20_COUNT: usize = 8;
+/// Max legal value = max (3 bits) = 7
+pub const MAX_CUSTOM_ERC20_COUNT: usize = 0b111;
 
 #[derive(Clone, Copy)]
 pub struct CustomERC20List<'a> {

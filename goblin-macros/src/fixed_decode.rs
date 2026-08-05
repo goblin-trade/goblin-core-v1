@@ -88,7 +88,7 @@ pub fn expand(input: DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
         .zip(field_types.iter())
         .map(|(field, ty)| {
             quote! {
-                let #field = <#ty as #trait_path<#ctx_lifetime>>::decode_raw(ctx);
+                let #field = <#ty as #trait_path<#ctx_lifetime>>::raw_fixed_decode(ctx);
             }
         });
 
@@ -105,7 +105,7 @@ pub fn expand(input: DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
         impl #impl_generics #trait_path<#ctx_lifetime> for #name #ty_generics #where_clause {
             const ENCODED_SIZE: usize = 0 #(+ #size_terms)*;
 
-            fn decode_raw(ctx: &#ctx_lifetime #ctx_path) -> Self {
+            fn raw_fixed_decode(ctx: &#ctx_lifetime #ctx_path) -> Self {
                 #(#decode_stmts)*
                 #constructor
             }

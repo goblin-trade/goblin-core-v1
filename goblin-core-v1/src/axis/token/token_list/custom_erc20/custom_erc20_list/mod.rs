@@ -1,7 +1,5 @@
-pub mod custom_erc20_count;
 pub mod custom_erc20_list;
 
-pub use custom_erc20_count::*;
 pub use custom_erc20_list::*;
 
 mod impl_index;
