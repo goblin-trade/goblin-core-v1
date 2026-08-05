@@ -1,16 +1,14 @@
 use crate::{
     axis::{
-        market::{
-            market_counts::{dynamic::DynamicCounts, hardcoded::HardcodedCounts},
-            MarketVariantPair,
-        },
+        market::market_counts::{dynamic::DynamicCounts, hardcoded::HardcodedCounts},
         token::{token_list::custom_erc20::CustomERC20List, token_reader::TokenDataTriple},
     },
     input_processor::{
-        global_args::global_header::GlobalHeader, DecodeCtx, FixedDecode, HeaderFlags, VariableDecode,
+        global_args::global_header::GlobalHeader, DecodeCtx, FixedDecode, HeaderFlags,
+        VariableDecode,
     },
     quantities::UnsidedAtoms,
-    types::Address,
+    types::{Address, Tuple},
 };
 
 impl<'a> VariableDecode<'a> for GlobalHeader<'a> {
@@ -46,7 +44,7 @@ impl<'a> VariableDecode<'a> for GlobalHeader<'a> {
             DynamicCounts::default()
         };
 
-        let market_counts = MarketVariantPair::new(hardcoded_counts, dynamic_counts);
+        let market_counts = Tuple::new(hardcoded_counts, dynamic_counts);
 
         let custom_erc20_list = CustomERC20List::raw_variable_decode(ctx, &flags);
         let token_data_triple = TokenDataTriple::from(custom_erc20_list);

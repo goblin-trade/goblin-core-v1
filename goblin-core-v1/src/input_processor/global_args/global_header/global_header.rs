@@ -1,16 +1,7 @@
 use crate::{
-    axis::{
-        market::{
-            market_counts::{dynamic::DynamicCounts, hardcoded::HardcodedCounts, MarketCounts},
-            Dynamic, Hardcoded, MarketVariantPair,
-        },
-        token::{token_list::custom_erc20::CustomERC20List, token_reader::TokenDataTriple},
-    },
-    goblin_error::GoblinError,
-    input_processor::{DecodeCtx, FixedDecode, HeaderFlags, VariableDecode},
+    axis::{market::market_counts::MarketCountsTuple, token::token_reader::TokenDataTriple},
     quantities::UnsidedAtoms,
-    settlement::Delta,
-    types::{Address, StoreReader},
+    types::Address,
 };
 
 /// Arguments read from calldata
@@ -27,38 +18,7 @@ pub struct GlobalHeader<'a> {
     pub custom_recipient: Option<&'a Address>,
 
     /// Number of hardcoded and dynamic markets to process
-    pub market_counts: MarketVariantPair<HardcodedCounts, DynamicCounts>,
+    pub market_counts: MarketCountsTuple,
 
     pub token_data_triple: TokenDataTriple<'a>,
 }
-
-// impl<'a> GlobalHeader<'a> {
-//     pub fn process(
-//         &'a self,
-//         hostio_fields: &HostioFields,
-//         ctx: &DecodeCtx,
-//         delta: &mut Delta,
-//     ) -> Result<(), GoblinError> {
-//         let hardcoded_counts = Hardcoded::get_leg(&self.market_counts);
-//         hardcoded_counts.process(
-//             &hostio_fields.msg_sender,
-//             ctx,
-//             &self.token_data_triple,
-//             delta,
-//         )?;
-
-//         let dynamic_counts = Dynamic::get_leg(&self.market_counts);
-//         dynamic_counts.process(
-//             &hostio_fields.msg_sender,
-//             ctx,
-//             &self.token_data_triple,
-//             delta,
-//         )?;
-
-//         delta.global.settle(
-//             self.recipient(msg_sender),
-//             &self.token_data_triple,
-//             &self.msg_transfers,
-//         )
-//     }
-// }

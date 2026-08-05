@@ -1,4 +1,7 @@
-use crate::axis::market::{Dynamic, Hardcoded};
+use crate::axis::market::{
+    market_counts::{dynamic::DynamicCounts, hardcoded::HardcodedCounts},
+    Dynamic, Hardcoded,
+};
 
 ///! We have 2 market variants
 ///!
@@ -7,12 +10,16 @@ use crate::axis::market::{Dynamic, Hardcoded};
 pub trait MarketMarker: Sized + Clone + Copy {
     /// Discriminator used to hash the market key
     const DISCRIMINATOR: u8;
+
+    type MarketCounts;
 }
 
 impl MarketMarker for Hardcoded {
     const DISCRIMINATOR: u8 = 3;
+    type MarketCounts = HardcodedCounts;
 }
 
 impl MarketMarker for Dynamic {
     const DISCRIMINATOR: u8 = 4;
+    type MarketCounts = DynamicCounts;
 }
