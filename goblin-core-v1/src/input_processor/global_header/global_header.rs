@@ -92,65 +92,65 @@ impl<'a> VariableDecode<'a> for GlobalHeader<'a> {
     }
 }
 
-impl<'a> GlobalHeader<'a> {
-    pub fn new(ctx: &'a DecodeCtx) -> Result<Self, GoblinError> {
-        let flags = HeaderFlags::try_decode(ctx)?;
-        let msg_transfers = MsgTransfers::try_new(ctx, &flags)?;
+// impl<'a> GlobalHeader<'a> {
+//     pub fn new(ctx: &'a DecodeCtx) -> Result<Self, GoblinError> {
+//         let flags = HeaderFlags::try_decode(ctx)?;
+//         let msg_transfers = MsgTransfers::try_new(ctx, &flags)?;
 
-        let recipient = if flags.read_custom_recipient {
-            Some(ctx.zero_copy_unchecked::<Address>())
-        } else {
-            None
-        };
+//         let recipient = if flags.read_custom_recipient {
+//             Some(ctx.zero_copy_unchecked::<Address>())
+//         } else {
+//             None
+//         };
 
-        // 2 bytes
-        let hardcoded_counts = HardcodedCounts::try_decode(ctx)?;
+//         // 2 bytes
+//         let hardcoded_counts = HardcodedCounts::try_decode(ctx)?;
 
-        // 4 bytes but conditional
-        let dynamic_counts = if flags.process_dynamic_markets {
-            DynamicCounts::new(ctx)?
-        } else {
-            DynamicCounts::default()
-        };
+//         // 4 bytes but conditional
+//         let dynamic_counts = if flags.process_dynamic_markets {
+//             DynamicCounts::new(ctx)?
+//         } else {
+//             DynamicCounts::default()
+//         };
 
-        let market_counts = Tuple::new(hardcoded_counts, dynamic_counts);
+//         let market_counts = Tuple::new(hardcoded_counts, dynamic_counts);
 
-        let custom_erc20_list = if flags.read_custom_erc20 {
-            CustomERC20List::try_decode(ctx)?
-        } else {
-            CustomERC20List::decode_empty(ctx)
-        };
-        let token_data_triple = TokenDataTriple::from(custom_erc20_list);
+//         let custom_erc20_list = if flags.read_custom_erc20 {
+//             CustomERC20List::try_decode(ctx)?
+//         } else {
+//             CustomERC20List::decode_empty(ctx)
+//         };
+//         let token_data_triple = TokenDataTriple::from(custom_erc20_list);
 
-        Ok(Self {
-            flags,
-            msg_transfers,
-            custom_recipient: recipient,
-            market_counts,
-            token_data_triple,
-        })
-    }
+//         Ok(Self {
+//             flags,
+//             msg_transfers,
+//             custom_recipient: recipient,
+//             market_counts,
+//             token_data_triple,
+//         })
+//     }
 
-    fn recipient(&'a self, msg_sender: &'a Address) -> &'a Address {
-        self.custom_recipient.unwrap_or(msg_sender)
-    }
+//     fn recipient(&'a self, msg_sender: &'a Address) -> &'a Address {
+//         self.custom_recipient.unwrap_or(msg_sender)
+//     }
 
-    pub fn process(
-        &'a self,
-        msg_sender: &'a Address,
-        ctx: &DecodeCtx,
-        delta: &mut Delta,
-    ) -> Result<(), GoblinError> {
-        let hardcoded_counts = Hardcoded::get_leg(&self.market_counts);
-        hardcoded_counts.process(msg_sender, ctx, &self.token_data_triple, delta)?;
+//     pub fn process(
+//         &'a self,
+//         msg_sender: &'a Address,
+//         ctx: &DecodeCtx,
+//         delta: &mut Delta,
+//     ) -> Result<(), GoblinError> {
+//         let hardcoded_counts = Hardcoded::get_leg(&self.market_counts);
+//         hardcoded_counts.process(msg_sender, ctx, &self.token_data_triple, delta)?;
 
-        let dynamic_counts = Dynamic::get_leg(&self.market_counts);
-        dynamic_counts.process(msg_sender, ctx, &self.token_data_triple, delta)?;
+//         let dynamic_counts = Dynamic::get_leg(&self.market_counts);
+//         dynamic_counts.process(msg_sender, ctx, &self.token_data_triple, delta)?;
 
-        delta.global.settle(
-            self.recipient(msg_sender),
-            &self.token_data_triple,
-            &self.msg_transfers,
-        )
-    }
-}
+//         delta.global.settle(
+//             self.recipient(msg_sender),
+//             &self.token_data_triple,
+//             &self.msg_transfers,
+//         )
+//     }
+// }
