@@ -1,5 +1,7 @@
 use quote::{format_ident, quote};
-use syn::{Data, DeriveInput, Fields, GenericParam, Lifetime, LifetimeParam, spanned::Spanned};
+use syn::{
+    Data, DeriveInput, Fields, GenericParam, Index, Lifetime, LifetimeParam, spanned::Spanned,
+};
 
 pub fn expand(input: DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
     let name = &input.ident;
@@ -18,7 +20,11 @@ pub fn expand(input: DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
             Fields::Unnamed(fields) => {
                 // Tuple structs have no field idents, so synthesize bindings
                 // (`field_0`, `field_1`, ...) to use in the decode statements
-                // and in the final `Self(...)` constructor.
+                // and in the final `Self(...)` constructor. Note these
+                // synthetic names are only valid inside `raw_fixed_decode`;
+                // `validate` runs on `&self` after construction and must
+                // access fields via `self.0`, `self.1`, ... instead (see
+                // `field_accessors` below).
                 let names = (0..fields.unnamed.len())
                     .map(|i| format_ident!("field_{}", i))
                     .collect();
@@ -78,6 +84,7 @@ pub fn expand(input: DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
     // Fully-qualified path to the trait, so callers never need to import it.
     let trait_path = quote! { crate::input_processor::FixedDecode };
     let ctx_path = quote! { crate::input_processor::DecodeCtx };
+    let error_path = quote! { crate::goblin_error::GoblinError };
 
     let size_terms = field_types
         .iter()
@@ -101,6 +108,32 @@ pub fn expand(input: DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
         quote! { Self { #(#field_names),* } }
     };
 
+    // `validate` runs on `&self` post-construction, so it can't reuse the
+    // synthetic `field_N` locals from `raw_fixed_decode` — tuple fields are
+    // accessed as `self.0`, `self.1`, ...; named fields as `self.<name>`.
+    let field_accessors: Vec<proc_macro2::TokenStream> = if is_tuple {
+        (0..field_types.len())
+            .map(|i| {
+                let idx = Index::from(i);
+                quote! { self.#idx }
+            })
+            .collect()
+    } else {
+        field_names
+            .iter()
+            .map(|field| quote! { self.#field })
+            .collect()
+    };
+
+    let validate_stmts = field_types
+        .iter()
+        .zip(field_accessors.iter())
+        .map(|(ty, accessor)| {
+            quote! {
+                <#ty as #trait_path<#ctx_lifetime>>::validate(&#accessor)?;
+            }
+        });
+
     let expanded = quote! {
         impl #impl_generics #trait_path<#ctx_lifetime> for #name #ty_generics #where_clause {
             const ENCODED_SIZE: usize = 0 #(+ #size_terms)*;
@@ -108,6 +141,11 @@ pub fn expand(input: DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
             fn raw_fixed_decode(ctx: &#ctx_lifetime #ctx_path) -> Self {
                 #(#decode_stmts)*
                 #constructor
+            }
+
+            fn validate(&self) -> Result<(), #error_path> {
+                #(#validate_stmts)*
+                Ok(())
             }
         }
     };
