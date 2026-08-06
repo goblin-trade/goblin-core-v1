@@ -4,7 +4,7 @@ use crate::{
         market::{market_spec::MarketSpec, Readables, Writables},
     },
     goblin_error::GoblinError,
-    input_processor::{Decodable, DecodeCtx},
+    input_processor::DecodeCtx,
     instructions::take::take_header::TakeHeader,
     matching::match_order,
 };

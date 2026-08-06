@@ -6,7 +6,7 @@ use crate::{
     },
     for_axes,
     goblin_error::GoblinError,
-    input_processor::{Decodable, DecodeCtx},
+    input_processor::DecodeCtx,
     settlement::{
         local_delta::{DepositPair, DepositTriple},
         ConstZero,
