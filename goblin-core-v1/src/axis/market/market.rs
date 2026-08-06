@@ -1,7 +1,7 @@
-use crate::types::{Marker, Tuple};
+use crate::types::Marker;
 
 /// Market axis
-#[derive(Default, Clone, Copy, PartialEq)]
+#[derive(Default, Clone, Copy, PartialEq, PartialOrd)]
 pub struct Market;
 
 pub type Hardcoded = Marker<Market, 0>;

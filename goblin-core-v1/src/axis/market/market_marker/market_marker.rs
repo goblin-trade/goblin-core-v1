@@ -11,7 +11,12 @@ use crate::{
 ///! * Hardcoded market- has hardcoded tokens
 ///! * Dynamic market- has dynamic tokens that can be either hardcoded or custom
 pub trait MarketMarker:
-    Sized + Clone + Copy + StoreReader<MarketCountsTuple, Result = Self::MarketCounts>
+    Sized
+    + Clone
+    + Copy
+    + PartialEq
+    + PartialOrd
+    + StoreReader<MarketCountsTuple, Result = Self::MarketCounts>
 {
     /// Discriminator used to hash the market key
     const DISCRIMINATOR: u8;

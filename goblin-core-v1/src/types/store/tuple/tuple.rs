@@ -1,6 +1,6 @@
 use core::marker::PhantomData;
 
-#[derive(Default, Clone, Copy)]
+#[derive(Default, Clone, Copy, PartialEq, PartialOrd)]
 pub struct Tuple<T0, T1, K>(pub T0, pub T1, PhantomData<K>);
 
 impl<T0, T1, K> Tuple<T0, T1, K> {

@@ -15,13 +15,13 @@ where
 {
     fn try_decode(ctx: &DecodeCtx) -> Result<Self, GoblinError> {
         let market_index_raw = u8::try_decode(ctx)? as usize;
+        let market_index = Self::new(market_index_raw);
 
         require!(
-            (market_index_raw as usize)
-                < (<MS::Pair as HardcodedMarketList>::HARDCODED_MARKET_LIST.len()),
+            market_index <= Self::MAX,
             GoblinError::InvalidHardcodedMarket
         );
 
-        Ok(Self::new(market_index_raw))
+        Ok(market_index)
     }
 }

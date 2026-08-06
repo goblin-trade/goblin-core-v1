@@ -8,7 +8,7 @@ use crate::{
     types::Address,
 };
 
-pub trait TokenMarker: Clone + Copy + PartialEq + 'static + TokenReader {
+pub trait TokenMarker: Clone + Copy + PartialEq + PartialOrd + 'static + TokenReader {
     fn get_global_deposit(
         local_deposit: Self::LocalDeposit,
         atoms_per_lot: UnsidedDeltaAtomsPerLot,

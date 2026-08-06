@@ -1,6 +1,6 @@
 use crate::axis::market::{market_marker::MarketMarker, token_pair::TokenPair};
 
-pub trait MarketSpec: Clone + Copy {
+pub trait MarketSpec: Clone + Copy + PartialEq + PartialOrd {
     type Market: MarketMarker;
     type Pair: TokenPair;
 }
