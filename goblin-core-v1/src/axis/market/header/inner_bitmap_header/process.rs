@@ -4,7 +4,7 @@ use crate::{
         Writables,
     },
     goblin_error::GoblinError,
-    input_processor::{Decodable, DecodeCtx},
+    input_processor::{DecodeCtx, FixedDecode},
     instructions::ix_make::ix_make,
     quantities::{SafePosition, INNER_POS, POS_0, POS_1},
     state::bitmap::{alias::OuterBitmap, Bitmap},
@@ -21,7 +21,7 @@ impl InnerBitmapHeader {
         let Self {
             outer_pos,
             update_count,
-        } = Self::try_decode(ctx)?;
+        } = Self::try_fixed_decode(ctx)?;
 
         let pos_1 = SafePosition::<POS_1>::new(pos_0, outer_pos);
 

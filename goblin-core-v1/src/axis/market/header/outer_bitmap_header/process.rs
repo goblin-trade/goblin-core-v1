@@ -5,7 +5,7 @@ use crate::{
         Readables, Writables,
     },
     goblin_error::GoblinError,
-    input_processor::{Decodable, DecodeCtx},
+    input_processor::{DecodeCtx, FixedDecode},
     quantities::{SafePosition, OUTER_POS, POS_0},
     state::bitmap::Bitmap,
 };
@@ -19,7 +19,7 @@ impl OuterBitmapHeader {
         let Self {
             outer_bitmap_index,
             inner_bitmap_count,
-        } = Self::try_decode(ctx)?;
+        } = Self::try_fixed_decode(ctx)?;
 
         let pos_0 = SafePosition::<POS_0>::new(outer_bitmap_index);
 

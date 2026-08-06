@@ -1,4 +1,6 @@
-pub trait InnerVal: Sized + Into<u64> {
+use crate::input_processor::FixedDecode;
+
+pub trait InnerVal: Sized + Into<u64> + for<'a> FixedDecode<'a> {
     fn from_u64(val: u64) -> Self;
 }
 
