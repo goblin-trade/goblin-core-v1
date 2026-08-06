@@ -7,7 +7,7 @@ use crate::{
         token::token_quantity::TokenQuantity,
     },
     goblin_error::GoblinError,
-    input_processor::{Decodable, DecodablePrimitive, DecodeCtx},
+    input_processor::{Decodable, DecodablePrimitive, DecodeCtx, FixedDecode},
     quantities::QuoteLotsPerBaseUnitPerTick,
     require,
 };
@@ -41,7 +41,7 @@ impl<MS: MarketSpec> Decodable for CommonMarket<MS> {
 
         // Ok(CommonMarket::)
 
-        let token_index_pair = TokenIndexPair::<MS::Pair>::try_decode(ctx)?;
+        let token_index_pair = TokenIndexPair::<MS::Pair>::try_fixed_decode(ctx)?;
         let lot_size_pair = LotSizePair::try_decode(ctx)?;
         let tick_size = QuoteLotsPerBaseUnitPerTick::try_decode(ctx)?;
 

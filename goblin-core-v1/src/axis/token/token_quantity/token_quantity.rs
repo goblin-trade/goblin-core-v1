@@ -1,6 +1,6 @@
 use crate::{
     axis::token::token_msg_transfer::TokenMsgTransfer,
-    input_processor::Decodable,
+    input_processor::{Decodable, FixedDecode},
     quantities::UnsidedDeltaAtoms,
     settlement::{CheckedOps, ConstZero},
 };
@@ -9,7 +9,7 @@ pub trait TokenQuantity: Clone + Copy + PartialEq + 'static {
     const DISCRIMINATOR: u8;
 
     /// Index to lookup token address
-    type TokenIndex: Clone + Copy + Decodable + ConstZero + PartialEq;
+    type TokenIndex: Clone + Copy + ConstZero + PartialEq + for<'a> FixedDecode<'a>;
 
     type TokenAddress: Clone + Copy + Sized + Default;
 

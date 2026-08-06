@@ -1,13 +1,13 @@
 use crate::{
-    axis::token::{token_marker::TokenData, CustomERC20},
+    axis::token::{
+        token_marker::{CustomERC20Index, TokenData},
+        CustomERC20,
+    },
     goblin_error::GoblinError,
     input_processor::{DecodablePrimitive, DecodeCtx},
     require,
     types::Address,
 };
-
-/// Max legal value = max (3 bits) = 7
-pub const MAX_CUSTOM_ERC20_COUNT: usize = 0b111;
 
 #[derive(Clone, Copy)]
 pub struct CustomERC20List<'a> {
@@ -25,7 +25,7 @@ impl<'a> CustomERC20List<'a> {
         let custom_erc20_count = byte as usize;
 
         require!(
-            custom_erc20_count <= MAX_CUSTOM_ERC20_COUNT,
+            custom_erc20_count <= CustomERC20Index::MAX_COUNT,
             GoblinError::CustomERC20CountExceeded
         );
 
