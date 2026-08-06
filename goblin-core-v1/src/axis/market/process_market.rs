@@ -10,7 +10,7 @@ use crate::{
         token::token_reader::TokenDataTriple,
     },
     goblin_error::GoblinError,
-    input_processor::{Decodable, DecodeCtx},
+    input_processor::{DecodeCtx, FixedDecode},
     settlement::Delta,
     types::Address,
 };
@@ -26,7 +26,7 @@ where
     M: MarketMarker + MarketLocator<TP>,
     TP: TokenPair + HardcodedMarketList,
 {
-    let market_header = MarketHeader::<(M, TP)>::try_decode(ctx)?;
+    let market_header = MarketHeader::<(M, TP)>::try_fixed_decode(ctx)?;
 
     if market_header.decode_deposit_amounts {
         delta.local.deposits.decode_and_set::<TP>(ctx)?;

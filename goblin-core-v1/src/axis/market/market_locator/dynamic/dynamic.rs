@@ -8,7 +8,7 @@ use crate::{
         token::token_reader::TokenDataTriple,
     },
     goblin_error::GoblinError,
-    input_processor::{Decodable, DecodeCtx},
+    input_processor::{DecodeCtx, FixedDecode},
     state::Preimage,
 };
 
@@ -22,7 +22,7 @@ where
         ctx: &DecodeCtx,
         token_data_triple: &TokenDataTriple,
     ) -> Result<Self::Locator, GoblinError> {
-        let common_market = CommonMarket::<(Dynamic, TP)>::try_decode(ctx)?;
+        let common_market = CommonMarket::<(Dynamic, TP)>::try_fixed_decode(ctx)?;
         let preimage = common_market.get_preimage(token_data_triple)?;
         let key = preimage.hash();
 

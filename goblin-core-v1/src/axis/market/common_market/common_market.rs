@@ -1,5 +1,7 @@
 use core::marker::PhantomData;
 
+use goblin_macros::FixedDecode;
+
 use crate::{
     axis::{
         leg::{Base, Quote},
@@ -12,6 +14,7 @@ use crate::{
     types::{LifetimedStoreReader, StoreReader, Tuple},
 };
 
+#[derive(FixedDecode)]
 pub struct CommonMarket<MS: MarketSpec> {
     /// The token pair
     pub token_index_pair: TokenIndexPair<MS::Pair>,

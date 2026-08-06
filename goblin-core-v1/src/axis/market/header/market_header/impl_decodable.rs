@@ -1,14 +1,15 @@
 use super::MarketHeader;
 use crate::{
     axis::market::market_spec::MarketSpec,
-    goblin_error::GoblinError,
-    input_processor::{Decodable, DecodeCtx},
+    input_processor::{DecodeCtx, FixedDecode},
     types::Tuple,
 };
 
-impl<MS: MarketSpec> Decodable for MarketHeader<MS> {
-    fn try_decode(ctx: &DecodeCtx) -> Result<Self, GoblinError> {
-        let byte_0 = u8::try_decode(ctx)?;
+impl<'a, MS: MarketSpec> FixedDecode<'a> for MarketHeader<MS> {
+    const ENCODED_SIZE: usize = 1;
+
+    fn raw_fixed_decode(ctx: &DecodeCtx) -> Self {
+        let byte_0 = u8::raw_fixed_decode(ctx);
 
         let decode_deposit_amounts = (byte_0 & 0b0000_0001) != 0;
 
@@ -20,14 +21,9 @@ impl<MS: MarketSpec> Decodable for MarketHeader<MS> {
         );
 
         // 2 bits- max value 3
-        // Too less, decipher one more byte
         // This field is currently unused. Increase the amount if needed by reading a new byte.
         let outer_bitmap_indices = (byte_0 & 0b0001_1000) >> 3;
 
-        Ok(Self::new(
-            decode_deposit_amounts,
-            execute_takes,
-            outer_bitmap_indices,
-        ))
+        Self::new(decode_deposit_amounts, execute_takes, outer_bitmap_indices)
     }
 }
