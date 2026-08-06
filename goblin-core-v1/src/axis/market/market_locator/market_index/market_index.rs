@@ -19,6 +19,9 @@ where
     MS: MarketSpec,
     MS::Pair: HardcodedMarketList,
 {
+    pub const MAX: Self =
+        Self::new(<MS::Pair as HardcodedMarketList>::HARDCODED_MARKET_LIST.len() - 1);
+
     pub const fn new(inner: usize) -> Self {
         Self {
             inner,
