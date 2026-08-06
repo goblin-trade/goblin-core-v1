@@ -3,7 +3,7 @@ use crate::{
         header::make_header::MakeHeader, market_spec::MarketSpec, Readables, Writables,
     },
     goblin_error::GoblinError,
-    input_processor::{Decodable, DecodeCtx},
+    input_processor::{DecodeCtx, FixedDecode},
     instructions::{
         make_variant::MakeVariant, open::ix_open::ix_open, update::ix_update::ix_update,
         MakeReadables, PosHeader,
@@ -23,7 +23,7 @@ pub fn ix_make<MS: MarketSpec>(
         inner_pos,
         base_lots,
         make_variant,
-    } = MakeHeader::try_decode(ctx)?;
+    } = MakeHeader::try_fixed_decode(ctx)?;
 
     let pos_2 = Pos2::new(pos_1, inner_pos);
     let position = pos_2.into();
