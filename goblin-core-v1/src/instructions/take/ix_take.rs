@@ -4,7 +4,7 @@ use crate::{
         market::{market_spec::MarketSpec, Readables, Writables},
     },
     goblin_error::GoblinError,
-    input_processor::DecodeCtx,
+    input_processor::{CompoundDecode, DecodeCtx},
     instructions::take::take_header::TakeHeader,
     matching::match_order,
 };
@@ -14,6 +14,6 @@ pub fn ix_take<MS: MarketSpec, In: LegMatcher>(
     readables: &Readables<MS>,
     writables: &mut Writables,
 ) -> Result<(), GoblinError> {
-    let header = TakeHeader::<In>::try_new(ctx)?;
+    let header = TakeHeader::<In>::try_compound_decode(ctx)?;
     match_order(header, readables, writables)
 }

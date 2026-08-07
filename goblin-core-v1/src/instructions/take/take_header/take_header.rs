@@ -1,10 +1,4 @@
-use crate::{
-    axis::leg::leg_matcher::LegMatcher,
-    goblin_error::GoblinError,
-    input_processor::{DecodeCtx, FixedDecode, VariableDecode},
-    instructions::{TakeHeaderMain, TakeHeaderOptional},
-    quantities::Position,
-};
+use crate::{axis::leg::leg_matcher::LegMatcher, quantities::Position};
 
 /// Instructions for a limit order. Limit orders are also known as market orders or immediate or cancel (IOC).
 ///
@@ -21,18 +15,4 @@ pub struct TakeHeader<In: LegMatcher> {
 
     /// The worst position to be matched against. Stop matching after this price is crossed.
     pub limit: Position,
-}
-
-impl<In: LegMatcher> TakeHeader<In> {
-    pub fn try_new(ctx: &DecodeCtx) -> Result<Self, GoblinError> {
-        let main_header = TakeHeaderMain::<In>::try_fixed_decode(ctx)?;
-        let optional_header =
-            TakeHeaderOptional::<In>::raw_variable_decode(ctx, &main_header.flags);
-
-        Ok(Self {
-            num_lots: main_header.num_lots,
-            min_lots_to_fill: optional_header.min_lots_to_fill,
-            limit: optional_header.limit,
-        })
-    }
 }

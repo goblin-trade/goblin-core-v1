@@ -1,7 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
     hostio::{self},
-    input_processor::{DecodeCtx, GlobalArgs},
+    input_processor::{CompoundDecode, DecodeCtx, GlobalArgs},
     require,
     settlement::Delta,
 };
@@ -17,7 +17,7 @@ pub fn processor(len: usize) -> Result<(), GoblinError> {
     let delta = Delta::get_static();
     let ctx = &mut DecodeCtx::new(len);
 
-    let global_args = GlobalArgs::try_new(ctx)?;
+    let global_args = GlobalArgs::try_compound_decode(ctx)?;
     global_args.process(ctx, delta)?;
 
     // Write cache to trie

@@ -6,3 +6,4 @@ pub use msg_transfers::*;
 
 mod global_header;
 mod hostio_fields;
+mod impl_compound_decode;
