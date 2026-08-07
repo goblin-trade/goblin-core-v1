@@ -1,8 +1,10 @@
 use crate::{
     axis::leg::leg_matcher::LegMatcher,
+    goblin_error::GoblinError,
     input_processor::{DecodeCtx, FixedDecode, VariableDecode},
     instructions::{TakeFlags, TakeHeaderOptional},
     quantities::Position,
+    require,
 };
 
 impl<'a, In: LegMatcher> VariableDecode<'a> for TakeHeaderOptional<In> {
@@ -27,5 +29,10 @@ impl<'a, In: LegMatcher> VariableDecode<'a> for TakeHeaderOptional<In> {
             min_lots_to_fill,
             limit,
         }
+    }
+
+    fn validate(&self) -> Result<(), GoblinError> {
+        require!(self.limit > Position::ZERO, GoblinError::InvalidTakeArgs);
+        Ok(())
     }
 }
