@@ -1,6 +1,6 @@
 use crate::{
     axis::token::token_msg_transfer::TokenMsgTransfer,
-    input_processor::{Decodable, FixedDecode},
+    input_processor::FixedDecode,
     quantities::UnsidedDeltaAtoms,
     settlement::{CheckedOps, ConstZero},
 };
@@ -25,17 +25,17 @@ pub trait TokenQuantity: Clone + Copy + PartialEq + 'static {
     type StoredPadding: Clone + Copy;
 
     /// Pending deposit amount in local namespace
-    type LocalDeposit: Clone + Copy + Default + Decodable + ConstZero + CheckedOps;
+    type LocalDeposit: Clone + Copy + Default + ConstZero + CheckedOps + for<'a> FixedDecode<'a>;
 
     /// Pending deposit amount in global namespace
     type GlobalDeposit: Clone
         + Copy
         + Default
         + PartialEq
-        + Decodable
         + ConstZero
         + CheckedOps
-        + Into<UnsidedDeltaAtoms>;
+        + Into<UnsidedDeltaAtoms>
+        + for<'a> FixedDecode<'a>;
 
     type TokenMsgTransfer: TokenMsgTransfer;
 }

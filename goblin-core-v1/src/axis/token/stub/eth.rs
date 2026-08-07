@@ -1,7 +1,6 @@
 use crate::{
     axis::token::{token_marker::TokenData, ETH},
-    goblin_error::GoblinError,
-    input_processor::{Decodable, DecodeCtx, FixedDecode},
+    input_processor::{DecodeCtx, FixedDecode},
     quantities::{UnsidedDeltaAtoms, NATIVE_TOKEN_DECIMALS},
     settlement::{CheckedOps, ConstZero},
 };
@@ -22,12 +21,6 @@ impl<'a> FixedDecode<'a> for ETHStub {
 
     fn raw_fixed_decode(_ctx: &'a DecodeCtx) -> Self {
         Self
-    }
-}
-
-impl Decodable for ETHStub {
-    fn try_decode(_ctx: &DecodeCtx) -> Result<Self, GoblinError> {
-        Ok(Self)
     }
 }
 

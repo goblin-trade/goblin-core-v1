@@ -4,7 +4,7 @@ use crate::{
         market_spec::MarketSpec,
     },
     goblin_error::GoblinError,
-    input_processor::FixedDecode,
+    input_processor::{DecodeCtx, FixedDecode},
     require,
 };
 
@@ -15,7 +15,7 @@ where
 {
     const ENCODED_SIZE: usize = 1;
 
-    fn raw_fixed_decode(ctx: &'a crate::input_processor::DecodeCtx) -> Self {
+    fn raw_fixed_decode(ctx: &'a DecodeCtx) -> Self {
         let market_index_raw = u8::raw_fixed_decode(ctx) as usize;
         Self::new(market_index_raw)
     }

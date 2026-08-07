@@ -14,6 +14,6 @@ pub fn ix_take<MS: MarketSpec, In: LegMatcher>(
     readables: &Readables<MS>,
     writables: &mut Writables,
 ) -> Result<(), GoblinError> {
-    let header = TakeHeader::<In>::try_decode(ctx)?;
+    let header = TakeHeader::<In>::try_new(ctx)?;
     match_order(header, readables, writables)
 }

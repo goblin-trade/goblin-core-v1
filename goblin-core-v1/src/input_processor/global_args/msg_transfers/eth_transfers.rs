@@ -1,9 +1,6 @@
 use crate::{
     goblin_error::GoblinError,
-    hostio,
-    input_processor::{DecodablePrimitive, DecodeCtx, HeaderFlags},
     quantities::{UnsidedAtoms, UnsidedDeltaAtoms},
-    settlement::ConstZero,
 };
 
 /// The amount of ETH transfered in through msg_value and the amount due to be
@@ -26,26 +23,6 @@ pub struct ETHTransfers {
 }
 
 impl ETHTransfers {
-    pub fn try_new(ctx: &DecodeCtx, flags: &HeaderFlags) -> Result<Self, GoblinError> {
-        let msg_value = if flags.read_msg_value {
-            let msg_value_raw = hostio::msg_value();
-            UnsidedAtoms::try_from(msg_value_raw)?
-        } else {
-            UnsidedAtoms::ZEROED
-        };
-
-        let eth_out_due = if flags.withdraw_eth {
-            UnsidedAtoms::decode_unchecked_no_advance(ctx)
-        } else {
-            UnsidedAtoms::ZEROED
-        };
-
-        Ok(Self {
-            msg_value,
-            eth_out_due,
-        })
-    }
-
     pub fn net_delta(&self) -> Result<UnsidedDeltaAtoms, GoblinError> {
         Ok(UnsidedDeltaAtoms::try_from(self.msg_value)?
             - UnsidedDeltaAtoms::try_from(self.eth_out_due)?)

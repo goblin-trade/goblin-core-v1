@@ -6,7 +6,7 @@ use crate::{
     },
     for_axes,
     goblin_error::GoblinError,
-    input_processor::DecodeCtx,
+    input_processor::{DecodeCtx, FixedDecode},
     settlement::{
         local_delta::{DepositPair, DepositTriple},
         ConstZero,
@@ -22,7 +22,7 @@ impl LocalDeposits {
         &mut self,
         ctx: &DecodeCtx,
     ) -> Result<(), GoblinError> {
-        let deposit_pair = DepositPair::<TP>::try_decode(ctx)?;
+        let deposit_pair = DepositPair::<TP>::try_fixed_decode(ctx)?;
         for_axes!(|In| self.set_leg::<TP, In>(&deposit_pair));
 
         Ok(())
