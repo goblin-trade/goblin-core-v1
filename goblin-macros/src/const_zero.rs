@@ -71,12 +71,20 @@ pub fn expand(input: DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
     // exactly what the hand-written impls do, and it also handles nested
     // arrays (`[[T; N]; M]`) for free via recursion.
     fn zero_expr(ty: &Type, trait_path: &proc_macro2::TokenStream) -> proc_macro2::TokenStream {
-        if let Type::Array(array) = ty {
-            let elem_expr = zero_expr(&array.elem, trait_path);
-            let len = &array.len;
-            quote! { [#elem_expr; #len] }
-        } else {
-            quote! { <#ty as #trait_path>::ZEROED }
+        match ty {
+            Type::Array(array) => {
+                let elem_expr = zero_expr(&array.elem, trait_path);
+                let len = &array.len;
+                quote! { [#elem_expr; #len] }
+            }
+            Type::Tuple(tuple) => {
+                let elem_exprs = tuple
+                    .elems
+                    .iter()
+                    .map(|elem_ty| zero_expr(elem_ty, trait_path));
+                quote! { (#(#elem_exprs),*) }
+            }
+            _ => quote! { <#ty as #trait_path>::ZEROED },
         }
     }
 

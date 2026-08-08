@@ -1,7 +1,11 @@
-use crate::types::FixedMap;
+use crate::{settlement::ConstZero, types::FixedMap};
 
-impl<'a, K: PartialEq + Clone + Copy, V: Default, const N: usize> IntoIterator
-    for &'a FixedMap<K, V, N>
+impl<
+        'a,
+        K: PartialEq + Clone + Copy + ConstZero,
+        V: Default + Clone + Copy + ConstZero,
+        const N: usize,
+    > IntoIterator for &'a FixedMap<K, V, N>
 {
     type Item = &'a (K, V);
     type IntoIter = core::slice::Iter<'a, (K, V)>;
@@ -11,8 +15,12 @@ impl<'a, K: PartialEq + Clone + Copy, V: Default, const N: usize> IntoIterator
     }
 }
 
-impl<'a, K: PartialEq + Clone + Copy, V: Default, const N: usize> IntoIterator
-    for &'a mut FixedMap<K, V, N>
+impl<
+        'a,
+        K: PartialEq + Clone + Copy + ConstZero,
+        V: Default + Clone + Copy + ConstZero,
+        const N: usize,
+    > IntoIterator for &'a mut FixedMap<K, V, N>
 {
     type Item = &'a mut (K, V);
     type IntoIter = core::slice::IterMut<'a, (K, V)>;
