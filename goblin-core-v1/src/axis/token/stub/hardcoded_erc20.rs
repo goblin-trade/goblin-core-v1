@@ -1,6 +1,8 @@
+use goblin_macros::ConstZero;
+
 use crate::goblin_error::GoblinError;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, ConstZero)]
 pub struct HardcodedERC20Stub;
 
 impl TryFrom<HardcodedERC20Stub> for u8 {

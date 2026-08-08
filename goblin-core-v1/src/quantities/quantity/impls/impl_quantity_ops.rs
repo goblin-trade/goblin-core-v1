@@ -1,6 +1,6 @@
 use crate::{
     quantities::{Exp, Quantity, QuantityOps},
-    settlement::{CheckedOps, ConstZero},
+    settlement::CheckedOps,
 };
 
 // Implementation for constants, addition and subtraction.
@@ -16,14 +16,6 @@ where
     const MIN: Self = Self::new(I::MIN);
     const MAX: Self = Self::new(I::MAX);
     const ONE: Self = Self::new(I::ONE);
-}
-
-impl<E, I> ConstZero for Quantity<E, I>
-where
-    E: Exp,
-    I: QuantityOps,
-{
-    const ZEROED: Self = Self::new(I::ZEROED);
 }
 
 impl<E, I> CheckedOps for Quantity<E, I>

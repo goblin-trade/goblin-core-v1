@@ -6,13 +6,6 @@ use core::ops::Index;
 
 pub static ETH_TOKEN_DATA: TokenData<ETH> = TokenData::<ETH>::ZEROED;
 
-impl ConstZero for TokenData<ETH> {
-    const ZEROED: Self = TokenData {
-        address: ETHStub,
-        decimals: ETHStub,
-    };
-}
-
 impl<'a> Index<ETHStub> for &'a TokenData<ETH> {
     type Output = TokenData<ETH>;
 

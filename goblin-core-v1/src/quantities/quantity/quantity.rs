@@ -1,12 +1,12 @@
 use core::marker::PhantomData;
 
 use crate::quantities::{Exp, QuantityOps};
-use goblin_macros::FixedDecode;
+use goblin_macros::{ConstZero, FixedDecode};
 
 //
 // Quantity type: value + Dim
 //
-#[derive(Default, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, FixedDecode)]
+#[derive(Default, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, FixedDecode, ConstZero)]
 pub struct Quantity<E, I>
 where
     E: Exp,

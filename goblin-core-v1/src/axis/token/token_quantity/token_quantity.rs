@@ -11,10 +11,10 @@ pub trait TokenQuantity: Clone + Copy + PartialEq + 'static {
     /// Index to lookup token address
     type TokenIndex: Clone + Copy + ConstZero + PartialEq + for<'a> FixedDecode<'a>;
 
-    type TokenAddress: Clone + Copy + Sized + Default;
+    type TokenAddress: Clone + Copy + Sized + Default + ConstZero;
 
     /// Decimals hardcoded in the smart contract
-    type HardcodedDecimals: Clone + Copy;
+    type HardcodedDecimals: Clone + Copy + ConstZero;
 
     /// Decimals stored in `Store`
     /// Decimals are stored as u8 for ERC20 tokens but not for ETH
