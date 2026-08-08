@@ -1,3 +1,5 @@
+use goblin_macros::ConstZero;
+
 use crate::{
     axis::{
         token::{
@@ -14,7 +16,7 @@ use crate::{
     types::Address,
 };
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, ConstZero)]
 pub struct TokenDelta<T: TokenQuantity> {
     pub deposit: T::GlobalDeposit,
     pub take: UnsidedDeltaAtoms,

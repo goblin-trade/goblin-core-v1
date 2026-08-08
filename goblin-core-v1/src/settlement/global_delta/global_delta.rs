@@ -1,3 +1,5 @@
+use goblin_macros::ConstZero;
+
 use crate::{
     axis::{
         market::{token_pair::TokenPair, LotSizePair, TokenIndexPair, Writables},
@@ -11,6 +13,7 @@ use crate::{
     types::Address,
 };
 
+#[derive(ConstZero)]
 pub struct GlobalDelta {
     pub sender: GlobalSender,
     pub counterparties: CounterpartyTriple,

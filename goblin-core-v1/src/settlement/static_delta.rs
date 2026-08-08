@@ -1,9 +1,12 @@
+use goblin_macros::ConstZero;
+
 use crate::settlement::{
     global_delta::GlobalDelta, local_delta::local_take::TakeCounterparties, ConstZero,
 };
 
 static mut STATIC_DELTA: StaticDelta = StaticDelta::ZEROED;
 
+#[derive(ConstZero)]
 pub struct StaticDelta {
     /// Global delta of sender and counterparties
     pub global: GlobalDelta,
@@ -18,13 +21,6 @@ pub struct StaticDelta {
     /// We get free zero fills by using mut ref for these buffers. Reset operation
     /// simply sets the count to 0 without overwriting the buffer contents.
     pub take_counterparties: TakeCounterparties,
-}
-
-impl ConstZero for StaticDelta {
-    const ZEROED: Self = Self {
-        global: GlobalDelta::ZEROED,
-        take_counterparties: TakeCounterparties::ZEROED,
-    };
 }
 
 impl StaticDelta {

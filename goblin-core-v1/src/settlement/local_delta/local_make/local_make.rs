@@ -1,3 +1,5 @@
+use goblin_macros::ConstZero;
+
 use crate::{
     axis::{leg::leg_matcher::LegMatcher, update::update_sign::UpdateSign},
     goblin_error::GoblinError,
@@ -8,6 +10,7 @@ use crate::{
     types::StoreReader,
 };
 
+#[derive(ConstZero)]
 pub struct LocalMake {
     pub inner: DeltaLotsPair,
 }

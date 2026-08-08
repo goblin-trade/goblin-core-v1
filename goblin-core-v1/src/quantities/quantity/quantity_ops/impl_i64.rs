@@ -1,16 +1,9 @@
-use crate::{
-    quantities::QuantityOps,
-    settlement::{CheckedOps, ConstZero},
-};
+use crate::{quantities::QuantityOps, settlement::CheckedOps};
 
 impl QuantityOps for i64 {
     const MIN: Self = 0;
     const MAX: Self = i64::MAX;
     const ONE: Self = 1;
-}
-
-impl ConstZero for i64 {
-    const ZEROED: Self = 0;
 }
 
 impl CheckedOps for i64 {

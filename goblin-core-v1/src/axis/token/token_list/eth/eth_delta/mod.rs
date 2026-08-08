@@ -1,5 +1,4 @@
 pub mod eth_delta;
-mod impl_const_zero;
 mod impl_index;
 mod impl_into_iterator;
 

@@ -1,16 +1,12 @@
-use crate::{
-    axis::token::token_list::hardcoded_erc20::HARDCODED_ERC20_COUNT, settlement::ConstZero,
-};
+use goblin_macros::ConstZero;
 
-#[derive(Clone, Copy, PartialEq, PartialOrd)]
+use crate::axis::token::token_list::hardcoded_erc20::HARDCODED_ERC20_COUNT;
+
+#[derive(Clone, Copy, PartialEq, PartialOrd, ConstZero)]
 pub struct HardcodedERC20Index(pub usize);
 
 impl HardcodedERC20Index {
     pub const MAX: Self = Self(HARDCODED_ERC20_COUNT - 1);
-}
-
-impl ConstZero for HardcodedERC20Index {
-    const ZEROED: Self = Self(0);
 }
 
 impl From<usize> for HardcodedERC20Index {
