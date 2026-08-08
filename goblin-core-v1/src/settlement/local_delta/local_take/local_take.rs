@@ -13,17 +13,24 @@ use crate::{
             local_take::{LocalCounterparty, TakeCounterparties},
             DeltaLotsPair,
         },
-        CheckedOps,
+        CheckedOps, ConstZero,
     },
     types::Address,
 };
 
-pub struct LocalTake {
+pub struct LocalTake<'a> {
     pub sender: DeltaLotsPair,
-    pub counterparties: TakeCounterparties,
+    pub counterparties: &'a mut TakeCounterparties,
 }
 
-impl LocalTake {
+impl<'a> LocalTake<'a> {
+    pub const fn new(counterparties: &'a mut TakeCounterparties) -> Self {
+        Self {
+            sender: DeltaLotsPair::ZEROED,
+            counterparties,
+        }
+    }
+
     /// Add matched lots to sender and counterparty deltas
     pub fn add_take<In: LegMatcher>(
         &mut self,

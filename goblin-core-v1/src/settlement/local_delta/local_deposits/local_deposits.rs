@@ -7,10 +7,7 @@ use crate::{
     for_axes,
     goblin_error::GoblinError,
     input_processor::{DecodeCtx, FixedDecode},
-    settlement::{
-        local_delta::{DepositPair, DepositTriple},
-        ConstZero,
-    },
+    settlement::local_delta::{DepositPair, DepositTriple},
     types::StoreReader,
 };
 
@@ -26,9 +23,6 @@ impl LocalDeposits {
         for_axes!(|In| self.set_leg::<TP, In>(&deposit_pair));
 
         Ok(())
-    }
-    pub fn reset<TP: TokenPair>(&mut self) {
-        for_axes!(|In| self.set_leg::<TP, In>(&DepositPair::<TP>::ZEROED));
     }
 
     fn set_leg<TP, In>(&mut self, deposit_pair: &DepositPair<TP>)

@@ -9,7 +9,7 @@ use crate::{
     },
     goblin_error::GoblinError,
     input_processor::DecodeCtx,
-    settlement::Delta,
+    settlement::StaticDelta,
     types::{Address, StoreReader},
 };
 
@@ -19,7 +19,7 @@ impl MarketCounts for Dynamic {
         msg_sender: &Address,
         ctx: &DecodeCtx,
         token_data_triple: &TokenDataTriple<'a>,
-        delta: &mut Delta,
+        static_delta: &mut StaticDelta,
     ) -> Result<(), GoblinError> {
         let counts = Self::get_leg(market_counts);
 
@@ -29,7 +29,7 @@ impl MarketCounts for Dynamic {
                 msg_sender,
                 ctx,
                 token_data_triple,
-                delta,
+                static_delta,
             )?;
         }
 
@@ -38,7 +38,7 @@ impl MarketCounts for Dynamic {
                 msg_sender,
                 ctx,
                 token_data_triple,
-                delta,
+                static_delta,
             )?;
         }
 
@@ -47,7 +47,7 @@ impl MarketCounts for Dynamic {
                 msg_sender,
                 ctx,
                 token_data_triple,
-                delta,
+                static_delta,
             )?;
         }
 
@@ -57,7 +57,7 @@ impl MarketCounts for Dynamic {
                 msg_sender,
                 ctx,
                 token_data_triple,
-                delta,
+                static_delta,
             )?;
         }
 
@@ -66,7 +66,7 @@ impl MarketCounts for Dynamic {
                 msg_sender,
                 ctx,
                 token_data_triple,
-                delta,
+                static_delta,
             )?;
         }
 
@@ -75,7 +75,7 @@ impl MarketCounts for Dynamic {
                 msg_sender,
                 ctx,
                 token_data_triple,
-                delta,
+                static_delta,
             )?;
         }
 
@@ -85,7 +85,7 @@ impl MarketCounts for Dynamic {
                 msg_sender,
                 ctx,
                 token_data_triple,
-                delta,
+                static_delta,
             )?;
         }
 
@@ -94,7 +94,7 @@ impl MarketCounts for Dynamic {
                 msg_sender,
                 ctx,
                 token_data_triple,
-                delta,
+                static_delta,
             )?;
         }
 

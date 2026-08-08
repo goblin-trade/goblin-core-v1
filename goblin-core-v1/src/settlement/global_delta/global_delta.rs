@@ -1,16 +1,13 @@
 use crate::{
     axis::{
-        market::{token_pair::TokenPair, LotSizePair, TokenIndexPair},
+        market::{token_pair::TokenPair, LotSizePair, TokenIndexPair, Writables},
         token::token_reader::TokenDataTriple,
     },
     for_axes,
     goblin_error::GoblinError,
     input_processor::MsgTransfers,
     quantities::{UnsideQuantity, ATOMS_PER_UNIT},
-    settlement::{
-        global_delta::{CounterpartyTriple, GlobalSender},
-        local_delta::LocalDelta,
-    },
+    settlement::global_delta::{CounterpartyTriple, GlobalSender},
     types::Address,
 };
 
@@ -24,23 +21,27 @@ impl GlobalDelta {
         &mut self,
         token_index_pair: &TokenIndexPair<TP>,
         lot_size_pair: &LotSizePair,
-        local_delta: &LocalDelta,
+        writables: &mut Writables,
     ) -> Result<(), GoblinError> {
         let atoms_per_lot_pair = ATOMS_PER_UNIT / lot_size_pair.unsided();
 
         for_axes!(|In| self.sender.commit_leg::<TP, In>(
-            local_delta,
+            writables.local_delta,
             token_index_pair,
             &atoms_per_lot_pair,
         )?);
 
-        for counterparty_data in local_delta.take.counterparties.into_iter() {
+        for counterparty_data in writables.local_delta.take.counterparties.into_iter() {
             for_axes!(|In| self.counterparties.commit_leg::<TP, In>(
                 counterparty_data,
                 token_index_pair,
                 &atoms_per_lot_pair,
             )?);
         }
+
+        // Reset counter of global mut counterparty buffer
+        writables.local_delta.take.counterparties.reset();
+
         Ok(())
     }
 

@@ -3,7 +3,7 @@ use crate::{
     hostio::{self},
     input_processor::{CompoundDecode, DecodeCtx, GlobalArgs},
     require,
-    settlement::Delta,
+    settlement::StaticDelta,
 };
 
 pub const CONTRACT_ADDRESS: [u8; 20] = [
@@ -14,7 +14,7 @@ pub const CONTRACT_ADDRESS: [u8; 20] = [
 pub fn processor(len: usize) -> Result<(), GoblinError> {
     require!(!hostio::msg_reentrant(), GoblinError::Reentrant);
 
-    let delta = Delta::get_static();
+    let delta = StaticDelta::get();
     let ctx = &mut DecodeCtx::new(len);
 
     let global_args = GlobalArgs::try_compound_decode(ctx)?;

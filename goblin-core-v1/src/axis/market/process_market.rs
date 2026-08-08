@@ -11,7 +11,7 @@ use crate::{
     },
     goblin_error::GoblinError,
     input_processor::{DecodeCtx, FixedDecode},
-    settlement::Delta,
+    settlement::{local_delta::LocalDelta, StaticDelta},
     types::Address,
 };
 
@@ -20,16 +20,17 @@ pub fn process_market<'a, M, TP>(
     msg_sender: &Address,
     ctx: &DecodeCtx,
     token_data_triple: &TokenDataTriple<'a>,
-    delta: &mut Delta,
+    static_delta: &mut StaticDelta,
 ) -> Result<(), GoblinError>
 where
     M: MarketMarker + MarketLocator<TP>,
     TP: TokenPair + HardcodedMarketList,
 {
+    let local_delta = &mut LocalDelta::new(&mut static_delta.take_counterparties);
     let market_header = MarketHeader::<(M, TP)>::try_fixed_decode(ctx)?;
 
     if market_header.decode_deposit_amounts {
-        delta.local.deposits.decode_and_set::<TP>(ctx)?;
+        local_delta.deposits.decode_and_set::<TP>(ctx)?;
     }
 
     let market_locator = M::decode_locator(ctx, token_data_triple)?;
@@ -42,7 +43,7 @@ where
 
     let market_state = &mut market_readables.market_key.load();
     let writables = &mut Writables {
-        local_delta: &mut delta.local,
+        local_delta,
         market_state,
     };
 
@@ -50,13 +51,9 @@ where
     market_header.execute_takes(ctx, readables, writables)?;
     market_header.execute_makes(ctx, readables, writables)?;
 
-    delta.commit_local_delta::<TP>(
+    static_delta.global.commit_local_delta::<TP>(
         &market_readables.market.token_index_pair,
         &market_readables.market.lot_size_pair,
-    )?;
-
-    // Clear deposit amounts so that store can be used for the next market
-    delta.local.deposits.reset::<TP>();
-
-    Ok(())
+        writables,
+    )
 }

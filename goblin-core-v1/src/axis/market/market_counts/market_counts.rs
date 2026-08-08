@@ -5,7 +5,7 @@ use crate::{
     },
     goblin_error::GoblinError,
     input_processor::DecodeCtx,
-    settlement::Delta,
+    settlement::StaticDelta,
     types::Address,
 };
 
@@ -16,6 +16,6 @@ pub trait MarketCounts: MarketMarker {
         msg_sender: &Address,
         ctx: &DecodeCtx,
         token_data_triple: &TokenDataTriple<'a>,
-        delta: &mut Delta,
+        static_delta: &mut StaticDelta,
     ) -> Result<(), GoblinError>;
 }

@@ -5,7 +5,7 @@ use crate::{
         global_args::{global_header::GlobalHeader, hostio_fields::HostioFields},
         DecodeCtx, ETHTransfers, HeaderFlags, MsgTransfers,
     },
-    settlement::Delta,
+    settlement::StaticDelta,
     types::Address,
 };
 
@@ -16,7 +16,7 @@ pub struct GlobalArgs<'a> {
 }
 
 impl<'a> GlobalArgs<'a> {
-    pub fn process(&'a self, ctx: &DecodeCtx, delta: &mut Delta) -> Result<(), GoblinError> {
+    pub fn process(&'a self, ctx: &DecodeCtx, delta: &mut StaticDelta) -> Result<(), GoblinError> {
         // TODO remove duplication along with internal count reads
         Hardcoded::process(
             &self.global_header.market_counts,
