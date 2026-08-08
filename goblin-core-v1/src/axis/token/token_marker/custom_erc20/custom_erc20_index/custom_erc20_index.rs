@@ -1,6 +1,6 @@
-use crate::settlement::ConstZero;
+use goblin_macros::ConstZero;
 
-#[derive(Clone, Copy, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, PartialEq, PartialOrd, ConstZero)]
 pub struct CustomERC20Index(pub usize);
 
 impl CustomERC20Index {
@@ -8,10 +8,6 @@ impl CustomERC20Index {
     pub const MAX_COUNT: usize = 7;
 
     pub const MAX: Self = Self(Self::MAX_COUNT - 1);
-}
-
-impl ConstZero for CustomERC20Index {
-    const ZEROED: Self = Self(0);
 }
 
 impl From<usize> for CustomERC20Index {

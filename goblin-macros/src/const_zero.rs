@@ -5,9 +5,15 @@ use syn::{Data, DeriveInput, Fields, spanned::Spanned};
 pub fn expand(input: DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
     let name = &input.ident;
 
+    // Stub markers (`struct ETHStub;`) are unit structs with no fields at
+    // all: there's nothing to zero, so `ZEROED` is just `Self`. This is
+    // tracked separately from `is_tuple` since a unit struct's constructor
+    // is the bare path `Self`, not `Self { .. }` or `Self(..)`.
+    let is_unit;
     let (field_names, field_types, is_tuple): (Vec<_>, Vec<_>, bool) = match &input.data {
         Data::Struct(data) => match &data.fields {
             Fields::Named(fields) => {
+                is_unit = false;
                 let names = fields
                     .named
                     .iter()
@@ -17,6 +23,7 @@ pub fn expand(input: DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
                 (names, types, false)
             }
             Fields::Unnamed(fields) => {
+                is_unit = false;
                 // Tuple structs have no field idents. We only need
                 // placeholder identifiers here to keep the same shape as
                 // the named-field case; the actual constructor for tuple
@@ -29,10 +36,8 @@ pub fn expand(input: DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
                 (names, types, true)
             }
             Fields::Unit => {
-                return Err(syn::Error::new(
-                    data.fields.span(),
-                    "ConstZero can only be derived for structs with at least one field",
-                ));
+                is_unit = true;
+                (Vec::new(), Vec::new(), false)
             }
         },
         Data::Enum(data) => {
@@ -54,7 +59,6 @@ pub fn expand(input: DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
     let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
 
     // Fully-qualified path to the trait, so callers never need to import it.
-    // NOTE: adjust this if ConstZero lives at a different module path.
     let trait_path = quote! { crate::settlement::traits::ConstZero };
 
     let zero_exprs = field_types
@@ -68,7 +72,9 @@ pub fn expand(input: DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
     // another field type `T` for which `<T as ConstZero>::ZEROED` resolves
     // via a blanket `impl<T: ConstZero, const N: usize> ConstZero for
     // [T; N]` defined alongside the trait itself.
-    let constructor = if is_tuple {
+    let constructor = if is_unit {
+        quote! { Self }
+    } else if is_tuple {
         quote! { Self(#(#zero_exprs),*) }
     } else {
         quote! { Self { #(#field_names: #zero_exprs),* } }

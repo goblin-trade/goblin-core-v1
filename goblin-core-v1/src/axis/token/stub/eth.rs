@@ -1,3 +1,5 @@
+use goblin_macros::ConstZero;
+
 use crate::{
     axis::token::{token_marker::TokenData, ETH},
     input_processor::{DecodeCtx, FixedDecode},
@@ -9,12 +11,8 @@ use core::ops::Index;
 /// Stub type for ETH token index, address and deposit
 ///
 /// Use an explicit stub type instead of `()` for clarity
-#[derive(Default, Clone, Copy, PartialEq)]
+#[derive(Default, Clone, Copy, PartialEq, ConstZero)]
 pub struct ETHStub;
-
-impl ConstZero for ETHStub {
-    const ZEROED: Self = Self;
-}
 
 impl<'a> FixedDecode<'a> for ETHStub {
     const ENCODED_SIZE: usize = 0;
