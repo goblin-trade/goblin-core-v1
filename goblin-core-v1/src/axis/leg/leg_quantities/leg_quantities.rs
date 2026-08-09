@@ -11,10 +11,6 @@ pub trait LegQuantities: Default + Sized + PartialEq + PartialOrd + Clone + Copy
     type Units: QuantityOps;
     type Atoms: QuantityOps + TryIntoUnsidedDelta<Self, Z0, Z0, P1>;
 
-    // Deltas
-    // TODO remove, unused
-    type DeltaLots: QuantityOps;
-
     // Ratios
     type LotsPerUnit: QuantityOps;
 
