@@ -23,6 +23,8 @@ where
         token_data_triple: &TokenDataTriple,
     ) -> Result<Self::Locator, GoblinError> {
         let common_market = CommonMarket::<(Dynamic, TP)>::try_fixed_decode(ctx)?;
+        common_market.lot_size_pair.validate()?;
+
         let preimage = common_market.get_preimage(token_data_triple)?;
         let key = preimage.hash();
 
