@@ -1,4 +1,4 @@
-use goblin_macros::ConstZero;
+use goblin_macros::ConstDefault;
 
 use crate::{
     axis::{
@@ -13,7 +13,7 @@ use crate::{
     types::Address,
 };
 
-#[derive(ConstZero)]
+#[derive(ConstDefault)]
 pub struct GlobalDelta {
     pub sender: GlobalSender,
     pub counterparties: CounterpartyTriple,

@@ -1,17 +1,17 @@
-use goblin_macros::ConstZero;
+use goblin_macros::ConstDefault;
 
 use crate::{
     axis::token::{token_marker::TokenData, ETH},
     input_processor::{DecodeCtx, FixedDecode},
     quantities::{UnsidedDeltaAtoms, NATIVE_TOKEN_DECIMALS},
-    settlement::{CheckedOps, ConstZero},
+    settlement::{CheckedOps, ConstDefault},
 };
 use core::ops::Index;
 
 /// Stub type for ETH token index, address and deposit
 ///
 /// Use an explicit stub type instead of `()` for clarity
-#[derive(Default, Clone, Copy, PartialEq, ConstZero)]
+#[derive(Default, Clone, Copy, PartialEq, ConstDefault)]
 pub struct ETHStub;
 
 impl<'a> FixedDecode<'a> for ETHStub {
@@ -34,7 +34,7 @@ impl CheckedOps for ETHStub {
 
 impl Into<UnsidedDeltaAtoms> for ETHStub {
     fn into(self) -> UnsidedDeltaAtoms {
-        UnsidedDeltaAtoms::ZEROED
+        UnsidedDeltaAtoms::DEFAULT
     }
 }
 
@@ -48,7 +48,7 @@ impl Index<ETHStub> for ETHStub {
     type Output = TokenData<ETH>;
 
     fn index(&self, _index: ETHStub) -> &Self::Output {
-        &TokenData::ZEROED
+        &TokenData::DEFAULT
     }
 }
 

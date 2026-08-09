@@ -19,7 +19,7 @@ use crate::{
     settlement::{
         global_delta::{FromLocalDelta, TokenDelta},
         local_delta::LocalDelta,
-        CheckedOps, ConstZero,
+        CheckedOps, ConstDefault,
     },
     types::{Address, StoreReader, Triple},
 };
@@ -67,7 +67,7 @@ impl GlobalSender {
         let sender_delta_list_iter = T::get_leg(self).into_iter();
 
         for (token_data, delta) in data_list_iter.zip(sender_delta_list_iter) {
-            if *delta != TokenDelta::ZEROED {
+            if *delta != TokenDelta::DEFAULT {
                 delta.settle(trader, &token_data, msg_transfers)?;
             }
         }

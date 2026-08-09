@@ -1,12 +1,12 @@
-use goblin_macros::ConstZero;
+use goblin_macros::ConstDefault;
 
 use crate::settlement::{
-    global_delta::GlobalDelta, local_delta::local_take::TakeCounterparties, ConstZero,
+    global_delta::GlobalDelta, local_delta::local_take::TakeCounterparties, ConstDefault,
 };
 
-static mut STATIC_DELTA: StaticDelta = StaticDelta::ZEROED;
+static mut STATIC_DELTA: StaticDelta = StaticDelta::DEFAULT;
 
-#[derive(ConstZero)]
+#[derive(ConstDefault)]
 pub struct StaticDelta {
     /// Global delta of sender and counterparties
     pub global: GlobalDelta,

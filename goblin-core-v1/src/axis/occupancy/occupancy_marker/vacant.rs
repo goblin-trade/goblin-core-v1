@@ -5,7 +5,7 @@ use crate::{
     },
     goblin_error::GoblinError,
     quantities::BaseLots,
-    settlement::ConstZero,
+    settlement::ConstDefault,
     state::{
         bitmap::alias::InnerBitmapUpdater,
         resting_order::{preimage::RestingOrderPreimage, RestingOrder},
@@ -37,6 +37,6 @@ impl OccupancyMarker for Vacant {
         _inner_bitmap_updater: &mut InnerBitmapUpdater<'a>,
     ) -> Result<BaseLots, GoblinError> {
         // Unreachable stub
-        Ok(BaseLots::ZEROED)
+        Ok(BaseLots::DEFAULT)
     }
 }

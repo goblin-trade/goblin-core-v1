@@ -6,7 +6,7 @@ use crate::{
         token_marker::TokenData,
         CustomERC20, HardcodedERC20, Token, ETH,
     },
-    settlement::ConstZero,
+    settlement::ConstDefault,
     types::Triple,
 };
 
@@ -19,6 +19,6 @@ pub type TokenDataTriple<'a> = Triple<
 
 impl<'a> From<CustomERC20List<'a>> for TokenDataTriple<'a> {
     fn from(value: CustomERC20List<'a>) -> Self {
-        Triple::new(&TokenData::<ETH>::ZEROED, &HARDCODED_ERC20_LIST, value)
+        Triple::new(&TokenData::<ETH>::DEFAULT, &HARDCODED_ERC20_LIST, value)
     }
 }

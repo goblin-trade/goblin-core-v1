@@ -1,6 +1,6 @@
-use goblin_macros::ConstZero;
+use goblin_macros::ConstDefault;
 
-#[derive(Clone, Copy, PartialEq, PartialOrd, ConstZero)]
+#[derive(Clone, Copy, PartialEq, PartialOrd, ConstDefault)]
 pub struct CustomERC20Index(pub usize);
 
 impl CustomERC20Index {

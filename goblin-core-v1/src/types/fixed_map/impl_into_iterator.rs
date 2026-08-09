@@ -1,9 +1,9 @@
-use crate::{settlement::ConstZero, types::FixedMap};
+use crate::{settlement::ConstDefault, types::FixedMap};
 
 impl<
         'a,
-        K: PartialEq + Clone + Copy + ConstZero,
-        V: Default + Clone + Copy + ConstZero,
+        K: PartialEq + Clone + Copy + ConstDefault,
+        V: Default + Clone + Copy + ConstDefault,
         const N: usize,
     > IntoIterator for &'a FixedMap<K, V, N>
 {
@@ -17,8 +17,8 @@ impl<
 
 impl<
         'a,
-        K: PartialEq + Clone + Copy + ConstZero,
-        V: Default + Clone + Copy + ConstZero,
+        K: PartialEq + Clone + Copy + ConstDefault,
+        V: Default + Clone + Copy + ConstDefault,
         const N: usize,
     > IntoIterator for &'a mut FixedMap<K, V, N>
 {

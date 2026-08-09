@@ -2,7 +2,7 @@ use crate::{
     axis::token::token_marker::TokenMarker,
     goblin_error::GoblinError,
     quantities::{Exp, IntoAbs, Quantity, UnsidedDeltaAtoms},
-    settlement::ConstZero,
+    settlement::ConstDefault,
     types::{Address, Marker, Tuple},
 };
 
@@ -41,9 +41,9 @@ impl UpdateEnum {
     }
 
     fn from_delta<E: Exp>(value: Quantity<E, i64>) -> Option<Self> {
-        if value > Quantity::ZEROED {
+        if value > Quantity::DEFAULT {
             Some(Self::Increase)
-        } else if value < Quantity::ZEROED {
+        } else if value < Quantity::DEFAULT {
             Some(Self::Decrease)
         } else {
             None

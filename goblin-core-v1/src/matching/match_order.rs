@@ -8,7 +8,7 @@ use crate::{
     matching::match_iterator::{match_iterator, RestingOrderEntry},
     quantities::Ticks,
     require,
-    settlement::ConstZero,
+    settlement::ConstDefault,
     state::resting_order::RestingOrder,
     types::StoreReader,
 };
@@ -70,9 +70,9 @@ pub fn match_order<MS: MarketSpec, In: LegMatcher>(
             price,
         )?;
 
-        if budget == In::MatchingLots::ZEROED {
+        if budget == In::MatchingLots::DEFAULT {
             let residue = quote - matched;
-            if residue > In::MatchingLots::ZEROED {
+            if residue > In::MatchingLots::DEFAULT {
                 resting_order_key_value.value.base_lots =
                     In::base_lots_from_matching(residue, market.tick_size, price);
 

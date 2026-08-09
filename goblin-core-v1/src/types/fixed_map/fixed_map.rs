@@ -1,12 +1,12 @@
-use goblin_macros::ConstZero;
+use goblin_macros::ConstDefault;
 
-use crate::settlement::ConstZero;
+use crate::settlement::ConstDefault;
 
 /// A fixed-capacity map with O(N) lookups
-#[derive(Clone, Copy, ConstZero)]
+#[derive(Clone, Copy, ConstDefault)]
 pub struct FixedMap<
-    K: PartialEq + Clone + Copy + ConstZero,
-    V: Default + Clone + Copy + ConstZero,
+    K: PartialEq + Clone + Copy + ConstDefault,
+    V: Default + Clone + Copy + ConstDefault,
     const N: usize,
 > {
     /// Fixed size array of the (K, V) tuple
@@ -17,8 +17,8 @@ pub struct FixedMap<
 }
 
 impl<
-        K: PartialEq + Clone + Copy + ConstZero,
-        V: Default + Clone + Copy + ConstZero,
+        K: PartialEq + Clone + Copy + ConstDefault,
+        V: Default + Clone + Copy + ConstDefault,
         const N: usize,
     > FixedMap<K, V, N>
 {

@@ -3,7 +3,7 @@ use crate::settlement::{
         local_take::{LocalTake, TakeCounterparties},
         LocalDeposits, LocalMake,
     },
-    ConstZero,
+    ConstDefault,
 };
 
 pub struct LocalDelta<'a> {
@@ -15,9 +15,9 @@ pub struct LocalDelta<'a> {
 impl<'a> LocalDelta<'a> {
     pub const fn new(counterparties: &'a mut TakeCounterparties) -> Self {
         Self {
-            deposits: LocalDeposits::ZEROED,
+            deposits: LocalDeposits::DEFAULT,
             take: LocalTake::new(counterparties),
-            make: LocalMake::ZEROED,
+            make: LocalMake::DEFAULT,
         }
     }
 }

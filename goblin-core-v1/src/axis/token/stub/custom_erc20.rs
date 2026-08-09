@@ -1,4 +1,4 @@
-use goblin_macros::ConstZero;
+use goblin_macros::ConstDefault;
 
-#[derive(Clone, Copy, ConstZero)]
+#[derive(Clone, Copy, ConstDefault)]
 pub struct CustomERC20Stub;

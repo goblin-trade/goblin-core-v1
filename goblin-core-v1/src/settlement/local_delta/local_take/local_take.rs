@@ -13,7 +13,7 @@ use crate::{
             local_take::{LocalCounterparty, TakeCounterparties},
             DeltaLotsPair,
         },
-        CheckedOps, ConstZero,
+        CheckedOps, ConstDefault,
     },
     types::Address,
 };
@@ -26,7 +26,7 @@ pub struct LocalTake<'a> {
 impl<'a> LocalTake<'a> {
     pub const fn new(counterparties: &'a mut TakeCounterparties) -> Self {
         Self {
-            sender: DeltaLotsPair::ZEROED,
+            sender: DeltaLotsPair::DEFAULT,
             counterparties,
         }
     }

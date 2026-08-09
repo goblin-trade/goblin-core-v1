@@ -1,4 +1,4 @@
-use goblin_macros::ConstZero;
+use goblin_macros::ConstDefault;
 
 use crate::{
     axis::token::{
@@ -8,7 +8,7 @@ use crate::{
     types::Address,
 };
 
-#[derive(PartialEq, Clone, Copy, ConstZero)]
+#[derive(PartialEq, Clone, Copy, ConstDefault)]
 pub struct CounterpartyTokenKey<T: TokenQuantity> {
     pub counterparty: Address,
     pub token_index: T::TokenIndex,

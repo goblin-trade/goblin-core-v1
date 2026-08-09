@@ -6,7 +6,7 @@ pub fn expand(input: DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
     let name = &input.ident;
 
     // Stub markers (`struct ETHStub;`) are unit structs with no fields at
-    // all: there's nothing to zero, so `ZEROED` is just `Self`. This is
+    // all: there's nothing to zero, so `DEFAULT` is just `Self`. This is
     // tracked separately from `is_tuple` since a unit struct's constructor
     // is the bare path `Self`, not `Self { .. }` or `Self(..)`.
     let is_unit;
@@ -43,31 +43,31 @@ pub fn expand(input: DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
         Data::Enum(data) => {
             return Err(syn::Error::new(
                 data.enum_token.span(),
-                "ConstZero cannot be derived for enums",
+                "ConstDefault cannot be derived for enums",
             ));
         }
         Data::Union(data) => {
             return Err(syn::Error::new(
                 data.union_token.span(),
-                "ConstZero cannot be derived for unions",
+                "ConstDefault cannot be derived for unions",
             ));
         }
     };
 
-    // ConstZero carries no lifetime of its own (unlike FixedDecode), so the
+    // ConstDefault carries no lifetime of its own (unlike FixedDecode), so the
     // struct's own generics can be used as-is for both the impl and Self.
     let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
 
     // Fully-qualified path to the trait, so callers never need to import it.
-    let trait_path = quote! { crate::settlement::traits::ConstZero };
+    let trait_path = quote! { crate::settlement::traits::ConstDefault };
 
-    // For a plain field type `T`, zeroing is `<T as ConstZero>::ZEROED`.
-    // For a fixed-size array field `[T; N]`, we do NOT require `ConstZero`
+    // For a plain field type `T`, zeroing is `<T as ConstDefault>::DEFAULT`.
+    // For a fixed-size array field `[T; N]`, we do NOT require `ConstDefault`
     // to be implemented on the array type itself (there's no blanket
-    // `impl<T: ConstZero, const N: usize> ConstZero for [T; N]` in this
+    // `impl<T: ConstDefault, const N: usize> ConstDefault for [T; N]` in this
     // codebase, only ad-hoc impls like `[u8; 20]` for `Address`). Instead
     // we recurse into the element type and build the array-repeat
-    // expression directly, e.g. `[<T as ConstZero>::ZEROED; N]` — this is
+    // expression directly, e.g. `[<T as ConstDefault>::DEFAULT; N]` — this is
     // exactly what the hand-written impls do, and it also handles nested
     // arrays (`[[T; N]; M]`) for free via recursion.
     fn zero_expr(ty: &Type, trait_path: &proc_macro2::TokenStream) -> proc_macro2::TokenStream {
@@ -84,17 +84,17 @@ pub fn expand(input: DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
                     .map(|elem_ty| zero_expr(elem_ty, trait_path));
                 quote! { (#(#elem_exprs),*) }
             }
-            _ => quote! { <#ty as #trait_path>::ZEROED },
+            _ => quote! { <#ty as #trait_path>::DEFAULT },
         }
     }
 
     let zero_exprs = field_types.iter().map(|ty| zero_expr(ty, &trait_path));
 
-    // Named structs build `Self { a: <Ty as ConstZero>::ZEROED, ... }`;
-    // tuple structs build `Self(<Ty as ConstZero>::ZEROED, ...)` — field
+    // Named structs build `Self { a: <Ty as ConstDefault>::DEFAULT, ... }`;
+    // tuple structs build `Self(<Ty as ConstDefault>::DEFAULT, ...)` — field
     // order matches declaration order in both cases. Array fields use the
     // repeat-expression form produced by `zero_expr` above instead of
-    // requiring `ConstZero` on the array type.
+    // requiring `ConstDefault` on the array type.
     let constructor = if is_unit {
         quote! { Self }
     } else if is_tuple {
@@ -105,7 +105,7 @@ pub fn expand(input: DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
 
     let expanded = quote! {
         impl #impl_generics #trait_path for #name #ty_generics #where_clause {
-            const ZEROED: Self = #constructor;
+            const DEFAULT: Self = #constructor;
         }
     };
 

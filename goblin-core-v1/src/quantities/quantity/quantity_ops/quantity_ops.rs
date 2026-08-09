@@ -2,7 +2,7 @@ use core::ops::{Add, AddAssign, Sub, SubAssign};
 
 use crate::{
     input_processor::FixedDecode,
-    settlement::{CheckedOps, ConstZero},
+    settlement::{CheckedOps, ConstDefault},
 };
 
 /// Blanket trait for all supported Quantity operations
@@ -20,7 +20,7 @@ pub trait QuantityOps:
     + SubAssign
     + PartialOrd
     + Ord
-    + ConstZero
+    + ConstDefault
     + CheckedOps
     + for<'a> FixedDecode<'a>
 {
