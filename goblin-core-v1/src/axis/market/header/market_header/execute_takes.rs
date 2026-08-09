@@ -1,9 +1,7 @@
 use super::MarketHeader;
 use crate::{
-    axis::{
-        leg::{Base, Quote},
-        market::{market_spec::MarketSpec, Readables, Writables},
-    },
+    axis::market::{market_spec::MarketSpec, Readables, Writables},
+    for_axes,
     goblin_error::GoblinError,
     input_processor::DecodeCtx,
     instructions::ix_take,
@@ -17,13 +15,11 @@ impl<MS: MarketSpec> MarketHeader<MS> {
         readables: &Readables<MS>,
         writables: &mut Writables,
     ) -> Result<(), GoblinError> {
-        // TODO use for_axes!
-        if Base::get(&self.execute_takes) {
-            ix_take::<MS, Base>(ctx, readables, writables)?;
-        }
-        if Quote::get(&self.execute_takes) {
-            ix_take::<MS, Quote>(ctx, readables, writables)?;
-        }
+        for_axes!(|In| {
+            if In::get(&self.execute_takes) {
+                ix_take::<MS, In>(ctx, readables, writables)?;
+            }
+        });
 
         Ok(())
     }
