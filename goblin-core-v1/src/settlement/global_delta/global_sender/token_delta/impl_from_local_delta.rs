@@ -20,7 +20,6 @@ impl<T: TokenMarker> FromLocalDelta for TokenDelta<T> {
     ) -> Self {
         let atoms_per_lot = In::get(atoms_per_lot_pair);
 
-        // TODO improved chaining syntax for nested tuples
         let local_deposit = T::get(In::get_leg(&local_delta.deposits));
         let deposit = T::get_global_deposit(local_deposit, atoms_per_lot);
 

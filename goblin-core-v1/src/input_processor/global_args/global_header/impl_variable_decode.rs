@@ -35,7 +35,6 @@ impl<'a> VariableDecode<'a> for GlobalHeader<'a> {
             None
         };
 
-        // TODO account for 2 bytes
         let hardcoded_counts = HardcodedCounts::raw_fixed_decode(ctx);
 
         let dynamic_counts = if flags.process_dynamic_markets {
