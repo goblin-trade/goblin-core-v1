@@ -42,29 +42,234 @@ macro_rules! for_axes {
     };
 }
 
-// Internal: single-pass substitution of canonical names in body tokens.
+// Internal: recursive stack-based substitution of canonical names in body tokens.
 #[doc(hidden)]
 #[macro_export]
 macro_rules! __for_axes_apply {
-    ([$($tm:tt)*] [$($lm:tt)*] [$($mm:tt)*] [$($om:tt)*] [$($um:tt)*] [$($acc:tt)*]) => {
+    // Entry point: initialize stack []
+    (
+        [$($tm:tt)*] [$($lm:tt)*] [$($mm:tt)*] [$($om:tt)*] [$($um:tt)*]
+        []
+        $($body:tt)*
+    ) => {
+        $crate::__for_axes_apply!(
+            @munch
+            [$($tm)*] [$($lm)*] [$($mm)*] [$($om)*] [$($um)*]
+            [] // Stack of parent contexts
+            [] // Accumulator for current level
+            $($body)*
+        );
+    };
+
+    // --- RECURSIVE GROUP DESCENT ---
+
+    // Parentheses (...)
+    (
+        @munch
+        [$($tm:tt)*] [$($lm:tt)*] [$($mm:tt)*] [$($om:tt)*] [$($um:tt)*]
+        [$($stack:tt)*]
+        [$($acc:tt)*]
+        ($($inner:tt)*) $($rest:tt)*
+    ) => {
+        $crate::__for_axes_apply!(
+            @munch
+            [$($tm)*] [$($lm)*] [$($mm)*] [$($om)*] [$($um)*]
+            [(@paren [$($acc)*] [$($rest)*]) $($stack)*]
+            []
+            $($inner)*
+        );
+    };
+
+    // Braces {...}
+    (
+        @munch
+        [$($tm:tt)*] [$($lm:tt)*] [$($mm:tt)*] [$($om:tt)*] [$($um:tt)*]
+        [$($stack:tt)*]
+        [$($acc:tt)*]
+        {$($inner:tt)*} $($rest:tt)*
+    ) => {
+        $crate::__for_axes_apply!(
+            @munch
+            [$($tm)*] [$($lm)*] [$($mm)*] [$($om:tt)*] [$($um)*]
+            [(@brace [$($acc)*] [$($rest)*]) $($stack)*]
+            []
+            $($inner)*
+        );
+    };
+
+    // Brackets [...]
+    (
+        @munch
+        [$($tm:tt)*] [$($lm:tt)*] [$($mm:tt)*] [$($om:tt)*] [$($um:tt)*]
+        [$($stack:tt)*]
+        [$($acc:tt)*]
+        [$($inner:tt)*] $($rest:tt)*
+    ) => {
+        $crate::__for_axes_apply!(
+            @munch
+            [$($tm)*] [$($lm)*] [$($mm)*] [$($om)*] [$($um)*]
+            [(@bracket [$($acc)*] [$($rest)*]) $($stack)*]
+            []
+            $($inner)*
+        );
+    };
+
+    // --- IDENTIFIER REPLACEMENTS ---
+
+    (
+        @munch
+        [$($tm:tt)*] [$($lm:tt)*] [$($mm:tt)*] [$($om:tt)*] [$($um:tt)*]
+        [$($stack:tt)*]
+        [$($acc:tt)*]
+        TM $($rest:tt)*
+    ) => {
+        $crate::__for_axes_apply!(
+            @munch
+            [$($tm)*] [$($lm)*] [$($mm)*] [$($om)*] [$($um)*]
+            [$($stack)*]
+            [$($acc)* $($tm)*]
+            $($rest)*
+        );
+    };
+
+    (
+        @munch
+        [$($tm:tt)*] [$($lm:tt)*] [$($mm:tt)*] [$($om:tt)*] [$($um:tt)*]
+        [$($stack:tt)*]
+        [$($acc:tt)*]
+        In $($rest:tt)*
+    ) => {
+        $crate::__for_axes_apply!(
+            @munch
+            [$($tm)*] [$($lm)*] [$($mm)*] [$($om)*] [$($um)*]
+            [$($stack)*]
+            [$($acc)* $($lm)*]
+            $($rest)*
+        );
+    };
+
+    (
+        @munch
+        [$($tm:tt)*] [$($lm:tt)*] [$($mm:tt)*] [$($om:tt)*] [$($um:tt)*]
+        [$($stack:tt)*]
+        [$($acc:tt)*]
+        MM $($rest:tt)*
+    ) => {
+        $crate::__for_axes_apply!(
+            @munch
+            [$($tm)*] [$($lm)*] [$($mm)*] [$($om)*] [$($um)*]
+            [$($stack)*]
+            [$($acc)* $($mm)*]
+            $($rest)*
+        );
+    };
+
+    (
+        @munch
+        [$($tm:tt)*] [$($lm:tt)*] [$($mm:tt)*] [$($om:tt)*] [$($um:tt)*]
+        [$($stack:tt)*]
+        [$($acc:tt)*]
+        OM $($rest:tt)*
+    ) => {
+        $crate::__for_axes_apply!(
+            @munch
+            [$($tm)*] [$($lm)*] [$($mm)*] [$($om)*] [$($um)*]
+            [$($stack)*]
+            [$($acc)* $($om)*]
+            $($rest)*
+        );
+    };
+
+    (
+        @munch
+        [$($tm:tt)*] [$($lm:tt)*] [$($mm:tt)*] [$($om:tt)*] [$($um:tt)*]
+        [$($stack:tt)*]
+        [$($acc:tt)*]
+        UM $($rest:tt)*
+    ) => {
+        $crate::__for_axes_apply!(
+            @munch
+            [$($tm)*] [$($lm)*] [$($mm)*] [$($om)*] [$($um)*]
+            [$($stack)*]
+            [$($acc)* $($um)*]
+            $($rest)*
+        );
+    };
+
+    // Default single token pass-through
+    (
+        @munch
+        [$($tm:tt)*] [$($lm:tt)*] [$($mm:tt)*] [$($om:tt)*] [$($um:tt)*]
+        [$($stack:tt)*]
+        [$($acc:tt)*]
+        $other:tt $($rest:tt)*
+    ) => {
+        $crate::__for_axes_apply!(
+            @munch
+            [$($tm)*] [$($lm)*] [$($mm)*] [$($om)*] [$($um)*]
+            [$($stack)*]
+            [$($acc)* $other]
+            $($rest)*
+        );
+    };
+
+    // --- POPPING STACK FRAMES ---
+
+    // Pop Paren frame
+    (
+        @munch
+        [$($tm:tt)*] [$($lm:tt)*] [$($mm:tt)*] [$($om:tt)*] [$($um:tt)*]
+        [(@paren [$($p_acc:tt)*] [$($p_rest:tt)*]) $($stack_tail:tt)*]
+        [$($inner_acc:tt)*]
+    ) => {
+        $crate::__for_axes_apply!(
+            @munch
+            [$($tm)*] [$($lm)*] [$($mm)*] [$($om)*] [$($um)*]
+            [$($stack_tail)*]
+            [$($p_acc)* ( $($inner_acc)* )]
+            $($p_rest)*
+        );
+    };
+
+    // Pop Brace frame
+    (
+        @munch
+        [$($tm:tt)*] [$($lm:tt)*] [$($mm:tt)*] [$($om:tt)*] [$($um:tt)*]
+        [(@brace [$($p_acc:tt)*] [$($p_rest:tt)*]) $($stack_tail:tt)*]
+        [$($inner_acc:tt)*]
+    ) => {
+        $crate::__for_axes_apply!(
+            @munch
+            [$($tm)*] [$($lm)*] [$($mm)*] [$($om)*] [$($um)*]
+            [$($stack_tail)*]
+            [$($p_acc)* { $($inner_acc)* }]
+            $($p_rest)*
+        );
+    };
+
+    // Pop Bracket frame
+    (
+        @munch
+        [$($tm:tt)*] [$($lm:tt)*] [$($mm:tt)*] [$($om:tt)*] [$($um:tt)*]
+        [(@bracket [$($p_acc:tt)*] [$($p_rest:tt)*]) $($stack_tail:tt)*]
+        [$($inner_acc:tt)*]
+    ) => {
+        $crate::__for_axes_apply!(
+            @munch
+            [$($tm)*] [$($lm)*] [$($mm)*] [$($om)*] [$($um)*]
+            [$($stack_tail)*]
+            [$($p_acc)* [ $($inner_acc)* ]]
+            $($p_rest)*
+        );
+    };
+
+    // Base case: Stack is empty, output full statement
+    (
+        @munch
+        [$($tm:tt)*] [$($lm:tt)*] [$($mm:tt)*] [$($om:tt)*] [$($um:tt)*]
+        []
+        [$($acc:tt)*]
+    ) => {
         $($acc)* ;
-    };
-    ([$($tm:tt)*] [$($lm:tt)*] [$($mm:tt)*] [$($om:tt)*] [$($um:tt)*] [$($acc:tt)*] TM $($rest:tt)*) => {
-        $crate::__for_axes_apply!([$($tm)*] [$($lm)*] [$($mm)*] [$($om)*] [$($um)*] [$($acc)* $($tm)*] $($rest)*)
-    };
-    ([$($tm:tt)*] [$($lm:tt)*] [$($mm:tt)*] [$($om:tt)*] [$($um:tt)*] [$($acc:tt)*] In $($rest:tt)*) => {
-        $crate::__for_axes_apply!([$($tm)*] [$($lm)*] [$($mm)*] [$($om)*] [$($um)*] [$($acc)* $($lm)*] $($rest)*)
-    };
-    ([$($tm:tt)*] [$($lm:tt)*] [$($mm:tt)*] [$($om:tt)*] [$($um:tt)*] [$($acc:tt)*] MM $($rest:tt)*) => {
-        $crate::__for_axes_apply!([$($tm)*] [$($lm)*] [$($mm)*] [$($om)*] [$($um)*] [$($acc)* $($mm)*] $($rest)*)
-    };
-    ([$($tm:tt)*] [$($lm:tt)*] [$($mm:tt)*] [$($om:tt)*] [$($um:tt)*] [$($acc:tt)*] OM $($rest:tt)*) => {
-        $crate::__for_axes_apply!([$($tm)*] [$($lm)*] [$($mm)*] [$($om)*] [$($um)*] [$($acc)* $($om)*] $($rest)*)
-    };
-    ([$($tm:tt)*] [$($lm:tt)*] [$($mm:tt)*] [$($om:tt)*] [$($um:tt)*] [$($acc:tt)*] UM $($rest:tt)*) => {
-        $crate::__for_axes_apply!([$($tm)*] [$($lm)*] [$($mm)*] [$($om)*] [$($um)*] [$($acc)* $($um)*] $($rest)*)
-    };
-    ([$($tm:tt)*] [$($lm:tt)*] [$($mm:tt)*] [$($om:tt)*] [$($um:tt)*] [$($acc:tt)*] $other:tt $($rest:tt)*) => {
-        $crate::__for_axes_apply!([$($tm)*] [$($lm)*] [$($mm)*] [$($om)*] [$($um)*] [$($acc)* $other] $($rest)*)
     };
 }
