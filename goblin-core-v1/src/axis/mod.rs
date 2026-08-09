@@ -5,4 +5,3 @@ pub mod token;
 pub mod update;
 
 pub mod for_axes;
-pub use for_axes::*;
