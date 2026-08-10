@@ -4,14 +4,14 @@ use crate::types::{Marker, Tuple};
 #[derive(Default, Clone, Copy, PartialEq, PartialOrd)]
 pub struct Leg;
 
-pub type Base = Marker<Leg, 0>;
-pub type Quote = Marker<Leg, 1>;
-
 #[derive(PartialEq, Clone, Copy)]
 pub enum LegEnum {
-    Base,
-    Quote,
+    Base = 0,
+    Quote = 1,
 }
+
+pub type Base = Marker<Leg, { LegEnum::Base as usize }>;
+pub type Quote = Marker<Leg, { LegEnum::Quote as usize }>;
 
 pub type Pair<T0, T1> = Tuple<T0, T1, Leg>;
 pub type SamePair<T> = Pair<T, T>;
