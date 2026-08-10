@@ -1,10 +1,12 @@
 use crate::{
     axis::{
         market::{market_spec::MarketSpec, Writables},
-        update::UpdateEnum,
+        occupancy::Occupied,
+        update::{update_make::UpdateMake, UpdateEnum},
     },
     goblin_error::GoblinError,
-    instructions::{update::process_update_cases::process_update_cases, MakeReadables},
+    instructions::MakeReadables,
+    match_axes,
     matching::region::make_region::MakeRegion,
     require,
     state::bitmap::alias::InnerBitmap,
@@ -29,11 +31,13 @@ pub fn ix_update<MS: MarketSpec>(
         GoblinError::NoRestingOrder
     );
 
-    process_update_cases(
-        make_readables,
-        update_enum,
-        leg_in,
-        writables,
-        inner_bitmap_state,
-    )
+    match_axes!(In = leg_in, UM = update_enum => {
+        UM::process_make::<MS, In, Occupied>(
+            make_readables,
+            writables,
+            inner_bitmap_state,
+        )?;
+    });
+
+    Ok(())
 }

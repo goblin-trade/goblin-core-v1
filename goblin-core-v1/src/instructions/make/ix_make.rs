@@ -8,6 +8,7 @@ use crate::{
         make_variant::MakeVariant, open::ix_open::ix_open, update::ix_update::ix_update,
         MakeReadables, PosHeader,
     },
+    match_axes,
     quantities::{Pos2, SafePosition, POS_1},
     state::bitmap::alias::InnerBitmap,
 };
@@ -37,6 +38,7 @@ pub fn ix_make<MS: MarketSpec>(
     };
 
     // TODO use for_axes! and generic
+    // Currently this is not an axis
     match make_variant {
         MakeVariant::Update(update_enum) => {
             ix_update(make_readables, update_enum, writables, inner_bitmap_state)

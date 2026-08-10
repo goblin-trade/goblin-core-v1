@@ -1,10 +1,11 @@
 use crate::{
     axis::{
-        leg::{Base, LegEnum, Quote},
+        leg::LegEnum,
         market::{market_spec::MarketSpec, Writables},
     },
     goblin_error::GoblinError,
     instructions::{open::ix_open_inner::ix_open_inner, MakeReadables},
+    match_axes,
     matching::region::make_region::MakeRegion,
     state::bitmap::alias::InnerBitmap,
 };
@@ -18,13 +19,8 @@ pub fn ix_open<MS: MarketSpec>(
     let position = make_readables.pos_header.position;
     let region = MakeRegion::new(&writables.market_state.last_positions, position);
 
-    // TODO use for_axes!
-    match leg_enum {
-        LegEnum::Base => {
-            ix_open_inner::<MS, Base>(region, make_readables, writables, inner_bitmap_state)
-        }
-        LegEnum::Quote => {
-            ix_open_inner::<MS, Quote>(region, make_readables, writables, inner_bitmap_state)
-        }
-    }
+    match_axes!(In = leg_enum => {
+        ix_open_inner::<MS, In>(region, make_readables, writables, inner_bitmap_state)?;
+    });
+    Ok(())
 }
