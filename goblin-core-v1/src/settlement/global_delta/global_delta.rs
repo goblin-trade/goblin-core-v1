@@ -28,14 +28,14 @@ impl GlobalDelta {
     ) -> Result<(), GoblinError> {
         let atoms_per_lot_pair = ATOMS_PER_UNIT / lot_size_pair.unsided();
 
-        for_axes!(|In| self.sender.commit_leg::<TP, In>(
+        for_axes!(In => self.sender.commit_leg::<TP, In>(
             writables.local_delta,
             token_index_pair,
             &atoms_per_lot_pair,
         )?);
 
         for counterparty_data in writables.local_delta.take.counterparties.into_iter() {
-            for_axes!(|In| self.counterparties.commit_leg::<TP, In>(
+            for_axes!(In => self.counterparties.commit_leg::<TP, In>(
                 counterparty_data,
                 token_index_pair,
                 &atoms_per_lot_pair,
@@ -62,12 +62,12 @@ impl GlobalDelta {
         //
         // We can combine it into a single for_axes!(|TM, TR|)
         //
-        for_axes!(|TM| self.sender.settle_leg::<TM>(
+        for_axes!(TM => self.sender.settle_leg::<TM>(
             recipient,
             token_data_triple,
             msg_transfers
         )?);
-        for_axes!(|TM| self.counterparties.settle_leg::<TM>(token_data_triple)?);
+        for_axes!(TM => self.counterparties.settle_leg::<TM>(token_data_triple)?);
 
         Ok(())
     }

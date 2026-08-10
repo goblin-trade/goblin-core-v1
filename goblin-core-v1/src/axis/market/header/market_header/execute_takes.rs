@@ -15,7 +15,7 @@ impl<MS: MarketSpec> MarketHeader<MS> {
         readables: &Readables<MS>,
         writables: &mut Writables,
     ) -> Result<(), GoblinError> {
-        for_axes!(|In| {
+        for_axes!(In => {
             if In::get(&self.execute_takes) {
                 ix_take::<MS, In>(ctx, readables, writables)?;
             }

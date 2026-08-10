@@ -20,8 +20,7 @@ impl LocalDeposits {
         ctx: &DecodeCtx,
     ) -> Result<(), GoblinError> {
         let deposit_pair = DepositPair::<TP>::try_fixed_decode(ctx)?;
-        for_axes!(|In| self.set_leg::<TP, In>(&deposit_pair));
-
+        for_axes!(In => self.set_leg::<TP, In>(&deposit_pair));
         Ok(())
     }
 

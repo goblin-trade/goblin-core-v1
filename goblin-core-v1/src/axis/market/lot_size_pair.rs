@@ -11,7 +11,7 @@ pub type LotSizePair =
 
 impl LotSizePair {
     pub fn validate(&self) -> Result<(), GoblinError> {
-        for_axes!(|In| {
+        for_axes!(In => {
             let lot_size = In::get(self);
             require!(
                 In::lots_per_unit_valid(lot_size),

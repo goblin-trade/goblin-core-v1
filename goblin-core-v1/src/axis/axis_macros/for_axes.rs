@@ -1,7 +1,13 @@
 #[macro_export]
 macro_rules! for_axes {
-    ( | $($axis:ident),+ $(,)? | $($body:tt)+ ) => {
-        $crate::for_axes!(@expand [$($axis),+] [] { $($body)+ });
+    // Block form: for_axes!(In, UM => { ... });
+    ( $($axis:ident),+ $(,)? => $body:block ) => {
+        $crate::for_axes!(@expand [$($axis),+] [] $body)
+    };
+
+    // Bare-expression form: for_axes!(In => self.sender.commit_leg::<TP, In>(...)?);
+    ( $($axis:ident),+ $(,)? => $body:expr ) => {
+        $crate::for_axes!(@expand [$($axis),+] [] { $body })
     };
 
     // --- Axis -> (seed type, arity) ---
@@ -21,7 +27,7 @@ macro_rules! for_axes {
         $crate::for_axes!(@range UM, $crate::axis::update::Update, 2, [$($rest)*], [$($alias)*], $body);
     };
 
-    // --- Shared by every axis of a given arity ---
+    // --- Shared: emit Marker<Seed, 0..N-1> for every axis of a given arity ---
     (@range $axis:ident, $seed:path, 2, [$($rest:ident)*], [$($alias:item)*], $body:block) => {
         $crate::for_axes!(@expand [$($rest)*] [$($alias)* type $axis = $crate::types::Marker<$seed, 0>;] $body);
         $crate::for_axes!(@expand [$($rest)*] [$($alias)* type $axis = $crate::types::Marker<$seed, 1>;] $body);
@@ -34,6 +40,9 @@ macro_rules! for_axes {
 
     // --- Base case ---
     (@expand [] [$($alias:item)*] $body:block) => {
-        { $($alias)* $body }
+        {
+            $($alias)*
+            $body
+        }
     };
 }
