@@ -1,15 +1,18 @@
 use crate::{
     axis::{
-        market::market_spec::MarketSpec,
+        market::{market_spec::MarketSpec, Writables},
         occupancy::{occupancy_marker::OccupancyMarker, Occupied},
         update::UpdateEnum,
     },
     goblin_error::GoblinError,
+    instructions::MakeReadables,
     quantities::BaseLots,
     require,
     settlement::CheckedOps,
     state::{
-        bitmap::alias::InnerBitmapUpdater, resting_order::preimage::RestingOrderPreimage, SlotKey,
+        bitmap::alias::{InnerBitmap, InnerBitmapUpdater},
+        resting_order::preimage::RestingOrderPreimage,
+        SlotKey,
     },
     types::Address,
 };
@@ -17,7 +20,12 @@ use crate::{
 impl OccupancyMarker for Occupied {
     type MakeEnum = UpdateEnum;
 
-    fn make() -> Result<(), GoblinError> {
+    fn make<MS: MarketSpec>(
+        make_readables: &MakeReadables<MS>,
+        inner_enum_raw: bool,
+        writables: &mut Writables,
+        inner_bitmap_state: &mut InnerBitmap,
+    ) -> Result<(), GoblinError> {
         Ok(())
     }
 

@@ -41,6 +41,7 @@ pub enum GoblinError {
     NoUpdate = 37,
     NoHardcodedDecimals = 38,
     NoHostioDecimals = 39,
+    InvalidEnumVariant = 40,
 }
 
 impl GoblinError {

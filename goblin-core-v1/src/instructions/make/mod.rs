@@ -5,6 +5,5 @@ pub mod pos_header;
 pub use make_readables::*;
 pub use pos_header::*;
 
-pub mod make_variant;
 pub mod open;
 pub mod update;
