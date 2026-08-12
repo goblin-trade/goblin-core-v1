@@ -1,4 +1,4 @@
 pub mod ix_open;
 
-mod ix_open_inner;
-mod validate_region;
+pub mod ix_open_inner;
+pub mod validate_region;
