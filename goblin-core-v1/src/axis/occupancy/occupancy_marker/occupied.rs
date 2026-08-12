@@ -2,6 +2,7 @@ use crate::{
     axis::{
         market::market_spec::MarketSpec,
         occupancy::{occupancy_marker::OccupancyMarker, Occupied},
+        update::UpdateEnum,
     },
     goblin_error::GoblinError,
     quantities::BaseLots,
@@ -14,6 +15,12 @@ use crate::{
 };
 
 impl OccupancyMarker for Occupied {
+    type MakeEnum = UpdateEnum;
+
+    fn make() -> Result<(), GoblinError> {
+        Ok(())
+    }
+
     fn increase_resting_order<'a, MS: MarketSpec>(
         msg_sender: &Address,
         base_lots: BaseLots,

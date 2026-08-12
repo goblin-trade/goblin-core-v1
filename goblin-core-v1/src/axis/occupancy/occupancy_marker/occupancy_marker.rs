@@ -9,6 +9,12 @@ use crate::{
 };
 
 pub trait OccupancyMarker {
+    type MakeEnum: Clone + Copy;
+
+    // vacant = open (LegMatcher = Base / Quote)
+    // occupied = update (UpdateMarker = Increase / Decrease)
+    fn make() -> Result<(), GoblinError>;
+
     fn increase_resting_order<'a, MS: MarketSpec>(
         msg_sender: &Address,
         base_lots: BaseLots,

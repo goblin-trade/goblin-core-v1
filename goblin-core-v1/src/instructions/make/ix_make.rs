@@ -38,12 +38,16 @@ pub fn ix_make<MS: MarketSpec>(
     };
 
     // TODO use for_axes! and generic
-    // Currently this is not an axis
+    //
+    // Axis- use occupancy axis
+    // But how to deal with second variable axis?
+    // Occupancy = Occupied, UpdateMarker
+    // Occupancy = Vacant, LegMatcher
     match make_variant {
-        MakeVariant::Update(update_enum) => {
+        MakeVariant::Occupied(update_enum) => {
             ix_update(make_readables, update_enum, writables, inner_bitmap_state)
         }
-        MakeVariant::Open(leg_enum) => {
+        MakeVariant::Vacant(leg_enum) => {
             ix_open(make_readables, leg_enum, writables, inner_bitmap_state)
         }
     }

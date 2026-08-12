@@ -1,5 +1,6 @@
 use crate::{
     axis::{
+        leg::LegEnum,
         market::market_spec::MarketSpec,
         occupancy::{occupancy_marker::OccupancyMarker, Vacant},
     },
@@ -15,6 +16,12 @@ use crate::{
 };
 
 impl OccupancyMarker for Vacant {
+    type MakeEnum = LegEnum;
+
+    fn make() -> Result<(), GoblinError> {
+        Ok(())
+    }
+
     fn increase_resting_order<'a, MS: MarketSpec>(
         msg_sender: &Address,
         base_lots: BaseLots,
