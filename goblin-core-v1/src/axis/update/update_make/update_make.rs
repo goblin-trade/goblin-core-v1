@@ -16,7 +16,7 @@ use crate::{
     types::{Address, StoreReader},
 };
 pub trait UpdateMake: UpdateSign {
-    fn process_make<'a, MS, In, Oc>(
+    fn process_make<'a, MS, In, OM>(
         make_readables: &MakeReadables<MS>,
         writables: &mut Writables,
         inner_bitmap_state: &mut InnerBitmap,
@@ -24,7 +24,7 @@ pub trait UpdateMake: UpdateSign {
     where
         MS: MarketSpec,
         In: LegMatcher,
-        Oc: OccupancyMarker,
+        OM: OccupancyMarker,
         Self: UpdateReader<In>,
     {
         let Readables {
@@ -43,7 +43,7 @@ pub trait UpdateMake: UpdateSign {
         }
         .hash();
 
-        let updated_base_lots = Self::update_resting_order::<MS, In, Oc>(
+        let updated_base_lots = Self::update_resting_order::<MS, In, OM>(
             msg_sender,
             base_lots,
             key,
@@ -65,7 +65,7 @@ pub trait UpdateMake: UpdateSign {
         )
     }
 
-    fn update_resting_order<'a, MS, In, Oc>(
+    fn update_resting_order<'a, MS, In, OM>(
         msg_sender: &Address,
         base_lots: BaseLots,
         key: &SlotKey<RestingOrderPreimage<MS>>,
@@ -74,5 +74,5 @@ pub trait UpdateMake: UpdateSign {
     where
         MS: MarketSpec,
         In: LegMatcher,
-        Oc: OccupancyMarker;
+        OM: OccupancyMarker;
 }

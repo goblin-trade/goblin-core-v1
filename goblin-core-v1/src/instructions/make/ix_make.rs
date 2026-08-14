@@ -1,16 +1,21 @@
 use crate::{
     axis::{
+        leg::Base,
         market::{header::make_header::MakeHeader, market_spec::MarketSpec, Readables, Writables},
         occupancy::occupancy_marker::OccupancyMarker,
         update::update_make::UpdateMake,
     },
     goblin_error::GoblinError,
     input_processor::{DecodeCtx, FixedDecode},
-    instructions::{MakeReadables, PosHeader},
     match_axes,
     matching::region::make_region::MakeRegion,
-    quantities::{Pos2, SafePosition, POS_1},
-    state::bitmap::alias::InnerBitmap,
+    quantities::{InnerPos, Pos2, SafePosition, Ticks, POS_1},
+    state::{
+        bitmap::alias::{InnerBitmap, InnerBitmapUpdater},
+        resting_order::preimage::RestingOrderPreimage,
+        Preimage,
+    },
+    types::StoreReader,
 };
 
 pub fn ix_make<MS: MarketSpec>(
@@ -30,14 +35,6 @@ pub fn ix_make<MS: MarketSpec>(
     let pos_2 = Pos2::new(pos_1, inner_pos);
     let position = pos_2.into();
 
-    let make_readables = &MakeReadables {
-        readables,
-        pos_header: PosHeader {
-            position,
-            base_lots,
-        },
-    };
-
     let region = MakeRegion::new(&writables.market_state.last_positions, position);
 
     match_axes!(OM = occupancy_enum => {
@@ -46,30 +43,36 @@ pub fn ix_make<MS: MarketSpec>(
         match_axes!(UM = enums.0, In = enums.1 => {
             OM::validate_and_update_region::<In>(region, position, &mut writables.market_state.last_positions, inner_bitmap_state)?;
 
-            UM::process_make::<MS, In, OM>(
-                make_readables,
-                writables,
-                inner_bitmap_state,
+            let key = &mut RestingOrderPreimage {
+                market_key: readables.market_readables.market_key,
+                position,
+            }
+            .hash();
+
+            // This will map back on OM
+            let updated_base_lots = UM::update_resting_order::<MS, In, OM>(
+                readables.msg_sender,
+                base_lots,
+                key,
+                &mut InnerBitmapUpdater {
+                    bitmap: inner_bitmap_state,
+                    pos: InnerPos::from(position),
+                },
+            )?;
+
+            let base_lot_size = Base::get(&readables.market_readables.market.lot_size_pair);
+            let tick_size = readables.market_readables.market.tick_size;
+            let price = Ticks::from(position);
+
+            writables.local_delta.make.add_make::<In, UM>(
+                updated_base_lots,
+                base_lot_size,
+                tick_size,
+                price,
             )?;
         });
 
-        // OM::make(make_readables, inner_enum_raw, writables, inner_bitmap_state)?;
     });
 
     Ok(())
-
-    // TODO use for_axes! and generic
-    //
-    // Axis- use occupancy axis
-    // But how to deal with second variable axis?
-    // Occupancy = Occupied, UpdateMarker
-    // Occupancy = Vacant, LegMatcher
-    // match make_variant {
-    //     MakeVariant::Occupied(update_enum) => {
-    //         ix_update(make_readables, update_enum, writables, inner_bitmap_state)
-    //     }
-    //     MakeVariant::Vacant(leg_enum) => {
-    //         ix_open(make_readables, leg_enum, writables, inner_bitmap_state)
-    //     }
-    // }
 }

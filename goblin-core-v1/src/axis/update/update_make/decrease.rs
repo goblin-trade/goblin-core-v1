@@ -14,7 +14,7 @@ use crate::{
 };
 
 impl UpdateMake for Decrease {
-    fn update_resting_order<'a, MS, In, Oc>(
+    fn update_resting_order<'a, MS, In, OM>(
         msg_sender: &Address,
         base_lots: BaseLots,
         key: &SlotKey<RestingOrderPreimage<MS>>,
@@ -23,9 +23,9 @@ impl UpdateMake for Decrease {
     where
         MS: MarketSpec,
         In: LegMatcher,
-        Oc: OccupancyMarker,
+        OM: OccupancyMarker,
     {
         // decrease store, i.e. increase resting order
-        Oc::increase_resting_order(msg_sender, base_lots, key, inner_bitmap_updater)
+        OM::increase_resting_order(msg_sender, base_lots, key, inner_bitmap_updater)
     }
 }
