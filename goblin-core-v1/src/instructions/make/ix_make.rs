@@ -2,11 +2,13 @@ use crate::{
     axis::{
         market::{header::make_header::MakeHeader, market_spec::MarketSpec, Readables, Writables},
         occupancy::occupancy_marker::OccupancyMarker,
+        update::update_make::UpdateMake,
     },
     goblin_error::GoblinError,
     input_processor::{DecodeCtx, FixedDecode},
     instructions::{MakeReadables, PosHeader},
     match_axes,
+    matching::region::make_region::MakeRegion,
     quantities::{Pos2, SafePosition, POS_1},
     state::bitmap::alias::InnerBitmap,
 };
@@ -36,8 +38,22 @@ pub fn ix_make<MS: MarketSpec>(
         },
     };
 
+    let region = MakeRegion::new(&writables.market_state.last_positions, position);
+
     match_axes!(OM = occupancy_enum => {
-        OM::make(make_readables, inner_enum_raw, writables, inner_bitmap_state)?;
+        let enums = OM::get_enums(inner_enum_raw, region)?;
+
+        match_axes!(UM = enums.0, In = enums.1 => {
+            OM::validate_and_update_region::<In>(region, position, &mut writables.market_state.last_positions, inner_bitmap_state)?;
+
+            UM::process_make::<MS, In, OM>(
+                make_readables,
+                writables,
+                inner_bitmap_state,
+            )?;
+        });
+
+        // OM::make(make_readables, inner_enum_raw, writables, inner_bitmap_state)?;
     });
 
     Ok(())
