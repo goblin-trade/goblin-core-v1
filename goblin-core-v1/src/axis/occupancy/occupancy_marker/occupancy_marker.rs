@@ -1,11 +1,10 @@
 use crate::{
     axis::{
         leg::{leg_matcher::LegMatcher, LegEnum, SamePair},
-        market::{market_spec::MarketSpec, Writables},
+        market::market_spec::MarketSpec,
         update::UpdateEnum,
     },
     goblin_error::GoblinError,
-    instructions::MakeReadables,
     matching::region::make_region::MakeRegion,
     quantities::{BaseLots, Position},
     state::{
@@ -28,15 +27,6 @@ pub trait OccupancyMarker {
         region: MakeRegion,
         position: Position,
         last_positions: &mut SamePair<Position>,
-        inner_bitmap_state: &mut InnerBitmap,
-    ) -> Result<(), GoblinError>;
-
-    // vacant = open (LegMatcher = Base / Quote)
-    // occupied = update (UpdateMarker = Increase / Decrease)
-    fn make<MS: MarketSpec>(
-        make_readables: &MakeReadables<MS>,
-        inner_enum_raw: bool,
-        writables: &mut Writables,
         inner_bitmap_state: &mut InnerBitmap,
     ) -> Result<(), GoblinError>;
 
