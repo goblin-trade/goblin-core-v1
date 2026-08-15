@@ -17,7 +17,7 @@ where
 {
     match region {
         MakeRegion::In(leg_enum) => {
-            require!(In::LEG_ENUM == leg_enum, GoblinError::InvalidOpenPrice);
+            require!(In::VARIANT == leg_enum, GoblinError::InvalidOpenPrice);
 
             let inner_pos = InnerPos::from(position);
             require!(
@@ -26,7 +26,7 @@ where
             );
         }
         MakeRegion::OnLastPrice(leg_enum) => {
-            require!(In::LEG_ENUM == leg_enum, GoblinError::InvalidOpenPrice);
+            require!(In::VARIANT == leg_enum, GoblinError::InvalidOpenPrice);
         }
         MakeRegion::Spread => {}
     }

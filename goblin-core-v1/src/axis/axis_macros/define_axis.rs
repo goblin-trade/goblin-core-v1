@@ -42,13 +42,13 @@ macro_rules! define_axis {
 
         impl $crate::axis::AxisMarker for $v0 {
             type Axis = $seed;
-            type Value = $enum_name;
-            const VALUE: Self::Value = $enum_name::$v0;
+            type Enum = $enum_name;
+            const VARIANT: Self::Enum = $enum_name::$v0;
         }
         impl $crate::axis::AxisMarker for $v1 {
             type Axis = $seed;
-            type Value = $enum_name;
-            const VALUE: Self::Value = $enum_name::$v1;
+            type Enum = $enum_name;
+            const VARIANT: Self::Enum = $enum_name::$v1;
         }
     };
 
@@ -92,18 +92,18 @@ macro_rules! define_axis {
 
         impl $crate::axis::AxisMarker for $v0 {
             type Axis = $seed;
-            type Value = $enum_name;
-            const VALUE: Self::Value = $enum_name::$v0;
+            type Enum = $enum_name;
+            const VARIANT: Self::Enum = $enum_name::$v0;
         }
         impl $crate::axis::AxisMarker for $v1 {
             type Axis = $seed;
-            type Value = $enum_name;
-            const VALUE: Self::Value = $enum_name::$v1;
+            type Enum = $enum_name;
+            const VARIANT: Self::Enum = $enum_name::$v1;
         }
         impl $crate::axis::AxisMarker for $v2 {
             type Axis = $seed;
-            type Value = $enum_name;
-            const VALUE: Self::Value = $enum_name::$v2;
+            type Enum = $enum_name;
+            const VARIANT: Self::Enum = $enum_name::$v2;
         }
     };
 }
