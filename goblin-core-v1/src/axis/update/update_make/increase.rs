@@ -1,29 +1,5 @@
-use crate::{
-    axis::{
-        market::market_spec::MarketSpec,
-        occupancy::occupancy_marker::OccupancyMarker,
-        update::{update_make::UpdateMake, Increase},
-    },
-    goblin_error::GoblinError,
-    quantities::BaseLots,
-    state::{
-        bitmap::alias::InnerBitmapUpdater, resting_order::preimage::RestingOrderPreimage, SlotKey,
-    },
-    types::Address,
-};
+use crate::axis::update::{update_make::UpdateMake, Increase, UpdateEnum};
 
 impl UpdateMake for Increase {
-    fn update_resting_order<'a, MS, OM>(
-        msg_sender: &Address,
-        base_lots: BaseLots,
-        key: &SlotKey<RestingOrderPreimage<MS>>,
-        inner_bitmap_updater: &mut InnerBitmapUpdater<'a>,
-    ) -> Result<BaseLots, GoblinError>
-    where
-        MS: MarketSpec,
-        OM: OccupancyMarker,
-    {
-        // increase store, i.e. decrease resting order
-        OM::decrease_resting_order(msg_sender, base_lots, key, inner_bitmap_updater)
-    }
+    const UPDATE_ENUM: UpdateEnum = UpdateEnum::Increase;
 }

@@ -40,9 +40,6 @@ pub fn ix_make_inner<MS: MarketSpec, In: LegMatcher, UM: UpdateMarker, OM: Occup
     }
     .hash();
 
-    // This will map back on OM
-    //
-    // Alternative match UpdateEnum. Call OM::increase or decrease respectively
     let updated_base_lots = UM::update_resting_order::<MS, OM>(
         msg_sender,
         base_lots,
