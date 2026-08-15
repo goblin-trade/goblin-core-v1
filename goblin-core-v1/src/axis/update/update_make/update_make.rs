@@ -1,7 +1,7 @@
 use crate::{
     axis::{
-        leg::leg_matcher::LegMatcher, market::market_spec::MarketSpec,
-        occupancy::occupancy_marker::OccupancyMarker, update::update_sign::UpdateSign,
+        market::market_spec::MarketSpec, occupancy::occupancy_marker::OccupancyMarker,
+        update::update_sign::UpdateSign,
     },
     goblin_error::GoblinError,
     quantities::BaseLots,
@@ -11,7 +11,7 @@ use crate::{
     types::Address,
 };
 pub trait UpdateMake: UpdateSign {
-    fn update_resting_order<'a, MS, In, OM>(
+    fn update_resting_order<'a, MS, OM>(
         msg_sender: &Address,
         base_lots: BaseLots,
         key: &SlotKey<RestingOrderPreimage<MS>>,
@@ -19,6 +19,5 @@ pub trait UpdateMake: UpdateSign {
     ) -> Result<BaseLots, GoblinError>
     where
         MS: MarketSpec,
-        In: LegMatcher,
         OM: OccupancyMarker;
 }

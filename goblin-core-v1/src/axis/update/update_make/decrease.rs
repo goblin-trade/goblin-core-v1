@@ -1,6 +1,5 @@
 use crate::{
     axis::{
-        leg::leg_matcher::LegMatcher,
         market::market_spec::MarketSpec,
         occupancy::occupancy_marker::OccupancyMarker,
         update::{update_make::UpdateMake, Decrease},
@@ -14,7 +13,7 @@ use crate::{
 };
 
 impl UpdateMake for Decrease {
-    fn update_resting_order<'a, MS, In, OM>(
+    fn update_resting_order<'a, MS, OM>(
         msg_sender: &Address,
         base_lots: BaseLots,
         key: &SlotKey<RestingOrderPreimage<MS>>,
@@ -22,7 +21,6 @@ impl UpdateMake for Decrease {
     ) -> Result<BaseLots, GoblinError>
     where
         MS: MarketSpec,
-        In: LegMatcher,
         OM: OccupancyMarker,
     {
         // decrease store, i.e. increase resting order
