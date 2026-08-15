@@ -1,48 +1,18 @@
 use crate::{
     axis::token::token_marker::TokenMarker,
+    define_axis,
     goblin_error::GoblinError,
     match_axes,
     quantities::{Exp, IntoAbs, Quantity, UnsidedDeltaAtoms},
     settlement::ConstDefault,
-    types::{Address, Marker, Tuple},
+    types::{Address, Tuple},
 };
 
-/// Update axis
-#[derive(Default, Clone, Copy, PartialEq)]
-pub struct Update;
-
-pub type Increase = Marker<Update, 0>;
-pub type Decrease = Marker<Update, 1>;
-
-// TODO switch order, should decrease be at 0?
-#[repr(u8)]
-#[derive(Clone, Copy)]
-pub enum UpdateEnum {
-    /// Increase store balance by decreasing resting order
-    Increase = 0,
-
-    /// Decrease store balance by increasing resting order
-    Decrease = 1,
-}
-
-impl From<bool> for UpdateEnum {
-    fn from(value: bool) -> Self {
-        match value {
-            false => Self::Increase,
-            true => Self::Decrease,
-        }
-    }
-}
-
-impl TryFrom<u8> for UpdateEnum {
-    type Error = GoblinError;
-
-    fn try_from(value: u8) -> Result<Self, Self::Error> {
-        match value {
-            0 => Ok(UpdateEnum::Increase),
-            1 => Ok(UpdateEnum::Decrease),
-            _ => Err(GoblinError::InvalidEnumVariant),
-        }
+define_axis! {
+    pub struct Update;
+    enum UpdateEnum {
+        Increase = 0,
+        Decrease = 1,
     }
 }
 

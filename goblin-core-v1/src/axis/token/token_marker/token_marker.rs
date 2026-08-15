@@ -1,14 +1,17 @@
 use crate::{
     axis::{
-        token::{token_marker::TokenData, token_reader::TokenReader},
+        token::{token_marker::TokenData, token_reader::TokenReader, TokenEnum},
         update::UpdateMarker,
+        AxisMarker,
     },
     goblin_error::GoblinError,
     quantities::{UnsidedAtoms, UnsidedDeltaAtomsPerLot},
     types::Address,
 };
 
-pub trait TokenMarker: Clone + Copy + PartialEq + PartialOrd + 'static + TokenReader {
+pub trait TokenMarker:
+    Clone + Copy + PartialEq + PartialOrd + 'static + AxisMarker<Enum = TokenEnum> + TokenReader
+{
     fn get_global_deposit(
         local_deposit: Self::LocalDeposit,
         atoms_per_lot: UnsidedDeltaAtomsPerLot,

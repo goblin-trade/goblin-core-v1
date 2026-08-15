@@ -1,5 +1,4 @@
 pub mod eth;
-pub use eth::*;
 
 pub mod eth_data;
 pub mod eth_delta;
