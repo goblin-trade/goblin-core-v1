@@ -9,14 +9,14 @@ use crate::axis::{
 
 /// Supertrait for leg operations
 pub trait LegMatcher:
-    LegQuantities
+    AxisMarker<Enum = LegEnum>
+    + LegQuantities
     + LegMath
     + LegConstants
     + LegValidator
     + LegCoordinates
     + LegIterator
     + LegReader
-    + AxisMarker<Enum = LegEnum>
 {
 }
 

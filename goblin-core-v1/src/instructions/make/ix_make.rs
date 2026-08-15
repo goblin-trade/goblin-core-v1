@@ -32,7 +32,7 @@ pub fn ix_make<MS: MarketSpec>(
     let region = MakeRegion::new(&writables.market_state.last_positions, position);
 
     match_axes!(OM = occupancy_enum => {
-        let enums = OM::get_enums(inner_enum_raw, region)?;
+        let enums = OM::get_make_enums(inner_enum_raw, region)?;
 
         match_axes!(UM = enums.0, In = enums.1 => {
             ix_make_inner::<MS, In, UM, OM>(position, region, base_lots, readables, writables, inner_bitmap_state)?;

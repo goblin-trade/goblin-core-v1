@@ -19,9 +19,7 @@ use crate::{
 };
 
 impl OccupancyMarker for Occupied {
-    type MakeEnum = UpdateEnum;
-
-    fn get_enums(
+    fn get_make_enums(
         inner_enum_raw: bool,
         region: MakeRegion,
     ) -> Result<(UpdateEnum, LegEnum), GoblinError> {

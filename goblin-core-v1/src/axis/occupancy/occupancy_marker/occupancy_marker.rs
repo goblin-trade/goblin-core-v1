@@ -2,7 +2,9 @@ use crate::{
     axis::{
         leg::{leg_matcher::LegMatcher, LegEnum, SamePair},
         market::market_spec::MarketSpec,
+        occupancy::OccupancyEnum,
         update::UpdateEnum,
+        AxisMarker,
     },
     goblin_error::GoblinError,
     matching::region::make_region::MakeRegion,
@@ -15,10 +17,8 @@ use crate::{
     types::Address,
 };
 
-pub trait OccupancyMarker {
-    type MakeEnum: Clone + Copy;
-
-    fn get_enums(
+pub trait OccupancyMarker: AxisMarker<Enum = OccupancyEnum> {
+    fn get_make_enums(
         inner_enum_raw: bool,
         region: MakeRegion,
     ) -> Result<(UpdateEnum, LegEnum), GoblinError>;

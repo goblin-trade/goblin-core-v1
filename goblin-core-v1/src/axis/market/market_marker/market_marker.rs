@@ -1,7 +1,12 @@
 use crate::{
-    axis::market::{
-        market_counts::{dynamic::DynamicCounts, hardcoded::HardcodedCounts, MarketCountsTuple},
-        Dynamic, Hardcoded,
+    axis::{
+        market::{
+            market_counts::{
+                dynamic::DynamicCounts, hardcoded::HardcodedCounts, MarketCountsTuple,
+            },
+            Dynamic, Hardcoded, MarketEnum,
+        },
+        AxisMarker,
     },
     types::StoreReader,
 };
@@ -16,6 +21,7 @@ pub trait MarketMarker:
     + Copy
     + PartialEq
     + PartialOrd
+    + AxisMarker<Enum = MarketEnum>
     + StoreReader<MarketCountsTuple, Result = Self::MarketCounts>
 {
     /// Discriminator used to hash the market key
