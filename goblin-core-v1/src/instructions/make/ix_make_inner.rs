@@ -3,27 +3,20 @@ use crate::{
         leg::{leg_matcher::LegMatcher, Base},
         market::{market_spec::MarketSpec, Readables, Writables},
         occupancy::occupancy_marker::OccupancyMarker,
-        update::UpdateMarker,
+        update::{update_make::UpdateResult, UpdateMarker},
     },
     goblin_error::GoblinError,
     matching::region::make_region::MakeRegion,
     quantities::{BaseLots, InnerPos, Position, Ticks},
-    state::{
-        bitmap::alias::{InnerBitmap, InnerBitmapUpdater},
-        resting_order::preimage::RestingOrderPreimage,
-        Preimage,
-    },
+    state::bitmap::alias::{InnerBitmap, InnerBitmapUpdater},
     types::StoreReader,
 };
 
 pub fn ix_make_inner<MS: MarketSpec, In: LegMatcher, UM: UpdateMarker, OM: OccupancyMarker>(
+    base_lots: BaseLots,
     position: Position,
     region: MakeRegion,
-    base_lots: BaseLots,
-    Readables {
-        msg_sender,
-        market_readables,
-    }: &Readables<MS>,
+    readables: &Readables<MS>,
     writables: &mut Writables,
     inner_bitmap_state: &mut InnerBitmap,
 ) -> Result<(), GoblinError> {
@@ -34,30 +27,26 @@ pub fn ix_make_inner<MS: MarketSpec, In: LegMatcher, UM: UpdateMarker, OM: Occup
         inner_bitmap_state,
     )?;
 
-    let key = &mut RestingOrderPreimage {
-        market_key: market_readables.market_key,
-        position,
-    }
-    .hash();
+    // number of lots to increase or decrease from global balance store
+    let UpdateResult {
+        delta_base_lots,
+        resting_order_closed,
+    } = UM::update_resting_order::<MS, OM>(base_lots, position, readables)?;
 
-    let updated_base_lots = UM::update_resting_order::<MS, OM>(
-        msg_sender,
-        base_lots,
-        key,
-        &mut InnerBitmapUpdater {
+    if resting_order_closed {
+        InnerBitmapUpdater {
             bitmap: inner_bitmap_state,
             pos: InnerPos::from(position),
-        },
-    )?;
+        }
+        .deactivate();
+    }
 
-    let base_lot_size = Base::get(&market_readables.market.lot_size_pair);
-    let tick_size = market_readables.market.tick_size;
+    let base_lot_size = Base::get(&readables.market_readables.market.lot_size_pair);
+    let tick_size = readables.market_readables.market.tick_size;
     let price = Ticks::from(position);
 
-    writables.local_delta.make.add_make::<In, UM>(
-        updated_base_lots,
-        base_lot_size,
-        tick_size,
-        price,
-    )
+    writables
+        .local_delta
+        .make
+        .add_make::<In, UM>(delta_base_lots, base_lot_size, tick_size, price)
 }

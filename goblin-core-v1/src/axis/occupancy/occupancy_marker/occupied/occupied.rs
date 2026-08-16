@@ -11,8 +11,8 @@ use crate::{
     require,
     settlement::CheckedOps,
     state::{
-        bitmap::alias::{InnerBitmap, InnerBitmapUpdater},
-        resting_order::preimage::RestingOrderPreimage,
+        bitmap::alias::InnerBitmap,
+        resting_order::{preimage::RestingOrderPreimage, RestingOrder},
         SlotKey,
     },
     types::Address,
@@ -45,12 +45,15 @@ impl OccupancyMarker for Occupied {
         Ok(())
     }
 
+    // TODO can we have a common update_resting_order() function
+    // * It loads and verifies
+    // * Map to UpdateMarker for increase / decrease operations
+
     fn increase_resting_order<'a, MS: MarketSpec>(
         msg_sender: &Address,
         base_lots: BaseLots,
         key: &SlotKey<RestingOrderPreimage<MS>>,
-        _inner_bitmap_updater: &mut InnerBitmapUpdater<'a>,
-    ) -> Result<BaseLots, GoblinError> {
+    ) -> Result<(RestingOrder, BaseLots), GoblinError> {
         let mut resting_order = key.load();
 
         require!(
@@ -63,17 +66,14 @@ impl OccupancyMarker for Occupied {
             .checked_add(base_lots)
             .ok_or(GoblinError::Overflow)?;
 
-        key.store(&resting_order);
-
-        Ok(base_lots)
+        Ok((resting_order, base_lots))
     }
 
     fn decrease_resting_order<'a, MS: MarketSpec>(
         msg_sender: &Address,
         base_lots: BaseLots,
         key: &SlotKey<RestingOrderPreimage<MS>>,
-        inner_bitmap_updater: &mut InnerBitmapUpdater<'a>,
-    ) -> Result<BaseLots, GoblinError> {
+    ) -> Result<(RestingOrder, BaseLots), GoblinError> {
         let mut resting_order = key.load();
 
         require!(
@@ -81,18 +81,9 @@ impl OccupancyMarker for Occupied {
             GoblinError::UnauthorizedMsgSender
         );
 
-        let stored_base_lots = &mut resting_order.base_lots;
-        let reduced_lots = if *stored_base_lots > base_lots {
-            *stored_base_lots -= base_lots;
-            key.store(&resting_order);
+        let delta_base_lots = resting_order.base_lots.min(base_lots);
+        resting_order.base_lots -= delta_base_lots;
 
-            base_lots
-        } else {
-            inner_bitmap_updater.deactivate();
-
-            *stored_base_lots
-        };
-
-        Ok(reduced_lots)
+        Ok((resting_order, delta_base_lots))
     }
 }

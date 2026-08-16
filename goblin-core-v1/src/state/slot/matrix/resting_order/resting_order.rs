@@ -19,6 +19,7 @@ use crate::{impl_checked_slot_state, quantities::BaseLots, types::Address};
 /// * If quote in case (bid), we use adjustedQuoteLots = quote lots * BaseLotsPerBaseUnit
 /// * Base in taker (ask) is matched against quote in maker (bid).
 #[repr(C)]
+#[derive(Default)]
 pub struct RestingOrder {
     pub maker: Address,
     pub base_lots: BaseLots,

@@ -10,8 +10,8 @@ use crate::{
     matching::region::make_region::MakeRegion,
     quantities::{BaseLots, Position},
     state::{
-        bitmap::alias::{InnerBitmap, InnerBitmapUpdater},
-        resting_order::preimage::RestingOrderPreimage,
+        bitmap::alias::InnerBitmap,
+        resting_order::{preimage::RestingOrderPreimage, RestingOrder},
         SlotKey,
     },
     types::Address,
@@ -34,13 +34,11 @@ pub trait OccupancyMarker: AxisMarker<Enum = OccupancyEnum> {
         msg_sender: &Address,
         base_lots: BaseLots,
         key: &SlotKey<RestingOrderPreimage<MS>>,
-        inner_bitmap_updater: &mut InnerBitmapUpdater<'a>,
-    ) -> Result<BaseLots, GoblinError>;
+    ) -> Result<(RestingOrder, BaseLots), GoblinError>;
 
     fn decrease_resting_order<'a, MS: MarketSpec>(
         msg_sender: &Address,
         base_lots: BaseLots,
         key: &SlotKey<RestingOrderPreimage<MS>>,
-        inner_bitmap_updater: &mut InnerBitmapUpdater<'a>,
-    ) -> Result<BaseLots, GoblinError>;
+    ) -> Result<(RestingOrder, BaseLots), GoblinError>;
 }
