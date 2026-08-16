@@ -35,7 +35,7 @@ pub fn ix_make<MS: MarketSpec>(
         let enums = OM::get_make_enums(inner_enum_raw, region)?;
 
         match_axes!(UM = enums.0, In = enums.1 => {
-            ix_make_inner::<MS, In, UM, OM>(base_lots, position, region, readables, writables, inner_bitmap_state)?;
+            ix_make_inner::<MS, In, OM, UM>(base_lots, position, region, readables, writables, inner_bitmap_state)?;
         });
     });
 

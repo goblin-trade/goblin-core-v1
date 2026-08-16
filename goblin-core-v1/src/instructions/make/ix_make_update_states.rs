@@ -1,0 +1,77 @@
+use core::matches;
+
+use crate::{
+    axis::{
+        leg::{leg_matcher::LegMatcher, SamePair},
+        market::market_spec::MarketSpec,
+        occupancy::{
+            occupancy_marker::OccupancyMarker,
+            OccupancyEnum::{Occupied, Vacant},
+        },
+        update::{
+            UpdateEnum::{Decrease, Increase},
+            UpdateMarker,
+        },
+    },
+    matching::region::make_region::MakeRegion::{self, Spread},
+    quantities::{BaseLots, InnerPos, Position},
+    state::{
+        bitmap::alias::{InnerBitmap, InnerBitmapUpdater},
+        resting_order::{preimage::RestingOrderPreimage, RestingOrder},
+        SlotKey,
+    },
+};
+
+pub fn ix_make_update_states<
+    MS: MarketSpec,
+    In: LegMatcher,
+    OM: OccupancyMarker,
+    UM: UpdateMarker,
+>(
+    position: Position,
+    region: MakeRegion,
+    key: &SlotKey<RestingOrderPreimage<MS>>,
+    resting_order: &RestingOrder,
+    inner_bitmap_state: &mut InnerBitmap,
+    last_positions: &mut SamePair<Position>,
+) {
+    let resting_order_empty = resting_order.base_lots == BaseLots::default();
+
+    if !resting_order_empty {
+        key.store(resting_order);
+    }
+
+    let mut inner_bitmap_updater = InnerBitmapUpdater {
+        bitmap: inner_bitmap_state,
+        pos: InnerPos::from(position),
+    };
+
+    match (OM::VARIANT, UM::VARIANT) {
+        (Vacant, Increase) => {
+            // illegal, unreachable
+        }
+        (Vacant, Decrease) => {
+            if resting_order_empty {
+                // Opening with 0 size is no-op
+                return;
+            }
+            key.store(resting_order);
+            inner_bitmap_updater.activate();
+
+            if matches!(region, Spread) {
+                let last_position = In::get_leg_mut(last_positions);
+                *last_position = position;
+            }
+        }
+        (Occupied, Increase) => {
+            if resting_order_empty {
+                inner_bitmap_updater.deactivate();
+            } else {
+                key.store(resting_order);
+            }
+        }
+        (Occupied, Decrease) => {
+            key.store(resting_order);
+        }
+    }
+}

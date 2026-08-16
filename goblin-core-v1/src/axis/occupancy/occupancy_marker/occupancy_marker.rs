@@ -23,11 +23,10 @@ pub trait OccupancyMarker: AxisMarker<Enum = OccupancyEnum> {
         region: MakeRegion,
     ) -> Result<(UpdateEnum, LegEnum), GoblinError>;
 
-    fn validate_and_update_region<In: LegMatcher>(
+    fn validate_region<In: LegMatcher>(
         region: MakeRegion,
         position: Position,
-        last_positions: &mut SamePair<Position>,
-        inner_bitmap_state: &mut InnerBitmap,
+        inner_bitmap_state: &InnerBitmap,
     ) -> Result<(), GoblinError>;
 
     fn get_validated_resting_order<MS: MarketSpec>(

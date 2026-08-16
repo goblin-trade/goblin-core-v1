@@ -1,6 +1,6 @@
 use crate::{
     axis::{
-        leg::{leg_matcher::LegMatcher, LegEnum, SamePair},
+        leg::{leg_matcher::LegMatcher, LegEnum},
         market::market_spec::MarketSpec,
         occupancy::{occupancy_marker::OccupancyMarker, Occupied},
         update::UpdateEnum,
@@ -31,11 +31,10 @@ impl OccupancyMarker for Occupied {
         Ok((update_enum, leg_enum))
     }
 
-    fn validate_and_update_region<In: LegMatcher>(
+    fn validate_region<In: LegMatcher>(
         _region: MakeRegion,
         position: Position,
-        _last_positions: &mut SamePair<Position>,
-        inner_bitmap_state: &mut InnerBitmap,
+        inner_bitmap_state: &InnerBitmap,
     ) -> Result<(), GoblinError> {
         require!(
             inner_bitmap_state.index_active(position.into()),
