@@ -8,7 +8,7 @@ use crate::{
     },
     goblin_error::GoblinError,
     matching::region::make_region::MakeRegion,
-    quantities::{BaseLots, Position},
+    quantities::Position,
     state::{
         bitmap::alias::InnerBitmap,
         resting_order::{preimage::RestingOrderPreimage, RestingOrder},
@@ -30,15 +30,8 @@ pub trait OccupancyMarker: AxisMarker<Enum = OccupancyEnum> {
         inner_bitmap_state: &mut InnerBitmap,
     ) -> Result<(), GoblinError>;
 
-    fn increase_resting_order<'a, MS: MarketSpec>(
-        msg_sender: &Address,
-        base_lots: BaseLots,
+    fn get_validated_resting_order<MS: MarketSpec>(
         key: &SlotKey<RestingOrderPreimage<MS>>,
-    ) -> Result<(RestingOrder, BaseLots), GoblinError>;
-
-    fn decrease_resting_order<'a, MS: MarketSpec>(
         msg_sender: &Address,
-        base_lots: BaseLots,
-        key: &SlotKey<RestingOrderPreimage<MS>>,
-    ) -> Result<(RestingOrder, BaseLots), GoblinError>;
+    ) -> Result<RestingOrder, GoblinError>;
 }

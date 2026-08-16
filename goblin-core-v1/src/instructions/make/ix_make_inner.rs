@@ -3,12 +3,16 @@ use crate::{
         leg::{leg_matcher::LegMatcher, Base},
         market::{market_spec::MarketSpec, Readables, Writables},
         occupancy::occupancy_marker::OccupancyMarker,
-        update::{update_make::UpdateResult, UpdateMarker},
+        update::UpdateMarker,
     },
     goblin_error::GoblinError,
     matching::region::make_region::MakeRegion,
     quantities::{BaseLots, InnerPos, Position, Ticks},
-    state::bitmap::alias::{InnerBitmap, InnerBitmapUpdater},
+    state::{
+        bitmap::alias::{InnerBitmap, InnerBitmapUpdater},
+        resting_order::preimage::RestingOrderPreimage,
+        Preimage,
+    },
     types::StoreReader,
 };
 
@@ -27,13 +31,20 @@ pub fn ix_make_inner<MS: MarketSpec, In: LegMatcher, UM: UpdateMarker, OM: Occup
         inner_bitmap_state,
     )?;
 
-    // number of lots to increase or decrease from global balance store
-    let UpdateResult {
-        delta_base_lots,
-        resting_order_closed,
-    } = UM::update_resting_order::<MS, OM>(base_lots, position, readables)?;
+    let key = &mut RestingOrderPreimage {
+        market_key: readables.market_readables.market_key,
+        position,
+    }
+    .hash();
 
-    if resting_order_closed {
+    let resting_order = &mut OM::get_validated_resting_order(key, readables.msg_sender)?;
+    let delta_base_lots = UM::update_resting_order(base_lots, resting_order)?;
+
+    let resting_order_closed = resting_order.base_lots == BaseLots::default();
+
+    if !resting_order_closed {
+        key.store(resting_order);
+    } else {
         InnerBitmapUpdater {
             bitmap: inner_bitmap_state,
             pos: InnerPos::from(position),

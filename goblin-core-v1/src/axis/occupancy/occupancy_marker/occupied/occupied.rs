@@ -7,9 +7,8 @@ use crate::{
     },
     goblin_error::GoblinError,
     matching::region::make_region::MakeRegion,
-    quantities::{BaseLots, Position},
+    quantities::Position,
     require,
-    settlement::CheckedOps,
     state::{
         bitmap::alias::InnerBitmap,
         resting_order::{preimage::RestingOrderPreimage, RestingOrder},
@@ -45,45 +44,17 @@ impl OccupancyMarker for Occupied {
         Ok(())
     }
 
-    // TODO can we have a common update_resting_order() function
-    // * It loads and verifies
-    // * Map to UpdateMarker for increase / decrease operations
-
-    fn increase_resting_order<'a, MS: MarketSpec>(
-        msg_sender: &Address,
-        base_lots: BaseLots,
+    fn get_validated_resting_order<MS: MarketSpec>(
         key: &SlotKey<RestingOrderPreimage<MS>>,
-    ) -> Result<(RestingOrder, BaseLots), GoblinError> {
-        let mut resting_order = key.load();
-
+        msg_sender: &Address,
+    ) -> Result<RestingOrder, GoblinError> {
+        // Load from key and ensure owner matches
+        let resting_order = key.load();
         require!(
             resting_order.maker == *msg_sender,
             GoblinError::UnauthorizedMsgSender
         );
 
-        let stored_base_lots = &mut resting_order.base_lots;
-        *stored_base_lots = stored_base_lots
-            .checked_add(base_lots)
-            .ok_or(GoblinError::Overflow)?;
-
-        Ok((resting_order, base_lots))
-    }
-
-    fn decrease_resting_order<'a, MS: MarketSpec>(
-        msg_sender: &Address,
-        base_lots: BaseLots,
-        key: &SlotKey<RestingOrderPreimage<MS>>,
-    ) -> Result<(RestingOrder, BaseLots), GoblinError> {
-        let mut resting_order = key.load();
-
-        require!(
-            resting_order.maker == *msg_sender,
-            GoblinError::UnauthorizedMsgSender
-        );
-
-        let delta_base_lots = resting_order.base_lots.min(base_lots);
-        resting_order.base_lots -= delta_base_lots;
-
-        Ok((resting_order, delta_base_lots))
+        Ok(resting_order)
     }
 }

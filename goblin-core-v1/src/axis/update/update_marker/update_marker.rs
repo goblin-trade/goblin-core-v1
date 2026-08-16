@@ -1,7 +1,10 @@
 use crate::{
-    axis::update::{
-        update_erc20::UpdateERC20, update_make::UpdateMake, Decrease, Increase, SameUpdatePair,
-        UpdateETH,
+    axis::{
+        update::{
+            update_erc20::UpdateERC20, update_make::UpdateMake, update_sign::UpdateSign, Decrease,
+            Increase, SameUpdatePair, UpdateETH, UpdateEnum,
+        },
+        AxisMarker,
     },
     quantities::UnsidedLots,
     types::StoreReader,
@@ -9,8 +12,10 @@ use crate::{
 
 pub trait UpdateMarker:
     UpdateMake
+    + UpdateSign
     + UpdateERC20
     + UpdateETH
+    + AxisMarker<Enum = UpdateEnum>
     + StoreReader<SameUpdatePair<UnsidedLots>, Result = UnsidedLots>
 {
 }

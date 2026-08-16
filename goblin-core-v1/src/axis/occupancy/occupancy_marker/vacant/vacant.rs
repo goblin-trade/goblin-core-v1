@@ -10,7 +10,7 @@ use crate::{
     },
     goblin_error::GoblinError,
     matching::region::make_region::MakeRegion,
-    quantities::{BaseLots, Position},
+    quantities::Position,
     state::{
         bitmap::alias::InnerBitmap,
         resting_order::{preimage::RestingOrderPreimage, RestingOrder},
@@ -44,26 +44,11 @@ impl OccupancyMarker for Vacant {
         Ok(())
     }
 
-    fn increase_resting_order<'a, MS: MarketSpec>(
-        msg_sender: &Address,
-        base_lots: BaseLots,
+    fn get_validated_resting_order<MS: MarketSpec>(
         _key: &SlotKey<RestingOrderPreimage<MS>>,
-    ) -> Result<(RestingOrder, BaseLots), GoblinError> {
-        Ok((
-            RestingOrder {
-                maker: *msg_sender,
-                base_lots,
-            },
-            base_lots,
-        ))
-    }
-
-    fn decrease_resting_order<'a, MS: MarketSpec>(
         _msg_sender: &Address,
-        _base_lots: BaseLots,
-        _key: &SlotKey<RestingOrderPreimage<MS>>,
-    ) -> Result<(RestingOrder, BaseLots), GoblinError> {
-        // Unreachable stub
-        Ok((RestingOrder::default(), BaseLots::default()))
+    ) -> Result<RestingOrder, GoblinError> {
+        // Vacant postion. Simply return a default empty resting order.
+        Ok(RestingOrder::default())
     }
 }
