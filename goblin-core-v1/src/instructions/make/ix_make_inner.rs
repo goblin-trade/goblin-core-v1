@@ -1,20 +1,15 @@
 use crate::{
     axis::{
-        leg::{leg_matcher::LegMatcher, Base, SamePair},
+        leg::leg_matcher::LegMatcher,
         market::{market_spec::MarketSpec, Readables, Writables},
         occupancy::occupancy_marker::OccupancyMarker,
         update::UpdateMarker,
     },
     goblin_error::GoblinError,
-    instructions::make::ix_make_update_states::ix_make_update_states,
-    matching::region::{self, make_region::MakeRegion},
-    quantities::{BaseLots, InnerPos, Position, Ticks},
-    state::{
-        bitmap::alias::{InnerBitmap, InnerBitmapUpdater},
-        resting_order::preimage::RestingOrderPreimage,
-        Preimage,
-    },
-    types::StoreReader,
+    instructions::make::{ix_make_delta::ix_make_delta, ix_make_states::ix_make_states},
+    matching::region::make_region::MakeRegion,
+    quantities::{BaseLots, Position},
+    state::{bitmap::alias::InnerBitmap, resting_order::preimage::RestingOrderPreimage, Preimage},
 };
 
 pub fn ix_make_inner<MS: MarketSpec, In: LegMatcher, OM: OccupancyMarker, UM: UpdateMarker>(
@@ -37,7 +32,7 @@ pub fn ix_make_inner<MS: MarketSpec, In: LegMatcher, OM: OccupancyMarker, UM: Up
     let delta_base_lots = UM::update_resting_order(base_lots, resting_order)?;
 
     // 1. Update states
-    ix_make_update_states::<MS, In, OM, UM>(
+    ix_make_states::<MS, In, OM, UM>(
         position,
         region,
         key,
@@ -47,12 +42,5 @@ pub fn ix_make_inner<MS: MarketSpec, In: LegMatcher, OM: OccupancyMarker, UM: Up
     );
 
     // 2. Update delta
-    let base_lot_size = Base::get(&readables.market_readables.market.lot_size_pair);
-    let tick_size = readables.market_readables.market.tick_size;
-    let price = Ticks::from(position);
-
-    writables
-        .local_delta
-        .make
-        .add_make::<In, UM>(delta_base_lots, base_lot_size, tick_size, price)
+    ix_make_delta::<MS, In, UM>(delta_base_lots, position, readables, writables)
 }

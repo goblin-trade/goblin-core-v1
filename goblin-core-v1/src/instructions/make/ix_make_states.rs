@@ -22,19 +22,19 @@ use crate::{
     },
 };
 
-pub fn ix_make_update_states<
-    MS: MarketSpec,
-    In: LegMatcher,
-    OM: OccupancyMarker,
-    UM: UpdateMarker,
->(
+pub fn ix_make_states<MS, In, OM, UM>(
     position: Position,
     region: MakeRegion,
     key: &SlotKey<RestingOrderPreimage<MS>>,
     resting_order: &RestingOrder,
     inner_bitmap_state: &mut InnerBitmap,
     last_positions: &mut SamePair<Position>,
-) {
+) where
+    MS: MarketSpec,
+    In: LegMatcher,
+    OM: OccupancyMarker,
+    UM: UpdateMarker,
+{
     let resting_order_empty = resting_order.base_lots == BaseLots::default();
 
     if !resting_order_empty {
@@ -58,6 +58,7 @@ pub fn ix_make_update_states<
             key.store(resting_order);
             inner_bitmap_updater.activate();
 
+            // Update last position if opened in spread
             if matches!(region, Spread) {
                 let last_position = In::get_leg_mut(last_positions);
                 *last_position = position;
