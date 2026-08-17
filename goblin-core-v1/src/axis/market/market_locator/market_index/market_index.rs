@@ -1,7 +1,7 @@
 use core::marker::PhantomData;
 
-use crate::axis::market::{
-    market_locator::hardcoded::HardcodedMarketList, market_spec::MarketSpec,
+use crate::{
+    axis::market::market_locator::hardcoded::HardcodedMarketList, axis_helpers::MarketSpec,
 };
 
 #[derive(Clone, Copy, PartialEq, PartialOrd)]

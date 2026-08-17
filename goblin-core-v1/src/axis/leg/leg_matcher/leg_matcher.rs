@@ -1,10 +1,10 @@
-use crate::axis::{
-    leg::{
+use crate::{
+    axis::leg::{
         leg_constants::LegConstants, leg_coordinates::LegCoordinates, leg_iterator::LegIterator,
         leg_math::LegMath, leg_quantities::LegQuantities, leg_reader::LegReader,
         leg_validator::LegValidator, Base, LegEnum, Quote,
     },
-    AxisMarker,
+    axis_helpers::AxisMarker,
 };
 
 /// Supertrait for leg operations

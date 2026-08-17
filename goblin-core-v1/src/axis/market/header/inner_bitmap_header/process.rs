@@ -1,8 +1,6 @@
 use crate::{
-    axis::market::{
-        header::inner_bitmap_header::InnerBitmapHeader, market_spec::MarketSpec, Readables,
-        Writables,
-    },
+    axis::market::{header::inner_bitmap_header::InnerBitmapHeader, Readables, Writables},
+    axis_helpers::MarketSpec,
     goblin_error::GoblinError,
     input_processor::{DecodeCtx, FixedDecode},
     instructions::ix_make::ix_make,

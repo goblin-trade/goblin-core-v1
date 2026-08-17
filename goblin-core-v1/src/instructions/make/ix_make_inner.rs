@@ -1,10 +1,11 @@
 use crate::{
     axis::{
         leg::leg_matcher::LegMatcher,
-        market::{market_spec::MarketSpec, Readables, Writables},
+        market::{Readables, Writables},
         occupancy::occupancy_marker::OccupancyMarker,
         update::UpdateMarker,
     },
+    axis_helpers::MarketSpec,
     goblin_error::GoblinError,
     instructions::make::{ix_make_delta::ix_make_delta, ix_make_states::ix_make_states},
     matching::region::make_region::MakeRegion,
@@ -16,6 +17,7 @@ pub fn ix_make_inner<MS: MarketSpec, In: LegMatcher, OM: OccupancyMarker, UM: Up
     base_lots: BaseLots,
     position: Position,
     region: MakeRegion,
+    // TODO common struct wrapper for Readables and Writables
     readables: &Readables<MS>,
     writables: &mut Writables,
     inner_bitmap_state: &mut InnerBitmap,

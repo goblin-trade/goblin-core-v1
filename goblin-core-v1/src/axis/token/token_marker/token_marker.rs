@@ -2,8 +2,8 @@ use crate::{
     axis::{
         token::{token_marker::TokenData, token_reader::TokenReader, TokenEnum},
         update::UpdateMarker,
-        AxisMarker,
     },
+    axis_helpers::AxisMarker,
     goblin_error::GoblinError,
     quantities::{UnsidedAtoms, UnsidedDeltaAtomsPerLot},
     types::Address,

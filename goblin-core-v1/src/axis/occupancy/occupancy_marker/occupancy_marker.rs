@@ -1,11 +1,10 @@
 use crate::{
     axis::{
-        leg::{leg_matcher::LegMatcher, LegEnum, SamePair},
-        market::market_spec::MarketSpec,
+        leg::{leg_matcher::LegMatcher, LegEnum},
         occupancy::OccupancyEnum,
         update::UpdateEnum,
-        AxisMarker,
     },
+    axis_helpers::{AxisMarker, MarketSpec},
     goblin_error::GoblinError,
     matching::region::make_region::MakeRegion,
     quantities::Position,

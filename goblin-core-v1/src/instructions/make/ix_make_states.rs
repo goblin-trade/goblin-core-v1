@@ -3,7 +3,6 @@ use core::matches;
 use crate::{
     axis::{
         leg::{leg_matcher::LegMatcher, SamePair},
-        market::market_spec::MarketSpec,
         occupancy::{
             occupancy_marker::OccupancyMarker,
             OccupancyEnum::{Occupied, Vacant},
@@ -13,6 +12,7 @@ use crate::{
             UpdateMarker,
         },
     },
+    axis_helpers::MarketSpec,
     matching::region::make_region::MakeRegion::{self, Spread},
     quantities::{BaseLots, InnerPos, Position},
     state::{

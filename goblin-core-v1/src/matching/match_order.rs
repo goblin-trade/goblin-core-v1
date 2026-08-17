@@ -1,8 +1,9 @@
 use crate::{
     axis::{
         leg::{leg_matcher::LegMatcher, Base},
-        market::{market_spec::MarketSpec, MarketReadables, Readables, Writables},
+        market::{MarketReadables, Readables, Writables},
     },
+    axis_helpers::MarketSpec,
     goblin_error::GoblinError,
     instructions::TakeHeader,
     matching::match_iterator::{match_iterator, RestingOrderEntry},

@@ -1,8 +1,9 @@
 use crate::{
     axis::{
-        market::{header::make_header::MakeHeader, market_spec::MarketSpec, Readables, Writables},
+        market::{header::make_header::MakeHeader, Readables, Writables},
         occupancy::occupancy_marker::OccupancyMarker,
     },
+    axis_helpers::MarketSpec,
     goblin_error::GoblinError,
     input_processor::{DecodeCtx, FixedDecode},
     instructions::make::ix_make_inner::ix_make_inner,
@@ -35,6 +36,9 @@ pub fn ix_make<MS: MarketSpec>(
         let enums = OM::get_make_enums(inner_enum_raw, region)?;
 
         match_axes!(UM = enums.0, In = enums.1 => {
+            // TODO combine In, OM, UM into a spec trait
+            // TODO combine Readables and Writables
+            // TODO combine base_lots, position, region into common struct
             ix_make_inner::<MS, In, OM, UM>(base_lots, position, region, readables, writables, inner_bitmap_state)?;
         });
     });

@@ -1,5 +1,6 @@
 use crate::{
-    axis::{leg::leg_matcher::LegMatcher, market::market_spec::MarketSpec},
+    axis::leg::leg_matcher::LegMatcher,
+    axis_helpers::MarketSpec,
     quantities::{Pos2, Position, SafePosition, INNER_POS, OUTER_POS, POS_0, POS_1, POS_2},
     state::{
         bitmap::{bitmap_reader::BitmapReader, preimage::BitmapPreimage, Bitmap},

@@ -1,9 +1,9 @@
 use crate::{
     axis::market::{
         header::{market_header::MarketHeader, outer_bitmap_header::OuterBitmapHeader},
-        market_spec::MarketSpec,
         Readables, Writables,
     },
+    axis_helpers::MarketSpec,
     goblin_error::GoblinError,
     input_processor::DecodeCtx,
 };

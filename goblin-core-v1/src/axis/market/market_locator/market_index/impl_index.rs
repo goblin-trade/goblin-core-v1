@@ -1,9 +1,11 @@
 use core::ops::Index;
 
-use crate::axis::market::{
-    market_locator::{hardcoded::HardcodedMarketList, MarketIndex},
-    market_spec::MarketSpec,
-    MarketReadables,
+use crate::{
+    axis::market::{
+        market_locator::{hardcoded::HardcodedMarketList, MarketIndex},
+        MarketReadables,
+    },
+    axis_helpers::MarketSpec,
 };
 
 impl<MS> Index<MarketIndex<MS>> for &'static [MarketReadables<MS>]

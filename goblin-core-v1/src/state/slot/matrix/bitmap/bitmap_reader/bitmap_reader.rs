@@ -1,5 +1,6 @@
 use crate::{
-    axis::{leg::leg_matcher::LegMatcher, market::market_spec::MarketSpec},
+    axis::leg::leg_matcher::LegMatcher,
+    axis_helpers::MarketSpec,
     quantities::{Position, SafePosition},
     state::{MarketPreimage, SlotKey},
 };

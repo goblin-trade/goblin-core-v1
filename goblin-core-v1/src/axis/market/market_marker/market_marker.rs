@@ -1,13 +1,9 @@
 use crate::{
-    axis::{
-        market::{
-            market_counts::{
-                dynamic::DynamicCounts, hardcoded::HardcodedCounts, MarketCountsTuple,
-            },
-            Dynamic, Hardcoded, MarketEnum,
-        },
-        AxisMarker,
+    axis::market::{
+        market_counts::{dynamic::DynamicCounts, hardcoded::HardcodedCounts, MarketCountsTuple},
+        Dynamic, Hardcoded, MarketEnum,
     },
+    axis_helpers::AxisMarker,
     types::StoreReader,
 };
 

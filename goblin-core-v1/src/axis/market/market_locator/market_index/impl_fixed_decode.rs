@@ -1,8 +1,6 @@
 use crate::{
-    axis::market::{
-        market_locator::{hardcoded::HardcodedMarketList, MarketIndex},
-        market_spec::MarketSpec,
-    },
+    axis::market::market_locator::{hardcoded::HardcodedMarketList, MarketIndex},
+    axis_helpers::MarketSpec,
     goblin_error::GoblinError,
     input_processor::{DecodeCtx, FixedDecode},
     require,

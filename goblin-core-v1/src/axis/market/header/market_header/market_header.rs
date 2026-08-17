@@ -1,4 +1,4 @@
-use crate::axis::{leg::SamePair, market::market_spec::MarketSpec};
+use crate::{axis::leg::SamePair, axis_helpers::MarketSpec};
 use core::marker::PhantomData;
 
 pub struct MarketHeader<MS: MarketSpec> {

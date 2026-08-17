@@ -1,5 +1,6 @@
 use crate::{
-    axis::{leg::SamePair, market::market_spec::MarketSpec},
+    axis::leg::SamePair,
+    axis_helpers::MarketSpec,
     matching::region::make_region::MakeRegion,
     quantities::{OuterPos, Position, SafePosition, INNER_POS, OUTER_POS, POS_0, POS_1},
     state::{

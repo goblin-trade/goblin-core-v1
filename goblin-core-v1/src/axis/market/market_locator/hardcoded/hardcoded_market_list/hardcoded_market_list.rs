@@ -1,5 +1,6 @@
-use crate::axis::market::{
-    market_spec::MarketSpec, token_pair::TokenPair, Hardcoded, MarketReadables,
+use crate::{
+    axis::market::{token_pair::TokenPair, Hardcoded, MarketReadables},
+    axis_helpers::MarketSpec,
 };
 
 /// Trait to store hardcoded market lists for each B, Q combination.

@@ -5,6 +5,7 @@
 use crate::processor::processor;
 
 pub mod axis;
+pub mod axis_helpers;
 pub mod goblin_error;
 pub mod hostio;
 pub mod input_processor;

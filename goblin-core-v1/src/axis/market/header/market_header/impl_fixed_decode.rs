@@ -1,6 +1,6 @@
 use super::MarketHeader;
 use crate::{
-    axis::market::market_spec::MarketSpec,
+    axis_helpers::MarketSpec,
     input_processor::{DecodeCtx, FixedDecode},
     types::Tuple,
 };

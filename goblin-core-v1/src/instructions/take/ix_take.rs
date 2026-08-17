@@ -1,8 +1,9 @@
 use crate::{
     axis::{
         leg::leg_matcher::LegMatcher,
-        market::{market_spec::MarketSpec, Readables, Writables},
+        market::{Readables, Writables},
     },
+    axis_helpers::MarketSpec,
     goblin_error::GoblinError,
     input_processor::{CompoundDecode, DecodeCtx},
     instructions::take::take_header::TakeHeader,

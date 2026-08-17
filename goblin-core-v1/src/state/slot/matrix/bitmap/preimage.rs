@@ -1,5 +1,5 @@
 use crate::{
-    axis::market::market_spec::MarketSpec,
+    axis_helpers::MarketSpec,
     quantities::{bits_layout::BitsLayout, SafePosition, OUTER_POS, POS_0},
     state::{bitmap::Bitmap, MarketPreimage, Preimage, SlotKey, SlotState},
 };

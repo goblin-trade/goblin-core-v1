@@ -1,6 +1,7 @@
 use super::MarketHeader;
 use crate::{
-    axis::market::{market_spec::MarketSpec, Readables, Writables},
+    axis::market::{Readables, Writables},
+    axis_helpers::MarketSpec,
     for_axes,
     goblin_error::GoblinError,
     input_processor::DecodeCtx,

@@ -40,12 +40,12 @@ macro_rules! define_axis {
         pub type $v0 = $crate::types::Marker<$seed, { $enum_name::$v0 as usize }>;
         pub type $v1 = $crate::types::Marker<$seed, { $enum_name::$v1 as usize }>;
 
-        impl $crate::axis::AxisMarker for $v0 {
+        impl $crate::axis_helpers::AxisMarker for $v0 {
             type Axis = $seed;
             type Enum = $enum_name;
             const VARIANT: Self::Enum = $enum_name::$v0;
         }
-        impl $crate::axis::AxisMarker for $v1 {
+        impl $crate::axis_helpers::AxisMarker for $v1 {
             type Axis = $seed;
             type Enum = $enum_name;
             const VARIANT: Self::Enum = $enum_name::$v1;
@@ -90,17 +90,17 @@ macro_rules! define_axis {
         pub type $v1 = $crate::types::Marker<$seed, { $enum_name::$v1 as usize }>;
         pub type $v2 = $crate::types::Marker<$seed, { $enum_name::$v2 as usize }>;
 
-        impl $crate::axis::AxisMarker for $v0 {
+        impl $crate::axis_helpers::AxisMarker for $v0 {
             type Axis = $seed;
             type Enum = $enum_name;
             const VARIANT: Self::Enum = $enum_name::$v0;
         }
-        impl $crate::axis::AxisMarker for $v1 {
+        impl $crate::axis_helpers::AxisMarker for $v1 {
             type Axis = $seed;
             type Enum = $enum_name;
             const VARIANT: Self::Enum = $enum_name::$v1;
         }
-        impl $crate::axis::AxisMarker for $v2 {
+        impl $crate::axis_helpers::AxisMarker for $v2 {
             type Axis = $seed;
             type Enum = $enum_name;
             const VARIANT: Self::Enum = $enum_name::$v2;
