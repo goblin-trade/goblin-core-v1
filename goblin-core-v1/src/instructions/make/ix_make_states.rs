@@ -1,5 +1,3 @@
-use core::matches;
-
 use crate::{
     axis::{
         leg::{leg_matcher::LegMatcher, SamePair},
@@ -7,7 +5,7 @@ use crate::{
         update::UpdateEnum::{Decrease, Increase},
     },
     axis_helpers::{AxisMarker, MarketSpec, SlotSpec},
-    matching::region::make_region::MakeRegion::{self, Spread},
+    matching::region::make_region::MakeRegion,
     quantities::{BaseLots, InnerPos, Position},
     state::{
         bitmap::alias::{InnerBitmap, InnerBitmapUpdater},
@@ -51,8 +49,8 @@ pub fn ix_make_states<MS, SS, In>(
             key.store(resting_order);
             inner_bitmap_updater.activate();
 
-            // Update last position if opened in spread
-            if matches!(region, Spread) {
+            // Update last position if opened beyond the last stored position
+            if let MakeRegion::OnLastPrice(_) | MakeRegion::Spread = region {
                 let last_position = In::get_leg_mut(last_positions);
                 *last_position = position;
             }
