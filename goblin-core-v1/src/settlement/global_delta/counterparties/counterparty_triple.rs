@@ -1,11 +1,12 @@
 use crate::{
     axis::{
-        leg::{leg_matcher::LegMatcher, leg_to_token::LegToToken, SamePair},
+        leg::{leg_matcher::LegMatcher, SamePair},
         token::{
             token_marker::TokenMarker, token_quantity::TokenQuantity,
             token_reader::TokenDataTriple, CustomERC20, HardcodedERC20, Token, ETH,
         },
     },
+    axis_helpers::LegToToken,
     goblin_error::GoblinError,
     market::{TokenIndexPair, TokenPair},
     quantities::UnsidedAtomsPerLot,

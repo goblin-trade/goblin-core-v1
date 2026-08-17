@@ -1,6 +1,6 @@
 use crate::{
     axis::{
-        leg::{leg_matcher::LegMatcher, leg_to_token::LegToToken, SamePair},
+        leg::{leg_matcher::LegMatcher, SamePair},
         token::{
             token_list::{
                 custom_erc20::CustomERC20Deltas, eth::ETHDelta,
@@ -12,6 +12,7 @@ use crate::{
             Token,
         },
     },
+    axis_helpers::LegToToken,
     goblin_error::GoblinError,
     input_processor::MsgTransfers,
     market::{TokenIndexPair, TokenPair},

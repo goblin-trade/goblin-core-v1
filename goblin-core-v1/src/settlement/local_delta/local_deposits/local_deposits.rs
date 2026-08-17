@@ -1,8 +1,9 @@
 use crate::{
     axis::{
-        leg::{leg_matcher::LegMatcher, leg_to_token::LegToToken, SamePair},
+        leg::{leg_matcher::LegMatcher, SamePair},
         token::token_quantity::TokenQuantity,
     },
+    axis_helpers::LegToToken,
     for_axes,
     goblin_error::GoblinError,
     input_processor::{DecodeCtx, FixedDecode},
