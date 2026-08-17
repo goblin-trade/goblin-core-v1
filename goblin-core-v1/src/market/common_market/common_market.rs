@@ -5,11 +5,11 @@ use goblin_macros::FixedDecode;
 use crate::{
     axis::{
         leg::{Base, Quote},
-        market::{token_pair::TokenPair, LotSizePair, TokenIndexPair},
         token::token_reader::TokenDataTriple,
     },
     axis_helpers::MarketSpec,
     goblin_error::GoblinError,
+    market::{LotSizePair, TokenIndexPair, TokenPair},
     quantities::QuoteLotsPerBaseUnitPerTick,
     state::MarketPreimage,
     types::{LifetimedStoreReader, StoreReader, Tuple},

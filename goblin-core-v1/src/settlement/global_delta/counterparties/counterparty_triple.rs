@@ -1,13 +1,13 @@
 use crate::{
     axis::{
         leg::{leg_matcher::LegMatcher, leg_to_token::LegToToken, SamePair},
-        market::{token_pair::TokenPair, TokenIndexPair},
         token::{
             token_marker::TokenMarker, token_quantity::TokenQuantity,
             token_reader::TokenDataTriple, CustomERC20, HardcodedERC20, Token, ETH,
         },
     },
     goblin_error::GoblinError,
+    market::{TokenIndexPair, TokenPair},
     quantities::UnsidedAtomsPerLot,
     settlement::{
         global_delta::{CounterpartyMap, CounterpartyTokenKey},

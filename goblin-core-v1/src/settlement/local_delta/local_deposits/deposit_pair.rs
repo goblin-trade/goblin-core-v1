@@ -1,4 +1,7 @@
-use crate::axis::{leg::Pair, market::token_pair::TokenPair, token::token_quantity::TokenQuantity};
+use crate::{
+    axis::{leg::Pair, token::token_quantity::TokenQuantity},
+    market::TokenPair,
+};
 
 /// Deposit amounts read from calldata
 pub type DepositPair<TP> = Pair<

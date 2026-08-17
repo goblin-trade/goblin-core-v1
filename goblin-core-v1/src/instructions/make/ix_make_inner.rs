@@ -1,13 +1,12 @@
 use crate::{
     axis::{
-        leg::leg_matcher::LegMatcher,
-        market::{Readables, Writables},
-        occupancy::occupancy_marker::OccupancyMarker,
+        leg::leg_matcher::LegMatcher, occupancy::occupancy_marker::OccupancyMarker,
         update::update_make::UpdateMake,
     },
     axis_helpers::{MarketSpec, SlotSpec},
     goblin_error::GoblinError,
     instructions::make::{ix_make_delta::ix_make_delta, ix_make_states::ix_make_states},
+    market::{Readables, Writables},
     matching::region::make_region::MakeRegion,
     quantities::{BaseLots, Position},
     state::{bitmap::alias::InnerBitmap, resting_order::preimage::RestingOrderPreimage, Preimage},

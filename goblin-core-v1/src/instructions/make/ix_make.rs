@@ -1,12 +1,10 @@
 use crate::{
-    axis::{
-        market::{header::make_header::MakeHeader, Readables, Writables},
-        occupancy::occupancy_marker::OccupancyMarker,
-    },
+    axis::occupancy::occupancy_marker::OccupancyMarker,
     axis_helpers::MarketSpec,
     goblin_error::GoblinError,
     input_processor::{DecodeCtx, FixedDecode},
     instructions::make::ix_make_inner::ix_make_inner,
+    market::{MakeHeader, Readables, Writables},
     match_axes,
     matching::region::make_region::MakeRegion,
     quantities::{Pos2, SafePosition, POS_1},

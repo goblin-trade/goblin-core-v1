@@ -1,13 +1,11 @@
 use goblin_macros::ConstDefault;
 
 use crate::{
-    axis::{
-        market::{token_pair::TokenPair, LotSizePair, TokenIndexPair, Writables},
-        token::token_reader::TokenDataTriple,
-    },
+    axis::token::token_reader::TokenDataTriple,
     for_axes,
     goblin_error::GoblinError,
     input_processor::MsgTransfers,
+    market::{LotSizePair, TokenIndexPair, TokenPair, Writables},
     quantities::{UnsideQuantity, ATOMS_PER_UNIT},
     settlement::global_delta::{CounterpartyTriple, GlobalSender},
     types::Address,

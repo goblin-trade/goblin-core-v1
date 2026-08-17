@@ -1,4 +1,4 @@
-use crate::axis::market::{market_marker::MarketMarker, token_pair::TokenPair};
+use crate::{axis::market::market_marker::MarketMarker, market::TokenPair};
 
 pub trait MarketSpec: Clone + Copy + PartialEq + PartialOrd {
     type Market: MarketMarker;

@@ -1,12 +1,10 @@
 use crate::{
-    axis::{
-        leg::leg_matcher::LegMatcher,
-        market::{Readables, Writables},
-    },
+    axis::leg::leg_matcher::LegMatcher,
     axis_helpers::MarketSpec,
     goblin_error::GoblinError,
     input_processor::{CompoundDecode, DecodeCtx},
     instructions::take::take_header::TakeHeader,
+    market::{Readables, Writables},
     matching::match_order,
 };
 

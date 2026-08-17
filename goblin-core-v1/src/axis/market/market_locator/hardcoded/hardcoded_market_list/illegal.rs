@@ -1,7 +1,10 @@
-use crate::axis::{
-    leg::Pair,
-    market::{Hardcoded, MarketReadables},
-    token::{CustomERC20, HardcodedERC20, ETH},
+use crate::{
+    axis::{
+        leg::Pair,
+        market::Hardcoded,
+        token::{CustomERC20, HardcodedERC20, ETH},
+    },
+    market::MarketReadables,
 };
 
 ///! Stub implementations for illegal combinations of MarketVariant and TokenMarkerInner

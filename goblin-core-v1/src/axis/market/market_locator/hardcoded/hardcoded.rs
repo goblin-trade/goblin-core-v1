@@ -2,13 +2,13 @@ use crate::{
     axis::{
         market::{
             market_locator::{hardcoded::HardcodedMarketList, MarketIndex, MarketLocator},
-            token_pair::TokenPair,
-            Hardcoded, MarketReadables,
+            Hardcoded,
         },
         token::token_reader::TokenDataTriple,
     },
     goblin_error::GoblinError,
     input_processor::{DecodeCtx, FixedDecode},
+    market::{token_pair::TokenPair, MarketReadables},
 };
 
 impl<TP> MarketLocator<TP> for Hardcoded

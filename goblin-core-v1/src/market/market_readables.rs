@@ -1,6 +1,6 @@
 use crate::{
-    axis::market::CommonMarket,
     axis_helpers::MarketSpec,
+    market::CommonMarket,
     state::{MarketPreimage, SlotKey},
 };
 

@@ -1,4 +1,4 @@
-use crate::{axis::market::MarketReadables, axis_helpers::MarketSpec, types::Address};
+use crate::{axis_helpers::MarketSpec, market::MarketReadables, types::Address};
 
 pub struct Readables<'a, MS: MarketSpec> {
     pub msg_sender: &'a Address,

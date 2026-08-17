@@ -1,11 +1,11 @@
 use crate::{
-    axis::market::{
-        header::{inner_bitmap_header::InnerBitmapHeader, outer_bitmap_header::OuterBitmapHeader},
-        Readables, Writables,
-    },
     axis_helpers::MarketSpec,
     goblin_error::GoblinError,
     input_processor::{DecodeCtx, FixedDecode},
+    market::{
+        header::{inner_bitmap_header::InnerBitmapHeader, outer_bitmap_header::OuterBitmapHeader},
+        Readables, Writables,
+    },
     quantities::{SafePosition, OUTER_POS, POS_0},
     state::bitmap::Bitmap,
 };

@@ -3,12 +3,13 @@ use crate::{
         leg::Pair,
         market::{
             market_counts::{MarketCounts, MarketCountsTuple},
-            process_market, Hardcoded,
+            Hardcoded,
         },
         token::{token_reader::TokenDataTriple, HardcodedERC20, ETH},
     },
     goblin_error::GoblinError,
     input_processor::DecodeCtx,
+    market::process_market,
     settlement::StaticDelta,
     types::{Address, StoreReader},
 };

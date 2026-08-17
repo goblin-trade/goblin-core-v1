@@ -1,9 +1,9 @@
 use crate::{
-    axis::market::{header::inner_bitmap_header::InnerBitmapHeader, Readables, Writables},
     axis_helpers::MarketSpec,
     goblin_error::GoblinError,
     input_processor::{DecodeCtx, FixedDecode},
     instructions::ix_make::ix_make,
+    market::{InnerBitmapHeader, Readables, Writables},
     quantities::{SafePosition, INNER_POS, POS_0, POS_1},
     state::bitmap::{alias::OuterBitmap, Bitmap},
 };

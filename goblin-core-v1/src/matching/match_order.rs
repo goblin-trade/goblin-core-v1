@@ -1,11 +1,9 @@
 use crate::{
-    axis::{
-        leg::{leg_matcher::LegMatcher, Base},
-        market::{MarketReadables, Readables, Writables},
-    },
+    axis::leg::{leg_matcher::LegMatcher, Base},
     axis_helpers::MarketSpec,
     goblin_error::GoblinError,
     instructions::TakeHeader,
+    market::{MarketReadables, Readables, Writables},
     matching::match_iterator::{match_iterator, RestingOrderEntry},
     quantities::Ticks,
     require,

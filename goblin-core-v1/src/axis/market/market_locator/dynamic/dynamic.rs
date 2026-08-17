@@ -2,13 +2,13 @@ use crate::{
     axis::{
         market::{
             market_locator::{hardcoded::HardcodedMarketList, MarketLocator},
-            token_pair::TokenPair,
-            CommonMarket, Dynamic, MarketReadables,
+            Dynamic,
         },
         token::token_reader::TokenDataTriple,
     },
     goblin_error::GoblinError,
     input_processor::{DecodeCtx, FixedDecode},
+    market::{token_pair::TokenPair, CommonMarket, MarketReadables},
     state::Preimage,
 };
 

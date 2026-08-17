@@ -1,7 +1,9 @@
-use crate::axis::{
-    leg::{Base, Quote},
-    market::token_pair::TokenPair,
-    token::token_marker::TokenMarker,
+use crate::{
+    axis::{
+        leg::{Base, Quote},
+        token::token_marker::TokenMarker,
+    },
+    market::TokenPair,
 };
 
 /// Maps a leg marker + a token pair to the token marker on that side.

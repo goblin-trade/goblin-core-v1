@@ -2,9 +2,10 @@ use super::HardcodedMarketList;
 use crate::{
     axis::{
         leg::Pair,
-        market::{CommonMarket, Hardcoded, MarketReadables},
+        market::Hardcoded,
         token::{token_marker::HardcodedERC20Index, ETHStub, HardcodedERC20, ETH},
     },
+    market::{CommonMarket, MarketReadables},
     quantities::{BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit},
     state::SlotKey,
     types::Tuple,

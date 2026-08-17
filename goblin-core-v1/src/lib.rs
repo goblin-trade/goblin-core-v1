@@ -10,6 +10,7 @@ pub mod goblin_error;
 pub mod hostio;
 pub mod input_processor;
 pub mod instructions;
+pub mod market;
 pub mod matching;
 pub mod processor;
 pub mod quantities;

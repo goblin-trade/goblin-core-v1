@@ -1,12 +1,12 @@
 use crate::{
     axis::{
         leg::{leg_matcher::LegMatcher, leg_to_token::LegToToken, SamePair},
-        market::token_pair::TokenPair,
         token::token_quantity::TokenQuantity,
     },
     for_axes,
     goblin_error::GoblinError,
     input_processor::{DecodeCtx, FixedDecode},
+    market::TokenPair,
     settlement::local_delta::{DepositPair, DepositTriple},
     types::StoreReader,
 };

@@ -1,6 +1,7 @@
 use crate::{
-    axis::{market::header::make_header::MakeHeader, occupancy::OccupancyEnum},
+    axis::occupancy::OccupancyEnum,
     input_processor::{DecodeCtx, FixedDecode},
+    market::MakeHeader,
     quantities::{BaseLots, InnerPos},
 };
 

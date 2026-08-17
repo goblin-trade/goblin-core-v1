@@ -1,8 +1,7 @@
 use crate::{
-    axis::market::{
-        market_marker::MarketMarker, token_pair::TokenPair, LotSizePair, TokenAddressPair,
-    },
+    axis::market::market_marker::MarketMarker,
     axis_helpers::MarketSpec,
+    market::{LotSizePair, TokenAddressPair, TokenPair},
     quantities::QuoteLotsPerBaseUnitPerTick,
     state::{MarketState, Preimage},
 };

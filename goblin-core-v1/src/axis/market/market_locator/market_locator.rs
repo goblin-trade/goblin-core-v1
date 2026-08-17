@@ -1,13 +1,11 @@
 use crate::{
     axis::{
-        market::{
-            market_locator::hardcoded::HardcodedMarketList, market_marker::MarketMarker,
-            MarketReadables, TokenPair,
-        },
+        market::{market_locator::hardcoded::HardcodedMarketList, market_marker::MarketMarker},
         token::token_reader::TokenDataTriple,
     },
     goblin_error::GoblinError,
     input_processor::DecodeCtx,
+    market::{MarketReadables, TokenPair},
 };
 
 /// The intermediate representation used to locate a market.

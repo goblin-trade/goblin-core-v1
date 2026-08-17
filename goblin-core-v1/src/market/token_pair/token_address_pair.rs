@@ -1,4 +1,7 @@
-use crate::axis::{leg::Pair, market::TokenPair, token::token_quantity::TokenQuantity};
+use crate::{
+    axis::{leg::Pair, token::token_quantity::TokenQuantity},
+    market::TokenPair,
+};
 
 pub type TokenAddressPair<TP> = Pair<
     <<TP as TokenPair>::Base as TokenQuantity>::TokenAddress,
