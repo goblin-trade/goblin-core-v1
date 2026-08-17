@@ -1,17 +1,4 @@
-use crate::{
-    axis::{
-        occupancy::{
-            occupancy_marker::OccupancyMarker,
-            OccupancyEnum::{Occupied, Vacant},
-        },
-        update::{
-            UpdateEnum::{Decrease, Increase},
-            UpdateMarker,
-        },
-    },
-    quantities::DerivedPosition,
-    state::bitmap::Bitmap,
-};
+use crate::{quantities::DerivedPosition, state::bitmap::Bitmap};
 
 /// Bitmap-index pair with convenience functions to activate and deactivate bits
 pub struct BitmapUpdater<'a, const BITS: u16, const INNER_BITS: u16> {
@@ -26,24 +13,5 @@ impl<'a, const BITS: u16, const INNER_BITS: u16> BitmapUpdater<'a, BITS, INNER_B
 
     pub fn deactivate(&mut self) {
         self.bitmap.deactivate(self.pos);
-    }
-
-    pub fn update<OM: OccupancyMarker, UM: UpdateMarker>(&mut self, resting_order_closed: bool) {
-        match (OM::VARIANT, UM::VARIANT) {
-            (Vacant, Increase) => {
-                // illegal, unreachable
-            }
-            (Vacant, Decrease) => {
-                self.activate();
-            }
-            (Occupied, Increase) => {
-                // Do nothing, already active
-            }
-            (Occupied, Decrease) => {
-                if resting_order_closed {
-                    self.deactivate();
-                }
-            }
-        }
     }
 }

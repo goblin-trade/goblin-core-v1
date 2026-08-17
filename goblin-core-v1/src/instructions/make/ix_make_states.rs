@@ -3,16 +3,10 @@ use core::matches;
 use crate::{
     axis::{
         leg::{leg_matcher::LegMatcher, SamePair},
-        occupancy::{
-            occupancy_marker::OccupancyMarker,
-            OccupancyEnum::{Occupied, Vacant},
-        },
-        update::{
-            UpdateEnum::{Decrease, Increase},
-            UpdateMarker,
-        },
+        occupancy::OccupancyEnum::{Occupied, Vacant},
+        update::UpdateEnum::{Decrease, Increase},
     },
-    axis_helpers::MarketSpec,
+    axis_helpers::{AxisMarker, MarketSpec, SlotSpec},
     matching::region::make_region::MakeRegion::{self, Spread},
     quantities::{BaseLots, InnerPos, Position},
     state::{
@@ -22,7 +16,7 @@ use crate::{
     },
 };
 
-pub fn ix_make_states<MS, In, OM, UM>(
+pub fn ix_make_states<MS, SS, In>(
     position: Position,
     region: MakeRegion,
     key: &SlotKey<RestingOrderPreimage<MS>>,
@@ -31,9 +25,8 @@ pub fn ix_make_states<MS, In, OM, UM>(
     last_positions: &mut SamePair<Position>,
 ) where
     MS: MarketSpec,
+    SS: SlotSpec,
     In: LegMatcher,
-    OM: OccupancyMarker,
-    UM: UpdateMarker,
 {
     let resting_order_empty = resting_order.base_lots == BaseLots::default();
 
@@ -46,7 +39,7 @@ pub fn ix_make_states<MS, In, OM, UM>(
         pos: InnerPos::from(position),
     };
 
-    match (OM::VARIANT, UM::VARIANT) {
+    match (SS::Occupancy::VARIANT, SS::Update::VARIANT) {
         (Vacant, Increase) => {
             // illegal, unreachable
         }

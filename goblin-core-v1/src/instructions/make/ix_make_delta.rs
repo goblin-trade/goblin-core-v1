@@ -10,7 +10,7 @@ use crate::{
     types::StoreReader,
 };
 
-pub fn ix_make_delta<MS: MarketSpec, In: LegMatcher, UM: UpdateMarker>(
+pub fn ix_make_delta<MS: MarketSpec, UM: UpdateMarker, In: LegMatcher>(
     delta_base_lots: BaseLots,
     position: Position,
     readables: &Readables<MS>,
@@ -23,5 +23,5 @@ pub fn ix_make_delta<MS: MarketSpec, In: LegMatcher, UM: UpdateMarker>(
     writables
         .local_delta
         .make
-        .add_make::<In, UM>(delta_base_lots, base_lot_size, tick_size, price)
+        .add_make::<UM, In>(delta_base_lots, base_lot_size, tick_size, price)
 }
