@@ -1,9 +1,6 @@
 use crate::{
     axis::{
-        market::{
-            market_locator::{hardcoded::HardcodedMarketList, MarketLocator},
-            Dynamic,
-        },
+        market::{market_locator::MarketLocator, Dynamic},
         token::token_reader::TokenDataTriple,
     },
     goblin_error::GoblinError,
@@ -12,11 +9,8 @@ use crate::{
     state::Preimage,
 };
 
-impl<TP> MarketLocator<TP> for Dynamic
-where
-    TP: TokenPair + HardcodedMarketList,
-{
-    type Locator = MarketReadables<(Self, TP)>;
+impl<TP: TokenPair> MarketLocator for (Dynamic, TP) {
+    type Locator = MarketReadables<Self>;
 
     fn decode_locator(
         ctx: &DecodeCtx,

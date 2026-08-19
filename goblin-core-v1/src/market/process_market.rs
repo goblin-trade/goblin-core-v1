@@ -1,38 +1,31 @@
 use crate::{
-    axis::{
-        market::{
-            market_locator::{hardcoded::HardcodedMarketList, MarketLocator},
-            market_marker::MarketMarker,
-        },
-        token::token_reader::TokenDataTriple,
-    },
+    axis::{market::market_locator::MarketLocator, token::token_reader::TokenDataTriple},
     goblin_error::GoblinError,
     input_processor::{DecodeCtx, FixedDecode},
-    market::{MarketHeader, Readables, TokenPair, Writables},
+    market::{MarketHeader, Readables, Writables},
     settlement::{local_delta::LocalDelta, StaticDelta},
     types::Address,
 };
 
 #[inline(never)]
-pub fn process_market<'a, M, TP>(
+pub fn process_market<'a, MS>(
     msg_sender: &Address,
     ctx: &DecodeCtx,
     token_data_triple: &TokenDataTriple<'a>,
     static_delta: &mut StaticDelta,
 ) -> Result<(), GoblinError>
 where
-    M: MarketMarker + MarketLocator<TP>,
-    TP: TokenPair + HardcodedMarketList,
+    MS: MarketLocator,
 {
     let local_delta = &mut LocalDelta::new(&mut static_delta.take_counterparties);
-    let market_header = MarketHeader::<(M, TP)>::try_fixed_decode(ctx)?;
+    let market_header = MarketHeader::<MS>::try_fixed_decode(ctx)?;
 
     if market_header.decode_deposit_amounts {
-        local_delta.deposits.decode_and_set::<TP>(ctx)?;
+        local_delta.deposits.decode_and_set::<MS::Pair>(ctx)?;
     }
 
-    let market_locator = M::decode_locator(ctx, token_data_triple)?;
-    let market_readables = M::locate_market(&market_locator);
+    let market_locator = MS::decode_locator(ctx, token_data_triple)?;
+    let market_readables = MS::locate_market(&market_locator);
 
     let readables = &Readables {
         msg_sender,
@@ -49,7 +42,7 @@ where
     market_header.execute_takes(ctx, readables, writables)?;
     market_header.execute_makes(ctx, readables, writables)?;
 
-    static_delta.global.commit_local_delta::<TP>(
+    static_delta.global.commit_local_delta::<MS::Pair>(
         &market_readables.market.token_index_pair,
         &market_readables.market.lot_size_pair,
         writables,

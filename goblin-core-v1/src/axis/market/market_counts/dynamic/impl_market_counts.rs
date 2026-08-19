@@ -26,7 +26,7 @@ impl MarketCounts for Dynamic {
 
         // Dynamic with hardcoded ERC20 (3)
         for _ in 0..counts.inner[0] {
-            process_market::<Dynamic, Pair<ETH, HardcodedERC20>>(
+            process_market::<(Dynamic, Pair<ETH, HardcodedERC20>)>(
                 msg_sender,
                 ctx,
                 token_data_triple,
@@ -35,7 +35,7 @@ impl MarketCounts for Dynamic {
         }
 
         for _ in 0..counts.inner[1] {
-            process_market::<Dynamic, Pair<HardcodedERC20, ETH>>(
+            process_market::<(Dynamic, Pair<HardcodedERC20, ETH>)>(
                 msg_sender,
                 ctx,
                 token_data_triple,
@@ -44,7 +44,7 @@ impl MarketCounts for Dynamic {
         }
 
         for _ in 0..counts.inner[2] {
-            process_market::<Dynamic, Pair<HardcodedERC20, HardcodedERC20>>(
+            process_market::<(Dynamic, Pair<HardcodedERC20, HardcodedERC20>)>(
                 msg_sender,
                 ctx,
                 token_data_triple,
@@ -54,7 +54,7 @@ impl MarketCounts for Dynamic {
 
         // Dynamic with custom ERC20 (3)
         for _ in 0..counts.inner[3] {
-            process_market::<Dynamic, Pair<ETH, CustomERC20>>(
+            process_market::<(Dynamic, Pair<ETH, CustomERC20>)>(
                 msg_sender,
                 ctx,
                 token_data_triple,
@@ -63,7 +63,7 @@ impl MarketCounts for Dynamic {
         }
 
         for _ in 0..counts.inner[4] {
-            process_market::<Dynamic, Pair<CustomERC20, ETH>>(
+            process_market::<(Dynamic, Pair<CustomERC20, ETH>)>(
                 msg_sender,
                 ctx,
                 token_data_triple,
@@ -72,7 +72,7 @@ impl MarketCounts for Dynamic {
         }
 
         for _ in 0..counts.inner[5] {
-            process_market::<Dynamic, Pair<CustomERC20, CustomERC20>>(
+            process_market::<(Dynamic, Pair<CustomERC20, CustomERC20>)>(
                 msg_sender,
                 ctx,
                 token_data_triple,
@@ -82,7 +82,7 @@ impl MarketCounts for Dynamic {
 
         // Dynamic with mixture of hardcoded and custom ERC20 (2)
         for _ in 0..counts.inner[6] {
-            process_market::<Dynamic, Pair<HardcodedERC20, CustomERC20>>(
+            process_market::<(Dynamic, Pair<HardcodedERC20, CustomERC20>)>(
                 msg_sender,
                 ctx,
                 token_data_triple,
@@ -91,7 +91,7 @@ impl MarketCounts for Dynamic {
         }
 
         for _ in 0..counts.inner[7] {
-            process_market::<Dynamic, Pair<CustomERC20, HardcodedERC20>>(
+            process_market::<(Dynamic, Pair<CustomERC20, HardcodedERC20>)>(
                 msg_sender,
                 ctx,
                 token_data_triple,
