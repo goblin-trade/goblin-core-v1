@@ -15,10 +15,12 @@ use crate::{
 ///
 /// We perform two operations to avoid copying static hardcoded market data
 /// onto the stack
+///
+/// TODO move on MarketSpec?
 pub trait MarketLocator<TP>
 where
     Self: MarketMarker,
-    TP: TokenPair + HardcodedMarketList,
+    TP: TokenPair,
 {
     type Locator;
 

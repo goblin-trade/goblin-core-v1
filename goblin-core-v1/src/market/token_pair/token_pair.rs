@@ -1,9 +1,10 @@
 use crate::axis::{
     leg::Pair,
+    market::market_locator::hardcoded::HardcodedMarketList,
     token::{token_marker::TokenMarker, token_quantity::TokenQuantity},
 };
 
-pub trait TokenPair: 'static + Clone + Copy + PartialEq + PartialOrd {
+pub trait TokenPair: 'static + Clone + Copy + PartialEq + PartialOrd + HardcodedMarketList {
     type Base: TokenMarker;
     type Quote: TokenMarker;
 
@@ -15,6 +16,7 @@ impl<B, Q> TokenPair for Pair<B, Q>
 where
     B: TokenMarker,
     Q: TokenMarker,
+    Self: HardcodedMarketList,
 {
     type Base = B;
     type Quote = Q;
