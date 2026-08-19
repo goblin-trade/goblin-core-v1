@@ -2,10 +2,11 @@ use goblin_macros::ConstDefault;
 
 use crate::{
     axis::token::token_reader::TokenDataTriple,
+    axis_helpers::MarketSpec,
     for_axes,
     goblin_error::GoblinError,
     input_processor::MsgTransfers,
-    market::{LotSizePair, TokenIndexPair, TokenPair, Writables},
+    market::{Readables, Writables},
     quantities::{UnsideQuantity, ATOMS_PER_UNIT},
     settlement::global_delta::{CounterpartyTriple, GlobalSender},
     types::Address,
@@ -18,24 +19,25 @@ pub struct GlobalDelta {
 }
 
 impl GlobalDelta {
-    pub fn commit_local_delta<TP: TokenPair>(
+    pub fn commit_local_delta<MS: MarketSpec>(
         &mut self,
-        token_index_pair: &TokenIndexPair<TP>,
-        lot_size_pair: &LotSizePair,
+        readables: &Readables<MS>,
         writables: &mut Writables,
     ) -> Result<(), GoblinError> {
-        let atoms_per_lot_pair = ATOMS_PER_UNIT / lot_size_pair.unsided();
+        let market = &readables.market_readables().market;
 
-        for_axes!(In => self.sender.commit_leg::<TP, In>(
+        let atoms_per_lot_pair = ATOMS_PER_UNIT / market.lot_size_pair.unsided();
+
+        for_axes!(In => self.sender.commit_leg::<MS::Pair, In>(
             writables.local_delta,
-            token_index_pair,
+            &market.token_index_pair,
             &atoms_per_lot_pair,
         )?);
 
         for counterparty_data in writables.local_delta.take.counterparties.into_iter() {
-            for_axes!(In => self.counterparties.commit_leg::<TP, In>(
+            for_axes!(In => self.counterparties.commit_leg::<MS::Pair, In>(
                 counterparty_data,
-                token_index_pair,
+                &market.token_index_pair,
                 &atoms_per_lot_pair,
             )?);
         }

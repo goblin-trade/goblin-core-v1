@@ -25,7 +25,7 @@ impl InnerBitmapHeader {
 
         let (inner_bitmap_key, mut inner_bitmap_state) =
             Bitmap::<POS_1, INNER_POS>::conditional_read(
-                readables.market_readables.market_key,
+                readables.market_readables().market_key,
                 &writables.market_state.last_positions,
                 pos_1,
                 outer_bitmap_state,

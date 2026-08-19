@@ -28,7 +28,9 @@ pub fn match_order<MS: MarketSpec, In: LegMatcher>(
     readables: &Readables<MS>,
     writables: &mut Writables,
 ) -> Result<(), GoblinError> {
-    let MarketReadables { market, market_key } = readables.market_readables;
+    let MarketReadables { market, market_key } = readables.market_readables();
+
+    // TODO common struct in Market for sizes
 
     let last_position_mut = In::get_leg_mut(&mut writables.market_state.last_positions);
 

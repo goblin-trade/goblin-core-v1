@@ -16,8 +16,11 @@ pub fn ix_make_delta<MS: MarketSpec, UM: UpdateMarker, In: LegMatcher>(
     readables: &Readables<MS>,
     writables: &mut Writables,
 ) -> Result<(), GoblinError> {
-    let base_lot_size = Base::get(&readables.market_readables.market.lot_size_pair);
-    let tick_size = readables.market_readables.market.tick_size;
+    let market = &readables.market_readables().market;
+
+    // TODO common function on Market to get lot size pair and tick size
+    let base_lot_size = Base::get(&market.lot_size_pair);
+    let tick_size = market.tick_size;
     let price = Ticks::from(position);
 
     writables

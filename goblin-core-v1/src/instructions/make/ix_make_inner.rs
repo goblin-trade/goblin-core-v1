@@ -24,7 +24,7 @@ pub fn ix_make_inner<MS: MarketSpec, SS: SlotSpec, In: LegMatcher>(
     SS::Occupancy::validate_region::<In>(region, position, inner_bitmap_state)?;
 
     let key = &RestingOrderPreimage {
-        market_key: readables.market_readables.market_key,
+        market_key: readables.market_readables().market_key,
         position,
     }
     .hash();

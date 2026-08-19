@@ -25,7 +25,7 @@ impl OuterBitmapHeader {
 
         let (outer_bitmap_key, mut outer_bitmap_state) =
             Bitmap::<POS_0, OUTER_POS>::conditional_read(
-                readables.market_readables.market_key,
+                readables.market_readables().market_key,
                 &writables.market_state.last_positions,
                 pos_0,
             );

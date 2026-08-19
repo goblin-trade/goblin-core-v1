@@ -24,16 +24,9 @@ where
     if market_header.decode_deposit_amounts {
         local_delta.deposits.decode_and_set::<MS::Pair>(ctx)?;
     }
+    let readables = &Readables::new(msg_sender, ctx, token_data_triple)?;
 
-    let market_locator = MS::decode_locator(ctx, token_data_triple)?;
-    let market_readables = MS::locate_market(&market_locator);
-
-    let readables = &Readables {
-        msg_sender,
-        market_readables,
-    };
-
-    let market_state = &mut market_readables.market_key.load();
+    let market_state = &mut readables.market_readables().market_key.load();
     let writables = &mut Writables {
         local_delta,
         market_state,
@@ -43,9 +36,7 @@ where
     market_header.execute_takes(ctx, readables, writables)?;
     market_header.execute_makes(ctx, readables, writables)?;
 
-    static_delta.global.commit_local_delta::<MS::Pair>(
-        &market_readables.market.token_index_pair,
-        &market_readables.market.lot_size_pair,
-        writables,
-    )
+    static_delta
+        .global
+        .commit_local_delta::<MS>(readables, writables)
 }
