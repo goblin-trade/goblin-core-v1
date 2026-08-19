@@ -9,7 +9,7 @@ pub struct Readables<'a, MS: MarketSpec> {
 }
 
 impl<'a, MS: MarketSpec> Readables<'a, MS> {
-    pub fn new(
+    pub fn try_new(
         msg_sender: &'a Address,
         ctx: &DecodeCtx,
         token_data_triple: &TokenDataTriple<'a>,

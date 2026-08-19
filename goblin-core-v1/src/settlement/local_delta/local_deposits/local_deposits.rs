@@ -16,6 +16,19 @@ use crate::{
 pub type LocalDeposits = SamePair<DepositTriple>;
 
 impl LocalDeposits {
+    pub fn try_new<TP: TokenPair>(
+        read_deposits: bool,
+        ctx: &DecodeCtx,
+    ) -> Result<Self, GoblinError> {
+        let mut deposits = Self::default();
+
+        // TODO use if-else and mut free code
+        if read_deposits {
+            deposits.decode_and_set::<TP>(ctx)?;
+        }
+        Ok(deposits)
+    }
+
     pub fn decode_and_set<'a, TP: TokenPair>(
         &mut self,
         ctx: &DecodeCtx,

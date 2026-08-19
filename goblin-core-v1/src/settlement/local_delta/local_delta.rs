@@ -13,9 +13,9 @@ pub struct LocalDelta<'a> {
 }
 
 impl<'a> LocalDelta<'a> {
-    pub const fn new(counterparties: &'a mut TakeCounterparties) -> Self {
+    pub const fn new(deposits: LocalDeposits, counterparties: &'a mut TakeCounterparties) -> Self {
         Self {
-            deposits: LocalDeposits::DEFAULT,
+            deposits,
             take: LocalTake::new(counterparties),
             make: LocalMake::DEFAULT,
         }
