@@ -4,23 +4,28 @@ use crate::{
         token::token_marker::TokenMarker,
     },
     quantities::UnsidedDeltaAtomsPerLot,
-    settlement::{global_delta::TokenDelta, local_delta::LocalDelta},
+    settlement::{
+        global_delta::TokenDelta,
+        local_delta::{LocalDelta, LocalDeposits},
+    },
 };
 pub trait FromLocalDelta {
-    fn from_local_delta<In: LegReader>(
+    fn from_local<In: LegReader>(
+        local_deposits: &LocalDeposits,
         local_delta: &LocalDelta,
         atoms_per_lot_pair: &SamePair<UnsidedDeltaAtomsPerLot>,
     ) -> Self;
 }
 
 impl<T: TokenMarker> FromLocalDelta for TokenDelta<T> {
-    fn from_local_delta<In: LegReader>(
+    fn from_local<In: LegReader>(
+        local_deposits: &LocalDeposits,
         local_delta: &LocalDelta,
         atoms_per_lot_pair: &SamePair<UnsidedDeltaAtomsPerLot>,
     ) -> Self {
         let atoms_per_lot = In::get(atoms_per_lot_pair);
 
-        let local_deposit = T::get(In::get_leg(&local_delta.deposits));
+        let local_deposit = T::get(In::get_leg(local_deposits));
         let deposit = T::get_global_deposit(local_deposit, atoms_per_lot);
 
         // TODO checked mul?
