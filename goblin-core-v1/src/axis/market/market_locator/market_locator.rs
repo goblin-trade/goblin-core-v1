@@ -1,5 +1,5 @@
 use crate::{
-    axis::token::token_reader::TokenDataTriple, axis_helpers::MarketSpec,
+    axis::token::token_reader::TokenDataTriple, axis_helpers::MarketSpecInner,
     goblin_error::GoblinError, input_processor::DecodeCtx, market::MarketReadables,
 };
 
@@ -11,7 +11,7 @@ use crate::{
 /// We perform two operations to avoid copying static hardcoded market data
 /// onto the stack
 ///
-pub trait MarketLocator: MarketSpec {
+pub trait MarketLocator: MarketSpecInner {
     type Locator;
 
     /// Decode market locator from input args.

@@ -1,11 +1,18 @@
-use crate::{axis::market::market_marker::MarketMarker, market::TokenPair};
+use crate::{
+    axis::market::{market_marker::MarketMarker, MarketLocator},
+    market::TokenPair,
+};
 
-pub trait MarketSpec: Clone + Copy + PartialEq + PartialOrd {
+pub trait MarketSpecInner: Clone + Copy + PartialEq + PartialOrd {
     type Market: MarketMarker;
     type Pair: TokenPair;
 }
 
-impl<M: MarketMarker, TP: TokenPair> MarketSpec for (M, TP) {
+impl<M: MarketMarker, TP: TokenPair> MarketSpecInner for (M, TP) {
     type Market = M;
     type Pair = TP;
 }
+
+pub trait MarketSpec: MarketSpecInner + MarketLocator {}
+
+impl<MS: MarketSpecInner + MarketLocator> MarketSpec for MS {}

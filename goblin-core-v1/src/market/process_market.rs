@@ -1,5 +1,6 @@
 use crate::{
-    axis::{market::market_locator::MarketLocator, token::token_reader::TokenDataTriple},
+    axis::token::token_reader::TokenDataTriple,
+    axis_helpers::MarketSpec,
     goblin_error::GoblinError,
     input_processor::{DecodeCtx, FixedDecode},
     market::{MarketHeader, Readables, Writables},
@@ -15,7 +16,7 @@ pub fn process_market<'a, MS>(
     static_delta: &mut StaticDelta,
 ) -> Result<(), GoblinError>
 where
-    MS: MarketLocator,
+    MS: MarketSpec,
 {
     let local_delta = &mut LocalDelta::new(&mut static_delta.take_counterparties);
     let market_header = MarketHeader::<MS>::try_fixed_decode(ctx)?;
