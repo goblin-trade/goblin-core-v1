@@ -1,31 +1,37 @@
 use crate::{
     axis::{
-        leg::{leg_reader::LegReader, SamePair},
+        leg::{leg_matcher::LegMatcher, SamePair},
         token::token_marker::TokenMarker,
     },
     quantities::UnsidedDeltaAtomsPerLot,
-    settlement::{
-        global_delta::TokenDelta,
-        local_delta::{LocalDelta, LocalDeposits},
-    },
+    settlement::{global_delta::TokenDelta, local_delta::LocalDelta},
 };
-pub trait FromLocalDelta {
-    fn from_local<In: LegReader>(
-        local_deposits: &LocalDeposits,
+
+pub trait FromLocalDelta<T> {
+    fn from_local<In>(
+        local_deposit: T::LocalDeposit,
         local_delta: &LocalDelta,
         atoms_per_lot_pair: &SamePair<UnsidedDeltaAtomsPerLot>,
-    ) -> Self;
+    ) -> Self
+    where
+        T: TokenMarker,
+        In: LegMatcher;
 }
 
-impl<T: TokenMarker> FromLocalDelta for TokenDelta<T> {
-    fn from_local<In: LegReader>(
-        local_deposits: &LocalDeposits,
+impl<T> FromLocalDelta<T> for TokenDelta<T>
+where
+    T: TokenMarker,
+{
+    fn from_local<In>(
+        local_deposit: T::LocalDeposit,
         local_delta: &LocalDelta,
         atoms_per_lot_pair: &SamePair<UnsidedDeltaAtomsPerLot>,
-    ) -> Self {
+    ) -> Self
+    where
+        T: TokenMarker,
+        In: LegMatcher,
+    {
         let atoms_per_lot = In::get(atoms_per_lot_pair);
-
-        let local_deposit = T::get(In::get_leg(local_deposits));
         let deposit = T::get_global_deposit(local_deposit, atoms_per_lot);
 
         // TODO checked mul?

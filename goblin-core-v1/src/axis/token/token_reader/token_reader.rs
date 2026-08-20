@@ -4,10 +4,7 @@ use crate::{
         CustomERC20, HardcodedERC20, ETH,
     },
     input_processor::MsgTransfers,
-    settlement::{
-        global_delta::{CounterpartyMap, CounterpartyTriple, GlobalSender},
-        local_delta::DepositTriple,
-    },
+    settlement::global_delta::{CounterpartyMap, CounterpartyTriple, GlobalSender},
     types::{LifetimedStoreReader, StoreReader},
 };
 
@@ -15,7 +12,6 @@ pub trait TokenReader:
     TokenQuantity
     + TokenList
     + for<'a> LifetimedStoreReader<'a, TokenDataTriple<'a>, Result = Self::DataList<'a>>
-    + StoreReader<DepositTriple, Result = Self::LocalDeposit>
     + StoreReader<CounterpartyTriple, Result = CounterpartyMap<Self>>
     + StoreReader<MsgTransfers, Result = Self::TokenMsgTransfer>
     + StoreReader<GlobalSender, Result = Self::SenderDeltaList>

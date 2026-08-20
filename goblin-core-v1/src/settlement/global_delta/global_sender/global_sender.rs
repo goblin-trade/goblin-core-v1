@@ -30,8 +30,8 @@ pub type GlobalSender = Triple<ETHDelta, HardcodedERC20Deltas, CustomERC20Deltas
 impl GlobalSender {
     pub fn commit_leg<TP, In>(
         &mut self,
-        local_deposits: &LocalDeposits,
         local_delta: &LocalDelta,
+        local_deposits: &LocalDeposits<TP>,
         token_index_pair: &TokenIndexPair<TP>,
         atoms_per_lot_pair: &SamePair<UnsidedAtomsPerLot>,
     ) -> Result<(), GoblinError>
@@ -39,12 +39,14 @@ impl GlobalSender {
         TP: TokenPair,
         In: LegMatcher
             + LegToToken<TP>
-            + StoreReader<TokenIndexPair<TP>, Result = <In::Selected as TokenQuantity>::TokenIndex>,
+            + StoreReader<TokenIndexPair<TP>, Result = <In::Selected as TokenQuantity>::TokenIndex>
+            + StoreReader<LocalDeposits<TP>, Result = <In::Selected as TokenQuantity>::LocalDeposit>,
     {
         let delta_atoms_per_lot_pair = atoms_per_lot_pair.try_into()?;
 
+        let local_deposit = In::get(local_deposits);
         let new_delta =
-            TokenDelta::from_local::<In>(local_deposits, local_delta, &delta_atoms_per_lot_pair);
+            TokenDelta::from_local::<In>(local_deposit, local_delta, &delta_atoms_per_lot_pair);
 
         let token_index = In::get(token_index_pair);
         let deltas_list = In::Selected::get_leg_mut(self);

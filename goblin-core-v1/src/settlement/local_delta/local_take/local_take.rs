@@ -6,27 +6,24 @@ use crate::{
     goblin_error::GoblinError,
     quantities::{
         BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, Ticks, TryIntoUnsidedDelta,
-        UnsideQuantity,
+        UnsideQuantity, UnsidedDeltaLots,
     },
     settlement::{
-        local_delta::{
-            local_take::{LocalCounterparty, TakeCounterparties},
-            DeltaLotsPair,
-        },
+        local_delta::local_take::{LocalCounterparty, TakeCounterparties},
         CheckedOps, ConstDefault,
     },
     types::Address,
 };
 
 pub struct LocalTake<'a> {
-    pub sender: DeltaLotsPair,
+    pub sender: SamePair<UnsidedDeltaLots>,
     pub counterparties: &'a mut TakeCounterparties,
 }
 
 impl<'a> LocalTake<'a> {
     pub const fn new(counterparties: &'a mut TakeCounterparties) -> Self {
         Self {
-            sender: DeltaLotsPair::DEFAULT,
+            sender: SamePair::<UnsidedDeltaLots>::DEFAULT,
             counterparties,
         }
     }
@@ -64,7 +61,7 @@ impl<'a> LocalTake<'a> {
     }
 
     fn add_for_leg<In: LegMatcher, U: UpdateMarker>(
-        sender: &mut DeltaLotsPair,
+        sender: &mut SamePair<UnsidedDeltaLots>,
         matching_lots: In::MatchingLots,
         base_lot_size: BaseLotsPerBaseUnit,
         counterparty_pair: &mut SamePair<LocalCounterparty>,

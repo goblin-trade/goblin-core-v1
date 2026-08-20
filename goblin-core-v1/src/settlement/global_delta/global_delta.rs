@@ -29,8 +29,8 @@ impl GlobalDelta {
         let atoms_per_lot_pair = ATOMS_PER_UNIT / market.lot_size_pair.unsided();
 
         for_axes!(In => self.sender.commit_leg::<MS::Pair, In>(
-            &readables.deposits,
             &writables.local_delta,
+            &readables.deposits,
             &market.token_index_pair,
             &atoms_per_lot_pair,
         )?);

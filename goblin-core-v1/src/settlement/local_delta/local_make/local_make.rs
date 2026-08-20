@@ -1,18 +1,22 @@
 use goblin_macros::ConstDefault;
 
 use crate::{
-    axis::{leg::leg_matcher::LegMatcher, update::UpdateMarker},
+    axis::{
+        leg::{leg_matcher::LegMatcher, SamePair},
+        update::UpdateMarker,
+    },
     goblin_error::GoblinError,
     quantities::{
         BaseLots, BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, Ticks, TryIntoUnsidedDelta,
+        UnsidedDeltaLots,
     },
-    settlement::{local_delta::DeltaLotsPair, CheckedOps},
+    settlement::CheckedOps,
     types::StoreReader,
 };
 
 #[derive(ConstDefault)]
 pub struct LocalMake {
-    pub inner: DeltaLotsPair,
+    pub inner: SamePair<UnsidedDeltaLots>,
 }
 
 impl LocalMake {

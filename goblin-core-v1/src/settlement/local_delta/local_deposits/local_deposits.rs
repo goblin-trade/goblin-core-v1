@@ -1,53 +1,11 @@
 use crate::{
-    axis::{
-        leg::{leg_matcher::LegMatcher, SamePair},
-        token::token_quantity::TokenQuantity,
-    },
-    axis_helpers::LegToToken,
-    for_axes,
-    goblin_error::GoblinError,
-    input_processor::{DecodeCtx, FixedDecode},
+    axis::{leg::Pair, token::token_quantity::TokenQuantity},
     market::TokenPair,
-    settlement::local_delta::{DepositPair, DepositTriple},
-    types::StoreReader,
 };
 
 /// Local deposits for a market
-pub type LocalDeposits = SamePair<DepositTriple>;
 
-impl LocalDeposits {
-    pub fn try_new<TP: TokenPair>(
-        decode_deposit_amounts: bool,
-        ctx: &DecodeCtx,
-    ) -> Result<Self, GoblinError> {
-        let mut deposits = Self::default();
-
-        // TODO use if-else and mut free code
-        if decode_deposit_amounts {
-            deposits.decode_and_set::<TP>(ctx)?;
-        }
-        Ok(deposits)
-    }
-
-    pub fn decode_and_set<'a, TP: TokenPair>(
-        &mut self,
-        ctx: &DecodeCtx,
-    ) -> Result<(), GoblinError> {
-        let deposit_pair = DepositPair::<TP>::try_fixed_decode(ctx)?;
-        for_axes!(In => self.set_leg::<TP, In>(&deposit_pair));
-        Ok(())
-    }
-
-    fn set_leg<TP, In>(&mut self, deposit_pair: &DepositPair<TP>)
-    where
-        TP: TokenPair,
-        In: LegMatcher
-            + LegToToken<TP>
-            + StoreReader<DepositPair<TP>, Result = <In::Selected as TokenQuantity>::LocalDeposit>,
-    {
-        let deposit_triple = In::get_leg_mut(self);
-        let deposit_store = In::Selected::get_leg_mut(deposit_triple);
-
-        *deposit_store = In::get(deposit_pair);
-    }
-}
+pub type LocalDeposits<TP> = Pair<
+    <<TP as TokenPair>::Base as TokenQuantity>::LocalDeposit,
+    <<TP as TokenPair>::Quote as TokenQuantity>::LocalDeposit,
+>;

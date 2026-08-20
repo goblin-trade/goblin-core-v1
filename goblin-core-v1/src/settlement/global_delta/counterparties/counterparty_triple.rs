@@ -60,7 +60,7 @@ impl CounterpartyTriple {
     where
         T: TokenMarker,
     {
-        let counterparty_map = T::get_leg(self);
+        let counterparty_map: &CounterpartyMap<T> = T::get_leg(self);
 
         for (counterparty_key, counterparty) in counterparty_map.into_iter() {
             let store_hash = counterparty_key.get_store_hash(token_data_triple);
