@@ -1,6 +1,7 @@
 use crate::{
     axis::token::token_reader::TokenDataTriple, axis_helpers::MarketSpec,
-    goblin_error::GoblinError, input_processor::DecodeCtx, market::MarketReadables, types::Address,
+    goblin_error::GoblinError, input_processor::ArgsReader, market::MarketReadables,
+    types::Address,
 };
 
 pub struct Readables<'a, MS: MarketSpec> {
@@ -11,10 +12,10 @@ pub struct Readables<'a, MS: MarketSpec> {
 impl<'a, MS: MarketSpec> Readables<'a, MS> {
     pub fn try_new(
         msg_sender: &'a Address,
-        ctx: &DecodeCtx,
+        reader: &ArgsReader,
         token_data_triple: &TokenDataTriple<'a>,
     ) -> Result<Self, GoblinError> {
-        let locator = MS::decode_locator(ctx, token_data_triple)?;
+        let locator = MS::decode_locator(reader, token_data_triple)?;
 
         Ok(Self {
             msg_sender,

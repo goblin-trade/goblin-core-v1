@@ -52,14 +52,14 @@ pub fn expand(input: DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
         }
     };
 
-    // Figure out which lifetime ties Self to the `&DecodeCtx` input:
+    // Figure out which lifetime ties Self to the `&ArgsReader` input:
     // - struct already has one (e.g. `Wrapper<'a>`) -> reuse it
     // - struct has none -> introduce a fresh impl-only lifetime
     // - struct has more than one -> unsupported, bail with a clear error
     let existing_lifetimes: Vec<_> = input.generics.lifetimes().cloned().collect();
 
     let mut impl_generics_src = input.generics.clone();
-    let ctx_lifetime: Lifetime = match existing_lifetimes.len() {
+    let reader_lifetime: Lifetime = match existing_lifetimes.len() {
         0 => {
             let lt = Lifetime::new("'__decode", proc_macro2::Span::call_site());
             impl_generics_src
@@ -83,19 +83,19 @@ pub fn expand(input: DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
 
     // Fully-qualified path to the trait, so callers never need to import it.
     let trait_path = quote! { crate::input_processor::FixedDecode };
-    let ctx_path = quote! { crate::input_processor::DecodeCtx };
+    let reader_path = quote! { crate::input_processor::ArgsReader };
     let error_path = quote! { crate::goblin_error::GoblinError };
 
     let size_terms = field_types
         .iter()
-        .map(|ty| quote! { <#ty as #trait_path<#ctx_lifetime>>::ENCODED_SIZE });
+        .map(|ty| quote! { <#ty as #trait_path<#reader_lifetime>>::ENCODED_SIZE });
 
     let decode_stmts = field_names
         .iter()
         .zip(field_types.iter())
         .map(|(field, ty)| {
             quote! {
-                let #field = <#ty as #trait_path<#ctx_lifetime>>::raw_fixed_decode(ctx);
+                let #field = <#ty as #trait_path<#reader_lifetime>>::raw_fixed_decode(reader);
             }
         });
 
@@ -130,15 +130,15 @@ pub fn expand(input: DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
         .zip(field_accessors.iter())
         .map(|(ty, accessor)| {
             quote! {
-                <#ty as #trait_path<#ctx_lifetime>>::validate(&#accessor)?;
+                <#ty as #trait_path<#reader_lifetime>>::validate(&#accessor)?;
             }
         });
 
     let expanded = quote! {
-        impl #impl_generics #trait_path<#ctx_lifetime> for #name #ty_generics #where_clause {
+        impl #impl_generics #trait_path<#reader_lifetime> for #name #ty_generics #where_clause {
             const ENCODED_SIZE: usize = 0 #(+ #size_terms)*;
 
-            fn raw_fixed_decode(ctx: &#ctx_lifetime #ctx_path) -> Self {
+            fn raw_fixed_decode(reader: &#reader_lifetime #reader_path) -> Self {
                 #(#decode_stmts)*
                 #constructor
             }

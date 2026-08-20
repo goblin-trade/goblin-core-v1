@@ -2,7 +2,7 @@ use crate::{
     axis::market::market_locator::MarketIndex,
     axis_helpers::MarketSpec,
     goblin_error::GoblinError,
-    input_processor::{DecodeCtx, FixedDecode},
+    input_processor::{ArgsReader, FixedDecode},
     require,
 };
 
@@ -12,8 +12,8 @@ where
 {
     const ENCODED_SIZE: usize = 1;
 
-    fn raw_fixed_decode(ctx: &'a DecodeCtx) -> Self {
-        let market_index_raw = u8::raw_fixed_decode(ctx) as usize;
+    fn raw_fixed_decode(reader: &'a ArgsReader) -> Self {
+        let market_index_raw = u8::raw_fixed_decode(reader) as usize;
         Self::new(market_index_raw)
     }
 

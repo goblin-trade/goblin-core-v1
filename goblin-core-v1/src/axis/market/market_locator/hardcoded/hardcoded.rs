@@ -7,7 +7,7 @@ use crate::{
         token::token_reader::TokenDataTriple,
     },
     goblin_error::GoblinError,
-    input_processor::{DecodeCtx, FixedDecode},
+    input_processor::{ArgsReader, FixedDecode},
     market::{token_pair::TokenPair, MarketReadables},
 };
 
@@ -15,10 +15,10 @@ impl<TP: TokenPair> MarketLocator for (Hardcoded, TP) {
     type Locator = MarketIndex<Self>;
 
     fn decode_locator(
-        ctx: &DecodeCtx,
+        reader: &ArgsReader,
         _token_data_triple: &TokenDataTriple,
     ) -> Result<Self::Locator, GoblinError> {
-        MarketIndex::try_fixed_decode(ctx)
+        MarketIndex::try_fixed_decode(reader)
     }
 
     fn locate_market(locator: &Self::Locator) -> &MarketReadables<(Hardcoded, TP)> {

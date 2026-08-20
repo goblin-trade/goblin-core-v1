@@ -8,7 +8,7 @@ use crate::{
         token::{token_reader::TokenDataTriple, HardcodedERC20, ETH},
     },
     goblin_error::GoblinError,
-    input_processor::DecodeCtx,
+    input_processor::ArgsReader,
     market::process_market,
     settlement::StaticDelta,
     types::{Address, StoreReader},
@@ -18,7 +18,7 @@ impl MarketCounts for Hardcoded {
     fn process<'a>(
         market_counts: &MarketCountsTuple,
         msg_sender: &Address,
-        ctx: &DecodeCtx,
+        reader: &ArgsReader,
         token_data_triple: &TokenDataTriple<'a>,
         static_delta: &mut StaticDelta,
     ) -> Result<(), GoblinError> {
@@ -27,7 +27,7 @@ impl MarketCounts for Hardcoded {
         for _ in 0..counts.inner[0] {
             process_market::<(Hardcoded, Pair<ETH, HardcodedERC20>)>(
                 msg_sender,
-                ctx,
+                reader,
                 token_data_triple,
                 static_delta,
             )?;
@@ -36,7 +36,7 @@ impl MarketCounts for Hardcoded {
         for _ in 0..counts.inner[1] {
             process_market::<(Hardcoded, Pair<HardcodedERC20, ETH>)>(
                 msg_sender,
-                ctx,
+                reader,
                 token_data_triple,
                 static_delta,
             )?;
@@ -45,7 +45,7 @@ impl MarketCounts for Hardcoded {
         for _ in 0..counts.inner[2] {
             process_market::<(Hardcoded, Pair<HardcodedERC20, HardcodedERC20>)>(
                 msg_sender,
-                ctx,
+                reader,
                 token_data_triple,
                 static_delta,
             )?;

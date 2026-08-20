@@ -1,7 +1,7 @@
 use crate::{
     axis::leg::leg_matcher::LegMatcher,
     goblin_error::GoblinError,
-    input_processor::{DecodeCtx, FixedDecode},
+    input_processor::{ArgsReader, FixedDecode},
     instructions::{TakeFlags, TakeHeaderMain},
     require,
 };
@@ -9,8 +9,8 @@ use crate::{
 impl<'a, In: LegMatcher> FixedDecode<'a> for TakeHeaderMain<In> {
     const ENCODED_SIZE: usize = core::mem::size_of::<u64>();
 
-    fn raw_fixed_decode(ctx: &'a DecodeCtx) -> Self {
-        let raw_bytes = u64::raw_fixed_decode(ctx);
+    fn raw_fixed_decode(reader: &'a ArgsReader) -> Self {
+        let raw_bytes = u64::raw_fixed_decode(reader);
 
         let read_min_lots = raw_bytes & 0b01 != 0;
         let read_limit = raw_bytes & 0b10 != 0;

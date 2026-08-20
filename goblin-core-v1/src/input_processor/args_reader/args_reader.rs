@@ -3,13 +3,13 @@ use crate::input_processor::ArgsBuffer;
 use core::cell::Cell;
 use core::mem::MaybeUninit;
 
-pub struct DecodeCtx {
+pub struct ArgsReader {
     pub args: ArgsBuffer,
     pub len: usize,
     pub offset: Cell<usize>,
 }
 
-impl DecodeCtx {
+impl ArgsReader {
     pub fn new(len: usize) -> Self {
         let mut args_buffer = MaybeUninit::<ArgsBuffer>::uninit();
         let args = unsafe {
@@ -23,12 +23,6 @@ impl DecodeCtx {
             offset: Cell::<usize>::default(),
         }
     }
-    // pub fn new(args_buffer: &'a ArgsBuffer, len: usize) -> Self {
-    //     Self {
-    //         args: &args_buffer[..len],
-    //         offset: Cell::<usize>::default(),
-    //     }
-    // }
 
     pub fn len(&self) -> usize {
         self.len

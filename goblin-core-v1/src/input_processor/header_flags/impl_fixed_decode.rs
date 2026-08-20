@@ -1,10 +1,10 @@
-use crate::input_processor::{DecodeCtx, FixedDecode, HeaderFlags};
+use crate::input_processor::{ArgsReader, FixedDecode, HeaderFlags};
 
 impl<'a> FixedDecode<'a> for HeaderFlags {
     const ENCODED_SIZE: usize = 1;
 
-    fn raw_fixed_decode(ctx: &'a DecodeCtx) -> Self {
-        let byte_0 = u8::raw_fixed_decode(ctx);
+    fn raw_fixed_decode(reader: &'a ArgsReader) -> Self {
+        let byte_0 = u8::raw_fixed_decode(reader);
 
         Self {
             read_custom_recipient: (byte_0 & 0b0000_0001) != 0,

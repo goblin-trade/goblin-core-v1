@@ -1,16 +1,16 @@
 use crate::{
     axis::market::market_counts::dynamic::DynamicCounts,
-    input_processor::{DecodeCtx, FixedDecode},
+    input_processor::{ArgsReader, FixedDecode},
 };
 
 impl<'a> FixedDecode<'a> for DynamicCounts {
     const ENCODED_SIZE: usize = 4;
 
-    fn raw_fixed_decode(ctx: &'a DecodeCtx) -> Self {
-        let byte_0 = u8::raw_fixed_decode(ctx);
-        let byte_1 = u8::raw_fixed_decode(ctx);
-        let byte_2 = u8::raw_fixed_decode(ctx);
-        let byte_3 = u8::raw_fixed_decode(ctx);
+    fn raw_fixed_decode(reader: &'a ArgsReader) -> Self {
+        let byte_0 = u8::raw_fixed_decode(reader);
+        let byte_1 = u8::raw_fixed_decode(reader);
+        let byte_2 = u8::raw_fixed_decode(reader);
+        let byte_3 = u8::raw_fixed_decode(reader);
 
         let market_counts = [
             byte_0 & 0b0000_1111,
@@ -23,7 +23,7 @@ impl<'a> FixedDecode<'a> for DynamicCounts {
             byte_3 >> 4,
         ];
 
-        ctx.advance_offset(Self::ENCODED_SIZE);
+        reader.advance_offset(Self::ENCODED_SIZE);
 
         Self {
             inner: market_counts,

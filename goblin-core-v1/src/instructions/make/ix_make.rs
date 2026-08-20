@@ -2,7 +2,7 @@ use crate::{
     axis::occupancy::occupancy_marker::OccupancyMarker,
     axis_helpers::MarketSpec,
     goblin_error::GoblinError,
-    input_processor::{DecodeCtx, FixedDecode},
+    input_processor::{ArgsReader, FixedDecode},
     instructions::make::ix_make_inner::ix_make_inner,
     market::{MakeHeader, Readables, Writables},
     match_axes,
@@ -12,7 +12,7 @@ use crate::{
 };
 
 pub fn ix_make<MS: MarketSpec>(
-    ctx: &DecodeCtx,
+    reader: &ArgsReader,
     readables: &Readables<MS>,
     pos_1: SafePosition<POS_1>,
     writables: &mut Writables,
@@ -23,7 +23,7 @@ pub fn ix_make<MS: MarketSpec>(
         occupancy_enum,
         inner_enum_raw,
         base_lots,
-    } = MakeHeader::try_fixed_decode(ctx)?;
+    } = MakeHeader::try_fixed_decode(reader)?;
 
     let pos_2 = Pos2::new(pos_1, inner_pos);
     let position = pos_2.into();

@@ -1,4 +1,4 @@
-use crate::{goblin_error::GoblinError, input_processor::DecodeCtx, require};
+use crate::{goblin_error::GoblinError, input_processor::ArgsReader, require};
 
 /// Decode values from a fixed sized buffer
 pub trait FixedDecode<'a>: Sized {
@@ -7,8 +7,8 @@ pub trait FixedDecode<'a>: Sized {
     const ENCODED_SIZE: usize;
 
     /// Decode assuming `ENCODED_SIZE` bytes are available at the current
-    /// offset. Advances `ctx`'s offset by `ENCODED_SIZE`.
-    fn raw_fixed_decode(ctx: &'a DecodeCtx) -> Self;
+    /// offset. Advances `reader`'s offset by `ENCODED_SIZE`.
+    fn raw_fixed_decode(reader: &'a ArgsReader) -> Self;
 
     /// Check constraints on an already-decoded value.
     /// Default is a no-op; leaf types override it.
@@ -18,12 +18,12 @@ pub trait FixedDecode<'a>: Sized {
 
     /// Bounds-checked decode. Default implementation: check once, then
     /// decode unchecked.
-    fn try_fixed_decode(ctx: &'a DecodeCtx) -> Result<Self, GoblinError> {
+    fn try_fixed_decode(reader: &'a ArgsReader) -> Result<Self, GoblinError> {
         require!(
-            ctx.len() >= ctx.offset.get() + Self::ENCODED_SIZE,
+            reader.len() >= reader.offset.get() + Self::ENCODED_SIZE,
             GoblinError::InvalidPayload
         );
-        let value = Self::raw_fixed_decode(ctx);
+        let value = Self::raw_fixed_decode(reader);
         value.validate()?;
         Ok(value)
     }

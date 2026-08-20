@@ -10,7 +10,7 @@ mod fixed_decode;
 /// - `ENCODED_SIZE` is generated as the sum of each field's `ENCODED_SIZE`.
 /// - `decode_raw` decodes fields in declaration order, so each field reads
 ///   from wherever the previous field left the cursor. This matches how
-///   `DecodeCtx`'s offset is threaded through `decode_raw` calls today.
+///   `Areader`'s offset is threaded through `decode_raw` calls today.
 ///
 /// Only structs with named fields are supported (no tuple structs, no unit
 /// structs, no enums) since we're only targeting fixed-size, heap-free wire

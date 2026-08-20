@@ -1,7 +1,7 @@
 use crate::{
     goblin_error::GoblinError,
     hostio::{self},
-    input_processor::{CompoundDecode, DecodeCtx, GlobalArgs},
+    input_processor::{ArgsReader, CompoundDecode, GlobalArgs},
     require,
     settlement::StaticDelta,
 };
@@ -15,10 +15,10 @@ pub fn processor(len: usize) -> Result<(), GoblinError> {
     require!(!hostio::msg_reentrant(), GoblinError::Reentrant);
 
     let delta = StaticDelta::get();
-    let ctx = &mut DecodeCtx::new(len);
+    let reader = &mut ArgsReader::new(len);
 
-    let global_args = GlobalArgs::try_compound_decode(ctx)?;
-    global_args.process(ctx, delta)?;
+    let global_args = GlobalArgs::try_compound_decode(reader)?;
+    global_args.process(reader, delta)?;
 
     // Write cache to trie
     // https://github.com/OffchainLabs/stylus-sdk-rs/blob/2c709a5a1a620ed7585c7d8af64fefabe3a0fc9a/stylus-sdk/src/storage/mod.rs#L81

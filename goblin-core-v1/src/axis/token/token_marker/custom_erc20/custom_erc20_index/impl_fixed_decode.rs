@@ -1,15 +1,15 @@
 use crate::{
     axis::token::token_marker::CustomERC20Index,
     goblin_error::GoblinError,
-    input_processor::{DecodeCtx, FixedDecode},
+    input_processor::{ArgsReader, FixedDecode},
     require,
 };
 
 impl<'a> FixedDecode<'a> for CustomERC20Index {
     const ENCODED_SIZE: usize = 1;
 
-    fn raw_fixed_decode(ctx: &'a DecodeCtx) -> Self {
-        let index_raw = u8::raw_fixed_decode(ctx) as usize;
+    fn raw_fixed_decode(reader: &'a ArgsReader) -> Self {
+        let index_raw = u8::raw_fixed_decode(reader) as usize;
         CustomERC20Index(index_raw)
     }
 

@@ -1,5 +1,5 @@
 use crate::{
-    input_processor::{DecodeCtx, FixedDecode},
+    input_processor::{ArgsReader, FixedDecode},
     types::Tuple,
 };
 
@@ -10,7 +10,7 @@ where
 {
     const ENCODED_SIZE: usize = T0::ENCODED_SIZE + T1::ENCODED_SIZE;
 
-    fn raw_fixed_decode(ctx: &'a DecodeCtx) -> Self {
-        Self::new(T0::raw_fixed_decode(ctx), T1::raw_fixed_decode(ctx))
+    fn raw_fixed_decode(reader: &'a ArgsReader) -> Self {
+        Self::new(T0::raw_fixed_decode(reader), T1::raw_fixed_decode(reader))
     }
 }

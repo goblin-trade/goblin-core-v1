@@ -1,15 +1,15 @@
 use super::MarketHeader;
 use crate::{
     axis_helpers::MarketSpec,
-    input_processor::{DecodeCtx, FixedDecode},
+    input_processor::{ArgsReader, FixedDecode},
     types::Tuple,
 };
 
 impl<'a, MS: MarketSpec> FixedDecode<'a> for MarketHeader<MS> {
     const ENCODED_SIZE: usize = 1;
 
-    fn raw_fixed_decode(ctx: &DecodeCtx) -> Self {
-        let byte_0 = u8::raw_fixed_decode(ctx);
+    fn raw_fixed_decode(reader: &ArgsReader) -> Self {
+        let byte_0 = u8::raw_fixed_decode(reader);
 
         let decode_deposit_amounts = (byte_0 & 0b0000_0001) != 0;
 

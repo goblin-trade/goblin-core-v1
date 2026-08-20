@@ -2,7 +2,7 @@ use goblin_macros::ConstDefault;
 
 use crate::{
     axis::token::{token_marker::TokenData, ETH},
-    input_processor::{DecodeCtx, FixedDecode},
+    input_processor::{ArgsReader, FixedDecode},
     quantities::{UnsidedDeltaAtoms, NATIVE_TOKEN_DECIMALS},
     settlement::{CheckedOps, ConstDefault},
 };
@@ -17,7 +17,7 @@ pub struct ETHStub;
 impl<'a> FixedDecode<'a> for ETHStub {
     const ENCODED_SIZE: usize = 0;
 
-    fn raw_fixed_decode(_ctx: &'a DecodeCtx) -> Self {
+    fn raw_fixed_decode(_reader: &'a ArgsReader) -> Self {
         Self
     }
 }

@@ -1,7 +1,7 @@
 use crate::{
     axis_helpers::MarketSpec,
     goblin_error::GoblinError,
-    input_processor::{DecodeCtx, FixedDecode},
+    input_processor::{ArgsReader, FixedDecode},
     instructions::ix_make::ix_make,
     market::{InnerBitmapHeader, Readables, Writables},
     quantities::{SafePosition, INNER_POS, POS_0, POS_1},
@@ -10,7 +10,7 @@ use crate::{
 
 impl InnerBitmapHeader {
     pub fn process<MS: MarketSpec>(
-        ctx: &DecodeCtx,
+        reader: &ArgsReader,
         readables: &Readables<MS>,
         pos_0: SafePosition<POS_0>,
         writables: &mut Writables,
@@ -19,7 +19,7 @@ impl InnerBitmapHeader {
         let Self {
             outer_pos,
             update_count,
-        } = Self::try_fixed_decode(ctx)?;
+        } = Self::try_fixed_decode(reader)?;
 
         let pos_1 = SafePosition::<POS_1>::new(pos_0, outer_pos);
 
@@ -34,7 +34,7 @@ impl InnerBitmapHeader {
         let inner_bitmap_clone = inner_bitmap_state;
 
         for _ in 0..update_count {
-            ix_make(ctx, readables, pos_1, writables, &mut inner_bitmap_state)?;
+            ix_make(reader, readables, pos_1, writables, &mut inner_bitmap_state)?;
         }
 
         inner_bitmap_state.conditional_write(

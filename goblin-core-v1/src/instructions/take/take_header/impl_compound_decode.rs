@@ -1,15 +1,15 @@
 use crate::{
     axis::leg::leg_matcher::LegMatcher,
     goblin_error::GoblinError,
-    input_processor::{CompoundDecode, DecodeCtx, FixedDecode, VariableDecode},
+    input_processor::{ArgsReader, CompoundDecode, FixedDecode, VariableDecode},
     instructions::{TakeHeader, TakeHeaderMain, TakeHeaderOptional},
 };
 
 impl<'a, In: LegMatcher> CompoundDecode<'a> for TakeHeader<In> {
-    fn try_compound_decode(ctx: &DecodeCtx) -> Result<Self, GoblinError> {
-        let main_header = TakeHeaderMain::<In>::try_fixed_decode(ctx)?;
+    fn try_compound_decode(reader: &ArgsReader) -> Result<Self, GoblinError> {
+        let main_header = TakeHeaderMain::<In>::try_fixed_decode(reader)?;
         let optional_header =
-            TakeHeaderOptional::<In>::raw_variable_decode(ctx, &main_header.flags);
+            TakeHeaderOptional::<In>::raw_variable_decode(reader, &main_header.flags);
 
         Ok(Self {
             num_lots: main_header.num_lots,

@@ -4,7 +4,7 @@ use crate::{
         token::token_reader::TokenDataTriple,
     },
     goblin_error::GoblinError,
-    input_processor::DecodeCtx,
+    input_processor::ArgsReader,
     settlement::StaticDelta,
     types::Address,
 };
@@ -14,7 +14,7 @@ pub trait MarketCounts: MarketMarker {
     fn process<'a>(
         market_counts: &MarketCountsTuple,
         msg_sender: &Address,
-        ctx: &DecodeCtx,
+        reader: &ArgsReader,
         token_data_triple: &TokenDataTriple<'a>,
         static_delta: &mut StaticDelta,
     ) -> Result<(), GoblinError>;
