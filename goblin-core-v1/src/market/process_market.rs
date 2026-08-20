@@ -4,7 +4,7 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::{DecodeCtx, FixedDecode},
     market::{MarketHeader, Readables, Writables},
-    settlement::StaticDelta,
+    settlement::{local_delta::LocalDeposits, StaticDelta},
     types::Address,
 };
 
@@ -20,12 +20,13 @@ where
 {
     let market_header = MarketHeader::<MS>::try_fixed_decode(ctx)?;
 
-    let readables = &Readables::try_new(
-        msg_sender,
-        ctx,
-        token_data_triple,
-        market_header.decode_deposit_amounts,
-    )?;
+    let deposits = if market_header.decode_deposit_amounts {
+        LocalDeposits::<MS::Pair>::try_fixed_decode(ctx)?
+    } else {
+        LocalDeposits::<MS::Pair>::default()
+    };
+
+    let readables = &Readables::try_new(msg_sender, ctx, token_data_triple)?;
 
     let writables = &mut Writables::try_new(
         &readables.market_readables().market_key,
@@ -38,5 +39,5 @@ where
 
     static_delta
         .global
-        .commit_local_delta::<MS>(readables, writables)
+        .commit_local_delta::<MS>(&deposits, readables, writables)
 }

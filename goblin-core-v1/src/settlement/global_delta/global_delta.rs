@@ -8,7 +8,10 @@ use crate::{
     input_processor::MsgTransfers,
     market::{Readables, Writables},
     quantities::{UnsideQuantity, ATOMS_PER_UNIT},
-    settlement::global_delta::{CounterpartyTriple, GlobalSender},
+    settlement::{
+        global_delta::{CounterpartyTriple, GlobalSender},
+        local_delta::LocalDeposits,
+    },
     types::Address,
 };
 
@@ -21,6 +24,7 @@ pub struct GlobalDelta {
 impl GlobalDelta {
     pub fn commit_local_delta<MS: MarketSpec>(
         &mut self,
+        deposits: &LocalDeposits<MS::Pair>,
         readables: &Readables<MS>,
         writables: &mut Writables,
     ) -> Result<(), GoblinError> {
@@ -30,7 +34,7 @@ impl GlobalDelta {
 
         for_axes!(In => self.sender.commit_leg::<MS::Pair, In>(
             &writables.local_delta,
-            &readables.deposits,
+            deposits,
             &market.token_index_pair,
             &atoms_per_lot_pair,
         )?);
