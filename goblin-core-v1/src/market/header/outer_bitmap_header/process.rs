@@ -5,7 +5,7 @@ use crate::{
     market::header::{
         inner_bitmap_header::InnerBitmapHeader, outer_bitmap_header::OuterBitmapHeader,
     },
-    quantities::{SafePosition, OUTER_POS, POS_0},
+    quantities::{Pos0, OUTER_POS, POS_0},
     state::bitmap::Bitmap,
     Ctx,
 };
@@ -20,7 +20,7 @@ impl OuterBitmapHeader {
             inner_bitmap_count,
         } = Self::try_fixed_decode(reader)?;
 
-        let pos_0 = SafePosition::<POS_0>::new(outer_bitmap_index);
+        let pos_0 = Pos0::new(outer_bitmap_index);
 
         let (outer_bitmap_key, mut outer_bitmap_state) =
             Bitmap::<POS_0, OUTER_POS>::conditional_read(pos_0, ctx);

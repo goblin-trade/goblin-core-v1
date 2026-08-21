@@ -1,7 +1,7 @@
 use crate::{
     axis::leg::leg_matcher::LegMatcher,
     axis_helpers::MarketSpec,
-    quantities::{Pos2, Position, SafePosition, INNER_POS, OUTER_POS, POS_0, POS_1, POS_2},
+    quantities::{Pos2, Position, INNER_POS, OUTER_POS, POS_0, POS_1, POS_2},
     state::{
         bitmap::{bitmap_reader::BitmapReader, preimage::BitmapPreimage, Bitmap},
         MarketPreimage, Preimage, SlotKey,
@@ -17,7 +17,7 @@ impl BitmapReader<POS_2> for Bitmap<POS_1, INNER_POS> {
     fn active_iterator<MS: MarketSpec, In: LegMatcher>(
         market_key: SlotKey<MarketPreimage<MS>>,
         range: RangeInclusive<Position>,
-    ) -> impl Iterator<Item = SafePosition<POS_2>> {
+    ) -> impl Iterator<Item = Pos2> {
         // outer iterator ignores inner bits in range endpoints — no complement needed
         Bitmap::<POS_0, OUTER_POS>::active_iterator::<MS, In>(market_key, range.clone()).flat_map(
             move |pos_1| {

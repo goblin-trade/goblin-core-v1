@@ -4,14 +4,14 @@ use crate::{
     input_processor::{ArgsReader, FixedDecode},
     instructions::ix_make::ix_make,
     market::InnerBitmapHeader,
-    quantities::{SafePosition, INNER_POS, POS_0, POS_1},
+    quantities::{Pos0, Pos1, INNER_POS, POS_1},
     state::bitmap::{alias::OuterBitmap, Bitmap},
     Ctx,
 };
 
 impl InnerBitmapHeader {
     pub fn process<MS: MarketSpec>(
-        pos_0: SafePosition<POS_0>,
+        pos_0: Pos0,
         outer_bitmap_state: &mut OuterBitmap,
         reader: &ArgsReader,
         ctx: &mut Ctx<MS>,
@@ -21,7 +21,7 @@ impl InnerBitmapHeader {
             update_count,
         } = Self::try_fixed_decode(reader)?;
 
-        let pos_1 = SafePosition::<POS_1>::new(pos_0, outer_pos);
+        let pos_1 = Pos1::new(pos_0, outer_pos);
 
         let (inner_bitmap_key, mut inner_bitmap_state) =
             Bitmap::<POS_1, INNER_POS>::conditional_read(pos_1, outer_pos, outer_bitmap_state, ctx);
