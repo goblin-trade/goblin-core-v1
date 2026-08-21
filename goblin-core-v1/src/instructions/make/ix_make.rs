@@ -3,7 +3,10 @@ use crate::{
     axis_helpers::MarketSpec,
     goblin_error::GoblinError,
     input_processor::{ArgsReader, FixedDecode},
-    instructions::make::{ix_make_delta::ix_make_delta, ix_make_states::ix_make_states},
+    instructions::make::{
+        update_delta::update_delta, update_matrix::update_matrix,
+        update_resting_order::update_resting_order,
+    },
     market::MakeHeader,
     match_axes,
     matching::region::make_region::MakeRegion,
@@ -26,27 +29,23 @@ pub fn ix_make<MS: MarketSpec>(
     } = MakeHeader::try_fixed_decode(reader)?;
 
     if base_lots == BaseLots::default() {
-        // Opening with 0 size is no-op
         return Ok(());
     }
 
-    let pos_2 = Pos2::new(pos_1, inner_pos);
-    let position = pos_2.into();
-
+    let position = Pos2::new(pos_1, inner_pos).into();
     let region = MakeRegion::new(&ctx.writables.market_state.last_positions, position);
 
     match_axes!(OM = occupancy_enum => {
         let enums = OM::get_make_enums(inner_enum_raw, region)?;
 
         match_axes!(UM = enums.0, In = enums.1 => {
-            // TODO combine base_lots, position, region into common struct
+            OM::validate_region::<In>(region, position, inner_bitmap_state)?;
 
-            // 1. Update states
-            let delta_base_lots =
-                ix_make_states::<MS, (OM, UM), In>(base_lots, position, region, inner_bitmap_state, ctx)?;
+            let (delta_base_lots, resting_order_empty) =
+                update_resting_order::<MS, OM, UM>(base_lots, position, ctx)?;
 
-            // 2. Update delta
-            ix_make_delta::<MS, UM, In>(delta_base_lots, position, ctx)?;
+            update_matrix::<MS, OM, In>(resting_order_empty, position, region, inner_bitmap_state, ctx);
+            update_delta::<MS, UM, In>(delta_base_lots, position, ctx)?;
         });
     });
 

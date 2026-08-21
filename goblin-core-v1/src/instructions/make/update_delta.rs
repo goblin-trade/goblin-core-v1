@@ -10,7 +10,7 @@ use crate::{
     Ctx,
 };
 
-pub fn ix_make_delta<MS: MarketSpec, UM: UpdateMarker, In: LegMatcher>(
+pub(crate) fn update_delta<MS: MarketSpec, UM: UpdateMarker, In: LegMatcher>(
     delta_base_lots: BaseLots,
     position: Position,
     ctx: &mut Ctx<MS>,

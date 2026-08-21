@@ -1,6 +1,8 @@
 pub mod ix_make;
-mod ix_make_delta;
-mod ix_make_states;
 pub mod pos_header;
+
+mod update_delta;
+mod update_matrix;
+mod update_resting_order;
 
 pub use pos_header::*;
