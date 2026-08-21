@@ -1,31 +1,56 @@
 use crate::{
     axis::{
-        leg::{leg_matcher::LegMatcher, SamePair},
-        occupancy::OccupancyEnum::{Occupied, Vacant},
-        update::UpdateEnum::{Decrease, Increase},
+        leg::leg_matcher::LegMatcher,
+        occupancy::{
+            OccupancyEnum::{Occupied, Vacant},
+            OccupancyMarker,
+        },
+        update::{
+            update_make::UpdateMake,
+            UpdateEnum::{Decrease, Increase},
+        },
     },
     axis_helpers::{AxisMarker, MarketSpec, SlotSpec},
+    goblin_error::GoblinError,
     matching::region::make_region::MakeRegion,
     quantities::{BaseLots, InnerPos, Position},
     state::{
         bitmap::alias::{InnerBitmap, InnerBitmapUpdater},
-        resting_order::{preimage::RestingOrderPreimage, RestingOrder},
-        SlotKey,
+        resting_order::preimage::RestingOrderPreimage,
+        Preimage,
     },
+    Ctx,
 };
 
 pub fn ix_make_states<MS, SS, In>(
+    base_lots: BaseLots,
     position: Position,
     region: MakeRegion,
-    key: &SlotKey<RestingOrderPreimage<MS>>,
-    resting_order: &RestingOrder,
     inner_bitmap_state: &mut InnerBitmap,
-    last_positions: &mut SamePair<Position>,
-) where
+    ctx: &mut Ctx<MS>,
+) -> Result<BaseLots, GoblinError>
+where
     MS: MarketSpec,
     SS: SlotSpec,
     In: LegMatcher,
 {
+    SS::Occupancy::validate_region::<In>(region, position, inner_bitmap_state)?;
+
+    if base_lots == BaseLots::default() {
+        // Opening with 0 size is no-op
+        return Ok(BaseLots::default());
+    }
+
+    let key = &RestingOrderPreimage {
+        market_key: ctx.readables.market_readables().market_key,
+        position,
+    }
+    .hash();
+
+    let resting_order =
+        &mut SS::Occupancy::get_validated_resting_order(key, ctx.readables.msg_sender)?;
+    let delta_base_lots = SS::Update::update_resting_order(base_lots, resting_order)?;
+
     let resting_order_empty = resting_order.base_lots == BaseLots::default();
 
     if !resting_order_empty {
@@ -42,16 +67,12 @@ pub fn ix_make_states<MS, SS, In>(
             // illegal, unreachable
         }
         (Vacant, Decrease) => {
-            if resting_order_empty {
-                // Opening with 0 size is no-op
-                return;
-            }
             key.store(resting_order);
             inner_bitmap_updater.activate();
 
             // Update last position if opened beyond the last stored position
             if let MakeRegion::OnLastPrice(_) | MakeRegion::Spread = region {
-                let last_position = In::get_leg_mut(last_positions);
+                let last_position = In::get_leg_mut(&mut ctx.writables.market_state.last_positions);
                 *last_position = position;
             }
         }
@@ -65,5 +86,7 @@ pub fn ix_make_states<MS, SS, In>(
         (Occupied, Decrease) => {
             key.store(resting_order);
         }
-    }
+    };
+
+    Ok(delta_base_lots)
 }

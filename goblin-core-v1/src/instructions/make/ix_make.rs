@@ -3,7 +3,7 @@ use crate::{
     axis_helpers::MarketSpec,
     goblin_error::GoblinError,
     input_processor::{ArgsReader, FixedDecode},
-    instructions::make::ix_make_inner::ix_make_inner,
+    instructions::make::{ix_make_delta::ix_make_delta, ix_make_states::ix_make_states},
     market::MakeHeader,
     match_axes,
     matching::region::make_region::MakeRegion,
@@ -35,7 +35,13 @@ pub fn ix_make<MS: MarketSpec>(
 
         match_axes!(UM = enums.0, In = enums.1 => {
             // TODO combine base_lots, position, region into common struct
-            ix_make_inner::<MS, (OM, UM), In>(base_lots, position, region, inner_bitmap_state, ctx)?;
+
+            // 1. Update states
+            let delta_base_lots =
+                ix_make_states::<MS, (OM, UM), In>(base_lots, position, region, inner_bitmap_state, ctx)?;
+
+            // 2. Update delta
+            ix_make_delta::<MS, UM, In>(delta_base_lots, position, ctx)?;
         });
     });
 
