@@ -36,11 +36,6 @@ where
 {
     SS::Occupancy::validate_region::<In>(region, position, inner_bitmap_state)?;
 
-    if base_lots == BaseLots::default() {
-        // Opening with 0 size is no-op
-        return Ok(BaseLots::default());
-    }
-
     let key = &RestingOrderPreimage {
         market_key: ctx.readables.market_readables().market_key,
         position,

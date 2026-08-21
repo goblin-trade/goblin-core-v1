@@ -7,7 +7,7 @@ use crate::{
     market::MakeHeader,
     match_axes,
     matching::region::make_region::MakeRegion,
-    quantities::{Pos2, SafePosition, POS_1},
+    quantities::{BaseLots, Pos2, SafePosition, POS_1},
     state::bitmap::alias::InnerBitmap,
     Ctx,
 };
@@ -24,6 +24,11 @@ pub fn ix_make<MS: MarketSpec>(
         inner_enum_raw,
         base_lots,
     } = MakeHeader::try_fixed_decode(reader)?;
+
+    if base_lots == BaseLots::default() {
+        // Opening with 0 size is no-op
+        return Ok(());
+    }
 
     let pos_2 = Pos2::new(pos_1, inner_pos);
     let position = pos_2.into();
