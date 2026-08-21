@@ -1,7 +1,7 @@
-use crate::quantities::{OuterPos, Position, SafePosition, POS_0, POS_1};
+use crate::quantities::{OuterPos, Pos0, Pos1, Position};
 
-impl SafePosition<POS_1> {
-    pub fn new(pos_0: SafePosition<POS_0>, outer_pos: OuterPos) -> Self {
+impl Pos1 {
+    pub fn new(pos_0: Pos0, outer_pos: OuterPos) -> Self {
         Self {
             inner: Position::from(pos_0) + outer_pos.into(),
         }

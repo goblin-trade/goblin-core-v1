@@ -1,7 +1,7 @@
 use crate::{
     axis::leg::leg_matcher::LegMatcher,
     axis_helpers::MarketSpec,
-    quantities::{Position, SafePosition, OUTER_POS, POS_0, POS_1},
+    quantities::{Pos0, Pos1, Position, OUTER_POS, POS_0, POS_1},
     state::{
         bitmap::{bitmap_reader::BitmapReader, preimage::BitmapPreimage, Bitmap},
         MarketPreimage, Preimage, SlotKey,
@@ -13,10 +13,10 @@ impl BitmapReader<POS_1> for Bitmap<POS_0, OUTER_POS> {
     fn active_iterator<MS: MarketSpec, In: LegMatcher>(
         market_key: SlotKey<MarketPreimage<MS>>,
         range: RangeInclusive<Position>,
-    ) -> impl Iterator<Item = SafePosition<POS_1>> {
+    ) -> impl Iterator<Item = Pos1> {
         In::outer_bitmap_index_iter(range.clone())
             .filter_map(move |outer_bitmap_index| {
-                let pos_0 = SafePosition::<POS_0>::new(outer_bitmap_index);
+                let pos_0 = Pos0::new(outer_bitmap_index);
 
                 let preimage = BitmapPreimage::<MS, POS_0, OUTER_POS> {
                     market_key,
@@ -27,7 +27,7 @@ impl BitmapReader<POS_1> for Bitmap<POS_0, OUTER_POS> {
                 outer_bitmap.is_active().then(|| {
                     In::outer_pos_iter(range.clone(), pos_0.into())
                         .filter(move |outer_pos| outer_bitmap.index_active(*outer_pos))
-                        .map(move |outer_pos| SafePosition::<POS_1>::new(pos_0, outer_pos))
+                        .map(move |outer_pos| Pos1::new(pos_0, outer_pos))
                 })
             })
             .flatten()

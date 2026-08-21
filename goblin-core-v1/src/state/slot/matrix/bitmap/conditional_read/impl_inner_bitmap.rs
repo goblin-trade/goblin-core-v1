@@ -1,7 +1,7 @@
 use crate::{
     axis_helpers::MarketSpec,
     matching::region::make_region::MakeRegion,
-    quantities::{OuterPos, SafePosition, INNER_POS, OUTER_POS, POS_0, POS_1},
+    quantities::{OuterPos, Pos1, INNER_POS, OUTER_POS, POS_0, POS_1},
     state::{
         bitmap::{preimage::BitmapPreimage, Bitmap},
         Preimage, SlotKey,
@@ -11,7 +11,7 @@ use crate::{
 
 impl Bitmap<POS_1, INNER_POS> {
     pub fn conditional_read<MS: MarketSpec>(
-        safe_position: SafePosition<POS_1>,
+        safe_position: Pos1,
         outer_pos: OuterPos,
         outer_bitmap_state: &Bitmap<POS_0, OUTER_POS>,
         ctx: &Ctx<MS>,

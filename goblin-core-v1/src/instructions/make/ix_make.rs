@@ -3,20 +3,17 @@ use crate::{
     axis_helpers::MarketSpec,
     goblin_error::GoblinError,
     input_processor::{ArgsReader, FixedDecode},
-    instructions::make::{
-        update_delta::update_delta, update_matrix::update_matrix,
-        update_resting_order::update_resting_order,
-    },
+    instructions::ix_make_inner::ix_make_inner,
     market::MakeHeader,
     match_axes,
     matching::region::make_region::MakeRegion,
-    quantities::{BaseLots, Pos2, SafePosition, POS_1},
+    quantities::{BaseLots, Pos1, Pos2},
     state::bitmap::alias::InnerBitmap,
     Ctx,
 };
 
 pub fn ix_make<MS: MarketSpec>(
-    pos_1: SafePosition<POS_1>,
+    pos_1: Pos1,
     reader: &ArgsReader,
     inner_bitmap_state: &mut InnerBitmap,
     ctx: &mut Ctx<MS>,
@@ -37,15 +34,8 @@ pub fn ix_make<MS: MarketSpec>(
 
     match_axes!(OM = occupancy_enum => {
         let enums = OM::get_make_enums(inner_enum_raw, region)?;
-
         match_axes!(UM = enums.0, In = enums.1 => {
-            OM::validate_region::<In>(region, position, inner_bitmap_state)?;
-
-            let (delta_base_lots, resting_order_empty) =
-                update_resting_order::<MS, OM, UM>(base_lots, position, ctx)?;
-
-            update_matrix::<MS, OM, In>(resting_order_empty, position, region, inner_bitmap_state, ctx);
-            update_delta::<MS, UM, In>(delta_base_lots, position, ctx)?;
+            ix_make_inner::<MS, OM, UM, In>(base_lots, position, region, inner_bitmap_state, ctx)?;
         });
     });
 
