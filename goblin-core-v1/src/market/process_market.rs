@@ -3,9 +3,10 @@ use crate::{
     axis_helpers::MarketSpec,
     goblin_error::GoblinError,
     input_processor::{ArgsReader, FixedDecode},
-    market::{MarketHeader, Readables, Writables},
+    market::MarketHeader,
     settlement::{local_delta::LocalDeposits, StaticDelta},
     types::Address,
+    Ctx,
 };
 
 #[inline(never)]
@@ -26,18 +27,16 @@ where
         LocalDeposits::<MS::Pair>::default()
     };
 
-    let readables = &Readables::try_new(msg_sender, reader, token_data_triple)?;
-
-    let writables = &mut Writables::try_new(
-        &readables.market_readables().market_key,
+    let ctx = &mut Ctx::try_new(
+        msg_sender,
+        reader,
+        token_data_triple,
         &mut static_delta.take_counterparties,
     )?;
 
     // TODO convert to axis- make and take?
-    market_header.execute_takes(reader, readables, writables)?;
-    market_header.execute_makes(reader, readables, writables)?;
+    market_header.execute_takes(reader, ctx)?;
+    market_header.execute_makes(reader, ctx)?;
 
-    static_delta
-        .global
-        .commit_local_delta::<MS>(&deposits, readables, writables)
+    static_delta.global.commit_local_delta::<MS>(&deposits, ctx)
 }

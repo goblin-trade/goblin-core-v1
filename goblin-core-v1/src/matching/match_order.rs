@@ -3,13 +3,14 @@ use crate::{
     axis_helpers::MarketSpec,
     goblin_error::GoblinError,
     instructions::TakeHeader,
-    market::{MarketReadables, Readables, Writables},
+    market::MarketReadables,
     matching::match_iterator::{match_iterator, RestingOrderEntry},
     quantities::Ticks,
     require,
     settlement::ConstDefault,
     state::resting_order::RestingOrder,
     types::StoreReader,
+    Ctx,
 };
 
 /// Match a take order
@@ -25,14 +26,13 @@ pub fn match_order<MS: MarketSpec, In: LegMatcher>(
         min_lots_to_fill,
         limit,
     }: TakeHeader<In>,
-    readables: &Readables<MS>,
-    writables: &mut Writables,
+    ctx: &mut Ctx<MS>,
 ) -> Result<(), GoblinError> {
-    let MarketReadables { market, market_key } = readables.market_readables();
+    let MarketReadables { market, market_key } = ctx.readables.market_readables();
 
     // TODO common struct in Market for sizes
 
-    let last_position_mut = In::get_leg_mut(&mut writables.market_state.last_positions);
+    let last_position_mut = In::get_leg_mut(&mut ctx.writables.market_state.last_positions);
 
     require!(
         In::in_region(*last_position_mut, limit),
@@ -63,7 +63,7 @@ pub fn match_order<MS: MarketSpec, In: LegMatcher>(
         let matched = quote.min(budget);
         budget -= matched;
 
-        writables.local_delta.take.add_take::<In>(
+        ctx.writables.local_delta.take.add_take::<In>(
             &maker,
             matched,
             base_lot_size,

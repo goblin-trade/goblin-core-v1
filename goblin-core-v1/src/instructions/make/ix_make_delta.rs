@@ -5,26 +5,27 @@ use crate::{
     },
     axis_helpers::MarketSpec,
     goblin_error::GoblinError,
-    market::{Readables, Writables},
     quantities::{BaseLots, Position, Ticks},
     types::StoreReader,
+    Ctx,
 };
 
 pub fn ix_make_delta<MS: MarketSpec, UM: UpdateMarker, In: LegMatcher>(
     delta_base_lots: BaseLots,
     position: Position,
-    readables: &Readables<MS>,
-    writables: &mut Writables,
+    ctx: &mut Ctx<MS>,
 ) -> Result<(), GoblinError> {
-    let market = &readables.market_readables().market;
+    let market = &ctx.readables.market_readables().market;
 
     // TODO common function on Market to get lot size pair and tick size
     let base_lot_size = Base::get(&market.lot_size_pair);
     let tick_size = market.tick_size;
     let price = Ticks::from(position);
 
-    writables
-        .local_delta
-        .make
-        .add_make::<UM, In>(delta_base_lots, base_lot_size, tick_size, price)
+    ctx.writables.local_delta.make.add_make::<UM, In>(
+        delta_base_lots,
+        base_lot_size,
+        tick_size,
+        price,
+    )
 }

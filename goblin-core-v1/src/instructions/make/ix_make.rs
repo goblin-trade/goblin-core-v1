@@ -4,19 +4,19 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::{ArgsReader, FixedDecode},
     instructions::make::ix_make_inner::ix_make_inner,
-    market::{MakeHeader, Readables, Writables},
+    market::MakeHeader,
     match_axes,
     matching::region::make_region::MakeRegion,
     quantities::{Pos2, SafePosition, POS_1},
     state::bitmap::alias::InnerBitmap,
+    Ctx,
 };
 
 pub fn ix_make<MS: MarketSpec>(
-    reader: &ArgsReader,
-    readables: &Readables<MS>,
     pos_1: SafePosition<POS_1>,
-    writables: &mut Writables,
+    reader: &ArgsReader,
     inner_bitmap_state: &mut InnerBitmap,
+    ctx: &mut Ctx<MS>,
 ) -> Result<(), GoblinError> {
     let MakeHeader {
         inner_pos,
@@ -28,15 +28,14 @@ pub fn ix_make<MS: MarketSpec>(
     let pos_2 = Pos2::new(pos_1, inner_pos);
     let position = pos_2.into();
 
-    let region = MakeRegion::new(&writables.market_state.last_positions, position);
+    let region = MakeRegion::new(&ctx.writables.market_state.last_positions, position);
 
     match_axes!(OM = occupancy_enum => {
         let enums = OM::get_make_enums(inner_enum_raw, region)?;
 
         match_axes!(UM = enums.0, In = enums.1 => {
-            // TODO combine Readables and Writables
             // TODO combine base_lots, position, region into common struct
-            ix_make_inner::<MS, (OM, UM), In>(base_lots, position, region, readables, writables, inner_bitmap_state)?;
+            ix_make_inner::<MS, (OM, UM), In>(base_lots, position, region, inner_bitmap_state, ctx)?;
         });
     });
 

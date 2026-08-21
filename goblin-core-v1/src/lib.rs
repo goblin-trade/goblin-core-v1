@@ -6,6 +6,7 @@ use crate::processor::processor;
 
 pub mod axis;
 pub mod axis_helpers;
+pub mod ctx;
 pub mod goblin_error;
 pub mod hostio;
 pub mod input_processor;
@@ -17,6 +18,8 @@ pub mod quantities;
 pub mod settlement;
 pub mod state;
 pub mod types;
+
+pub use ctx::*;
 
 #[no_mangle]
 pub extern "C" fn user_entrypoint(len: usize) -> i32 {
