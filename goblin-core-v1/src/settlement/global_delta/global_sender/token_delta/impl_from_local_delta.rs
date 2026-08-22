@@ -4,13 +4,13 @@ use crate::{
         token::token_marker::TokenMarker,
     },
     quantities::UnsidedDeltaAtomsPerLot,
-    settlement::{global_delta::TokenDelta, local_delta::LocalDelta},
+    settlement::{global_delta::TokenDelta, local_delta::LocalSender},
 };
 
 pub trait FromLocalDelta<T> {
     fn from_local<In>(
         local_deposit: T::LocalDeposit,
-        local_delta: &LocalDelta,
+        local_sender: &LocalSender,
         atoms_per_lot_pair: &SamePair<UnsidedDeltaAtomsPerLot>,
     ) -> Self
     where
@@ -24,7 +24,7 @@ where
 {
     fn from_local<In>(
         local_deposit: T::LocalDeposit,
-        local_delta: &LocalDelta,
+        local_delta: &LocalSender,
         atoms_per_lot_pair: &SamePair<UnsidedDeltaAtomsPerLot>,
     ) -> Self
     where
@@ -35,7 +35,7 @@ where
         let deposit = T::get_global_deposit(local_deposit, atoms_per_lot);
 
         // TODO checked mul?
-        let local_take = In::get(&local_delta.take.sender);
+        let local_take = In::get(&local_delta.take);
         let take = local_take * atoms_per_lot;
 
         let local_make = In::get(&local_delta.make.inner);

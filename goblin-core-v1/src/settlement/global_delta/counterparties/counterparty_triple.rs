@@ -12,7 +12,7 @@ use crate::{
     quantities::UnsidedAtomsPerLot,
     settlement::{
         global_delta::{CounterpartyMap, CounterpartyTokenKey},
-        local_delta::local_take::LocalCounterparty,
+        local_delta::LocalCounterparty,
         CheckedOps,
     },
     types::{Address, StoreReader, Triple},

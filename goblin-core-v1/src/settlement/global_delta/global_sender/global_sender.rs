@@ -19,7 +19,7 @@ use crate::{
     quantities::UnsidedAtomsPerLot,
     settlement::{
         global_delta::{FromLocalDelta, TokenDelta},
-        local_delta::{LocalDelta, LocalDeposits},
+        local_delta::{LocalDeposits, LocalSender},
         CheckedOps, ConstDefault,
     },
     types::{Address, StoreReader, Triple},
@@ -30,7 +30,7 @@ pub type GlobalSender = Triple<ETHDelta, HardcodedERC20Deltas, CustomERC20Deltas
 impl GlobalSender {
     pub fn commit_leg<TP, In>(
         &mut self,
-        local_delta: &LocalDelta,
+        local_sender: &LocalSender,
         local_deposits: &LocalDeposits<TP>,
         token_index_pair: &TokenIndexPair<TP>,
         atoms_per_lot_pair: &SamePair<UnsidedAtomsPerLot>,
@@ -46,7 +46,7 @@ impl GlobalSender {
 
         let local_deposit = In::get(local_deposits);
         let new_delta =
-            TokenDelta::from_local::<In>(local_deposit, local_delta, &delta_atoms_per_lot_pair);
+            TokenDelta::from_local::<In>(local_deposit, local_sender, &delta_atoms_per_lot_pair);
 
         let token_index = In::get(token_index_pair);
         let deltas_list = In::Selected::get_leg_mut(self);

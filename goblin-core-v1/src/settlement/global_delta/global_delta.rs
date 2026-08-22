@@ -1,7 +1,7 @@
 use goblin_macros::ConstDefault;
 
 use crate::{
-    axis::token::token_reader::TokenDataTriple,
+    axis::{party::Party, token::token_reader::TokenDataTriple},
     axis_helpers::MarketSpec,
     for_axes,
     goblin_error::GoblinError,
@@ -11,15 +11,11 @@ use crate::{
         global_delta::{CounterpartyTriple, GlobalSender},
         local_delta::LocalDeposits,
     },
-    types::Address,
+    types::{Address, Tuple},
     Ctx,
 };
 
-#[derive(ConstDefault)]
-pub struct GlobalDelta {
-    pub sender: GlobalSender,
-    pub counterparties: CounterpartyTriple,
-}
+pub type GlobalDelta = Tuple<GlobalSender, CounterpartyTriple, Party>;
 
 impl GlobalDelta {
     pub fn commit_local_delta<MS: MarketSpec>(
