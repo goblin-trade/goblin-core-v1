@@ -17,7 +17,6 @@ pub(crate) fn update_delta<MS: MarketSpec, UM: UpdateMarker, In: LegMatcher>(
 ) -> Result<(), GoblinError> {
     let market = &ctx.readables.market_readables().market;
 
-    // TODO common function on Market to get lot size pair and tick size
     let base_lot_size = Base::get(&market.lot_size_pair);
     let tick_size = market.tick_size;
     let price = Ticks::from(position);

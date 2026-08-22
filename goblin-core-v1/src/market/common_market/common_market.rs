@@ -4,15 +4,14 @@ use goblin_macros::FixedDecode;
 
 use crate::{
     axis::{
-        leg::{Base, Quote},
+        leg::{Base, Pair, Quote},
         token::token_reader::TokenDataTriple,
     },
     axis_helpers::MarketSpec,
     goblin_error::GoblinError,
-    market::{LotSizePair, TokenIndexPair, TokenPair},
+    market::{LotSizePair, TokenIndexPair},
     quantities::QuoteLotsPerBaseUnitPerTick,
     state::MarketPreimage,
-    types::{LifetimedStoreReader, StoreReader, Tuple},
 };
 
 #[derive(FixedDecode)]
@@ -48,19 +47,15 @@ impl<MS: MarketSpec> CommonMarket<MS> {
         &self,
         token_data_triple: &TokenDataTriple<'a>,
     ) -> Result<MarketPreimage<MS>, GoblinError> {
-        let base_token_index = Base::get(&self.token_index_pair);
-        let quote_token_index = Quote::get(&self.token_index_pair);
+        let base_data = token_data_triple.get_data::<MS::Pair, Base>(&self.token_index_pair);
+        let quote_data = token_data_triple.get_data::<MS::Pair, Quote>(&self.token_index_pair);
 
-        let base_data_list = <MS::Pair as TokenPair>::Base::get_lifetimed(token_data_triple);
-        let quote_data_list = <MS::Pair as TokenPair>::Quote::get_lifetimed(token_data_triple);
-
-        let base_token_address = base_data_list[base_token_index].address;
-        let quote_token_address = quote_data_list[quote_token_index].address;
+        let address_pair = Pair::new(base_data.address, quote_data.address);
 
         Ok(MarketPreimage::<MS>::new(
             self.lot_size_pair,
             self.tick_size,
-            Tuple::new(base_token_address, quote_token_address),
+            address_pair,
         ))
     }
 }
