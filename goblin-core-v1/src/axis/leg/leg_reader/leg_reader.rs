@@ -4,7 +4,7 @@ use crate::{
         BaseLots, BaseLotsPerBaseUnit, Position, QuoteLots, QuoteLotsPerQuoteUnit,
         UnsidedAtomsPerLot, UnsidedDeltaAtoms, UnsidedDeltaAtomsPerLot, UnsidedDeltaLots,
     },
-    settlement::local_delta::local_take::LocalCounterparty,
+    settlement::local_delta::LocalCounterparty,
     types::{StoreReader, Tuple},
 };
 

@@ -1,7 +1,7 @@
 use goblin_macros::ConstDefault;
 
 use crate::settlement::{
-    global_delta::GlobalDelta, local_delta::local_take::TakeCounterparties, ConstDefault,
+    global_delta::GlobalDelta, local_delta::LocalCounterparties, ConstDefault,
 };
 
 static mut STATIC_DELTA: StaticDelta = StaticDelta::DEFAULT;
@@ -20,7 +20,7 @@ pub struct StaticDelta {
     ///
     /// We get free zero fills by using mut ref for these buffers. Reset operation
     /// simply sets the count to 0 without overwriting the buffer contents.
-    pub take_counterparties: TakeCounterparties,
+    pub local_counterparties: LocalCounterparties,
 }
 
 impl StaticDelta {

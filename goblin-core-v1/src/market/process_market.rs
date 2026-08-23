@@ -31,7 +31,7 @@ where
         msg_sender,
         reader,
         token_data_triple,
-        &mut static_delta.take_counterparties,
+        &mut static_delta.local_counterparties,
     )?;
 
     // TODO convert to axis- make and take?

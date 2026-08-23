@@ -1,6 +1,7 @@
 use crate::{
     axis::{
         leg::{leg_matcher::LegMatcher, Base},
+        party::Sender,
         update::UpdateMarker,
     },
     axis_helpers::MarketSpec,
@@ -21,10 +22,7 @@ pub(crate) fn update_delta<MS: MarketSpec, UM: UpdateMarker, In: LegMatcher>(
     let tick_size = market.tick_size;
     let price = Ticks::from(position);
 
-    ctx.writables.local_delta.make.add_make::<UM, In>(
-        delta_base_lots,
-        base_lot_size,
-        tick_size,
-        price,
-    )
+    Sender::get_leg_mut(&mut ctx.writables.local_delta)
+        .make
+        .add_make::<UM, In>(delta_base_lots, base_lot_size, tick_size, price)
 }

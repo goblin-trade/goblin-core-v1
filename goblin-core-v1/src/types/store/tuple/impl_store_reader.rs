@@ -1,12 +1,12 @@
 use crate::types::{Marker, StoreReader, Tuple};
 
-impl<T0, T1, K> StoreReader<Tuple<T0, T1, K>> for Marker<K, 0>
-where
-    T0: Clone + Copy,
-{
+impl<T0, T1, K> StoreReader<Tuple<T0, T1, K>> for Marker<K, 0> {
     type Result = T0;
 
-    fn get(store: &Tuple<T0, T1, K>) -> Self::Result {
+    fn get(store: &Tuple<T0, T1, K>) -> Self::Result
+    where
+        Self::Result: Clone + Copy,
+    {
         store.0
     }
 
@@ -19,13 +19,13 @@ where
     }
 }
 
-impl<T0, T1, K> StoreReader<Tuple<T0, T1, K>> for Marker<K, 1>
-where
-    T1: Clone + Copy,
-{
+impl<T0, T1, K> StoreReader<Tuple<T0, T1, K>> for Marker<K, 1> {
     type Result = T1;
 
-    fn get(store: &Tuple<T0, T1, K>) -> Self::Result {
+    fn get(store: &Tuple<T0, T1, K>) -> Self::Result
+    where
+        Self::Result: Clone + Copy,
+    {
         store.1
     }
 

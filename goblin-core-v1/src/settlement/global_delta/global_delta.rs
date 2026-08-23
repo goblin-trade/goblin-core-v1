@@ -1,7 +1,8 @@
-use goblin_macros::ConstDefault;
-
 use crate::{
-    axis::{party::Party, token::token_reader::TokenDataTriple},
+    axis::{
+        party::{Counterparties, Party, Sender},
+        token::token_reader::TokenDataTriple,
+    },
     axis_helpers::MarketSpec,
     for_axes,
     goblin_error::GoblinError,
@@ -11,7 +12,7 @@ use crate::{
         global_delta::{CounterpartyTriple, GlobalSender},
         local_delta::LocalDeposits,
     },
-    types::{Address, Tuple},
+    types::{Address, StoreReader, Tuple},
     Ctx,
 };
 
@@ -27,15 +28,25 @@ impl GlobalDelta {
 
         let atoms_per_lot_pair = ATOMS_PER_UNIT / market.lot_size_pair.unsided();
 
-        for_axes!(In => self.sender.commit_leg::<MS::Pair, In>(
-            &ctx.writables.local_delta,
-            deposits,
-            &market.token_index_pair,
-            &atoms_per_lot_pair,
-        )?);
+        // TODO reduce with for_axes!
+        // 1. Commit sender
+        let global_sender = Sender::get_leg_mut(self);
+        let local_sender = Sender::get_leg(&ctx.writables.local_delta);
+        for_axes!(In => {
+            global_sender.commit_leg::<MS::Pair, In>(
+                local_sender,
+                deposits,
+                &market.token_index_pair,
+                &atoms_per_lot_pair,
+            )?;
+        });
 
-        for counterparty_data in ctx.writables.local_delta.take.counterparties.into_iter() {
-            for_axes!(In => self.counterparties.commit_leg::<MS::Pair, In>(
+        // 2. Commit counterparties
+        let global_counterparties = Counterparties::get_leg_mut(self);
+        let local_counterparties = Counterparties::get_leg_mut(&mut ctx.writables.local_delta);
+
+        for counterparty_data in local_counterparties.into_iter() {
+            for_axes!(In => global_counterparties.commit_leg::<MS::Pair, In>(
                 counterparty_data,
                 &market.token_index_pair,
                 &atoms_per_lot_pair,
@@ -43,7 +54,7 @@ impl GlobalDelta {
         }
 
         // Reset counter of global mut counterparty buffer
-        ctx.writables.local_delta.take.counterparties.reset();
+        local_counterparties.reset();
 
         Ok(())
     }
@@ -54,20 +65,17 @@ impl GlobalDelta {
         token_data_triple: &TokenDataTriple,
         msg_transfers: &MsgTransfers,
     ) -> Result<(), GoblinError> {
-        // TODO convert sender and counterparty to new axis TR = Trader
-        // This way both global and local deltas can become tuples
-        // we will have uniform function API
-        //
-        // Sender needs trader and msg_transfers but counterparty doesn't.
+        // TODO trait on GlobalSender and CounterpartyTriple with
+        // commit and settle function
         //
         // We can combine it into a single for_axes!(|TM, TR|)
         //
-        for_axes!(TM => self.sender.settle_leg::<TM>(
+        for_axes!(TM => Sender::get_leg(self).settle_leg::<TM>(
             recipient,
             token_data_triple,
             msg_transfers
         )?);
-        for_axes!(TM => self.counterparties.settle_leg::<TM>(token_data_triple)?);
+        for_axes!(TM => Counterparties::get_leg(self).settle_leg::<TM>(token_data_triple)?);
 
         Ok(())
     }

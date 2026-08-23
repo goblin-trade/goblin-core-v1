@@ -14,7 +14,7 @@ use crate::{
     types::StoreReader,
 };
 
-#[derive(ConstDefault)]
+#[derive(ConstDefault, Clone, Copy)]
 pub struct LocalMake {
     pub inner: SamePair<UnsidedDeltaLots>,
 }
