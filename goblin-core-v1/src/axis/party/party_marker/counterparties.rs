@@ -5,8 +5,7 @@ use crate::{
         update::{Decrease, Increase},
     },
     goblin_error::GoblinError,
-    quantities::UnsideQuantity,
-    settlement::{local_delta::LocalDelta, CheckedOps},
+    settlement::local_delta::LocalDelta,
     types::{Address, StoreReader},
 };
 
@@ -21,15 +20,8 @@ impl PartyMarker for Counterparties {
             .get_or_insert_mut(*counterparty)
             .ok_or(GoblinError::LocalCounterpartyFull)?;
 
-        let counterparty_in = Decrease::get_leg_mut(In::get_leg_mut(counterparty_pair));
-        *counterparty_in = counterparty_in
-            .checked_add(lots.unsided())
-            .ok_or(GoblinError::DeltaOverflow)?;
-
-        let counterparty_out = Increase::get_leg_mut(In::Opposite::get_leg_mut(counterparty_pair));
-        *counterparty_out = counterparty_out
-            .checked_add(lots_opposite.unsided())
-            .ok_or(GoblinError::DeltaOverflow)?;
+        counterparty_pair.add_leg::<Decrease, In>(lots)?;
+        counterparty_pair.add_leg::<Increase, In::Opposite>(lots_opposite)?;
 
         Ok(())
     }

@@ -28,7 +28,7 @@ pub type CounterpartyTriple = Triple<
 impl CounterpartyTriple {
     pub fn commit_leg<TP, In>(
         &mut self,
-        counterparty_data: &(Address, SamePair<LocalCounterparty>),
+        counterparty_data: &(Address, LocalCounterparty),
         token_index_pair: &TokenIndexPair<TP>,
         atoms_per_lot_pair: &SamePair<UnsidedAtomsPerLot>,
     ) -> Result<(), GoblinError>

@@ -1,8 +1,12 @@
 use crate::{
-    axis::leg::{leg_math::LegMath, leg_quantities::LegQuantities, Base, Leg, Quote, SamePair},
+    axis::{
+        leg::{leg_math::LegMath, leg_quantities::LegQuantities, Base, Leg, Quote, SamePair},
+        update::SameUpdatePair,
+    },
     quantities::{
         BaseLots, BaseLotsPerBaseUnit, Position, QuoteLots, QuoteLotsPerQuoteUnit,
         UnsidedAtomsPerLot, UnsidedDeltaAtoms, UnsidedDeltaAtomsPerLot, UnsidedDeltaLots,
+        UnsidedLots,
     },
     settlement::local_delta::LocalCounterparty,
     types::{StoreReader, Tuple},
@@ -18,7 +22,7 @@ pub trait LegReader: LegMath
     + StoreReader<SamePair<UnsidedDeltaLots>, Result = UnsidedDeltaLots>
     + StoreReader<SamePair<UnsidedAtomsPerLot>, Result = UnsidedAtomsPerLot>
     + StoreReader<SamePair<UnsidedDeltaAtomsPerLot>, Result = UnsidedDeltaAtomsPerLot>
-    + StoreReader<SamePair<LocalCounterparty>, Result = LocalCounterparty>
+    + StoreReader<LocalCounterparty, Result = SameUpdatePair<UnsidedLots>>
 {
 }
 
