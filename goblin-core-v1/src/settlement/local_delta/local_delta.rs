@@ -1,15 +1,15 @@
 use crate::{
     axis::{
         leg::{leg_matcher::LegMatcher, leg_math::LegMath},
-        party::{Counterparties, Party, PartyMarker, Sender},
+        party::{Counterparties, Party, Sender},
     },
     goblin_error::GoblinError,
     quantities::{BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, Ticks},
     settlement::{
-        local_delta::{LocalCounterparties, LocalSender},
+        local_delta::{LocalCounterparties, LocalDeltaStore, LocalSender},
         ConstDefault,
     },
-    types::{Address, Tuple},
+    types::{Address, StoreReader, Tuple},
 };
 
 pub type LocalDelta<'a> = Tuple<LocalSender, &'a mut LocalCounterparties, Party>;
@@ -37,8 +37,14 @@ impl<'a> LocalDelta<'a> {
         let lots_opposite =
             <In::Opposite as LegMath>::decode_matching_lots(matched_opposite, base_lot_size);
 
-        Sender::add_local_delta::<In>(lots, lots_opposite, counterparty, self)?;
-        Counterparties::add_local_delta::<In>(lots, lots_opposite, counterparty, self)?;
+        let sender = Sender::get_leg_mut(self);
+        sender.take.add::<In>(lots, lots_opposite)?;
+
+        let counterparty = Counterparties::get_leg_mut(self)
+            .get_or_insert_mut(*counterparty)
+            .ok_or(GoblinError::LocalCounterpartyFull)?;
+
+        counterparty.add::<In>(lots, lots_opposite)?;
 
         Ok(())
     }

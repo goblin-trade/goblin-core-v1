@@ -5,7 +5,7 @@ use crate::{
     },
     goblin_error::GoblinError,
     quantities::{UnsideQuantity, UnsidedLots},
-    settlement::CheckedOps,
+    settlement::{local_delta::LocalDeltaStore, CheckedOps},
 };
 
 /// Pending counterparty update when matched for a side.
@@ -21,8 +21,8 @@ use crate::{
 /// an i64 delta for netting
 pub type LocalCounterparty = SamePair<SameUpdatePair<UnsidedLots>>;
 
-impl LocalCounterparty {
-    pub fn add_leg<UM: UpdateMarker, In: LegMatcher>(
+impl LocalDeltaStore for LocalCounterparty {
+    fn add_leg<UM: UpdateMarker, In: LegMatcher>(
         &mut self,
         lots: In::Lots,
     ) -> Result<(), GoblinError> {

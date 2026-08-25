@@ -7,7 +7,7 @@ use crate::{
     },
     goblin_error::GoblinError,
     quantities::{TryIntoUnsidedDelta, UnsidedDeltaLots},
-    settlement::CheckedOps,
+    settlement::{local_delta::LocalDeltaStore, CheckedOps},
 };
 
 #[derive(ConstDefault, Clone, Copy)]
@@ -15,12 +15,11 @@ pub struct LocalTake {
     pub inner: SamePair<UnsidedDeltaLots>,
 }
 
-impl LocalTake {
-    pub fn add_leg<UM, In>(&mut self, lots: In::Lots) -> Result<(), GoblinError>
-    where
-        UM: UpdateMarker,
-        In: LegMatcher,
-    {
+impl LocalDeltaStore for LocalTake {
+    fn add_leg<UM: UpdateMarker, In: LegMatcher>(
+        &mut self,
+        lots: In::Lots,
+    ) -> Result<(), GoblinError> {
         let delta_lots = lots.try_into_unsided_delta::<UM>()?;
 
         let total_delta = In::get_leg_mut(&mut self.inner);
