@@ -35,7 +35,7 @@ where
         let deposit = T::get_global_deposit(local_deposit, atoms_per_lot);
 
         // TODO checked mul?
-        let local_take = In::get(&local_delta.take);
+        let local_take = In::get(&local_delta.take.inner);
         let take = local_take * atoms_per_lot;
 
         let local_make = In::get(&local_delta.make.inner);

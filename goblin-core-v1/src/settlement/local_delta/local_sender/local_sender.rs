@@ -1,11 +1,9 @@
 use goblin_macros::ConstDefault;
 
-use crate::{
-    axis::leg::SamePair, quantities::UnsidedDeltaLots, settlement::local_delta::LocalMake,
-};
+use crate::settlement::local_delta::{LocalMake, LocalTake};
 
 #[derive(ConstDefault, Clone, Copy)]
 pub struct LocalSender {
-    pub take: SamePair<UnsidedDeltaLots>,
+    pub take: LocalTake,
     pub make: LocalMake,
 }
