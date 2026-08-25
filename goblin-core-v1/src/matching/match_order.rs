@@ -63,7 +63,7 @@ pub fn match_order<MS: MarketSpec, In: LegMatcher>(
         let matched = quote.min(budget);
         budget -= matched;
 
-        ctx.writables.local_delta.take.add_take::<In>(
+        ctx.writables.local_delta.add_take::<In>(
             &maker,
             matched,
             base_lot_size,
