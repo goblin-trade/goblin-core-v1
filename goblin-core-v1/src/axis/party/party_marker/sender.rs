@@ -1,10 +1,10 @@
 use crate::{
     axis::{
-        leg::{leg_matcher::LegMatcher, SamePair},
+        leg::SamePair,
         party::{party_marker::party_marker::PartyMarker, Sender},
-        token::{token_marker::TokenMarker, token_quantity::TokenQuantity},
+        token::token_marker::TokenMarker,
     },
-    axis_helpers::{LegToToken, TokenPair},
+    axis_helpers::{PairLeg, TokenPair},
     for_axes,
     goblin_error::GoblinError,
     market::TokenIndexPair,
@@ -18,41 +18,27 @@ use crate::{
 
 impl PartyMarker for Sender {
     type Address = ();
+
     type Local<'a, TP: TokenPair> = (&'a LocalSender, &'a LocalDeposits<TP>);
+    type GlobalDeltaStore<PL: PairLeg> = TokenDelta<PL::Selected>;
 
-    type GlobalDeltaStore<TP, In>
-        = TokenDelta<In::Selected>
-    where
-        TP: TokenPair,
-        In: LegMatcher
-            + LegToToken<TP>
-            + StoreReader<TokenIndexPair<TP>, Result = <In::Selected as TokenQuantity>::TokenIndex>
-            + StoreReader<LocalDeposits<TP>, Result = <In::Selected as TokenQuantity>::LocalDeposit>;
-
-    fn try_new<'a, TP, In>(
-        (local_delta, local_deposits): Self::Local<'a, TP>,
+    fn try_new<'a, PL: PairLeg>(
+        (local_delta, local_deposits): Self::Local<'a, PL::Pair>,
         atoms_per_lot_pair: &SamePair<UnsidedAtomsPerLot>,
-    ) -> Result<Self::GlobalDeltaStore<TP, In>, GoblinError>
-    where
-        TP: TokenPair,
-        In: LegMatcher
-            + LegToToken<TP>
-            + StoreReader<TokenIndexPair<TP>, Result = <In::Selected as TokenQuantity>::TokenIndex>
-            + StoreReader<LocalDeposits<TP>, Result = <In::Selected as TokenQuantity>::LocalDeposit>,
-    {
-        let local_deposit = In::get(local_deposits);
+    ) -> Result<Self::GlobalDeltaStore<PL>, GoblinError> {
+        let local_deposit = PL::Leg::get(local_deposits);
         let delta_atoms_per_lot_pair =
             SamePair::<UnsidedDeltaAtomsPerLot>::try_from(atoms_per_lot_pair)?;
 
-        let atoms_per_lot = In::get(&delta_atoms_per_lot_pair);
+        let atoms_per_lot = PL::Leg::get(&delta_atoms_per_lot_pair);
 
-        let deposit = In::Selected::get_global_deposit(local_deposit, atoms_per_lot);
-        let local_take = In::get(&local_delta.take.inner);
+        let deposit = PL::Selected::get_global_deposit(local_deposit, atoms_per_lot);
+        let local_take = PL::Leg::get(&local_delta.take.inner);
 
         // TODO checked mul?
         let take = local_take * atoms_per_lot;
 
-        let local_make = In::get(&local_delta.make.inner);
+        let local_make = PL::Leg::get(&local_delta.make.inner);
         let make = local_make * atoms_per_lot;
 
         Ok(TokenDelta {
@@ -62,21 +48,14 @@ impl PartyMarker for Sender {
         })
     }
 
-    fn get_store<'a, TP, In>(
+    fn get_store<'a, PL: PairLeg>(
         _address: &Self::Address,
-        token_index_pair: &TokenIndexPair<TP>,
+        token_index_pair: &TokenIndexPair<PL::Pair>,
         global_delta: &'a mut GlobalDelta,
-    ) -> Result<&'a mut Self::GlobalDeltaStore<TP, In>, GoblinError>
-    where
-        TP: TokenPair,
-        In: LegMatcher
-            + LegToToken<TP>
-            + StoreReader<TokenIndexPair<TP>, Result = <In::Selected as TokenQuantity>::TokenIndex>
-            + StoreReader<LocalDeposits<TP>, Result = <In::Selected as TokenQuantity>::LocalDeposit>,
-    {
+    ) -> Result<&'a mut Self::GlobalDeltaStore<PL>, GoblinError> {
         let sender_delta = Sender::get_leg_mut(global_delta);
-        let deltas_list = In::Selected::get_leg_mut(sender_delta);
-        let token_index = In::get(token_index_pair);
+        let deltas_list = PL::Selected::get_leg_mut(sender_delta);
+        let token_index = PL::Leg::get(token_index_pair);
 
         Ok(&mut deltas_list[token_index])
     }
@@ -90,7 +69,7 @@ impl PartyMarker for Sender {
     ) -> Result<(), GoblinError> {
         let local_sender = Sender::get_leg(local_delta);
         for_axes!(In => {
-            Sender::commit_leg::<TP, In>(
+            Sender::commit_leg::<(TP, In)>(
                 &(),
                 (local_sender, local_deposits),
                 atoms_per_lot_pair,

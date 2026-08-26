@@ -1,10 +1,9 @@
 use crate::{
     axis::{
-        leg::{leg_matcher::LegMatcher, SamePair},
+        leg::SamePair,
         party::{party_marker::party_marker::PartyMarker, Counterparties},
-        token::token_quantity::TokenQuantity,
     },
-    axis_helpers::{LegToToken, TokenPair},
+    axis_helpers::{PairLeg, TokenPair},
     for_axes,
     goblin_error::GoblinError,
     market::TokenIndexPair,
@@ -18,55 +17,34 @@ use crate::{
 
 impl PartyMarker for Counterparties {
     type Address = Address;
+
     type Local<'a, TP: TokenPair> = &'a LocalCounterparty;
+    type GlobalDeltaStore<PL: PairLeg> = GlobalCounterparty;
 
-    type GlobalDeltaStore<TP, In>
-        = GlobalCounterparty
-    where
-        TP: TokenPair,
-        In: LegMatcher
-            + LegToToken<TP>
-            + StoreReader<TokenIndexPair<TP>, Result = <In::Selected as TokenQuantity>::TokenIndex>
-            + StoreReader<LocalDeposits<TP>, Result = <In::Selected as TokenQuantity>::LocalDeposit>;
-
-    fn try_new<'a, TP, In>(
-        local_delta: Self::Local<'a, TP>,
+    fn try_new<'a, PL: PairLeg>(
+        local_delta: Self::Local<'a, PL::Pair>,
         atoms_per_lot_pair: &SamePair<UnsidedAtomsPerLot>,
-    ) -> Result<Self::GlobalDeltaStore<TP, In>, GoblinError>
-    where
-        TP: TokenPair,
-        In: LegMatcher
-            + LegToToken<TP>
-            + StoreReader<TokenIndexPair<TP>, Result = <In::Selected as TokenQuantity>::TokenIndex>
-            + StoreReader<LocalDeposits<TP>, Result = <In::Selected as TokenQuantity>::LocalDeposit>,
-    {
-        let local_counterparty = In::get(local_delta);
-        let atoms_per_lot = In::get(atoms_per_lot_pair);
+    ) -> Result<Self::GlobalDeltaStore<PL>, GoblinError> {
+        let local_counterparty = PL::Leg::get(local_delta);
+        let atoms_per_lot = PL::Leg::get(atoms_per_lot_pair);
         let atoms_pair = atoms_per_lot * local_counterparty;
 
         Ok(GlobalCounterparty { inner: atoms_pair })
     }
 
-    fn get_store<'a, TP, In>(
+    fn get_store<'a, PL: PairLeg>(
         address: &Self::Address,
-        token_index_pair: &TokenIndexPair<TP>,
+        token_index_pair: &TokenIndexPair<PL::Pair>,
         global_delta: &'a mut GlobalDelta,
-    ) -> Result<&'a mut Self::GlobalDeltaStore<TP, In>, GoblinError>
-    where
-        TP: TokenPair,
-        In: LegMatcher
-            + LegToToken<TP>
-            + StoreReader<TokenIndexPair<TP>, Result = <In::Selected as TokenQuantity>::TokenIndex>
-            + StoreReader<LocalDeposits<TP>, Result = <In::Selected as TokenQuantity>::LocalDeposit>,
-    {
+    ) -> Result<&'a mut Self::GlobalDeltaStore<PL>, GoblinError> {
         let counterparty_delta = Counterparties::get_leg_mut(global_delta);
 
         let key = CounterpartyTokenKey {
             counterparty: *address,
-            token_index: In::get(token_index_pair),
+            token_index: PL::Leg::get(token_index_pair),
         };
 
-        In::Selected::get_leg_mut(counterparty_delta)
+        PL::Selected::get_leg_mut(counterparty_delta)
             .get_or_insert_mut(key)
             .ok_or(GoblinError::GlobalCounterpartyFull)
     }
@@ -80,7 +58,7 @@ impl PartyMarker for Counterparties {
     ) -> Result<(), GoblinError> {
         let local_counterparties = &**Counterparties::get_leg(local_delta);
         for (address, local_counterparty) in local_counterparties.into_iter() {
-            for_axes!(In => Counterparties::commit_leg::<TP, In>(
+            for_axes!(In => Counterparties::commit_leg::<(TP, In)>(
                 address,
                 &local_counterparty,
                 atoms_per_lot_pair,

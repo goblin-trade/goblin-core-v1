@@ -1,10 +1,6 @@
 use crate::{
-    axis::{
-        leg::{leg_matcher::LegMatcher, SamePair},
-        party::PartyEnum,
-        token::token_quantity::TokenQuantity,
-    },
-    axis_helpers::{AxisMarker, LegToToken, TokenPair},
+    axis::{leg::SamePair, party::PartyEnum},
+    axis_helpers::{AxisMarker, PairLeg, TokenPair},
     goblin_error::GoblinError,
     market::TokenIndexPair,
     quantities::UnsidedAtomsPerLot,
@@ -13,77 +9,44 @@ use crate::{
         local_delta::{LocalDelta, LocalDeposits},
         CheckedOps,
     },
-    types::StoreReader,
 };
 
 pub trait PartyMarker: AxisMarker<Enum = PartyEnum> {
     type Address;
 
     /// The local type that is converted into GlobalDeltaStore
-    ///
-    /// # Confusion
-    ///
-    /// This type doesn't have trait bound LocalDeltaStore
     type Local<'a, TP: TokenPair>;
 
-    // TODO combine TP, In into wrapper trait with all bounds
-    type GlobalDeltaStore<TP, In>: CheckedOps + Clone + Copy
-    where
-        TP: TokenPair,
-        In: LegMatcher
-            + LegToToken<TP>
-            + StoreReader<TokenIndexPair<TP>, Result = <In::Selected as TokenQuantity>::TokenIndex>
-            + StoreReader<LocalDeposits<TP>, Result = <In::Selected as TokenQuantity>::LocalDeposit>;
+    type GlobalDeltaStore<PL: PairLeg>: CheckedOps + Clone + Copy;
 
-    fn try_new<'a, TP, In>(
-        local: Self::Local<'a, TP>,
+    fn try_new<'a, PL: PairLeg>(
+        local: Self::Local<'a, PL::Pair>,
         atoms_per_lot_pair: &SamePair<UnsidedAtomsPerLot>,
-    ) -> Result<Self::GlobalDeltaStore<TP, In>, GoblinError>
-    where
-        TP: TokenPair,
-        In: LegMatcher
-            + LegToToken<TP>
-            + StoreReader<TokenIndexPair<TP>, Result = <In::Selected as TokenQuantity>::TokenIndex>
-            + StoreReader<LocalDeposits<TP>, Result = <In::Selected as TokenQuantity>::LocalDeposit>;
+    ) -> Result<Self::GlobalDeltaStore<PL>, GoblinError>;
 
-    fn get_store<'a, TP, In>(
+    fn get_store<'a, PL: PairLeg>(
         address: &Self::Address,
-        token_index_pair: &TokenIndexPair<TP>,
+        token_index_pair: &TokenIndexPair<PL::Pair>,
         global_delta: &'a mut GlobalDelta,
-    ) -> Result<&'a mut Self::GlobalDeltaStore<TP, In>, GoblinError>
-    where
-        TP: TokenPair,
-        In: LegMatcher
-            + LegToToken<TP>
-            + StoreReader<TokenIndexPair<TP>, Result = <In::Selected as TokenQuantity>::TokenIndex>
-            + StoreReader<LocalDeposits<TP>, Result = <In::Selected as TokenQuantity>::LocalDeposit>;
+    ) -> Result<&'a mut Self::GlobalDeltaStore<PL>, GoblinError>;
 
-    fn commit_local_delta<'a, TP>(
+    fn commit_local_delta<'a, TP: TokenPair>(
         atoms_per_lot_pair: &SamePair<UnsidedAtomsPerLot>,
         token_index_pair: &TokenIndexPair<TP>,
         local_delta: &LocalDelta<'a>,
         local_deposits: &LocalDeposits<TP>,
         global_delta: &mut GlobalDelta,
-    ) -> Result<(), GoblinError>
-    where
-        TP: TokenPair;
+    ) -> Result<(), GoblinError>;
 
-    fn commit_leg<'a, TP, In>(
+    fn commit_leg<'a, PL: PairLeg>(
         address: &Self::Address,
-        local: Self::Local<'a, TP>,
+        local: Self::Local<'a, PL::Pair>,
         atoms_per_lot_pair: &SamePair<UnsidedAtomsPerLot>,
-        token_index_pair: &TokenIndexPair<TP>,
+        token_index_pair: &TokenIndexPair<PL::Pair>,
         global_delta: &mut GlobalDelta,
-    ) -> Result<(), GoblinError>
-    where
-        TP: TokenPair,
-        In: LegMatcher
-            + LegToToken<TP>
-            + StoreReader<TokenIndexPair<TP>, Result = <In::Selected as TokenQuantity>::TokenIndex>
-            + StoreReader<LocalDeposits<TP>, Result = <In::Selected as TokenQuantity>::LocalDeposit>,
-    {
-        let new_delta = Self::try_new::<TP, In>(local, atoms_per_lot_pair)?;
-        let delta_store = Self::get_store(address, token_index_pair, global_delta)?;
+    ) -> Result<(), GoblinError> {
+        let new_delta = Self::try_new::<PL>(local, atoms_per_lot_pair)?;
+        let delta_store = Self::get_store::<PL>(address, token_index_pair, global_delta)?;
 
         *delta_store = delta_store
             .checked_add(new_delta)
