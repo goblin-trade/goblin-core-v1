@@ -31,8 +31,7 @@ impl GlobalDelta {
         for_axes!(In => {
             Sender::commit_leg::<MS::Pair, In>(
                 &(),
-                local_sender,
-                deposits,
+                (local_sender, deposits),
                 &atoms_per_lot_pair,
                 &market.token_index_pair,
                 self
@@ -43,8 +42,7 @@ impl GlobalDelta {
         for (address, local_counterparty) in local_counterparties.into_iter() {
             for_axes!(In => Counterparties::commit_leg::<MS::Pair, In>(
                 address,
-                local_counterparty,
-                deposits,
+                &local_counterparty,
                 &atoms_per_lot_pair,
                 &market.token_index_pair,
                 self

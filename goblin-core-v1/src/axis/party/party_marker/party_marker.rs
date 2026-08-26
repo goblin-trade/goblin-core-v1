@@ -24,7 +24,7 @@ pub trait PartyMarker: AxisMarker<Enum = PartyEnum> {
     /// # Confusion
     ///
     /// This type doesn't have trait bound LocalDeltaStore
-    type LocalDeltaStore;
+    type Local<'a, TP: TokenPair>;
 
     // TODO combine TP, In into wrapper trait with all bounds
     type GlobalDeltaStore<TP, In>: GlobalDeltaStore<TP, In>
@@ -35,9 +35,8 @@ pub trait PartyMarker: AxisMarker<Enum = PartyEnum> {
             + StoreReader<TokenIndexPair<TP>, Result = <In::Selected as TokenQuantity>::TokenIndex>
             + StoreReader<LocalDeposits<TP>, Result = <In::Selected as TokenQuantity>::LocalDeposit>;
 
-    fn try_new<TP, In>(
-        local_delta: &Self::LocalDeltaStore,
-        local_deposits: &LocalDeposits<TP>,
+    fn try_new<'a, TP, In>(
+        local: Self::Local<'a, TP>,
         atoms_per_lot_pair: &SamePair<UnsidedAtomsPerLot>,
     ) -> Result<Self::GlobalDeltaStore<TP, In>, GoblinError>
     where
@@ -59,10 +58,9 @@ pub trait PartyMarker: AxisMarker<Enum = PartyEnum> {
             + StoreReader<TokenIndexPair<TP>, Result = <In::Selected as TokenQuantity>::TokenIndex>
             + StoreReader<LocalDeposits<TP>, Result = <In::Selected as TokenQuantity>::LocalDeposit>;
 
-    fn commit_leg<TP, In>(
+    fn commit_leg<'a, TP, In>(
         address: &Self::Address,
-        local_delta: &Self::LocalDeltaStore,
-        local_deposits: &LocalDeposits<TP>,
+        local: Self::Local<'a, TP>,
         atoms_per_lot_pair: &SamePair<UnsidedAtomsPerLot>,
         token_index_pair: &TokenIndexPair<TP>,
         global_delta: &mut GlobalDelta,
@@ -74,7 +72,7 @@ pub trait PartyMarker: AxisMarker<Enum = PartyEnum> {
             + StoreReader<TokenIndexPair<TP>, Result = <In::Selected as TokenQuantity>::TokenIndex>
             + StoreReader<LocalDeposits<TP>, Result = <In::Selected as TokenQuantity>::LocalDeposit>,
     {
-        let new_delta = Self::try_new::<TP, In>(local_delta, local_deposits, atoms_per_lot_pair)?;
+        let new_delta = Self::try_new::<TP, In>(local, atoms_per_lot_pair)?;
         let delta_store = Self::get_store(address, token_index_pair, global_delta)?;
 
         *delta_store = delta_store

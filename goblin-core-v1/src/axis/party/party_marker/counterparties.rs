@@ -17,7 +17,7 @@ use crate::{
 
 impl PartyMarker for Counterparties {
     type Address = Address;
-    type LocalDeltaStore = LocalCounterparty;
+    type Local<'a, TP: TokenPair> = &'a LocalCounterparty;
 
     type GlobalDeltaStore<TP, In>
         = GlobalCounterparty
@@ -28,9 +28,8 @@ impl PartyMarker for Counterparties {
             + StoreReader<TokenIndexPair<TP>, Result = <In::Selected as TokenQuantity>::TokenIndex>
             + StoreReader<LocalDeposits<TP>, Result = <In::Selected as TokenQuantity>::LocalDeposit>;
 
-    fn try_new<TP, In>(
-        local_delta: &Self::LocalDeltaStore,
-        _local_deposits: &LocalDeposits<TP>,
+    fn try_new<'a, TP, In>(
+        local_delta: Self::Local<'a, TP>,
         atoms_per_lot_pair: &SamePair<UnsidedAtomsPerLot>,
     ) -> Result<Self::GlobalDeltaStore<TP, In>, GoblinError>
     where
