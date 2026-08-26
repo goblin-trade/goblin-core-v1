@@ -29,10 +29,8 @@ impl GlobalDelta {
 
         for_axes!(PT => {
             PT::commit_local_delta::<MS::Pair>(
-                &atoms_per_lot_pair,
-                &market.token_index_pair,
-                &ctx.writables.local_delta,
-                local_deposits,
+                (&market.token_index_pair, &atoms_per_lot_pair),
+                (&ctx.writables.local_delta, local_deposits),
                 self
             )?;
         });

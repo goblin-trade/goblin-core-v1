@@ -61,19 +61,16 @@ impl PartyMarker for Sender {
     }
 
     fn commit_local_delta<'a, TP: TokenPair>(
-        atoms_per_lot_pair: &SamePair<UnsidedAtomsPerLot>,
-        token_index_pair: &TokenIndexPair<TP>,
-        local_delta: &LocalDelta<'a>,
-        local_deposits: &LocalDeposits<TP>,
+        params: (&TokenIndexPair<TP>, &SamePair<UnsidedAtomsPerLot>),
+        (local_delta, local_deposits): (&LocalDelta<'a>, &LocalDeposits<TP>),
         global_delta: &mut GlobalDelta,
     ) -> Result<(), GoblinError> {
         let local_sender = Sender::get_leg(local_delta);
         for_axes!(In => {
             Sender::commit_leg::<(TP, In)>(
                 &(),
+                params,
                 (local_sender, local_deposits),
-                atoms_per_lot_pair,
-                token_index_pair,
                 global_delta
             )?;
         });

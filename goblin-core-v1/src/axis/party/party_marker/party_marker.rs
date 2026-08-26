@@ -31,20 +31,18 @@ pub trait PartyMarker: AxisMarker<Enum = PartyEnum> {
     ) -> Result<&'a mut Self::GlobalDeltaStore<PL>, GoblinError>;
 
     fn commit_local_delta<'a, TP: TokenPair>(
-        atoms_per_lot_pair: &SamePair<UnsidedAtomsPerLot>,
-        token_index_pair: &TokenIndexPair<TP>,
-        local_delta: &LocalDelta<'a>,
-        local_deposits: &LocalDeposits<TP>,
+        params: (&TokenIndexPair<TP>, &SamePair<UnsidedAtomsPerLot>),
+        local: (&LocalDelta<'a>, &LocalDeposits<TP>),
         global_delta: &mut GlobalDelta,
     ) -> Result<(), GoblinError>;
 
     fn commit_leg<'a, PL: PairLeg>(
         address: &Self::Address,
+        params: (&TokenIndexPair<PL::Pair>, &SamePair<UnsidedAtomsPerLot>),
         local: Self::Local<'a, PL::Pair>,
-        atoms_per_lot_pair: &SamePair<UnsidedAtomsPerLot>,
-        token_index_pair: &TokenIndexPair<PL::Pair>,
         global_delta: &mut GlobalDelta,
     ) -> Result<(), GoblinError> {
+        let (token_index_pair, atoms_per_lot_pair) = params;
         let new_delta = Self::try_new::<PL>(local, atoms_per_lot_pair)?;
         let delta_store = Self::get_store::<PL>(address, token_index_pair, global_delta)?;
 
