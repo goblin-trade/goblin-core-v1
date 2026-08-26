@@ -1,6 +1,6 @@
 use crate::{
     axis::market::{market_marker::MarketMarker, MarketLocator},
-    market::TokenPair,
+    axis_helpers::TokenPair,
 };
 
 pub trait MarketSpecInner: Clone + Copy + PartialEq + PartialOrd {

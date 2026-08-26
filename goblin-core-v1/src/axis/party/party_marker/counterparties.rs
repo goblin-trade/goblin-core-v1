@@ -4,10 +4,10 @@ use crate::{
         party::{party_marker::party_marker::PartyMarker, Counterparties},
         token::token_quantity::TokenQuantity,
     },
-    axis_helpers::LegToToken,
+    axis_helpers::{LegToToken, TokenPair},
     for_axes,
     goblin_error::GoblinError,
-    market::{TokenIndexPair, TokenPair},
+    market::TokenIndexPair,
     quantities::UnsidedAtomsPerLot,
     settlement::{
         global_delta::{CounterpartyTokenKey, GlobalCounterparty, GlobalDelta},

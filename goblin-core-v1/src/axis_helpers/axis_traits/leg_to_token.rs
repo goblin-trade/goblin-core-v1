@@ -3,7 +3,7 @@ use crate::{
         leg::{Base, Quote},
         token::token_marker::TokenMarker,
     },
-    market::TokenPair,
+    axis_helpers::TokenPair,
 };
 
 /// Maps a leg marker + a token pair to the token marker on that side.

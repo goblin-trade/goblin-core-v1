@@ -6,9 +6,10 @@ use crate::{
         },
         token::token_reader::TokenDataTriple,
     },
+    axis_helpers::TokenPair,
     goblin_error::GoblinError,
     input_processor::{ArgsReader, FixedDecode},
-    market::{token_pair::TokenPair, MarketReadables},
+    market::MarketReadables,
 };
 
 impl<TP: TokenPair> MarketLocator for (Hardcoded, TP) {

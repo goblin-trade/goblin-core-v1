@@ -1,6 +1,6 @@
 use crate::{
     axis::{leg::Pair, token::token_quantity::TokenQuantity},
-    market::TokenPair,
+    axis_helpers::TokenPair,
 };
 
 /// Local deposits for a market

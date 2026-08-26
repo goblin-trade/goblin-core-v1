@@ -4,9 +4,9 @@ use crate::{
         party::PartyEnum,
         token::token_quantity::TokenQuantity,
     },
-    axis_helpers::{AxisMarker, LegToToken},
+    axis_helpers::{AxisMarker, LegToToken, TokenPair},
     goblin_error::GoblinError,
-    market::{TokenIndexPair, TokenPair},
+    market::TokenIndexPair,
     quantities::UnsidedAtomsPerLot,
     settlement::{
         global_delta::GlobalDelta,

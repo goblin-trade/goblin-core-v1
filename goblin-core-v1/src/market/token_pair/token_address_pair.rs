@@ -1,6 +1,6 @@
 use crate::{
     axis::{leg::Pair, token::token_quantity::TokenQuantity},
-    market::TokenPair,
+    axis_helpers::TokenPair,
 };
 
 pub type TokenAddressPair<TP> = Pair<

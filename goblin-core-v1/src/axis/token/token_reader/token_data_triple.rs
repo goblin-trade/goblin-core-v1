@@ -10,8 +10,8 @@ use crate::{
             CustomERC20, HardcodedERC20, Token, ETH,
         },
     },
-    axis_helpers::LegToToken,
-    market::{TokenIndexPair, TokenPair},
+    axis_helpers::{LegToToken, TokenPair},
+    market::TokenIndexPair,
     settlement::ConstDefault,
     types::{LifetimedStoreReader, StoreReader, Triple},
 };
