@@ -19,6 +19,11 @@ use crate::{
 pub trait PartyMarker: AxisMarker<Enum = PartyEnum> {
     type Address;
 
+    /// The local type that is converted into GlobalDeltaStore
+    ///
+    /// # Confusion
+    ///
+    /// This type doesn't have trait bound LocalDeltaStore
     type LocalDeltaStore;
 
     // TODO combine TP, In into wrapper trait with all bounds

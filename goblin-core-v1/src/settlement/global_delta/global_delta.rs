@@ -39,6 +39,18 @@ impl GlobalDelta {
             )?;
         });
 
+        let local_counterparties = &**Counterparties::get_leg(&ctx.writables.local_delta);
+        for (address, local_counterparty) in local_counterparties.into_iter() {
+            for_axes!(In => Counterparties::commit_leg::<MS::Pair, In>(
+                address,
+                local_counterparty,
+                deposits,
+                &atoms_per_lot_pair,
+                &market.token_index_pair,
+                self
+            )?);
+        }
+
         // // TODO reduce with for_axes!
         // // 1. Commit sender
         // let global_sender = Sender::get_leg_mut(self);
@@ -58,14 +70,14 @@ impl GlobalDelta {
         // )?;
 
         // 2. Commit counterparties
-        let global_counterparties = Counterparties::get_leg_mut(self);
-        let local_counterparties = &**Counterparties::get_leg(&ctx.writables.local_delta);
+        // let global_counterparties = Counterparties::get_leg_mut(self);
+        // let local_counterparties = &**Counterparties::get_leg(&ctx.writables.local_delta);
 
-        global_counterparties.commit::<MS::Pair>(
-            local_counterparties,
-            &market.token_index_pair,
-            &atoms_per_lot_pair,
-        )?;
+        // global_counterparties.commit::<MS::Pair>(
+        //     local_counterparties,
+        //     &market.token_index_pair,
+        //     &atoms_per_lot_pair,
+        // )?;
 
         // Reset counter of global mut counterparty buffer
         Counterparties::get_leg_mut(&mut ctx.writables.local_delta).reset();
