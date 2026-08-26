@@ -16,6 +16,7 @@ use crate::{
 };
 
 impl PartyMarker for Counterparties {
+    type Address = Address;
     type LocalDeltaStore = LocalCounterparty;
 
     type GlobalDeltaStore<TP, In>
@@ -47,7 +48,7 @@ impl PartyMarker for Counterparties {
     }
 
     fn get_store<'a, TP, In>(
-        address: &Address,
+        address: &Self::Address,
         token_index_pair: &TokenIndexPair<TP>,
         global_delta: &'a mut GlobalDelta,
     ) -> Result<&'a mut Self::GlobalDeltaStore<TP, In>, GoblinError>

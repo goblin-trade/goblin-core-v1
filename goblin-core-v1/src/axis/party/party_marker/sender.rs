@@ -12,10 +12,11 @@ use crate::{
         global_delta::{GlobalDelta, TokenDelta},
         local_delta::{LocalDeposits, LocalSender},
     },
-    types::{Address, StoreReader},
+    types::StoreReader,
 };
 
 impl PartyMarker for Sender {
+    type Address = ();
     type LocalDeltaStore = LocalSender;
 
     type GlobalDeltaStore<TP, In>
@@ -62,7 +63,7 @@ impl PartyMarker for Sender {
     }
 
     fn get_store<'a, TP, In>(
-        _address: &Address,
+        _address: &Self::Address,
         token_index_pair: &TokenIndexPair<TP>,
         global_delta: &'a mut GlobalDelta,
     ) -> Result<&'a mut Self::GlobalDeltaStore<TP, In>, GoblinError>

@@ -17,6 +17,8 @@ use crate::{
 };
 
 pub trait PartyMarker: AxisMarker<Enum = PartyEnum> {
+    type Address;
+
     type LocalDeltaStore;
 
     // TODO combine TP, In into wrapper trait with all bounds
@@ -41,7 +43,7 @@ pub trait PartyMarker: AxisMarker<Enum = PartyEnum> {
             + StoreReader<LocalDeposits<TP>, Result = <In::Selected as TokenQuantity>::LocalDeposit>;
 
     fn get_store<'a, TP, In>(
-        address: &Address,
+        address: &Self::Address,
         token_index_pair: &TokenIndexPair<TP>,
         global_delta: &'a mut GlobalDelta,
     ) -> Result<&'a mut Self::GlobalDeltaStore<TP, In>, GoblinError>
@@ -53,7 +55,7 @@ pub trait PartyMarker: AxisMarker<Enum = PartyEnum> {
             + StoreReader<LocalDeposits<TP>, Result = <In::Selected as TokenQuantity>::LocalDeposit>;
 
     fn commit_leg<TP, In>(
-        address: &Address,
+        address: &Self::Address,
         local_delta: &Self::LocalDeltaStore,
         local_deposits: &LocalDeposits<TP>,
         atoms_per_lot_pair: &SamePair<UnsidedAtomsPerLot>,

@@ -1,6 +1,7 @@
 use crate::{
     axis::{
         leg::{leg_matcher::LegMatcher, SamePair},
+        party::{party_marker::party_marker::PartyMarker, Sender},
         token::{
             token_list::{
                 custom_erc20::CustomERC20Deltas, eth::ETHDelta,
@@ -33,8 +34,8 @@ impl GlobalSender {
         &mut self,
         local_sender: &LocalSender,
         local_deposits: &LocalDeposits<TP>,
-        token_index_pair: &TokenIndexPair<TP>,
         atoms_per_lot_pair: &SamePair<UnsidedAtomsPerLot>,
+        token_index_pair: &TokenIndexPair<TP>,
     ) -> Result<(), GoblinError> {
         // Problem- commit_leg() is defined on TokenDelta but self is GlobalSender
         // We can't use self for call. Long syntax must be used.

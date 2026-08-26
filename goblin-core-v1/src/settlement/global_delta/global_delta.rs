@@ -1,6 +1,6 @@
 use crate::{
     axis::{
-        party::{Counterparties, Party, Sender},
+        party::{party_marker::party_marker::PartyMarker, Counterparties, Party, Sender},
         token::token_reader::TokenDataTriple,
     },
     axis_helpers::MarketSpec,
@@ -25,27 +25,37 @@ impl GlobalDelta {
         ctx: &mut Ctx<MS>,
     ) -> Result<(), GoblinError> {
         let market = &ctx.readables.market_readables().market;
-
         let atoms_per_lot_pair = ATOMS_PER_UNIT / market.lot_size_pair.unsided();
 
-        // TODO reduce with for_axes!
-        // 1. Commit sender
-        let global_sender = Sender::get_leg_mut(self);
         let local_sender = Sender::get_leg(&ctx.writables.local_delta);
+        for_axes!(In => {
+            Sender::commit_leg::<MS::Pair, In>(
+                &(),
+                local_sender,
+                deposits,
+                &atoms_per_lot_pair,
+                &market.token_index_pair,
+                self
+            )?;
+        });
 
-        // Options
-        //
-        // 1. Trait with commit() function with `deposit` field. Rest remains symmetric.
-        //
-        // 2. commit_leg() is difficult because sender has extra `deposits` field while counterparty
-        // has extra counterparty `address` field
+        // // TODO reduce with for_axes!
+        // // 1. Commit sender
+        // let global_sender = Sender::get_leg_mut(self);
 
-        global_sender.commit::<MS::Pair>(
-            local_sender,
-            deposits, // TODO 1 field creating asymmetry
-            &market.token_index_pair,
-            &atoms_per_lot_pair,
-        )?;
+        // // Options
+        // //
+        // // 1. Trait with commit() function with `deposit` field. Rest remains symmetric.
+        // //
+        // // 2. commit_leg() is difficult because sender has extra `deposits` field while counterparty
+        // // has extra counterparty `address` field
+
+        // global_sender.commit::<MS::Pair>(
+        //     local_sender,
+        //     deposits, // TODO 1 field creating asymmetry
+        //     &atoms_per_lot_pair,
+        //     &market.token_index_pair,
+        // )?;
 
         // 2. Commit counterparties
         let global_counterparties = Counterparties::get_leg_mut(self);
