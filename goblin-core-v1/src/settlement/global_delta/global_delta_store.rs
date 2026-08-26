@@ -7,8 +7,8 @@ use crate::{
     goblin_error::GoblinError,
     market::{TokenIndexPair, TokenPair},
     quantities::UnsidedAtomsPerLot,
-    settlement::local_delta::LocalDeposits,
-    types::StoreReader,
+    settlement::{global_delta::GlobalDelta, local_delta::LocalDeposits},
+    types::{Address, StoreReader},
 };
 
 pub trait GlobalDeltaStore<TP, In>: Sized
@@ -26,4 +26,10 @@ where
         local_deposits: &LocalDeposits<TP>,
         atoms_per_lot_pair: &SamePair<UnsidedAtomsPerLot>,
     ) -> Result<Self, GoblinError>;
+
+    fn get_store<'a>(
+        address: &Address,
+        token_index_pair: &TokenIndexPair<TP>,
+        global_delta: &'a mut GlobalDelta,
+    ) -> Result<&'a mut Self, GoblinError>;
 }

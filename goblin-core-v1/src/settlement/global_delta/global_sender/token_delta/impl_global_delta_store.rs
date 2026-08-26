@@ -1,6 +1,7 @@
 use crate::{
     axis::{
         leg::{leg_matcher::LegMatcher, SamePair},
+        party::Sender,
         token::{token_marker::TokenMarker, token_quantity::TokenQuantity},
     },
     axis_helpers::LegToToken,
@@ -8,10 +9,10 @@ use crate::{
     market::{TokenIndexPair, TokenPair},
     quantities::{UnsidedAtomsPerLot, UnsidedDeltaAtomsPerLot},
     settlement::{
-        global_delta::{GlobalDeltaStore, TokenDelta},
+        global_delta::{GlobalDelta, GlobalDeltaStore, TokenDelta},
         local_delta::{LocalDeposits, LocalSender},
     },
-    types::StoreReader,
+    types::{Address, StoreReader},
 };
 
 impl<T, TP, In> GlobalDeltaStore<TP, In> for TokenDelta<T>
@@ -50,5 +51,17 @@ where
             take,
             make,
         })
+    }
+
+    fn get_store<'a>(
+        _address: &Address,
+        token_index_pair: &TokenIndexPair<TP>,
+        global_delta: &'a mut GlobalDelta,
+    ) -> Result<&'a mut Self, GoblinError> {
+        let sender_delta = Sender::get_leg_mut(global_delta);
+        let deltas_list = In::Selected::get_leg_mut(sender_delta);
+        let token_index = In::get(token_index_pair);
+
+        Ok(&mut deltas_list[token_index])
     }
 }
