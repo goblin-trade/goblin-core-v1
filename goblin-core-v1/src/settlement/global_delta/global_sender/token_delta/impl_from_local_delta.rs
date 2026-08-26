@@ -7,6 +7,7 @@ use crate::{
     settlement::{global_delta::TokenDelta, local_delta::LocalSender},
 };
 
+// TODO replace with GlobalDeltaStore
 pub trait FromLocalDelta<T> {
     fn from_local<In>(
         local_deposit: T::LocalDeposit,

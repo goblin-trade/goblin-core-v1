@@ -1,3 +1,5 @@
+use goblin_macros::ConstDefault;
+
 use crate::{axis::update::SameUpdatePair, quantities::UnsidedAtoms};
 
 /// Pending counterparty update for a token
@@ -11,4 +13,7 @@ use crate::{axis::update::SameUpdatePair, quantities::UnsidedAtoms};
 ///
 /// Since increase and decrease affects different state variables, we cannot use
 /// an i64 delta for netting
-pub type GlobalCounterparty = SameUpdatePair<UnsidedAtoms>;
+#[derive(Default, ConstDefault, Clone, Copy)]
+pub struct GlobalCounterparty {
+    pub inner: SameUpdatePair<UnsidedAtoms>,
+}

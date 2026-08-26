@@ -55,12 +55,12 @@ impl<T: TokenMarker> Store<T> {
     ) -> Result<(), GoblinError> {
         self.atoms_locked = self
             .atoms_locked
-            .checked_sub(Increase::get(counterparty))
+            .checked_sub(Increase::get(&counterparty.inner))
             .ok_or(GoblinError::Underflow)?;
 
         self.atoms_free = self
             .atoms_free
-            .checked_add(Decrease::get(counterparty))
+            .checked_add(Decrease::get(&counterparty.inner))
             .ok_or(GoblinError::Overflow)?;
 
         Ok(())

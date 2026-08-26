@@ -73,7 +73,8 @@ impl CounterpartyTriple {
             .ok_or(GoblinError::GlobalCounterpartyFull)?;
 
         // 3. Add to global
-        *global_counterparty = global_counterparty
+        global_counterparty.inner = global_counterparty
+            .inner
             .checked_add(atoms_pair)
             .ok_or(GoblinError::DeltaOverflow)?;
 
