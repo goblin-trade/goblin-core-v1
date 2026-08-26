@@ -19,6 +19,8 @@ pub trait LegMath: LegQuantities {
     /// Use Self::MatchingLots to track amount consumed and Opposite::MatchingLots to get the output
     type MatchingLots: QuantityOps;
 
+    // TODO group functions based on if they take MatchingLots as input or output
+
     /// Obtain MatchingLots from taker amount in
     fn matching_lots_in(
         input_lots: Self::Lots,

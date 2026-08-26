@@ -51,7 +51,10 @@ pub fn match_order<MS: MarketSpec, In: LegMatcher>(
         mut resting_order_key_value,
     } in iterator
     {
-        let RestingOrder { base_lots, maker } = resting_order_key_value.value;
+        let RestingOrder {
+            base_lots,
+            maker: counterparty,
+        } = resting_order_key_value.value;
 
         *last_position_mut = position;
         let price = Ticks::from(position);
@@ -64,7 +67,7 @@ pub fn match_order<MS: MarketSpec, In: LegMatcher>(
         budget -= matched;
 
         ctx.writables.local_delta.add_take::<In>(
-            &maker,
+            &counterparty,
             matched,
             base_lot_size,
             market.tick_size,
