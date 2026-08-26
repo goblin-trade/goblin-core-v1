@@ -11,18 +11,19 @@ use crate::{
     types::StoreReader,
 };
 
-pub trait GlobalDeltaStore: Sized {
+pub trait GlobalDeltaStore<TP, In>: Sized
+where
+    TP: TokenPair,
+    In: LegMatcher
+        + LegToToken<TP>
+        + StoreReader<TokenIndexPair<TP>, Result = <In::Selected as TokenQuantity>::TokenIndex>
+        + StoreReader<LocalDeposits<TP>, Result = <In::Selected as TokenQuantity>::LocalDeposit>,
+{
     type LocalDeltaStore;
 
-    fn try_new<TP, In>(
+    fn try_new(
         local_delta: &Self::LocalDeltaStore,
         local_deposits: &LocalDeposits<TP>,
         atoms_per_lot_pair: &SamePair<UnsidedAtomsPerLot>,
-    ) -> Result<Self, GoblinError>
-    where
-        TP: TokenPair,
-        In: LegMatcher
-            + LegToToken<TP>
-            + StoreReader<TokenIndexPair<TP>, Result = <In::Selected as TokenQuantity>::TokenIndex>
-            + StoreReader<LocalDeposits<TP>, Result = <In::Selected as TokenQuantity>::LocalDeposit>;
+    ) -> Result<Self, GoblinError>;
 }
