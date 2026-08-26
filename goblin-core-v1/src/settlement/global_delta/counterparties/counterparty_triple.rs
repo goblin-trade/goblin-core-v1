@@ -7,12 +7,13 @@ use crate::{
         },
     },
     axis_helpers::LegToToken,
+    for_axes,
     goblin_error::GoblinError,
     market::{TokenIndexPair, TokenPair},
     quantities::UnsidedAtomsPerLot,
     settlement::{
         global_delta::{CounterpartyMap, CounterpartyTokenKey},
-        local_delta::LocalCounterparty,
+        local_delta::{LocalCounterparties, LocalCounterparty},
         CheckedOps,
     },
     types::{Address, StoreReader, Triple},
@@ -26,6 +27,26 @@ pub type CounterpartyTriple = Triple<
 >;
 
 impl CounterpartyTriple {
+    pub fn commit<TP>(
+        &mut self,
+        local_counterparties: &LocalCounterparties,
+        token_index_pair: &TokenIndexPair<TP>,
+        atoms_per_lot_pair: &SamePair<UnsidedAtomsPerLot>,
+    ) -> Result<(), GoblinError>
+    where
+        TP: TokenPair,
+    {
+        for counterparty_data in local_counterparties.into_iter() {
+            for_axes!(In => self.commit_leg::<TP, In>(
+                counterparty_data,
+                token_index_pair,
+                atoms_per_lot_pair,
+            )?);
+        }
+
+        Ok(())
+    }
+
     pub fn commit_leg<TP, In>(
         &mut self,
         counterparty_data: &(Address, LocalCounterparty),

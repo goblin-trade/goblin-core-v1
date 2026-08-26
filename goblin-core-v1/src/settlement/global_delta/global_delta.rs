@@ -32,29 +32,33 @@ impl GlobalDelta {
         // 1. Commit sender
         let global_sender = Sender::get_leg_mut(self);
         let local_sender = Sender::get_leg(&ctx.writables.local_delta);
-        for_axes!(In => {
-            global_sender.commit_leg::<MS::Pair, In>(
-                local_sender,
-                deposits,
-                &market.token_index_pair,
-                &atoms_per_lot_pair,
-            )?;
-        });
+
+        // Options
+        //
+        // 1. Trait with commit() function with `deposit` field. Rest remains symmetric.
+        //
+        // 2. commit_leg() is difficult because sender has extra `deposits` field while counterparty
+        // has extra counterparty `address` field
+
+        global_sender.commit::<MS::Pair>(
+            local_sender,
+            deposits, // TODO 1 field creating asymmetry
+            &market.token_index_pair,
+            &atoms_per_lot_pair,
+        )?;
 
         // 2. Commit counterparties
         let global_counterparties = Counterparties::get_leg_mut(self);
-        let local_counterparties = Counterparties::get_leg_mut(&mut ctx.writables.local_delta);
+        let local_counterparties = &**Counterparties::get_leg(&ctx.writables.local_delta);
 
-        for counterparty_data in local_counterparties.into_iter() {
-            for_axes!(In => global_counterparties.commit_leg::<MS::Pair, In>(
-                counterparty_data,
-                &market.token_index_pair,
-                &atoms_per_lot_pair,
-            )?);
-        }
+        global_counterparties.commit::<MS::Pair>(
+            local_counterparties,
+            &market.token_index_pair,
+            &atoms_per_lot_pair,
+        )?;
 
         // Reset counter of global mut counterparty buffer
-        local_counterparties.reset();
+        Counterparties::get_leg_mut(&mut ctx.writables.local_delta).reset();
 
         Ok(())
     }

@@ -13,6 +13,7 @@ use crate::{
         },
     },
     axis_helpers::LegToToken,
+    for_axes,
     goblin_error::GoblinError,
     input_processor::MsgTransfers,
     market::{TokenIndexPair, TokenPair},
@@ -28,6 +29,24 @@ use crate::{
 pub type GlobalSender = Triple<ETHDelta, HardcodedERC20Deltas, CustomERC20Deltas, Token>;
 
 impl GlobalSender {
+    pub fn commit<TP: TokenPair>(
+        &mut self,
+        local_sender: &LocalSender,
+        local_deposits: &LocalDeposits<TP>,
+        token_index_pair: &TokenIndexPair<TP>,
+        atoms_per_lot_pair: &SamePair<UnsidedAtomsPerLot>,
+    ) -> Result<(), GoblinError> {
+        for_axes!(In => {
+            self.commit_leg::<TP, In>(
+                local_sender,
+                local_deposits,
+                token_index_pair,
+                atoms_per_lot_pair,
+            )?;
+        });
+        Ok(())
+    }
+
     pub fn commit_leg<TP, In>(
         &mut self,
         local_sender: &LocalSender,
