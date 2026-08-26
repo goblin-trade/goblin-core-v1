@@ -36,6 +36,8 @@ impl GlobalSender {
         token_index_pair: &TokenIndexPair<TP>,
         atoms_per_lot_pair: &SamePair<UnsidedAtomsPerLot>,
     ) -> Result<(), GoblinError> {
+        // Problem- commit_leg() is defined on TokenDelta but self is GlobalSender
+        // We can't use self for call. Long syntax must be used.
         for_axes!(In => {
             self.commit_leg::<TP, In>(
                 local_sender,
