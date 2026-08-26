@@ -9,15 +9,17 @@ use crate::{
     market::{TokenIndexPair, TokenPair},
     quantities::UnsidedAtomsPerLot,
     settlement::{
-        global_delta::GlobalDeltaStore,
-        local_delta::{LocalDeltaStore, LocalDeposits},
+        global_delta::{GlobalDelta, GlobalDeltaStore},
+        local_delta::LocalDeposits,
+        CheckedOps,
     },
-    types::StoreReader,
+    types::{Address, StoreReader},
 };
 
 pub trait PartyMarker: AxisMarker<Enum = PartyEnum> {
     type LocalDeltaStore;
 
+    // TODO combine TP, In into wrapper trait with all bounds
     type GlobalDeltaStore<TP, In>: GlobalDeltaStore<TP, In>
     where
         TP: TokenPair,
@@ -37,4 +39,41 @@ pub trait PartyMarker: AxisMarker<Enum = PartyEnum> {
             + LegToToken<TP>
             + StoreReader<TokenIndexPair<TP>, Result = <In::Selected as TokenQuantity>::TokenIndex>
             + StoreReader<LocalDeposits<TP>, Result = <In::Selected as TokenQuantity>::LocalDeposit>;
+
+    fn get_store<'a, TP, In>(
+        address: &Address,
+        token_index_pair: &TokenIndexPair<TP>,
+        global_delta: &'a mut GlobalDelta,
+    ) -> Result<&'a mut Self::GlobalDeltaStore<TP, In>, GoblinError>
+    where
+        TP: TokenPair,
+        In: LegMatcher
+            + LegToToken<TP>
+            + StoreReader<TokenIndexPair<TP>, Result = <In::Selected as TokenQuantity>::TokenIndex>
+            + StoreReader<LocalDeposits<TP>, Result = <In::Selected as TokenQuantity>::LocalDeposit>;
+
+    fn commit_leg<TP, In>(
+        address: &Address,
+        local_delta: &Self::LocalDeltaStore,
+        local_deposits: &LocalDeposits<TP>,
+        atoms_per_lot_pair: &SamePair<UnsidedAtomsPerLot>,
+        token_index_pair: &TokenIndexPair<TP>,
+        global_delta: &mut GlobalDelta,
+    ) -> Result<(), GoblinError>
+    where
+        TP: TokenPair,
+        In: LegMatcher
+            + LegToToken<TP>
+            + StoreReader<TokenIndexPair<TP>, Result = <In::Selected as TokenQuantity>::TokenIndex>
+            + StoreReader<LocalDeposits<TP>, Result = <In::Selected as TokenQuantity>::LocalDeposit>,
+    {
+        let new_delta = Self::try_new::<TP, In>(local_delta, local_deposits, atoms_per_lot_pair)?;
+        let delta_store = Self::get_store(address, token_index_pair, global_delta)?;
+
+        *delta_store = delta_store
+            .checked_add(new_delta)
+            .ok_or(GoblinError::DeltaOverflow)?;
+
+        Ok(())
+    }
 }

@@ -9,10 +9,10 @@ use crate::{
     market::{TokenIndexPair, TokenPair},
     quantities::{UnsidedAtomsPerLot, UnsidedDeltaAtomsPerLot},
     settlement::{
-        global_delta::TokenDelta,
+        global_delta::{GlobalDelta, TokenDelta},
         local_delta::{LocalDeposits, LocalSender},
     },
-    types::StoreReader,
+    types::{Address, StoreReader},
 };
 
 impl PartyMarker for Sender {
@@ -59,5 +59,24 @@ impl PartyMarker for Sender {
             take,
             make,
         })
+    }
+
+    fn get_store<'a, TP, In>(
+        _address: &Address,
+        token_index_pair: &TokenIndexPair<TP>,
+        global_delta: &'a mut GlobalDelta,
+    ) -> Result<&'a mut Self::GlobalDeltaStore<TP, In>, GoblinError>
+    where
+        TP: TokenPair,
+        In: LegMatcher
+            + LegToToken<TP>
+            + StoreReader<TokenIndexPair<TP>, Result = <In::Selected as TokenQuantity>::TokenIndex>
+            + StoreReader<LocalDeposits<TP>, Result = <In::Selected as TokenQuantity>::LocalDeposit>,
+    {
+        let sender_delta = Sender::get_leg_mut(global_delta);
+        let deltas_list = In::Selected::get_leg_mut(sender_delta);
+        let token_index = In::get(token_index_pair);
+
+        Ok(&mut deltas_list[token_index])
     }
 }
