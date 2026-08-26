@@ -10,7 +10,6 @@ use crate::{
         BaseLots, BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, Ticks, TryIntoUnsidedDelta,
         UnsidedDeltaLots,
     },
-    settlement::CheckedOps,
     types::StoreReader,
 };
 
@@ -35,12 +34,10 @@ impl LocalMake {
         In: LegMatcher,
     {
         let lots = In::opposite_lots_consumed_on_make(base_lots, base_lot_size, tick_size, price);
-        let delta_lots = lots.try_into_unsided_delta::<UM>()?;
-
+        let delta_lots = lots.try_into_unsided_delta()?;
         let store = In::Opposite::get_leg_mut(&mut self.inner);
-        *store = store
-            .checked_add(delta_lots)
-            .ok_or(GoblinError::DeltaOverflow)?;
+
+        *store = UM::checked_update(*store, delta_lots).ok_or(GoblinError::DeltaOverflow)?;
 
         Ok(())
     }

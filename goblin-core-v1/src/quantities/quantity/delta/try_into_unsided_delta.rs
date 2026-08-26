@@ -1,8 +1,5 @@
 use crate::{
-    axis::{
-        leg::{leg_quantities::LegQuantities, Base, Quote},
-        update::update_sign::UpdateSign,
-    },
+    axis::leg::{leg_quantities::LegQuantities, Base, Quote},
     goblin_error::GoblinError,
     quantities::{BaseDim, Dim, Exp, Quantity, QuoteDim, Unsided, Z0},
 };
@@ -14,7 +11,7 @@ where
     U: Exp,
     A: Exp,
 {
-    fn try_into_unsided_delta<UM: UpdateSign>(self) -> Result<Unsided<L, U, A, i64>, GoblinError>;
+    fn try_into_unsided_delta(self) -> Result<Unsided<L, U, A, i64>, GoblinError>;
 }
 
 /// Base → Unsided i64 (from u64, fallible)
@@ -25,8 +22,8 @@ where
     U: Exp,
     A: Exp,
 {
-    fn try_into_unsided_delta<UM: UpdateSign>(self) -> Result<Unsided<L, U, A, i64>, GoblinError> {
-        let raw = UM::SIGN * i64::try_from(self.inner).map_err(|_| GoblinError::Overflow)?;
+    fn try_into_unsided_delta(self) -> Result<Unsided<L, U, A, i64>, GoblinError> {
+        let raw = i64::try_from(self.inner).map_err(|_| GoblinError::Overflow)?;
         let delta = Unsided::new(raw);
         Ok(delta)
     }
@@ -40,8 +37,8 @@ where
     U: Exp,
     A: Exp,
 {
-    fn try_into_unsided_delta<UM: UpdateSign>(self) -> Result<Unsided<L, U, A, i64>, GoblinError> {
-        let raw = UM::SIGN * i64::try_from(self.inner).map_err(|_| GoblinError::Overflow)?;
+    fn try_into_unsided_delta(self) -> Result<Unsided<L, U, A, i64>, GoblinError> {
+        let raw = i64::try_from(self.inner).map_err(|_| GoblinError::Overflow)?;
         let delta = Unsided::new(raw);
         Ok(delta)
     }
