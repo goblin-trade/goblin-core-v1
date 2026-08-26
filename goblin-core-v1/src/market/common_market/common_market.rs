@@ -47,8 +47,8 @@ impl<MS: MarketSpec> CommonMarket<MS> {
         &self,
         token_data_triple: &TokenDataTriple<'a>,
     ) -> Result<MarketPreimage<MS>, GoblinError> {
-        let base_data = token_data_triple.get_data::<MS::Pair, Base>(&self.token_index_pair);
-        let quote_data = token_data_triple.get_data::<MS::Pair, Quote>(&self.token_index_pair);
+        let base_data = token_data_triple.get_data::<(MS::Pair, Base)>(&self.token_index_pair);
+        let quote_data = token_data_triple.get_data::<(MS::Pair, Quote)>(&self.token_index_pair);
 
         let address_pair = Pair::new(base_data.address, quote_data.address);
 

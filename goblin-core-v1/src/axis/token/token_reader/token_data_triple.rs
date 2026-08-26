@@ -1,16 +1,12 @@
 use crate::{
-    axis::{
-        leg::leg_matcher::LegMatcher,
-        token::{
-            token_list::{
-                custom_erc20::CustomERC20List, hardcoded_erc20::HARDCODED_ERC20_LIST, TokenList,
-            },
-            token_marker::TokenData,
-            token_quantity::TokenQuantity,
-            CustomERC20, HardcodedERC20, Token, ETH,
+    axis::token::{
+        token_list::{
+            custom_erc20::CustomERC20List, hardcoded_erc20::HARDCODED_ERC20_LIST, TokenList,
         },
+        token_marker::TokenData,
+        CustomERC20, HardcodedERC20, Token, ETH,
     },
-    axis_helpers::{LegToToken, TokenPair},
+    axis_helpers::PairLeg,
     market::TokenIndexPair,
     settlement::ConstDefault,
     types::{LifetimedStoreReader, StoreReader, Triple},
@@ -30,18 +26,12 @@ impl<'a> From<CustomERC20List<'a>> for TokenDataTriple<'a> {
 }
 
 impl<'a> TokenDataTriple<'a> {
-    pub fn get_data<TP, In>(
+    pub fn get_data<PL: PairLeg>(
         &self,
-        token_index_pair: &TokenIndexPair<TP>,
-    ) -> TokenData<<In as LegToToken<TP>>::Selected>
-    where
-        TP: TokenPair,
-        In: LegMatcher
-            + LegToToken<TP>
-            + StoreReader<TokenIndexPair<TP>, Result = <In::Selected as TokenQuantity>::TokenIndex>,
-    {
-        let index = In::get(token_index_pair);
-        let data_list = In::Selected::get_lifetimed(self);
+        token_index_pair: &TokenIndexPair<PL::Pair>,
+    ) -> TokenData<PL::Selected> {
+        let index = PL::Leg::get(token_index_pair);
+        let data_list = PL::Selected::get_lifetimed(self);
 
         data_list[index]
     }
