@@ -10,7 +10,7 @@ use crate::{
     quantities::UnsidedAtomsPerLot,
     settlement::{
         global_delta::{GlobalDelta, GlobalDeltaStore},
-        local_delta::LocalDeposits,
+        local_delta::{LocalDelta, LocalDeposits},
         CheckedOps,
     },
     types::{Address, StoreReader},
@@ -57,6 +57,16 @@ pub trait PartyMarker: AxisMarker<Enum = PartyEnum> {
             + LegToToken<TP>
             + StoreReader<TokenIndexPair<TP>, Result = <In::Selected as TokenQuantity>::TokenIndex>
             + StoreReader<LocalDeposits<TP>, Result = <In::Selected as TokenQuantity>::LocalDeposit>;
+
+    fn commit_local_delta<'a, TP>(
+        atoms_per_lot_pair: &SamePair<UnsidedAtomsPerLot>,
+        token_index_pair: &TokenIndexPair<TP>,
+        local_delta: &LocalDelta<'a>,
+        local_deposits: &LocalDeposits<TP>,
+        global_delta: &mut GlobalDelta,
+    ) -> Result<(), GoblinError>
+    where
+        TP: TokenPair;
 
     fn commit_leg<'a, TP, In>(
         address: &Self::Address,

@@ -5,12 +5,13 @@ use crate::{
         token::{token_marker::TokenMarker, token_quantity::TokenQuantity},
     },
     axis_helpers::LegToToken,
+    for_axes,
     goblin_error::GoblinError,
     market::{TokenIndexPair, TokenPair},
     quantities::{UnsidedAtomsPerLot, UnsidedDeltaAtomsPerLot},
     settlement::{
         global_delta::{GlobalDelta, TokenDelta},
-        local_delta::{LocalDeposits, LocalSender},
+        local_delta::{LocalDelta, LocalDeposits, LocalSender},
     },
     types::StoreReader,
 };
@@ -78,5 +79,26 @@ impl PartyMarker for Sender {
         let token_index = In::get(token_index_pair);
 
         Ok(&mut deltas_list[token_index])
+    }
+
+    fn commit_local_delta<'a, TP: TokenPair>(
+        atoms_per_lot_pair: &SamePair<UnsidedAtomsPerLot>,
+        token_index_pair: &TokenIndexPair<TP>,
+        local_delta: &LocalDelta<'a>,
+        local_deposits: &LocalDeposits<TP>,
+        global_delta: &mut GlobalDelta,
+    ) -> Result<(), GoblinError> {
+        let local_sender = Sender::get_leg(local_delta);
+        for_axes!(In => {
+            Sender::commit_leg::<TP, In>(
+                &(),
+                (local_sender, local_deposits),
+                atoms_per_lot_pair,
+                token_index_pair,
+                global_delta
+            )?;
+        });
+
+        Ok(())
     }
 }

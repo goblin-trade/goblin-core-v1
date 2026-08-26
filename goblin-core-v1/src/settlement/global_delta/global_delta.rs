@@ -21,7 +21,7 @@ pub type GlobalDelta = Tuple<GlobalSender, CounterpartyTriple, Party>;
 impl GlobalDelta {
     pub fn commit_local_delta<MS: MarketSpec>(
         &mut self,
-        deposits: &LocalDeposits<MS::Pair>,
+        local_deposits: &LocalDeposits<MS::Pair>,
         ctx: &mut Ctx<MS>,
     ) -> Result<(), GoblinError> {
         let market = &ctx.readables.market_readables().market;
@@ -31,7 +31,7 @@ impl GlobalDelta {
         for_axes!(In => {
             Sender::commit_leg::<MS::Pair, In>(
                 &(),
-                (local_sender, deposits),
+                (local_sender, local_deposits),
                 &atoms_per_lot_pair,
                 &market.token_index_pair,
                 self
@@ -48,6 +48,11 @@ impl GlobalDelta {
                 self
             )?);
         }
+
+        // Reset counter of global mut counterparty buffer
+        Counterparties::get_leg_mut(&mut ctx.writables.local_delta).reset();
+
+        Ok(())
 
         // // TODO reduce with for_axes!
         // // 1. Commit sender
@@ -76,11 +81,6 @@ impl GlobalDelta {
         //     &market.token_index_pair,
         //     &atoms_per_lot_pair,
         // )?;
-
-        // Reset counter of global mut counterparty buffer
-        Counterparties::get_leg_mut(&mut ctx.writables.local_delta).reset();
-
-        Ok(())
     }
 
     pub fn settle(
