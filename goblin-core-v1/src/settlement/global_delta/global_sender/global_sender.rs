@@ -61,16 +61,19 @@ impl GlobalSender {
             + StoreReader<TokenIndexPair<TP>, Result = <In::Selected as TokenQuantity>::TokenIndex>
             + StoreReader<LocalDeposits<TP>, Result = <In::Selected as TokenQuantity>::LocalDeposit>,
     {
-        let delta_atoms_per_lot_pair = atoms_per_lot_pair.try_into()?;
-
+        // 1. Calculate delta
+        // Includes both trade amounts and deposits
         let local_deposit = In::get(local_deposits);
+        let delta_atoms_per_lot_pair = atoms_per_lot_pair.try_into()?;
         let new_delta =
             TokenDelta::from_local::<In>(local_deposit, local_sender, &delta_atoms_per_lot_pair);
 
+        // 2. Get store
         let token_index = In::get(token_index_pair);
         let deltas_list = In::Selected::get_leg_mut(self);
         let delta_store = &mut deltas_list[token_index];
 
+        // 3. Add to global
         *delta_store = delta_store
             .checked_add(new_delta)
             .ok_or(GoblinError::DeltaOverflow)?;

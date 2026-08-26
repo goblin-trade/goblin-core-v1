@@ -59,10 +59,12 @@ impl CounterpartyTriple {
             + LegToToken<TP>
             + StoreReader<TokenIndexPair<TP>, Result = <In::Selected as TokenQuantity>::TokenIndex>,
     {
+        // 1. Calculate delta
         let local_counterparty = In::get(&counterparty_data.1);
         let atoms_per_lot = In::get(atoms_per_lot_pair);
         let atoms_pair = atoms_per_lot * local_counterparty;
 
+        // 2. Get store
         let global_counterparty = In::Selected::get_leg_mut(self)
             .get_or_insert_mut(CounterpartyTokenKey {
                 counterparty: counterparty_data.0,
@@ -70,6 +72,7 @@ impl CounterpartyTriple {
             })
             .ok_or(GoblinError::GlobalCounterpartyFull)?;
 
+        // 3. Add to global
         *global_counterparty = global_counterparty
             .checked_add(atoms_pair)
             .ok_or(GoblinError::DeltaOverflow)?;
