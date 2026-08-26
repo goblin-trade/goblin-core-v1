@@ -1,22 +1,11 @@
 use crate::{
-    axis::{
-        leg::{leg_matcher::LegMatcher, SamePair},
-        token::{
-            token_marker::TokenMarker, token_quantity::TokenQuantity,
-            token_reader::TokenDataTriple, CustomERC20, HardcodedERC20, Token, ETH,
-        },
+    axis::token::{
+        token_marker::TokenMarker, token_reader::TokenDataTriple, CustomERC20, HardcodedERC20,
+        Token, ETH,
     },
-    axis_helpers::LegToToken,
-    for_axes,
     goblin_error::GoblinError,
-    market::{TokenIndexPair, TokenPair},
-    quantities::UnsidedAtomsPerLot,
-    settlement::{
-        global_delta::{CounterpartyMap, CounterpartyTokenKey},
-        local_delta::{LocalCounterparties, LocalCounterparty},
-        CheckedOps,
-    },
-    types::{Address, StoreReader, Triple},
+    settlement::global_delta::CounterpartyMap,
+    types::Triple,
 };
 
 pub type CounterpartyTriple = Triple<
@@ -27,60 +16,6 @@ pub type CounterpartyTriple = Triple<
 >;
 
 impl CounterpartyTriple {
-    pub fn commit<TP>(
-        &mut self,
-        local_counterparties: &LocalCounterparties,
-        token_index_pair: &TokenIndexPair<TP>,
-        atoms_per_lot_pair: &SamePair<UnsidedAtomsPerLot>,
-    ) -> Result<(), GoblinError>
-    where
-        TP: TokenPair,
-    {
-        for counterparty_data in local_counterparties.into_iter() {
-            for_axes!(In => self.commit_leg::<TP, In>(
-                counterparty_data,
-                token_index_pair,
-                atoms_per_lot_pair,
-            )?);
-        }
-
-        Ok(())
-    }
-
-    pub fn commit_leg<TP, In>(
-        &mut self,
-        counterparty_data: &(Address, LocalCounterparty),
-        token_index_pair: &TokenIndexPair<TP>,
-        atoms_per_lot_pair: &SamePair<UnsidedAtomsPerLot>,
-    ) -> Result<(), GoblinError>
-    where
-        TP: TokenPair,
-        In: LegMatcher
-            + LegToToken<TP>
-            + StoreReader<TokenIndexPair<TP>, Result = <In::Selected as TokenQuantity>::TokenIndex>,
-    {
-        // 1. Calculate delta
-        let local_counterparty = In::get(&counterparty_data.1);
-        let atoms_per_lot = In::get(atoms_per_lot_pair);
-        let atoms_pair = atoms_per_lot * local_counterparty;
-
-        // 2. Get store
-        let global_counterparty = In::Selected::get_leg_mut(self)
-            .get_or_insert_mut(CounterpartyTokenKey {
-                counterparty: counterparty_data.0,
-                token_index: In::get(token_index_pair),
-            })
-            .ok_or(GoblinError::GlobalCounterpartyFull)?;
-
-        // 3. Add to global
-        global_counterparty.inner = global_counterparty
-            .inner
-            .checked_add(atoms_pair)
-            .ok_or(GoblinError::DeltaOverflow)?;
-
-        Ok(())
-    }
-
     pub fn settle_leg<T>(&self, token_data_triple: &TokenDataTriple) -> Result<(), GoblinError>
     where
         T: TokenMarker,

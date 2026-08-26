@@ -9,11 +9,11 @@ use crate::{
     market::{TokenIndexPair, TokenPair},
     quantities::UnsidedAtomsPerLot,
     settlement::{
-        global_delta::{GlobalDelta, GlobalDeltaStore},
+        global_delta::GlobalDelta,
         local_delta::{LocalDelta, LocalDeposits},
         CheckedOps,
     },
-    types::{Address, StoreReader},
+    types::StoreReader,
 };
 
 pub trait PartyMarker: AxisMarker<Enum = PartyEnum> {
@@ -27,7 +27,7 @@ pub trait PartyMarker: AxisMarker<Enum = PartyEnum> {
     type Local<'a, TP: TokenPair>;
 
     // TODO combine TP, In into wrapper trait with all bounds
-    type GlobalDeltaStore<TP, In>: GlobalDeltaStore<TP, In>
+    type GlobalDeltaStore<TP, In>: CheckedOps + Clone + Copy
     where
         TP: TokenPair,
         In: LegMatcher

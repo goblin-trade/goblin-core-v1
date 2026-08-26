@@ -26,6 +26,9 @@ macro_rules! for_axes {
     (@expand [UM $(, $rest:ident)*] [$($alias:item)*] $body:block) => {
         $crate::for_axes!(@range UM, $crate::axis::update::Update, 2, [$($rest)*], [$($alias)*], $body);
     };
+    (@expand [PT $(, $rest:ident)*] [$($alias:item)*] $body:block) => {
+        $crate::for_axes!(@range PT, $crate::axis::party::Party, 2, [$($rest)*], [$($alias)*], $body);
+    };
 
     // --- Shared: emit Marker<Seed, 0..N-1> for every axis of a given arity ---
     (@range $axis:ident, $seed:path, 2, [$($rest:ident)*], [$($alias:item)*], $body:block) => {

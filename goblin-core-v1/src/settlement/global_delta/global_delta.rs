@@ -27,60 +27,20 @@ impl GlobalDelta {
         let market = &ctx.readables.market_readables().market;
         let atoms_per_lot_pair = ATOMS_PER_UNIT / market.lot_size_pair.unsided();
 
-        let local_sender = Sender::get_leg(&ctx.writables.local_delta);
-        for_axes!(In => {
-            Sender::commit_leg::<MS::Pair, In>(
-                &(),
-                (local_sender, local_deposits),
+        for_axes!(PT => {
+            PT::commit_local_delta::<MS::Pair>(
                 &atoms_per_lot_pair,
                 &market.token_index_pair,
+                &ctx.writables.local_delta,
+                local_deposits,
                 self
             )?;
         });
-
-        let local_counterparties = &**Counterparties::get_leg(&ctx.writables.local_delta);
-        for (address, local_counterparty) in local_counterparties.into_iter() {
-            for_axes!(In => Counterparties::commit_leg::<MS::Pair, In>(
-                address,
-                &local_counterparty,
-                &atoms_per_lot_pair,
-                &market.token_index_pair,
-                self
-            )?);
-        }
 
         // Reset counter of global mut counterparty buffer
         Counterparties::get_leg_mut(&mut ctx.writables.local_delta).reset();
 
         Ok(())
-
-        // // TODO reduce with for_axes!
-        // // 1. Commit sender
-        // let global_sender = Sender::get_leg_mut(self);
-
-        // // Options
-        // //
-        // // 1. Trait with commit() function with `deposit` field. Rest remains symmetric.
-        // //
-        // // 2. commit_leg() is difficult because sender has extra `deposits` field while counterparty
-        // // has extra counterparty `address` field
-
-        // global_sender.commit::<MS::Pair>(
-        //     local_sender,
-        //     deposits, // TODO 1 field creating asymmetry
-        //     &atoms_per_lot_pair,
-        //     &market.token_index_pair,
-        // )?;
-
-        // 2. Commit counterparties
-        // let global_counterparties = Counterparties::get_leg_mut(self);
-        // let local_counterparties = &**Counterparties::get_leg(&ctx.writables.local_delta);
-
-        // global_counterparties.commit::<MS::Pair>(
-        //     local_counterparties,
-        //     &market.token_index_pair,
-        //     &atoms_per_lot_pair,
-        // )?;
     }
 
     pub fn settle(
