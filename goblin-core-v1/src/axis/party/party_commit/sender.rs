@@ -14,7 +14,7 @@ use crate::{
 impl PartyCommit for Sender {
     fn commit_local_delta<'a, TP: TokenPair>(
         params: (&TokenIndexPair<TP>, &SamePair<UnsidedAtomsPerLot>),
-        local_update: &LocalUpdate<TP>,
+        local_update: LocalUpdate<TP>,
         global_delta: &mut GlobalDelta,
     ) -> Result<(), GoblinError> {
         for_axes!(In => {

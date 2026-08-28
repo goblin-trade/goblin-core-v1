@@ -48,7 +48,7 @@ where
 
     static_delta
         .global
-        .commit::<MS>(&ctx.readables.market_readables().market, &local_update)?;
+        .commit::<MS>(&ctx.readables.market_readables().market, local_update)?;
 
     // Reset counter of global mut counterparty buffer
     Counterparties::get_leg_mut(&mut ctx.writables.local_delta).reset();
