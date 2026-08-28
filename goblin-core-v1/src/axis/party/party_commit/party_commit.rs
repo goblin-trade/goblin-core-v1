@@ -4,13 +4,13 @@ use crate::{
     goblin_error::GoblinError,
     market::TokenIndexPair,
     quantities::UnsidedAtomsPerLot,
-    settlement::{global_delta::GlobalDelta, local_delta::LocalUpdate, CheckedOps},
+    settlement::{global_delta::GlobalDelta, local_delta::LocalUpdateV2, CheckedOps},
 };
 
 pub trait PartyCommit: PartyDelta {
     fn commit_local_delta<'a, TP: TokenPair>(
         params: (&TokenIndexPair<TP>, &SamePair<UnsidedAtomsPerLot>),
-        local_update: LocalUpdate<TP>,
+        local_update: &LocalUpdateV2<TP>,
         global_delta: &mut GlobalDelta,
     ) -> Result<(), GoblinError>;
 

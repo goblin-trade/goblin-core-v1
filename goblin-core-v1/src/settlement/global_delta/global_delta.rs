@@ -11,7 +11,7 @@ use crate::{
     quantities::{UnsideQuantity, ATOMS_PER_UNIT},
     settlement::{
         global_delta::{CounterpartyTriple, GlobalSender},
-        local_delta::LocalUpdate,
+        local_delta::LocalUpdateV2,
     },
     types::{Address, StoreReader, Tuple},
 };
@@ -22,7 +22,7 @@ impl GlobalDelta {
     pub fn commit<MS: MarketSpec>(
         &mut self,
         market: &CommonMarket<MS>,
-        local_update: LocalUpdate<MS::Pair>,
+        local_update: &LocalUpdateV2<MS::Pair>,
     ) -> Result<(), GoblinError> {
         let atoms_per_lot_pair = ATOMS_PER_UNIT / market.lot_size_pair.unsided();
 

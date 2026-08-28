@@ -5,7 +5,7 @@ use crate::{
     input_processor::{ArgsReader, FixedDecode},
     market::MarketHeader,
     settlement::{
-        local_delta::{LocalDeposits, LocalUpdate, LocalUpdateV2},
+        local_delta::{LocalDeposits, LocalUpdateV2},
         StaticDelta,
     },
     types::{Address, StoreReader},
@@ -44,14 +44,9 @@ where
     let local_update_v2 =
         LocalUpdateV2::<MS::Pair>::from((&ctx.writables.local_delta, local_deposits));
 
-    let local_update = LocalUpdate {
-        delta: &ctx.writables.local_delta,
-        deposits: local_deposits,
-    };
-
     static_delta
         .global
-        .commit::<MS>(&ctx.readables.market_readables().market, local_update)?;
+        .commit::<MS>(&ctx.readables.market_readables().market, &local_update_v2)?;
 
     // Reset counter of global mut counterparty buffer
     Counterparties::get_leg_mut(&mut ctx.writables.local_delta).reset();
