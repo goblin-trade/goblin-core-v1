@@ -11,6 +11,11 @@ use crate::{
     },
 };
 
+/// 3 sub traits
+///
+/// - PartyDelta: local, global, try_new, get_store
+/// - PartyCommit
+/// - PartySettle
 pub trait PartyMarker: AxisMarker<Enum = PartyEnum> {
     type Address;
 
