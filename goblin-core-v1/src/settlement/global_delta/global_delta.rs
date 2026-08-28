@@ -7,10 +7,11 @@ use crate::{
     for_axes,
     goblin_error::GoblinError,
     input_processor::MsgTransfers,
+    market::CommonMarket,
     quantities::{UnsideQuantity, ATOMS_PER_UNIT},
     settlement::{
         global_delta::{CounterpartyTriple, GlobalSender},
-        local_delta::LocalDeposits,
+        local_delta::{LocalDeposits, LocalUpdate},
     },
     types::{Address, StoreReader, Tuple},
     Ctx,
@@ -19,24 +20,20 @@ use crate::{
 pub type GlobalDelta = Tuple<GlobalSender, CounterpartyTriple, Party>;
 
 impl GlobalDelta {
-    pub fn commit_local_delta<MS: MarketSpec>(
+    pub fn commit<MS: MarketSpec>(
         &mut self,
-        local_deposits: &LocalDeposits<MS::Pair>,
-        ctx: &mut Ctx<MS>,
+        market: &CommonMarket<MS>,
+        local_update: LocalUpdate<MS::Pair>,
     ) -> Result<(), GoblinError> {
-        let market = &ctx.readables.market_readables().market;
         let atoms_per_lot_pair = ATOMS_PER_UNIT / market.lot_size_pair.unsided();
 
-        for_axes!(PT => {
-            PT::commit_local_delta::<MS::Pair>(
-                (&market.token_index_pair, &atoms_per_lot_pair),
-                (&ctx.writables.local_delta, local_deposits),
-                self
-            )?;
-        });
-
-        // Reset counter of global mut counterparty buffer
-        Counterparties::get_leg_mut(&mut ctx.writables.local_delta).reset();
+        // for_axes!(PT => {
+        //     PT::commit_local_delta::<MS::Pair>(
+        //         (&market.token_index_pair, &atoms_per_lot_pair),
+        //         (&ctx.writables.local_delta, local_deposits),
+        //         self
+        //     )?;
+        // });
 
         Ok(())
     }
