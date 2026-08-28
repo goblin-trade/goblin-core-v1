@@ -1,7 +1,7 @@
 use crate::{
     axis::{
         leg::SamePair,
-        party::{party_marker::party_marker::PartyMarker, Counterparties, PartyCommit},
+        party::{Counterparties, PartyCommit},
     },
     axis_helpers::TokenPair,
     for_axes,

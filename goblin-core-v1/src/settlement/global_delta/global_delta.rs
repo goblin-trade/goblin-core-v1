@@ -1,6 +1,6 @@
 use crate::{
     axis::{
-        party::{party_marker::party_marker::PartyMarker, Counterparties, Party, Sender},
+        party::{Counterparties, Party, PartyCommit, Sender},
         token::token_reader::TokenDataTriple,
     },
     axis_helpers::MarketSpec,

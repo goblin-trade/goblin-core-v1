@@ -18,13 +18,16 @@ use crate::{
 impl PartyDelta for Sender {
     type Address = ();
 
+    // TODO combine LocalSender and LocalDeposits into a struct
+    // I separated them because 'deposits' is not a writable that is updated by
+    // trade operations. However they are unified into the global delta
     type Local<'a, TP: TokenPair> = (&'a LocalSender, &'a LocalDeposits<TP>);
-    type GlobalDeltaStore<PL: PairLeg> = TokenDelta<PL::Selected>;
+    type GlobalInner<PL: PairLeg> = TokenDelta<PL::Selected>;
 
     fn try_new<'a, PL: PairLeg>(
         (local_delta, local_deposits): Self::Local<'a, PL::Pair>,
         atoms_per_lot_pair: &SamePair<UnsidedAtomsPerLot>,
-    ) -> Result<Self::GlobalDeltaStore<PL>, GoblinError> {
+    ) -> Result<Self::GlobalInner<PL>, GoblinError> {
         let local_deposit = PL::Leg::get(local_deposits);
         let delta_atoms_per_lot_pair =
             SamePair::<UnsidedDeltaAtomsPerLot>::try_from(atoms_per_lot_pair)?;
@@ -51,7 +54,7 @@ impl PartyDelta for Sender {
         _address: &Self::Address,
         token_index_pair: &TokenIndexPair<PL::Pair>,
         global_delta: &'a mut GlobalDelta,
-    ) -> Result<&'a mut Self::GlobalDeltaStore<PL>, GoblinError> {
+    ) -> Result<&'a mut Self::GlobalInner<PL>, GoblinError> {
         let sender_delta = Sender::get_leg_mut(global_delta);
         let deltas_list = PL::Selected::get_leg_mut(sender_delta);
         let token_index = PL::Leg::get(token_index_pair);

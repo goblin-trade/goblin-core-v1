@@ -14,6 +14,7 @@ use crate::{
 pub trait PartyCommit: PartyDelta {
     fn commit_local_delta<'a, TP: TokenPair>(
         params: (&TokenIndexPair<TP>, &SamePair<UnsidedAtomsPerLot>),
+        // TODO combine LocalDelta and LocalDeposits into a common struct
         local: (&LocalDelta<'a>, &LocalDeposits<TP>),
         global_delta: &mut GlobalDelta,
     ) -> Result<(), GoblinError>;

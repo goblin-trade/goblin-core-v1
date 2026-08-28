@@ -18,12 +18,12 @@ impl PartyDelta for Counterparties {
     type Address = Address;
 
     type Local<'a, TP: TokenPair> = &'a LocalCounterparty;
-    type GlobalDeltaStore<PL: PairLeg> = GlobalCounterparty;
+    type GlobalInner<PL: PairLeg> = GlobalCounterparty;
 
     fn try_new<'a, PL: PairLeg>(
         local: Self::Local<'a, PL::Pair>,
         atoms_per_lot_pair: &SamePair<UnsidedAtomsPerLot>,
-    ) -> Result<Self::GlobalDeltaStore<PL>, GoblinError> {
+    ) -> Result<Self::GlobalInner<PL>, GoblinError> {
         let local_counterparty = PL::Leg::get(local);
         let atoms_per_lot = PL::Leg::get(atoms_per_lot_pair);
         let atoms_pair = atoms_per_lot * local_counterparty;
@@ -35,7 +35,7 @@ impl PartyDelta for Counterparties {
         address: &Self::Address,
         token_index_pair: &TokenIndexPair<PL::Pair>,
         global_delta: &'a mut GlobalDelta,
-    ) -> Result<&'a mut Self::GlobalDeltaStore<PL>, GoblinError> {
+    ) -> Result<&'a mut Self::GlobalInner<PL>, GoblinError> {
         let counterparty_delta = Counterparties::get_leg_mut(global_delta);
 
         let key = CounterpartyTokenKey {
