@@ -5,7 +5,7 @@ use crate::{
     input_processor::{ArgsReader, FixedDecode},
     market::MarketHeader,
     settlement::{
-        local_delta::{LocalDeposits, LocalUpdate},
+        local_delta::{LocalDeposits, LocalUpdate, LocalUpdateV2},
         StaticDelta,
     },
     types::{Address, StoreReader},
@@ -40,6 +40,9 @@ where
     // TODO convert to axis- make and take?
     market_header.execute_takes(reader, ctx)?;
     market_header.execute_makes(reader, ctx)?;
+
+    let local_update_v2 =
+        LocalUpdateV2::<MS::Pair>::from((&ctx.writables.local_delta, local_deposits));
 
     let local_update = LocalUpdate {
         delta: &ctx.writables.local_delta,
