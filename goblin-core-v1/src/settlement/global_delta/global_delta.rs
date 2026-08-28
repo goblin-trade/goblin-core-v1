@@ -23,17 +23,17 @@ impl GlobalDelta {
     pub fn commit<MS: MarketSpec>(
         &mut self,
         market: &CommonMarket<MS>,
-        local_update: LocalUpdate<MS::Pair>,
+        local_update: &LocalUpdate<MS::Pair>,
     ) -> Result<(), GoblinError> {
         let atoms_per_lot_pair = ATOMS_PER_UNIT / market.lot_size_pair.unsided();
 
-        // for_axes!(PT => {
-        //     PT::commit_local_delta::<MS::Pair>(
-        //         (&market.token_index_pair, &atoms_per_lot_pair),
-        //         (&ctx.writables.local_delta, local_deposits),
-        //         self
-        //     )?;
-        // });
+        for_axes!(PT => {
+            PT::commit_local_delta::<MS::Pair>(
+                (&market.token_index_pair, &atoms_per_lot_pair),
+                local_update,
+                self
+            )?;
+        });
 
         Ok(())
     }

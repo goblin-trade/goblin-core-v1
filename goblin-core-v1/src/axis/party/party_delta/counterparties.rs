@@ -17,14 +17,14 @@ use crate::{
 impl PartyDelta for Counterparties {
     type Address = Address;
 
-    type Local<'a, TP: TokenPair> = &'a LocalCounterparty;
+    type LocalUpdate<'a, TP: TokenPair> = &'a LocalCounterparty;
     type GlobalInner<PL: PairLeg> = GlobalCounterparty;
 
     fn try_new<'a, PL: PairLeg>(
-        local: Self::Local<'a, PL::Pair>,
+        local_update: Self::LocalUpdate<'a, PL::Pair>,
         atoms_per_lot_pair: &SamePair<UnsidedAtomsPerLot>,
     ) -> Result<Self::GlobalInner<PL>, GoblinError> {
-        let local_counterparty = PL::Leg::get(local);
+        let local_counterparty = PL::Leg::get(local_update);
         let atoms_per_lot = PL::Leg::get(atoms_per_lot_pair);
         let atoms_pair = atoms_per_lot * local_counterparty;
 

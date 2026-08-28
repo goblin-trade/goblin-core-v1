@@ -4,6 +4,6 @@ use crate::{
 };
 
 pub struct LocalUpdate<'a, TP: TokenPair> {
-    pub local_delta: &'a LocalDelta<'a>,
-    pub local_deposits: LocalDeposits<TP>,
+    pub delta: &'a LocalDelta<'a>,
+    pub deposits: LocalDeposits<TP>,
 }

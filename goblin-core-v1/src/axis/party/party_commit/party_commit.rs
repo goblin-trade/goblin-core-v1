@@ -4,25 +4,20 @@ use crate::{
     goblin_error::GoblinError,
     market::TokenIndexPair,
     quantities::UnsidedAtomsPerLot,
-    settlement::{
-        global_delta::GlobalDelta,
-        local_delta::{LocalDelta, LocalDeposits},
-        CheckedOps,
-    },
+    settlement::{global_delta::GlobalDelta, local_delta::LocalUpdate, CheckedOps},
 };
 
 pub trait PartyCommit: PartyDelta {
     fn commit_local_delta<'a, TP: TokenPair>(
         params: (&TokenIndexPair<TP>, &SamePair<UnsidedAtomsPerLot>),
-        // TODO combine LocalDelta and LocalDeposits into a common struct
-        local: (&LocalDelta<'a>, &LocalDeposits<TP>),
+        local_update: &LocalUpdate<TP>,
         global_delta: &mut GlobalDelta,
     ) -> Result<(), GoblinError>;
 
     fn commit_leg<'a, PL: PairLeg>(
         address: &Self::Address,
         params: (&TokenIndexPair<PL::Pair>, &SamePair<UnsidedAtomsPerLot>),
-        local: Self::Local<'a, PL::Pair>,
+        local: Self::LocalUpdate<'a, PL::Pair>,
         global_delta: &mut GlobalDelta,
     ) -> Result<(), GoblinError> {
         let (token_index_pair, atoms_per_lot_pair) = params;

@@ -10,13 +10,12 @@ use crate::{
 pub trait PartyDelta {
     type Address;
 
-    /// The local type that is converted into GlobalDeltaStore
-    type Local<'a, TP: TokenPair>;
+    type LocalUpdate<'a, TP: TokenPair>;
 
     type GlobalInner<PL: PairLeg>: CheckedOps + Clone + Copy;
 
     fn try_new<'a, PL: PairLeg>(
-        local: Self::Local<'a, PL::Pair>,
+        local_update: Self::LocalUpdate<'a, PL::Pair>,
         atoms_per_lot_pair: &SamePair<UnsidedAtomsPerLot>,
     ) -> Result<Self::GlobalInner<PL>, GoblinError>;
 

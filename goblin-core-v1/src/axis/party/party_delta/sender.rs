@@ -10,7 +10,7 @@ use crate::{
     quantities::{UnsidedAtomsPerLot, UnsidedDeltaAtomsPerLot},
     settlement::{
         global_delta::{GlobalDelta, TokenDelta},
-        local_delta::{LocalDeposits, LocalSender},
+        local_delta::LocalSenderUpdate,
     },
     types::StoreReader,
 };
@@ -18,29 +18,26 @@ use crate::{
 impl PartyDelta for Sender {
     type Address = ();
 
-    // TODO combine LocalSender and LocalDeposits into a struct
-    // I separated them because 'deposits' is not a writable that is updated by
-    // trade operations. However they are unified into the global delta
-    type Local<'a, TP: TokenPair> = (&'a LocalSender, &'a LocalDeposits<TP>);
+    type LocalUpdate<'a, TP: TokenPair> = LocalSenderUpdate<'a, TP>;
     type GlobalInner<PL: PairLeg> = TokenDelta<PL::Selected>;
 
     fn try_new<'a, PL: PairLeg>(
-        (local_delta, local_deposits): Self::Local<'a, PL::Pair>,
+        local: Self::LocalUpdate<'a, PL::Pair>,
         atoms_per_lot_pair: &SamePair<UnsidedAtomsPerLot>,
     ) -> Result<Self::GlobalInner<PL>, GoblinError> {
-        let local_deposit = PL::Leg::get(local_deposits);
+        let local_deposit = PL::Leg::get(&local.deposits);
         let delta_atoms_per_lot_pair =
             SamePair::<UnsidedDeltaAtomsPerLot>::try_from(atoms_per_lot_pair)?;
 
         let atoms_per_lot = PL::Leg::get(&delta_atoms_per_lot_pair);
 
         let deposit = PL::Selected::get_global_deposit(local_deposit, atoms_per_lot);
-        let local_take = PL::Leg::get(&local_delta.take.inner);
+        let local_take = PL::Leg::get(&local.sender.take.inner);
 
         // TODO checked mul?
         let take = local_take * atoms_per_lot;
 
-        let local_make = PL::Leg::get(&local_delta.make.inner);
+        let local_make = PL::Leg::get(&local.sender.make.inner);
         let make = local_make * atoms_per_lot;
 
         Ok(TokenDelta {
