@@ -10,7 +10,7 @@ use crate::{
     quantities::{UnsidedAtomsPerLot, UnsidedDeltaAtomsPerLot},
     settlement::{
         global_delta::{GlobalDelta, TokenDelta},
-        local_delta::LocalSenderUpdateV2,
+        local_delta::LocalSenderUpdate,
     },
     types::StoreReader,
 };
@@ -18,7 +18,7 @@ use crate::{
 impl PartyDelta for Sender {
     type Address = ();
 
-    type LocalUpdate<'a, TP: TokenPair> = LocalSenderUpdateV2<TP>;
+    type LocalUpdate<'a, TP: TokenPair> = LocalSenderUpdate<TP>;
     type GlobalInner<PL: PairLeg> = TokenDelta<PL::Selected>;
 
     fn try_new<'a, PL: PairLeg>(

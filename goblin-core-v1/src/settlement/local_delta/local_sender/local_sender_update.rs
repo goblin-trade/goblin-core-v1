@@ -1,22 +1,11 @@
 use crate::{
-    axis::party::Sender,
     axis_helpers::TokenPair,
-    settlement::local_delta::{LocalDeposits, LocalSender, LocalUpdate},
-    types::StoreReader,
+    settlement::local_delta::{LocalDeposits, LocalSender},
 };
 
 /// Wrapper struct for sender trade updates and deposits
 #[derive(Clone, Copy)]
-pub struct LocalSenderUpdate<'a, TP: TokenPair> {
-    pub sender: &'a LocalSender,
+pub struct LocalSenderUpdate<TP: TokenPair> {
+    pub sender: LocalSender,
     pub deposits: LocalDeposits<TP>,
-}
-
-impl<'a, TP: TokenPair> From<LocalUpdate<'a, TP>> for LocalSenderUpdate<'a, TP> {
-    fn from(value: LocalUpdate<'a, TP>) -> Self {
-        Self {
-            sender: Sender::get_leg(value.delta),
-            deposits: value.deposits,
-        }
-    }
 }
