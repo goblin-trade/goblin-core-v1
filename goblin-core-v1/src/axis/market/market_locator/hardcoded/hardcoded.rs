@@ -1,7 +1,7 @@
 use crate::{
     axis::{
         market::{
-            market_locator::{MarketIndex, MarketLocator},
+            market_locator::{hardcoded::HardcodedMarketList, MarketIndex, MarketLocator},
             Hardcoded,
         },
         token::token_reader::TokenDataTriple,
@@ -12,7 +12,10 @@ use crate::{
     market::MarketReadables,
 };
 
-impl<TP: TokenPair> MarketLocator for (Hardcoded, TP) {
+impl<TP> MarketLocator for (Hardcoded, TP)
+where
+    TP: TokenPair + HardcodedMarketList,
+{
     type Locator = MarketIndex<Self>;
 
     fn decode_locator(
@@ -22,7 +25,10 @@ impl<TP: TokenPair> MarketLocator for (Hardcoded, TP) {
         MarketIndex::try_fixed_decode(reader)
     }
 
-    fn locate_market(locator: &Self::Locator) -> &MarketReadables<(Hardcoded, TP)> {
+    fn locate_market(locator: &Self::Locator) -> &MarketReadables<TP>
+    where
+        TP: HardcodedMarketList,
+    {
         &TP::HARDCODED_MARKET_LIST[*locator]
     }
 }

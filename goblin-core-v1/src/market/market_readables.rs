@@ -1,10 +1,10 @@
 use crate::{
-    axis_helpers::MarketSpec,
+    axis_helpers::TokenPair,
     market::CommonMarket,
     state::{MarketPreimage, SlotKey},
 };
 
-pub struct MarketReadables<MS: MarketSpec> {
-    pub market: CommonMarket<MS>,
-    pub market_key: SlotKey<MarketPreimage<MS>>,
+pub struct MarketReadables<TP: TokenPair> {
+    pub market: CommonMarket<TP>,
+    pub market_key: SlotKey<MarketPreimage<TP>>,
 }

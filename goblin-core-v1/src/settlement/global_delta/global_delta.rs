@@ -21,7 +21,7 @@ pub type GlobalDelta = Tuple<GlobalSender, CounterpartyTriple, Party>;
 impl GlobalDelta {
     pub fn commit<MS: MarketSpec>(
         &mut self,
-        market: &CommonMarket<MS>,
+        market: &CommonMarket<MS::Pair>,
         local_update: &LocalUpdate<MS::Pair>,
     ) -> Result<(), GoblinError> {
         let atoms_per_lot_pair = ATOMS_PER_UNIT / market.lot_size_pair.unsided();

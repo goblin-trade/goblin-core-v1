@@ -11,13 +11,13 @@ use crate::{
 };
 
 impl<TP: TokenPair> MarketLocator for (Dynamic, TP) {
-    type Locator = MarketReadables<Self>;
+    type Locator = MarketReadables<TP>;
 
     fn decode_locator(
         reader: &ArgsReader,
         token_data_triple: &TokenDataTriple,
     ) -> Result<Self::Locator, GoblinError> {
-        let common_market = CommonMarket::<(Dynamic, TP)>::try_fixed_decode(reader)?;
+        let common_market = CommonMarket::<TP>::try_fixed_decode(reader)?;
         common_market.lot_size_pair.validate()?;
 
         let preimage = common_market.get_preimage(token_data_triple)?;
@@ -29,7 +29,7 @@ impl<TP: TokenPair> MarketLocator for (Dynamic, TP) {
         })
     }
 
-    fn locate_market(locator: &Self::Locator) -> &MarketReadables<(Dynamic, TP)> {
+    fn locate_market(locator: &Self::Locator) -> &MarketReadables<TP> {
         locator
     }
 }

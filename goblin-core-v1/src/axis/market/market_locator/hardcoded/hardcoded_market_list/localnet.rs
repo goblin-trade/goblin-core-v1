@@ -2,7 +2,6 @@ use super::HardcodedMarketList;
 use crate::{
     axis::{
         leg::Pair,
-        market::Hardcoded,
         token::{token_marker::HardcodedERC20Index, ETHStub, HardcodedERC20, ETH},
     },
     market::{CommonMarket, MarketReadables},
@@ -12,44 +11,39 @@ use crate::{
 };
 
 impl HardcodedMarketList for Pair<ETH, HardcodedERC20> {
-    const HARDCODED_MARKET_LIST: &'static [MarketReadables<(
-        Hardcoded,
-        Pair<ETH, HardcodedERC20>,
-    )>] = &[MarketReadables {
-        market: CommonMarket::new(
-            Pair::new(ETHStub, HardcodedERC20Index(0)),
-            Tuple::new(
-                BaseLotsPerBaseUnit::new(100),
-                QuoteLotsPerQuoteUnit::new(1000),
+    const HARDCODED_MARKET_LIST: &'static [MarketReadables<Pair<ETH, HardcodedERC20>>] =
+        &[MarketReadables {
+            market: CommonMarket::new(
+                Pair::new(ETHStub, HardcodedERC20Index(0)),
+                Tuple::new(
+                    BaseLotsPerBaseUnit::new(100),
+                    QuoteLotsPerQuoteUnit::new(1000),
+                ),
+                QuoteLotsPerBaseUnitPerTick::new(1),
             ),
-            QuoteLotsPerBaseUnitPerTick::new(1),
-        ),
-        market_key: SlotKey::new([0u8; 32]),
-    }];
+            market_key: SlotKey::new([0u8; 32]),
+        }];
 }
 
 impl HardcodedMarketList for Pair<HardcodedERC20, ETH> {
-    const HARDCODED_MARKET_LIST: &'static [MarketReadables<(
-        Hardcoded,
-        Pair<HardcodedERC20, ETH>,
-    )>] = &[MarketReadables {
-        market: CommonMarket::new(
-            Pair::new(HardcodedERC20Index(1), ETHStub),
-            Tuple::new(
-                BaseLotsPerBaseUnit::new(200),
-                QuoteLotsPerQuoteUnit::new(2000),
+    const HARDCODED_MARKET_LIST: &'static [MarketReadables<Pair<HardcodedERC20, ETH>>] =
+        &[MarketReadables {
+            market: CommonMarket::new(
+                Pair::new(HardcodedERC20Index(1), ETHStub),
+                Tuple::new(
+                    BaseLotsPerBaseUnit::new(200),
+                    QuoteLotsPerQuoteUnit::new(2000),
+                ),
+                QuoteLotsPerBaseUnitPerTick::new(1),
             ),
-            QuoteLotsPerBaseUnitPerTick::new(1),
-        ),
-        market_key: SlotKey::new([0u8; 32]),
-    }];
+            market_key: SlotKey::new([0u8; 32]),
+        }];
 }
 
 impl HardcodedMarketList for Pair<HardcodedERC20, HardcodedERC20> {
-    const HARDCODED_MARKET_LIST: &'static [MarketReadables<(
-        Hardcoded,
+    const HARDCODED_MARKET_LIST: &'static [MarketReadables<
         Pair<HardcodedERC20, HardcodedERC20>,
-    )>] = &[MarketReadables {
+    >] = &[MarketReadables {
         market: CommonMarket::new(
             Pair::new(HardcodedERC20Index(0), HardcodedERC20Index(1)),
             Tuple::new(

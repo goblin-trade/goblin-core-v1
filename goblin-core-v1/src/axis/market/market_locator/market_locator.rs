@@ -1,6 +1,12 @@
 use crate::{
-    axis::token::token_reader::TokenDataTriple, axis_helpers::MarketSpecInner,
-    goblin_error::GoblinError, input_processor::ArgsReader, market::MarketReadables,
+    axis::{
+        market::market_locator::hardcoded::HardcodedMarketList,
+        token::token_reader::TokenDataTriple,
+    },
+    axis_helpers::MarketSpecInner,
+    goblin_error::GoblinError,
+    input_processor::ArgsReader,
+    market::MarketReadables,
 };
 
 /// The intermediate representation used to locate a market.
@@ -27,5 +33,7 @@ pub trait MarketLocator: MarketSpecInner {
     ///
     /// - Hardcoded: Looks up market in static list using index
     /// - Dynamic: Returns reference to the already-constructed market
-    fn locate_market(locator: &Self::Locator) -> &MarketReadables<Self>;
+    fn locate_market(locator: &Self::Locator) -> &MarketReadables<Self::Pair>
+    where
+        Self::Pair: HardcodedMarketList;
 }

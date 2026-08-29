@@ -13,30 +13,28 @@ use core::marker::PhantomData;
 /// a pair of token addresses
 #[repr(C)]
 #[derive(Clone, Copy)]
-pub struct MarketPreimage<MS: MarketSpec> {
+pub struct MarketPreimage<TP: TokenPair> {
     lot_size_pair: LotSizePair,
     tick_size: QuoteLotsPerBaseUnitPerTick,
-    token_address_pair: TokenAddressPair<MS::Pair>,
-    _marker: PhantomData<MS>,
+    token_address_pair: TokenAddressPair<TP>,
 }
 
-impl<MS: MarketSpec> MarketPreimage<MS> {
+impl<TP: TokenPair> MarketPreimage<TP> {
     pub fn new(
         lot_size_pair: LotSizePair,
         tick_size: QuoteLotsPerBaseUnitPerTick,
-        token_address_pair: TokenAddressPair<MS::Pair>,
+        token_address_pair: TokenAddressPair<TP>,
     ) -> Self {
         Self {
             lot_size_pair,
             tick_size,
             token_address_pair,
-            _marker: PhantomData,
         }
     }
 }
 
-impl<MS: MarketSpec> Preimage for MarketPreimage<MS> {
-    const SLOT_DISCRIMINATOR: u8 = MS::Market::DISCRIMINATOR + MS::Pair::DISCRIMINATOR;
+impl<TP: TokenPair> Preimage for MarketPreimage<TP> {
+    const SLOT_DISCRIMINATOR: u8 = TP::DISCRIMINATOR;
 
     type SlotState = MarketState;
 }

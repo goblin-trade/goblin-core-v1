@@ -23,7 +23,7 @@ impl<'a, MS: MarketSpec> Readables<'a, MS> {
         })
     }
 
-    pub fn market_readables(&self) -> &MarketReadables<MS> {
+    pub fn market_readables(&self) -> &MarketReadables<MS::Pair> {
         MS::locate_market(&self.locator)
     }
 }
