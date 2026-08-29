@@ -1,6 +1,9 @@
 use crate::{
-    axis::token::token_reader::TokenDataTriple, axis_helpers::MarketSpec,
-    goblin_error::GoblinError, input_processor::ArgsReader, market::MarketReadables,
+    axis::{market::MarketLocator, token::token_reader::TokenDataTriple},
+    axis_helpers::MarketSpec,
+    goblin_error::GoblinError,
+    input_processor::ArgsReader,
+    market::MarketReadables,
     types::Address,
 };
 
@@ -15,7 +18,7 @@ impl<'a, MS: MarketSpec> Readables<'a, MS> {
         reader: &ArgsReader,
         token_data_triple: &TokenDataTriple<'a>,
     ) -> Result<Self, GoblinError> {
-        let locator = MS::decode_locator(reader, token_data_triple)?;
+        let locator = MS::Market::decode_locator(reader, token_data_triple)?;
 
         Ok(Self {
             msg_sender,
@@ -24,6 +27,6 @@ impl<'a, MS: MarketSpec> Readables<'a, MS> {
     }
 
     pub fn market_readables(&self) -> &MarketReadables<MS::Pair> {
-        MS::locate_market(&self.locator)
+        MS::Market::locate_market(&self.locator)
     }
 }

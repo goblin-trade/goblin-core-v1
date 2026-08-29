@@ -4,7 +4,6 @@ use crate::axis::{
     token::{token_marker::TokenMarker, token_quantity::TokenQuantity},
 };
 
-// TODO better to have HardcodedMarketList bound here
 pub trait TokenPair: 'static + Clone + Copy + PartialEq + PartialOrd {
     type Base: TokenMarker;
     type Quote: TokenMarker;

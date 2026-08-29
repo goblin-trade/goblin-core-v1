@@ -13,7 +13,7 @@ use crate::{
     state::Preimage,
 };
 
-impl<TP: TokenPair + HardcodedMarketList> MarketLocator for (Dynamic, TP) {
+impl<TP: TokenPair + HardcodedMarketList> MarketLocator<TP> for Dynamic {
     type Locator = MarketReadables<TP>;
 
     fn decode_locator(

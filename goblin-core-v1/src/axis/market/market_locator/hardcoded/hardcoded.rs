@@ -12,10 +12,7 @@ use crate::{
     market::MarketReadables,
 };
 
-impl<TP> MarketLocator for (Hardcoded, TP)
-where
-    TP: TokenPair + HardcodedMarketList,
-{
+impl<TP: TokenPair + HardcodedMarketList> MarketLocator<TP> for Hardcoded {
     type Locator = MarketIndex<TP>;
 
     fn decode_locator(
@@ -25,10 +22,7 @@ where
         MarketIndex::try_fixed_decode(reader)
     }
 
-    fn locate_market(locator: &Self::Locator) -> &MarketReadables<TP>
-    where
-        TP: HardcodedMarketList,
-    {
+    fn locate_market(locator: &Self::Locator) -> &MarketReadables<TP> {
         &TP::HARDCODED_MARKET_LIST[*locator]
     }
 }

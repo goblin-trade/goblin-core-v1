@@ -3,7 +3,7 @@ use crate::{
         market::market_locator::hardcoded::HardcodedMarketList,
         token::token_reader::TokenDataTriple,
     },
-    axis_helpers::MarketSpecInner,
+    axis_helpers::TokenPair,
     goblin_error::GoblinError,
     input_processor::ArgsReader,
     market::MarketReadables,
@@ -17,7 +17,7 @@ use crate::{
 /// We perform two operations to avoid copying static hardcoded market data
 /// onto the stack
 ///
-pub trait MarketLocator: MarketSpecInner {
+pub trait MarketLocator<TP: TokenPair + HardcodedMarketList> {
     type Locator;
 
     /// Decode market locator from input args.
@@ -33,7 +33,5 @@ pub trait MarketLocator: MarketSpecInner {
     ///
     /// - Hardcoded: Looks up market in static list using index
     /// - Dynamic: Returns reference to the already-constructed market
-    fn locate_market(locator: &Self::Locator) -> &MarketReadables<Self::Pair>
-    where
-        Self::Pair: HardcodedMarketList;
+    fn locate_market(locator: &Self::Locator) -> &MarketReadables<TP>;
 }
