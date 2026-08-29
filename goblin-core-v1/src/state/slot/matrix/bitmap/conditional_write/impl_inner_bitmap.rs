@@ -1,5 +1,5 @@
 use crate::{
-    axis_helpers::MarketSpec,
+    axis_helpers::TokenPair,
     quantities::{OuterPos, INNER_POS, POS_1},
     state::{
         bitmap::{alias::OuterBitmap, preimage::BitmapPreimage, Bitmap},
@@ -8,10 +8,10 @@ use crate::{
 };
 
 impl Bitmap<POS_1, INNER_POS> {
-    pub fn conditional_write<MS: MarketSpec>(
+    pub fn conditional_write<TP: TokenPair>(
         &self,
         clone: &Self,
-        key: &SlotKey<BitmapPreimage<MS, POS_1, INNER_POS>>,
+        key: &SlotKey<BitmapPreimage<TP, POS_1, INNER_POS>>,
         outer_pos: OuterPos,
         outer_bitmap_state: &mut OuterBitmap,
     ) {

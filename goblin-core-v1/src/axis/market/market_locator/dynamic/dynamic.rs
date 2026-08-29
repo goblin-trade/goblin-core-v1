@@ -1,6 +1,9 @@
 use crate::{
     axis::{
-        market::{market_locator::MarketLocator, Dynamic},
+        market::{
+            market_locator::{hardcoded::HardcodedMarketList, MarketLocator},
+            Dynamic,
+        },
         token::token_reader::TokenDataTriple,
     },
     axis_helpers::TokenPair,
@@ -10,7 +13,7 @@ use crate::{
     state::Preimage,
 };
 
-impl<TP: TokenPair> MarketLocator for (Dynamic, TP) {
+impl<TP: TokenPair + HardcodedMarketList> MarketLocator for (Dynamic, TP) {
     type Locator = MarketReadables<TP>;
 
     fn decode_locator(

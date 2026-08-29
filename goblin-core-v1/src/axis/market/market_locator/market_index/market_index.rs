@@ -1,25 +1,24 @@
 use core::marker::PhantomData;
 
 use crate::{
-    axis::market::market_locator::hardcoded::HardcodedMarketList, axis_helpers::MarketSpec,
+    axis::market::market_locator::hardcoded::HardcodedMarketList, axis_helpers::TokenPair,
 };
 
+/// Index for hardcoded market
 #[derive(Clone, Copy, PartialEq, PartialOrd)]
-pub struct MarketIndex<MS>
+pub struct MarketIndex<TP>
 where
-    MS: MarketSpec,
-    MS::Pair: HardcodedMarketList,
+    TP: TokenPair + HardcodedMarketList,
 {
     pub inner: usize,
-    _marker: PhantomData<MS>,
+    _marker: PhantomData<TP>,
 }
 
-impl<MS> MarketIndex<MS>
+impl<TP> MarketIndex<TP>
 where
-    MS: MarketSpec,
-    MS::Pair: HardcodedMarketList,
+    TP: TokenPair + HardcodedMarketList,
 {
-    pub const MAX: Self = Self::new(MS::Pair::HARDCODED_MARKET_LIST.len() - 1);
+    pub const MAX: Self = Self::new(TP::HARDCODED_MARKET_LIST.len() - 1);
 
     pub const fn new(inner: usize) -> Self {
         Self {

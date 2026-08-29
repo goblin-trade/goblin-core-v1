@@ -39,7 +39,7 @@ pub fn match_order<MS: MarketSpec, In: LegMatcher>(
         GoblinError::TakerPriceLimitReached
     );
 
-    let iterator = match_iterator::<MS, In>(*market_key, *last_position_mut, limit);
+    let iterator = match_iterator::<MS::Pair, In>(*market_key, *last_position_mut, limit);
 
     let base_lot_size = Base::get(&market.lot_size_pair);
     let input_budget = In::matching_lots_in(num_lots, base_lot_size);

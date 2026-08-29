@@ -2,18 +2,17 @@ use core::ops::Index;
 
 use crate::{
     axis::market::market_locator::{hardcoded::HardcodedMarketList, MarketIndex},
-    axis_helpers::MarketSpec,
+    axis_helpers::TokenPair,
     market::MarketReadables,
 };
 
-impl<MS> Index<MarketIndex<MS>> for &'static [MarketReadables<MS::Pair>]
+impl<TP> Index<MarketIndex<TP>> for &'static [MarketReadables<TP>]
 where
-    MS: MarketSpec,
-    MS::Pair: HardcodedMarketList,
+    TP: TokenPair + HardcodedMarketList,
 {
-    type Output = MarketReadables<MS::Pair>;
+    type Output = MarketReadables<TP>;
 
-    fn index(&self, index: MarketIndex<MS>) -> &Self::Output {
+    fn index(&self, index: MarketIndex<TP>) -> &Self::Output {
         self.get(index.inner).unwrap()
     }
 }

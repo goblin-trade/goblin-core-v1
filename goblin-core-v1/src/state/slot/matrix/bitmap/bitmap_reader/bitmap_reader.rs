@@ -1,6 +1,6 @@
 use crate::{
     axis::leg::leg_matcher::LegMatcher,
-    axis_helpers::MarketSpec,
+    axis_helpers::TokenPair,
     quantities::{Position, SafePosition},
     state::{MarketPreimage, SlotKey},
 };
@@ -8,8 +8,8 @@ use core::ops::RangeInclusive;
 
 pub trait BitmapReader<const BITS: u16> {
     /// Give an iterator to return active positions inside a bitmap
-    fn active_iterator<MS: MarketSpec, In: LegMatcher>(
-        market_key: SlotKey<MarketPreimage<MS>>,
+    fn active_iterator<TP: TokenPair, In: LegMatcher>(
+        market_key: SlotKey<MarketPreimage<TP>>,
         range: RangeInclusive<Position>,
     ) -> impl Iterator<Item = SafePosition<BITS>>;
 }

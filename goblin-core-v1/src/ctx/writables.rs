@@ -1,5 +1,5 @@
 use crate::{
-    axis_helpers::MarketSpec,
+    axis_helpers::TokenPair,
     goblin_error::GoblinError,
     settlement::local_delta::{LocalCounterparties, LocalDelta},
     state::{MarketPreimage, MarketState, SlotKey},
@@ -11,8 +11,8 @@ pub struct Writables<'a> {
 }
 
 impl<'a> Writables<'a> {
-    pub fn try_new<MS: MarketSpec>(
-        market_key: &SlotKey<MarketPreimage<MS>>,
+    pub fn try_new<TP: TokenPair>(
+        market_key: &SlotKey<MarketPreimage<TP>>,
         local_counterparties: &'a mut LocalCounterparties,
     ) -> Result<Self, GoblinError> {
         let local_delta = LocalDelta::from(local_counterparties);

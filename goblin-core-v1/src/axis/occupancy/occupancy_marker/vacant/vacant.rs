@@ -7,7 +7,7 @@ use crate::{
         },
         update::UpdateEnum,
     },
-    axis_helpers::MarketSpec,
+    axis_helpers::TokenPair,
     goblin_error::GoblinError,
     matching::region::make_region::MakeRegion,
     quantities::Position,
@@ -37,8 +37,8 @@ impl OccupancyMarker for Vacant {
         Ok(())
     }
 
-    fn get_validated_resting_order<MS: MarketSpec>(
-        _key: &SlotKey<RestingOrderPreimage<MS>>,
+    fn get_validated_resting_order<TP: TokenPair>(
+        _key: &SlotKey<RestingOrderPreimage<TP>>,
         _msg_sender: &Address,
     ) -> Result<RestingOrder, GoblinError> {
         // Vacant postion. Simply return a default empty resting order.

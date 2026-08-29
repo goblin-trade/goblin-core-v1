@@ -13,8 +13,8 @@ impl Bitmap<POS_0, OUTER_POS> {
     pub fn conditional_read<MS: MarketSpec>(
         safe_position: Pos0,
         ctx: &Ctx<MS>,
-    ) -> (SlotKey<BitmapPreimage<MS, POS_0, OUTER_POS>>, Self) {
-        let key = BitmapPreimage::<MS, POS_0, OUTER_POS> {
+    ) -> (SlotKey<BitmapPreimage<MS::Pair, POS_0, OUTER_POS>>, Self) {
+        let key = BitmapPreimage {
             market_key: ctx.readables.market_readables().market_key,
             safe_position,
         }

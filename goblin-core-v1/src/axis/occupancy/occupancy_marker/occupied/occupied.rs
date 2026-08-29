@@ -4,7 +4,7 @@ use crate::{
         occupancy::{occupancy_marker::OccupancyMarker, Occupied},
         update::UpdateEnum,
     },
-    axis_helpers::MarketSpec,
+    axis_helpers::TokenPair,
     goblin_error::GoblinError,
     matching::region::make_region::MakeRegion,
     quantities::Position,
@@ -43,8 +43,8 @@ impl OccupancyMarker for Occupied {
         Ok(())
     }
 
-    fn get_validated_resting_order<MS: MarketSpec>(
-        key: &SlotKey<RestingOrderPreimage<MS>>,
+    fn get_validated_resting_order<TP: TokenPair>(
+        key: &SlotKey<RestingOrderPreimage<TP>>,
         msg_sender: &Address,
     ) -> Result<RestingOrder, GoblinError> {
         // Load from key and ensure owner matches

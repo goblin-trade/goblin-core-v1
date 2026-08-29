@@ -1,6 +1,6 @@
 use crate::{
     axis::leg::leg_matcher::LegMatcher,
-    axis_helpers::MarketSpec,
+    axis_helpers::TokenPair,
     quantities::{Pos2, Position, INNER_POS, OUTER_POS, POS_0, POS_1, POS_2},
     state::{
         bitmap::{bitmap_reader::BitmapReader, preimage::BitmapPreimage, Bitmap},
@@ -14,14 +14,14 @@ impl BitmapReader<POS_2> for Bitmap<POS_1, INNER_POS> {
     ///
     /// # Range
     /// - start() should be the lower bound. I.e. last_price in In=Quote and limit_price in In=Base
-    fn active_iterator<MS: MarketSpec, In: LegMatcher>(
-        market_key: SlotKey<MarketPreimage<MS>>,
+    fn active_iterator<TP: TokenPair, In: LegMatcher>(
+        market_key: SlotKey<MarketPreimage<TP>>,
         range: RangeInclusive<Position>,
     ) -> impl Iterator<Item = Pos2> {
         // outer iterator ignores inner bits in range endpoints — no complement needed
-        Bitmap::<POS_0, OUTER_POS>::active_iterator::<MS, In>(market_key, range.clone()).flat_map(
+        Bitmap::<POS_0, OUTER_POS>::active_iterator::<TP, In>(market_key, range.clone()).flat_map(
             move |pos_1| {
-                let preimage = BitmapPreimage::<MS, POS_1, INNER_POS> {
+                let preimage = BitmapPreimage::<TP, POS_1, INNER_POS> {
                     market_key,
                     safe_position: pos_1,
                 };

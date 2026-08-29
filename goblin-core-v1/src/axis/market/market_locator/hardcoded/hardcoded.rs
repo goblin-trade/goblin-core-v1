@@ -16,7 +16,7 @@ impl<TP> MarketLocator for (Hardcoded, TP)
 where
     TP: TokenPair + HardcodedMarketList,
 {
-    type Locator = MarketIndex<Self>;
+    type Locator = MarketIndex<TP>;
 
     fn decode_locator(
         reader: &ArgsReader,

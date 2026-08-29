@@ -1,15 +1,14 @@
 use crate::{
     axis::market::market_locator::{hardcoded::HardcodedMarketList, MarketIndex},
-    axis_helpers::MarketSpec,
+    axis_helpers::TokenPair,
     goblin_error::GoblinError,
     input_processor::{ArgsReader, FixedDecode},
     require,
 };
 
-impl<'a, MS> FixedDecode<'a> for MarketIndex<MS>
+impl<'a, TP> FixedDecode<'a> for MarketIndex<TP>
 where
-    MS: MarketSpec,
-    MS::Pair: HardcodedMarketList,
+    TP: TokenPair + HardcodedMarketList,
 {
     const ENCODED_SIZE: usize = 1;
 

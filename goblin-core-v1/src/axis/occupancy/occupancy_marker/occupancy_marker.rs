@@ -4,7 +4,7 @@ use crate::{
         occupancy::OccupancyEnum,
         update::UpdateEnum,
     },
-    axis_helpers::{AxisMarker, MarketSpec},
+    axis_helpers::{AxisMarker, TokenPair},
     goblin_error::GoblinError,
     matching::region::make_region::MakeRegion,
     quantities::Position,
@@ -28,8 +28,8 @@ pub trait OccupancyMarker: AxisMarker<Enum = OccupancyEnum> {
         inner_bitmap_state: &InnerBitmap,
     ) -> Result<(), GoblinError>;
 
-    fn get_validated_resting_order<MS: MarketSpec>(
-        key: &SlotKey<RestingOrderPreimage<MS>>,
+    fn get_validated_resting_order<TP: TokenPair>(
+        key: &SlotKey<RestingOrderPreimage<TP>>,
         msg_sender: &Address,
     ) -> Result<RestingOrder, GoblinError>;
 }
