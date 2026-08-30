@@ -1,42 +1,18 @@
 use crate::{
     axis::{
-        party::{Counterparties, Party, PartyCommit, Sender},
+        party::{Counterparties, Party, Sender},
         token::token_reader::TokenDataTriple,
     },
-    axis_helpers::{MarketSpec, TokenPair},
     for_axes,
     goblin_error::GoblinError,
     input_processor::MsgTransfers,
-    market::CommonMarket,
-    quantities::{UnsideQuantity, ATOMS_PER_UNIT},
-    settlement::{
-        global_delta::{CounterpartyTriple, GlobalSender},
-        local_delta::LocalUpdate,
-    },
+    settlement::global_delta::{CounterpartyTriple, GlobalSender},
     types::{Address, StoreReader, Tuple},
 };
 
 pub type GlobalDelta = Tuple<GlobalSender, CounterpartyTriple, Party>;
 
 impl GlobalDelta {
-    pub fn commit<TP: TokenPair>(
-        &mut self,
-        market: &CommonMarket<TP>,
-        local_update: &LocalUpdate<TP>,
-    ) -> Result<(), GoblinError> {
-        let atoms_per_lot_pair = ATOMS_PER_UNIT / market.lot_size_pair.unsided();
-
-        for_axes!(PT => {
-            PT::commit_local_delta::<TP>(
-                (&market.token_index_pair, &atoms_per_lot_pair),
-                local_update,
-                self
-            )?;
-        });
-
-        Ok(())
-    }
-
     pub fn settle(
         &self,
         recipient: &Address,

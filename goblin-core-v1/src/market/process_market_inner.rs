@@ -1,6 +1,10 @@
 use crate::{
-    axis::{party::Counterparties, token::token_reader::TokenDataTriple},
+    axis::{
+        party::{Counterparties, PartyCommit},
+        token::token_reader::TokenDataTriple,
+    },
     axis_helpers::MarketSpec,
+    for_axes,
     goblin_error::GoblinError,
     input_processor::{ArgsReader, FixedDecode},
     market::MarketHeader,
@@ -44,9 +48,12 @@ where
     let market = &ctx.readables.market_readables().market;
     let local_update = LocalUpdate::<MS::Pair>::from((&ctx.writables.local_delta, local_deposits));
 
-    static_delta
-        .global
-        .commit::<MS::Pair>(market, &local_update)?;
+    // Commit sender and counterparty
+    for_axes!(PT => PT::commit::<MS::Pair>(
+        market,
+        &local_update,
+        &mut static_delta.global
+    )?);
 
     // Reset counter of global mut counterparty buffer
     Counterparties::get_leg_mut(&mut ctx.writables.local_delta).reset();
