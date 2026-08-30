@@ -1,10 +1,16 @@
 use crate::{
-    axis::market::{market_counts::MarketCounts, Dynamic, Hardcoded},
+    axis::{
+        leg::Pair,
+        market::{market_counts::MarketCounts, Dynamic, Hardcoded},
+        token::{HardcodedERC20, ETH},
+    },
+    for_axes,
     goblin_error::GoblinError,
     input_processor::{
         global_args::{global_header::GlobalHeader, hostio_fields::HostioFields},
         ArgsReader, ETHTransfers, HeaderFlags, MsgTransfers,
     },
+    market::process_market_outer,
     settlement::StaticDelta,
     types::Address,
 };
@@ -21,26 +27,46 @@ impl<'a> GlobalArgs<'a> {
         reader: &ArgsReader,
         delta: &mut StaticDelta,
     ) -> Result<(), GoblinError> {
+        // let counts = self.global_header.market_counts;
+
+        // problem- trait HardcodedMarketList is not implemented for illegal combinations like
+        // (Hardcoded, Pair<ETH, ETH>)
+        process_market_outer::<(Hardcoded, Pair<ETH, ETH>)>(
+            &self.hostio_fields.msg_sender,
+            reader,
+            &self.global_header.token_data_triple,
+            delta,
+            &self.global_header.market_counts,
+        )?;
+
+        // for_axes!(B, Q => process_market_outer::<(Hardcoded, Pair<B, Q>)>(
+        //     &self.global_header.market_counts,
+        //     &self.hostio_fields.msg_sender,
+        //     reader,
+        //     &self.global_header.token_data_triple,
+        //     delta,
+        // )?);
+
         // TODO remove duplication along with internal count reads
         // problem- if we use for_axes! for 18 combinations, we will need
         // 18 bytes.
         //
         // Currently we only use 2 + 6 = 8 bytes
-        Hardcoded::process(
-            &self.global_header.market_counts,
-            &self.hostio_fields.msg_sender,
-            reader,
-            &self.global_header.token_data_triple,
-            delta,
-        )?;
+        // Hardcoded::process(
+        //     &self.global_header.market_counts,
+        //     &self.hostio_fields.msg_sender,
+        //     reader,
+        //     &self.global_header.token_data_triple,
+        //     delta,
+        // )?;
 
-        Dynamic::process(
-            &self.global_header.market_counts,
-            &self.hostio_fields.msg_sender,
-            reader,
-            &self.global_header.token_data_triple,
-            delta,
-        )?;
+        // Dynamic::process(
+        //     &self.global_header.market_counts,
+        //     &self.hostio_fields.msg_sender,
+        //     reader,
+        //     &self.global_header.token_data_triple,
+        //     delta,
+        // )?;
 
         delta.global.settle(
             self.recipient(),

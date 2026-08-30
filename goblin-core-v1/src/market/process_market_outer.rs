@@ -13,7 +13,7 @@ pub fn process_market_outer<'a, MS: MarketSpec>(
     reader: &ArgsReader,
     token_data_triple: &TokenDataTriple<'a>,
     static_delta: &mut StaticDelta,
-    market_counts: &mut MarketCountsV2,
+    market_counts: &MarketCountsV2,
 ) -> Result<(), GoblinError> {
     if MS::illegal() {
         return Ok(());

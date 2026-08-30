@@ -43,6 +43,6 @@ impl<'a> VariableDecode<'a> for MarketCountsV2 {
         counts[..3].copy_from_slice(&hardcoded_count);
         counts[3..].copy_from_slice(&custom_count);
 
-        Self::new(counts, 0)
+        Self::new(counts)
     }
 }

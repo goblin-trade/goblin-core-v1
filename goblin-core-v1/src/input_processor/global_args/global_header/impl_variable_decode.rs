@@ -1,14 +1,11 @@
 use crate::{
-    axis::{
-        market::market_counts::{dynamic::DynamicCounts, hardcoded::HardcodedCounts},
-        token::{token_list::custom_erc20::CustomERC20List, token_reader::TokenDataTriple},
-    },
+    axis::token::{token_list::custom_erc20::CustomERC20List, token_reader::TokenDataTriple},
     input_processor::{
         global_args::global_header::GlobalHeader, ArgsReader, FixedDecode, HeaderFlags,
-        VariableDecode,
+        MarketCountsV2, VariableDecode,
     },
     quantities::UnsidedAtoms,
-    types::{Address, Tuple},
+    types::Address,
 };
 
 impl<'a> VariableDecode<'a> for GlobalHeader<'a> {
@@ -17,8 +14,7 @@ impl<'a> VariableDecode<'a> for GlobalHeader<'a> {
     fn size(flags: &Self::Flags) -> usize {
         (flags.withdraw_eth as usize * UnsidedAtoms::ENCODED_SIZE)
             + (flags.read_custom_recipient as usize * core::mem::size_of::<Address>())
-            + HardcodedCounts::ENCODED_SIZE
-            + (flags.process_dynamic_markets as usize * DynamicCounts::ENCODED_SIZE)
+            + MarketCountsV2::size(&flags.process_dynamic_markets)
             + CustomERC20List::size(flags)
     }
 
@@ -35,15 +31,8 @@ impl<'a> VariableDecode<'a> for GlobalHeader<'a> {
             None
         };
 
-        let hardcoded_counts = HardcodedCounts::raw_fixed_decode(reader);
-
-        let dynamic_counts = if flags.process_dynamic_markets {
-            DynamicCounts::raw_fixed_decode(reader)
-        } else {
-            DynamicCounts::default()
-        };
-
-        let market_counts = Tuple::new(hardcoded_counts, dynamic_counts);
+        let market_counts =
+            MarketCountsV2::raw_variable_decode(reader, &flags.process_dynamic_markets);
 
         let custom_erc20_list = CustomERC20List::raw_variable_decode(reader, &flags);
         let token_data_triple = TokenDataTriple::from(custom_erc20_list);
