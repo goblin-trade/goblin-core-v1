@@ -22,6 +22,10 @@ impl<'a> GlobalArgs<'a> {
         delta: &mut StaticDelta,
     ) -> Result<(), GoblinError> {
         // TODO remove duplication along with internal count reads
+        // problem- if we use for_axes! for 18 combinations, we will need
+        // 18 bytes.
+        //
+        // Currently we only use 2 + 6 = 8 bytes
         Hardcoded::process(
             &self.global_header.market_counts,
             &self.hostio_fields.msg_sender,
