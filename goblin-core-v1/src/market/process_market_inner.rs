@@ -22,7 +22,7 @@ pub fn process_market_inner<'a, MS>(
 where
     MS: MarketSpec,
 {
-    let market_header = MarketHeader::<MS>::try_fixed_decode(reader)?;
+    let market_header = MarketHeader::try_fixed_decode(reader)?;
 
     let local_deposits = if market_header.decode_deposit_amounts {
         LocalDeposits::<MS::Pair>::try_fixed_decode(reader)?
@@ -30,7 +30,7 @@ where
         LocalDeposits::<MS::Pair>::default()
     };
 
-    let ctx = &mut Ctx::try_new(
+    let ctx = &mut Ctx::<MS>::try_new(
         msg_sender,
         reader,
         token_data_triple,
@@ -44,7 +44,9 @@ where
     let market = &ctx.readables.market_readables().market;
     let local_update = LocalUpdate::<MS::Pair>::from((&ctx.writables.local_delta, local_deposits));
 
-    static_delta.global.commit::<MS>(market, &local_update)?;
+    static_delta
+        .global
+        .commit::<MS::Pair>(market, &local_update)?;
 
     // Reset counter of global mut counterparty buffer
     Counterparties::get_leg_mut(&mut ctx.writables.local_delta).reset();

@@ -1,11 +1,10 @@
 use super::MarketHeader;
 use crate::{
-    axis_helpers::MarketSpec,
     input_processor::{ArgsReader, FixedDecode},
     types::Tuple,
 };
 
-impl<'a, MS: MarketSpec> FixedDecode<'a> for MarketHeader<MS> {
+impl<'a> FixedDecode<'a> for MarketHeader {
     const ENCODED_SIZE: usize = 1;
 
     fn raw_fixed_decode(reader: &ArgsReader) -> Self {

@@ -6,8 +6,12 @@ use crate::{
     Ctx,
 };
 
-impl<MS: MarketSpec> MarketHeader<MS> {
-    pub fn execute_makes(&self, reader: &ArgsReader, ctx: &mut Ctx<MS>) -> Result<(), GoblinError> {
+impl MarketHeader {
+    pub fn execute_makes<MS: MarketSpec>(
+        &self,
+        reader: &ArgsReader,
+        ctx: &mut Ctx<MS>,
+    ) -> Result<(), GoblinError> {
         for _ in 0..self.outer_bitmap_count {
             OuterBitmapHeader::process(reader, ctx)?;
         }

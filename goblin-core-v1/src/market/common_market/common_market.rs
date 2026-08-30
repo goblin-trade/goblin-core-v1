@@ -2,14 +2,14 @@ use goblin_macros::FixedDecode;
 
 use crate::{
     axis::{
-        leg::{Base, Pair, Quote},
+        leg::{Base, Pair, Quote, SamePair},
         market::MarketMarker,
         token::token_reader::TokenDataTriple,
     },
     axis_helpers::TokenPair,
     goblin_error::GoblinError,
     market::{LotSizePair, TokenIndexPair},
-    quantities::QuoteLotsPerBaseUnitPerTick,
+    quantities::{QuoteLotsPerBaseUnitPerTick, UnsideQuantity, UnsidedAtomsPerLot, ATOMS_PER_UNIT},
     state::MarketPreimage,
 };
 
@@ -53,5 +53,9 @@ impl<TP: TokenPair> CommonMarket<TP> {
             self.tick_size,
             address_pair,
         ))
+    }
+
+    pub fn atoms_per_lot_pair(&self) -> SamePair<UnsidedAtomsPerLot> {
+        ATOMS_PER_UNIT / self.lot_size_pair.unsided()
     }
 }

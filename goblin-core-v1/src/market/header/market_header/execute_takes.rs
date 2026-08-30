@@ -4,8 +4,12 @@ use crate::{
     instructions::ix_take, types::StoreReader, Ctx,
 };
 
-impl<MS: MarketSpec> MarketHeader<MS> {
-    pub fn execute_takes(&self, reader: &ArgsReader, ctx: &mut Ctx<MS>) -> Result<(), GoblinError> {
+impl MarketHeader {
+    pub fn execute_takes<MS: MarketSpec>(
+        &self,
+        reader: &ArgsReader,
+        ctx: &mut Ctx<MS>,
+    ) -> Result<(), GoblinError> {
         for_axes!(In => {
             if In::get(&self.execute_takes) {
                 ix_take::<MS, In>(reader, ctx)?;

@@ -3,7 +3,7 @@ use crate::{
         party::{Counterparties, Party, PartyCommit, Sender},
         token::token_reader::TokenDataTriple,
     },
-    axis_helpers::MarketSpec,
+    axis_helpers::{MarketSpec, TokenPair},
     for_axes,
     goblin_error::GoblinError,
     input_processor::MsgTransfers,
@@ -19,15 +19,15 @@ use crate::{
 pub type GlobalDelta = Tuple<GlobalSender, CounterpartyTriple, Party>;
 
 impl GlobalDelta {
-    pub fn commit<MS: MarketSpec>(
+    pub fn commit<TP: TokenPair>(
         &mut self,
-        market: &CommonMarket<MS::Pair>,
-        local_update: &LocalUpdate<MS::Pair>,
+        market: &CommonMarket<TP>,
+        local_update: &LocalUpdate<TP>,
     ) -> Result<(), GoblinError> {
         let atoms_per_lot_pair = ATOMS_PER_UNIT / market.lot_size_pair.unsided();
 
         for_axes!(PT => {
-            PT::commit_local_delta::<MS::Pair>(
+            PT::commit_local_delta::<TP>(
                 (&market.token_index_pair, &atoms_per_lot_pair),
                 local_update,
                 self
