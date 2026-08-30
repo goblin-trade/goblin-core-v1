@@ -7,6 +7,7 @@ use crate::{
     for_axes,
     goblin_error::GoblinError,
     input_processor::{ArgsReader, FixedDecode},
+    instructions::{process_makes, process_takes},
     market::MarketHeader,
     settlement::{
         local_delta::{LocalDeposits, LocalUpdate},
@@ -17,18 +18,15 @@ use crate::{
 };
 
 #[inline(never)]
-pub fn process_market_inner<'a, MS>(
+pub fn process_market_inner<'a, MS: MarketSpec>(
     msg_sender: &Address,
     reader: &ArgsReader,
     token_data_triple: &TokenDataTriple<'a>,
     static_delta: &mut StaticDelta,
-) -> Result<(), GoblinError>
-where
-    MS: MarketSpec,
-{
-    let market_header = MarketHeader::try_fixed_decode(reader)?;
+) -> Result<(), GoblinError> {
+    let header = MarketHeader::try_fixed_decode(reader)?;
 
-    let local_deposits = if market_header.decode_deposit_amounts {
+    let local_deposits = if header.decode_deposit_amounts {
         LocalDeposits::<MS::Pair>::try_fixed_decode(reader)?
     } else {
         LocalDeposits::<MS::Pair>::default()
@@ -41,9 +39,8 @@ where
         &mut static_delta.local_counterparties,
     )?;
 
-    // TODO convert to axis- make and take?
-    market_header.execute_takes(reader, ctx)?;
-    market_header.execute_makes(reader, ctx)?;
+    process_takes(&header, reader, ctx)?;
+    process_makes(&header, reader, ctx)?;
 
     let market = &ctx.readables.market_readables().market;
     let local_update = LocalUpdate::<MS::Pair>::from((&ctx.writables.local_delta, local_deposits));
