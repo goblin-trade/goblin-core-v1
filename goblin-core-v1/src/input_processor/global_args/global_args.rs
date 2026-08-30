@@ -1,5 +1,5 @@
 use crate::{
-    axis::leg::Pair,
+    axis::{leg::Pair, party::PartySettle},
     for_axes,
     goblin_error::GoblinError,
     input_processor::{
@@ -31,11 +31,14 @@ impl<'a> GlobalArgs<'a> {
             delta,
         )?);
 
-        delta.global.settle(
-            self.recipient(),
+        for_axes!(PT, TM0 => PT::settle::<TM0>(
+            &delta.global,
             &self.global_header.token_data_triple,
+            self.recipient(),
             &self.msg_transfers(),
-        )
+        )?);
+
+        Ok(())
     }
 
     fn recipient(&'a self) -> &'a Address {

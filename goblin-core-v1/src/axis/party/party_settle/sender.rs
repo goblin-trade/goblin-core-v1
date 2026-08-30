@@ -1,0 +1,39 @@
+use crate::{
+    axis::{
+        party::{PartySettle, Sender},
+        token::{token_marker::TokenMarker, token_reader::TokenDataTriple},
+    },
+    goblin_error::GoblinError,
+    input_processor::MsgTransfers,
+    settlement::{
+        global_delta::{GlobalDelta, TokenDelta},
+        ConstDefault,
+    },
+    types::{Address, StoreReader},
+};
+
+impl PartySettle for Sender {
+    fn settle<'a, TM>(
+        global_delta: &'a GlobalDelta,
+        token_data_triple: &TokenDataTriple<'a>,
+        trader: &Address,
+        transfers: &MsgTransfers,
+    ) -> Result<(), GoblinError>
+    where
+        TM: TokenMarker,
+        &'a TM::SenderDeltaList: IntoIterator<Item = &'a TokenDelta<TM>>,
+    {
+        let sender_delta = Self::get_leg(global_delta);
+
+        let data_list_iter = TM::get_lifetimed(&token_data_triple).into_iter();
+        let sender_delta_list_iter = TM::get_leg(sender_delta).into_iter();
+
+        for (token_data, delta) in data_list_iter.zip(sender_delta_list_iter) {
+            if *delta != TokenDelta::DEFAULT {
+                delta.settle(trader, &token_data, transfers)?;
+            }
+        }
+
+        Ok(())
+    }
+}
