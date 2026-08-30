@@ -1,11 +1,11 @@
 use core::cell::Cell;
 
-pub struct MarketCountsV2 {
+pub struct MarketCounts {
     counts: [u8; 11],
     index: Cell<usize>,
 }
 
-impl MarketCountsV2 {
+impl MarketCounts {
     pub fn new(counts: [u8; 11]) -> Self {
         Self {
             counts,

@@ -1,8 +1,8 @@
 use crate::input_processor::{
-    global_args::global_header::MarketCountsV2, FixedDecode, VariableDecode,
+    global_args::global_header::MarketCounts, FixedDecode, VariableDecode,
 };
 
-impl<'a> VariableDecode<'a> for MarketCountsV2 {
+impl<'a> VariableDecode<'a> for MarketCounts {
     type Flags = bool;
 
     fn size(flags: &Self::Flags) -> usize {

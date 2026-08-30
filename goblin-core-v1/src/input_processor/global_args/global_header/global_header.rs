@@ -1,5 +1,5 @@
 use crate::{
-    axis::token::token_reader::TokenDataTriple, input_processor::MarketCountsV2,
+    axis::token::token_reader::TokenDataTriple, input_processor::MarketCounts,
     quantities::UnsidedAtoms, types::Address,
 };
 
@@ -17,6 +17,6 @@ pub struct GlobalHeader<'a> {
     pub custom_recipient: Option<&'a Address>,
 
     /// Number of hardcoded and dynamic markets to process
-    pub market_counts: MarketCountsV2,
+    pub market_counts: MarketCounts,
     pub token_data_triple: TokenDataTriple<'a>,
 }

@@ -2,7 +2,7 @@ use crate::{
     axis::token::{token_list::custom_erc20::CustomERC20List, token_reader::TokenDataTriple},
     input_processor::{
         global_args::global_header::GlobalHeader, ArgsReader, FixedDecode, HeaderFlags,
-        MarketCountsV2, VariableDecode,
+        MarketCounts, VariableDecode,
     },
     quantities::UnsidedAtoms,
     types::Address,
@@ -14,7 +14,7 @@ impl<'a> VariableDecode<'a> for GlobalHeader<'a> {
     fn size(flags: &Self::Flags) -> usize {
         (flags.withdraw_eth as usize * UnsidedAtoms::ENCODED_SIZE)
             + (flags.read_custom_recipient as usize * core::mem::size_of::<Address>())
-            + MarketCountsV2::size(&flags.process_dynamic_markets)
+            + MarketCounts::size(&flags.process_dynamic_markets)
             + CustomERC20List::size(flags)
     }
 
@@ -32,7 +32,7 @@ impl<'a> VariableDecode<'a> for GlobalHeader<'a> {
         };
 
         let market_counts =
-            MarketCountsV2::raw_variable_decode(reader, &flags.process_dynamic_markets);
+            MarketCounts::raw_variable_decode(reader, &flags.process_dynamic_markets);
 
         let custom_erc20_list = CustomERC20List::raw_variable_decode(reader, &flags);
         let token_data_triple = TokenDataTriple::from(custom_erc20_list);

@@ -48,12 +48,12 @@ impl GlobalDelta {
         //
         // We can combine it into a single for_axes!(|TM, TR|)
         //
-        for_axes!(TM => Sender::get_leg(self).settle_leg::<TM>(
+        for_axes!(TM0 => Sender::get_leg(self).settle_leg::<TM0>(
             recipient,
             token_data_triple,
             msg_transfers
         )?);
-        for_axes!(TM => Counterparties::get_leg(self).settle_leg::<TM>(token_data_triple)?);
+        for_axes!(TM0 => Counterparties::get_leg(self).settle_leg::<TM0>(token_data_triple)?);
 
         Ok(())
     }

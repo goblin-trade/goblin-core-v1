@@ -1,10 +1,6 @@
 use crate::{
-    axis::market::{
-        market_counts::{dynamic::DynamicCounts, hardcoded::HardcodedCounts, MarketCountsTuple},
-        Dynamic, Hardcoded, MarketEnum,
-    },
+    axis::market::{Dynamic, Hardcoded, MarketEnum},
     axis_helpers::AxisMarker,
-    types::StoreReader,
 };
 
 ///! We have 2 market variants
@@ -12,26 +8,18 @@ use crate::{
 ///! * Hardcoded market- has hardcoded tokens
 ///! * Dynamic market- has dynamic tokens that can be either hardcoded or custom
 pub trait MarketMarker:
-    Sized
-    + Clone
-    + Copy
-    + PartialEq
-    + PartialOrd
-    + AxisMarker<Enum = MarketEnum>
-    + StoreReader<MarketCountsTuple, Result = Self::MarketCounts>
+    Sized + Clone + Copy + PartialEq + PartialOrd + AxisMarker<Enum = MarketEnum>
 {
     /// Discriminator used to hash the market key
+    ///
+    /// TODO unused, remove
     const DISCRIMINATOR: u8;
-
-    type MarketCounts;
 }
 
 impl MarketMarker for Hardcoded {
     const DISCRIMINATOR: u8 = 3;
-    type MarketCounts = HardcodedCounts;
 }
 
 impl MarketMarker for Dynamic {
     const DISCRIMINATOR: u8 = 4;
-    type MarketCounts = DynamicCounts;
 }
