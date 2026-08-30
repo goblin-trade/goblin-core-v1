@@ -1,23 +1,42 @@
 use crate::{
     axis::{
         token::{token_marker::TokenData, token_reader::TokenReader, TokenEnum},
-        update::UpdateMarker,
+        update::{UpdateEnum, UpdateMarker},
     },
     axis_helpers::AxisMarker,
     goblin_error::GoblinError,
-    quantities::{UnsidedAtoms, UnsidedDeltaAtomsPerLot},
+    match_axes,
+    quantities::{IntoAbs, UnsidedAtoms, UnsidedDeltaAtoms, UnsidedDeltaAtomsPerLot},
     types::Address,
 };
 
-pub trait TokenMarker: 'static + AxisMarker<Enum = TokenEnum> + TokenReader {
+pub trait TokenMarker: 'static + TokenReader + AxisMarker<Enum = TokenEnum> {
     fn get_global_deposit(
         local_deposit: Self::LocalDeposit,
         atoms_per_lot: UnsidedDeltaAtomsPerLot,
     ) -> Self::GlobalDeposit;
 
-    // this gives a clean implementation for ETH
-    //
-    // However we don't want to duplicate decimal matching for hardcoded and custom ERC20
+    fn transfer(
+        net_deposit: UnsidedDeltaAtoms,
+        trader: &Address,
+        token_address: &Self::TokenAddress,
+        decimals: Self::StoredDecimals,
+    ) -> Result<(), GoblinError> {
+        if net_deposit == UnsidedDeltaAtoms::default() {
+            return Ok(());
+        }
+
+        let update_enum = UpdateEnum::from(net_deposit);
+        let deposit = net_deposit.abs();
+
+        match_axes!(UM = update_enum => {
+            Self::update::<UM>(deposit, trader, token_address, decimals)?;
+        });
+
+        Ok(())
+    }
+
+    // Transfer the token in or out, based on UM
     fn update<UM: UpdateMarker>(
         deposit: UnsidedAtoms,
         trader: &Address,

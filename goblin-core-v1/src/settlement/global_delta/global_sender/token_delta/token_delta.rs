@@ -1,13 +1,10 @@
 use goblin_macros::ConstDefault;
 
 use crate::{
-    axis::{
-        token::{
-            token_marker::{TokenData, TokenMarker},
-            token_msg_transfer::TokenMsgTransfer,
-            token_quantity::TokenQuantity,
-        },
-        update::UpdateEnum,
+    axis::token::{
+        token_marker::{TokenData, TokenMarker},
+        token_msg_transfer::TokenMsgTransfer,
+        token_quantity::TokenQuantity,
     },
     goblin_error::GoblinError,
     input_processor::MsgTransfers,
@@ -48,6 +45,7 @@ impl<TM: TokenMarker> TokenDelta<TM> {
 
         // 2. Transfer tokens
         let net_deposit = self.deposit.into() + msg_transfer.deposit_due()?;
-        UpdateEnum::transfer::<TM>(net_deposit, trader, &token_data.address, store.decimals)
+
+        TM::transfer(net_deposit, trader, &token_data.address, store.decimals)
     }
 }

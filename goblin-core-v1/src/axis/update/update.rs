@@ -1,11 +1,8 @@
 use crate::{
-    axis::token::token_marker::TokenMarker,
     define_axis,
-    goblin_error::GoblinError,
-    match_axes,
-    quantities::{Exp, IntoAbs, Quantity, UnsidedDeltaAtoms},
+    quantities::{Exp, Quantity},
     settlement::ConstDefault,
-    types::{Address, Tuple},
+    types::Tuple,
 };
 
 define_axis! {
@@ -16,34 +13,12 @@ define_axis! {
     }
 }
 
-impl UpdateEnum {
-    // TODO move elsewhere
-    pub fn transfer<TM: TokenMarker>(
-        net_deposit: UnsidedDeltaAtoms,
-        trader: &Address,
-        token_address: &TM::TokenAddress,
-        decimals: TM::StoredDecimals,
-    ) -> Result<(), GoblinError> {
-        let Some(update_enum) = UpdateEnum::from_delta(net_deposit) else {
-            return Ok(());
-        };
-
-        let deposit = net_deposit.abs();
-
-        match_axes!(UM = update_enum => {
-            TM::update::<UM>(deposit, trader, token_address, decimals)?;
-        });
-
-        Ok(())
-    }
-
-    fn from_delta<E: Exp>(value: Quantity<E, i64>) -> Option<Self> {
+impl<E: Exp> From<Quantity<E, i64>> for UpdateEnum {
+    fn from(value: Quantity<E, i64>) -> Self {
         if value > Quantity::DEFAULT {
-            Some(Self::Increase)
-        } else if value < Quantity::DEFAULT {
-            Some(Self::Decrease)
+            Self::Increase
         } else {
-            None
+            Self::Decrease
         }
     }
 }
