@@ -12,6 +12,10 @@ use crate::{
 ///! Hardcoded markets only have HardcodedERC20. They cannot have CustomERC20.
 use super::HardcodedMarketList;
 
+impl HardcodedMarketList for Pair<ETH, ETH> {
+    const HARDCODED_MARKET_LIST: &'static [MarketReadables<Pair<ETH, ETH>>] = &[];
+}
+
 impl HardcodedMarketList for Pair<ETH, CustomERC20> {
     const HARDCODED_MARKET_LIST: &'static [MarketReadables<Pair<ETH, CustomERC20>>] = &[];
 }

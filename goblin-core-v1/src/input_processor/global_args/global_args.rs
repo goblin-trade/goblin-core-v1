@@ -39,12 +39,12 @@ impl<'a> GlobalArgs<'a> {
             &self.global_header.market_counts,
         )?;
 
-        // for_axes!(B, Q => process_market_outer::<(Hardcoded, Pair<B, Q>)>(
-        //     &self.global_header.market_counts,
+        // for_axes!(MM, B, Q => process_market_outer::<(MM, Pair<B, Q>)>(
         //     &self.hostio_fields.msg_sender,
         //     reader,
         //     &self.global_header.token_data_triple,
         //     delta,
+        //     &self.global_header.market_counts,
         // )?);
 
         // TODO remove duplication along with internal count reads
