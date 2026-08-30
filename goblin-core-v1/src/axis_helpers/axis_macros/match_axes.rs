@@ -16,8 +16,8 @@ macro_rules! match_axes {
     (@expand [OM = $val:expr $(, $axis:ident = $rest_val:expr)*] $body:block) => {
         $crate::match_axes!(@arity 2, $val, OM, $crate::axis::occupancy::Occupancy, [$($axis = $rest_val),*], $body)
     };
-    (@expand [MM = $val:expr $(, $axis:ident = $rest_val:expr)*] $body:block) => {
-        $crate::match_axes!(@arity 2, $val, MM, $crate::axis::market::Market, [$($axis = $rest_val),*], $body)
+    (@expand [M = $val:expr $(, $axis:ident = $rest_val:expr)*] $body:block) => {
+        $crate::match_axes!(@arity 2, $val, M, $crate::axis::market::Market, [$($axis = $rest_val),*], $body)
     };
     (@expand [TM = $val:expr $(, $axis:ident = $rest_val:expr)*] $body:block) => {
         $crate::match_axes!(@arity 3, $val, TM, $crate::axis::token::Token, [$($axis = $rest_val),*], $body)

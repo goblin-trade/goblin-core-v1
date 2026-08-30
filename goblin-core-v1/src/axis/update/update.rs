@@ -18,11 +18,11 @@ define_axis! {
 
 impl UpdateEnum {
     // TODO move elsewhere
-    pub fn transfer<T: TokenMarker>(
+    pub fn transfer<TM: TokenMarker>(
         net_deposit: UnsidedDeltaAtoms,
         trader: &Address,
-        token_address: &T::TokenAddress,
-        decimals: T::StoredDecimals,
+        token_address: &TM::TokenAddress,
+        decimals: TM::StoredDecimals,
     ) -> Result<(), GoblinError> {
         let Some(update_enum) = UpdateEnum::from_delta(net_deposit) else {
             return Ok(());
@@ -31,7 +31,7 @@ impl UpdateEnum {
         let deposit = net_deposit.abs();
 
         match_axes!(UM = update_enum => {
-            T::update::<UM>(deposit, trader, token_address, decimals)?;
+            TM::update::<UM>(deposit, trader, token_address, decimals)?;
         });
 
         Ok(())

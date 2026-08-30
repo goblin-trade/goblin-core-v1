@@ -3,7 +3,7 @@ use crate::{
     settlement::{global_delta::TokenDelta, CheckedOps},
 };
 
-impl<T: TokenMarker> CheckedOps for TokenDelta<T> {
+impl<TM: TokenMarker> CheckedOps for TokenDelta<TM> {
     fn checked_add(self, rhs: Self) -> Option<Self> {
         Some(Self {
             deposit: self.deposit.checked_add(rhs.deposit)?,

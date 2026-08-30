@@ -23,7 +23,7 @@ impl<'a> GlobalArgs<'a> {
         reader: &ArgsReader,
         delta: &mut StaticDelta,
     ) -> Result<(), GoblinError> {
-        for_axes!(MM, TM0, TM1 => process_market::<(MM, Pair<TM0, TM1>)>(
+        for_axes!(M, TM0, TM1 => process_market::<(M, Pair<TM0, TM1>)>(
             &self.hostio_fields.msg_sender,
             reader,
             &self.global_header.token_data_triple,

@@ -18,22 +18,22 @@ use crate::{
 };
 
 #[repr(C)]
-pub struct Store<T: TokenMarker> {
+pub struct Store<TM: TokenMarker> {
     pub atoms_locked: UnsidedAtoms,
     pub atoms_free: UnsidedAtoms,
-    pub decimals: T::StoredDecimals,
-    _padding: T::StoredPadding,
+    pub decimals: TM::StoredDecimals,
+    _padding: TM::StoredPadding,
 }
 
-impl<T: TokenMarker> Store<T> {
+impl<TM: TokenMarker> Store<TM> {
     pub fn update_sender(
         &mut self,
-        token_data: &TokenData<T>,
-        token_delta: &TokenDelta<T>,
-        msg_transfer: &T::TokenMsgTransfer,
+        token_data: &TokenData<TM>,
+        token_delta: &TokenDelta<TM>,
+        msg_transfer: &TM::TokenMsgTransfer,
     ) -> Result<(), GoblinError> {
         if self.is_empty() {
-            self.decimals = T::get_stored_decimals(token_data)?;
+            self.decimals = TM::get_stored_decimals(token_data)?;
         }
 
         let atoms_free_delta = UnsidedDeltaAtoms::try_from(self.atoms_free)?
@@ -67,7 +67,7 @@ impl<T: TokenMarker> Store<T> {
     }
 }
 
-unsafe impl<T: TokenMarker> SlotState for Store<T> {}
+unsafe impl<TM: TokenMarker> SlotState for Store<TM> {}
 const _: () = <Store<ETH> as SlotState>::_ASSERT;
 const _: () = <Store<HardcodedERC20> as SlotState>::_ASSERT;
 const _: () = <Store<CustomERC20> as SlotState>::_ASSERT;

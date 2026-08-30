@@ -6,12 +6,12 @@ use crate::{
 
 #[repr(C)]
 #[derive(Clone, Copy)]
-pub struct StorePreimage<T: TokenMarker> {
+pub struct StorePreimage<TM: TokenMarker> {
     pub trader: Address,
-    pub token_address: T::TokenAddress,
+    pub token_address: TM::TokenAddress,
 }
 
-impl<T: TokenMarker> Preimage for StorePreimage<T> {
-    const SLOT_DISCRIMINATOR: u8 = 2 + T::DISCRIMINATOR;
-    type SlotState = Store<T>;
+impl<TM: TokenMarker> Preimage for StorePreimage<TM> {
+    const SLOT_DISCRIMINATOR: u8 = 2 + TM::DISCRIMINATOR;
+    type SlotState = Store<TM>;
 }

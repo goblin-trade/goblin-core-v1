@@ -9,14 +9,17 @@ use crate::{
 };
 
 #[derive(PartialEq, Clone, Copy, ConstDefault)]
-pub struct CounterpartyTokenKey<T: TokenQuantity> {
+pub struct CounterpartyTokenKey<TM: TokenQuantity> {
     pub counterparty: Address,
-    pub token_index: T::TokenIndex,
+    pub token_index: TM::TokenIndex,
 }
 
-impl<T: TokenMarker> CounterpartyTokenKey<T> {
-    pub fn get_store_hash(&self, token_data_triple: &TokenDataTriple) -> SlotKey<StorePreimage<T>> {
-        let token_data_list = T::get_lifetimed(token_data_triple);
+impl<TM: TokenMarker> CounterpartyTokenKey<TM> {
+    pub fn get_store_hash(
+        &self,
+        token_data_triple: &TokenDataTriple,
+    ) -> SlotKey<StorePreimage<TM>> {
+        let token_data_list = TM::get_lifetimed(token_data_triple);
         let token_data = token_data_list[self.token_index];
 
         let preimage = StorePreimage {

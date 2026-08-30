@@ -17,13 +17,13 @@ use crate::{
 };
 
 #[derive(Clone, Copy, PartialEq, ConstDefault)]
-pub struct TokenDelta<T: TokenQuantity> {
-    pub deposit: T::GlobalDeposit,
+pub struct TokenDelta<TM: TokenQuantity> {
+    pub deposit: TM::GlobalDeposit,
     pub take: UnsidedDeltaAtoms,
     pub make: UnsidedDeltaAtoms,
 }
 
-impl<T: TokenMarker> TokenDelta<T> {
+impl<TM: TokenMarker> TokenDelta<TM> {
     pub fn net_delta(&self) -> UnsidedDeltaAtoms {
         self.deposit.into() + self.take + self.make
     }
@@ -31,13 +31,13 @@ impl<T: TokenMarker> TokenDelta<T> {
     pub fn settle(
         &self,
         trader: &Address,
-        token_data: &TokenData<T>,
+        token_data: &TokenData<TM>,
         msg_transfers: &MsgTransfers,
     ) -> Result<(), GoblinError> {
-        let msg_transfer = T::get_leg(msg_transfers);
+        let msg_transfer = TM::get_leg(msg_transfers);
 
         // 1. Update store
-        let store_hash = StorePreimage::<T> {
+        let store_hash = StorePreimage::<TM> {
             trader: *trader,
             token_address: token_data.address,
         }
@@ -48,6 +48,6 @@ impl<T: TokenMarker> TokenDelta<T> {
 
         // 2. Transfer tokens
         let net_deposit = self.deposit.into() + msg_transfer.deposit_due()?;
-        UpdateEnum::transfer::<T>(net_deposit, trader, &token_data.address, store.decimals)
+        UpdateEnum::transfer::<TM>(net_deposit, trader, &token_data.address, store.decimals)
     }
 }

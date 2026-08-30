@@ -17,8 +17,8 @@ macro_rules! for_axes {
     (@expand [In $(, $rest:ident)*] [$($alias:item)*] $body:block) => {
         $crate::for_axes!(@range In, $crate::axis::leg::Leg, 2, [$($rest),*], [$($alias)*], $body);
     };
-    (@expand [MM $(, $rest:ident)*] [$($alias:item)*] $body:block) => {
-        $crate::for_axes!(@range MM, $crate::axis::market::Market, 2, [$($rest),*], [$($alias)*], $body);
+    (@expand [M $(, $rest:ident)*] [$($alias:item)*] $body:block) => {
+        $crate::for_axes!(@range M, $crate::axis::market::Market, 2, [$($rest),*], [$($alias)*], $body);
     };
     (@expand [OM $(, $rest:ident)*] [$($alias:item)*] $body:block) => {
         $crate::for_axes!(@range OM, $crate::axis::occupancy::Occupancy, 2, [$($rest),*], [$($alias)*], $body);
