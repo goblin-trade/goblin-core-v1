@@ -27,26 +27,15 @@ use crate::{
 /// Ideally we want a trait API to iterate on resting orders, abstracting away the inner
 /// complexity
 pub fn match_order<MS: MarketSpec, In: LegMatcher>(
-    TakeHeader {
-        num_lots,
-        min_lots_to_fill,
-        limit,
-    }: TakeHeader<In>,
+    header: TakeHeader<In>,
     ctx: &mut Ctx<MS>,
 ) -> Result<(), GoblinError> {
     let MarketReadables { market, market_key } = ctx.readables.market_readables();
-    let last_position_mut = In::get_leg_mut(&mut ctx.writables.market_state.last_positions);
-
-    require!(
-        In::in_region(*last_position_mut, limit),
-        GoblinError::TakerPriceLimitReached
-    );
-
-    let iterator = match_iterator::<MS::Pair, In>(*market_key, *last_position_mut, limit);
+    let iterator =
+        match_iterator::<MS::Pair, In>(*market_key, header.limit, &mut ctx.writables.market_state)?;
 
     let base_lot_size = Base::get(&market.lot_size_pair);
-    let input_budget = In::matching_lots_taker(num_lots, base_lot_size);
-
+    let input_budget = In::matching_lots_taker(header.num_lots, base_lot_size);
     let mut budget = input_budget;
 
     for RestingOrderEntry {
@@ -59,16 +48,15 @@ pub fn match_order<MS: MarketSpec, In: LegMatcher>(
             maker: counterparty,
         } = resting_order_key_value.value;
 
-        *last_position_mut = position;
-
         let price = Ticks::from(position);
         let price_in_quote_lots = market.tick_size * price;
-
         let quote = In::matching_lots_maker(base_lots, price_in_quote_lots);
-        let matched = quote.min(budget);
 
+        // 1. calculate 2 variables- matched, updated budget
+        let matched = quote.min(budget);
         budget -= matched;
 
+        // 2. Update local delta
         ctx.writables.local_delta.add_take::<In>(
             &counterparty,
             MatchDelta {
@@ -78,12 +66,12 @@ pub fn match_order<MS: MarketSpec, In: LegMatcher>(
             },
         )?;
 
+        // 3. Update resting order
         if budget == In::MatchingLots::DEFAULT {
             let residue = quote - matched;
             if residue > In::MatchingLots::DEFAULT {
                 resting_order_key_value.value.base_lots =
                     In::base_lots_maker(residue, price_in_quote_lots);
-
                 resting_order_key_value.store();
             }
             break;
@@ -92,7 +80,7 @@ pub fn match_order<MS: MarketSpec, In: LegMatcher>(
 
     let total_matched = In::lots_taker(input_budget - budget, base_lot_size);
     require!(
-        total_matched >= min_lots_to_fill,
+        total_matched >= header.min_lots_to_fill,
         GoblinError::InsufficientTakerFill
     );
 
