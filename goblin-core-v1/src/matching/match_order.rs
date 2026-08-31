@@ -4,7 +4,10 @@ use crate::{
     goblin_error::GoblinError,
     instructions::TakeHeader,
     market::MarketReadables,
-    matching::match_iterator::{match_iterator, RestingOrderEntry},
+    matching::{
+        match_iterator::{match_iterator, RestingOrderEntry},
+        MatchDelta,
+    },
     quantities::Ticks,
     require,
     settlement::ConstDefault,
@@ -20,6 +23,9 @@ use crate::{
 /// * Price limit reached
 /// * All resting orders are popped
 ///
+/// TODO split and modularize
+/// Ideally we want a trait API to iterate on resting orders, abstracting away the inner
+/// complexity
 pub fn match_order<MS: MarketSpec, In: LegMatcher>(
     TakeHeader {
         num_lots,
@@ -29,9 +35,6 @@ pub fn match_order<MS: MarketSpec, In: LegMatcher>(
     ctx: &mut Ctx<MS>,
 ) -> Result<(), GoblinError> {
     let MarketReadables { market, market_key } = ctx.readables.market_readables();
-
-    // TODO common struct in Market for sizes
-
     let last_position_mut = In::get_leg_mut(&mut ctx.writables.market_state.last_positions);
 
     require!(
@@ -68,9 +71,11 @@ pub fn match_order<MS: MarketSpec, In: LegMatcher>(
 
         ctx.writables.local_delta.add_take::<In>(
             &counterparty,
-            matched,
-            base_lot_size,
-            price_in_quote_lots,
+            MatchDelta {
+                matching_lots: matched,
+                base_lot_size,
+                price_in_quote_lots,
+            },
         )?;
 
         if budget == In::MatchingLots::DEFAULT {

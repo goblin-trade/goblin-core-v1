@@ -1,10 +1,10 @@
 use crate::{
     axis::{
-        leg::{leg_matcher::LegMatcher, leg_math::LegMath},
+        leg::leg_matcher::LegMatcher,
         party::{Counterparties, Party, Sender},
     },
     goblin_error::GoblinError,
-    quantities::{BaseLotsPerBaseUnit, QuoteLotsPerBaseUnit},
+    matching::MatchDelta,
     settlement::{
         local_delta::{LocalCounterparties, LocalDeltaStore, LocalSender},
         ConstDefault,
@@ -25,16 +25,10 @@ impl<'a> LocalDelta<'a> {
     pub fn add_take<In: LegMatcher>(
         &mut self,
         counterparty: &Address,
-        matching_lots: In::MatchingLots,
-        base_lot_size: BaseLotsPerBaseUnit,
-        price_in_quote_lots: QuoteLotsPerBaseUnit,
+        match_delta: MatchDelta<In>,
     ) -> Result<(), GoblinError> {
-        let lots = In::lots_taker(matching_lots, base_lot_size);
-
-        let base_lots = In::base_lots_maker(matching_lots, price_in_quote_lots);
-        let matching_lots_opposite =
-            In::Opposite::matching_lots_maker(base_lots, price_in_quote_lots);
-        let lots_opposite = In::Opposite::lots_taker(matching_lots_opposite, base_lot_size);
+        let lots = match_delta.lots();
+        let lots_opposite = match_delta.lots_opposite();
 
         let sender = Sender::get_leg_mut(self);
         sender.take.add::<In>(lots, lots_opposite)?;
