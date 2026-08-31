@@ -16,7 +16,6 @@ pub struct RestingOrderEntry<TP: TokenPair> {
     pub resting_order_key_value: KeyValue<RestingOrderPreimage<TP>>,
 }
 
-/// TODO define as trait impl on these 3 values
 pub fn match_iterator<'a, TP: TokenPair, In: LegMatcher + 'a>(
     market_key: SlotKey<MarketPreimage<TP>>,
     limit: Position,

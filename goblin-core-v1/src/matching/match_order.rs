@@ -4,76 +4,34 @@ use crate::{
     goblin_error::GoblinError,
     instructions::TakeHeader,
     market::MarketReadables,
-    matching::{
-        match_iterator::{match_iterator, RestingOrderEntry},
-        MatchDelta,
-    },
-    quantities::Ticks,
+    matching::{match_iterator::match_iterator, FillOutcome},
     require,
-    settlement::ConstDefault,
-    state::resting_order::RestingOrder,
     types::StoreReader,
     Ctx,
 };
 
 /// Match a take order
-///
-/// We match against resting orders until one of these conditions is met
-/// * The budget is consumed
-/// * Price limit reached
-/// * All resting orders are popped
-///
-/// TODO split and modularize
-/// Ideally we want a trait API to iterate on resting orders, abstracting away the inner
-/// complexity
 pub fn match_order<MS: MarketSpec, In: LegMatcher>(
     header: TakeHeader<In>,
     ctx: &mut Ctx<MS>,
 ) -> Result<(), GoblinError> {
     let MarketReadables { market, market_key } = ctx.readables.market_readables();
-    let iterator =
-        match_iterator::<MS::Pair, In>(*market_key, header.limit, &mut ctx.writables.market_state)?;
 
     let base_lot_size = Base::get(&market.lot_size_pair);
     let input_budget = In::matching_lots_taker(header.num_lots, base_lot_size);
     let mut budget = input_budget;
 
-    for RestingOrderEntry {
-        position,
-        mut resting_order_key_value,
-    } in iterator
-    {
-        let RestingOrder {
-            base_lots,
-            maker: counterparty,
-        } = resting_order_key_value.value;
+    let iterator =
+        match_iterator::<MS::Pair, In>(*market_key, header.limit, &mut ctx.writables.market_state)?;
+    for resting_order_entry in iterator {
+        let fill_outcome =
+            FillOutcome::<In>::new(market.tick_size, &resting_order_entry, &mut budget);
 
-        let price = Ticks::from(position);
-        let price_in_quote_lots = market.tick_size * price;
-        let quote = In::matching_lots_maker(base_lots, price_in_quote_lots);
+        ctx.writables
+            .local_delta
+            .add_take_v2(base_lot_size, &fill_outcome)?;
 
-        // 1. calculate 2 variables- matched, updated budget
-        let matched = quote.min(budget);
-        budget -= matched;
-
-        // 2. Update local delta
-        ctx.writables.local_delta.add_take::<In>(
-            &counterparty,
-            MatchDelta {
-                matching_lots: matched,
-                base_lot_size,
-                price_in_quote_lots,
-            },
-        )?;
-
-        // 3. Update resting order
-        if budget == In::MatchingLots::DEFAULT {
-            let residue = quote - matched;
-            if residue > In::MatchingLots::DEFAULT {
-                resting_order_key_value.value.base_lots =
-                    In::base_lots_maker(residue, price_in_quote_lots);
-                resting_order_key_value.store();
-            }
+        if fill_outcome.budget_exhausted {
             break;
         }
     }
