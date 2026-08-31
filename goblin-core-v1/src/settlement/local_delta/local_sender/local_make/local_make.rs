@@ -2,7 +2,7 @@ use goblin_macros::ConstDefault;
 
 use crate::{
     axis::{
-        leg::{leg_matcher::LegMatcher, SamePair},
+        leg::{leg_matcher::LegMatcher, leg_math::LegMath, SamePair},
         update::UpdateMarker,
     },
     goblin_error::GoblinError,
@@ -33,7 +33,9 @@ impl LocalMake {
         UM: UpdateMarker,
         In: LegMatcher,
     {
-        let lots = In::opposite_lots_consumed_on_make(base_lots, base_lot_size, tick_size, price);
+        let matching_lots = In::Opposite::matching_lots_maker(base_lots, tick_size, price);
+        let lots = In::Opposite::lots_taker(matching_lots, base_lot_size);
+
         let delta_lots = lots.try_into_unsided_delta()?;
         let store = In::Opposite::get_leg_mut(&mut self.inner);
 

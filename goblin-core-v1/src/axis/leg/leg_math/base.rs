@@ -9,14 +9,21 @@ impl LegMath for Base {
 
     type MatchingLots = BaseLots;
 
-    fn matching_lots_in(
-        input_lots: Self::Lots,
+    fn matching_lots_taker(
+        lots: Self::Lots,
         _base_lot_size: BaseLotsPerBaseUnit,
     ) -> Self::MatchingLots {
-        input_lots
+        lots
     }
 
-    fn matching_lots_out(
+    fn lots_taker(
+        matching_lots: Self::MatchingLots,
+        _base_lot_size: BaseLotsPerBaseUnit,
+    ) -> Self::Lots {
+        matching_lots
+    }
+
+    fn matching_lots_opposite(
         matching_lots: Self::MatchingLots,
         tick_size: QuoteLotsPerBaseUnitPerTick,
         price: Ticks,
@@ -32,14 +39,7 @@ impl LegMath for Base {
         size
     }
 
-    fn decode_matching_lots(
-        matching_lots: Self::MatchingLots,
-        _base_lot_size: BaseLotsPerBaseUnit,
-    ) -> Self::Lots {
-        matching_lots
-    }
-
-    fn base_lots_from_matching(
+    fn base_lots_maker(
         matching: Self::MatchingLots,
         _tick_size: QuoteLotsPerBaseUnitPerTick,
         _price: Ticks,

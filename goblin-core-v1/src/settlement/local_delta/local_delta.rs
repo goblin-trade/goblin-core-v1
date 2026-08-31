@@ -32,10 +32,9 @@ impl<'a> LocalDelta<'a> {
         tick_size: QuoteLotsPerBaseUnitPerTick,
         price: Ticks,
     ) -> Result<(), GoblinError> {
-        let lots = In::decode_matching_lots(matched, base_lot_size);
-        let matched_opposite = In::matching_lots_out(matched, tick_size, price);
-        let lots_opposite =
-            <In::Opposite as LegMath>::decode_matching_lots(matched_opposite, base_lot_size);
+        let lots = In::lots_taker(matched, base_lot_size);
+        let matched_opposite = In::matching_lots_opposite(matched, tick_size, price);
+        let lots_opposite = <In::Opposite as LegMath>::lots_taker(matched_opposite, base_lot_size);
 
         let sender = Sender::get_leg_mut(self);
         sender.take.add::<In>(lots, lots_opposite)?;

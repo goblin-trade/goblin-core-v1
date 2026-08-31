@@ -42,7 +42,7 @@ pub fn match_order<MS: MarketSpec, In: LegMatcher>(
     let iterator = match_iterator::<MS::Pair, In>(*market_key, *last_position_mut, limit);
 
     let base_lot_size = Base::get(&market.lot_size_pair);
-    let input_budget = In::matching_lots_in(num_lots, base_lot_size);
+    let input_budget = In::matching_lots_taker(num_lots, base_lot_size);
 
     let mut budget = input_budget;
 
@@ -78,7 +78,7 @@ pub fn match_order<MS: MarketSpec, In: LegMatcher>(
             let residue = quote - matched;
             if residue > In::MatchingLots::DEFAULT {
                 resting_order_key_value.value.base_lots =
-                    In::base_lots_from_matching(residue, market.tick_size, price);
+                    In::base_lots_maker(residue, market.tick_size, price);
 
                 resting_order_key_value.store();
             }
@@ -86,7 +86,7 @@ pub fn match_order<MS: MarketSpec, In: LegMatcher>(
         }
     }
 
-    let total_matched = In::decode_matching_lots(input_budget - budget, base_lot_size);
+    let total_matched = In::lots_taker(input_budget - budget, base_lot_size);
     require!(
         total_matched >= min_lots_to_fill,
         GoblinError::InsufficientTakerFill

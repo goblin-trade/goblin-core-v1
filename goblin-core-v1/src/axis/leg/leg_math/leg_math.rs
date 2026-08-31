@@ -22,48 +22,45 @@ pub trait LegMath: LegQuantities {
     // TODO group functions based on if they take MatchingLots as input or output
 
     /// Obtain MatchingLots from taker amount in
-    fn matching_lots_in(
-        input_lots: Self::Lots,
+    fn matching_lots_taker(
+        lots: Self::Lots,
         base_lot_size: BaseLotsPerBaseUnit,
     ) -> Self::MatchingLots;
 
-    fn matching_lots_out(
-        matching_lots: Self::MatchingLots,
-        tick_size: QuoteLotsPerBaseUnitPerTick,
-        price: Ticks,
-    ) -> <Self::Opposite as LegMath>::MatchingLots;
-
     /// Decode MatchingLots into Lots
-    fn decode_matching_lots(
+    fn lots_taker(
         matching_lots: Self::MatchingLots,
         base_lot_size: BaseLotsPerBaseUnit,
     ) -> Self::Lots;
 
-    // ------------
-
     /// Obtain MatchingLots from a resting order
-    /// TODO replace with direct function opposite_matching_lots()
     fn matching_lots_maker(
         size: BaseLots,
         tick_size: QuoteLotsPerBaseUnitPerTick,
         price: Ticks,
     ) -> Self::MatchingLots;
 
-    /// TODO replace with direct function opposite_matching_lots()
-    fn base_lots_from_matching(
+    /// Reciprocal of maker function
+    fn base_lots_maker(
         matching_lots: Self::MatchingLots,
         tick_size: QuoteLotsPerBaseUnitPerTick,
         price: Ticks,
     ) -> BaseLots;
 
-    fn opposite_lots_consumed_on_make(
-        base_lots: BaseLots,
-        base_lot_size: BaseLotsPerBaseUnit,
+    /// Steps to derive opposite values
+    ///
+    /// 1. MatchingLots to opposite lots:
+    ///   - In::base_lots_maker() -> Opposite::matching_lots_maker() -> Opposite::lots_taker()
+    ///
+    /// 2. Base lots to opposite lots
+    ///   - Opposite::matching_lots_maker() -> Opposite::lots_taker()
+    ///
+
+    /// The ones on top are the main relationships. Rest is derived
+
+    fn matching_lots_opposite(
+        matching_lots: Self::MatchingLots,
         tick_size: QuoteLotsPerBaseUnitPerTick,
         price: Ticks,
-    ) -> <Self::Opposite as LegQuantities>::Lots {
-        let matching_lots =
-            <Self::Opposite as LegMath>::matching_lots_maker(base_lots, tick_size, price);
-        <Self::Opposite as LegMath>::decode_matching_lots(matching_lots, base_lot_size)
-    }
+    ) -> <Self::Opposite as LegMath>::MatchingLots;
 }
