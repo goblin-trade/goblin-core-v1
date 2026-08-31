@@ -4,7 +4,7 @@ use crate::{
         party::{Counterparties, Party, Sender},
     },
     goblin_error::GoblinError,
-    quantities::{BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, Ticks},
+    quantities::{BaseLotsPerBaseUnit, QuoteLotsPerBaseUnit},
     settlement::{
         local_delta::{LocalCounterparties, LocalDeltaStore, LocalSender},
         ConstDefault,
@@ -26,16 +26,14 @@ impl<'a> LocalDelta<'a> {
         &mut self,
         counterparty: &Address,
         matching_lots: In::MatchingLots,
-
-        // TODO combine (B, T, P) into common struct
         base_lot_size: BaseLotsPerBaseUnit,
-        tick_size: QuoteLotsPerBaseUnitPerTick,
-        price: Ticks,
+        price_in_quote_lots: QuoteLotsPerBaseUnit,
     ) -> Result<(), GoblinError> {
         let lots = In::lots_taker(matching_lots, base_lot_size);
 
-        let base_lots = In::base_lots_maker(matching_lots, tick_size, price);
-        let matching_lots_opposite = In::Opposite::matching_lots_maker(base_lots, tick_size, price);
+        let base_lots = In::base_lots_maker(matching_lots, price_in_quote_lots);
+        let matching_lots_opposite =
+            In::Opposite::matching_lots_maker(base_lots, price_in_quote_lots);
         let lots_opposite = In::Opposite::lots_taker(matching_lots_opposite, base_lot_size);
 
         let sender = Sender::get_leg_mut(self);

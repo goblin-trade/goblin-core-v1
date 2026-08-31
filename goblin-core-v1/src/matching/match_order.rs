@@ -57,28 +57,27 @@ pub fn match_order<MS: MarketSpec, In: LegMatcher>(
         } = resting_order_key_value.value;
 
         *last_position_mut = position;
+
         let price = Ticks::from(position);
+        let price_in_quote_lots = market.tick_size * price;
 
-        // TODO cleanup- common struct for base lots, tick size, price (B, T, P)
-        // also for matching lots, tick size, price
-        let quote = In::matching_lots_maker(base_lots, market.tick_size, price);
-
+        let quote = In::matching_lots_maker(base_lots, price_in_quote_lots);
         let matched = quote.min(budget);
+
         budget -= matched;
 
         ctx.writables.local_delta.add_take::<In>(
             &counterparty,
             matched,
             base_lot_size,
-            market.tick_size,
-            price,
+            price_in_quote_lots,
         )?;
 
         if budget == In::MatchingLots::DEFAULT {
             let residue = quote - matched;
             if residue > In::MatchingLots::DEFAULT {
                 resting_order_key_value.value.base_lots =
-                    In::base_lots_maker(residue, market.tick_size, price);
+                    In::base_lots_maker(residue, price_in_quote_lots);
 
                 resting_order_key_value.store();
             }

@@ -1,7 +1,7 @@
 ///! LegMarker for input base, also known as ask / sell
 use crate::axis::leg::leg_math::LegMath;
 use crate::axis::leg::{Base, Quote};
-use crate::quantities::{BaseLots, BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, Ticks};
+use crate::quantities::{BaseLots, BaseLotsPerBaseUnit, QuoteLotsPerBaseUnit};
 
 // Input Base = side Ask (sell)
 impl LegMath for Base {
@@ -25,16 +25,14 @@ impl LegMath for Base {
 
     fn matching_lots_maker(
         base_lots: BaseLots,
-        _tick_size: QuoteLotsPerBaseUnitPerTick,
-        _price: Ticks,
+        _price_in_quote_lots: QuoteLotsPerBaseUnit,
     ) -> Self::MatchingLots {
         base_lots
     }
 
     fn base_lots_maker(
         matching_lots: Self::MatchingLots,
-        _tick_size: QuoteLotsPerBaseUnitPerTick,
-        _price: Ticks,
+        _price_in_quote_lots: QuoteLotsPerBaseUnit,
     ) -> BaseLots {
         matching_lots
     }

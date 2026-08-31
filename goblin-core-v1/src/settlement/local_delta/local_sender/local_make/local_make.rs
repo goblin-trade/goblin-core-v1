@@ -7,8 +7,7 @@ use crate::{
     },
     goblin_error::GoblinError,
     quantities::{
-        BaseLots, BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, Ticks, TryIntoUnsidedDelta,
-        UnsidedDeltaLots,
+        BaseLots, BaseLotsPerBaseUnit, QuoteLotsPerBaseUnit, TryIntoUnsidedDelta, UnsidedDeltaLots,
     },
 };
 
@@ -31,14 +30,13 @@ impl LocalMake {
         &mut self,
         base_lots: BaseLots,
         base_lot_size: BaseLotsPerBaseUnit,
-        tick_size: QuoteLotsPerBaseUnitPerTick,
-        price: Ticks,
+        price_in_quote_lots: QuoteLotsPerBaseUnit,
     ) -> Result<(), GoblinError>
     where
         UM: UpdateMarker,
         OP: LegMatcher,
     {
-        let matching_lots = OP::matching_lots_maker(base_lots, tick_size, price);
+        let matching_lots = OP::matching_lots_maker(base_lots, price_in_quote_lots);
         let lots = OP::lots_taker(matching_lots, base_lot_size);
 
         let delta_lots = lots.try_into_unsided_delta()?;

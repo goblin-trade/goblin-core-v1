@@ -28,10 +28,11 @@ pub(crate) fn update_delta<MS: MarketSpec, UM: UpdateMarker, OP: LegMatcher>(
     let market = &ctx.readables.market_readables().market;
 
     let base_lot_size = Base::get(&market.lot_size_pair);
-    let tick_size = market.tick_size;
+
     let price = Ticks::from(position);
+    let price_in_quote_lots = market.tick_size * price;
 
     Sender::get_leg_mut(&mut ctx.writables.local_delta)
         .make
-        .add_make::<UM, OP>(delta_base_lots, base_lot_size, tick_size, price)
+        .add_make::<UM, OP>(delta_base_lots, base_lot_size, price_in_quote_lots)
 }

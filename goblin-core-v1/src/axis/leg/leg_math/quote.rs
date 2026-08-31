@@ -1,9 +1,7 @@
 ///! LegMarker for input quote, also known as bid / buy
 use crate::{
     axis::leg::{leg_math::LegMath, Base, Quote},
-    quantities::{
-        AdjustedQuoteLots, BaseLots, BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, Ticks,
-    },
+    quantities::{AdjustedQuoteLots, BaseLots, BaseLotsPerBaseUnit, QuoteLotsPerBaseUnit},
 };
 
 impl LegMath for Quote {
@@ -27,17 +25,15 @@ impl LegMath for Quote {
 
     fn matching_lots_maker(
         base_lots: BaseLots,
-        tick_size: QuoteLotsPerBaseUnitPerTick,
-        price: Ticks,
+        price_in_quote_lots: QuoteLotsPerBaseUnit,
     ) -> Self::MatchingLots {
-        (tick_size * price) * base_lots
+        price_in_quote_lots * base_lots
     }
 
     fn base_lots_maker(
         matching_lots: Self::MatchingLots,
-        tick_size: QuoteLotsPerBaseUnitPerTick,
-        price: Ticks,
+        price_in_quote_lots: QuoteLotsPerBaseUnit,
     ) -> BaseLots {
-        matching_lots / (tick_size * price)
+        matching_lots / price_in_quote_lots
     }
 }
