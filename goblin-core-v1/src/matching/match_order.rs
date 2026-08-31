@@ -59,7 +59,7 @@ pub fn match_order<MS: MarketSpec, In: LegMatcher>(
         *last_position_mut = position;
         let price = Ticks::from(position);
 
-        // TODO cleanup- common struct for base lots, tick size, price
+        // TODO cleanup- common struct for base lots, tick size, price (B, T, P)
         // also for matching lots, tick size, price
         let quote = In::matching_lots_maker(base_lots, market.tick_size, price);
 

@@ -25,16 +25,18 @@ impl<'a> LocalDelta<'a> {
     pub fn add_take<In: LegMatcher>(
         &mut self,
         counterparty: &Address,
-        matched: In::MatchingLots,
+        matching_lots: In::MatchingLots,
 
         // TODO combine (B, T, P) into common struct
         base_lot_size: BaseLotsPerBaseUnit,
         tick_size: QuoteLotsPerBaseUnitPerTick,
         price: Ticks,
     ) -> Result<(), GoblinError> {
-        let lots = In::lots_taker(matched, base_lot_size);
-        let matched_opposite = In::matching_lots_opposite(matched, tick_size, price);
-        let lots_opposite = <In::Opposite as LegMath>::lots_taker(matched_opposite, base_lot_size);
+        let lots = In::lots_taker(matching_lots, base_lot_size);
+
+        let base_lots = In::base_lots_maker(matching_lots, tick_size, price);
+        let matching_lots_opposite = In::Opposite::matching_lots_maker(base_lots, tick_size, price);
+        let lots_opposite = In::Opposite::lots_taker(matching_lots_opposite, base_lot_size);
 
         let sender = Sender::get_leg_mut(self);
         sender.take.add::<In>(lots, lots_opposite)?;

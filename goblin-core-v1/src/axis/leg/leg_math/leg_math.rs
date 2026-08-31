@@ -19,8 +19,6 @@ pub trait LegMath: LegQuantities {
     /// Use Self::MatchingLots to track amount consumed and Opposite::MatchingLots to get the output
     type MatchingLots: QuantityOps;
 
-    // TODO group functions based on if they take MatchingLots as input or output
-
     /// Obtain MatchingLots from taker amount in
     fn matching_lots_taker(
         lots: Self::Lots,
@@ -46,21 +44,4 @@ pub trait LegMath: LegQuantities {
         tick_size: QuoteLotsPerBaseUnitPerTick,
         price: Ticks,
     ) -> BaseLots;
-
-    /// Steps to derive opposite values
-    ///
-    /// 1. MatchingLots to opposite lots:
-    ///   - In::base_lots_maker() -> Opposite::matching_lots_maker() -> Opposite::lots_taker()
-    ///
-    /// 2. Base lots to opposite lots
-    ///   - Opposite::matching_lots_maker() -> Opposite::lots_taker()
-    ///
-
-    /// The ones on top are the main relationships. Rest is derived
-
-    fn matching_lots_opposite(
-        matching_lots: Self::MatchingLots,
-        tick_size: QuoteLotsPerBaseUnitPerTick,
-        price: Ticks,
-    ) -> <Self::Opposite as LegMath>::MatchingLots;
 }

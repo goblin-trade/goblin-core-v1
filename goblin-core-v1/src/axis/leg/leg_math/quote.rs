@@ -40,12 +40,4 @@ impl LegMath for Quote {
     ) -> BaseLots {
         matching_lots / (tick_size * price)
     }
-
-    fn matching_lots_opposite(
-        matching_lots: Self::MatchingLots,
-        tick_size: QuoteLotsPerBaseUnitPerTick,
-        price: Ticks,
-    ) -> <Self::Opposite as LegMath>::MatchingLots {
-        matching_lots / (tick_size * price)
-    }
 }

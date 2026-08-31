@@ -24,11 +24,11 @@ impl LegMath for Base {
     }
 
     fn matching_lots_maker(
-        size: BaseLots,
+        base_lots: BaseLots,
         _tick_size: QuoteLotsPerBaseUnitPerTick,
         _price: Ticks,
     ) -> Self::MatchingLots {
-        size
+        base_lots
     }
 
     fn base_lots_maker(
@@ -37,13 +37,5 @@ impl LegMath for Base {
         _price: Ticks,
     ) -> BaseLots {
         matching_lots
-    }
-
-    fn matching_lots_opposite(
-        matching_lots: Self::MatchingLots,
-        tick_size: QuoteLotsPerBaseUnitPerTick,
-        price: Ticks,
-    ) -> <Self::Opposite as LegMath>::MatchingLots {
-        (tick_size * price) * matching_lots
     }
 }
