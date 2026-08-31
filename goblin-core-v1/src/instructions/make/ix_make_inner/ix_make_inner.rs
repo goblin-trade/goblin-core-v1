@@ -32,7 +32,10 @@ where
 
     update_matrix::<MS, OM>(resting_order_empty, position, inner_bitmap_state);
     update_last_position::<MS, OM, UM, In>(position, region, ctx);
-    update_delta::<MS, UM, In>(delta_base_lots, position, ctx)?;
+
+    // pass opposite leg to update_delta. By convention `In` is the leg
+    // from perspective of the taker so we need to reverse it for makers.
+    update_delta::<MS, UM, In::Opposite>(delta_base_lots, position, ctx)?;
 
     Ok(())
 }

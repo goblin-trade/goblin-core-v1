@@ -2,7 +2,7 @@ use goblin_macros::ConstDefault;
 
 use crate::{
     axis::{
-        leg::{leg_matcher::LegMatcher, leg_math::LegMath, SamePair},
+        leg::{leg_matcher::LegMatcher, SamePair},
         update::UpdateMarker,
     },
     goblin_error::GoblinError,
@@ -10,7 +10,6 @@ use crate::{
         BaseLots, BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, Ticks, TryIntoUnsidedDelta,
         UnsidedDeltaLots,
     },
-    types::StoreReader,
 };
 
 #[derive(ConstDefault, Clone, Copy)]
@@ -19,10 +18,16 @@ pub struct LocalMake {
 }
 
 impl LocalMake {
-    /// Add make delta
+    /// Add base lots to local make. Depending on `UM` lots are added or subtracted.
     ///
-    /// Delta is generated for the opposite side when making orders
-    pub fn add_make<UM, In>(
+    /// Base lots are converted and stored lots for the respective side.
+    ///
+    /// # Convention
+    ///
+    /// In: LegMarker represents the direction from perspective of taker.
+    /// Therefore when make<In = Base>(), we deposit `Quote`.
+    ///
+    pub fn add_make<UM, OP>(
         &mut self,
         base_lots: BaseLots,
         base_lot_size: BaseLotsPerBaseUnit,
@@ -31,13 +36,13 @@ impl LocalMake {
     ) -> Result<(), GoblinError>
     where
         UM: UpdateMarker,
-        In: LegMatcher,
+        OP: LegMatcher,
     {
-        let matching_lots = In::Opposite::matching_lots_maker(base_lots, tick_size, price);
-        let lots = In::Opposite::lots_taker(matching_lots, base_lot_size);
+        let matching_lots = OP::matching_lots_maker(base_lots, tick_size, price);
+        let lots = OP::lots_taker(matching_lots, base_lot_size);
 
         let delta_lots = lots.try_into_unsided_delta()?;
-        let store = In::Opposite::get_leg_mut(&mut self.inner);
+        let store = OP::get_leg_mut(&mut self.inner);
 
         *store = UM::checked_update(*store, delta_lots).ok_or(GoblinError::DeltaOverflow)?;
 

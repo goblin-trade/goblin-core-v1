@@ -11,7 +11,16 @@ use crate::{
     Ctx,
 };
 
-pub(crate) fn update_delta<MS: MarketSpec, UM: UpdateMarker, In: LegMatcher>(
+/// Add base lots to local make. Depending on `UM` lots are added or subtracted.
+///
+/// Base lots are converted and stored lots for the respective side.
+///
+/// # Convention
+///
+/// In: LegMarker represents the direction from perspective of taker.
+/// Therefore when make<In = Base>(), we deposit `Quote`.
+///
+pub(crate) fn update_delta<MS: MarketSpec, UM: UpdateMarker, OP: LegMatcher>(
     delta_base_lots: BaseLots,
     position: Position,
     ctx: &mut Ctx<MS>,
@@ -24,5 +33,5 @@ pub(crate) fn update_delta<MS: MarketSpec, UM: UpdateMarker, In: LegMatcher>(
 
     Sender::get_leg_mut(&mut ctx.writables.local_delta)
         .make
-        .add_make::<UM, In>(delta_base_lots, base_lot_size, tick_size, price)
+        .add_make::<UM, OP>(delta_base_lots, base_lot_size, tick_size, price)
 }
