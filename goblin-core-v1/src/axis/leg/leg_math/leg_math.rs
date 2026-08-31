@@ -35,7 +35,7 @@ pub trait LegMath: LegQuantities {
 
     /// Obtain MatchingLots from a resting order
     fn matching_lots_maker(
-        size: BaseLots,
+        base_lots: BaseLots,
         tick_size: QuoteLotsPerBaseUnitPerTick,
         price: Ticks,
     ) -> Self::MatchingLots;

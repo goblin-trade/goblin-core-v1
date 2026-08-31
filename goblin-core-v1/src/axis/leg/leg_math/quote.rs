@@ -12,10 +12,10 @@ impl LegMath for Quote {
     type MatchingLots = AdjustedQuoteLots;
 
     fn matching_lots_taker(
-        input_lots: Self::Lots,
+        lots: Self::Lots,
         base_lot_size: BaseLotsPerBaseUnit,
     ) -> Self::MatchingLots {
-        input_lots * base_lot_size
+        lots * base_lot_size
     }
 
     fn lots_taker(
@@ -25,20 +25,12 @@ impl LegMath for Quote {
         matching_lots / base_lot_size
     }
 
-    fn matching_lots_opposite(
-        matching_lots: Self::MatchingLots,
-        tick_size: QuoteLotsPerBaseUnitPerTick,
-        price: Ticks,
-    ) -> <Self::Opposite as LegMath>::MatchingLots {
-        matching_lots / (tick_size * price)
-    }
-
     fn matching_lots_maker(
-        size: BaseLots,
+        base_lots: BaseLots,
         tick_size: QuoteLotsPerBaseUnitPerTick,
         price: Ticks,
     ) -> Self::MatchingLots {
-        (tick_size * price) * size
+        (tick_size * price) * base_lots
     }
 
     fn base_lots_maker(
@@ -46,6 +38,14 @@ impl LegMath for Quote {
         tick_size: QuoteLotsPerBaseUnitPerTick,
         price: Ticks,
     ) -> BaseLots {
+        matching_lots / (tick_size * price)
+    }
+
+    fn matching_lots_opposite(
+        matching_lots: Self::MatchingLots,
+        tick_size: QuoteLotsPerBaseUnitPerTick,
+        price: Ticks,
+    ) -> <Self::Opposite as LegMath>::MatchingLots {
         matching_lots / (tick_size * price)
     }
 }
