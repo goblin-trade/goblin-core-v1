@@ -18,7 +18,10 @@ where
     }
 
     fn validate(&self) -> Result<(), GoblinError> {
-        require!(*self <= Self::MAX, GoblinError::InvalidPayload);
+        require!(
+            self.inner < TP::HARDCODED_MARKET_LIST.len(),
+            GoblinError::InvalidPayload
+        );
         Ok(())
     }
 }

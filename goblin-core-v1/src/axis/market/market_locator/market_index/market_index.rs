@@ -18,8 +18,6 @@ impl<TP> MarketIndex<TP>
 where
     TP: TokenPair + HardcodedMarketList,
 {
-    pub const MAX: Self = Self::new(TP::HARDCODED_MARKET_LIST.len() - 1);
-
     pub const fn new(inner: usize) -> Self {
         Self {
             inner,
