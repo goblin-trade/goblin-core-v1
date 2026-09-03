@@ -1,78 +1,20 @@
 {
-  description = "Goblin flake for Arbitrum Stylus development";
+  description = "Goblin flake";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-
-    rust-overlay = {
-      url = "github:oxalica/rust-overlay";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { self, nixpkgs, rust-overlay, flake-utils, ... }:
+  outputs = { self, nixpkgs, flake-utils, ... }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs {
           inherit system;
-          overlays = [ rust-overlay.overlays.default ];
         };
-
-        # Read channel/version/components/targets directly from
-        # ./rust-toolchain.toml so the flake and Cargo use the same
-        # Rust toolchain.
-        rustToolchain =
-          pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
-
-        rustPlatform = pkgs.makeRustPlatform {
-          cargo = rustToolchain;
-          rustc = rustToolchain;
-        };
-
-        # Build cargo-stylus using the same Rust toolchain defined
-        # in rust-toolchain.toml.
-        makeCargoStylus = pkgs: rustPlatform.buildRustPackage rec {
-          pname = "cargo-stylus";
-          version = "0.5.3";
-
-          src = pkgs.fetchFromGitHub {
-            owner = "OffchainLabs";
-            repo = "cargo-stylus";
-            rev = "v${version}";
-            hash = "sha256-2KkiwX2CYt155YxY9CQ3uGwZRIl5lsnyIoYcPGaTneI=";
-          };
-
-          cargoHash =
-            "sha256-fmsMAarWdedbY856NWdwElQQLaJCUFJ5Eb9o1vgArcE=";
-
-          nativeBuildInputs = [
-            pkgs.pkg-config
-          ];
-
-          buildInputs = [
-            pkgs.openssl
-          ] ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [
-            pkgs.darwin.apple_sdk.frameworks.Security
-            pkgs.darwin.apple_sdk.frameworks.SystemConfiguration
-          ];
-
-          meta = {
-            description = "Stylus development CLI for Arbitrum";
-            homepage = "https://github.com/OffchainLabs/cargo-stylus";
-            license = pkgs.lib.licenses.mit;
-          };
-        };
-
-        # Instantiate the cargo-stylus package.
-        cargoStylus = makeCargoStylus pkgs;
-
       in {
         devShells.default = pkgs.mkShell {
           buildInputs = [
-            rustToolchain
-            cargoStylus
             pkgs.sqlx-cli
           ];
 
