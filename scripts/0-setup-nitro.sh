@@ -1,3 +1,4 @@
+# TODO remove, this is deployed by default
 #!/usr/bin/env bash
 # Set $ADDRESS as admin with initial balance
 # Problem- this changes the nonces
