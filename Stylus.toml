@@ -5,3 +5,6 @@ endpoint = "https://sepolia-rollup.arbitrum.io/rpc"
 
 [workspace.networks.arbitrum-one]
 endpoint = "https://arb1.arbitrum.io/rpc"
+
+[workspace.networks.localnet]
+endpoint = "http://127.0.0.1:8547"

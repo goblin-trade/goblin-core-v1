@@ -1,3 +1,14 @@
+# Deployment 2026
+
+
+```sh
+# Deploy locally built file without verification
+cargo stylus deploy --wasm-file ./target/wasm32-unknown-unknown/release/goblin_core_v1.wasm --private-key $PRIVATE_KEY --no-verify
+
+# Cache
+cargo stylus cache bid 525c2aba45f66987217323e8a05ea400c65d06dc 0 --private-key $PRIVATE_KEY
+```
+
 # Rounding numbers
 
 ## Rounding up division
