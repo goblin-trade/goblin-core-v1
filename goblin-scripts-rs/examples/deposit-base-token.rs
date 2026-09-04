@@ -1,5 +1,4 @@
 use alloy::{
-    network::EthereumWallet,
     primitives::{Address, Bytes, U256},
     providers::{Provider, ProviderBuilder},
     rpc::types::TransactionRequest,
@@ -36,19 +35,17 @@ async fn main() -> Result<()> {
         .parse()?;
 
     let deposit_lots: i64 = env::var("DEPOSIT_LOTS")
-        .unwrap_or_else(|_| "10000".to_string())
+        .unwrap_or_else(|_| "10".to_string())
         .parse()?;
 
-    let wallet = EthereumWallet::from(signer);
-    let provider = ProviderBuilder::new()
-        .with_recommended_fillers()
-        .wallet(wallet)
-        .on_http(rpc_url);
+    let provider = ProviderBuilder::new().wallet(signer).connect_http(rpc_url);
 
     // 1. Serialize calldata using goblin-sdk-rs
     let mut builder = GoblinCalldataBuilder::new();
     let base_token_idx = builder.add_custom_token(base_token_addr.0 .0)?;
 
+    // TODO passing 0 token index for ETH looks wrong.
+    // Can we use generics in SDK?
     let mut market = MarketCallBuilder::new();
     market
         .dynamic(

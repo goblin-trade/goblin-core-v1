@@ -1,5 +1,4 @@
 use alloy::{
-    network::EthereumWallet,
     primitives::{utils::parse_units, Address, Bytes, U256},
     providers::{Provider, ProviderBuilder},
     rpc::types::TransactionRequest,
@@ -24,11 +23,7 @@ async fn main() -> Result<()> {
     let eth_amount_str = env::var("ETH_AMOUNT").unwrap_or_else(|_| "0.1".to_string());
     let eth_value: U256 = parse_units(&eth_amount_str, "ether")?.into();
 
-    let wallet = EthereumWallet::from(signer);
-    let provider = ProviderBuilder::new()
-        .with_recommended_fillers()
-        .wallet(wallet)
-        .on_http(rpc_url);
+    let provider = ProviderBuilder::new().wallet(signer).connect_http(rpc_url);
 
     // Build calldata: enable read_msg_value
     let mut builder = GoblinCalldataBuilder::new();
