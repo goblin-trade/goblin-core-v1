@@ -9,6 +9,38 @@ const FACTORY_ADDRESS: Address = address!("525c2aBA45F66987217323E8a05EA400C65D0
 const PROXY_BYTECODE: [u8; 16] = hex!("67363d3d37363d34f03d5260086018f3");
 const DESIRED_PREFIX: [u8; 2] = hex!("8888"); // Define desired prefix as bytes
 
+fn main() {
+    let proxy_bytecode_hash = keccak256(PROXY_BYTECODE);
+
+    println!("Starting search for CREATE3 salt...");
+
+    match find_salt(
+        FACTORY_ADDRESS,
+        DEPLOYER,
+        proxy_bytecode_hash.into(),
+        &DESIRED_PREFIX,
+    ) {
+        Some(salt) => println!("Found matching salt: {:?}", salt),
+        None => println!("No matching salt found."),
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_address_for_salt() {
+        let salt = B256::new(hex!(
+            "0000000000000000000000000000000000000000000000000000000000000001"
+        ));
+        let proxy_bytecode_hash = keccak256(PROXY_BYTECODE);
+
+        let address = get_create3_address(FACTORY_ADDRESS, DEPLOYER, salt, proxy_bytecode_hash);
+        println!("address {:?}", address);
+    }
+}
+
 /// Namespace the salt by hashing the deployer address with the provided salt.
 fn namespace_salt(deployer: Address, salt: B256) -> B256 {
     keccak256([deployer.as_slice(), salt.as_slice()].concat()).into()
@@ -70,36 +102,4 @@ fn find_salt(
             None
         }
     })
-}
-
-fn main() {
-    let proxy_bytecode_hash = keccak256(PROXY_BYTECODE);
-
-    println!("Starting search for CREATE3 salt...");
-
-    match find_salt(
-        FACTORY_ADDRESS,
-        DEPLOYER,
-        proxy_bytecode_hash.into(),
-        &DESIRED_PREFIX,
-    ) {
-        Some(salt) => println!("Found matching salt: {:?}", salt),
-        None => println!("No matching salt found."),
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn test_address_for_salt() {
-        let salt = B256::new(hex!(
-            "0000000000000000000000000000000000000000000000000000000000000001"
-        ));
-        let proxy_bytecode_hash = keccak256(PROXY_BYTECODE);
-
-        let address = get_create3_address(FACTORY_ADDRESS, DEPLOYER, salt, proxy_bytecode_hash);
-        println!("address {:?}", address);
-    }
 }
