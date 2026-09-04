@@ -6,7 +6,9 @@ use goblin_macros::{ConstDefault, FixedDecode};
 //
 // Quantity type: value + Dim
 //
-#[derive(Default, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, FixedDecode, ConstDefault)]
+#[derive(
+    Default, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Debug, FixedDecode, ConstDefault,
+)]
 pub struct Quantity<E, I>
 where
     E: Exp,

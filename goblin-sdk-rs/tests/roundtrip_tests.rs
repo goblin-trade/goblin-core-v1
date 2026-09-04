@@ -1,15 +1,19 @@
-use goblin_core_v1::input_processor::{
-    ArgsReader, CompoundDecode, FixedDecode, HeaderFlags, VariableDecode,
+use goblin_core_v1::{
+    axis::leg::LegEnum,
+    input_processor::{ArgsReader, CompoundDecode, FixedDecode, HeaderFlags, VariableDecode},
+    quantities::{
+        BaseLots, BaseLotsPerBaseUnit, InnerPos, OuterBitmapIndex, OuterPos, Position, QuoteLots,
+        QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit, UnsidedAtoms, UnsidedDeltaLots,
+    },
 };
 use goblin_sdk_rs::{
     column_from_position, parts_from_position, position_from_parts, position_from_ticks,
-    ticks_from_position, GoblinCalldataBuilder, LegSide, MarketCallBuilder, MarketSpecIndex,
-    TokenKind,
+    ticks_from_position, GoblinCalldataBuilder, MarketCallBuilder, MarketSpecIndex, TokenKind,
 };
 
 #[test]
 fn test_position_math_roundtrip() {
-    let position: u64 = 0x1234_5678_9abc_def0;
+    let position = Position::new(0x1234_5678_9abc_def0);
     let (outer_bitmap_idx, outer_pos, inner_pos) = parts_from_position(position);
     let reconstructed = position_from_parts(outer_bitmap_idx, outer_pos, inner_pos);
     assert_eq!(position, reconstructed);
@@ -30,7 +34,7 @@ fn test_global_header_decoding() {
     builder
         .set_recipient(recipient)
         .set_msg_value(true)
-        .set_eth_withdrawal(500_000, true);
+        .set_eth_withdrawal(UnsidedAtoms::new(500_000), true);
 
     let token_idx_1 = builder.add_custom_token(custom_token_1).unwrap();
     let token_idx_2 = builder.add_custom_token(custom_token_2).unwrap();
@@ -67,12 +71,27 @@ fn test_hardcoded_market_with_takes_and_makes() {
     market_builder
         .hardcoded(MarketSpecIndex::HardcodedEthHardcodedERC20, 0)
         .unwrap()
-        .deposit(0, 1000) // quote deposit (HardcodedERC20 is quote)
-        .take_base(50, Some(40), Some(1_000_000))
-        .take_quote(100, None, None)
-        .make_open(position_from_parts(1, 2, 3), LegSide::Base, 20)
-        .make_open(position_from_parts(1, 2, 4), LegSide::Quote, 30)
-        .make_increase(position_from_parts(1, 5, 6), 15);
+        .deposit(UnsidedDeltaLots::new(0), UnsidedDeltaLots::new(1000))
+        .take_base(
+            BaseLots::new(50),
+            Some(BaseLots::new(40)),
+            Some(Position::new(1_000_000)),
+        )
+        .take_quote(QuoteLots::new(100), None, None)
+        .make_open(
+            position_from_parts(OuterBitmapIndex::new(1), OuterPos::new(2), InnerPos::new(3)),
+            LegEnum::Base,
+            BaseLots::new(20),
+        )
+        .make_open(
+            position_from_parts(OuterBitmapIndex::new(1), OuterPos::new(2), InnerPos::new(4)),
+            LegEnum::Quote,
+            BaseLots::new(30),
+        )
+        .make_increase(
+            position_from_parts(OuterBitmapIndex::new(1), OuterPos::new(5), InnerPos::new(6)),
+            BaseLots::new(15),
+        );
 
     let market_call = market_builder.build().unwrap();
     builder.add_market(market_call);
@@ -194,13 +213,13 @@ fn test_dynamic_market_batching() {
             idx_a,
             TokenKind::CustomERC20,
             idx_b,
-            100,  // base lot size
-            1000, // quote lot size
-            1,    // tick size
+            BaseLotsPerBaseUnit::new(100),
+            QuoteLotsPerQuoteUnit::new(1000),
+            QuoteLotsPerBaseUnitPerTick::new(1),
         )
         .unwrap()
-        .deposit(500, 600)
-        .take_base(25, None, None);
+        .deposit(UnsidedDeltaLots::new(500), UnsidedDeltaLots::new(600))
+        .take_base(BaseLots::new(25), None, None);
 
     builder.add_market(market.build().unwrap());
 

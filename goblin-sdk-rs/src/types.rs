@@ -1,3 +1,11 @@
+use goblin_core_v1::{
+    axis::leg::LegEnum,
+    quantities::{
+        BaseLots, BaseLotsPerBaseUnit, Position, QuoteLots, QuoteLotsPerBaseUnitPerTick,
+        QuoteLotsPerQuoteUnit, UnsidedDeltaLots, ATOMS_PER_UNIT,
+    },
+};
+
 use crate::error::GoblinSdkError;
 
 /// Token variants supported by goblin-core-v1
@@ -136,7 +144,7 @@ impl MarketSpecIndex {
         }
     }
 
-    /// Try to determine the MarketSpecIndex from market kind and base/quote token kinds.
+    /// Determine MarketSpecIndex from market kind and base/quote token kinds.
     pub const fn from_tokens(
         market_kind: MarketKind,
         base: TokenKind,
@@ -181,29 +189,21 @@ impl MarketSpecIndex {
     }
 }
 
-/// Leg side of a trade (Base or Quote)
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-#[repr(u8)]
-pub enum LegSide {
-    Base = 0,
-    Quote = 1,
-}
-
 /// Make order operation types: Open, Increase, Decrease, Close
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MakeAction {
     /// Open a new resting order on a vacant position
-    Open { side: LegSide, base_lots: u64 },
+    Open { side: LegEnum, base_lots: BaseLots },
     /// Increase base lots on an existing occupied resting order
-    Increase { base_lots: u64 },
+    Increase { base_lots: BaseLots },
     /// Decrease base lots on an existing occupied resting order
-    Decrease { base_lots: u64 },
+    Decrease { base_lots: BaseLots },
     /// Close an existing resting order by reducing base lots
-    Close { base_lots: u64 },
+    Close { base_lots: BaseLots },
 }
 
 impl MakeAction {
-    pub const fn base_lots(&self) -> u64 {
+    pub const fn base_lots(&self) -> BaseLots {
         match *self {
             Self::Open { base_lots, .. }
             | Self::Increase { base_lots }
@@ -216,7 +216,7 @@ impl MakeAction {
     pub const fn encode_bits(&self) -> (bool, bool) {
         match *self {
             // Vacant (occupancy = false): inner_enum_raw is LegEnum (Base = false, Quote = true)
-            Self::Open { side, .. } => (false, matches!(side, LegSide::Quote)),
+            Self::Open { side, .. } => (false, matches!(side, LegEnum::Quote)),
             // Occupied (occupancy = true): inner_enum_raw is UpdateEnum (Increase = false, Decrease = true)
             Self::Increase { .. } => (true, false),
             Self::Decrease { .. } | Self::Close { .. } => (true, true),
@@ -224,40 +224,40 @@ impl MakeAction {
     }
 }
 
-/// A make order positioned at a 64-bit position / tick
+/// A make order positioned at a strongly-typed `Position`
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PositionedMakeOrder {
-    pub position: u64,
+    pub position: Position,
     pub action: MakeAction,
 }
 
 impl PositionedMakeOrder {
-    pub const fn new(position: u64, action: MakeAction) -> Self {
+    pub const fn new(position: Position, action: MakeAction) -> Self {
         Self { position, action }
     }
 
-    pub const fn open(position: u64, side: LegSide, base_lots: u64) -> Self {
+    pub const fn open(position: Position, side: LegEnum, base_lots: BaseLots) -> Self {
         Self {
             position,
             action: MakeAction::Open { side, base_lots },
         }
     }
 
-    pub const fn increase(position: u64, base_lots: u64) -> Self {
+    pub const fn increase(position: Position, base_lots: BaseLots) -> Self {
         Self {
             position,
             action: MakeAction::Increase { base_lots },
         }
     }
 
-    pub const fn decrease(position: u64, base_lots: u64) -> Self {
+    pub const fn decrease(position: Position, base_lots: BaseLots) -> Self {
         Self {
             position,
             action: MakeAction::Decrease { base_lots },
         }
     }
 
-    pub const fn close(position: u64, base_lots: u64) -> Self {
+    pub const fn close(position: Position, base_lots: BaseLots) -> Self {
         Self {
             position,
             action: MakeAction::Close { base_lots },
@@ -265,19 +265,19 @@ impl PositionedMakeOrder {
     }
 }
 
-/// Take order (Immediate-or-Cancel / Market Order)
+/// Take order (Immediate-or-Cancel / Market Order) parameterised by its side lot type
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub struct TakeOrder {
+pub struct TakeOrder<L: Copy + Default> {
     /// Number of lots to fill (must be > 0)
-    pub num_lots: u64,
+    pub num_lots: L,
     /// Minimum lots to fill (for Fill-or-Kill or slippage control)
-    pub min_lots_to_fill: Option<u64>,
+    pub min_lots_to_fill: Option<L>,
     /// Worst position limit to match against
-    pub limit: Option<u64>,
+    pub limit: Option<Position>,
 }
 
-impl TakeOrder {
-    pub const fn new(num_lots: u64) -> Self {
+impl<L: Copy + Default> TakeOrder<L> {
+    pub const fn new(num_lots: L) -> Self {
         Self {
             num_lots,
             min_lots_to_fill: None,
@@ -285,26 +285,29 @@ impl TakeOrder {
         }
     }
 
-    pub const fn with_min_lots(mut self, min_lots: u64) -> Self {
+    pub const fn with_min_lots(mut self, min_lots: L) -> Self {
         self.min_lots_to_fill = Some(min_lots);
         self
     }
 
-    pub const fn with_limit(mut self, limit: u64) -> Self {
+    pub const fn with_limit(mut self, limit: Position) -> Self {
         self.limit = Some(limit);
         self
     }
 }
 
+pub type BaseTakeOrder = TakeOrder<BaseLots>;
+pub type QuoteTakeOrder = TakeOrder<QuoteLots>;
+
 /// Deposit amounts for a market (in local market namespace)
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct MarketDeposits {
-    pub base_deposit: i64,
-    pub quote_deposit: i64,
+    pub base_deposit: UnsidedDeltaLots,
+    pub quote_deposit: UnsidedDeltaLots,
 }
 
 impl MarketDeposits {
-    pub const fn new(base_deposit: i64, quote_deposit: i64) -> Self {
+    pub const fn new(base_deposit: UnsidedDeltaLots, quote_deposit: UnsidedDeltaLots) -> Self {
         Self {
             base_deposit,
             quote_deposit,
@@ -312,7 +315,7 @@ impl MarketDeposits {
     }
 
     pub const fn is_zero(&self) -> bool {
-        self.base_deposit == 0 && self.quote_deposit == 0
+        self.base_deposit.inner == 0 && self.quote_deposit.inner == 0
     }
 }
 
@@ -325,9 +328,9 @@ pub enum MarketLocator {
     Dynamic {
         base_token_index: u8,
         quote_token_index: u8,
-        base_lot_size: u64,
-        quote_lot_size: u64,
-        tick_size: u64,
+        base_lot_size: BaseLotsPerBaseUnit,
+        quote_lot_size: QuoteLotsPerQuoteUnit,
+        tick_size: QuoteLotsPerBaseUnitPerTick,
     },
 }
 
@@ -337,8 +340,8 @@ pub struct MarketCall {
     pub spec: MarketSpecIndex,
     pub locator: MarketLocator,
     pub deposits: Option<MarketDeposits>,
-    pub base_take: Option<TakeOrder>,
-    pub quote_take: Option<TakeOrder>,
+    pub base_take: Option<BaseTakeOrder>,
+    pub quote_take: Option<QuoteTakeOrder>,
     pub makes: Vec<PositionedMakeOrder>,
 }
 
@@ -367,9 +370,9 @@ impl MarketCall {
         base_token_index: u8,
         quote_kind: TokenKind,
         quote_token_index: u8,
-        base_lot_size: u64,
-        quote_lot_size: u64,
-        tick_size: u64,
+        base_lot_size: BaseLotsPerBaseUnit,
+        quote_lot_size: QuoteLotsPerQuoteUnit,
+        tick_size: QuoteLotsPerBaseUnitPerTick,
     ) -> Result<Self, GoblinSdkError> {
         let spec = MarketSpecIndex::from_tokens(MarketKind::Dynamic, base_kind, quote_kind).ok_or(
             GoblinSdkError::InvalidTokenPair {
@@ -379,13 +382,12 @@ impl MarketCall {
             },
         )?;
 
-        // Validate lot sizes (must divide 1_000_000 ATOMS_PER_UNIT)
-        const ATOMS_PER_UNIT: u64 = 1_000_000;
-        if base_lot_size == 0 || ATOMS_PER_UNIT % base_lot_size != 0 {
-            return Err(GoblinSdkError::InvalidLotSize(base_lot_size));
+        // Validate lot sizes (must divide ATOMS_PER_UNIT)
+        if base_lot_size.inner == 0 || ATOMS_PER_UNIT.inner % base_lot_size.inner != 0 {
+            return Err(GoblinSdkError::InvalidLotSize(base_lot_size.inner));
         }
-        if quote_lot_size == 0 || ATOMS_PER_UNIT % quote_lot_size != 0 {
-            return Err(GoblinSdkError::InvalidLotSize(quote_lot_size));
+        if quote_lot_size.inner == 0 || ATOMS_PER_UNIT.inner % quote_lot_size.inner != 0 {
+            return Err(GoblinSdkError::InvalidLotSize(quote_lot_size.inner));
         }
 
         Ok(Self {

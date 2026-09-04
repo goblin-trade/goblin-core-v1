@@ -3,7 +3,7 @@ use crate::quantities::{add_exp::AddExp, sub_exp::SubExp, Exp};
 
 use core::marker::PhantomData;
 
-#[derive(Default, Clone, Copy, PartialEq, PartialOrd, Eq, Ord)]
+#[derive(Default, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Debug)]
 pub struct Dim<Base: Exp, Quote: Exp, T: Exp>(PhantomData<(Base, Quote, T)>);
 
 impl<Base: Exp, Quote: Exp, T: Exp> Exp for Dim<Base, Quote, T> {}

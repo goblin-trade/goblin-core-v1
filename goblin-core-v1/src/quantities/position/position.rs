@@ -4,7 +4,7 @@ use crate::quantities::bits_layout::BitsLayout;
 use core::ops::{Add, Sub};
 use core::u64;
 
-#[derive(PartialEq, PartialOrd, Clone, Copy, FixedDecode)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug, FixedDecode)]
 pub struct Position {
     pub inner: u64,
 }

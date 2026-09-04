@@ -1,7 +1,14 @@
-use goblin_core_v1::input_processor::{ArgsReader, FixedDecode, HeaderFlags, VariableDecode};
+use goblin_core_v1::{
+    axis::leg::LegEnum,
+    input_processor::{ArgsReader, FixedDecode, HeaderFlags, VariableDecode},
+    quantities::{
+        BaseLots, BaseLotsPerBaseUnit, InnerPos, OuterBitmapIndex, OuterPos,
+        QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit,
+    },
+};
 use goblin_sdk_rs::{
-    position_from_parts, GoblinCalldataBuilder, GoblinSdkError, LegSide, MarketCallBuilder,
-    MarketSpecIndex, TokenKind,
+    position_from_parts, GoblinCalldataBuilder, GoblinSdkError, MarketCallBuilder, MarketSpecIndex,
+    TokenKind,
 };
 
 #[test]
@@ -13,6 +20,10 @@ fn test_all_11_market_specs_in_single_call() {
     let token_c1 = [0x20; 20];
     let c0 = builder.add_custom_token(token_c0).unwrap();
     let c1 = builder.add_custom_token(token_c1).unwrap();
+
+    let base_lot_size = BaseLotsPerBaseUnit::new(100);
+    let quote_lot_size = QuoteLotsPerQuoteUnit::new(1000);
+    let tick_size = QuoteLotsPerBaseUnitPerTick::new(1);
 
     // Add one market for each of the 11 specs
     // Spec 0: Hardcoded (ETH, HardcodedERC20)
@@ -40,17 +51,25 @@ fn test_all_11_market_specs_in_single_call() {
         0,
         TokenKind::HardcodedERC20,
         0,
-        100,
-        1000,
-        1,
+        base_lot_size,
+        quote_lot_size,
+        tick_size,
     )
     .unwrap();
     builder.add_market(m3.build().unwrap());
 
     // Spec 4: Dynamic (ETH, CustomERC20)
     let mut m4 = MarketCallBuilder::new();
-    m4.dynamic(TokenKind::ETH, 0, TokenKind::CustomERC20, c0, 100, 1000, 1)
-        .unwrap();
+    m4.dynamic(
+        TokenKind::ETH,
+        0,
+        TokenKind::CustomERC20,
+        c0,
+        base_lot_size,
+        quote_lot_size,
+        tick_size,
+    )
+    .unwrap();
     builder.add_market(m4.build().unwrap());
 
     // Spec 5: Dynamic (HardcodedERC20, ETH)
@@ -60,9 +79,9 @@ fn test_all_11_market_specs_in_single_call() {
         1,
         TokenKind::ETH,
         0,
-        100,
-        1000,
-        1,
+        base_lot_size,
+        quote_lot_size,
+        tick_size,
     )
     .unwrap();
     builder.add_market(m5.build().unwrap());
@@ -74,9 +93,9 @@ fn test_all_11_market_specs_in_single_call() {
         0,
         TokenKind::HardcodedERC20,
         1,
-        100,
-        1000,
-        1,
+        base_lot_size,
+        quote_lot_size,
+        tick_size,
     )
     .unwrap();
     builder.add_market(m6.build().unwrap());
@@ -88,17 +107,25 @@ fn test_all_11_market_specs_in_single_call() {
         0,
         TokenKind::CustomERC20,
         c1,
-        100,
-        1000,
-        1,
+        base_lot_size,
+        quote_lot_size,
+        tick_size,
     )
     .unwrap();
     builder.add_market(m7.build().unwrap());
 
     // Spec 8: Dynamic (CustomERC20, ETH)
     let mut m8 = MarketCallBuilder::new();
-    m8.dynamic(TokenKind::CustomERC20, c0, TokenKind::ETH, 0, 100, 1000, 1)
-        .unwrap();
+    m8.dynamic(
+        TokenKind::CustomERC20,
+        c0,
+        TokenKind::ETH,
+        0,
+        base_lot_size,
+        quote_lot_size,
+        tick_size,
+    )
+    .unwrap();
     builder.add_market(m8.build().unwrap());
 
     // Spec 9: Dynamic (CustomERC20, HardcodedERC20)
@@ -108,9 +135,9 @@ fn test_all_11_market_specs_in_single_call() {
         c1,
         TokenKind::HardcodedERC20,
         0,
-        100,
-        1000,
-        1,
+        base_lot_size,
+        quote_lot_size,
+        tick_size,
     )
     .unwrap();
     builder.add_market(m9.build().unwrap());
@@ -122,9 +149,9 @@ fn test_all_11_market_specs_in_single_call() {
         c0,
         TokenKind::CustomERC20,
         c1,
-        100,
-        1000,
-        1,
+        base_lot_size,
+        quote_lot_size,
+        tick_size,
     )
     .unwrap();
     builder.add_market(m10.build().unwrap());
@@ -156,11 +183,28 @@ fn test_all_make_actions_encoding() {
     market
         .hardcoded(MarketSpecIndex::HardcodedEthHardcodedERC20, 0)
         .unwrap()
-        .make_open(position_from_parts(0, 0, 1), LegSide::Base, 10)
-        .make_open(position_from_parts(0, 0, 2), LegSide::Quote, 20)
-        .make_increase(position_from_parts(0, 0, 3), 30)
-        .make_decrease(position_from_parts(0, 0, 4), 15)
-        .make_close(position_from_parts(0, 0, 5), 40);
+        .make_open(
+            position_from_parts(OuterBitmapIndex::new(0), OuterPos::new(0), InnerPos::new(1)),
+            LegEnum::Base,
+            BaseLots::new(10),
+        )
+        .make_open(
+            position_from_parts(OuterBitmapIndex::new(0), OuterPos::new(0), InnerPos::new(2)),
+            LegEnum::Quote,
+            BaseLots::new(20),
+        )
+        .make_increase(
+            position_from_parts(OuterBitmapIndex::new(0), OuterPos::new(0), InnerPos::new(3)),
+            BaseLots::new(30),
+        )
+        .make_decrease(
+            position_from_parts(OuterBitmapIndex::new(0), OuterPos::new(0), InnerPos::new(4)),
+            BaseLots::new(15),
+        )
+        .make_close(
+            position_from_parts(OuterBitmapIndex::new(0), OuterPos::new(0), InnerPos::new(5)),
+            BaseLots::new(40),
+        );
 
     builder.add_market(market.build().unwrap());
     let calldata = builder.build().unwrap();
@@ -260,10 +304,26 @@ fn test_errors_and_limits() {
     market
         .hardcoded(MarketSpecIndex::HardcodedEthHardcodedERC20, 0)
         .unwrap();
-    market.make_open(position_from_parts(0, 0, 0), LegSide::Base, 1);
-    market.make_open(position_from_parts(1, 0, 0), LegSide::Base, 1);
-    market.make_open(position_from_parts(2, 0, 0), LegSide::Base, 1);
-    market.make_open(position_from_parts(3, 0, 0), LegSide::Base, 1); // 4th outer bitmap
+    market.make_open(
+        position_from_parts(OuterBitmapIndex::new(0), OuterPos::new(0), InnerPos::new(0)),
+        LegEnum::Base,
+        BaseLots::new(1),
+    );
+    market.make_open(
+        position_from_parts(OuterBitmapIndex::new(1), OuterPos::new(0), InnerPos::new(0)),
+        LegEnum::Base,
+        BaseLots::new(1),
+    );
+    market.make_open(
+        position_from_parts(OuterBitmapIndex::new(2), OuterPos::new(0), InnerPos::new(0)),
+        LegEnum::Base,
+        BaseLots::new(1),
+    );
+    market.make_open(
+        position_from_parts(OuterBitmapIndex::new(3), OuterPos::new(0), InnerPos::new(0)),
+        LegEnum::Base,
+        BaseLots::new(1),
+    ); // 4th outer bitmap
     let m_call = market.build().unwrap();
 
     let mut b2 = GoblinCalldataBuilder::new();
@@ -278,9 +338,9 @@ fn test_errors_and_limits() {
             0,
             TokenKind::HardcodedERC20,
             0,
-            777, // does not divide 1_000_000
-            1000,
-            1,
+            BaseLotsPerBaseUnit::new(777), // does not divide 1_000_000
+            QuoteLotsPerQuoteUnit::new(1000),
+            QuoteLotsPerBaseUnitPerTick::new(1),
         )
         .is_err());
 
@@ -289,7 +349,7 @@ fn test_errors_and_limits() {
     m_zero_take
         .hardcoded(MarketSpecIndex::HardcodedEthHardcodedERC20, 0)
         .unwrap();
-    m_zero_take.take_base(0, None, None);
+    m_zero_take.take_base(BaseLots::new(0), None, None);
     let mut b3 = GoblinCalldataBuilder::new();
     b3.add_market(m_zero_take.build().unwrap());
     assert_eq!(b3.build(), Err(GoblinSdkError::ZeroTakeLots));

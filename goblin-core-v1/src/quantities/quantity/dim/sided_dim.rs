@@ -3,7 +3,7 @@ use core::marker::PhantomData;
 
 use crate::quantities::{add_exp::AddExp, sub_exp::SubExp, Exp};
 
-#[derive(Default, Clone, Copy, PartialEq, PartialOrd, Eq, Ord)]
+#[derive(Default, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Debug)]
 pub struct SidedDim<L: Exp, U: Exp, A: Exp>(PhantomData<(L, U, A)>);
 
 impl<L: Exp, U: Exp, A: Exp> Exp for SidedDim<L, U, A> {}

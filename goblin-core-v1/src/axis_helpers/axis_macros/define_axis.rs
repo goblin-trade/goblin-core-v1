@@ -14,7 +14,7 @@ macro_rules! define_axis {
         $vis struct $seed;
 
         #[repr(u8)]
-        #[derive(Debug, PartialEq, Clone, Copy)]
+        #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
         pub enum $enum_name {
             $v0 = 0,
             $v1 = 1,
@@ -67,7 +67,7 @@ macro_rules! define_axis {
         $vis struct $seed;
 
         #[repr(u8)]
-        #[derive(Debug, PartialEq, Clone, Copy)]
+        #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
         pub enum $enum_name {
             $v0 = 0,
             $v1 = 1,

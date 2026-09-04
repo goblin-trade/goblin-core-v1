@@ -1,22 +1,27 @@
+use goblin_core_v1::{
+    quantities::{InnerPos, Position, UnsidedAtoms},
+    types::Address,
+};
+
 use crate::{
     error::GoblinSdkError,
     position::group_makes_by_bitmaps,
-    types::{MakeAction, MarketCall, MarketLocator, TakeOrder, TokenKind},
+    types::{BaseTakeOrder, MakeAction, MarketCall, MarketLocator, QuoteTakeOrder, TokenKind},
 };
 
 /// Configuration for the global calldata payload
 #[derive(Debug, Clone, Default)]
 pub struct GlobalPayloadConfig {
     /// Optional custom recipient address
-    pub custom_recipient: Option<[u8; 20]>,
+    pub custom_recipient: Option<Address>,
     /// Whether hostio should read msg.value
     pub read_msg_value: bool,
-    /// ETH withdrawal amount in atoms (default 0)
-    pub withdraw_eth_amount: u64,
+    /// ETH withdrawal amount in atoms
+    pub withdraw_eth_amount: UnsidedAtoms,
     /// Whether to credit withdrawal internally (store credit) instead of external transfer
     pub withdraw_internally: bool,
     /// List of custom ERC20 token addresses (up to 7)
-    pub custom_tokens: Vec<[u8; 20]>,
+    pub custom_tokens: Vec<Address>,
     /// Markets to execute, grouped by their respective MarketSpecIndex
     pub markets: Vec<MarketCall>,
 }
@@ -55,7 +60,7 @@ impl GoblinEncoder {
             counts[i] = len as u8;
         }
 
-        let withdraw_eth = config.withdraw_eth_amount > 0;
+        let withdraw_eth = config.withdraw_eth_amount.inner > 0;
         let read_custom_recipient = config.custom_recipient.is_some();
         let custom_erc20_count = config.custom_tokens.len();
 
@@ -73,7 +78,7 @@ impl GoblinEncoder {
         // 2. Global Header
         // 2a. ETH withdrawal amount if enabled (8 bytes LE)
         if withdraw_eth {
-            out.extend_from_slice(&config.withdraw_eth_amount.to_le_bytes());
+            out.extend_from_slice(&config.withdraw_eth_amount.inner.to_le_bytes());
         }
 
         // 2b. Custom recipient address if enabled (20 bytes)
@@ -154,11 +159,11 @@ impl GoblinEncoder {
             let deposits = market.deposits.unwrap_or_default();
             // Base deposit (only if ERC20)
             if base_kind.is_erc20() {
-                out.extend_from_slice(&deposits.base_deposit.to_le_bytes());
+                out.extend_from_slice(&deposits.base_deposit.inner.to_le_bytes());
             }
             // Quote deposit (only if ERC20)
             if quote_kind.is_erc20() {
-                out.extend_from_slice(&deposits.quote_deposit.to_le_bytes());
+                out.extend_from_slice(&deposits.quote_deposit.inner.to_le_bytes());
             }
         }
 
@@ -199,27 +204,27 @@ impl GoblinEncoder {
                 }
 
                 // Lot sizes and tick size (8 bytes each LE)
-                out.extend_from_slice(&base_lot_size.to_le_bytes());
-                out.extend_from_slice(&quote_lot_size.to_le_bytes());
-                out.extend_from_slice(&tick_size.to_le_bytes());
+                out.extend_from_slice(&base_lot_size.inner.to_le_bytes());
+                out.extend_from_slice(&quote_lot_size.inner.to_le_bytes());
+                out.extend_from_slice(&tick_size.inner.to_le_bytes());
             }
         }
 
         // 4. Takes (Base first, then Quote)
         if let Some(ref base_take) = market.base_take {
-            Self::encode_take(base_take, out)?;
+            Self::encode_take_base(base_take, out)?;
         }
         if let Some(ref quote_take) = market.quote_take {
-            Self::encode_take(quote_take, out)?;
+            Self::encode_take_quote(quote_take, out)?;
         }
 
         // 5. Makes (Hierarchical outer bitmaps)
         for outer_group in &outer_groups {
-            out.extend_from_slice(&outer_group.outer_bitmap_index.to_le_bytes());
+            out.extend_from_slice(&outer_group.outer_bitmap_index.inner.to_le_bytes());
             out.push(outer_group.inner_bitmaps.len() as u8);
 
             for inner_group in &outer_group.inner_bitmaps {
-                out.push(inner_group.outer_pos);
+                out.push(inner_group.outer_pos.inner);
                 out.push(inner_group.updates.len() as u8);
 
                 for (inner_pos, action) in &inner_group.updates {
@@ -231,33 +236,60 @@ impl GoblinEncoder {
         Ok(())
     }
 
-    /// Encode a single take order
-    pub fn encode_take(take: &TakeOrder, out: &mut Vec<u8>) -> Result<(), GoblinSdkError> {
-        if take.num_lots == 0 {
+    /// Encode a base take order
+    pub fn encode_take_base(take: &BaseTakeOrder, out: &mut Vec<u8>) -> Result<(), GoblinSdkError> {
+        Self::encode_take_raw(
+            take.num_lots.inner,
+            take.min_lots_to_fill.map(|l| l.inner),
+            take.limit,
+            out,
+        )
+    }
+
+    /// Encode a quote take order
+    pub fn encode_take_quote(
+        take: &QuoteTakeOrder,
+        out: &mut Vec<u8>,
+    ) -> Result<(), GoblinSdkError> {
+        Self::encode_take_raw(
+            take.num_lots.inner,
+            take.min_lots_to_fill.map(|l| l.inner),
+            take.limit,
+            out,
+        )
+    }
+
+    fn encode_take_raw(
+        num_lots: u64,
+        min_lots_to_fill: Option<u64>,
+        limit: Option<Position>,
+        out: &mut Vec<u8>,
+    ) -> Result<(), GoblinSdkError> {
+        if num_lots == 0 {
             return Err(GoblinSdkError::ZeroTakeLots);
         }
-        if take.num_lots >= (1u64 << 62) {
-            return Err(GoblinSdkError::TakeLotsOverflow(take.num_lots));
+        if num_lots >= (1u64 << 62) {
+            return Err(GoblinSdkError::TakeLotsOverflow(num_lots));
         }
 
-        let read_min_lots = take.min_lots_to_fill.is_some();
-        let read_limit = take.limit.is_some();
+        let read_min_lots = min_lots_to_fill.is_some();
+        let read_limit = limit.is_some();
 
-        if let Some(limit) = take.limit {
-            if limit == 0 {
+        if let Some(lim) = limit {
+            if lim == Position::ZERO {
                 return Err(GoblinSdkError::ZeroLimit);
             }
         }
 
-        let raw_bytes = (take.num_lots << 2) | ((read_limit as u64) << 1) | (read_min_lots as u64);
+        let raw_bytes = (num_lots << 2) | ((read_limit as u64) << 1) | (read_min_lots as u64);
         out.extend_from_slice(&raw_bytes.to_le_bytes());
 
-        if let Some(min_lots) = take.min_lots_to_fill {
+        if let Some(min_lots) = min_lots_to_fill {
             out.extend_from_slice(&min_lots.to_le_bytes());
         }
 
-        if let Some(limit) = take.limit {
-            out.extend_from_slice(&limit.to_le_bytes());
+        if let Some(lim) = limit {
+            out.extend_from_slice(&lim.inner.to_le_bytes());
         }
 
         Ok(())
@@ -265,20 +297,20 @@ impl GoblinEncoder {
 
     /// Encode a single make order update
     pub fn encode_make(
-        inner_pos: u8,
+        inner_pos: InnerPos,
         action: &MakeAction,
         out: &mut Vec<u8>,
     ) -> Result<(), GoblinSdkError> {
-        let base_lots = action.base_lots();
-        if base_lots >= (1u64 << 62) {
-            return Err(GoblinSdkError::MakeLotsOverflow(base_lots));
+        let base_lots_raw = action.base_lots().inner;
+        if base_lots_raw >= (1u64 << 62) {
+            return Err(GoblinSdkError::MakeLotsOverflow(base_lots_raw));
         }
 
-        out.push(inner_pos);
+        out.push(inner_pos.inner);
 
         let (occupancy_bit, inner_enum_raw_bit) = action.encode_bits();
         let raw_bytes =
-            (base_lots << 2) | ((inner_enum_raw_bit as u64) << 1) | (occupancy_bit as u64);
+            (base_lots_raw << 2) | ((inner_enum_raw_bit as u64) << 1) | (occupancy_bit as u64);
 
         out.extend_from_slice(&raw_bytes.to_le_bytes());
         Ok(())

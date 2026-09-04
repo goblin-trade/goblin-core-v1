@@ -1,9 +1,18 @@
+use goblin_core_v1::{
+    axis::leg::LegEnum,
+    quantities::{
+        BaseLots, BaseLotsPerBaseUnit, Position, QuoteLots, QuoteLotsPerBaseUnitPerTick,
+        QuoteLotsPerQuoteUnit, UnsidedAtoms, UnsidedDeltaLots, ATOMS_PER_UNIT,
+    },
+    types::Address,
+};
+
 use crate::{
     encoder::{GlobalPayloadConfig, GoblinEncoder},
     error::GoblinSdkError,
     types::{
-        LegSide, MarketCall, MarketDeposits, MarketLocator, MarketSpecIndex, PositionedMakeOrder,
-        TakeOrder, TokenKind,
+        BaseTakeOrder, MarketCall, MarketDeposits, MarketLocator, MarketSpecIndex,
+        PositionedMakeOrder, QuoteTakeOrder, TakeOrder, TokenKind,
     },
 };
 
@@ -20,7 +29,7 @@ impl GoblinCalldataBuilder {
     }
 
     /// Set a custom recipient for token/ETH payouts
-    pub fn set_recipient(&mut self, recipient: [u8; 20]) -> &mut Self {
+    pub fn set_recipient(&mut self, recipient: Address) -> &mut Self {
         self.config.custom_recipient = Some(recipient);
         self
     }
@@ -46,14 +55,14 @@ impl GoblinCalldataBuilder {
     }
 
     /// Configure ETH withdrawal amount and whether to credit internally or transfer externally
-    pub fn set_eth_withdrawal(&mut self, amount: u64, internally: bool) -> &mut Self {
+    pub fn set_eth_withdrawal(&mut self, amount: UnsidedAtoms, internally: bool) -> &mut Self {
         self.config.withdraw_eth_amount = amount;
         self.config.withdraw_internally = internally;
         self
     }
 
     /// Register a custom ERC20 token address and return its allocated 0-based custom token index
-    pub fn add_custom_token(&mut self, address: [u8; 20]) -> Result<u8, GoblinSdkError> {
+    pub fn add_custom_token(&mut self, address: Address) -> Result<u8, GoblinSdkError> {
         if self.config.custom_tokens.len() >= 7 {
             return Err(GoblinSdkError::CustomTokenLimitExceeded(
                 self.config.custom_tokens.len() + 1,
@@ -113,8 +122,8 @@ pub struct MarketCallBuilder {
     spec: Option<MarketSpecIndex>,
     locator: Option<MarketLocator>,
     deposits: Option<MarketDeposits>,
-    base_take: Option<TakeOrder>,
-    quote_take: Option<TakeOrder>,
+    base_take: Option<BaseTakeOrder>,
+    quote_take: Option<QuoteTakeOrder>,
     makes: Vec<PositionedMakeOrder>,
 }
 
@@ -149,9 +158,9 @@ impl MarketCallBuilder {
         base_token_index: u8,
         quote_kind: TokenKind,
         quote_token_index: u8,
-        base_lot_size: u64,
-        quote_lot_size: u64,
-        tick_size: u64,
+        base_lot_size: BaseLotsPerBaseUnit,
+        quote_lot_size: QuoteLotsPerQuoteUnit,
+        tick_size: QuoteLotsPerBaseUnitPerTick,
     ) -> Result<&mut Self, GoblinSdkError> {
         let spec =
             MarketSpecIndex::from_tokens(crate::types::MarketKind::Dynamic, base_kind, quote_kind)
@@ -161,12 +170,11 @@ impl MarketCallBuilder {
                     quote: quote_kind.name(),
                 })?;
 
-        const ATOMS_PER_UNIT: u64 = 1_000_000;
-        if base_lot_size == 0 || ATOMS_PER_UNIT % base_lot_size != 0 {
-            return Err(GoblinSdkError::InvalidLotSize(base_lot_size));
+        if base_lot_size.inner == 0 || ATOMS_PER_UNIT.inner % base_lot_size.inner != 0 {
+            return Err(GoblinSdkError::InvalidLotSize(base_lot_size.inner));
         }
-        if quote_lot_size == 0 || ATOMS_PER_UNIT % quote_lot_size != 0 {
-            return Err(GoblinSdkError::InvalidLotSize(quote_lot_size));
+        if quote_lot_size.inner == 0 || ATOMS_PER_UNIT.inner % quote_lot_size.inner != 0 {
+            return Err(GoblinSdkError::InvalidLotSize(quote_lot_size.inner));
         }
 
         self.spec = Some(spec);
@@ -181,7 +189,11 @@ impl MarketCallBuilder {
     }
 
     /// Set deposit amounts for base and quote tokens
-    pub fn deposit(&mut self, base_deposit: i64, quote_deposit: i64) -> &mut Self {
+    pub fn deposit(
+        &mut self,
+        base_deposit: UnsidedDeltaLots,
+        quote_deposit: UnsidedDeltaLots,
+    ) -> &mut Self {
         self.deposits = Some(MarketDeposits::new(base_deposit, quote_deposit));
         self
     }
@@ -189,9 +201,9 @@ impl MarketCallBuilder {
     /// Add a take order on the base side (Immediate-or-Cancel / Market Order)
     pub fn take_base(
         &mut self,
-        num_lots: u64,
-        min_lots_to_fill: Option<u64>,
-        limit: Option<u64>,
+        num_lots: BaseLots,
+        min_lots_to_fill: Option<BaseLots>,
+        limit: Option<Position>,
     ) -> &mut Self {
         self.base_take = Some(TakeOrder {
             num_lots,
@@ -204,9 +216,9 @@ impl MarketCallBuilder {
     /// Add a take order on the quote side (Immediate-or-Cancel / Market Order)
     pub fn take_quote(
         &mut self,
-        num_lots: u64,
-        min_lots_to_fill: Option<u64>,
-        limit: Option<u64>,
+        num_lots: QuoteLots,
+        min_lots_to_fill: Option<QuoteLots>,
+        limit: Option<Position>,
     ) -> &mut Self {
         self.quote_take = Some(TakeOrder {
             num_lots,
@@ -217,28 +229,33 @@ impl MarketCallBuilder {
     }
 
     /// Add a make order to open a new resting order on a vacant position
-    pub fn make_open(&mut self, position: u64, side: LegSide, base_lots: u64) -> &mut Self {
+    pub fn make_open(
+        &mut self,
+        position: Position,
+        side: LegEnum,
+        base_lots: BaseLots,
+    ) -> &mut Self {
         self.makes
             .push(PositionedMakeOrder::open(position, side, base_lots));
         self
     }
 
     /// Add a make order to increase lots on an existing occupied resting order
-    pub fn make_increase(&mut self, position: u64, base_lots: u64) -> &mut Self {
+    pub fn make_increase(&mut self, position: Position, base_lots: BaseLots) -> &mut Self {
         self.makes
             .push(PositionedMakeOrder::increase(position, base_lots));
         self
     }
 
     /// Add a make order to decrease lots on an existing occupied resting order
-    pub fn make_decrease(&mut self, position: u64, base_lots: u64) -> &mut Self {
+    pub fn make_decrease(&mut self, position: Position, base_lots: BaseLots) -> &mut Self {
         self.makes
             .push(PositionedMakeOrder::decrease(position, base_lots));
         self
     }
 
     /// Add a make order to close an existing occupied resting order
-    pub fn make_close(&mut self, position: u64, base_lots: u64) -> &mut Self {
+    pub fn make_close(&mut self, position: Position, base_lots: BaseLots) -> &mut Self {
         self.makes
             .push(PositionedMakeOrder::close(position, base_lots));
         self
