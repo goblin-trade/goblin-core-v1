@@ -24,6 +24,17 @@ impl ArgsReader {
         }
     }
 
+    pub fn from_slice(slice: &[u8]) -> Self {
+        let mut args = [0u8; crate::input_processor::INPUT_SIZE];
+        let len = slice.len().min(crate::input_processor::INPUT_SIZE);
+        args[..len].copy_from_slice(&slice[..len]);
+        Self {
+            args,
+            len: slice.len(),
+            offset: Cell::new(0),
+        }
+    }
+
     pub fn len(&self) -> usize {
         self.len
     }

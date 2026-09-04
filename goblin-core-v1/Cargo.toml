@@ -21,6 +21,7 @@ panic = "abort"
 
 [features]
 default = ["localnet"]
+std = []
 localnet = []
 testnet = []
 mainnet = []

@@ -6,7 +6,7 @@ impl<'a> VariableDecode<'a> for MarketCounts {
     type Flags = bool;
 
     fn size(flags: &Self::Flags) -> usize {
-        3 + 8 * usize::from(*flags)
+        2 + 4 * usize::from(*flags)
     }
 
     fn raw_variable_decode(

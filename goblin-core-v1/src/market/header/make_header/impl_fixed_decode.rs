@@ -12,8 +12,8 @@ impl<'a> FixedDecode<'a> for MakeHeader {
         let inner_pos = InnerPos::new(u8::raw_fixed_decode(reader));
         let bytes = u64::raw_fixed_decode(reader);
 
-        let occupancy_enum = OccupancyEnum::from((bytes & 0b01) == 1);
-        let inner_enum_raw = (bytes & 0b10) == 1;
+        let occupancy_enum = OccupancyEnum::from((bytes & 0b01) != 0);
+        let inner_enum_raw = (bytes & 0b10) != 0;
 
         let base_lots = BaseLots::new(bytes >> 2);
 

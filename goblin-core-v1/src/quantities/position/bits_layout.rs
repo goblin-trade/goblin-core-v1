@@ -2,7 +2,7 @@ pub struct BitsLayout<const BITS: u16>;
 
 impl<const BITS: u16> BitsLayout<BITS> {
     pub const OFFSET: u16 = BITS >> 8;
-    pub const BIT_COUNT: u16 = BITS & 0b1111;
+    pub const BIT_COUNT: u16 = BITS & 0b1111_1111;
 
     /// Unshifted bitmask of BIT_COUNT ones
     /// e.g. BIT_COUNT=4 → (0b10000 - 1) = 0b1111
