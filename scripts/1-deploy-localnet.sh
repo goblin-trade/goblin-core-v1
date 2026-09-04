@@ -27,22 +27,30 @@ forge create \
 
 cd ..
 
-# Deploy goblin core
-cargo build --release --target wasm32-unknown-unknown
-cargo stylus check --wasm-file ./target/wasm32-unknown-unknown/release/goblin_core_v1.wasm --endpoint $ETH_RPC_URL
+# Build
+#
+# Unnecessary, `cargo stylus get-initcode` will compile and give init code
+# cargo build --release --target wasm32-unknown-unknown
+# cargo stylus check --wasm-file ./target/wasm32-unknown-unknown/release/goblin_core_v1.wasm --endpoint $ETH_RPC_URL
 
-# Compile init code
-cargo run --example compile-contract
+# Get init code in temp file
+TMPFILE="$(mktemp)"
+trap 'rm -f "$TMPFILE"' EXIT
 
-# Deploy goblin_core_v1 with CREATE3
-readonly INIT_CODE=0x$(xxd -p target/wasm32-unknown-unknown/release/goblin_core_v1.contract | tr -d '\n')
+cargo stylus get-initcode --output "$TMPFILE"
+
+readonly INIT_CODE="$(<"$TMPFILE")"
+
+echo "deploying on CREATE3";
 
 cast send $CREATE3_FACTORY \
     "deploy(bytes32,bytes)" $GOBLIN_SALT $INIT_CODE \
     --private-key $PRIVATE_KEY
 
+echo "Activating";
+
 # Activate contract
 cast send $ARB_WASM_CONTRACT \
     "activateProgram(address)" $CONTRACT \
     --private-key $PRIVATE_KEY \
-    --value 0.0001ether
+    --value 0.01ether

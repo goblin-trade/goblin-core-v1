@@ -7,6 +7,10 @@ cargo stylus deploy --wasm-file ./target/wasm32-unknown-unknown/release/goblin_c
 
 # Cache
 cargo stylus cache bid 525c2aba45f66987217323e8a05ea400c65d06dc 0 --private-key $PRIVATE_KEY
+
+# Get init code
+# This works?
+cargo stylus get-initcode --output init-code-cli.txt
 ```
 
 # Rounding numbers
