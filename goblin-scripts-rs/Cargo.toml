@@ -1,0 +1,24 @@
+[package]
+name = "goblin-scripts-rs"
+version = "0.1.0"
+edition = "2021"
+
+[dev-dependencies]
+tiny-keccak = { version = "2.0.2", features = ["keccak"] }
+hex-literal = "0.4.1"
+alloy-primitives = "0.6"
+alloy-rlp = "0.3.11"
+alloy-sol-types = "0.6"
+rayon = "1.7"
+
+# compile-contract
+eyre = "0.6"
+wasm-gen = "0.1.4"
+brotli2 = "0.3"
+wasm-encoder = "0.30"
+wasmparser = "0.110"
+hex = "0.4"
+glob = "0.3.1"
+
+[dependencies]
+leb128 = "0.2.7"

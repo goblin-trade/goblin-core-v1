@@ -2,7 +2,7 @@ use alloy_primitives::{address, keccak256, Address, B256};
 use hex_literal::hex;
 
 const DEPLOYER: Address = address!("3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E");
-const FACTORY_ADDRESS: Address = address!("A6E41fFD769491a42A6e5Ce453259b93983a22EF");
+const FACTORY_ADDRESS: Address = address!("525c2aBA45F66987217323E8a05EA400C65D06DC");
 const PROXY_BYTECODE: [u8; 16] = hex!("67363d3d37363d34f03d5260086018f3");
 
 fn main() {

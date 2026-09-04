@@ -1,5 +1,5 @@
 [workspace]
 resolver = "2"
 members = [
-    "goblin-core-v1", "goblin-macros",
+    "goblin-core-v1", "goblin-macros", "goblin-scripts-rs"
 ]
