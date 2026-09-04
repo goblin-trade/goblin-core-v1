@@ -1,3 +1,8 @@
+use alloc::{
+    format,
+    string::{String, ToString},
+    vec::Vec,
+};
 use goblin_core_v1::{
     axis::leg::LegEnum,
     quantities::{

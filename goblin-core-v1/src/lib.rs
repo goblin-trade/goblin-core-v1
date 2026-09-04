@@ -1,8 +1,8 @@
 #![allow(static_mut_refs)]
-#![cfg_attr(not(any(test, feature = "std")), no_std)]
-#![cfg_attr(not(any(test, feature = "std")), no_main)]
+#![cfg_attr(target_arch = "wasm32", no_std)]
+#![cfg_attr(target_arch = "wasm32", no_main)]
 
-#[cfg(not(feature = "std"))]
+#[cfg(all(not(test), target_arch = "wasm32"))]
 use crate::processor::processor;
 
 pub mod axis;
@@ -22,7 +22,7 @@ pub mod types;
 
 pub use ctx::*;
 
-#[cfg(not(feature = "std"))]
+#[cfg(all(not(test), target_arch = "wasm32"))]
 #[no_mangle]
 pub extern "C" fn user_entrypoint(len: usize) -> i32 {
     match processor(len) {
@@ -31,13 +31,13 @@ pub extern "C" fn user_entrypoint(len: usize) -> i32 {
     }
 }
 
-#[cfg(not(any(test, feature = "std")))]
+#[cfg(all(not(test), target_arch = "wasm32"))]
 #[panic_handler]
 fn panic(_info: &core::panic::PanicInfo) -> ! {
     loop {}
 }
 
-#[cfg(all(not(any(test, feature = "std")), target_arch = "wasm32"))]
+#[cfg(all(not(test), target_arch = "wasm32"))]
 #[no_mangle]
 pub unsafe extern "C" fn mark_used() {
     crate::hostio::hostio_unsafe::pay_for_memory_grow(0);

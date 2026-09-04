@@ -13,6 +13,10 @@
 //! - Automatic 2-level bitmap hierarchy grouping for make orders.
 //! - WASM bindings (`wasm-bindgen`) for browser and Node.js environments.
 
+#![cfg_attr(not(feature = "std"), no_std)]
+
+extern crate alloc;
+
 pub mod builder;
 pub mod encoder;
 pub mod error;

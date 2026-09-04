@@ -5,13 +5,12 @@ edition = "2021"
 description = "SDK for calldata serialization to call goblin-core-v1 Stylus contract"
 
 [lib]
-crate-type = ["cdylib", "rlib"]
+crate-type = ["rlib"]
 
 [dependencies]
-goblin-core-v1 = { path = "../goblin-core-v1", default-features = false, features = ["std", "localnet"] }
+goblin-core-v1 = { path = "../goblin-core-v1", default-features = false, features = ["localnet"] }
 goblin-macros = { path = "../goblin-macros" }
 hex = { version = "0.4", default-features = false, features = ["alloc"] }
-thiserror = "1.0"
 
 # WASM dependencies
 wasm-bindgen = { version = "0.2", optional = true }
@@ -21,6 +20,6 @@ js-sys = { version = "0.3", optional = true }
 hex-literal = "0.4.1"
 
 [features]
-default = ["std"]
+default = []
 std = []
 wasm = ["wasm-bindgen", "js-sys"]

@@ -2,6 +2,11 @@
 
 
 ```sh
+cargo build --target wasm32-unknown-unknown --release
+
+# check
+cargo stylus check --wasm-file ./target/wasm32-unknown-unknown/release/goblin_core_v1.wasm
+
 # Deploy locally built file without verification
 cargo stylus deploy --wasm-file ./target/wasm32-unknown-unknown/release/goblin_core_v1.wasm --private-key $PRIVATE_KEY --no-verify
 

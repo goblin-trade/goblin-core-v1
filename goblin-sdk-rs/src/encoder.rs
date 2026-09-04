@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use goblin_core_v1::{
     quantities::{InnerPos, Position, UnsidedAtoms},
     types::Address,

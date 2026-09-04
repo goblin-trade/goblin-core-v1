@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use goblin_core_v1::{
     axis::leg::LegEnum,
     quantities::{

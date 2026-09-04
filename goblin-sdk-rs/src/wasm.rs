@@ -1,4 +1,10 @@
 #[cfg(feature = "wasm")]
+use alloc::{
+    string::{String, ToString},
+    vec::Vec,
+};
+
+#[cfg(feature = "wasm")]
 use wasm_bindgen::prelude::*;
 
 #[cfg(feature = "wasm")]
