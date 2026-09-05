@@ -4,7 +4,7 @@ use crate::{
     axis::token::{
         token_marker::TokenMarker, token_quantity::TokenQuantity, token_reader::TokenDataTriple,
     },
-    state::{Preimage, SlotKey, StorePreimage},
+    state::{SlotKey, StorePreimage},
     types::Address,
 };
 
@@ -22,13 +22,11 @@ impl<TM: TokenMarker> CounterpartyTokenKey<TM> {
         let token_data_list = TM::get_lifetimed(token_data_triple);
         let token_data = token_data_list[self.token_index];
 
-        // TODO use Caller axis to get hash
-        // Hash is hardcoded for HardcodedCaller + (HardcodedERC20 or ERC20)
         let preimage = StorePreimage {
             trader: self.counterparty,
             token_address: token_data.address,
         };
 
-        preimage.hash()
+        preimage.get_hash(&self.token_index)
     }
 }

@@ -1,5 +1,6 @@
 use crate::{
     axis::{
+        caller::CallerMarker,
         token::{
             token_marker::{TokenData, TokenMarker},
             CustomERC20,
@@ -10,6 +11,7 @@ use crate::{
     hostio::erc20_hostio,
     quantities::{UnsidedAtoms, UnsidedDeltaAtomsPerLot},
     settlement::global_delta::TransferERC20,
+    state::{Preimage, SlotKey, StorePreimage},
     types::Address,
 };
 
@@ -28,6 +30,13 @@ impl TokenMarker for CustomERC20 {
         decimals: Self::StoredDecimals,
     ) -> Result<(), GoblinError> {
         TransferERC20::<UM>::new(deposit, trader, token_address, decimals).dispatch()
+    }
+
+    fn get_store_hash<CM: CallerMarker>(
+        preimage: &StorePreimage<Self>,
+        _token_index: &Self::TokenIndex,
+    ) -> SlotKey<StorePreimage<Self>> {
+        preimage.hash()
     }
 
     ///////

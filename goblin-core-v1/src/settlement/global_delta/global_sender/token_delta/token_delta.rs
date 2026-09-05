@@ -9,7 +9,7 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::MsgTransfers,
     quantities::UnsidedDeltaAtoms,
-    state::{Preimage, StorePreimage},
+    state::StorePreimage,
     types::Address,
 };
 
@@ -29,18 +29,17 @@ impl<TM: TokenMarker> TokenDelta<TM> {
         &self,
         trader: &Address,
         token_data: &TokenData<TM>,
+        token_index: TM::TokenIndex,
         msg_transfers: &MsgTransfers,
     ) -> Result<(), GoblinError> {
         let msg_transfer = TM::get_leg(msg_transfers);
 
         // 1. Update store
-        // TODO use Caller axis to get hash
-        // Hash is hardcoded for HardcodedCaller + (HardcodedERC20 or ERC20)
         let store_hash = StorePreimage::<TM> {
             trader: *trader,
             token_address: token_data.address,
         }
-        .hash();
+        .get_hash(&token_index);
         let mut store = store_hash.load();
         store.update_sender(token_data, self, msg_transfer)?;
         store_hash.store(&store);

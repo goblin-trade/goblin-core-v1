@@ -1,6 +1,8 @@
 use crate::{
     axis::{
+        caller::{CallerEnum, CallerMarker, HardcodedCaller},
         token::{
+            token_list::hardcoded_erc20::{HARDCODED_ERC20_COUNT, HARDCODED_ERC20_STORE_HASHES},
             token_marker::{TokenData, TokenMarker},
             HardcodedERC20,
         },
@@ -9,6 +11,7 @@ use crate::{
     goblin_error::GoblinError,
     quantities::{UnsidedAtoms, UnsidedDeltaAtomsPerLot},
     settlement::global_delta::TransferERC20,
+    state::{Preimage, SlotKey, StorePreimage},
     types::Address,
 };
 
@@ -27,6 +30,27 @@ impl TokenMarker for HardcodedERC20 {
         decimals: Self::StoredDecimals,
     ) -> Result<(), GoblinError> {
         TransferERC20::<UM>::new(deposit, trader, token_address, decimals).dispatch()
+    }
+
+    fn get_store_hash<CM: CallerMarker>(
+        preimage: &StorePreimage<Self>,
+        token_index: &Self::TokenIndex,
+    ) -> SlotKey<StorePreimage<Self>> {
+        match CM::VARIANT {
+            CallerEnum::HardcodedCaller => {
+                match HardcodedCaller::get_caller_index(&preimage.trader) {
+                    Some(caller_idx) => {
+                        if token_index.0 < HARDCODED_ERC20_COUNT {
+                            HARDCODED_ERC20_STORE_HASHES[caller_idx][token_index.0]
+                        } else {
+                            preimage.hash()
+                        }
+                    }
+                    None => preimage.hash(),
+                }
+            }
+            CallerEnum::CustomCaller => preimage.hash(),
+        }
     }
 
     ///////////

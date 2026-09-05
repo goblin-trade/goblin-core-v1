@@ -22,6 +22,9 @@ macro_rules! match_axes {
     (@expand [TM = $val:expr $(, $axis:ident = $rest_val:expr)*] $body:block) => {
         $crate::match_axes!(@arity 3, $val, TM, $crate::axis::token::Token, [$($axis = $rest_val),*], $body)
     };
+    (@expand [CM = $val:expr $(, $axis:ident = $rest_val:expr)*] $body:block) => {
+        $crate::match_axes!(@arity 2, $val, CM, $crate::axis::caller::Caller, [$($axis = $rest_val),*], $body)
+    };
 
     // --- Shared: branch on the enum's numeric discriminant, not its variant path ---
     (@arity 2, $val:expr, $axis:ident, $seed:path, $rest:tt, $body:block) => {

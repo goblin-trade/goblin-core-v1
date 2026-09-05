@@ -1,5 +1,12 @@
-use crate::axis::token::{
-    token_list::hardcoded_erc20::HardcodedERC20List, token_marker::TokenData,
+use crate::{
+    axis::{
+        caller::HARDCODED_CALLER_COUNT,
+        token::{
+            token_list::hardcoded_erc20::HardcodedERC20List, token_marker::TokenData,
+            HardcodedERC20,
+        },
+    },
+    state::{SlotKey, StorePreimage},
 };
 
 pub const HARDCODED_ERC20_COUNT: usize = 2;
@@ -22,3 +29,5 @@ pub const HARDCODED_ERC20_LIST: HardcodedERC20List<HARDCODED_ERC20_COUNT> = Hard
         },
     ],
 };
+
+include!(concat!(env!("OUT_DIR"), "/hardcoded_erc20_store_hashes.rs"));

@@ -44,6 +44,12 @@ impl Into<u8> for ETHStub {
     }
 }
 
+impl From<usize> for ETHStub {
+    fn from(_: usize) -> Self {
+        Self
+    }
+}
+
 impl Index<ETHStub> for ETHStub {
     type Output = TokenData<ETH>;
 

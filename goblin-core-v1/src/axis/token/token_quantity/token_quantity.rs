@@ -9,7 +9,7 @@ pub trait TokenQuantity: Clone + Copy + PartialEq + 'static {
     const DISCRIMINATOR: u8;
 
     /// Index to lookup token address
-    type TokenIndex: Clone + Copy + ConstDefault + PartialEq + for<'a> FixedDecode<'a>;
+    type TokenIndex: Clone + Copy + ConstDefault + PartialEq + From<usize> + for<'a> FixedDecode<'a>;
 
     type TokenAddress: Clone + Copy + Sized + Default + ConstDefault;
 

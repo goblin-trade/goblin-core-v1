@@ -29,6 +29,9 @@ macro_rules! for_axes {
     (@expand [PT $(, $rest:ident)*] [$($alias:item)*] $body:block) => {
         $crate::for_axes!(@range PT, $crate::axis::party::Party, 2, [$($rest),*], [$($alias)*], $body);
     };
+    (@expand [CM $(, $rest:ident)*] [$($alias:item)*] $body:block) => {
+        $crate::for_axes!(@range CM, $crate::axis::caller::Caller, 2, [$($rest),*], [$($alias)*], $body);
+    };
 
     (@range $axis:ident, $seed:path, 2, [$($rest:ident),*], [$($alias:item)*], $body:block) => {
         $crate::for_axes!(@expand [$($rest),*] [$($alias)* type $axis = $crate::types::Marker<$seed, 0>;] $body);

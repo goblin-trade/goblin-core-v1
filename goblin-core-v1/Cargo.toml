@@ -9,6 +9,9 @@ crate-type = ["lib", "cdylib"]
 [dependencies]
 goblin-macros = { path = "../goblin-macros" }
 
+[build-dependencies]
+tiny-keccak = { version = "2.0.2", features = ["keccak"] }
+
 [dev-dependencies]
 tiny-keccak = { version = "2.0.2", features = ["keccak"] }
 hex-literal = "0.4.1"

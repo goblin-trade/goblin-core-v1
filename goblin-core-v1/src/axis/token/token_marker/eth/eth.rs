@@ -1,5 +1,6 @@
 use crate::{
     axis::{
+        caller::{CallerEnum, CallerMarker, HardcodedCaller, HARDCODED_CALLER_COUNT},
         token::{
             token_marker::{TokenData, TokenMarker},
             ETHStub, ETH,
@@ -8,8 +9,11 @@ use crate::{
     },
     goblin_error::GoblinError,
     quantities::{ETHAtoms, UnsidedAtoms, UnsidedDeltaAtomsPerLot},
+    state::{Preimage, SlotKey, StorePreimage},
     types::Address,
 };
+
+include!(concat!(env!("OUT_DIR"), "/eth_store_hashes.rs"));
 
 impl TokenMarker for ETH {
     fn get_global_deposit(
@@ -27,6 +31,21 @@ impl TokenMarker for ETH {
     ) -> Result<(), GoblinError> {
         let amount = ETHAtoms::try_from(deposit)?;
         UM::update_eth(trader, &amount)
+    }
+
+    fn get_store_hash<CM: CallerMarker>(
+        preimage: &StorePreimage<Self>,
+        _token_index: &Self::TokenIndex,
+    ) -> SlotKey<StorePreimage<Self>> {
+        match CM::VARIANT {
+            CallerEnum::HardcodedCaller => {
+                match HardcodedCaller::get_caller_index(&preimage.trader) {
+                    Some(idx) => ETH_STORE_HASHES[idx],
+                    None => preimage.hash(),
+                }
+            }
+            CallerEnum::CustomCaller => preimage.hash(),
+        }
     }
 
     ////////////////////
