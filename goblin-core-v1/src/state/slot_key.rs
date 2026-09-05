@@ -6,7 +6,7 @@ use crate::{
 };
 
 /// The slot key obtained on hashing a preimage
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default)]
 pub struct SlotKey<P: Preimage> {
     hash: [u8; 32],
     _marker: PhantomData<P>,

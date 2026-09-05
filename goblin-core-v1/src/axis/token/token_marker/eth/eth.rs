@@ -1,32 +1,19 @@
 use crate::{
     axis::{
-        caller::{CallerEnum, CallerMarker, HardcodedCaller},
+        caller::{CallerEnum, CallerMarker},
         token::{
             token_marker::{TokenData, TokenMarker},
             ETHStub, ETH,
         },
+        token_marker::eth::ETH_STORE_HASH_LIST,
         update::UpdateMarker,
-        HardcodedCallerList, HARDCODED_CALLER_LIST,
+        HardcodedCallerList,
     },
     goblin_error::GoblinError,
     quantities::{ETHAtoms, UnsidedAtoms, UnsidedDeltaAtomsPerLot},
     state::{Preimage, SlotKey, StorePreimage},
     types::Address,
 };
-
-// TODO impl Index<HardcodedCallerIndex>
-pub const ETH_STORE_HASHES: [SlotKey<StorePreimage<ETH>>; HARDCODED_CALLER_LIST.inner.len()] = [
-    StorePreimage {
-        trader: HARDCODED_CALLER_LIST.inner[0],
-        token_address: ETHStub,
-    }
-    .const_hash(),
-    StorePreimage {
-        trader: HARDCODED_CALLER_LIST.inner[1],
-        token_address: ETHStub,
-    }
-    .const_hash(),
-];
 
 impl TokenMarker for ETH {
     fn get_global_deposit(
@@ -55,7 +42,7 @@ impl TokenMarker for ETH {
         // HardcodedCaller is guaranteed to have ETH
         match CM::VARIANT {
             CallerEnum::HardcodedCaller => match HardcodedCallerList::index(&preimage.trader) {
-                Some(idx) => ETH_STORE_HASHES[idx.inner],
+                Some(idx) => ETH_STORE_HASH_LIST[idx.inner],
                 None => preimage.hash(),
             },
             CallerEnum::CustomCaller => preimage.hash(),
