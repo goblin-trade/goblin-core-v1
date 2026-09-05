@@ -3,7 +3,7 @@ use goblin_macros::FixedDecode;
 use crate::quantities::{bits_layout::BitsLayout, inner_val::InnerVal, Position};
 use core::ops::RangeInclusive;
 
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default, Debug, FixedDecode)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug, FixedDecode)]
 pub struct DerivedPosition<K, const BITS: u16>
 where
     K: InnerVal,

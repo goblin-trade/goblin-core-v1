@@ -1,6 +1,6 @@
 use crate::axis::{HardcodedMarketList, Pair, TokenMarker, TokenQuantity};
 
-pub trait TokenPair: 'static + Clone + Copy + PartialEq + PartialOrd {
+pub trait TokenPair: 'static + Clone + Copy + PartialEq + PartialOrd + Default {
     type Base: TokenMarker;
     type Quote: TokenMarker;
 

@@ -1,12 +1,14 @@
 use core::marker::PhantomData;
 
+use goblin_macros::ConstDefault;
+
 use crate::{
     hostio::{storage_cache_bytes32, storage_load_bytes32},
     state::Preimage,
 };
 
 /// The slot key obtained on hashing a preimage
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, ConstDefault)]
 pub struct SlotKey<P: Preimage> {
     hash: [u8; 32],
     _marker: PhantomData<P>,

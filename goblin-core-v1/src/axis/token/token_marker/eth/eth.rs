@@ -40,6 +40,8 @@ impl TokenMarker for ETH {
     ) -> SlotKey<StorePreimage<Self>> {
         // TODO fix
         // HardcodedCaller is guaranteed to have ETH
+        //
+        // TODO make call on CallMarker trait instead of matching enum
         match CM::VARIANT {
             CallerEnum::HardcodedCaller => match HardcodedCallerList::index(&preimage.trader) {
                 Some(idx) => ETH_STORE_HASH_LIST[idx.inner],
