@@ -2096,7 +2096,6 @@ dependencies = [
  "eyre",
  "glob",
  "goblin-core-v1",
- "goblin-sdk-rs",
  "hex",
  "hex-literal",
  "leb128",
@@ -2107,18 +2106,6 @@ dependencies = [
  "wasm-encoder",
  "wasm-gen",
  "wasmparser",
-]
-
-[[package]]
-name = "goblin-sdk-rs"
-version = "0.1.0"
-dependencies = [
- "goblin-core-v1",
- "goblin-macros",
- "hex",
- "hex-literal",
- "js-sys",
- "wasm-bindgen",
 ]
 
 [[package]]
