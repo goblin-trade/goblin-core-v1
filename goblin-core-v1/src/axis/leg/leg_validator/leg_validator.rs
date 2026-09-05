@@ -1,4 +1,4 @@
-use crate::{axis::leg::leg_constants::LegConstants, settlement::ConstDefault};
+use crate::{axis::leg::LegConstants, settlement::ConstDefault};
 
 pub trait LegValidator: LegConstants {
     /// Ensure that market has an integer number of atoms per lot

@@ -1,6 +1,6 @@
 use crate::{
-    axis::leg::{leg_iterator::LegIterator, Quote},
-    quantities::{bits_layout::BitsLayout, Position},
+    axis::leg::{LegIterator, Quote},
+    quantities::{BitsLayout, Position},
 };
 use core::ops::RangeInclusive;
 

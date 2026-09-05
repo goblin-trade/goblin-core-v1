@@ -1,5 +1,5 @@
 use crate::{
-    axis::leg::{leg_matcher::LegMatcher, leg_quantities::LegQuantities},
+    axis::leg::{LegMatcher, LegQuantities},
     quantities::{BaseLots, BaseLotsPerBaseUnit, QuantityOps, QuoteLotsPerBaseUnit},
 };
 

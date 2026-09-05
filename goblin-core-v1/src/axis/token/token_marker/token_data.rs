@@ -1,6 +1,6 @@
 use goblin_macros::ConstDefault;
 
-use crate::axis::token::token_quantity::TokenQuantity;
+use crate::axis::TokenQuantity;
 
 #[derive(Clone, Copy, ConstDefault)]
 pub struct TokenData<TM: TokenQuantity> {

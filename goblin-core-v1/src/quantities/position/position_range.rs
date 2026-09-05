@@ -1,8 +1,8 @@
 use core::ops::RangeInclusive;
 
 use crate::{
-    axis::leg::leg_coordinates::LegCoordinates,
-    quantities::{inner_val::InnerVal, DerivedPosition, Position},
+    axis::LegCoordinates,
+    quantities::{DerivedPosition, InnerVal, Position},
 };
 
 pub trait PositionRange: Sized {

@@ -1,5 +1,5 @@
 use crate::{
-    axis::leg::leg_matcher::LegMatcher,
+    axis::LegMatcher,
     goblin_error::GoblinError,
     input_processor::{ArgsReader, CompoundDecode, FixedDecode, VariableDecode},
     instructions::{TakeHeader, TakeHeaderMain, TakeHeaderOptional},

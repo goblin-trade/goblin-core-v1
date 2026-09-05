@@ -1,4 +1,4 @@
-use crate::axis::leg::SamePair;
+use crate::axis::SamePair;
 
 pub struct MarketHeader {
     /// Whether to decode deposit amounts

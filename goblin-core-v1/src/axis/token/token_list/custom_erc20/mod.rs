@@ -1,4 +1,4 @@
-pub mod custom_erc20;
+mod custom_erc20;
 pub mod custom_erc20_deltas;
 pub mod custom_erc20_list;
 

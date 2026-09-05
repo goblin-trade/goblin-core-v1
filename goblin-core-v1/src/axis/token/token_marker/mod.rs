@@ -1,5 +1,5 @@
 pub mod custom_erc20;
-pub mod eth;
+mod eth;
 pub mod hardcoded_erc20;
 pub mod token_data;
 pub mod token_marker;

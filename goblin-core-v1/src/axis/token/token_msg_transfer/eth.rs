@@ -1,6 +1,6 @@
 use crate::{
-    axis::token::token_msg_transfer::TokenMsgTransfer, goblin_error::GoblinError,
-    input_processor::ETHTransfers, quantities::UnsidedDeltaAtoms,
+    axis::TokenMsgTransfer, goblin_error::GoblinError, input_processor::ETHTransfers,
+    quantities::UnsidedDeltaAtoms,
 };
 
 impl TokenMsgTransfer for ETHTransfers {

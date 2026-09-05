@@ -1,6 +1,7 @@
-use crate::axis::leg::{leg_iterator::LegIterator, Base};
-use crate::quantities::bits_layout::BitsLayout;
-use crate::quantities::Position;
+use crate::{
+    axis::leg::{Base, LegIterator},
+    quantities::{BitsLayout, Position},
+};
 use core::ops::RangeInclusive;
 
 impl LegIterator for Base {

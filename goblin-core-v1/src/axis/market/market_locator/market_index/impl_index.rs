@@ -1,7 +1,7 @@
 use core::ops::Index;
 
 use crate::{
-    axis::market::market_locator::{hardcoded::HardcodedMarketList, MarketIndex},
+    axis::{HardcodedMarketList, MarketIndex},
     axis_helpers::TokenPair,
     market::MarketReadables,
 };

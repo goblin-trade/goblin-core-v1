@@ -1,14 +1,14 @@
 use crate::{
-    axis::{leg::leg_matcher::LegMatcher, occupancy::OccupancyMarker, update::UpdateMarker},
+    axis::{LegMatcher, OccupancyMarker, UpdateMarker},
     axis_helpers::MarketSpec,
     goblin_error::GoblinError,
     instructions::ix_make_inner::{
         update_delta::update_delta, update_last_position::update_last_position,
         update_matrix::update_matrix, update_resting_order::update_resting_order,
     },
-    matching::region::make_region::MakeRegion,
+    matching::MakeRegion,
     quantities::{BaseLots, Position},
-    state::bitmap::alias::InnerBitmap,
+    state::InnerBitmap,
     Ctx,
 };
 

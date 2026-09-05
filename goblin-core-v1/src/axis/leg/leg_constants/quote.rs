@@ -1,5 +1,5 @@
 use crate::{
-    axis::leg::{leg_constants::LegConstants, Quote},
+    axis::leg::{LegConstants, Quote},
     quantities::{Position, QuoteAtomsPerQuoteUnit, ATOMS_PER_UNIT},
 };
 

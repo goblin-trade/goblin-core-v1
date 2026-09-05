@@ -1,4 +1,4 @@
-use crate::{axis::leg::leg_quantities::LegQuantities, quantities::Position};
+use crate::{axis::leg::LegQuantities, quantities::Position};
 
 pub trait LegCoordinates: LegQuantities {
     fn in_region(last_position: Position, position: Position) -> bool;

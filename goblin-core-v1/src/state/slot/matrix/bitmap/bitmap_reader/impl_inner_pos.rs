@@ -1,9 +1,9 @@
 use crate::{
-    axis::leg::leg_matcher::LegMatcher,
+    axis::LegMatcher,
     axis_helpers::TokenPair,
     quantities::{Pos2, Position, INNER_POS, OUTER_POS, POS_0, POS_1, POS_2},
     state::{
-        bitmap::{bitmap_reader::BitmapReader, preimage::BitmapPreimage, Bitmap},
+        bitmap::{Bitmap, BitmapPreimage, BitmapReader},
         MarketPreimage, Preimage, SlotKey,
     },
 };

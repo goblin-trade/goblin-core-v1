@@ -9,5 +9,7 @@ pub mod update_reader;
 pub use update::*;
 pub use update_erc20::*;
 pub use update_eth::*;
+pub use update_make::*;
 pub use update_marker::*;
 pub use update_quantity::*;
+pub use update_reader::*;

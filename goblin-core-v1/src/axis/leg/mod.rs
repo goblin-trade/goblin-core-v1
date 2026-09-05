@@ -1,7 +1,4 @@
-// TODO `pub use` on submodules
 pub mod leg;
-pub use leg::*;
-
 pub mod leg_constants;
 pub mod leg_coordinates;
 pub mod leg_iterator;
@@ -10,3 +7,13 @@ pub mod leg_math;
 pub mod leg_quantities;
 pub mod leg_reader;
 pub mod leg_validator;
+
+pub use leg::*;
+pub use leg_constants::*;
+pub use leg_coordinates::*;
+pub use leg_iterator::*;
+pub use leg_matcher::*;
+pub use leg_math::*;
+pub use leg_quantities::*;
+pub use leg_reader::*;
+pub use leg_validator::*;

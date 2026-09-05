@@ -1,9 +1,9 @@
 use crate::{
-    axis::leg::leg_matcher::LegMatcher,
+    axis::LegMatcher,
     axis_helpers::TokenPair,
-    matching::match_iterator::RestingOrderEntry,
+    matching::RestingOrderEntry,
     quantities::{QuoteLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, Ticks},
-    state::resting_order::RestingOrder,
+    state::RestingOrder,
     types::Address,
 };
 

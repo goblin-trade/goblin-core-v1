@@ -8,7 +8,9 @@ pub mod position_range;
 pub mod safe_position;
 
 pub use alias::*;
+pub use bits_layout::*;
 pub use derived_position::*;
+pub use inner_val::*;
 pub use position::*;
 pub use position_range::*;
 pub use safe_position::*;

@@ -1,21 +1,13 @@
 use crate::{
     axis::{
-        leg::{leg_matcher::LegMatcher, LegEnum},
-        occupancy::{
-            occupancy_marker::{vacant::validate_region, OccupancyMarker},
-            Vacant,
-        },
-        update::UpdateEnum,
+        occupancy_marker::vacant::validate_region, LegEnum, LegMatcher, OccupancyMarker,
+        UpdateEnum, Vacant,
     },
     axis_helpers::TokenPair,
     goblin_error::GoblinError,
-    matching::region::make_region::MakeRegion,
+    matching::MakeRegion,
     quantities::Position,
-    state::{
-        bitmap::alias::InnerBitmap,
-        resting_order::{preimage::RestingOrderPreimage, RestingOrder},
-        SlotKey,
-    },
+    state::{InnerBitmap, RestingOrder, RestingOrderPreimage, SlotKey},
     types::Address,
 };
 

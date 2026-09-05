@@ -1,5 +1,5 @@
 use crate::{
-    axis::token::token_msg_transfer::TokenMsgTransfer,
+    axis::TokenMsgTransfer,
     input_processor::FixedDecode,
     quantities::UnsidedDeltaAtoms,
     settlement::{CheckedOps, ConstDefault},

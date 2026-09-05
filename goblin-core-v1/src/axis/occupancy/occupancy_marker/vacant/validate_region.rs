@@ -1,10 +1,10 @@
 use crate::{
-    axis::leg::leg_matcher::LegMatcher,
+    axis::LegMatcher,
     goblin_error::GoblinError,
-    matching::region::make_region::MakeRegion,
+    matching::MakeRegion,
     quantities::{InnerPos, Position},
     require,
-    state::bitmap::alias::InnerBitmap,
+    state::InnerBitmap,
 };
 
 pub fn validate_region<In>(

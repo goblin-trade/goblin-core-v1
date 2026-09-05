@@ -1,3 +1,3 @@
-use crate::axis::leg::{leg_validator::LegValidator, Base};
+use crate::axis::leg::{Base, LegValidator};
 
 impl LegValidator for Base {}

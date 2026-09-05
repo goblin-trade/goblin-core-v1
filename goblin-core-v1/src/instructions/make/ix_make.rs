@@ -1,14 +1,14 @@
 use crate::{
-    axis::occupancy::occupancy_marker::OccupancyMarker,
+    axis::OccupancyMarker,
     axis_helpers::MarketSpec,
     goblin_error::GoblinError,
     input_processor::{ArgsReader, FixedDecode},
-    instructions::ix_make_inner::ix_make_inner,
+    instructions::ix_make_inner,
     market::MakeHeader,
     match_axes,
-    matching::region::make_region::MakeRegion,
+    matching::MakeRegion,
     quantities::{BaseLots, Pos1, Pos2},
-    state::bitmap::alias::InnerBitmap,
+    state::InnerBitmap,
     Ctx,
 };
 

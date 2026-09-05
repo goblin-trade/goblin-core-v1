@@ -1,5 +1,4 @@
-pub mod eth;
-
+mod eth;
 pub mod eth_data;
 pub mod eth_delta;
 

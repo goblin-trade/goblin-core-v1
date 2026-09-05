@@ -1,7 +1,9 @@
-use crate::quantities::{InnerPos, OuterBitmapIndex, OuterPos, PositionRange};
 use crate::{
-    axis::leg::leg_coordinates::LegCoordinates,
-    quantities::{Position, INNER_POS, OUTER_BITMAP_INDEX, OUTER_POS},
+    axis::leg::LegCoordinates,
+    quantities::{
+        InnerPos, OuterBitmapIndex, OuterPos, Position, PositionRange, INNER_POS,
+        OUTER_BITMAP_INDEX, OUTER_POS,
+    },
 };
 use core::ops::RangeInclusive;
 use core::u16;

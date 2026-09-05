@@ -1,6 +1,6 @@
 use crate::{
-    axis::token::token_marker::TokenMarker,
-    settlement::{global_delta::TokenDelta, CheckedOps},
+    axis::TokenMarker,
+    settlement::{CheckedOps, TokenDelta},
 };
 
 impl<TM: TokenMarker> CheckedOps for TokenDelta<TM> {

@@ -1,9 +1,9 @@
 use crate::{
-    axis::{occupancy::OccupancyMarker, update::UpdateMarker},
+    axis::{OccupancyMarker, UpdateMarker},
     axis_helpers::MarketSpec,
     goblin_error::GoblinError,
     quantities::{BaseLots, Position},
-    state::{resting_order::preimage::RestingOrderPreimage, Preimage},
+    state::{Preimage, RestingOrderPreimage},
     Ctx,
 };
 

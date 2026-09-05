@@ -1,9 +1,9 @@
 use crate::{
-    axis::leg::leg_matcher::LegMatcher,
+    axis::LegMatcher,
     axis_helpers::MarketSpec,
     goblin_error::GoblinError,
     input_processor::{ArgsReader, CompoundDecode},
-    instructions::take::take_header::TakeHeader,
+    instructions::TakeHeader,
     matching::match_order,
     Ctx,
 };

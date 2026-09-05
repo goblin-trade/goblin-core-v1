@@ -1,7 +1,7 @@
 use crate::{
-    axis::token::token_reader::TokenDataTriple, axis_helpers::MarketSpec,
-    goblin_error::GoblinError, input_processor::ArgsReader,
-    settlement::local_delta::LocalCounterparties, types::Address, Readables, Writables,
+    axis::TokenDataTriple, axis_helpers::MarketSpec, goblin_error::GoblinError,
+    input_processor::ArgsReader, settlement::LocalCounterparties, types::Address, Readables,
+    Writables,
 };
 
 pub struct Ctx<'a, MS: MarketSpec> {

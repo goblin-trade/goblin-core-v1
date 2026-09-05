@@ -1,6 +1,6 @@
 use crate::{
     axis::{
-        leg::{leg_math::LegMath, leg_quantities::LegQuantities, Base, Leg, Quote, SamePair},
+        leg::{Base, Leg, LegMath, LegQuantities, Quote, SamePair},
         update::SameUpdatePair,
     },
     quantities::{
@@ -8,7 +8,7 @@ use crate::{
         UnsidedAtomsPerLot, UnsidedDeltaAtoms, UnsidedDeltaAtomsPerLot, UnsidedDeltaLots,
         UnsidedLots,
     },
-    settlement::local_delta::LocalCounterparty,
+    settlement::LocalCounterparty,
     types::{StoreReader, Tuple},
 };
 

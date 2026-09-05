@@ -1,7 +1,8 @@
 ///! LegMarker for input base, also known as ask / sell
-use crate::axis::leg::leg_math::LegMath;
-use crate::axis::leg::{Base, Quote};
-use crate::quantities::{BaseLots, BaseLotsPerBaseUnit, QuoteLotsPerBaseUnit};
+use crate::{
+    axis::leg::{Base, LegMath, Quote},
+    quantities::{BaseLots, BaseLotsPerBaseUnit, QuoteLotsPerBaseUnit},
+};
 
 // Input Base = side Ask (sell)
 impl LegMath for Base {

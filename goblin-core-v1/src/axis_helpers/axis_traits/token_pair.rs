@@ -1,8 +1,4 @@
-use crate::axis::{
-    leg::Pair,
-    market::market_locator::hardcoded::HardcodedMarketList,
-    token::{token_marker::TokenMarker, token_quantity::TokenQuantity},
-};
+use crate::axis::{HardcodedMarketList, Pair, TokenMarker, TokenQuantity};
 
 pub trait TokenPair: 'static + Clone + Copy + PartialEq + PartialOrd {
     type Base: TokenMarker;

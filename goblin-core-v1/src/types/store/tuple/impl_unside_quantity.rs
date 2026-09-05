@@ -1,4 +1,4 @@
-use crate::{axis::leg::leg_matcher::LegMatcher, quantities::UnsideQuantity, types::Tuple};
+use crate::{axis::LegMatcher, quantities::UnsideQuantity, types::Tuple};
 
 impl<S0, S1, T0, T1, K> UnsideQuantity<S0> for Tuple<T0, T1, K>
 where

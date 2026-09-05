@@ -1,6 +1,6 @@
 use crate::{
-    axis::leg::{leg_coordinates::LegCoordinates, Base},
-    quantities::{bits_layout::BitsLayout, Position},
+    axis::leg::{Base, LegCoordinates},
+    quantities::{BitsLayout, Position},
 };
 
 impl LegCoordinates for Base {

@@ -1,6 +1,6 @@
 use goblin_macros::FixedDecode;
 
-use crate::quantities::bits_layout::BitsLayout;
+use crate::quantities::BitsLayout;
 use core::ops::{Add, Sub};
 use core::u64;
 

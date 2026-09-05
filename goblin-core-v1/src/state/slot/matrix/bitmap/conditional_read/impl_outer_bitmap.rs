@@ -1,9 +1,9 @@
 use crate::{
     axis_helpers::MarketSpec,
-    matching::region::make_region::MakeRegion,
+    matching::MakeRegion,
     quantities::{Pos0, OUTER_POS, POS_0},
     state::{
-        bitmap::{preimage::BitmapPreimage, Bitmap},
+        bitmap::{Bitmap, BitmapPreimage},
         Preimage, SlotKey,
     },
     Ctx,

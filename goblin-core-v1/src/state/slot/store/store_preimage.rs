@@ -1,5 +1,5 @@
 use crate::{
-    axis::token::token_marker::TokenMarker,
+    axis::TokenMarker,
     state::{Preimage, Store},
     types::Address,
 };
