@@ -1,4 +1,4 @@
-pub mod alias;
+mod alias;
 pub mod into_abs;
 pub mod try_into_delta;
 pub mod try_into_unsided_delta;

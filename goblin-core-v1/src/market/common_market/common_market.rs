@@ -3,7 +3,6 @@ use goblin_macros::FixedDecode;
 use crate::{
     axis::{
         leg::{Base, Pair, Quote, SamePair},
-        market::MarketMarker,
         token::token_reader::TokenDataTriple,
     },
     axis_helpers::TokenPair,

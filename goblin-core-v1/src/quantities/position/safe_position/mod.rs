@@ -1,6 +1,6 @@
 pub mod safe_position;
 pub use safe_position::*;
-pub mod alias;
+mod alias;
 pub use alias::*;
 
 mod pos_0;

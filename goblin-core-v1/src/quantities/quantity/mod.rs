@@ -1,4 +1,4 @@
-pub mod alias;
+mod alias;
 pub mod delta;
 pub mod dim;
 pub mod exp;

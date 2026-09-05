@@ -39,5 +39,5 @@ fn test_min() {
     let a = BaseAtoms::new(1);
     let b = BaseAtoms::new(2);
 
-    a.min(b);
+    assert!(a.min(b) == a);
 }

@@ -1,4 +1,4 @@
-pub mod alias;
+mod alias;
 pub mod bits_layout;
 pub mod derived_position;
 mod from_ticks;
