@@ -1,4 +1,4 @@
-use crate::{axis::HARDCODED_CALLERS, define_axis, types::Address};
+use crate::{axis::HardcodedCallerList, define_axis, types::Address};
 
 define_axis! {
     pub struct Caller;
@@ -10,7 +10,11 @@ define_axis! {
 
 impl From<&Address> for CallerEnum {
     fn from(address: &Address) -> Self {
-        if *address == HARDCODED_CALLERS[0] || *address == HARDCODED_CALLERS[1] {
+        // TODO fix duplication
+        // We find the caller index then discard it. We find it again in TM::get_store_hash()
+        //
+        // TODO pass CM::CallerIndex = HardcodedCallerIndex or CustomCallerStub
+        if HardcodedCallerList::index(address).is_some() {
             CallerEnum::HardcodedCaller
         } else {
             CallerEnum::CustomCaller

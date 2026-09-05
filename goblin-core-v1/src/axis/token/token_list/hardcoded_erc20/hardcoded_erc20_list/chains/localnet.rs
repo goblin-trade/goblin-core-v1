@@ -4,13 +4,14 @@ use crate::{
             token_list::hardcoded_erc20::HardcodedERC20List, token_marker::TokenData,
             HardcodedERC20,
         },
-        HARDCODED_CALLERS,
+        HARDCODED_CALLER_LIST,
     },
     state::{SlotKey, StorePreimage},
 };
 
 pub const HARDCODED_ERC20_COUNT: usize = 2;
 
+// TODO impl Index<HardcodedCallerIndex>
 pub const HARDCODED_ERC20_LIST: HardcodedERC20List<HARDCODED_ERC20_COUNT> = HardcodedERC20List {
     inner: [
         TokenData {
@@ -30,17 +31,19 @@ pub const HARDCODED_ERC20_LIST: HardcodedERC20List<HARDCODED_ERC20_COUNT> = Hard
     ],
 };
 
+// TODO impl Index<HardcodedCallerIndex>
 pub const HARDCODED_ERC20_STORE_HASHES: [[SlotKey<StorePreimage<HardcodedERC20>>;
-    HARDCODED_ERC20_COUNT]; HARDCODED_CALLERS.len()] = [
+    HARDCODED_ERC20_COUNT];
+    HARDCODED_CALLER_LIST.inner.len()] = [
     // Caller 0
     [
         StorePreimage {
-            trader: HARDCODED_CALLERS[0],
+            trader: HARDCODED_CALLER_LIST.inner[0],
             token_address: HARDCODED_ERC20_LIST.inner[0].address,
         }
         .const_hash(),
         StorePreimage {
-            trader: HARDCODED_CALLERS[0],
+            trader: HARDCODED_CALLER_LIST.inner[0],
             token_address: HARDCODED_ERC20_LIST.inner[1].address,
         }
         .const_hash(),
@@ -48,12 +51,12 @@ pub const HARDCODED_ERC20_STORE_HASHES: [[SlotKey<StorePreimage<HardcodedERC20>>
     // Caller 1
     [
         StorePreimage {
-            trader: HARDCODED_CALLERS[1],
+            trader: HARDCODED_CALLER_LIST.inner[1],
             token_address: HARDCODED_ERC20_LIST.inner[0].address,
         }
         .const_hash(),
         StorePreimage {
-            trader: HARDCODED_CALLERS[1],
+            trader: HARDCODED_CALLER_LIST.inner[1],
             token_address: HARDCODED_ERC20_LIST.inner[1].address,
         }
         .const_hash(),

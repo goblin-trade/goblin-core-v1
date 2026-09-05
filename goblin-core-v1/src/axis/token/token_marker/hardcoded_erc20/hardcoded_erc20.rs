@@ -1,12 +1,13 @@
 use crate::{
     axis::{
-        caller::{CallerEnum, CallerMarker, HardcodedCaller},
+        caller::{CallerEnum, CallerMarker},
         token::{
             token_list::hardcoded_erc20::{HARDCODED_ERC20_COUNT, HARDCODED_ERC20_STORE_HASHES},
             token_marker::{TokenData, TokenMarker},
             HardcodedERC20,
         },
         update::UpdateMarker,
+        HardcodedCallerList,
     },
     goblin_error::GoblinError,
     quantities::{UnsidedAtoms, UnsidedDeltaAtomsPerLot},
@@ -37,18 +38,18 @@ impl TokenMarker for HardcodedERC20 {
         token_index: &Self::TokenIndex,
     ) -> SlotKey<StorePreimage<Self>> {
         match CM::VARIANT {
-            CallerEnum::HardcodedCaller => {
-                match HardcodedCaller::get_caller_index(&preimage.trader) {
-                    Some(caller_idx) => {
-                        if token_index.0 < HARDCODED_ERC20_COUNT {
-                            HARDCODED_ERC20_STORE_HASHES[caller_idx][token_index.0]
-                        } else {
-                            preimage.hash()
-                        }
+            // TODO remove. Accept caller index in param
+            CallerEnum::HardcodedCaller => match HardcodedCallerList::index(&preimage.trader) {
+                Some(caller_idx) => {
+                    if token_index.0 < HARDCODED_ERC20_COUNT {
+                        // TODO use Index trait to get inner
+                        HARDCODED_ERC20_STORE_HASHES[caller_idx.inner][token_index.0]
+                    } else {
+                        preimage.hash()
                     }
-                    None => preimage.hash(),
                 }
-            }
+                None => preimage.hash(),
+            },
             CallerEnum::CustomCaller => preimage.hash(),
         }
     }
