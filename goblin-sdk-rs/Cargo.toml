@@ -21,5 +21,5 @@ hex-literal = "0.4.1"
 
 [features]
 default = []
-std = []
-wasm = ["wasm-bindgen", "js-sys"]
+std = ["goblin-core-v1/sdk", "hex/std"]
+wasm = ["wasm-bindgen", "js-sys", "std"]

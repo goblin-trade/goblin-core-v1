@@ -1,8 +1,7 @@
 #![allow(static_mut_refs)]
-#![cfg_attr(target_arch = "wasm32", no_std)]
-#![cfg_attr(target_arch = "wasm32", no_main)]
+#![cfg_attr(all(not(any(test, feature = "sdk")), target_arch = "wasm32"), no_std)]
+#![cfg_attr(all(not(any(test, feature = "sdk")), target_arch = "wasm32"), no_main)]
 
-#[cfg(all(not(test), target_arch = "wasm32"))]
 use crate::processor::processor;
 
 pub mod axis;
@@ -22,7 +21,6 @@ pub mod types;
 
 pub use ctx::*;
 
-#[cfg(all(not(test), target_arch = "wasm32"))]
 #[no_mangle]
 pub extern "C" fn user_entrypoint(len: usize) -> i32 {
     match processor(len) {
@@ -31,7 +29,7 @@ pub extern "C" fn user_entrypoint(len: usize) -> i32 {
     }
 }
 
-#[cfg(all(not(test), target_arch = "wasm32"))]
+#[cfg(all(not(any(test, feature = "sdk")), target_arch = "wasm32"))]
 #[panic_handler]
 fn panic(_info: &core::panic::PanicInfo) -> ! {
     loop {}
