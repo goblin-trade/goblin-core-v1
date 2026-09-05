@@ -2079,9 +2079,11 @@ dependencies = [
 name = "goblin-macros"
 version = "0.1.0"
 dependencies = [
+ "hex",
  "proc-macro2",
  "quote",
  "syn 2.0.99",
+ "tiny-keccak",
 ]
 
 [[package]]
