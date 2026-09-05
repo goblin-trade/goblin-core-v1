@@ -1,12 +1,10 @@
-use goblin_macros::const_keccak256;
-
 use crate::{
     axis::{
-        caller::HARDCODED_CALLER_COUNT,
         token::{
             token_list::hardcoded_erc20::HardcodedERC20List, token_marker::TokenData,
             HardcodedERC20,
         },
+        HARDCODED_CALLERS,
     },
     state::{SlotKey, StorePreimage},
 };
@@ -33,53 +31,31 @@ pub const HARDCODED_ERC20_LIST: HardcodedERC20List<HARDCODED_ERC20_COUNT> = Hard
 };
 
 pub const HARDCODED_ERC20_STORE_HASHES: [[SlotKey<StorePreimage<HardcodedERC20>>;
-    HARDCODED_ERC20_COUNT]; HARDCODED_CALLER_COUNT] = [
-    // Caller 0 (0x0)
+    HARDCODED_ERC20_COUNT]; HARDCODED_CALLERS.len()] = [
+    // Caller 0
     [
-        // Token 0
-        SlotKey::new(const_keccak256!(
-            3u8,
-            [0u8; 20],
-            [
-                0xe1, 0x08, 0x02, 0x24, 0xb6, 0x32, 0xa9, 0x39, 0x51, 0xa7, 0xcf, 0xa3, 0x3e, 0xee,
-                0xa9, 0xfd, 0x81, 0x55, 0x8b, 0x5e
-            ]
-        )),
-        // Token 1
-        SlotKey::new(const_keccak256!(
-            3u8,
-            [0u8; 20],
-            [
-                0x3f, 0x1e, 0xae, 0x7d, 0x46, 0xd8, 0x8f, 0x08, 0xfc, 0x2f, 0x8e, 0xd2, 0x7f, 0xcb,
-                0x2a, 0xb1, 0x83, 0xeb, 0x2d, 0x0e
-            ]
-        )),
+        StorePreimage {
+            trader: HARDCODED_CALLERS[0],
+            token_address: HARDCODED_ERC20_LIST.inner[0].address,
+        }
+        .const_hash(),
+        StorePreimage {
+            trader: HARDCODED_CALLERS[0],
+            token_address: HARDCODED_ERC20_LIST.inner[1].address,
+        }
+        .const_hash(),
     ],
-    // Caller 1 (0x3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E)
+    // Caller 1
     [
-        // Token 0
-        SlotKey::new(const_keccak256!(
-            3u8,
-            [
-                0x3f, 0x1e, 0xae, 0x7d, 0x46, 0xd8, 0x8f, 0x08, 0xfc, 0x2f, 0x8e, 0xd2, 0x7f, 0xcb,
-                0x2a, 0xb1, 0x83, 0xeb, 0x2d, 0x0e
-            ],
-            [
-                0xe1, 0x08, 0x02, 0x24, 0xb6, 0x32, 0xa9, 0x39, 0x51, 0xa7, 0xcf, 0xa3, 0x3e, 0xee,
-                0xa9, 0xfd, 0x81, 0x55, 0x8b, 0x5e
-            ]
-        )),
-        // Token 1
-        SlotKey::new(const_keccak256!(
-            3u8,
-            [
-                0x3f, 0x1e, 0xae, 0x7d, 0x46, 0xd8, 0x8f, 0x08, 0xfc, 0x2f, 0x8e, 0xd2, 0x7f, 0xcb,
-                0x2a, 0xb1, 0x83, 0xeb, 0x2d, 0x0e
-            ],
-            [
-                0x3f, 0x1e, 0xae, 0x7d, 0x46, 0xd8, 0x8f, 0x08, 0xfc, 0x2f, 0x8e, 0xd2, 0x7f, 0xcb,
-                0x2a, 0xb1, 0x83, 0xeb, 0x2d, 0x0e
-            ]
-        )),
+        StorePreimage {
+            trader: HARDCODED_CALLERS[1],
+            token_address: HARDCODED_ERC20_LIST.inner[0].address,
+        }
+        .const_hash(),
+        StorePreimage {
+            trader: HARDCODED_CALLERS[1],
+            token_address: HARDCODED_ERC20_LIST.inner[1].address,
+        }
+        .const_hash(),
     ],
 ];

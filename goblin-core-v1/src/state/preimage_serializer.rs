@@ -18,7 +18,7 @@ impl<P: Preimage> PreimageSerializer<P> {
         }
     }
 
-    pub fn serialize(&self) -> &[u8] {
+    pub const fn serialize(&self) -> &[u8] {
         unsafe {
             core::slice::from_raw_parts(
                 self as *const _ as *const u8,

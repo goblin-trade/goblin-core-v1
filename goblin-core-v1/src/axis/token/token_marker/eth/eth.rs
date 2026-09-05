@@ -1,13 +1,12 @@
-use goblin_macros::const_keccak256;
-
 use crate::{
     axis::{
-        caller::{CallerEnum, CallerMarker, HardcodedCaller, HARDCODED_CALLER_COUNT},
+        caller::{CallerEnum, CallerMarker, HardcodedCaller},
         token::{
             token_marker::{TokenData, TokenMarker},
             ETHStub, ETH,
         },
         update::UpdateMarker,
+        HARDCODED_CALLERS,
     },
     goblin_error::GoblinError,
     quantities::{ETHAtoms, UnsidedAtoms, UnsidedDeltaAtomsPerLot},
@@ -15,17 +14,17 @@ use crate::{
     types::Address,
 };
 
-pub const ETH_STORE_HASHES: [SlotKey<StorePreimage<ETH>>; HARDCODED_CALLER_COUNT] = [
-    // Caller 0 (0x0)
-    SlotKey::new(const_keccak256!(2u8, [0u8; 20])),
-    // Caller 1 (0x3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E)
-    SlotKey::new(const_keccak256!(
-        2u8,
-        [
-            0x3f, 0x1e, 0xae, 0x7d, 0x46, 0xd8, 0x8f, 0x08, 0xfc, 0x2f, 0x8e, 0xd2, 0x7f, 0xcb,
-            0x2a, 0xb1, 0x83, 0xeb, 0x2d, 0x0e
-        ]
-    )),
+pub const ETH_STORE_HASHES: [SlotKey<StorePreimage<ETH>>; HARDCODED_CALLERS.len()] = [
+    StorePreimage {
+        trader: HARDCODED_CALLERS[0],
+        token_address: ETHStub,
+    }
+    .const_hash(),
+    StorePreimage {
+        trader: HARDCODED_CALLERS[1],
+        token_address: ETHStub,
+    }
+    .const_hash(),
 ];
 
 impl TokenMarker for ETH {

@@ -3,7 +3,6 @@ use syn::{DeriveInput, parse_macro_input};
 
 mod const_default;
 mod fixed_decode;
-mod keccak;
 
 /// Derive `FixedDecode` for a fixed-size struct whose fields all implement
 /// `FixedDecode`.
@@ -47,15 +46,6 @@ pub fn derive_const_default(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
     match const_default::expand(input) {
-        Ok(tokens) => tokens.into(),
-        Err(err) => err.to_compile_error().into(),
-    }
-}
-
-/// Compute Keccak-256 hash at compile time for byte inputs (arrays, string/hex literals, integers)
-#[proc_macro]
-pub fn const_keccak256(input: TokenStream) -> TokenStream {
-    match keccak::expand_keccak256(input.into()) {
         Ok(tokens) => tokens.into(),
         Err(err) => err.to_compile_error().into(),
     }
