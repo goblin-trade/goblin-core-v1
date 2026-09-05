@@ -1,5 +1,8 @@
 use crate::{
-    axis::{CallerEnum, CallerMarker, TokenMarker},
+    axis::{
+        CallerEnum, CallerIndexEnum, CallerMarker, CustomCaller, HardcodedCaller,
+        HardcodedCallerIndex, TokenMarker,
+    },
     match_axes,
     state::{Preimage, PreimageSerializer, SlotKey, Store},
     types::Address,
@@ -14,15 +17,15 @@ pub struct StorePreimage<TM: TokenMarker> {
 }
 
 impl<TM: TokenMarker> StorePreimage<TM> {
-    pub fn get_hash(&self, token_index: &TM::TokenIndex) -> SlotKey<Self> {
-        let caller_enum = CallerEnum::from(&self.trader);
-        match_axes!(CM = caller_enum => {
-            Self::get_store_hash::<CM>(self, token_index)
-        })
-    }
-
-    pub fn get_store_hash<CM: CallerMarker>(&self, token_index: &TM::TokenIndex) -> SlotKey<Self> {
-        TM::get_store_hash::<CM>(self, token_index)
+    pub fn get_hash(&self, token_index: TM::TokenIndex) -> SlotKey<Self> {
+        match CallerIndexEnum::from(&self.trader) {
+            CallerIndexEnum::HardcodedCaller(caller_index) => {
+                TM::get_store_hash::<HardcodedCaller>(self, token_index, caller_index)
+            }
+            CallerIndexEnum::CustomCaller(caller_index) => {
+                TM::get_store_hash::<CustomCaller>(self, token_index, caller_index)
+            }
+        }
     }
 
     pub const fn const_hash(&self) -> SlotKey<Self> {

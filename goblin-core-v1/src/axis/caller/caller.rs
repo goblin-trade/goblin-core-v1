@@ -1,4 +1,8 @@
-use crate::{axis::HardcodedCallerList, define_axis, types::Address};
+use crate::{
+    axis::{CallerMarker, CustomCallerStub, HardcodedCallerList},
+    define_axis,
+    types::Address,
+};
 
 define_axis! {
     pub struct Caller;
@@ -22,8 +26,17 @@ impl From<&Address> for CallerEnum {
     }
 }
 
-impl From<Address> for CallerEnum {
-    fn from(address: Address) -> Self {
-        Self::from(&address)
+pub enum CallerIndexEnum {
+    HardcodedCaller(<HardcodedCaller as CallerMarker>::CallerIndex),
+    CustomCaller(<CustomCaller as CallerMarker>::CallerIndex),
+}
+
+impl From<&Address> for CallerIndexEnum {
+    fn from(address: &Address) -> Self {
+        if let Some(hardcoded_caller_index) = HardcodedCallerList::index(address) {
+            CallerIndexEnum::HardcodedCaller(hardcoded_caller_index)
+        } else {
+            CallerIndexEnum::CustomCaller(CustomCallerStub)
+        }
     }
 }

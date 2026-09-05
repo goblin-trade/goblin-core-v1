@@ -34,7 +34,8 @@ impl TokenMarker for CustomERC20 {
 
     fn get_store_hash<CM: CallerMarker>(
         preimage: &StorePreimage<Self>,
-        _token_index: &Self::TokenIndex,
+        _token_index: Self::TokenIndex,
+        _caller_index: CM::CallerIndex,
     ) -> SlotKey<StorePreimage<Self>> {
         preimage.hash()
     }

@@ -39,7 +39,7 @@ impl<TM: TokenMarker> TokenDelta<TM> {
             trader: *trader,
             token_address: token_data.address,
         }
-        .get_hash(&token_index);
+        .get_hash(token_index);
         let mut store = store_hash.load();
         store.update_sender(token_data, self, msg_transfer)?;
         store_hash.store(&store);

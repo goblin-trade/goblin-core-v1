@@ -48,7 +48,8 @@ impl TokenMarker for ETH {
 
     fn get_store_hash<CM: CallerMarker>(
         preimage: &StorePreimage<Self>,
-        _token_index: &Self::TokenIndex,
+        _token_index: Self::TokenIndex,
+        caller_index: CM::CallerIndex,
     ) -> SlotKey<StorePreimage<Self>> {
         // TODO fix
         // HardcodedCaller is guaranteed to have ETH

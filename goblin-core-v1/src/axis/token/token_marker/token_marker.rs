@@ -48,7 +48,8 @@ pub trait TokenMarker: 'static + TokenReader + AxisMarker<Enum = TokenEnum> {
 
     fn get_store_hash<CM: CallerMarker>(
         preimage: &StorePreimage<Self>,
-        token_index: &Self::TokenIndex,
+        token_index: Self::TokenIndex,
+        caller_index: CM::CallerIndex,
     ) -> SlotKey<StorePreimage<Self>>;
 
     ////////////////////////

@@ -27,6 +27,6 @@ impl<TM: TokenMarker> CounterpartyTokenKey<TM> {
             token_address: token_data.address,
         };
 
-        preimage.get_hash(&self.token_index)
+        preimage.get_hash(self.token_index)
     }
 }

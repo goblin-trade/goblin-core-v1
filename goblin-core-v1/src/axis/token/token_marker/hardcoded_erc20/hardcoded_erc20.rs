@@ -35,7 +35,8 @@ impl TokenMarker for HardcodedERC20 {
 
     fn get_store_hash<CM: CallerMarker>(
         preimage: &StorePreimage<Self>,
-        token_index: &Self::TokenIndex,
+        token_index: Self::TokenIndex,
+        caller_index: CM::CallerIndex,
     ) -> SlotKey<StorePreimage<Self>> {
         match CM::VARIANT {
             // TODO remove. Accept caller index in param
