@@ -1,6 +1,6 @@
 use crate::{
     goblin_error::GoblinError,
-    hostio::{self},
+    hostio,
     input_processor::{ArgsReader, CompoundDecode, GlobalArgs},
     require,
     settlement::StaticDelta,
@@ -11,7 +11,15 @@ pub const CONTRACT_ADDRESS: [u8; 20] = [
     0xde, 0x80, 0x77, 0x22,
 ];
 
-pub fn processor(len: usize) -> Result<(), GoblinError> {
+#[no_mangle]
+pub extern "C" fn user_entrypoint(len: usize) -> i32 {
+    match user_entrypoint_inner(len) {
+        Ok(_) => 0,
+        Err(err) => err.code(),
+    }
+}
+
+fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
     require!(!hostio::msg_reentrant(), GoblinError::Reentrant);
 
     let delta = StaticDelta::get();
