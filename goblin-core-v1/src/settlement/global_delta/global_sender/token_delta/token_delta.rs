@@ -34,6 +34,8 @@ impl<TM: TokenMarker> TokenDelta<TM> {
         let msg_transfer = TM::get_leg(msg_transfers);
 
         // 1. Update store
+        // TODO use Caller axis to get hash
+        // Hash is hardcoded for HardcodedCaller + (HardcodedERC20 or ERC20)
         let store_hash = StorePreimage::<TM> {
             trader: *trader,
             token_address: token_data.address,
