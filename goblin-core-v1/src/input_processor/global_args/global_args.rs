@@ -27,34 +27,23 @@ impl<'a> GlobalArgs<'a> {
         reader: &ArgsReader,
         delta: &mut StaticDelta,
     ) -> Result<(), GoblinError> {
-        // problem- currently we need to pass caller_index and caller_address
-        // separately.
-        //
-        // This creates invalid states in hardcoded case. Instead of using
-        // a stub, Caller = HardcodedCallerIndex / Address
-        // Then we can map hardcoded index to address whenever necessary
-        let maybe_hardcoded_caller_index =
-            HardcodedCallerList::index(&self.hostio_fields.msg_sender);
+        for_axes!(CM => {
+            if let Some(caller) = CM::get_caller(&self.hostio_fields.msg_sender) {
+                for_axes!(M, TM0, TM1 => process_market::<(M, Pair<TM0, TM1>)>(
+                    &self.hostio_fields.msg_sender,
+                    reader,
+                    &self.global_header.token_data_triple,
+                    &self.global_header.market_counts,
+                    delta,
+                )?);
 
-        let caller_enum = CallerEnum::from(maybe_hardcoded_caller_index);
-
-        match_axes!(CM = caller_enum => {
-            let index = CM::get_caller(maybe_hardcoded_caller_index);
-
-            for_axes!(M, TM0, TM1 => process_market::<(M, Pair<TM0, TM1>)>(
-                &self.hostio_fields.msg_sender,
-                reader,
-                &self.global_header.token_data_triple,
-                &self.global_header.market_counts,
-                delta,
-            )?);
-
-            for_axes!(PT, TM0 => PT::settle::<TM0>(
-                &delta.global,
-                &self.global_header.token_data_triple,
-                self.recipient(),
-                &self.msg_transfers(),
-            )?);
+                for_axes!(PT, TM0 => PT::settle::<TM0>(
+                    &delta.global,
+                    &self.global_header.token_data_triple,
+                    self.recipient(),
+                    &self.msg_transfers(),
+                )?);
+            }
         });
 
         Ok(())

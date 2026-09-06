@@ -21,27 +21,3 @@ impl From<Option<HardcodedCallerIndex>> for CallerEnum {
         }
     }
 }
-
-pub enum CallerIndexEnum {
-    HardcodedCaller(<HardcodedCaller as CallerMarker>::Caller),
-    CustomCaller(<CustomCaller as CallerMarker>::Caller),
-}
-
-impl CallerIndexEnum {
-    pub fn kind(&self) -> CallerEnum {
-        match self {
-            Self::HardcodedCaller(_) => CallerEnum::HardcodedCaller,
-            Self::CustomCaller(_) => CallerEnum::CustomCaller,
-        }
-    }
-}
-
-impl From<&Address> for CallerIndexEnum {
-    fn from(address: &Address) -> Self {
-        if let Some(hardcoded_caller_index) = HardcodedCallerList::index(address) {
-            CallerIndexEnum::HardcodedCaller(hardcoded_caller_index)
-        } else {
-            CallerIndexEnum::CustomCaller(CustomCallerStub)
-        }
-    }
-}
