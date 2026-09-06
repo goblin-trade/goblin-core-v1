@@ -1,14 +1,12 @@
-use core::iter::Zip;
-
 use crate::{
     axis::{
         party::{PartySettle, Sender},
         token::{token_marker::TokenMarker, token_reader::TokenDataTriple},
-        CallerData, CallerMarker, HardcodedCaller, TokenList,
+        CallerData, CallerEnum, CallerMarker, HardcodedCallerList,
     },
-    for_axes,
     goblin_error::GoblinError,
     input_processor::MsgTransfers,
+    match_axes,
     settlement::{
         global_delta::{GlobalDelta, TokenDelta},
         ConstDefault, TokenSettler,
@@ -30,104 +28,37 @@ impl PartySettle for Sender {
     {
         let sender_delta = Self::get_leg(global_delta);
 
-        // problem- data and delta lists should not implement copy
-        let data_list_iter = TM::get_lifetimed(&token_data_triple).into_iter();
-        let sender_delta_list_iter = TM::get_leg(sender_delta).into_iter();
+        let data_iter = TM::get_lifetimed(&token_data_triple).into_iter();
+        let delta_iter = TM::get_leg(sender_delta).into_iter();
 
-        let iter = data_list_iter.zip(sender_delta_list_iter);
+        let maybe_hardcoded_caller_index = HardcodedCallerList::index(caller);
+        let caller_enum = CallerEnum::from(maybe_hardcoded_caller_index);
 
-        // i am back to CallerIndexEnum
-        // this enum is equivalent to Option<HardcodedCallerIndex>
+        match_axes!(CM = caller_enum => {
+            let caller_data = CallerData::<CM> {
+                address: caller,
+                locator: CM::get_locator(maybe_hardcoded_caller_index)
+            };
 
-        let locator = HardcodedCaller::get_locator(caller);
+            for (index, (token_data, token_delta)) in
+                data_iter.zip(delta_iter).enumerate()
+            {
+                if *token_delta != TokenDelta::DEFAULT {
+                    let token_index = TM::TokenIndex::from(index);
 
-        // if let Some(locator) = HardcodedCaller::get_locator(caller) {
-        //     let caller_data = CallerData::<CM> {
-        //         address: caller,
-        //         locator,
-        //     };
-
-        //     for (index, (token_data, token_delta)) in
-        //         data_list_iter.zip(sender_delta_list_iter).enumerate()
-        //     {
-        //         if *token_delta != TokenDelta::DEFAULT {
-        //             let token_index = TM::TokenIndex::from(index);
-
-        //             TokenSettler {
-        //                 token_index,
-        //                 token_data,
-        //                 token_delta,
-        //                 caller_data,
-        //                 msg_transfers,
-        //                 recipient,
-        //             }
-        //             .settle()?;
-        //         }
-        //     }
-        // }
-
-        // for_axes gives copy clone issue
-        // for_axes!(CM => {
-        //     if let Some(locator) = CM::get_locator(caller) {
-        //         let caller_data = CallerData::<CM> {
-        //             address: caller,
-        //             locator
-        //         };
-
-        //         for (index, (token_data, token_delta)) in
-        //             data_list_iter.zip(sender_delta_list_iter).enumerate()
-        //         {
-        //             if *token_delta != TokenDelta::DEFAULT {
-        //                 let token_index = TM::TokenIndex::from(index);
-
-        //                 TokenSettler {
-        //                     token_index,
-        //                     token_data,
-        //                     token_delta,
-        //                     caller_data,
-        //                     msg_transfers,
-        //                     recipient,
-        //                 }
-        //                 .settle()?;
-        //             }
-        //         }
-        //     }
-        // });
+                    TokenSettler {
+                        token_index,
+                        token_data,
+                        token_delta,
+                        caller_data,
+                        msg_transfers,
+                        recipient,
+                    }
+                    .settle()?;
+                }
+            }
+        });
 
         Ok(())
     }
-}
-
-fn settle_inner<'a, CM, TM>(
-    caller_data: CallerData<CM>,
-    recipient: &Address,
-    msg_transfers: &MsgTransfers,
-    iter: Zip<
-        <<TM as TokenList>::DataList<'_> as IntoIterator>::IntoIter,
-        <&'a <TM as TokenList>::SenderDeltaList as IntoIterator>::IntoIter,
-    >,
-    // data_list_iter: <<TM as TokenList>::DataList<'_> as IntoIterator>::IntoIter,
-    // sender_delta_list_iter: <&'a <TM as TokenList>::SenderDeltaList as IntoIterator>::IntoIter,
-) -> Result<(), GoblinError>
-where
-    CM: CallerMarker,
-    TM: TokenMarker,
-    &'a TM::SenderDeltaList: IntoIterator<Item = &'a TokenDelta<TM>>,
-{
-    for (index, (token_data, token_delta)) in iter.enumerate() {
-        if *token_delta != TokenDelta::DEFAULT {
-            let token_index = TM::TokenIndex::from(index);
-
-            TokenSettler {
-                token_index,
-                token_data,
-                token_delta,
-                caller_data,
-                msg_transfers,
-                recipient,
-            }
-            .settle()?;
-        }
-    }
-    Ok(())
 }

@@ -1,14 +1,14 @@
 use crate::{
-    axis::{CallerMarker, HardcodedCaller, HardcodedCallerIndex, HardcodedCallerList, TokenMarker},
+    axis::{CallerMarker, HardcodedCaller, HardcodedCallerIndex, TokenMarker},
     state::{IndexedPreimage, SlotKey, StorePreimage},
-    types::Address,
 };
 
 impl CallerMarker for HardcodedCaller {
     type Locator = HardcodedCallerIndex;
 
-    fn get_locator(address: &Address) -> Option<Self::Locator> {
-        HardcodedCallerList::index(address)
+    fn get_locator(maybe_hardcoded_caller_index: Option<HardcodedCallerIndex>) -> Self::Locator {
+        // externally guaranteed to be present
+        maybe_hardcoded_caller_index.unwrap()
     }
 
     fn get_store_hash<TM: TokenMarker>(
