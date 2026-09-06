@@ -8,7 +8,7 @@ use crate::{
     goblin_error::GoblinError,
     match_axes,
     quantities::{IntoAbs, UnsidedAtoms, UnsidedDeltaAtoms, UnsidedDeltaAtomsPerLot},
-    state::{SlotKey, StorePreimage},
+    state::{indexed_preimage, IndexedPreimage, SlotKey, StorePreimage},
     types::Address,
 };
 
@@ -47,9 +47,7 @@ pub trait TokenMarker: 'static + TokenReader + AxisMarker<Enum = TokenEnum> {
     ) -> Result<(), GoblinError>;
 
     fn get_store_hash<CM: CallerMarker>(
-        preimage: &StorePreimage<Self>,
-        token_index: Self::TokenIndex,
-        caller_index: CM::CallerIndex,
+        indexed_preimage: &IndexedPreimage<CM, Self>,
     ) -> SlotKey<StorePreimage<Self>>;
 
     ////////////////////////

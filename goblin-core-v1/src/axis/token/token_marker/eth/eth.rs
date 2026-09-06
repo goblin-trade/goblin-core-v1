@@ -11,7 +11,7 @@ use crate::{
     },
     goblin_error::GoblinError,
     quantities::{ETHAtoms, UnsidedAtoms, UnsidedDeltaAtomsPerLot},
-    state::{Preimage, SlotKey, StorePreimage},
+    state::{IndexedPreimage, Preimage, SlotKey, StorePreimage},
     types::Address,
 };
 
@@ -34,21 +34,27 @@ impl TokenMarker for ETH {
     }
 
     fn get_store_hash<CM: CallerMarker>(
-        preimage: &StorePreimage<Self>,
-        _token_index: Self::TokenIndex,
-        caller_index: CM::CallerIndex,
+        indexed_preimage: &IndexedPreimage<CM, Self>,
     ) -> SlotKey<StorePreimage<Self>> {
+        // TODO need trait to cover both HardcodedCaller and CustomCaller
+        //
+        // Better alternative- move get_store_hash() on CallMarker itself
+        match CM::VARIANT {
+            CallerEnum::HardcodedCaller => ETH_STORE_LIST[indexed_preimage],
+            CallerEnum::CustomCaller => indexed_preimage.preimage.hash(),
+        }
+
         // TODO fix
         // HardcodedCaller is guaranteed to have ETH
         //
         // TODO make call on CallMarker trait instead of matching enum
-        match CM::VARIANT {
-            CallerEnum::HardcodedCaller => match HardcodedCallerList::index(&preimage.trader) {
-                Some(idx) => ETH_STORE_LIST.inner[idx.inner],
-                None => preimage.hash(),
-            },
-            CallerEnum::CustomCaller => preimage.hash(),
-        }
+        // match CM::VARIANT {
+        //     CallerEnum::HardcodedCaller => match HardcodedCallerList::index(&preimage.trader) {
+        //         Some(idx) => ETH_STORE_LIST.inner[idx.inner],
+        //         None => preimage.hash(),
+        //     },
+        //     CallerEnum::CustomCaller => preimage.hash(),
+        // }
     }
 
     ////////////////////

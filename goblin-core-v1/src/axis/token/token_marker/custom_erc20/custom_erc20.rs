@@ -11,7 +11,7 @@ use crate::{
     hostio::erc20_hostio,
     quantities::{UnsidedAtoms, UnsidedDeltaAtomsPerLot},
     settlement::global_delta::TransferERC20,
-    state::{Preimage, SlotKey, StorePreimage},
+    state::{IndexedPreimage, Preimage, SlotKey, StorePreimage},
     types::Address,
 };
 
@@ -33,11 +33,9 @@ impl TokenMarker for CustomERC20 {
     }
 
     fn get_store_hash<CM: CallerMarker>(
-        preimage: &StorePreimage<Self>,
-        _token_index: Self::TokenIndex,
-        _caller_index: CM::CallerIndex,
+        indexed_preimage: &IndexedPreimage<CM, Self>,
     ) -> SlotKey<StorePreimage<Self>> {
-        preimage.hash()
+        indexed_preimage.preimage.hash()
     }
 
     ///////

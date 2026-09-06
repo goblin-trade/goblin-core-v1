@@ -21,14 +21,14 @@ impl<TM: TokenMarker> StorePreimage<TM> {
         match CallerIndexEnum::from(&self.trader) {
             CallerIndexEnum::HardcodedCaller(caller_index) => {
                 // TODO pass store_key_index
-                let store_key_index = StoreKeyIndex::<TM, HardcodedCaller> {
+                let store_key_index = StoreKeyIndex::<HardcodedCaller, TM> {
                     caller_index,
                     token_index,
                 };
                 TM::get_store_hash::<HardcodedCaller>(self, token_index, caller_index)
             }
             CallerIndexEnum::CustomCaller(caller_index) => {
-                let store_key_index = StoreKeyIndex::<TM, CustomCaller> {
+                let store_key_index = StoreKeyIndex::<CustomCaller, TM> {
                     caller_index,
                     token_index,
                 };

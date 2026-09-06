@@ -4,7 +4,7 @@ use crate::{
     types::Address,
 };
 
-pub struct IndexedPreimage<TM: TokenMarker, CM: CallerMarker> {
-    pub store_key_index: StoreKeyIndex<TM, CM>,
+pub struct IndexedPreimage<CM: CallerMarker, TM: TokenMarker> {
+    pub store_key_index: StoreKeyIndex<CM, TM>,
     pub preimage: StorePreimage<TM>,
 }
