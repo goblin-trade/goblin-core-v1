@@ -2,7 +2,6 @@ use crate::{
     axis::{CallerEnum, HardcodedCallerIndex, TokenMarker},
     axis_helpers::AxisMarker,
     state::{IndexedPreimage, SlotKey, StorePreimage},
-    types::Address,
 };
 
 pub trait CallerMarker: AxisMarker<Enum = CallerEnum> {
