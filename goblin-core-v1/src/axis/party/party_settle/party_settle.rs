@@ -1,8 +1,5 @@
 use crate::{
-    axis::{
-        token::{token_marker::TokenMarker, token_reader::TokenDataTriple},
-        CallerData, CallerMarker,
-    },
+    axis::token::{token_marker::TokenMarker, token_reader::TokenDataTriple},
     goblin_error::GoblinError,
     input_processor::MsgTransfers,
     settlement::global_delta::{GlobalDelta, TokenDelta},
@@ -10,8 +7,8 @@ use crate::{
 };
 
 pub trait PartySettle {
-    fn settle<'a, TM, CM>(
-        caller_data: CallerData<'a, CM>,
+    fn settle<'a, TM>(
+        caller: &Address,
         recipient: &Address,
         global_delta: &'a GlobalDelta,
         token_data_triple: &TokenDataTriple<'a>,
@@ -19,6 +16,5 @@ pub trait PartySettle {
     ) -> Result<(), GoblinError>
     where
         TM: TokenMarker,
-        &'a TM::SenderDeltaList: IntoIterator<Item = &'a TokenDelta<TM>>,
-        CM: CallerMarker;
+        &'a TM::SenderDeltaList: IntoIterator<Item = &'a TokenDelta<TM>>;
 }
