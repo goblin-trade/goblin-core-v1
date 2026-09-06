@@ -1,8 +1,5 @@
 use crate::{
-    axis::{
-        leg::Pair, party::PartySettle, CallerEnum, CallerIndexEnum, CallerMarker,
-        HardcodedCallerList,
-    },
+    axis::{leg::Pair, party::PartySettle, CallerMarker, HardcodedCallerList},
     for_axes,
     goblin_error::GoblinError,
     input_processor::{
@@ -28,7 +25,7 @@ impl<'a> GlobalArgs<'a> {
         delta: &mut StaticDelta,
     ) -> Result<(), GoblinError> {
         for_axes!(CM => {
-            if let Some(caller) = CM::get_caller(&self.hostio_fields.msg_sender) {
+            if let Some(locator) = CM::get_locator(&self.hostio_fields.msg_sender) {
                 for_axes!(M, TM0, TM1 => process_market::<(M, Pair<TM0, TM1>)>(
                     &self.hostio_fields.msg_sender,
                     reader,
@@ -37,6 +34,7 @@ impl<'a> GlobalArgs<'a> {
                     delta,
                 )?);
 
+                // Caller is needed in settle, not process
                 for_axes!(PT, TM0 => PT::settle::<TM0>(
                     &delta.global,
                     &self.global_header.token_data_triple,

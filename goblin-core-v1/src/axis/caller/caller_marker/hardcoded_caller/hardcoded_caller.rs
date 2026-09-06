@@ -5,9 +5,9 @@ use crate::{
 };
 
 impl CallerMarker for HardcodedCaller {
-    type Caller = HardcodedCallerIndex;
+    type Locator = HardcodedCallerIndex;
 
-    fn get_caller(address: &Address) -> Option<Self::Caller> {
+    fn get_locator(address: &Address) -> Option<Self::Locator> {
         HardcodedCallerList::index(address)
     }
 

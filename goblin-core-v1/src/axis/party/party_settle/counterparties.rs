@@ -2,6 +2,7 @@ use crate::{
     axis::{
         party::{Counterparties, PartySettle},
         token::{token_marker::TokenMarker, token_reader::TokenDataTriple},
+        CallerMarker,
     },
     goblin_error::GoblinError,
     input_processor::MsgTransfers,
@@ -10,7 +11,7 @@ use crate::{
 };
 
 impl PartySettle for Counterparties {
-    fn settle<'a, TM>(
+    fn settle<'a, TM, CM>(
         global_delta: &'a GlobalDelta,
         token_data_triple: &TokenDataTriple<'a>,
         _trader: &Address,
@@ -19,6 +20,7 @@ impl PartySettle for Counterparties {
     where
         TM: TokenMarker,
         &'a TM::SenderDeltaList: IntoIterator<Item = &'a TokenDelta<TM>>,
+        CM: CallerMarker,
     {
         let counterparties_delta = Counterparties::get_leg(global_delta);
 

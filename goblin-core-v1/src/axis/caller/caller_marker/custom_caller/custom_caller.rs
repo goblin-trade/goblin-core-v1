@@ -1,20 +1,20 @@
 use crate::{
     axis::{
         caller_marker::custom_caller::CustomCallerStub, CallerMarker, CustomCaller,
-        HardcodedCallerIndex, HardcodedCallerList, TokenMarker,
+        HardcodedCallerList, TokenMarker,
     },
     state::{IndexedPreimage, Preimage, SlotKey, StorePreimage},
     types::Address,
 };
 
 impl CallerMarker for CustomCaller {
-    type Caller = Address;
+    type Locator = CustomCallerStub;
 
-    fn get_caller(address: &Address) -> Option<Self::Caller> {
+    fn get_locator(address: &Address) -> Option<Self::Locator> {
         if HardcodedCallerList::index(address).is_some() {
             None
         } else {
-            Some(*address)
+            Some(CustomCallerStub)
         }
     }
 
