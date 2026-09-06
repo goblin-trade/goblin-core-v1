@@ -1,5 +1,8 @@
 use crate::{
-    axis::{leg::Pair, party::PartySettle},
+    axis::{
+        leg::Pair, party::PartySettle, CallerEnum, CallerIndexEnum, CallerMarker,
+        HardcodedCallerList,
+    },
     for_axes,
     goblin_error::GoblinError,
     input_processor::{
@@ -7,6 +10,7 @@ use crate::{
         ArgsReader, ETHTransfers, HeaderFlags, MsgTransfers,
     },
     market::process_market,
+    match_axes,
     settlement::StaticDelta,
     types::Address,
 };
@@ -23,20 +27,29 @@ impl<'a> GlobalArgs<'a> {
         reader: &ArgsReader,
         delta: &mut StaticDelta,
     ) -> Result<(), GoblinError> {
-        for_axes!(M, TM0, TM1 => process_market::<(M, Pair<TM0, TM1>)>(
-            &self.hostio_fields.msg_sender,
-            reader,
-            &self.global_header.token_data_triple,
-            &self.global_header.market_counts,
-            delta,
-        )?);
+        let maybe_hardcoded_caller_index =
+            HardcodedCallerList::index(&self.hostio_fields.msg_sender);
 
-        for_axes!(PT, TM0 => PT::settle::<TM0>(
-            &delta.global,
-            &self.global_header.token_data_triple,
-            self.recipient(),
-            &self.msg_transfers(),
-        )?);
+        let caller_enum = CallerEnum::from(maybe_hardcoded_caller_index);
+
+        match_axes!(CM = caller_enum => {
+            let index = CM::get_caller_index(maybe_hardcoded_caller_index);
+
+            for_axes!(M, TM0, TM1 => process_market::<(M, Pair<TM0, TM1>)>(
+                &self.hostio_fields.msg_sender,
+                reader,
+                &self.global_header.token_data_triple,
+                &self.global_header.market_counts,
+                delta,
+            )?);
+
+            for_axes!(PT, TM0 => PT::settle::<TM0>(
+                &delta.global,
+                &self.global_header.token_data_triple,
+                self.recipient(),
+                &self.msg_transfers(),
+            )?);
+        });
 
         Ok(())
     }

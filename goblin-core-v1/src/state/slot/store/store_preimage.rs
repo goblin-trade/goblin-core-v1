@@ -14,6 +14,12 @@ pub struct StorePreimage<TM: TokenMarker> {
 
 impl<TM: TokenMarker> StorePreimage<TM> {
     pub fn get_hash(&self, token_index: TM::TokenIndex) -> SlotKey<Self> {
+        // problem- CallerIndexEnum stores value but CallerEnum does not
+        //
+        // What does match_axis! do?
+        // match enum {
+        //   if Hardcoded: func<Hardcoded>()
+        // }
         match CallerIndexEnum::from(&self.trader) {
             CallerIndexEnum::HardcodedCaller(caller_index) => {
                 let store_key_index = StoreKeyIndex::<HardcodedCaller, TM> {

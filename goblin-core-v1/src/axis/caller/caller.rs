@@ -1,5 +1,5 @@
 use crate::{
-    axis::{CallerMarker, CustomCallerStub, HardcodedCallerList},
+    axis::{CallerMarker, CustomCallerStub, HardcodedCallerIndex, HardcodedCallerList},
     define_axis,
     types::Address,
 };
@@ -12,13 +12,9 @@ define_axis! {
     }
 }
 
-impl From<&Address> for CallerEnum {
-    fn from(address: &Address) -> Self {
-        // TODO fix duplication
-        // We find the caller index then discard it. We find it again in TM::get_store_hash()
-        //
-        // TODO pass CM::CallerIndex = HardcodedCallerIndex or CustomCallerStub
-        if HardcodedCallerList::index(address).is_some() {
+impl From<Option<HardcodedCallerIndex>> for CallerEnum {
+    fn from(value: Option<HardcodedCallerIndex>) -> Self {
+        if value.is_some() {
             CallerEnum::HardcodedCaller
         } else {
             CallerEnum::CustomCaller
@@ -29,6 +25,15 @@ impl From<&Address> for CallerEnum {
 pub enum CallerIndexEnum {
     HardcodedCaller(<HardcodedCaller as CallerMarker>::CallerIndex),
     CustomCaller(<CustomCaller as CallerMarker>::CallerIndex),
+}
+
+impl CallerIndexEnum {
+    pub fn kind(&self) -> CallerEnum {
+        match self {
+            Self::HardcodedCaller(_) => CallerEnum::HardcodedCaller,
+            Self::CustomCaller(_) => CallerEnum::CustomCaller,
+        }
+    }
 }
 
 impl From<&Address> for CallerIndexEnum {
