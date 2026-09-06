@@ -4,21 +4,22 @@ use crate::{
     state::{SlotKey, StorePreimage},
 };
 
-pub const ETH_STORE_HASH_LIST: [SlotKey<StorePreimage<ETH>>; HARDCODED_CALLER_LIST.inner.len()] =
-    build_eth_store_hashes();
-
-const fn build_eth_store_hashes() -> [SlotKey<StorePreimage<ETH>>; HARDCODED_CALLER_LIST.inner.len()]
-{
-    // array::map() is not stable so we need to use raw looping
-    let mut hashes = [SlotKey::DEFAULT; HARDCODED_CALLER_LIST.inner.len()];
+/// Store hashes for [HardcodedCaller, TokenMarker = ETH]
+///
+/// # Stable rust limitation
+///
+/// Const maps, range loops and Index trait can't be used in const in stable rust.
+/// Therefore we use low level looping
+pub const ETH_STORE_HASH_LIST: [SlotKey<StorePreimage<ETH>>; HARDCODED_CALLER_LIST.inner.len()] = const {
+    let mut list = [SlotKey::DEFAULT; HARDCODED_CALLER_LIST.inner.len()];
     let mut i = 0;
-    while i < hashes.len() {
-        hashes[i] = StorePreimage {
+    while i < list.len() {
+        list[i] = StorePreimage {
             trader: HARDCODED_CALLER_LIST.inner[i],
             token_address: ETHStub,
         }
         .const_hash();
         i += 1;
     }
-    hashes
-}
+    list
+};
