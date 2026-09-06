@@ -1,7 +1,6 @@
 use crate::{
     axis::{CallerMarker, TokenMarker},
     state::{StoreKeyIndex, StorePreimage},
-    types::Address,
 };
 
 pub struct IndexedPreimage<CM: CallerMarker, TM: TokenMarker> {

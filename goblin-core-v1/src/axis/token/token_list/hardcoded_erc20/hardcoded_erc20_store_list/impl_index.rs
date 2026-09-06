@@ -1,17 +1,14 @@
 use core::ops::Index;
 
 use crate::{
-    axis::{
-        token_list::HardcodedERC20StoreList, HardcodedCallerIndex, HardcodedERC20,
-        HardcodedERC20Index,
-    },
-    state::{SlotKey, StorePreimage},
+    axis::{token_list::HardcodedERC20StoreList, HardcodedCaller, HardcodedERC20},
+    state::{SlotKey, StoreKeyIndex, StorePreimage},
 };
 
-impl Index<(HardcodedCallerIndex, HardcodedERC20Index)> for HardcodedERC20StoreList {
+impl Index<&StoreKeyIndex<HardcodedCaller, HardcodedERC20>> for HardcodedERC20StoreList {
     type Output = SlotKey<StorePreimage<HardcodedERC20>>;
 
-    fn index(&self, index: (HardcodedCallerIndex, HardcodedERC20Index)) -> &Self::Output {
-        &self.inner[index.0.inner][index.1.inner]
+    fn index(&self, index: &StoreKeyIndex<HardcodedCaller, HardcodedERC20>) -> &Self::Output {
+        &self.inner[index.caller_index.inner][index.token_index.inner]
     }
 }

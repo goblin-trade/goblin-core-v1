@@ -1,11 +1,11 @@
 use crate::{
     axis::{
-        caller::CallerMarker,
         token::{
             token_marker::{TokenData, TokenMarker},
             CustomERC20,
         },
         update::UpdateMarker,
+        HardcodedCaller,
     },
     goblin_error::GoblinError,
     hostio::erc20_hostio,
@@ -32,8 +32,8 @@ impl TokenMarker for CustomERC20 {
         TransferERC20::<UM>::new(deposit, trader, token_address, decimals).dispatch()
     }
 
-    fn get_store_hash<CM: CallerMarker>(
-        indexed_preimage: &IndexedPreimage<CM, Self>,
+    fn get_hardcoded_store_hash(
+        indexed_preimage: &IndexedPreimage<HardcodedCaller, Self>,
     ) -> SlotKey<StorePreimage<Self>> {
         indexed_preimage.preimage.hash()
     }

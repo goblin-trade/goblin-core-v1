@@ -1,14 +1,14 @@
 use crate::{
     axis::{
-        caller::CallerMarker,
         token::{token_marker::TokenData, token_reader::TokenReader, TokenEnum},
         update::{UpdateEnum, UpdateMarker},
+        HardcodedCaller,
     },
     axis_helpers::AxisMarker,
     goblin_error::GoblinError,
     match_axes,
     quantities::{IntoAbs, UnsidedAtoms, UnsidedDeltaAtoms, UnsidedDeltaAtomsPerLot},
-    state::{indexed_preimage, IndexedPreimage, SlotKey, StorePreimage},
+    state::{IndexedPreimage, SlotKey, StorePreimage},
     types::Address,
 };
 
@@ -46,8 +46,8 @@ pub trait TokenMarker: 'static + TokenReader + AxisMarker<Enum = TokenEnum> {
         decimals: Self::StoredDecimals,
     ) -> Result<(), GoblinError>;
 
-    fn get_store_hash<CM: CallerMarker>(
-        indexed_preimage: &IndexedPreimage<CM, Self>,
+    fn get_hardcoded_store_hash(
+        indexed_preimage: &IndexedPreimage<HardcodedCaller, Self>,
     ) -> SlotKey<StorePreimage<Self>>;
 
     ////////////////////////

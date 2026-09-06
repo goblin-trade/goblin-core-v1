@@ -1,10 +1,6 @@
 use crate::{
-    axis::{
-        CallerEnum, CallerIndexEnum, CallerMarker, CustomCaller, HardcodedCaller,
-        HardcodedCallerIndex, TokenMarker,
-    },
-    match_axes,
-    state::{Preimage, PreimageSerializer, SlotKey, Store, StoreKeyIndex},
+    axis::{CallerIndexEnum, CallerMarker, CustomCaller, HardcodedCaller, TokenMarker},
+    state::{IndexedPreimage, Preimage, PreimageSerializer, SlotKey, Store, StoreKeyIndex},
     types::Address,
 };
 use keccak_const::Keccak256;
@@ -20,20 +16,27 @@ impl<TM: TokenMarker> StorePreimage<TM> {
     pub fn get_hash(&self, token_index: TM::TokenIndex) -> SlotKey<Self> {
         match CallerIndexEnum::from(&self.trader) {
             CallerIndexEnum::HardcodedCaller(caller_index) => {
-                // TODO pass store_key_index
                 let store_key_index = StoreKeyIndex::<HardcodedCaller, TM> {
                     caller_index,
                     token_index,
                 };
-                TM::get_store_hash::<HardcodedCaller>(self, token_index, caller_index)
+                let indexed_preimage = IndexedPreimage {
+                    store_key_index,
+                    preimage: *self,
+                };
+
+                HardcodedCaller::get_store_hash(&indexed_preimage)
             }
             CallerIndexEnum::CustomCaller(caller_index) => {
                 let store_key_index = StoreKeyIndex::<CustomCaller, TM> {
                     caller_index,
                     token_index,
                 };
-
-                TM::get_store_hash::<CustomCaller>(self, token_index, caller_index)
+                let indexed_preimage = IndexedPreimage {
+                    store_key_index,
+                    preimage: *self,
+                };
+                CustomCaller::get_store_hash(&indexed_preimage)
             }
         }
     }
