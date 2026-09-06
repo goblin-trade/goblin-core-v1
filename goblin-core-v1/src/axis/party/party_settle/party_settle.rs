@@ -8,11 +8,11 @@ use crate::{
 
 pub trait PartySettle {
     fn settle<'a, TM>(
-        caller: &Address,
-        recipient: &Address,
         global_delta: &'a GlobalDelta,
         token_data_triple: &TokenDataTriple<'a>,
         transfers: &MsgTransfers,
+        caller: &Address,
+        recipient: &Address,
     ) -> Result<(), GoblinError>
     where
         TM: TokenMarker,

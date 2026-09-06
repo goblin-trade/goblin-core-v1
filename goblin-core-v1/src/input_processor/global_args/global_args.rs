@@ -1,5 +1,5 @@
 use crate::{
-    axis::{leg::Pair, party::PartySettle, CallerMarker, HardcodedCallerList},
+    axis::{leg::Pair, party::PartySettle},
     for_axes,
     goblin_error::GoblinError,
     input_processor::{
@@ -7,7 +7,6 @@ use crate::{
         ArgsReader, ETHTransfers, HeaderFlags, MsgTransfers,
     },
     market::process_market,
-    match_axes,
     settlement::StaticDelta,
     types::Address,
 };
@@ -24,27 +23,23 @@ impl<'a> GlobalArgs<'a> {
         reader: &ArgsReader,
         delta: &mut StaticDelta,
     ) -> Result<(), GoblinError> {
+        let caller = &self.hostio_fields.msg_sender;
+
         for_axes!(M, TM0, TM1 => process_market::<(M, Pair<TM0, TM1>)>(
-            &self.hostio_fields.msg_sender,
+            caller,
             reader,
             &self.global_header.token_data_triple,
             &self.global_header.market_counts,
             delta,
         )?);
 
-        for_axes!(CM => {
-            if let Some(locator) = CM::get_locator(&self.hostio_fields.msg_sender) {
-
-
-                // Caller is needed in settle, not process
-                for_axes!(PT, TM0 => PT::settle::<TM0, CM>(
-                    &delta.global,
-                    &self.global_header.token_data_triple,
-                    self.recipient(),
-                    &self.msg_transfers(),
-                )?);
-            }
-        });
+        for_axes!(PT, TM0 => PT::settle::<TM0>(
+            &delta.global,
+            &self.global_header.token_data_triple,
+            &self.msg_transfers(),
+            caller,
+            self.recipient(),
+        )?);
 
         Ok(())
     }

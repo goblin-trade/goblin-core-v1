@@ -16,11 +16,11 @@ use crate::{
 
 impl PartySettle for Sender {
     fn settle<'a, TM>(
-        caller: &Address,
-        recipient: &Address,
         global_delta: &'a GlobalDelta,
         token_data_triple: &TokenDataTriple<'a>,
         msg_transfers: &MsgTransfers,
+        caller: &Address,
+        recipient: &Address,
     ) -> Result<(), GoblinError>
     where
         TM: TokenMarker,
