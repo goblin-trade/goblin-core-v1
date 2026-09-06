@@ -5,7 +5,7 @@ use crate::{
 };
 
 pub trait CallerMarker: AxisMarker<Enum = CallerEnum> {
-    type CallerIndex;
+    type CallerIndex: Clone + Copy;
 
     // fn get_store_hash<TM: TokenMarker>(
     //     preimage: &StorePreimage<TM>,

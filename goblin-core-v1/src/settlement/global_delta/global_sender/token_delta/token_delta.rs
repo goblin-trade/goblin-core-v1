@@ -34,6 +34,11 @@ impl<TM: TokenMarker> TokenDelta<TM> {
     ) -> Result<(), GoblinError> {
         let msg_transfer = TM::get_leg(msg_transfers);
 
+        let preimage = StorePreimage::<TM> {
+            trader: *trader,
+            token_address: token_data.address,
+        };
+
         // 1. Update store
         let store_hash = StorePreimage::<TM> {
             trader: *trader,
