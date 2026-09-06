@@ -11,4 +11,6 @@ pub trait TokenList: TokenQuantity {
 
     type DataList<'a>: Index<Self::TokenIndex, Output = TokenData<Self>>
         + IntoIterator<Item = &'a TokenData<Self>>;
+
+    type HardcodedStoreList;
 }

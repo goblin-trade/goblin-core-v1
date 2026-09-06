@@ -1,7 +1,7 @@
 use crate::{
     axis::{
-        token_marker::ETH_STORE_HASH_LIST, CallerMarker, HardcodedCaller, HardcodedCallerIndex,
-        TokenEnum, TokenMarker,
+        token_list::ETH_STORE_LIST, CallerMarker, HardcodedCaller, HardcodedCallerIndex, TokenEnum,
+        TokenMarker,
     },
     state::{Preimage, SlotKey, StorePreimage},
     types::Address,

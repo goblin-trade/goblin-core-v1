@@ -3,10 +3,10 @@ use crate::{
         caller::{CallerEnum, CallerMarker},
         token::{
             token_list::hardcoded_erc20::HARDCODED_ERC20_COUNT,
+            token_list::HARDCODED_ERC20_STORE_LIST,
             token_marker::{TokenData, TokenMarker},
             HardcodedERC20,
         },
-        token_marker::HARDCODED_ERC20_STORE_HASH_LIST,
         update::UpdateMarker,
         HardcodedCallerList,
     },
@@ -45,7 +45,7 @@ impl TokenMarker for HardcodedERC20 {
                 Some(caller_idx) => {
                     if token_index.0 < HARDCODED_ERC20_COUNT {
                         // TODO use Index trait to get inner
-                        HARDCODED_ERC20_STORE_HASH_LIST.inner[caller_idx.inner][token_index.0]
+                        HARDCODED_ERC20_STORE_LIST.inner[caller_idx.inner][token_index.0]
                     } else {
                         preimage.hash()
                     }

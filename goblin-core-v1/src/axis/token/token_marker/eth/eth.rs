@@ -2,10 +2,10 @@ use crate::{
     axis::{
         caller::{CallerEnum, CallerMarker},
         token::{
+            token_list::eth::ETH_STORE_LIST,
             token_marker::{TokenData, TokenMarker},
             ETHStub, ETH,
         },
-        token_marker::eth::ETH_STORE_HASH_LIST,
         update::UpdateMarker,
         HardcodedCallerList,
     },
@@ -44,7 +44,7 @@ impl TokenMarker for ETH {
         // TODO make call on CallMarker trait instead of matching enum
         match CM::VARIANT {
             CallerEnum::HardcodedCaller => match HardcodedCallerList::index(&preimage.trader) {
-                Some(idx) => ETH_STORE_HASH_LIST.inner[idx.inner],
+                Some(idx) => ETH_STORE_LIST.inner[idx.inner],
                 None => preimage.hash(),
             },
             CallerEnum::CustomCaller => preimage.hash(),

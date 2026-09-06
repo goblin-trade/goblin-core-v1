@@ -4,7 +4,7 @@ use crate::{
     state::{SlotKey, StorePreimage},
 };
 
-pub struct EthStoreHashList {
+pub struct ETHStoreList {
     pub inner: [SlotKey<StorePreimage<ETH>>; HARDCODED_CALLER_LIST.inner.len()],
 }
 
@@ -14,7 +14,7 @@ pub struct EthStoreHashList {
 ///
 /// Const maps, range loops and Index trait can't be used in const in stable rust.
 /// Therefore we use low level looping
-pub const ETH_STORE_HASH_LIST: EthStoreHashList = EthStoreHashList {
+pub const ETH_STORE_LIST: ETHStoreList = ETHStoreList {
     inner: const {
         let mut list = [SlotKey::DEFAULT; HARDCODED_CALLER_LIST.inner.len()];
         let mut i = 0;
