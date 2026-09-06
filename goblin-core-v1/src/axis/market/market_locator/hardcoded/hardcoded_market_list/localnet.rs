@@ -14,7 +14,7 @@ impl HardcodedMarketList for Pair<ETH, HardcodedERC20> {
     const HARDCODED_MARKET_LIST: &'static [MarketReadables<Pair<ETH, HardcodedERC20>>] =
         &[MarketReadables {
             market: CommonMarket::new(
-                Pair::new(ETHStub, HardcodedERC20Index(0)),
+                Pair::new(ETHStub, HardcodedERC20Index::new(0)),
                 Tuple::new(
                     BaseLotsPerBaseUnit::new(100),
                     QuoteLotsPerQuoteUnit::new(1000),
@@ -29,7 +29,7 @@ impl HardcodedMarketList for Pair<HardcodedERC20, ETH> {
     const HARDCODED_MARKET_LIST: &'static [MarketReadables<Pair<HardcodedERC20, ETH>>] =
         &[MarketReadables {
             market: CommonMarket::new(
-                Pair::new(HardcodedERC20Index(1), ETHStub),
+                Pair::new(HardcodedERC20Index::new(1), ETHStub),
                 Tuple::new(
                     BaseLotsPerBaseUnit::new(200),
                     QuoteLotsPerQuoteUnit::new(2000),
@@ -45,7 +45,7 @@ impl HardcodedMarketList for Pair<HardcodedERC20, HardcodedERC20> {
         Pair<HardcodedERC20, HardcodedERC20>,
     >] = &[MarketReadables {
         market: CommonMarket::new(
-            Pair::new(HardcodedERC20Index(0), HardcodedERC20Index(1)),
+            Pair::new(HardcodedERC20Index::new(0), HardcodedERC20Index::new(1)),
             Tuple::new(
                 BaseLotsPerBaseUnit::new(300),
                 QuoteLotsPerQuoteUnit::new(3000),

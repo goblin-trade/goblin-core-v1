@@ -10,7 +10,7 @@ impl<'a> FixedDecode<'a> for HardcodedERC20Index {
 
     fn raw_fixed_decode(reader: &'a ArgsReader) -> Self {
         let index_raw = u8::raw_fixed_decode(reader) as usize;
-        Self(index_raw)
+        Self::new(index_raw)
     }
 
     fn validate(&self) -> Result<(), GoblinError> {

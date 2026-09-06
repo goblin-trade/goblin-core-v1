@@ -12,6 +12,6 @@ impl Index<(HardcodedCallerIndex, HardcodedERC20Index)> for HardcodedERC20StoreL
     type Output = SlotKey<StorePreimage<HardcodedERC20>>;
 
     fn index(&self, index: (HardcodedCallerIndex, HardcodedERC20Index)) -> &Self::Output {
-        &self.inner[index.0.inner][index.1 .0]
+        &self.inner[index.0.inner][index.1.inner]
     }
 }

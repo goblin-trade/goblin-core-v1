@@ -43,9 +43,9 @@ impl TokenMarker for HardcodedERC20 {
             // TODO remove. Accept caller index in param
             CallerEnum::HardcodedCaller => match HardcodedCallerList::index(&preimage.trader) {
                 Some(caller_idx) => {
-                    if token_index.0 < HARDCODED_ERC20_COUNT {
+                    if token_index.inner < HARDCODED_ERC20_COUNT {
                         // TODO use Index trait to get inner
-                        HARDCODED_ERC20_STORE_LIST.inner[caller_idx.inner][token_index.0]
+                        HARDCODED_ERC20_STORE_LIST.inner[caller_idx.inner][token_index.inner]
                     } else {
                         preimage.hash()
                     }
