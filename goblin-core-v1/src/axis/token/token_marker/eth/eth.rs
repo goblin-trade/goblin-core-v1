@@ -44,7 +44,7 @@ impl TokenMarker for ETH {
         // TODO make call on CallMarker trait instead of matching enum
         match CM::VARIANT {
             CallerEnum::HardcodedCaller => match HardcodedCallerList::index(&preimage.trader) {
-                Some(idx) => ETH_STORE_HASH_LIST[idx.inner],
+                Some(idx) => ETH_STORE_HASH_LIST.inner[idx.inner],
                 None => preimage.hash(),
             },
             CallerEnum::CustomCaller => preimage.hash(),

@@ -45,7 +45,7 @@ impl TokenMarker for HardcodedERC20 {
                 Some(caller_idx) => {
                     if token_index.0 < HARDCODED_ERC20_COUNT {
                         // TODO use Index trait to get inner
-                        HARDCODED_ERC20_STORE_HASH_LIST[caller_idx.inner][token_index.0]
+                        HARDCODED_ERC20_STORE_HASH_LIST.inner[caller_idx.inner][token_index.0]
                     } else {
                         preimage.hash()
                     }
