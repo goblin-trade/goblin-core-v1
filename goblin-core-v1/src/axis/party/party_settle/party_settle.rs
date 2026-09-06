@@ -1,7 +1,7 @@
 use crate::{
     axis::{
         token::{token_marker::TokenMarker, token_reader::TokenDataTriple},
-        CallerMarker,
+        CallerData, CallerMarker,
     },
     goblin_error::GoblinError,
     input_processor::MsgTransfers,
@@ -11,9 +11,10 @@ use crate::{
 
 pub trait PartySettle {
     fn settle<'a, TM, CM>(
+        caller_data: CallerData<'a, CM>,
+        recipient: &Address,
         global_delta: &'a GlobalDelta,
         token_data_triple: &TokenDataTriple<'a>,
-        trader: &Address,
         transfers: &MsgTransfers,
     ) -> Result<(), GoblinError>
     where

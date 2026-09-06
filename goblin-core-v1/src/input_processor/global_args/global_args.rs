@@ -35,7 +35,7 @@ impl<'a> GlobalArgs<'a> {
                 )?);
 
                 // Caller is needed in settle, not process
-                for_axes!(PT, TM0 => PT::settle::<TM0>(
+                for_axes!(PT, TM0 => PT::settle::<TM0, CM>(
                     &delta.global,
                     &self.global_header.token_data_triple,
                     self.recipient(),
