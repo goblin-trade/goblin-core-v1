@@ -4,11 +4,11 @@ use crate::{
 };
 
 impl CallerMarker for HardcodedCaller {
-    type CallerIndex = HardcodedCallerIndex;
+    type Caller = HardcodedCallerIndex;
 
-    fn get_caller_index(option_index: Option<HardcodedCallerIndex>) -> Self::CallerIndex {
+    fn get_caller(_maybe_hardcded_caller: Option<HardcodedCallerIndex>) -> Self::Caller {
         // guaranteed to be present in hardcoded caller case
-        option_index.unwrap()
+        _maybe_hardcded_caller.unwrap()
     }
 
     fn get_store_hash<TM: TokenMarker>(

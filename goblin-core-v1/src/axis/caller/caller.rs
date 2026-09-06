@@ -23,8 +23,8 @@ impl From<Option<HardcodedCallerIndex>> for CallerEnum {
 }
 
 pub enum CallerIndexEnum {
-    HardcodedCaller(<HardcodedCaller as CallerMarker>::CallerIndex),
-    CustomCaller(<CustomCaller as CallerMarker>::CallerIndex),
+    HardcodedCaller(<HardcodedCaller as CallerMarker>::Caller),
+    CustomCaller(<CustomCaller as CallerMarker>::Caller),
 }
 
 impl CallerIndexEnum {

@@ -5,9 +5,9 @@ use crate::{
 };
 
 pub trait CallerMarker: AxisMarker<Enum = CallerEnum> {
-    type CallerIndex: Clone + Copy;
+    type Caller: Clone + Copy;
 
-    fn get_caller_index(option_index: Option<HardcodedCallerIndex>) -> Self::CallerIndex;
+    fn get_caller(maybe_hardcded_caller: Option<HardcodedCallerIndex>) -> Self::Caller;
 
     fn get_store_hash<TM: TokenMarker>(
         indexed_preimage: &IndexedPreimage<Self, TM>,

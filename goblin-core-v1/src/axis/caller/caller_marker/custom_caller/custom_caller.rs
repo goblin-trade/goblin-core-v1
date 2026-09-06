@@ -7,9 +7,9 @@ use crate::{
 };
 
 impl CallerMarker for CustomCaller {
-    type CallerIndex = CustomCallerStub;
+    type Caller = CustomCallerStub;
 
-    fn get_caller_index(_option_index: Option<HardcodedCallerIndex>) -> Self::CallerIndex {
+    fn get_caller(_maybe_hardcded_caller: Option<HardcodedCallerIndex>) -> Self::Caller {
         CustomCallerStub
     }
 
