@@ -8,7 +8,7 @@ use crate::{
     input_processor::MsgTransfers,
     settlement::{
         global_delta::{GlobalDelta, TokenDelta},
-        ConstDefault,
+        ConstDefault, TokenSettler,
     },
     types::{Address, StoreReader},
 };
@@ -19,7 +19,7 @@ impl PartySettle for Sender {
         recipient: &Address,
         global_delta: &'a GlobalDelta,
         token_data_triple: &TokenDataTriple<'a>,
-        transfers: &MsgTransfers,
+        msg_transfers: &MsgTransfers,
     ) -> Result<(), GoblinError>
     where
         TM: TokenMarker,
@@ -31,10 +31,21 @@ impl PartySettle for Sender {
         let data_list_iter = TM::get_lifetimed(&token_data_triple).into_iter();
         let sender_delta_list_iter = TM::get_leg(sender_delta).into_iter();
 
-        for (index, (token_data, delta)) in data_list_iter.zip(sender_delta_list_iter).enumerate() {
-            if *delta != TokenDelta::DEFAULT {
+        for (index, (token_data, token_delta)) in
+            data_list_iter.zip(sender_delta_list_iter).enumerate()
+        {
+            if *token_delta != TokenDelta::DEFAULT {
                 let token_index = TM::TokenIndex::from(index);
-                delta.settle(recipient, &token_data, token_index, transfers)?;
+
+                TokenSettler {
+                    token_index,
+                    token_data,
+                    token_delta,
+                    caller_data,
+                    msg_transfers,
+                    recipient,
+                }
+                .settle()?;
             }
         }
 
