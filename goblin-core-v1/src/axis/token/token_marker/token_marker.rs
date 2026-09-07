@@ -19,10 +19,10 @@ pub trait TokenMarker: 'static + TokenReader + AxisMarker<Enum = TokenEnum> {
 
     // Transfer the token in or out, based on UM
     fn update<UM: UpdateMarker>(
-        deposit: UnsidedAtoms,
         token_address: &Self::TokenAddress,
-        decimals: Self::StoredDecimals,
         caller_addresses: CallerAddresses,
+        deposit: UnsidedAtoms,
+        decimals: Self::StoredDecimals,
     ) -> Result<(), GoblinError>;
 
     fn get_hardcoded_store_hash(

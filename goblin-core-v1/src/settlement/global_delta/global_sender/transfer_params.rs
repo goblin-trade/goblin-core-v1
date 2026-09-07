@@ -8,19 +8,19 @@ use crate::{
 use core::marker::PhantomData;
 
 pub struct TransferERC20<'a, UM: UpdateMarker> {
-    pub deposit: UnsidedAtoms,
-    pub decimals: u8,
     pub token_address: &'a Address,
     pub caller_addresses: CallerAddresses<'a>,
+    pub deposit: UnsidedAtoms,
+    pub decimals: u8,
     _marker: PhantomData<UM>,
 }
 
 impl<'a, UM: UpdateMarker> TransferERC20<'a, UM> {
     pub fn new(
-        deposit: UnsidedAtoms,
-        decimals: u8,
         token_address: &'a Address,
         caller_addresses: CallerAddresses<'a>,
+        deposit: UnsidedAtoms,
+        decimals: u8,
     ) -> Self {
         Self {
             deposit,
@@ -31,15 +31,16 @@ impl<'a, UM: UpdateMarker> TransferERC20<'a, UM> {
         }
     }
 
-    fn run<const D: u8>(&self) -> Result<(), GoblinError> {
+    fn update_erc20_for_decimals<const D: u8>(&self) -> Result<(), GoblinError> {
         let raw_atoms = RawAtoms::<D>::try_from(self.deposit)?;
-        UM::update_erc20(self.token_address, self.trader, &raw_atoms)
+        let update_address = UM::update_address(self.caller_addresses);
+        UM::update_erc20(self.token_address, update_address, &raw_atoms)
     }
 
-    pub fn dispatch(&self) -> Result<(), GoblinError> {
+    pub fn update_erc20(&self) -> Result<(), GoblinError> {
         match self.decimals {
-            6 => self.run::<6>(),
-            8 => self.run::<8>(),
+            6 => self.update_erc20_for_decimals::<6>(),
+            8 => self.update_erc20_for_decimals::<8>(),
             _ => Err(GoblinError::UnsupportedDecimals),
         }
     }

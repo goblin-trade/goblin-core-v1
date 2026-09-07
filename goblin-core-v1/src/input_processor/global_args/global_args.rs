@@ -4,11 +4,10 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::{
         global_args::{global_header::GlobalHeader, hostio_fields::HostioFields},
-        ArgsReader, ETHTransfers, HeaderFlags, MsgTransfers,
+        ArgsReader, CallerAddresses, ETHTransfers, HeaderFlags, MsgTransfers,
     },
     market::process_market,
     settlement::StaticDelta,
-    types::Address,
 };
 
 pub struct GlobalArgs<'a> {
@@ -37,18 +36,14 @@ impl<'a> GlobalArgs<'a> {
             &delta.global,
             &self.global_header.token_data_triple,
             &self.msg_transfers(),
-            caller,
-            self.recipient(),
+            CallerAddresses {
+                caller: &self.hostio_fields.msg_sender,
+                custom_recipient: self.global_header.custom_recipient
+            },
         )?);
 
         Ok(())
     }
-
-    // fn recipient(&'a self) -> &'a Address {
-    //     self.global_header
-    //         .custom_recipient
-    //         .unwrap_or(&self.hostio_fields.msg_sender)
-    // }
 
     fn msg_transfers(&self) -> MsgTransfers {
         MsgTransfers::from(ETHTransfers {

@@ -7,7 +7,7 @@ use crate::{
 };
 
 impl UpdateETH for Decrease {
-    fn update_eth(trader: &Address, amount: &ETHAtoms) -> Result<(), GoblinError> {
-        eth_hostio::transfer_out(trader, amount)
+    fn update_eth(address: &Address, amount: &ETHAtoms) -> Result<(), GoblinError> {
+        eth_hostio::transfer_out(address, amount)
     }
 }

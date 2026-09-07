@@ -24,12 +24,12 @@ impl TokenMarker for CustomERC20 {
     }
 
     fn update<UM: UpdateMarker>(
-        deposit: UnsidedAtoms,
         token_address: &Self::TokenAddress,
-        decimals: Self::StoredDecimals,
         caller_addresses: CallerAddresses,
+        deposit: UnsidedAtoms,
+        decimals: Self::StoredDecimals,
     ) -> Result<(), GoblinError> {
-        TransferERC20::<UM>::new(deposit, decimals, token_address, caller_addresses).dispatch()
+        TransferERC20::<UM>::new(token_address, caller_addresses, deposit, decimals).update_erc20()
     }
 
     fn get_hardcoded_store_hash(
