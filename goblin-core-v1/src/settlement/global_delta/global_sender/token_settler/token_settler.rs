@@ -1,19 +1,18 @@
 use crate::{
-    axis::{CallerData, CallerMarker, TokenData, TokenMarker, TokenMsgTransfer, TokenQuantity},
+    axis::{CallerMarker, TokenData, TokenMarker, TokenMsgTransfer, TokenQuantity},
     goblin_error::GoblinError,
-    input_processor::MsgTransfers,
-    settlement::TokenDelta,
+    input_processor::{CallerAddresses, MsgTransfers},
+    settlement::{transfer_token, TokenDelta},
     state::{IndexedPreimage, StoreKeyIndex, StorePreimage},
-    types::Address,
 };
 
 pub struct TokenSettler<'a, CM: CallerMarker, TM: TokenQuantity> {
     pub token_index: TM::TokenIndex,
+    pub locator: CM::Locator,
     pub token_data: &'a TokenData<TM>,
     pub token_delta: &'a TokenDelta<TM>,
-    pub caller_data: CallerData<'a, CM>,
     pub msg_transfers: &'a MsgTransfers,
-    pub recipient: &'a Address,
+    pub caller_addresses: CallerAddresses<'a>,
 }
 
 impl<'a, CM: CallerMarker, TM: TokenMarker> TokenSettler<'a, CM, TM> {
@@ -22,11 +21,11 @@ impl<'a, CM: CallerMarker, TM: TokenMarker> TokenSettler<'a, CM, TM> {
 
         let indexed_preimage = IndexedPreimage {
             store_key_index: StoreKeyIndex {
-                caller_locator: self.caller_data.locator,
+                caller_locator: self.locator,
                 token_index: self.token_index,
             },
-            preimage: StorePreimage::<TM> {
-                trader: *self.caller_data.address,
+            preimage: StorePreimage {
+                trader: *self.caller_addresses.caller,
                 token_address: self.token_data.address,
             },
         };
@@ -39,15 +38,13 @@ impl<'a, CM: CallerMarker, TM: TokenMarker> TokenSettler<'a, CM, TM> {
         store_hash.store(&store);
 
         // 2. Transfer tokens to recipient
-        //
-        // TODO fix- we can only send surplus to recipient, not withdraw shortfall
         let net_deposit = self.token_delta.deposit.into() + msg_transfer.deposit_due()?;
 
-        TM::transfer(
+        transfer_token::<TM>(
             net_deposit,
-            self.recipient,
             &self.token_data.address,
             store.decimals,
+            self.caller_addresses,
         )
     }
 }

@@ -2,16 +2,16 @@ use crate::{
     axis::{
         party::{PartySettle, Sender},
         token::{token_marker::TokenMarker, token_reader::TokenDataTriple},
-        CallerData, CallerEnum, CallerMarker, HardcodedCallerList,
+        CallerEnum, CallerMarker, HardcodedCallerList,
     },
     goblin_error::GoblinError,
-    input_processor::MsgTransfers,
+    input_processor::{CallerAddresses, MsgTransfers},
     match_axes,
     settlement::{
         global_delta::{GlobalDelta, TokenDelta},
         ConstDefault, TokenSettler,
     },
-    types::{Address, StoreReader},
+    types::StoreReader,
 };
 
 impl PartySettle for Sender {
@@ -19,8 +19,7 @@ impl PartySettle for Sender {
         global_delta: &'a GlobalDelta,
         token_data_triple: &TokenDataTriple<'a>,
         msg_transfers: &MsgTransfers,
-        caller: &Address,
-        recipient: &Address,
+        caller_addresses: CallerAddresses<'a>,
     ) -> Result<(), GoblinError>
     where
         TM: TokenMarker,
@@ -31,14 +30,11 @@ impl PartySettle for Sender {
         let data_iter = TM::get_lifetimed(&token_data_triple).into_iter();
         let delta_iter = TM::get_leg(sender_delta).into_iter();
 
-        let maybe_hardcoded_caller_index = HardcodedCallerList::index(caller);
+        let maybe_hardcoded_caller_index = HardcodedCallerList::index(caller_addresses.caller);
         let caller_enum = CallerEnum::from(maybe_hardcoded_caller_index);
 
         match_axes!(CM = caller_enum => {
-            let caller_data = CallerData::<CM> {
-                address: caller,
-                locator: CM::get_locator(maybe_hardcoded_caller_index)
-            };
+            let locator = CM::get_locator(maybe_hardcoded_caller_index);
 
             for (index, (token_data, token_delta)) in
                 data_iter.zip(delta_iter).enumerate()
@@ -46,13 +42,13 @@ impl PartySettle for Sender {
                 if *token_delta != TokenDelta::DEFAULT {
                     let token_index = TM::TokenIndex::from(index);
 
-                    TokenSettler {
+                    TokenSettler::<CM, TM> {
                         token_index,
+                        locator,
                         token_data,
                         token_delta,
-                        caller_data,
                         msg_transfers,
-                        recipient,
+                        caller_addresses,
                     }
                     .settle()?;
                 }

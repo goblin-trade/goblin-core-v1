@@ -9,10 +9,10 @@ use crate::{
         HardcodedCaller,
     },
     goblin_error::GoblinError,
+    input_processor::CallerAddresses,
     quantities::{UnsidedAtoms, UnsidedDeltaAtomsPerLot},
     settlement::global_delta::TransferERC20,
     state::{IndexedPreimage, SlotKey, StorePreimage},
-    types::Address,
 };
 
 impl TokenMarker for HardcodedERC20 {
@@ -25,11 +25,11 @@ impl TokenMarker for HardcodedERC20 {
 
     fn update<UM: UpdateMarker>(
         deposit: UnsidedAtoms,
-        trader: &Address,
         token_address: &Self::TokenAddress,
         decimals: Self::StoredDecimals,
+        caller_addresses: CallerAddresses,
     ) -> Result<(), GoblinError> {
-        TransferERC20::<UM>::new(deposit, trader, token_address, decimals).dispatch()
+        TransferERC20::<UM>::new(deposit, decimals, token_address, caller_addresses).dispatch()
     }
 
     fn get_hardcoded_store_hash(

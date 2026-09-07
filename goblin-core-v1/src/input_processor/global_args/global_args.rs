@@ -44,11 +44,11 @@ impl<'a> GlobalArgs<'a> {
         Ok(())
     }
 
-    fn recipient(&'a self) -> &'a Address {
-        self.global_header
-            .custom_recipient
-            .unwrap_or(&self.hostio_fields.msg_sender)
-    }
+    // fn recipient(&'a self) -> &'a Address {
+    //     self.global_header
+    //         .custom_recipient
+    //         .unwrap_or(&self.hostio_fields.msg_sender)
+    // }
 
     fn msg_transfers(&self) -> MsgTransfers {
         MsgTransfers::from(ETHTransfers {

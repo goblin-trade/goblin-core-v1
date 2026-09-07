@@ -5,10 +5,10 @@ use crate::{
         CallerEnum, CallerMarker, HardcodedCallerList,
     },
     goblin_error::GoblinError,
-    input_processor::MsgTransfers,
+    input_processor::{CallerAddresses, MsgTransfers},
     match_axes,
     settlement::global_delta::{CounterpartyMap, GlobalDelta, TokenDelta},
-    types::{Address, StoreReader},
+    types::StoreReader,
 };
 
 impl PartySettle for Counterparties {
@@ -16,8 +16,7 @@ impl PartySettle for Counterparties {
         global_delta: &'a GlobalDelta,
         token_data_triple: &TokenDataTriple<'a>,
         _msg_transfers: &MsgTransfers,
-        _caller: &Address,
-        _recipient: &Address,
+        _caller_addresses: CallerAddresses<'a>,
     ) -> Result<(), GoblinError>
     where
         TM: TokenMarker,

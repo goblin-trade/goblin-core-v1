@@ -1,9 +1,8 @@
 use crate::{
     axis::token::{token_marker::TokenMarker, token_reader::TokenDataTriple},
     goblin_error::GoblinError,
-    input_processor::MsgTransfers,
+    input_processor::{CallerAddresses, MsgTransfers},
     settlement::global_delta::{GlobalDelta, TokenDelta},
-    types::Address,
 };
 
 pub trait PartySettle {
@@ -11,8 +10,7 @@ pub trait PartySettle {
         global_delta: &'a GlobalDelta,
         token_data_triple: &TokenDataTriple<'a>,
         transfers: &MsgTransfers,
-        caller: &Address,
-        recipient: &Address,
+        caller_addresses: CallerAddresses<'a>,
     ) -> Result<(), GoblinError>
     where
         TM: TokenMarker,
