@@ -2082,7 +2082,7 @@ name = "goblin-hostio"
 version = "0.1.0"
 dependencies = [
  "hex-literal",
- "tiny-keccak",
+ "keccak-const",
 ]
 
 [[package]]
