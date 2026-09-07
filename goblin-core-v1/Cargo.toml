@@ -14,12 +14,6 @@ keccak-const = "0.2.0"
 tiny-keccak = { version = "2.0.2", features = ["keccak"] }
 hex-literal = "0.4.1"
 
-[profile.release]
-opt-level = "s"
-strip = true
-lto = true
-panic = "abort"
-
 [features]
 default = ["localnet"]
 sdk = []
