@@ -47,7 +47,7 @@ cast send $CREATE3_FACTORY \
     "deploy(bytes32,bytes)" $GOBLIN_SALT $INIT_CODE \
     --private-key $PRIVATE_KEY
 
-echo "Activating";
+# echo "Activating";
 
 # Activate contract
 cast send $ARB_WASM_CONTRACT \
