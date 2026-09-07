@@ -1,4 +1,4 @@
-#[cfg(all(not(any(test, feature = "sdk")), target_arch = "wasm32"))]
+#[cfg(all(not(test), target_arch = "wasm32"))]
 #[panic_handler]
 fn panic(_info: &core::panic::PanicInfo) -> ! {
     loop {}

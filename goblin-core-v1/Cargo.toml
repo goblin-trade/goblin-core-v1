@@ -16,7 +16,6 @@ hex-literal = "0.4.1"
 
 [features]
 default = ["localnet"]
-sdk = []
 localnet = []
 testnet = []
 mainnet = []

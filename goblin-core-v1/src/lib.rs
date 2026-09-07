@@ -1,6 +1,6 @@
 #![allow(static_mut_refs)]
-#![cfg_attr(all(not(any(test, feature = "sdk")), target_arch = "wasm32"), no_std)]
-#![cfg_attr(all(not(any(test, feature = "sdk")), target_arch = "wasm32"), no_main)]
+#![cfg_attr(all(not(test), target_arch = "wasm32"), no_std)]
+#![cfg_attr(all(not(test), target_arch = "wasm32"), no_main)]
 
 pub mod axis;
 pub mod axis_helpers;
