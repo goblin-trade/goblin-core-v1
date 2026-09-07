@@ -7,5 +7,6 @@ use core::mem::MaybeUninit;
 pub unsafe fn buffered_call<K>(f: impl FnOnce(*mut u8)) -> K {
     let mut buffer = MaybeUninit::<K>::uninit();
     f(buffer.as_mut_ptr() as *mut u8);
-    buffer.assume_init()
+    // SAFETY: `f` is required to have fully initialized `buffer` before returning.
+    unsafe { buffer.assume_init() }
 }

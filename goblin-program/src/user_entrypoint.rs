@@ -6,7 +6,7 @@ use goblin_core::{
     settlement::StaticDelta,
 };
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn user_entrypoint(len: usize) -> i32 {
     match user_entrypoint_inner(len) {
         Ok(_) => 0,

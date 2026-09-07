@@ -1,4 +1,4 @@
-extern "C" {
+unsafe extern "C" {
     // Have a single TraderTokenState update event instead
     // The amount deposited or withdrawn can be reconstructed using SQL
     //

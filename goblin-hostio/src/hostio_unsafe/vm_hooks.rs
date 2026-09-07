@@ -14,7 +14,7 @@
 // Ref- https://github.com/OffchainLabs/stylus-sdk-rs/blob/2c709a5a1a620ed7585c7d8af64fefabe3a0fc9a/stylus-sdk/src/call/mod.rs#L36
 //
 #[cfg_attr(target_arch = "wasm32", link(wasm_import_module = "vm_hooks"))]
-extern "C" {
+unsafe extern "C" {
     pub fn read_args(dest: *mut u8);
     pub fn write_result(data: *const u8, len: usize);
     pub fn pay_for_memory_grow(pages: u16);

@@ -1,7 +1,7 @@
 [package]
 name = "goblin-scripts-rs"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
 [dev-dependencies]
 tiny-keccak = { version = "2.0.2", features = ["keccak"] }
