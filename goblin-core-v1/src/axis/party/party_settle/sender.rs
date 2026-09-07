@@ -66,15 +66,15 @@ impl PartySettle for Sender {
                     let token_index = TM::TokenIndex::from(index);
 
                     // TODO fix error here
-                    // TokenSettler::<CM, TM> {
-                    //     token_index,
-                    //     locator,
-                    //     token_data,
-                    //     token_delta,
-                    //     msg_transfers,
-                    //     caller_addresses,
-                    // }
-                    // .settle()?;
+                    TokenSettler::<CM, TM> {
+                        token_index,
+                        locator,
+                        token_data,
+                        token_delta,
+                        msg_transfers,
+                        caller_addresses,
+                    }
+                    .settle()?;
                 }
             }
         });

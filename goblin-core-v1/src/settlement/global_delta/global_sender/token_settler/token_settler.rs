@@ -20,7 +20,7 @@ impl<'a, CM: CallerMarker, TM: TokenMarker> TokenSettler<'a, CM, TM> {
         let msg_transfer = TM::get_leg(self.msg_transfers);
 
         let indexed_preimage = IndexedPreimage {
-            store_key_index: StoreKeyIndex {
+            store_key_index: StoreKeyIndex::<CM, TM> {
                 caller_locator: self.locator,
                 token_index: self.token_index,
             },
@@ -40,6 +40,7 @@ impl<'a, CM: CallerMarker, TM: TokenMarker> TokenSettler<'a, CM, TM> {
         // 2. Transfer tokens to recipient
         let net_deposit = self.token_delta.deposit.into() + msg_transfer.deposit_due()?;
 
+        // TODO fix error in here
         transfer_token::<TM>(
             net_deposit,
             &self.token_data.address,
