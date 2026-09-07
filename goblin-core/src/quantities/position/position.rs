@@ -2,7 +2,6 @@ use goblin_macros::FixedDecode;
 
 use crate::quantities::BitsLayout;
 use core::ops::{Add, Sub};
-use core::u64;
 
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug, FixedDecode)]
 pub struct Position {

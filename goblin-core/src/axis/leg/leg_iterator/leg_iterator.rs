@@ -1,12 +1,11 @@
 use crate::{
     axis::leg::LegCoordinates,
     quantities::{
-        InnerPos, OuterBitmapIndex, OuterPos, Position, PositionRange, INNER_POS,
-        OUTER_BITMAP_INDEX, OUTER_POS,
+        INNER_POS, InnerPos, OUTER_BITMAP_INDEX, OUTER_POS, OuterBitmapIndex, OuterPos, Position,
+        PositionRange,
     },
 };
-use core::ops::RangeInclusive;
-use core::u16;
+use core::range::RangeInclusive;
 
 /// Iterators of coordinates
 ///

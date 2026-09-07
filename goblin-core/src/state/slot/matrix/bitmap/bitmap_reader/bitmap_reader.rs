@@ -4,7 +4,7 @@ use crate::{
     quantities::{Position, SafePosition},
     state::{MarketPreimage, SlotKey},
 };
-use core::ops::RangeInclusive;
+use core::range::RangeInclusive;
 
 pub trait BitmapReader<const BITS: u16> {
     /// Give an iterator to return active positions inside a bitmap

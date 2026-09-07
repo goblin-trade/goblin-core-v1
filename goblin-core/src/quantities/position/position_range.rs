@@ -1,4 +1,4 @@
-use core::ops::RangeInclusive;
+use core::range::RangeInclusive;
 
 use crate::{
     axis::LegCoordinates,
@@ -21,7 +21,10 @@ pub trait PositionRange: Sized {
 
 impl PositionRange for RangeInclusive<Position> {
     fn map_range<A>(&self, f: impl Fn(Position) -> A) -> RangeInclusive<A> {
-        f(*self.start())..=f(*self.end())
+        RangeInclusive {
+            start: f(self.start),
+            last: f(self.last),
+        }
     }
 
     fn extract_range<const BITS: u16>(&self) -> Self {
@@ -40,17 +43,17 @@ impl PositionRange for RangeInclusive<Position> {
         In: LegCoordinates,
     {
         let compliment = position.complement::<BITS>();
-        let start = if compliment == self.start().complement::<BITS>() {
+        let start = if compliment == self.start.complement::<BITS>() {
             position.extract::<BITS>()
         } else {
             In::start::<BITS>()
         };
-        let end = if compliment == self.end().complement::<BITS>() {
+        let last = if compliment == self.last.complement::<BITS>() {
             position.extract::<BITS>()
         } else {
             In::end::<BITS>()
         };
 
-        start..=end
+        RangeInclusive { start, last }
     }
 }

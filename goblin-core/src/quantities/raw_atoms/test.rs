@@ -1,5 +1,4 @@
 use crate::quantities::RawAtoms;
-use core::u128;
 
 #[test]
 fn test_zero_raw_atoms() {

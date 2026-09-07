@@ -1,7 +1,7 @@
 use goblin_macros::FixedDecode;
 
-use crate::quantities::{bits_layout::BitsLayout, inner_val::InnerVal, Position};
-use core::ops::RangeInclusive;
+use crate::quantities::{Position, bits_layout::BitsLayout, inner_val::InnerVal};
+use core::range::RangeInclusive;
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug, FixedDecode)]
 pub struct DerivedPosition<K, const BITS: u16>
@@ -28,8 +28,10 @@ where
     }
 
     pub fn convert_range(value: RangeInclusive<Position>) -> RangeInclusive<Self> {
-        let (start, end) = value.into_inner();
-        RangeInclusive::new(start.into(), end.into())
+        RangeInclusive {
+            start: value.start.into(),
+            last: value.last.into(),
+        }
     }
 }
 
