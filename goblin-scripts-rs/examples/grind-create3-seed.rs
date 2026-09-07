@@ -68,9 +68,6 @@ pub fn get_create3_address(
         .as_slice()[12..32],
     );
 
-    // let preimage = [&[0xd6, 0x94], proxy_address.as_slice(), &[0x01, 0x01]];
-
-    // todo!()
     Address::from_slice(
         &keccak256([&[0xd6, 0x94][..], proxy_address.as_slice(), &[0x01][..]].concat()).as_slice()
             [12..32],

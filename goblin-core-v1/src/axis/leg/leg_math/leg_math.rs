@@ -31,8 +31,6 @@ pub trait LegMath: LegQuantities {
         base_lot_size: BaseLotsPerBaseUnit,
     ) -> Self::Lots;
 
-    // TODO replace tick_size, price with single var `price_in_quote_lots`
-
     /// Obtain MatchingLots from a resting order
     fn matching_lots_maker(
         base_lots: BaseLots,

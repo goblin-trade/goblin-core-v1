@@ -15,8 +15,6 @@ pub const HARDCODED_CALLER_LIST: HardcodedCallerList = HardcodedCallerList {
 };
 
 impl HardcodedCallerList {
-    // TODO replace
-    // Only use it in enum function. Replace usage in delta code
     pub fn index(address: &Address) -> Option<HardcodedCallerIndex> {
         HARDCODED_CALLER_LIST
             .inner

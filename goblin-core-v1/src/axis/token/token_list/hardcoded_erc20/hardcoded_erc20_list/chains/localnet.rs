@@ -4,7 +4,6 @@ use crate::axis::token::{
 
 pub const HARDCODED_ERC20_COUNT: usize = 2;
 
-// TODO impl Index<HardcodedCallerIndex>
 pub const HARDCODED_ERC20_LIST: HardcodedERC20List<HARDCODED_ERC20_COUNT> = HardcodedERC20List {
     inner: [
         TokenData {
