@@ -8,19 +8,6 @@ pub struct ETHStoreList {
     pub inner: [SlotKey<StorePreimage<ETH>>; HARDCODED_CALLER_LIST.inner.len()],
 }
 
-// pub const ETH_STORE_LIST: ETHStoreList = ETHStoreList {
-//     inner: [
-//         // SlotKey::new([
-//         //     199, 186, 65, 203, 212, 40, 76, 23, 189, 201, 35, 94, 83, 41, 2, 23, 153, 11, 163, 93,
-//         //     25, 222, 163, 42, 1, 76, 240, 114, 31, 122, 80, 70,
-//         // ]),
-//         SlotKey::new([
-//             255, 140, 68, 121, 39, 165, 189, 40, 111, 225, 212, 22, 49, 218, 123, 85, 235, 164,
-//             102, 81, 212, 120, 113, 232, 124, 152, 14, 240, 255, 151, 63, 214,
-//         ]),
-//     ],
-// };
-
 /// Store hashes for [HardcodedCaller, TokenMarker = ETH]
 ///
 /// # Stable rust limitation
@@ -42,19 +29,3 @@ pub const ETH_STORE_LIST: ETHStoreList = ETHStoreList {
         list
     },
 };
-
-#[cfg(test)]
-mod test {
-    use crate::axis::token_list::ETH_STORE_LIST;
-
-    #[test]
-    fn test_list() {
-        let inner_list = ETH_STORE_LIST.inner.map(|gg| *gg.hash());
-
-        println!(
-            "length {}, list {:?}",
-            ETH_STORE_LIST.inner.len(),
-            inner_list
-        );
-    }
-}

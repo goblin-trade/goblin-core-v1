@@ -58,22 +58,3 @@ impl PartySettle for Sender {
         Ok(())
     }
 }
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn test_locator() {
-        // This works for both cases. Unwrap does not cause problem
-        let address = [1u8; 20];
-        let maybe_hardcoded_caller_index = HardcodedCallerList::index(&address);
-        let caller_enum = CallerEnum::from(maybe_hardcoded_caller_index);
-
-        match_axes!(CM = caller_enum => {
-            let locator = CM::get_locator(maybe_hardcoded_caller_index);
-
-            println!("locator {:?}", locator);
-        });
-    }
-}
