@@ -21,7 +21,7 @@ hex = "0.4"
 glob = "0.3.1"
 
 [dependencies]
-goblin-core-v1 = { path = "../goblin-core-v1" }
+goblin-core = { path = "../goblin-core" }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 alloy = "2.4.1"
