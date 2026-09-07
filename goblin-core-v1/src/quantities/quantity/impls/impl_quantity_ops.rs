@@ -30,4 +30,8 @@ where
     fn checked_sub(self, rhs: Self) -> Option<Self> {
         self.inner.checked_sub(rhs.inner).map(Quantity::new)
     }
+
+    fn checked_mul(self, rhs: Self) -> Option<Self> {
+        self.inner.checked_mul(rhs.inner).map(Quantity::new)
+    }
 }

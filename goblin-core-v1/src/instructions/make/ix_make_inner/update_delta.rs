@@ -30,7 +30,10 @@ pub(crate) fn update_delta<MS: MarketSpec, UM: UpdateMarker, OP: LegMatcher>(
     let base_lot_size = Base::get(&market.lot_size_pair);
 
     let price = Ticks::from(position);
-    let price_in_quote_lots = market.tick_size * price;
+    let price_in_quote_lots = market
+        .tick_size
+        .checked_mul(price)
+        .ok_or(GoblinError::Overflow)?;
 
     Sender::get_leg_mut(&mut ctx.writables.local_delta)
         .make

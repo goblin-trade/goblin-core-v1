@@ -33,7 +33,7 @@ impl<'a> LocalDelta<'a> {
             price_in_quote_lots: fill_outcome.price_in_quote_lots,
         };
         let lots = match_delta.lots();
-        let lots_opposite = match_delta.lots_opposite();
+        let lots_opposite = match_delta.lots_opposite()?;
 
         let sender = Sender::get_leg_mut(self);
         sender.take.add::<In>(lots, lots_opposite)?;
@@ -54,7 +54,7 @@ impl<'a> LocalDelta<'a> {
         match_delta: MatchDelta<In>,
     ) -> Result<(), GoblinError> {
         let lots = match_delta.lots();
-        let lots_opposite = match_delta.lots_opposite();
+        let lots_opposite = match_delta.lots_opposite()?;
 
         let sender = Sender::get_leg_mut(self);
         sender.take.add::<In>(lots, lots_opposite)?;

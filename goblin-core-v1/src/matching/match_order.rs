@@ -18,14 +18,14 @@ pub fn match_order<MS: MarketSpec, In: LegMatcher>(
     let MarketReadables { market, market_key } = ctx.readables.market_readables();
 
     let base_lot_size = Base::get(&market.lot_size_pair);
-    let input_budget = In::matching_lots_taker(header.num_lots, base_lot_size);
+    let input_budget = In::matching_lots_taker(header.num_lots, base_lot_size)?;
     let mut budget = input_budget;
 
     let iterator =
         match_iterator::<MS::Pair, In>(*market_key, header.limit, &mut ctx.writables.market_state)?;
     for resting_order_entry in iterator {
         let fill_outcome =
-            FillOutcome::<In>::new(market.tick_size, &resting_order_entry, &mut budget);
+            FillOutcome::<In>::new(market.tick_size, &resting_order_entry, &mut budget)?;
 
         ctx.writables
             .local_delta

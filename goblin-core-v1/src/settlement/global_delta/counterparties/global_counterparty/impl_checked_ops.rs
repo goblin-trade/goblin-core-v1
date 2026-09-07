@@ -12,4 +12,10 @@ impl CheckedOps for GlobalCounterparty {
             inner: self.inner.checked_sub(rhs.inner)?,
         })
     }
+
+    fn checked_mul(self, rhs: Self) -> Option<Self> {
+        Some(Self {
+            inner: self.inner.checked_mul(rhs.inner)?,
+        })
+    }
 }

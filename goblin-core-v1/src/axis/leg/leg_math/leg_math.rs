@@ -1,5 +1,6 @@
 use crate::{
     axis::leg::{LegMatcher, LegQuantities},
+    goblin_error::GoblinError,
     quantities::{BaseLots, BaseLotsPerBaseUnit, QuantityOps, QuoteLotsPerBaseUnit},
 };
 
@@ -23,7 +24,7 @@ pub trait LegMath: LegQuantities {
     fn matching_lots_taker(
         lots: Self::Lots,
         base_lot_size: BaseLotsPerBaseUnit,
-    ) -> Self::MatchingLots;
+    ) -> Result<Self::MatchingLots, GoblinError>;
 
     /// Decode MatchingLots into Lots
     fn lots_taker(
@@ -35,7 +36,7 @@ pub trait LegMath: LegQuantities {
     fn matching_lots_maker(
         base_lots: BaseLots,
         price_in_quote_lots: QuoteLotsPerBaseUnit,
-    ) -> Self::MatchingLots;
+    ) -> Result<Self::MatchingLots, GoblinError>;
 
     /// Reciprocal of maker function
     fn base_lots_maker(

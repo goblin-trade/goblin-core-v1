@@ -1,6 +1,7 @@
 use crate::{
     axis::LegMatcher,
     axis_helpers::TokenPair,
+    goblin_error::GoblinError,
     matching::RestingOrderEntry,
     quantities::{QuoteLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, Ticks},
     state::RestingOrder,
@@ -23,12 +24,14 @@ impl<'a, In: LegMatcher> FillOutcome<'a, In> {
             resting_order_key_value,
         }: &'a RestingOrderEntry<TP>,
         budget: &mut In::MatchingLots,
-    ) -> Self {
+    ) -> Result<Self, GoblinError> {
         let counterparty = &resting_order_key_value.value.maker;
-        let price_in_quote_lots = tick_size * Ticks::from(*position);
+        let price_in_quote_lots = tick_size
+            .checked_mul(Ticks::from(*position))
+            .ok_or(GoblinError::Overflow)?;
 
         let quote =
-            In::matching_lots_maker(resting_order_key_value.value.base_lots, price_in_quote_lots);
+            In::matching_lots_maker(resting_order_key_value.value.base_lots, price_in_quote_lots)?;
         let matched = quote.min(*budget);
 
         *budget -= matched;
@@ -49,11 +52,11 @@ impl<'a, In: LegMatcher> FillOutcome<'a, In> {
             }
         }
 
-        Self {
+        Ok(Self {
             counterparty,
             price_in_quote_lots,
             matched,
             budget_exhausted,
-        }
+        })
     }
 }

@@ -19,4 +19,12 @@ impl<TM: TokenMarker> CheckedOps for TokenDelta<TM> {
             make: self.make.checked_sub(rhs.make)?,
         })
     }
+
+    fn checked_mul(self, rhs: Self) -> Option<Self> {
+        Some(Self {
+            deposit: CheckedOps::checked_mul(self.deposit, rhs.deposit)?,
+            take: CheckedOps::checked_mul(self.take, rhs.take)?,
+            make: CheckedOps::checked_mul(self.make, rhs.make)?,
+        })
+    }
 }

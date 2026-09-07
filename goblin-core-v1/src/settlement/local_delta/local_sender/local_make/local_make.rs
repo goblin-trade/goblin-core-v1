@@ -36,7 +36,7 @@ impl LocalMake {
         UM: UpdateMarker,
         OP: LegMatcher,
     {
-        let matching_lots = OP::matching_lots_maker(base_lots, price_in_quote_lots);
+        let matching_lots = OP::matching_lots_maker(base_lots, price_in_quote_lots)?;
         let lots = OP::lots_taker(matching_lots, base_lot_size);
 
         let delta_lots = lots.try_into_unsided_delta()?;

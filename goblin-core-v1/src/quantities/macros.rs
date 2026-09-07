@@ -88,6 +88,13 @@ macro_rules! define_custom_type {
                     .map($type)
                     .ok_or(crate::goblin_error::GoblinError::Underflow)
             }
+
+            pub fn checked_mul(self, rhs: Self) -> Result<Self, crate::goblin_error::GoblinError> {
+                self.0
+                    .checked_mul(rhs.0)
+                    .map($type)
+                    .ok_or(crate::goblin_error::GoblinError::Overflow)
+            }
         }
     };
 }

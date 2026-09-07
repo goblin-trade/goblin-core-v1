@@ -39,6 +39,23 @@ where
     }
 }
 
+impl<E0, I> Quantity<E0, I>
+where
+    E0: Exp,
+    I: QuantityOps,
+{
+    pub fn checked_mul<E1>(
+        self,
+        rhs: Quantity<E1, I>,
+    ) -> Option<Quantity<<E0 as AddExp<E1>>::Output, I>>
+    where
+        E0: AddExp<E1>,
+        E1: Exp,
+    {
+        self.inner.checked_mul(rhs.inner).map(Quantity::new)
+    }
+}
+
 /// Division
 impl<E0, E1, I> Div<Quantity<E1, I>> for Quantity<E0, I>
 where

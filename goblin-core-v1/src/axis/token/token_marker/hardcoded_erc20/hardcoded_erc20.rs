@@ -18,8 +18,10 @@ impl TokenMarker for HardcodedERC20 {
     fn get_global_deposit(
         local_deposit: Self::LocalDeposit,
         atoms_per_lot: UnsidedDeltaAtomsPerLot,
-    ) -> Self::GlobalDeposit {
-        local_deposit * atoms_per_lot
+    ) -> Result<Self::GlobalDeposit, GoblinError> {
+        local_deposit
+            .checked_mul(atoms_per_lot)
+            .ok_or(GoblinError::Overflow)
     }
 
     fn update<'a, UM: UpdateMarker>(

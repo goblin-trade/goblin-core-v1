@@ -18,8 +18,8 @@ impl TokenMarker for ETH {
     fn get_global_deposit(
         _local_deposit: Self::LocalDeposit,
         _atoms_per_lot: UnsidedDeltaAtomsPerLot,
-    ) -> Self::GlobalDeposit {
-        ETHStub
+    ) -> Result<Self::GlobalDeposit, GoblinError> {
+        Ok(ETHStub)
     }
 
     fn update<'a, UM: UpdateMarker>(

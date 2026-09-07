@@ -21,6 +21,7 @@ fn test_ops() {
     let _lot_per_unit = base_lots / base_units;
 
     let _checked_add = Ticks::new(1).checked_add(Ticks::new(2));
+    let _checked_mul = base_lots.checked_mul(base_units);
 }
 
 #[test]

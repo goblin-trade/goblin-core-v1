@@ -18,4 +18,11 @@ where
             self.1.checked_sub(rhs.1)?,
         ))
     }
+
+    fn checked_mul(self, rhs: Self) -> Option<Self> {
+        Some(Tuple::new(
+            self.0.checked_mul(rhs.0)?,
+            self.1.checked_mul(rhs.1)?,
+        ))
+    }
 }

@@ -31,14 +31,17 @@ impl PartyDelta for Sender {
 
         let atoms_per_lot = PL::Leg::get(&delta_atoms_per_lot_pair);
 
-        let deposit = PL::Selected::get_global_deposit(local_deposit, atoms_per_lot);
+        let deposit = PL::Selected::get_global_deposit(local_deposit, atoms_per_lot)?;
         let local_take = PL::Leg::get(&local.sender.take.inner);
 
-        // TODO checked mul?
-        let take = local_take * atoms_per_lot;
+        let take = local_take
+            .checked_mul(atoms_per_lot)
+            .ok_or(GoblinError::Overflow)?;
 
         let local_make = PL::Leg::get(&local.sender.make.inner);
-        let make = local_make * atoms_per_lot;
+        let make = local_make
+            .checked_mul(atoms_per_lot)
+            .ok_or(GoblinError::Overflow)?;
 
         Ok(TokenDelta {
             deposit,

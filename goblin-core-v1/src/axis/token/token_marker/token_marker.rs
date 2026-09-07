@@ -15,7 +15,7 @@ pub trait TokenMarker: 'static + TokenReader + AxisMarker<Enum = TokenEnum> {
     fn get_global_deposit(
         local_deposit: Self::LocalDeposit,
         atoms_per_lot: UnsidedDeltaAtomsPerLot,
-    ) -> Self::GlobalDeposit;
+    ) -> Result<Self::GlobalDeposit, GoblinError>;
 
     // Transfer the token in or out, based on UM
     fn update<'a, UM: UpdateMarker>(

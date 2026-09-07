@@ -14,4 +14,8 @@ impl CheckedOps for u64 {
     fn checked_sub(self, rhs: Self) -> Option<Self> {
         self.checked_sub(rhs)
     }
+
+    fn checked_mul(self, rhs: Self) -> Option<Self> {
+        self.checked_mul(rhs)
+    }
 }
