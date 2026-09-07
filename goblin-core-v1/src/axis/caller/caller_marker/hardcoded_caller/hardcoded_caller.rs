@@ -7,7 +7,6 @@ impl CallerMarker for HardcodedCaller {
     type Locator = HardcodedCallerIndex;
 
     fn get_locator(maybe_hardcoded_caller_index: Option<HardcodedCallerIndex>) -> Self::Locator {
-        // externally guaranteed to be present
         maybe_hardcoded_caller_index.unwrap()
     }
 

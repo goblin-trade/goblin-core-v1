@@ -40,7 +40,6 @@ impl<'a, CM: CallerMarker, TM: TokenMarker> TokenSettler<'a, CM, TM> {
         // 2. Transfer tokens to recipient
         let net_deposit = self.token_delta.deposit.into() + msg_transfer.deposit_due()?;
 
-        // TODO fix error in here
         transfer_token::<TM>(
             net_deposit,
             &self.token_data.address,

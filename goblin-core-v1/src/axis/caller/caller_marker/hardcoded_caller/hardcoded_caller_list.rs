@@ -5,7 +5,6 @@ pub struct HardcodedCallerList {
 }
 
 pub const HARDCODED_CALLER_LIST: HardcodedCallerList = HardcodedCallerList {
-    // inner: [],
     inner: [
         [0u8; 20],
         [

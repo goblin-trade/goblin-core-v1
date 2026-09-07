@@ -3,3 +3,9 @@ resolver = "2"
 members = [
     "goblin-core-v1", "goblin-macros", "goblin-scripts-rs"
 ]
+
+[profile.release]
+opt-level = "s"
+strip = true
+lto = true
+panic = "abort"
