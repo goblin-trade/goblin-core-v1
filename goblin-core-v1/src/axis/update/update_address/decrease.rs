@@ -5,7 +5,7 @@ use crate::{
 };
 
 impl UpdateAddress for Decrease {
-    fn update_address(call_addresses: CallerAddresses) -> &Address {
+    fn get_update_address<'a>(call_addresses: CallerAddresses<'a>) -> &'a Address {
         // Credit to custom recipient if present
         call_addresses
             .custom_recipient

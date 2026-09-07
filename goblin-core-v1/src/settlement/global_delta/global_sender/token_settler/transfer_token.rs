@@ -1,9 +1,12 @@
+use core::marker::PhantomData;
+
 use crate::{
     axis::{TokenMarker, UpdateEnum},
     goblin_error::GoblinError,
     input_processor::CallerAddresses,
     match_axes,
     quantities::{IntoAbs, UnsidedDeltaAtoms},
+    settlement::UpdateParams,
 };
 
 pub fn transfer_token<TM: TokenMarker>(
@@ -20,7 +23,13 @@ pub fn transfer_token<TM: TokenMarker>(
     let deposit = net_deposit.abs();
 
     match_axes!(UM = update_enum => {
-        TM::update::<UM>(token_address, caller_addresses, deposit, decimals)?;
+        TM::update(UpdateParams::<TM, UM> {
+            token_address,
+            caller_addresses,
+            deposit,
+            decimals,
+            _marker: PhantomData
+        })?;
     });
 
     Ok(())

@@ -5,7 +5,7 @@ use crate::{
 };
 
 impl UpdateAddress for Increase {
-    fn update_address(call_addresses: CallerAddresses) -> &Address {
+    fn get_update_address<'a>(call_addresses: CallerAddresses<'a>) -> &'a Address {
         // Always debit from caller
         call_addresses.caller
     }

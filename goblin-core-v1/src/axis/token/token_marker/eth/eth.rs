@@ -9,8 +9,8 @@ use crate::{
         HardcodedCaller,
     },
     goblin_error::GoblinError,
-    input_processor::CallerAddresses,
-    quantities::{ETHAtoms, UnsidedAtoms, UnsidedDeltaAtomsPerLot},
+    quantities::UnsidedDeltaAtomsPerLot,
+    settlement::UpdateParams,
     state::{IndexedPreimage, SlotKey, StorePreimage},
 };
 
@@ -22,15 +22,10 @@ impl TokenMarker for ETH {
         ETHStub
     }
 
-    fn update<UM: UpdateMarker>(
-        _token_address: &Self::TokenAddress,
-        caller_addresses: CallerAddresses,
-        deposit: UnsidedAtoms,
-        _decimals: Self::StoredDecimals,
+    fn update<'a, UM: UpdateMarker>(
+        update_params: UpdateParams<'a, Self, UM>,
     ) -> Result<(), GoblinError> {
-        let amount = ETHAtoms::try_from(deposit)?;
-        let update_address = UM::update_address(caller_addresses);
-        UM::update_eth(update_address, &amount)
+        update_params.update_eth()
     }
 
     fn get_hardcoded_store_hash(

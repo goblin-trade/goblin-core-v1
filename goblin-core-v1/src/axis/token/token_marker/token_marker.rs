@@ -6,8 +6,8 @@ use crate::{
     },
     axis_helpers::AxisMarker,
     goblin_error::GoblinError,
-    input_processor::CallerAddresses,
-    quantities::{UnsidedAtoms, UnsidedDeltaAtomsPerLot},
+    quantities::UnsidedDeltaAtomsPerLot,
+    settlement::UpdateParams,
     state::{IndexedPreimage, SlotKey, StorePreimage},
 };
 
@@ -18,11 +18,8 @@ pub trait TokenMarker: 'static + TokenReader + AxisMarker<Enum = TokenEnum> {
     ) -> Self::GlobalDeposit;
 
     // Transfer the token in or out, based on UM
-    fn update<UM: UpdateMarker>(
-        token_address: &Self::TokenAddress,
-        caller_addresses: CallerAddresses,
-        deposit: UnsidedAtoms,
-        decimals: Self::StoredDecimals,
+    fn update<'a, UM: UpdateMarker>(
+        update_params: UpdateParams<'a, Self, UM>,
     ) -> Result<(), GoblinError>;
 
     fn get_hardcoded_store_hash(
