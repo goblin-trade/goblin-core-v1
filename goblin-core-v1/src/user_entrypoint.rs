@@ -5,11 +5,9 @@ use crate::{
     require,
     settlement::StaticDelta,
 };
+use hex_literal::hex;
 
-pub const CONTRACT_ADDRESS: [u8; 20] = [
-    0x88, 0x88, 0xef, 0x09, 0xa6, 0x3b, 0x63, 0x28, 0x46, 0x8f, 0xce, 0x63, 0xa0, 0x9f, 0xc1, 0x85,
-    0xde, 0x80, 0x77, 0x22,
-];
+pub const CONTRACT_ADDRESS: [u8; 20] = hex!("8888ef09a63b6328468fce63a09fc185de807722");
 
 #[no_mangle]
 pub extern "C" fn user_entrypoint(len: usize) -> i32 {

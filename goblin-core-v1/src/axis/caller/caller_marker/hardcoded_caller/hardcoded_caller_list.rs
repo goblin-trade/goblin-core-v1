@@ -1,4 +1,5 @@
 use crate::{axis::HardcodedCallerIndex, types::Address};
+use hex_literal::hex;
 
 pub struct HardcodedCallerList {
     pub inner: [Address; 2],
@@ -7,10 +8,7 @@ pub struct HardcodedCallerList {
 pub const HARDCODED_CALLER_LIST: HardcodedCallerList = HardcodedCallerList {
     inner: [
         [0u8; 20],
-        [
-            0x3f, 0x1e, 0xae, 0x7d, 0x46, 0xd8, 0x8f, 0x08, 0xfc, 0x2f, 0x8e, 0xd2, 0x7f, 0xcb,
-            0x2a, 0xb1, 0x83, 0xeb, 0x2d, 0x0e,
-        ],
+        hex!("3f1eae7d46d88f08fc2f8ed27fcb2ab183eb2d0e"),
     ],
 };
 
