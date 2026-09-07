@@ -27,7 +27,9 @@ impl TokenMarker for HardcodedERC20 {
     fn update<'a, UM: UpdateMarker>(
         update_params: UpdateParams<'a, Self, UM>,
     ) -> Result<(), GoblinError> {
-        update_params.update_erc20()
+        Ok(())
+        // TODO fix problem here. Problem in ETH and HardcodedERC20 version
+        // update_params.update_erc20()
     }
 
     fn get_hardcoded_store_hash(

@@ -25,6 +25,8 @@ impl TokenMarker for ETH {
     fn update<'a, UM: UpdateMarker>(
         update_params: UpdateParams<'a, Self, UM>,
     ) -> Result<(), GoblinError> {
+        // Ok(())
+        // TODO fix problem here. Problem in ETH and HardcodedERC20 version
         update_params.update_eth()
     }
 
