@@ -31,7 +31,7 @@ cd ..
 #
 # Unnecessary, `cargo stylus get-initcode` will compile and give init code
 # cargo build --release --target wasm32-unknown-unknown
-# cargo stylus check --wasm-file ./target/wasm32-unknown-unknown/release/goblin_core_v1.wasm --endpoint $ETH_RPC_URL
+# cargo stylus check --wasm-file ./target/wasm32-unknown-unknown/release/goblin_core.wasm --endpoint $ETH_RPC_URL
 
 # Get init code in temp file
 TMPFILE="$(mktemp)"

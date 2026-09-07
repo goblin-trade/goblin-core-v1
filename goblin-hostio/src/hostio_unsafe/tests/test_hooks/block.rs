@@ -1,5 +1,5 @@
 extern crate alloc;
-use crate::hostio::hostio_unsafe::tests::*;
+use crate::hostio_unsafe::tests::*;
 
 pub fn set_block_number(value: u64) {
     vm_ctx().block_number = value;

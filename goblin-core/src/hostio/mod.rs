@@ -1,7 +1,11 @@
+// Low-level Stylus hostio bindings and the native "test hostio" emulation live
+// in the `goblin-hostio` crate. Re-export the module so existing
+// `crate::hostio::hostio_unsafe` call sites keep working.
+pub use goblin_hostio::hostio_unsafe;
+
 pub mod erc20_hostio;
 pub mod eth_hostio;
 pub mod hostio_helpers;
-pub mod hostio_unsafe;
 
 pub use erc20_hostio::*;
 pub use eth_hostio::*;

@@ -4,7 +4,7 @@ use crate::{
     hostio::erc20_hostio,
     quantities::RawAtoms,
     types::Address,
-    user_entrypoint::CONTRACT_ADDRESS,
+    CONTRACT_ADDRESS,
 };
 
 impl UpdateERC20 for Increase {

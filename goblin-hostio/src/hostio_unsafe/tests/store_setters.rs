@@ -2,7 +2,6 @@ extern crate alloc;
 use alloc::vec::Vec;
 
 use super::vm_context::vm_ctx;
-use crate::types::Address;
 
 pub fn set_test_args(args: Vec<u8>) {
     vm_ctx().test_args = args;
@@ -24,7 +23,7 @@ pub fn get_msg_value() -> [u8; 32] {
     vm_ctx().msg_value
 }
 
-pub fn set_msg_sender(sender: Address) {
+pub fn set_msg_sender(sender: [u8; 20]) {
     vm_ctx().msg_sender = sender;
 }
 

@@ -2,15 +2,15 @@
 
 
 ```sh
-cargo build --target wasm32-unknown-unknown --release
+cargo build -p goblin-program --target wasm32-unknown-unknown --release
 
 # check
-cargo stylus check --wasm-file ./target/wasm32-unknown-unknown/release/goblin_core_v1.wasm
+cargo stylus check --wasm-file ./target/wasm32-unknown-unknown/release/goblin_program.wasm
 
 # Deploy locally built file without verification
-cargo stylus deploy --wasm-file ./target/wasm32-unknown-unknown/release/goblin_core_v1.wasm --private-key $PRIVATE_KEY --no-verify
+cargo stylus deploy --wasm-file ./target/wasm32-unknown-unknown/release/goblin_program.wasm --private-key $PRIVATE_KEY --no-verify
 
-cargo stylus deploy --wasm-file ./target/wasm32-unknown-unknown/release/goblin_core_v1.wasm --private-key $PRIVATE_KEY --no-verify --no-activate
+cargo stylus deploy --wasm-file ./target/wasm32-unknown-unknown/release/goblin_program.wasm --private-key $PRIVATE_KEY --no-verify --no-activate
 
 # Cache
 cargo stylus cache bid 525c2aba45f66987217323e8a05ea400c65d06dc 0 --private-key $PRIVATE_KEY
@@ -121,15 +121,18 @@ Order removal is designed to minimize slot writes.
 - Pvt key: 0xb6b15c8cb491557369f3c7d2c287b053eb229daa9c22138887752191c9520659
 - Address: 0x3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E
 
-# goblin-core crate
+# goblin-program crate
+
+The smart contract is compiled from `goblin-program`, which depends on the pure
+`no_std` logic in `goblin-core` and the hostio bindings in `goblin-hostio`.
 
 ```sh
 nix -p pkg-config openssl
 cargo install --force cargo-stylus
 
-cargo build -p goblin-core --release --target wasm32-unknown-unknown
-cargo stylus check --wasm-file ./target/wasm32-unknown-unknown/release/goblin_core.wasm --endpoint http://127.0.0.1:8547
-cargo stylus deploy --wasm-file ./target/wasm32-unknown-unknown/release/goblin_core.wasm --no-verify --private-key 0xb6b15c8cb491557369f3c7d2c287b053eb229daa9c22138887752191c9520659 --endpoint http://127.0.0.1:8547
+cargo build -p goblin-program --release --target wasm32-unknown-unknown
+cargo stylus check --wasm-file ./target/wasm32-unknown-unknown/release/goblin_program.wasm --endpoint http://127.0.0.1:8547
+cargo stylus deploy --wasm-file ./target/wasm32-unknown-unknown/release/goblin_program.wasm --no-verify --private-key 0xb6b15c8cb491557369f3c7d2c287b053eb229daa9c22138887752191c9520659 --endpoint http://127.0.0.1:8547
 
 # copy_from_slice
 # size 736, gas 1341202 - 0x13c680 = 45202

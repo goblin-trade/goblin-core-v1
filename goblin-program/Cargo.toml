@@ -1,0 +1,14 @@
+[package]
+name = "goblin-program"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+
+[dependencies]
+# Select the network by choosing goblin-core's feature here, e.g.
+#   goblin-core = { path = "../goblin-core", default-features = false, features = ["mainnet"] }
+# The default (localnet) is used when no feature is specified.
+goblin-core = { path = "../goblin-core" }
+goblin-hostio = { path = "../goblin-hostio" }

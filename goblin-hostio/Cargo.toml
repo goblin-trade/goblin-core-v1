@@ -1,0 +1,10 @@
+[package]
+name = "goblin-hostio"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+
+[dev-dependencies]
+hex-literal = "0.4.1"
+tiny-keccak = { version = "2.0.2", features = ["keccak"] }

@@ -2071,9 +2071,17 @@ checksum = "e4eba85ea1d0a966a983acd07deee566e67395d2d96b6fb39e62b5a833f1eb0b"
 name = "goblin-core"
 version = "0.1.0"
 dependencies = [
+ "goblin-hostio",
  "goblin-macros",
  "hex-literal",
  "keccak-const",
+]
+
+[[package]]
+name = "goblin-hostio"
+version = "0.1.0"
+dependencies = [
+ "hex-literal",
  "tiny-keccak",
 ]
 
@@ -2086,6 +2094,14 @@ dependencies = [
  "quote",
  "syn 2.0.119",
  "tiny-keccak",
+]
+
+[[package]]
+name = "goblin-program"
+version = "0.1.0"
+dependencies = [
+ "goblin-core",
+ "goblin-hostio",
 ]
 
 [[package]]

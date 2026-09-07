@@ -1,6 +1,8 @@
 #![allow(static_mut_refs)]
-#![cfg_attr(all(not(test), target_arch = "wasm32"), no_std)]
-#![cfg_attr(all(not(test), target_arch = "wasm32"), no_main)]
+#![no_std]
+
+#[cfg(test)]
+extern crate std;
 
 pub mod axis;
 pub mod axis_helpers;
@@ -14,8 +16,13 @@ pub mod matching;
 pub mod quantities;
 pub mod settlement;
 pub mod state;
-mod stylus;
 pub mod types;
-pub mod user_entrypoint;
-
 pub use ctx::*;
+
+use hex_literal::hex;
+
+/// Address of the deployed Goblin contract (deterministic CREATE3 deployment).
+///
+/// The contract logic reads this at compile time, e.g. to approve
+/// `transferFrom` pulls from the maker.
+pub const CONTRACT_ADDRESS: [u8; 20] = hex!("8888ef09a63b6328468fce63a09fc185de807722");

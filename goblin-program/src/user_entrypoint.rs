@@ -1,13 +1,10 @@
-use crate::{
+use goblin_core::{
     goblin_error::GoblinError,
     hostio,
     input_processor::{ArgsReader, CompoundDecode, GlobalArgs},
     require,
     settlement::StaticDelta,
 };
-use hex_literal::hex;
-
-pub const CONTRACT_ADDRESS: [u8; 20] = hex!("8888ef09a63b6328468fce63a09fc185de807722");
 
 #[no_mangle]
 pub extern "C" fn user_entrypoint(len: usize) -> i32 {

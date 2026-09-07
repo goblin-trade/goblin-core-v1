@@ -1,5 +1,5 @@
 extern crate alloc;
-use crate::hostio::hostio_unsafe::tests::*;
+use crate::hostio_unsafe::tests::*;
 
 #[no_mangle]
 pub unsafe extern "C" fn storage_load_bytes32(key: *const u8, dest: *mut u8) {

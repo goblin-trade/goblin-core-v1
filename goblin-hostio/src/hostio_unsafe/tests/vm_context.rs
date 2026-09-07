@@ -4,13 +4,12 @@ extern crate alloc;
 use alloc::vec::Vec;
 use std::collections::BTreeMap;
 
-use crate::types::Address;
 pub struct VMContext {
     pub test_args: Vec<u8>,
     pub test_result: Vec<u8>,
     pub storage: BTreeMap<[u8; 32], [u8; 32]>,
     pub msg_value: [u8; 32],
-    pub msg_sender: Address,
+    pub msg_sender: [u8; 20],
     pub block_number: u64,
     pub block_timestamp: u64,
     pub return_data: Vec<Vec<u8>>,
