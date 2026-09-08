@@ -1,4 +1,4 @@
-use alloy_primitives::{address, keccak256, Address, B256};
+use alloy_primitives::{Address, B256, address, keccak256};
 use hex_literal::hex;
 
 const DEPLOYER: Address = address!("3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E");
@@ -44,5 +44,5 @@ pub fn get_create3_address(
 
 /// Namespace the salt by hashing the deployer address with the provided salt.
 fn namespace_salt(deployer: Address, salt: B256) -> B256 {
-    keccak256([deployer.as_slice(), salt.as_slice()].concat()).into()
+    keccak256([deployer.as_slice(), salt.as_slice()].concat())
 }

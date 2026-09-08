@@ -1,8 +1,8 @@
-use alloy_primitives::{address, keccak256, Address, B256, U256};
+use alloy_primitives::{Address, B256, U256, address, keccak256};
 use hex_literal::hex;
 use rayon::prelude::*;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 const DEPLOYER: Address = address!("3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E");
 const FACTORY_ADDRESS: Address = address!("525c2aBA45F66987217323E8a05EA400C65D06DC");
@@ -17,7 +17,7 @@ fn main() {
     match find_salt(
         FACTORY_ADDRESS,
         DEPLOYER,
-        proxy_bytecode_hash.into(),
+        proxy_bytecode_hash,
         &DESIRED_PREFIX,
     ) {
         Some(salt) => println!("Found matching salt: {:?}", salt),
@@ -43,7 +43,7 @@ mod test {
 
 /// Namespace the salt by hashing the deployer address with the provided salt.
 fn namespace_salt(deployer: Address, salt: B256) -> B256 {
-    keccak256([deployer.as_slice(), salt.as_slice()].concat()).into()
+    keccak256([deployer.as_slice(), salt.as_slice()].concat())
 }
 
 /// Generate a CREATE3 address given the factory, deployer, salt, and proxy bytecode hash.
