@@ -1,9 +1,7 @@
 use core::ops::Index;
 
-use crate::{
-    axis::{HardcodedCallerIndex, HardcodedCallerList},
-    types::Address,
-};
+use super::HardcodedCallerIndex;
+use crate::{axis::HardcodedCallerList, types::Address};
 
 impl Index<HardcodedCallerIndex> for HardcodedCallerList {
     type Output = Address;

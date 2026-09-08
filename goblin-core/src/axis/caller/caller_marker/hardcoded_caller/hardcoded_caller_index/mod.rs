@@ -1,5 +1,12 @@
-pub mod hardcoded_caller_index;
-
-pub use hardcoded_caller_index::*;
-
 mod impl_index;
+
+#[derive(Clone, Copy, Debug)]
+pub struct HardcodedCallerIndex {
+    pub inner: usize,
+}
+
+impl HardcodedCallerIndex {
+    pub const fn new(inner: usize) -> Self {
+        Self { inner }
+    }
+}
