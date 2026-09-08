@@ -1,13 +1,13 @@
 use crate::{
-    axis::leg::{leg_matcher::LegMatcher, Base},
+    Ctx,
+    axis::leg::{Base, leg_matcher::LegMatcher},
     axis_helpers::MarketSpec,
     goblin_error::GoblinError,
     instructions::TakeHeader,
     market::MarketReadables,
-    matching::{match_iterator::match_iterator, FillOutcome},
+    matching::{FillOutcome, match_iterator::match_iterator},
     require,
     types::StoreReader,
-    Ctx,
 };
 
 /// Match a take order
@@ -29,7 +29,7 @@ pub fn match_order<MS: MarketSpec, In: LegMatcher>(
 
         ctx.writables
             .local_delta
-            .add_take_v2(base_lot_size, &fill_outcome)?;
+            .add_take(base_lot_size, &fill_outcome)?;
 
         if fill_outcome.budget_exhausted {
             break;
