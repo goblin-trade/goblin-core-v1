@@ -8,7 +8,7 @@ use crate::{
     axis_helpers::TokenPair,
     goblin_error::GoblinError,
     market::{LotSizePair, TokenIndexPair},
-    quantities::{QuoteLotsPerBaseUnitPerTick, UnsideQuantity, UnsidedAtomsPerLot, ATOMS_PER_UNIT},
+    quantities::{ATOMS_PER_UNIT, QuoteLotsPerBaseUnitPerTick, UnsideQuantity, UnsidedAtomsPerLot},
     state::MarketPreimage,
 };
 
