@@ -1,4 +1,4 @@
-use crate::types::{triple::triple::Triple, Marker, StoreReader};
+use crate::types::{Marker, StoreReader, triple::Triple};
 
 impl<T0, T1, T2, K> StoreReader<Triple<T0, T1, T2, K>> for Marker<K, 0>
 where

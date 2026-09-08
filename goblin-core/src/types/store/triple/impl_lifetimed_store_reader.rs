@@ -1,4 +1,4 @@
-use crate::types::{triple::triple::Triple, LifetimedStoreReader, Marker};
+use crate::types::{LifetimedStoreReader, Marker, Triple};
 
 impl<'a, T0, T1, T2, K> LifetimedStoreReader<'a, Triple<T0, T1, T2, K>> for Marker<K, 0>
 where
