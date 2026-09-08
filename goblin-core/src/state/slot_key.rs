@@ -1,11 +1,9 @@
 use core::marker::PhantomData;
 
+use goblin_hostio::hostio_helpers::{storage_cache_bytes32, storage_load_bytes32};
 use goblin_macros::ConstDefault;
 
-use crate::{
-    hostio::{storage_cache_bytes32, storage_load_bytes32},
-    state::Preimage,
-};
+use crate::state::Preimage;
 
 /// The slot key obtained on hashing a preimage
 #[derive(Clone, Copy, ConstDefault)]

@@ -1,9 +1,9 @@
 use crate::{
     goblin_error::GoblinError,
-    hostio,
     quantities::{RawAtoms, UnsidedAtoms},
     types::Address,
 };
+use goblin_hostio::hostio_helpers;
 
 pub struct HostioFields {
     pub msg_sender: Address,
@@ -14,10 +14,10 @@ pub struct HostioFields {
 
 impl HostioFields {
     pub fn try_new(read_msg_value: bool) -> Result<Self, GoblinError> {
-        let msg_sender = hostio::msg_sender();
+        let msg_sender = hostio_helpers::msg_sender();
 
         let msg_value = if read_msg_value {
-            let msg_value_raw = RawAtoms::<18>(hostio::msg_value());
+            let msg_value_raw = RawAtoms::<18>(hostio_helpers::msg_value());
             UnsidedAtoms::try_from(msg_value_raw)?
         } else {
             UnsidedAtoms::default()

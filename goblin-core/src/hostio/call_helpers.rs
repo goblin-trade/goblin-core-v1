@@ -1,11 +1,7 @@
 //! Safe helpers for contract calls
-use crate::{
-    goblin_error::GoblinError,
-    hostio::{hostio_helpers::buffered_call, hostio_unsafe},
-    quantities::RawAtoms,
-    require,
-    types::Address,
-};
+use goblin_hostio::{hostio_helpers::buffered_call, hostio_unsafe};
+
+use crate::{goblin_error::GoblinError, quantities::RawAtoms, require, types::Address};
 
 pub fn call_contract<const D: u8>(
     contract: &Address,

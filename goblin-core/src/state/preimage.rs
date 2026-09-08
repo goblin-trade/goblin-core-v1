@@ -1,7 +1,6 @@
-use crate::{
-    hostio::hostio_helpers,
-    state::{KeyValue, PreimageSerializer, SlotKey, SlotState},
-};
+use goblin_hostio::hostio_helpers;
+
+use crate::state::{KeyValue, PreimageSerializer, SlotKey, SlotState};
 /// Preimage used to derive slot key. The slot key is then used
 /// to read SlotState
 pub trait Preimage: Sized + Clone + Copy {
