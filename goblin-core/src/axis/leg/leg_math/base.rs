@@ -1,4 +1,3 @@
-///! LegMarker for input base, also known as ask / sell
 use crate::{
     axis::leg::{Base, LegMath, Quote},
     goblin_error::GoblinError,

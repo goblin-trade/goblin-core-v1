@@ -1,6 +1,6 @@
-pub mod leg;
 pub mod leg_constants;
 pub mod leg_coordinates;
+pub mod leg_enum;
 pub mod leg_iterator;
 pub mod leg_matcher;
 pub mod leg_math;
@@ -8,9 +8,9 @@ pub mod leg_quantities;
 pub mod leg_reader;
 pub mod leg_validator;
 
-pub use leg::*;
 pub use leg_constants::*;
 pub use leg_coordinates::*;
+pub use leg_enum::*;
 pub use leg_iterator::*;
 pub use leg_matcher::*;
 pub use leg_math::*;

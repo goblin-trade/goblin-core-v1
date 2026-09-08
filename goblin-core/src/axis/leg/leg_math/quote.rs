@@ -1,6 +1,5 @@
-///! LegMarker for input quote, also known as bid / buy
 use crate::{
-    axis::leg::{leg_math::LegMath, Base, Quote},
+    axis::leg::{Base, Quote, leg_math::LegMath},
     goblin_error::GoblinError,
     quantities::{AdjustedQuoteLots, BaseLots, BaseLotsPerBaseUnit, QuoteLotsPerBaseUnit},
 };
