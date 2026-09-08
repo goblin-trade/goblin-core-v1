@@ -2,4 +2,46 @@ pub mod hardcoded_erc20_index;
 
 pub use hardcoded_erc20_index::*;
 
-mod hardcoded_erc20;
+use super::{TokenData, TokenMarker};
+use crate::{
+    axis::{
+        caller::HardcodedCaller,
+        token::{HardcodedERC20, token_list::HARDCODED_ERC20_STORE_LIST},
+        update::UpdateMarker,
+    },
+    goblin_error::GoblinError,
+    quantities::UnsidedDeltaAtomsPerLot,
+    settlement::global_delta::UpdateParams,
+    state::{IndexedPreimage, SlotKey, StorePreimage},
+};
+
+impl TokenMarker for HardcodedERC20 {
+    fn get_global_deposit(
+        local_deposit: Self::LocalDeposit,
+        atoms_per_lot: UnsidedDeltaAtomsPerLot,
+    ) -> Result<Self::GlobalDeposit, GoblinError> {
+        local_deposit
+            .checked_mul(atoms_per_lot)
+            .ok_or(GoblinError::Overflow)
+    }
+
+    fn update<'a, UM: UpdateMarker>(
+        update_params: UpdateParams<'a, Self, UM>,
+    ) -> Result<(), GoblinError> {
+        update_params.update_erc20()
+    }
+
+    fn get_hardcoded_store_hash(
+        indexed_preimage: &IndexedPreimage<HardcodedCaller, Self>,
+    ) -> SlotKey<StorePreimage<Self>> {
+        HARDCODED_ERC20_STORE_LIST[&indexed_preimage.store_key_index]
+    }
+
+    ///////////
+
+    fn get_stored_decimals(
+        token_data: &TokenData<Self>,
+    ) -> Result<Self::StoredDecimals, GoblinError> {
+        Ok(token_data.decimals)
+    }
+}

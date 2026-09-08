@@ -6,4 +6,12 @@ pub use eth_data::*;
 pub use eth_delta::*;
 pub use eth_store_list::*;
 
-mod eth;
+use crate::axis::token::{ETH, TokenData};
+
+use super::TokenList;
+
+impl TokenList for ETH {
+    type SenderDeltaList = ETHDelta;
+    type DataList<'a> = &'a TokenData<ETH>;
+    type HardcodedStoreList = ETHStoreList;
+}
