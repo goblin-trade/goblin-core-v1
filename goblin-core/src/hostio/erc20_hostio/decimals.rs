@@ -1,7 +1,10 @@
-use crate::{goblin_error::GoblinError, hostio, types::Address};
+use crate::{
+    goblin_error::GoblinError,
+    hostio::{self, abi_selector},
+    types::Address,
+};
 
-// keccak256('decimals()') = 0x313ce567
-const DECIMALS_SELECTOR: [u8; 4] = [0x31, 0x3c, 0xe5, 0x67];
+const DECIMALS_SELECTOR: [u8; 4] = abi_selector(b"decimals()");
 
 pub fn decimals(token_address: &Address) -> Result<u8, GoblinError> {
     let calldata = DECIMALS_SELECTOR;

@@ -1,8 +1,9 @@
 use super::call_and_check::call_and_check;
-use crate::{goblin_error::GoblinError, quantities::RawAtoms, types::Address};
+use crate::{
+    goblin_error::GoblinError, hostio::abi_selector, quantities::RawAtoms, types::Address,
+};
 
-// keccak256('transfer(address,uint256)') = 0xa9059cbb
-const TRANSFER_SELECTOR: [u8; 4] = [0xa9, 0x05, 0x9c, 0xbb];
+const TRANSFER_SELECTOR: [u8; 4] = abi_selector(b"transfer(address,uint256)");
 
 pub fn transfer<const D: u8>(
     token_address: &Address,

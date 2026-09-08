@@ -1,7 +1,9 @@
+pub mod abi_selector;
 pub mod call_helpers;
 pub mod erc20_hostio;
 pub mod eth_hostio;
 
+pub use abi_selector::*;
 pub use call_helpers::*;
 pub use erc20_hostio::*;
 pub use eth_hostio::*;
