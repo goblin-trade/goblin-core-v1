@@ -26,7 +26,7 @@ pub trait LegIterator: LegCoordinates {
     ) -> impl Iterator<Item = OuterBitmapIndex> {
         let extracted_range = range.extract_range::<OUTER_BITMAP_INDEX>();
         Self::step_iter::<OUTER_BITMAP_INDEX>(extracted_range)
-            .map(|pos| OuterBitmapIndex::from(pos))
+            .map(OuterBitmapIndex::from)
     }
 
     fn outer_pos_iter(
@@ -34,7 +34,7 @@ pub trait LegIterator: LegCoordinates {
         current: Position,
     ) -> impl Iterator<Item = OuterPos> {
         let clamped_range = range.clamp_range::<Self, OUTER_POS>(current);
-        Self::step_iter::<OUTER_POS>(clamped_range).map(|pos| OuterPos::from(pos))
+        Self::step_iter::<OUTER_POS>(clamped_range).map(OuterPos::from)
     }
 
     fn inner_pos_iter(
@@ -42,6 +42,6 @@ pub trait LegIterator: LegCoordinates {
         current: Position,
     ) -> impl Iterator<Item = InnerPos> {
         let clamped_range = range.clamp_range::<Self, INNER_POS>(current);
-        Self::step_iter::<INNER_POS>(clamped_range).map(|pos| InnerPos::from(pos))
+        Self::step_iter::<INNER_POS>(clamped_range).map(InnerPos::from)
     }
 }

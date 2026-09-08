@@ -19,7 +19,7 @@ impl PartyCommit for Counterparties {
             for_axes!(In => Self::commit_leg::<(TP, In)>(
                 address,
                 market,
-                &local_counterparty,
+                local_counterparty,
                 global_delta
             )?);
         }

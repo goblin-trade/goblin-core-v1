@@ -27,7 +27,7 @@ impl PartySettle for Sender {
     {
         let sender_delta = Self::get_leg(global_delta);
 
-        let data_iter = TM::get_lifetimed(&token_data_triple).into_iter();
+        let data_iter = TM::get_lifetimed(token_data_triple).into_iter();
         let delta_iter = TM::get_leg(sender_delta).into_iter();
 
         let maybe_hardcoded_caller_index = HardcodedCallerList::index(caller_addresses.caller);

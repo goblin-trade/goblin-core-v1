@@ -60,40 +60,32 @@ macro_rules! define_custom_type {
             pub const MAX: Self = $type(<$t>::MAX);
 
             pub fn min(self, other: Self) -> Self {
-                if self.0 < other.0 {
-                    self
-                } else {
-                    other
-                }
+                if self.0 < other.0 { self } else { other }
             }
 
             pub fn max(self, other: Self) -> Self {
-                if self.0 > other.0 {
-                    self
-                } else {
-                    other
-                }
+                if self.0 > other.0 { self } else { other }
             }
 
-            pub fn checked_add(self, rhs: Self) -> Result<Self, crate::goblin_error::GoblinError> {
+            pub fn checked_add(self, rhs: Self) -> Result<Self, $crate::goblin_error::GoblinError> {
                 self.0
                     .checked_add(rhs.0)
                     .map($type)
-                    .ok_or(crate::goblin_error::GoblinError::Overflow)
+                    .ok_or($crate::goblin_error::GoblinError::Overflow)
             }
 
-            pub fn checked_sub(self, rhs: Self) -> Result<Self, crate::goblin_error::GoblinError> {
+            pub fn checked_sub(self, rhs: Self) -> Result<Self, $crate::goblin_error::GoblinError> {
                 self.0
                     .checked_sub(rhs.0)
                     .map($type)
-                    .ok_or(crate::goblin_error::GoblinError::Underflow)
+                    .ok_or($crate::goblin_error::GoblinError::Underflow)
             }
 
-            pub fn checked_mul(self, rhs: Self) -> Result<Self, crate::goblin_error::GoblinError> {
+            pub fn checked_mul(self, rhs: Self) -> Result<Self, $crate::goblin_error::GoblinError> {
                 self.0
                     .checked_mul(rhs.0)
                     .map($type)
-                    .ok_or(crate::goblin_error::GoblinError::Overflow)
+                    .ok_or($crate::goblin_error::GoblinError::Overflow)
             }
         }
     };

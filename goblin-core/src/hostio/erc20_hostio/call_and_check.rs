@@ -4,7 +4,7 @@ use crate::{goblin_error::GoblinError, hostio, quantities::RawAtoms, require, ty
 ///
 /// msg.value is zero
 pub fn call_and_check(contract: &Address, calldata: &[u8]) -> Result<(), GoblinError> {
-    hostio::call_contract(contract, &calldata, &RawAtoms::<8>::ZERO)?;
+    hostio::call_contract(contract, calldata, &RawAtoms::<8>::ZERO)?;
 
     // Ensure call succeeded
     let result_byte = hostio::read_return_data::<u8>(31);

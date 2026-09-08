@@ -34,7 +34,7 @@ impl<'a> VariableDecode<'a> for GlobalHeader<'a> {
         let market_counts =
             MarketCounts::raw_variable_decode(reader, &flags.process_dynamic_markets);
 
-        let custom_erc20_list = CustomERC20List::raw_variable_decode(reader, &flags);
+        let custom_erc20_list = CustomERC20List::raw_variable_decode(reader, flags);
         let token_data_triple = TokenDataTriple::from(custom_erc20_list);
 
         Self {

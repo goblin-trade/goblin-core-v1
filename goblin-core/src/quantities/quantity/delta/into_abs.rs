@@ -12,7 +12,7 @@ where
     E: Exp,
 {
     fn abs(&self) -> Quantity<E, u64> {
-        let inner = self.inner.abs() as u64;
+        let inner = self.inner.unsigned_abs();
         Quantity::new(inner)
     }
 }

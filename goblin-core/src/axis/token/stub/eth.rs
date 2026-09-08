@@ -1,9 +1,9 @@
 use goblin_macros::ConstDefault;
 
 use crate::{
-    axis::token::{token_marker::TokenData, ETH},
+    axis::token::{ETH, token_marker::TokenData},
     input_processor::{ArgsReader, FixedDecode},
-    quantities::{UnsidedDeltaAtoms, NATIVE_TOKEN_DECIMALS},
+    quantities::{NATIVE_TOKEN_DECIMALS, UnsidedDeltaAtoms},
     settlement::{CheckedOps, ConstDefault},
 };
 use core::ops::Index;
@@ -36,14 +36,14 @@ impl CheckedOps for ETHStub {
     }
 }
 
-impl Into<UnsidedDeltaAtoms> for ETHStub {
-    fn into(self) -> UnsidedDeltaAtoms {
+impl From<ETHStub> for UnsidedDeltaAtoms {
+    fn from(_val: ETHStub) -> Self {
         UnsidedDeltaAtoms::DEFAULT
     }
 }
 
-impl Into<u8> for ETHStub {
-    fn into(self) -> u8 {
+impl From<ETHStub> for u8 {
+    fn from(_val: ETHStub) -> Self {
         NATIVE_TOKEN_DECIMALS
     }
 }
