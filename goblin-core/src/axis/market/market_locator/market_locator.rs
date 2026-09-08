@@ -1,5 +1,5 @@
 use crate::{
-    axis::{HardcodedMarketList, TokenDataTriple},
+    axis::{market::HardcodedMarketList, token::TokenDataTriple},
     axis_helpers::TokenPair,
     goblin_error::GoblinError,
     input_processor::ArgsReader,

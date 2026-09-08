@@ -1,7 +1,7 @@
 use core::range::RangeInclusive;
 
 use crate::{
-    axis::LegCoordinates,
+    axis::leg::LegCoordinates,
     quantities::{DerivedPosition, InnerVal, Position},
 };
 

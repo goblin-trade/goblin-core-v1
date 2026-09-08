@@ -1,10 +1,9 @@
 use crate::axis::{
     token::{
-        token_list::{eth::ETHDelta, TokenList},
+        token_list::{eth::ETHDelta, ETHStoreList, TokenList},
         token_marker::TokenData,
         ETH,
     },
-    token_list::ETHStoreList,
 };
 
 impl TokenList for ETH {

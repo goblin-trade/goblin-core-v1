@@ -1,10 +1,7 @@
 use crate::{
-    axis::{
-        update::{
-            update_erc20::UpdateERC20, update_make::UpdateMake, Decrease, Increase, SameUpdatePair,
-            UpdateETH, UpdateEnum, UpdateQuantity,
-        },
-        UpdateAddress,
+    axis::update::{
+        Decrease, Increase, SameUpdatePair, UpdateAddress, UpdateETH, UpdateEnum, UpdateQuantity,
+        update_erc20::UpdateERC20, update_make::UpdateMake,
     },
     axis_helpers::AxisMarker,
     quantities::UnsidedLots,

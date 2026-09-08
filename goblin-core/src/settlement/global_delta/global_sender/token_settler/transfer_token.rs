@@ -1,7 +1,10 @@
 use core::marker::PhantomData;
 
 use crate::{
-    axis::{TokenMarker, UpdateEnum},
+    axis::{
+        token::token_marker::TokenMarker,
+        update::UpdateEnum,
+    },
     goblin_error::GoblinError,
     input_processor::CallerAddresses,
     match_axes,

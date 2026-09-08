@@ -1,5 +1,8 @@
 use crate::{
-    axis::{HardcodedERC20, HARDCODED_CALLER_LIST, HARDCODED_ERC20_LIST},
+    axis::{
+        caller::HARDCODED_CALLER_LIST,
+        token::{HardcodedERC20, HARDCODED_ERC20_LIST},
+    },
     settlement::ConstDefault,
     state::{SlotKey, StorePreimage},
 };

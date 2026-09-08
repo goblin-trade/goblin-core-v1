@@ -1,4 +1,4 @@
-use crate::{axis::LegMatcher, quantities::Position};
+use crate::{axis::leg::LegMatcher, quantities::Position};
 
 pub struct TakeHeaderOptional<In: LegMatcher> {
     /// The minimum number of base lots to fill, otherwise the order will be invalidated.

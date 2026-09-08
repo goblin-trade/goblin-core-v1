@@ -1,5 +1,8 @@
 use crate::{
-    axis::{ETHStub, ETH, HARDCODED_CALLER_LIST},
+    axis::{
+        caller::HARDCODED_CALLER_LIST,
+        token::{ETHStub, ETH},
+    },
     settlement::ConstDefault,
     state::{SlotKey, StorePreimage},
 };

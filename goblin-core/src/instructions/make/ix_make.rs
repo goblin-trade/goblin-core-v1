@@ -1,5 +1,5 @@
 use crate::{
-    axis::OccupancyMarker,
+    axis::occupancy::OccupancyMarker,
     axis_helpers::MarketSpec,
     goblin_error::GoblinError,
     input_processor::{ArgsReader, FixedDecode},

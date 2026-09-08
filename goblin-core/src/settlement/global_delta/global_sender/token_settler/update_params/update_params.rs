@@ -1,7 +1,7 @@
 use core::marker::PhantomData;
 
 use crate::{
-    axis::{update::UpdateMarker, TokenMarker},
+    axis::{token::token_marker::TokenMarker, update::UpdateMarker},
     input_processor::CallerAddresses,
     quantities::UnsidedAtoms,
 };

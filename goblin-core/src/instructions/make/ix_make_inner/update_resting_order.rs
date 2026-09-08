@@ -1,5 +1,8 @@
 use crate::{
-    axis::{OccupancyMarker, UpdateMarker},
+    axis::{
+        occupancy::OccupancyMarker,
+        update::UpdateMarker,
+    },
     axis_helpers::MarketSpec,
     goblin_error::GoblinError,
     quantities::{BaseLots, Position},

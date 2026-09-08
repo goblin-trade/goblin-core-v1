@@ -1,4 +1,8 @@
-use crate::axis::{HardcodedMarketList, Pair, TokenMarker, TokenQuantity};
+use crate::axis::{
+    leg::Pair,
+    market::HardcodedMarketList,
+    token::{TokenMarker, TokenQuantity},
+};
 
 pub trait TokenPair: 'static + Clone + Copy + PartialEq + PartialOrd + Default {
     type Base: TokenMarker;

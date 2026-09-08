@@ -1,5 +1,6 @@
 use crate::{
-    axis::{LegMatcher, OccupancyMarker, UpdateMarker},
+    Ctx,
+    axis::{leg::leg_matcher::LegMatcher, occupancy::OccupancyMarker, update::UpdateMarker},
     axis_helpers::MarketSpec,
     goblin_error::GoblinError,
     instructions::ix_make_inner::{
@@ -9,7 +10,6 @@ use crate::{
     matching::MakeRegion,
     quantities::{BaseLots, Position},
     state::InnerBitmap,
-    Ctx,
 };
 
 pub fn ix_make_inner<MS, OM, UM, In>(

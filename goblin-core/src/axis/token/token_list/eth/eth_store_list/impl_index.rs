@@ -1,7 +1,10 @@
 use core::ops::Index;
 
 use crate::{
-    axis::{token_list::ETHStoreList, HardcodedCaller, ETH},
+    axis::{
+        caller::HardcodedCaller,
+        token::{ETH, token_list::ETHStoreList},
+    },
     state::{SlotKey, StoreKeyIndex, StorePreimage},
 };
 

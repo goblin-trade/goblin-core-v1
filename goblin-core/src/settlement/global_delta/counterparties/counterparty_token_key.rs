@@ -2,10 +2,10 @@ use goblin_macros::ConstDefault;
 
 use crate::{
     axis::{
+        caller::CallerMarker,
         token::{
             token_marker::TokenMarker, token_quantity::TokenQuantity, token_reader::TokenDataTriple,
         },
-        CallerMarker,
     },
     state::{IndexedPreimage, SlotKey, StoreKeyIndex, StorePreimage},
     types::Address,

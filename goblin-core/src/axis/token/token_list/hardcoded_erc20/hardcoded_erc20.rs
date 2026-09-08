@@ -1,12 +1,9 @@
-use crate::axis::{
-    token::{
-        token_list::{
-            hardcoded_erc20::{HardcodedERC20Deltas, HardcodedERC20List, HARDCODED_ERC20_COUNT},
-            TokenList,
-        },
-        HardcodedERC20,
+use crate::axis::token::{
+    HardcodedERC20,
+    token_list::{
+        HardcodedERC20StoreList, TokenList,
+        hardcoded_erc20::{HARDCODED_ERC20_COUNT, HardcodedERC20Deltas, HardcodedERC20List},
     },
-    token_list::HardcodedERC20StoreList,
 };
 
 impl TokenList for HardcodedERC20 {

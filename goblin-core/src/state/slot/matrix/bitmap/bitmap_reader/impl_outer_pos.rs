@@ -1,5 +1,5 @@
 use crate::{
-    axis::LegMatcher,
+    axis::leg::LegMatcher,
     axis_helpers::TokenPair,
     quantities::{OUTER_POS, POS_0, POS_1, Pos0, Pos1, Position},
     state::{

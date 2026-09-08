@@ -1,5 +1,5 @@
 use crate::{
-    axis::TokenMsgTransfer, goblin_error::GoblinError, input_processor::ETHTransfers,
+    axis::token::TokenMsgTransfer, goblin_error::GoblinError, input_processor::ETHTransfers,
     quantities::UnsidedDeltaAtoms,
 };
 

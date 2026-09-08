@@ -1,5 +1,5 @@
 use crate::{
-    axis::{Decrease, UpdateAddress},
+    axis::update::{Decrease, UpdateAddress},
     input_processor::CallerAddresses,
     types::Address,
 };

@@ -1,4 +1,4 @@
-use crate::axis::{CallerMarker, TokenMarker};
+use crate::axis::{caller::CallerMarker, token::TokenMarker};
 
 pub struct StoreKeyIndex<CM: CallerMarker, TM: TokenMarker> {
     pub caller_locator: CM::Locator,

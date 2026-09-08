@@ -1,6 +1,6 @@
 use core::marker::PhantomData;
 
-use crate::{axis::HardcodedMarketList, axis_helpers::TokenPair};
+use crate::{axis::market::HardcodedMarketList, axis_helpers::TokenPair};
 
 /// Index for hardcoded market
 #[derive(Clone, Copy, PartialEq, PartialOrd)]

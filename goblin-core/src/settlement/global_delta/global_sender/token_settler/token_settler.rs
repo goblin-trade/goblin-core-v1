@@ -1,5 +1,12 @@
 use crate::{
-    axis::{CallerMarker, TokenData, TokenMarker, TokenMsgTransfer, TokenQuantity},
+    axis::{
+        caller::CallerMarker,
+        token::{
+            token_marker::{TokenData, TokenMarker},
+            token_msg_transfer::TokenMsgTransfer,
+            token_quantity::TokenQuantity,
+        },
+    },
     goblin_error::GoblinError,
     input_processor::{CallerAddresses, MsgTransfers},
     settlement::{transfer_token, TokenDelta},

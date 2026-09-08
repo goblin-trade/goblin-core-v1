@@ -1,4 +1,4 @@
-use crate::{axis::LegMatcher, quantities::Position};
+use crate::{axis::leg::LegMatcher, quantities::Position};
 
 /// Instructions for a limit order. Limit orders are also known as market orders or immediate or cancel (IOC).
 ///

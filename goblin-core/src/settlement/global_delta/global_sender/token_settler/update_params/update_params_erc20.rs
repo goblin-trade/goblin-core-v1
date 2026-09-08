@@ -1,5 +1,8 @@
 use crate::{
-    axis::{TokenMarker, UpdateMarker},
+    axis::{
+        token::token_marker::TokenMarker,
+        update::UpdateMarker,
+    },
     goblin_error::GoblinError,
     quantities::RawAtoms,
     settlement::UpdateParams,

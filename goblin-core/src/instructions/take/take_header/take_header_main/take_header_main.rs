@@ -1,4 +1,4 @@
-use crate::{axis::LegMatcher, instructions::TakeFlags};
+use crate::{axis::leg::LegMatcher, instructions::TakeFlags};
 
 pub struct TakeHeaderMain<In: LegMatcher> {
     /// The order size, i.e. number of lots to fill

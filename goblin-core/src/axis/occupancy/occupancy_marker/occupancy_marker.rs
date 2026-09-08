@@ -1,5 +1,9 @@
 use crate::{
-    axis::{LegEnum, LegMatcher, OccupancyEnum, UpdateEnum},
+    axis::{
+        leg::{LegEnum, LegMatcher},
+        occupancy::OccupancyEnum,
+        update::UpdateEnum,
+    },
     axis_helpers::{AxisMarker, TokenPair},
     goblin_error::GoblinError,
     matching::MakeRegion,

@@ -1,12 +1,12 @@
 use crate::{
-    axis::LegMatcher,
+    axis::leg::LegMatcher,
     axis_helpers::TokenPair,
     goblin_error::GoblinError,
-    quantities::{Position, INNER_POS, POS_1},
+    quantities::{INNER_POS, POS_1, Position},
     require,
     state::{
-        bitmap::{Bitmap, BitmapReader},
         KeyValue, MarketPreimage, MarketState, Preimage, RestingOrderPreimage, SlotKey,
+        bitmap::{Bitmap, BitmapReader},
     },
 };
 

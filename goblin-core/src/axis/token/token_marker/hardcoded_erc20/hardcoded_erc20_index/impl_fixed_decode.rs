@@ -1,5 +1,5 @@
 use crate::{
-    axis::HardcodedERC20Index,
+    axis::token::HardcodedERC20Index,
     goblin_error::GoblinError,
     input_processor::{ArgsReader, FixedDecode},
     require,

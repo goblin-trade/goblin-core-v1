@@ -1,8 +1,8 @@
 use crate::{
     axis::{
-        token::{token_marker::TokenData, token_reader::TokenReader, TokenEnum},
+        caller::HardcodedCaller,
+        token::{TokenEnum, token_marker::TokenData, token_reader::TokenReader},
         update::UpdateMarker,
-        HardcodedCaller,
     },
     axis_helpers::AxisMarker,
     goblin_error::GoblinError,

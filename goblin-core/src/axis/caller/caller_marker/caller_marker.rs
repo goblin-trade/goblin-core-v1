@@ -1,5 +1,8 @@
 use crate::{
-    axis::{CallerEnum, HardcodedCallerIndex, TokenMarker},
+    axis::{
+        caller::{CallerEnum, HardcodedCallerIndex},
+        token::TokenMarker,
+    },
     axis_helpers::AxisMarker,
     state::{IndexedPreimage, SlotKey, StorePreimage},
 };

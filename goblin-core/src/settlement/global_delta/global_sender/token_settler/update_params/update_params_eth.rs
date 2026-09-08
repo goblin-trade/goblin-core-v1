@@ -1,5 +1,8 @@
 use crate::{
-    axis::{UpdateMarker, ETH},
+    axis::{
+        token::ETH,
+        update::UpdateMarker,
+    },
     goblin_error::GoblinError,
     hostio::eth_hostio,
     quantities::ETHAtoms,

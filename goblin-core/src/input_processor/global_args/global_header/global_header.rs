@@ -1,5 +1,5 @@
 use crate::{
-    axis::TokenDataTriple, input_processor::MarketCounts, quantities::UnsidedAtoms, types::Address,
+    axis::token::TokenDataTriple, input_processor::MarketCounts, quantities::UnsidedAtoms, types::Address,
 };
 
 /// Arguments read from calldata

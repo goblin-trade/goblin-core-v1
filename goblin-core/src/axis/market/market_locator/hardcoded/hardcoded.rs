@@ -1,5 +1,8 @@
 use crate::{
-    axis::{Hardcoded, HardcodedMarketList, MarketIndex, MarketLocator, TokenDataTriple},
+    axis::{
+        market::{Hardcoded, HardcodedMarketList, MarketIndex, MarketLocator},
+        token::TokenDataTriple,
+    },
     axis_helpers::TokenPair,
     goblin_error::GoblinError,
     input_processor::{ArgsReader, FixedDecode},

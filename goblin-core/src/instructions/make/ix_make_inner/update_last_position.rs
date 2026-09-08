@@ -1,5 +1,9 @@
 use crate::{
-    axis::{LegMatcher, OccupancyEnum, OccupancyMarker, UpdateEnum, UpdateMarker},
+    axis::{
+        leg::leg_matcher::LegMatcher,
+        occupancy::{OccupancyEnum, OccupancyMarker},
+        update::{UpdateEnum, UpdateMarker},
+    },
     axis_helpers::MarketSpec,
     matching::MakeRegion,
     quantities::Position,

@@ -1,4 +1,4 @@
-use crate::{axis::HardcodedCallerIndex, define_axis};
+use crate::{axis::caller::HardcodedCallerIndex, define_axis};
 
 define_axis! {
     pub struct Caller;

@@ -3,8 +3,8 @@ pub use custom_caller_stub::*;
 
 use crate::{
     axis::{
-        CallerMarker, CustomCaller, HardcodedCallerIndex, TokenMarker,
-        caller_marker::custom_caller::CustomCallerStub,
+        caller::{CallerMarker, CustomCaller, HardcodedCallerIndex},
+        token::TokenMarker,
     },
     state::{IndexedPreimage, Preimage, SlotKey, StorePreimage},
 };

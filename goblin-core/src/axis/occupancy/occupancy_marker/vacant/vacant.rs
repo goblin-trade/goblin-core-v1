@@ -1,7 +1,10 @@
 use crate::{
     axis::{
-        occupancy_marker::vacant::validate_region, LegEnum, LegMatcher, OccupancyMarker,
-        UpdateEnum, Vacant,
+        leg::{LegEnum, LegMatcher},
+        occupancy::{
+            occupancy_marker::vacant::validate_region, OccupancyMarker, Vacant,
+        },
+        update::UpdateEnum,
     },
     axis_helpers::TokenPair,
     goblin_error::GoblinError,

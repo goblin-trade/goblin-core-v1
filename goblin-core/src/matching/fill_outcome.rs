@@ -1,5 +1,5 @@
 use crate::{
-    axis::LegMatcher,
+    axis::leg::LegMatcher,
     axis_helpers::TokenPair,
     goblin_error::GoblinError,
     matching::RestingOrderEntry,

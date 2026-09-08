@@ -1,12 +1,9 @@
-use crate::axis::{
-    token::{
-        token_list::{
-            custom_erc20::{CustomERC20Deltas, CustomERC20List},
-            TokenList,
-        },
-        CustomERC20,
+use crate::axis::token::{
+    CustomERC20, CustomERC20Stub,
+    token_list::{
+        TokenList,
+        custom_erc20::{CustomERC20Deltas, CustomERC20List},
     },
-    CustomERC20Stub,
 };
 
 impl TokenList for CustomERC20 {
