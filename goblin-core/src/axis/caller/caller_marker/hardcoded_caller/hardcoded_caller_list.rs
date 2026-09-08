@@ -1,4 +1,5 @@
-use crate::{axis::caller::HardcodedCallerIndex, types::Address};
+use super::HardcodedCallerIndex;
+use crate::types::Address;
 use hex_literal::hex;
 
 pub struct HardcodedCallerList {
