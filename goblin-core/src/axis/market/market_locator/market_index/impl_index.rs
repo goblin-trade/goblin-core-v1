@@ -1,10 +1,7 @@
+use super::{HardcodedMarketList, MarketIndex};
 use core::ops::Index;
 
-use crate::{
-    axis::market::{HardcodedMarketList, MarketIndex},
-    axis_helpers::TokenPair,
-    market::MarketReadables,
-};
+use crate::{axis_helpers::TokenPair, market::MarketReadables};
 
 impl<TP> Index<MarketIndex<TP>> for &'static [MarketReadables<TP>]
 where

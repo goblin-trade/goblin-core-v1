@@ -1,15 +1,15 @@
+//! Stub implementations for illegal combinations of MarketVariant and TokenMarkerInner
+//! They are never used, but are needed for satisfying the compiler.
+//!
+//! Hardcoded markets only have HardcodedERC20. They cannot have CustomERC20.
 use crate::{
     axis::{
         leg::Pair,
-        token::{CustomERC20, HardcodedERC20, ETH},
+        token::{CustomERC20, ETH, HardcodedERC20},
     },
     market::MarketReadables,
 };
 
-///! Stub implementations for illegal combinations of MarketVariant and TokenMarkerInner
-///! They are never used, but are needed for satisfying the compiler.
-///!
-///! Hardcoded markets only have HardcodedERC20. They cannot have CustomERC20.
 use super::HardcodedMarketList;
 
 impl HardcodedMarketList for Pair<ETH, ETH> {
