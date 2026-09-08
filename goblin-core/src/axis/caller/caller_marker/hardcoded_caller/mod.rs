@@ -5,7 +5,10 @@ pub use hardcoded_caller_index::*;
 pub use hardcoded_caller_list::*;
 
 use crate::{
-    axis::{caller::{CallerMarker, HardcodedCaller}, token::TokenMarker},
+    axis::{
+        caller::{CallerMarker, HardcodedCaller},
+        token::token_marker::TokenMarker,
+    },
     state::{IndexedPreimage, SlotKey, StorePreimage},
 };
 

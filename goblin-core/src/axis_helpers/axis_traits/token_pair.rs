@@ -1,7 +1,7 @@
 use crate::axis::{
     leg::Pair,
     market::HardcodedMarketList,
-    token::{TokenMarker, TokenQuantity},
+    token::{TokenQuantity, token_marker::TokenMarker},
 };
 
 pub trait TokenPair: 'static + Clone + Copy + PartialEq + PartialOrd + Default {

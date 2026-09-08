@@ -3,7 +3,7 @@ mod impl_index;
 
 use goblin_macros::ConstDefault;
 
-use crate::axis::token::HARDCODED_ERC20_COUNT;
+use crate::axis::token::token_list::HARDCODED_ERC20_COUNT;
 
 #[derive(Clone, Copy, PartialEq, PartialOrd, ConstDefault)]
 pub struct HardcodedERC20Index {

@@ -5,7 +5,7 @@ pub use custom_caller::*;
 pub use hardcoded_caller::*;
 
 use crate::{
-    axis::{caller::CallerEnum, token::TokenMarker},
+    axis::{caller::CallerEnum, token::token_marker::TokenMarker},
     axis_helpers::AxisMarker,
     state::{IndexedPreimage, SlotKey, StorePreimage},
 };
