@@ -4,6 +4,7 @@ extern crate alloc;
 use alloc::vec::Vec;
 use std::collections::BTreeMap;
 
+#[derive(Default)]
 pub struct VMContext {
     pub test_args: Vec<u8>,
     pub test_result: Vec<u8>,

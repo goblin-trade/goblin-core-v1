@@ -1,8 +1,13 @@
 extern crate alloc;
-use crate::hostio_unsafe::tests::*;
+use crate::hostio_unsafe::test_suite::*;
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn call_contract(
+/// Emulate a contract call in test environment, returning the result length
+///
+/// # Safety
+///
+/// Developer sets return value during intialization.
+///
+pub unsafe fn call_contract(
     _contract: *const u8,
     _calldata: *const u8,
     _calldata_len: usize,
@@ -27,8 +32,13 @@ pub unsafe extern "C" fn call_contract(
     0
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn static_call_contract(
+/// Emulate a static contract call in test environment, returning the result length
+///
+/// # Safety
+///
+/// Developer sets return value during intialization.
+///
+pub unsafe fn static_call_contract(
     _contract: *const u8,
     _calldata: *const u8,
     _calldata_len: usize,
@@ -52,10 +62,14 @@ pub unsafe extern "C" fn static_call_contract(
     0
 }
 
-// Returns the queued return data. It should only be called after calling call_contract()
-// or static_call_contract(); otherwise it returns 0.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn read_return_data(dest: *mut u8, offset: usize, size: usize) -> usize {
+/// Returns the queued return data. It should only be called after calling call_contract()
+/// or static_call_contract(); otherwise it returns 0.
+///
+/// # Safety
+///
+/// Developer sets return value during intialization.
+///
+pub unsafe fn read_return_data(dest: *mut u8, offset: usize, size: usize) -> usize {
     let vm_ctx = vm_ctx();
 
     // index == 0 means no call has occurred yet

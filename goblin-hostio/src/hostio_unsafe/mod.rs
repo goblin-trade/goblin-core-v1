@@ -8,6 +8,6 @@ pub mod vm_hooks;
 pub use vm_hooks::*;
 
 #[cfg(test)]
-mod tests;
+mod test_suite;
 #[cfg(test)]
-pub use tests::*;
+pub use test_suite::*;

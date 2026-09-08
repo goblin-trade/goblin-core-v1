@@ -1,8 +1,13 @@
 extern crate alloc;
-use crate::hostio_unsafe::tests::*;
+use crate::hostio_unsafe::test_suite::*;
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn storage_load_bytes32(key: *const u8, dest: *mut u8) {
+/// Write the value stored at `key` into `dest`
+///
+/// # Safety
+///
+/// * `key` and `dest` are pointers to 32 byte byte arrays
+/// * Test suite reads from an in-memory K-V store
+pub unsafe fn storage_load_bytes32(key: *const u8, dest: *mut u8) {
     let key_slice = unsafe { core::slice::from_raw_parts(key, 32) };
     let mut key_array = [0u8; 32];
     key_array.copy_from_slice(key_slice);
@@ -18,8 +23,14 @@ pub unsafe extern "C" fn storage_load_bytes32(key: *const u8, dest: *mut u8) {
     }
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn storage_cache_bytes32(key: *const u8, value: *const u8) {
+/// Write the key value pair to storage
+///
+/// # Safety
+///
+/// * `key` and `value` are pointers to 32 byte byte arrays
+/// * Test suite writes to an in-memory K-V store
+///
+pub unsafe fn storage_cache_bytes32(key: *const u8, value: *const u8) {
     let key_slice = unsafe { core::slice::from_raw_parts(key, 32) };
     let mut key_array = [0u8; 32];
     key_array.copy_from_slice(key_slice);
@@ -31,7 +42,9 @@ pub unsafe extern "C" fn storage_cache_bytes32(key: *const u8, value: *const u8)
     vm_ctx().storage.insert(key_array, value_array);
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn storage_flush_cache(_clear: bool) {
-    // In test environment, we don't need to distinguish between cached and flushed state
-}
+/// Flush cache. No-op in test environment
+///
+/// # Safety
+///
+/// No-op in test environment
+pub unsafe fn storage_flush_cache(_clear: bool) {}
