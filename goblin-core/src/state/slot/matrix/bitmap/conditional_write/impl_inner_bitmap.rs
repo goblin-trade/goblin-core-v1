@@ -1,9 +1,9 @@
 use crate::{
     axis_helpers::TokenPair,
-    quantities::{OuterPos, INNER_POS, POS_1},
+    quantities::{INNER_POS, OuterPos, POS_1},
     state::{
-        bitmap::{alias::OuterBitmap, preimage::BitmapPreimage, Bitmap},
         SlotKey,
+        bitmap::{Bitmap, alias::OuterBitmap, bitmap_preimage::BitmapPreimage},
     },
 };
 
