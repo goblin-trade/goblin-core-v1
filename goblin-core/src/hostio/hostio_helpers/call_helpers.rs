@@ -1,4 +1,4 @@
-///! Safe helpers for contract calls
+//! Safe helpers for contract calls
 use crate::{
     goblin_error::GoblinError,
     hostio::{hostio_helpers::buffered_call, hostio_unsafe},

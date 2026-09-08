@@ -1,4 +1,4 @@
-///! Safe helpers for hostio interaction
+//! Safe helpers for hostio interaction
 use crate::{
     hostio::{hostio_helpers::buffered_call, hostio_unsafe},
     quantities::ETHAtoms,
