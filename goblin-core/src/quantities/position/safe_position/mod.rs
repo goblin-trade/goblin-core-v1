@@ -1,8 +1,15 @@
-pub mod safe_position;
-pub use safe_position::*;
 mod alias;
 pub use alias::*;
 
-mod pos_0;
-mod pos_1;
-mod pos_2;
+use crate::quantities::Position;
+
+#[derive(Clone, Copy, PartialEq, PartialOrd)]
+pub struct SafePosition<const BITS: u16> {
+    pub(super) inner: Position,
+}
+
+impl<const BITS: u16> From<SafePosition<BITS>> for Position {
+    fn from(value: SafePosition<BITS>) -> Self {
+        value.inner
+    }
+}

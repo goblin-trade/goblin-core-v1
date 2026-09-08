@@ -1,3 +1,6 @@
+#[cfg(test)]
+mod test;
+
 use crate::{
     goblin_error::GoblinError,
     quantities::{RawAtoms, UnsidedAtoms},

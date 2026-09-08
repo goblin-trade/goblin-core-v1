@@ -1,4 +1,6 @@
-use crate::quantities::{OuterPos, Pos0, Pos1, Position};
+use crate::quantities::{OuterPos, POS_1, Pos0, Position, SafePosition};
+
+pub type Pos1 = SafePosition<POS_1>;
 
 impl Pos1 {
     pub fn new(pos_0: Pos0, outer_pos: OuterPos) -> Self {

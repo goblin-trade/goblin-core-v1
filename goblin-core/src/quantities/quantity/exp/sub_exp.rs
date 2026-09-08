@@ -1,5 +1,5 @@
-///! Subtraction = add negated RHS
-use crate::quantities::{add_exp::AddExp, neg_exp::NegExp, Exp};
+//! Subtraction = add negated RHS
+use crate::quantities::{Exp, add_exp::AddExp, neg_exp::NegExp};
 
 pub trait SubExp<Rhs: Exp>: Exp {
     type Output: Exp;

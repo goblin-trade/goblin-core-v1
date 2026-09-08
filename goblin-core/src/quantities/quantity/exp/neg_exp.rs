@@ -1,4 +1,4 @@
-///! Negation
+//! Negation
 use crate::quantities::{Exp, N1, P1, Z0};
 
 pub trait NegExp {

@@ -1,4 +1,4 @@
-///! Type-level addition of exponents
+//! Type-level addition of exponents
 use crate::quantities::{Exp, N1, P1, Z0};
 
 pub trait AddExp<Rhs: Exp> {
