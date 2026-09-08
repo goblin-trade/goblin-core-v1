@@ -5,4 +5,5 @@
 
 #![cfg_attr(target_arch = "wasm32", no_std)]
 
+pub mod hostio_helpers;
 pub mod hostio_unsafe;

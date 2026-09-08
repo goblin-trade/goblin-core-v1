@@ -1,5 +1,8 @@
 //! Safe helpers for hostio interaction
-use crate::hostio::{hostio_helpers::buffered_call, hostio_unsafe};
+mod buffered_call;
+
+use crate::hostio_unsafe;
+pub use buffered_call::buffered_call;
 
 // Find keccak hash for a slice of bytes
 //
