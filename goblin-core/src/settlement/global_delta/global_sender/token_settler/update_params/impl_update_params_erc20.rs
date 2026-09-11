@@ -1,8 +1,5 @@
 use crate::{
-    axis::{
-        token::token_marker::TokenMarker,
-        update::UpdateMarker,
-    },
+    axis::{token::token_marker::TokenMarker, update::UpdateMarker},
     goblin_error::GoblinError,
     quantities::RawAtoms,
     settlement::UpdateParams,
@@ -18,6 +15,7 @@ where
         match self.decimals {
             6 => self.update_erc20_for_decimals::<6>(),
             8 => self.update_erc20_for_decimals::<8>(),
+            18 => self.update_erc20_for_decimals::<8>(),
             _ => Err(GoblinError::UnsupportedDecimals),
         }
     }

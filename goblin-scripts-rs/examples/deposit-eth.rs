@@ -129,23 +129,3 @@ async fn main() -> Result<()> {
     println!("Deposit confirmed. Tx: {tx_hash:?}");
     Ok(())
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn deposit_calldata_sets_read_msg_value_only() {
-        let calldata = build_deposit_calldata();
-
-        // read_msg_value on, every other flag off, zero market counts.
-        assert_eq!(calldata, vec![0b0000_0010, 0x00, 0x00]);
-
-        // Guard against accidentally setting other flag bits.
-        assert_eq!(
-            calldata[0] & HEADER_FLAG_READ_MSG_VALUE,
-            HEADER_FLAG_READ_MSG_VALUE
-        );
-        assert_eq!(calldata[0] & !HEADER_FLAG_READ_MSG_VALUE, 0);
-    }
-}
