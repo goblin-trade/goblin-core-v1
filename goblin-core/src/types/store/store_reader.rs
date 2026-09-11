@@ -1,10 +1,3 @@
-const trait TestTrait {
-    fn get();
-}
-const impl TestTrait for () {
-    fn get() {}
-}
-
 /// A marker type to read fields from a store at compile time
 pub const trait StoreReader<S> {
     type Result;

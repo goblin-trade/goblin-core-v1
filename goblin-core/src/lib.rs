@@ -2,7 +2,6 @@
 #![no_std]
 #![feature(const_trait_impl)]
 #![feature(const_index)]
-#![feature(const_try)]
 
 #[cfg(test)]
 extern crate std;
