@@ -6,7 +6,7 @@ use crate::{
         token::{ETH, ETHStub},
     },
     settlement::ConstDefault,
-    state::{SlotKey, StorePreimage},
+    state::{ConstPreimage, SlotKey, StorePreimage},
 };
 
 pub struct ETHStoreList {

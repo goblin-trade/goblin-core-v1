@@ -4,7 +4,7 @@ use super::HARDCODED_ERC20_LIST;
 use crate::{
     axis::{caller::HARDCODED_CALLER_LIST, token::HardcodedERC20},
     settlement::ConstDefault,
-    state::{SlotKey, StorePreimage},
+    state::{ConstPreimage, SlotKey, StorePreimage},
 };
 
 pub struct HardcodedERC20StoreList {

@@ -2,7 +2,7 @@ use crate::{
     axis_helpers::TokenPair,
     market::{LotSizePair, TokenAddressPair},
     quantities::QuoteLotsPerBaseUnitPerTick,
-    state::{MarketState, Preimage},
+    state::{ConstPreimage, MarketState, Preimage},
 };
 
 /// Key preimage to read MarketState from slot
@@ -22,3 +22,5 @@ impl<TP: TokenPair> Preimage for MarketPreimage<TP> {
 
     type SlotState = MarketState;
 }
+
+const impl<TP: TokenPair> ConstPreimage for MarketPreimage<TP> {}

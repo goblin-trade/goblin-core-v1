@@ -1,6 +1,8 @@
 use crate::{
     axis::{caller::CallerMarker, token::token_marker::TokenMarker},
-    state::{IndexedPreimage, Preimage, PreimageSerializer, SlotKey, Store, StoreKeyIndex},
+    state::{
+        ConstPreimage, IndexedPreimage, Preimage, PreimageSerializer, SlotKey, Store, StoreKeyIndex,
+    },
     types::Address,
 };
 use keccak_const::Keccak256;
@@ -24,17 +26,11 @@ impl<TM: TokenMarker> StorePreimage<TM> {
 
         CM::get_store_hash(&indexed_preimage)
     }
-
-    pub const fn const_hash(&self) -> SlotKey<Self> {
-        let buffer = PreimageSerializer::new(*self);
-        let bytes = buffer.serialize();
-        let hash = Keccak256::new().update(bytes).finalize();
-
-        SlotKey::<Self>::new(hash)
-    }
 }
 
 impl<TM: TokenMarker> Preimage for StorePreimage<TM> {
     const SLOT_DISCRIMINATOR: u8 = 2 + TM::DISCRIMINATOR;
     type SlotState = Store<TM>;
 }
+
+const impl<TM: TokenMarker> ConstPreimage for StorePreimage<TM> {}
