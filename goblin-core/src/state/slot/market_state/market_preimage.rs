@@ -9,7 +9,14 @@ use crate::{
 ///
 /// This is similar to MarketState, but instead of token index pair we have
 /// a pair of token addresses
-#[repr(C)]
+///
+/// # `packed` representation
+///
+/// The byte layout of this type is hashed by [crate::state::ConstPreimage],
+/// which reads the raw bytes of `self`. Without `packed`, the trailing
+/// alignment padding would be uninitialized and reading it during const
+/// evaluation is a hard error. `packed` keeps the struct padding-free.
+#[repr(C, packed)]
 #[derive(Clone, Copy)]
 pub struct MarketPreimage<TP: TokenPair> {
     pub lot_size_pair: LotSizePair,

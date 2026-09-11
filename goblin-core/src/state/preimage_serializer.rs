@@ -4,7 +4,19 @@ use crate::state::Preimage;
 ///
 /// Assigns the preimage disciminator at index 0 and returns a serialized byte slice.
 /// Serialization is zero-copy and avoids `mut` and zero fills.
-#[repr(C)]
+///
+/// # `packed` representation
+///
+/// `serialize` exposes the raw bytes of this struct via `from_raw_parts`.
+/// With the default `repr(C)` layout the compiler would insert padding
+/// between `discriminator` (align 1) and `preimage` (possibly align > 1).
+/// Those padding bytes are not initialized, and hashing them during const
+/// evaluation is a hard error (`E0080`). `repr(C, packed)` removes the
+/// inter-field padding so every byte of the serialized slice is initialized.
+///
+/// Note this only removes padding *between* the fields; `P` itself must also
+/// be padding-free (see `MarketPreimage`).
+#[repr(C, packed)]
 pub struct PreimageSerializer<P: Preimage> {
     discriminator: u8,
     preimage: P,
