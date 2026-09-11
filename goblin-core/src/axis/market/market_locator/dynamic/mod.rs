@@ -7,6 +7,7 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::{ArgsReader, FixedDecode},
     market::{CommonMarket, MarketReadables},
+    require,
     state::Preimage,
 };
 
@@ -18,7 +19,10 @@ impl<TP: TokenPair + HardcodedMarketList> MarketLocator<TP> for Dynamic {
         token_data_triple: &TokenDataTriple,
     ) -> Result<Self::Locator, GoblinError> {
         let common_market = CommonMarket::<TP>::try_fixed_decode(reader)?;
-        common_market.lot_size_pair.validate()?;
+        require!(
+            common_market.lot_size_pair.valid(),
+            GoblinError::InvalidLotSize
+        );
 
         let preimage = common_market.get_preimage(token_data_triple)?;
         let key = preimage.hash();

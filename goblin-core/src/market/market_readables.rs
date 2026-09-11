@@ -6,6 +6,7 @@ use crate::{
     axis_helpers::TokenPair,
     goblin_error::GoblinError,
     market::CommonMarket,
+    require,
     state::{MarketPreimage, SlotKey},
 };
 
@@ -16,7 +17,7 @@ pub struct MarketReadables<TP: TokenPair> {
 
 impl<TP: TokenPair> MarketReadables<TP> {
     pub const fn get_hardcoded(market: CommonMarket<TP>) -> Result<Self, GoblinError> {
-        // market.lot_size_pair.validate()?;
+        require!(market.lot_size_pair.valid(), GoblinError::InvalidLotSize);
         // problem- LegMarker::get() doesn't work with const
         //
 
