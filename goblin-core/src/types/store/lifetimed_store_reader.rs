@@ -3,7 +3,7 @@
 /// pub trait LegReader: LegMath
 ///     + for<'a> StoreReader<'a, Tuple<BaseLotsPerBaseUnit, QuoteLotsPerQuoteUnit, Leg>, Result = Self::LotsPerUnit>
 ///
-pub trait LifetimedStoreReader<'a, S> {
+pub const trait LifetimedStoreReader<'a, S> {
     type Result: Clone + Copy;
 
     fn get_lifetimed(store: &'a S) -> Self::Result;

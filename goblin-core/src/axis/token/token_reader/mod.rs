@@ -14,7 +14,7 @@ use crate::{
 pub trait TokenReader:
     TokenQuantity
     + TokenList
-    + for<'a> LifetimedStoreReader<'a, TokenDataTriple<'a>, Result = Self::DataList<'a>>
+    + for<'a> const LifetimedStoreReader<'a, TokenDataTriple<'a>, Result = Self::DataList<'a>>
     + StoreReader<CounterpartyTriple, Result = CounterpartyMap<Self>>
     + StoreReader<MsgTransfers, Result = Self::TokenMsgTransfer>
     + StoreReader<GlobalSender, Result = Self::SenderDeltaList>

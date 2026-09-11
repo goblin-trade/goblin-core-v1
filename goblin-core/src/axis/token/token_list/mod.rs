@@ -17,8 +17,9 @@ pub trait TokenList: TokenQuantity {
     type SenderDeltaList: Index<Self::TokenIndex, Output = TokenDelta<Self>>
         + IndexMut<Self::TokenIndex>;
 
-    type DataList<'a>: Index<Self::TokenIndex, Output = TokenData<Self>>
-        + IntoIterator<Item = &'a TokenData<Self>>;
+    type DataList<'a>: const Index<Self::TokenIndex, Output = TokenData<Self>>
+        + IntoIterator<Item = &'a TokenData<Self>>
+        + Copy;
 
     type HardcodedStoreList;
 }
