@@ -2,7 +2,7 @@ use super::HardcodedMarketList;
 use crate::{
     axis::{
         leg::Pair,
-        token::{token_marker::HardcodedERC20Index, ETHStub, HardcodedERC20, ETH},
+        token::{ETH, ETHStub, HardcodedERC20, token_marker::HardcodedERC20Index},
     },
     market::{CommonMarket, MarketReadables},
     quantities::{BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit},
@@ -17,7 +17,7 @@ impl HardcodedMarketList for Pair<ETH, HardcodedERC20> {
                 Pair::new(ETHStub, HardcodedERC20Index::new(0)),
                 Tuple::new(
                     BaseLotsPerBaseUnit::new(100),
-                    QuoteLotsPerQuoteUnit::new(1000),
+                    QuoteLotsPerQuoteUnit::new(100),
                 ),
                 QuoteLotsPerBaseUnitPerTick::new(1),
             ),
@@ -31,8 +31,8 @@ impl HardcodedMarketList for Pair<HardcodedERC20, ETH> {
             market: CommonMarket::new(
                 Pair::new(HardcodedERC20Index::new(1), ETHStub),
                 Tuple::new(
-                    BaseLotsPerBaseUnit::new(200),
-                    QuoteLotsPerQuoteUnit::new(2000),
+                    BaseLotsPerBaseUnit::new(100),
+                    QuoteLotsPerQuoteUnit::new(100),
                 ),
                 QuoteLotsPerBaseUnitPerTick::new(1),
             ),
@@ -47,8 +47,8 @@ impl HardcodedMarketList for Pair<HardcodedERC20, HardcodedERC20> {
         market: CommonMarket::new(
             Pair::new(HardcodedERC20Index::new(0), HardcodedERC20Index::new(1)),
             Tuple::new(
-                BaseLotsPerBaseUnit::new(300),
-                QuoteLotsPerQuoteUnit::new(3000),
+                BaseLotsPerBaseUnit::new(100),
+                QuoteLotsPerQuoteUnit::new(100),
             ),
             QuoteLotsPerBaseUnitPerTick::new(1),
         ),

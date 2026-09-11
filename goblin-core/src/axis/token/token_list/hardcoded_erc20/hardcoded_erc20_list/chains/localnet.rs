@@ -8,11 +8,11 @@ pub const HARDCODED_ERC20_COUNT: usize = 2;
 pub const HARDCODED_ERC20_LIST: HardcodedERC20List<HARDCODED_ERC20_COUNT> = HardcodedERC20List {
     inner: [
         TokenData {
-            address: hex!("e1080224b632a93951a7cfa33eeea9fd81558b5e"),
+            address: hex!("85D9a8a4bd77b9b5559c1B7FCb8eC9635922Ed49"),
             decimals: 18,
         },
         TokenData {
-            address: hex!("3f1eae7d46d88f08fc2f8ed27fcb2ab183eb2d0e"),
+            address: hex!("4A2bA922052bA54e29c5417bC979Daaf7D5Fe4f4"),
             decimals: 18,
         },
     ],
