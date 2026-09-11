@@ -26,7 +26,7 @@ impl<'a> TokenDataTriple<'a> {
 }
 
 impl<'a> TokenDataTriple<'a> {
-    pub fn get_data<PL: PairLeg>(
+    pub const fn get_data<PL: PairLeg>(
         &self,
         token_index_pair: &TokenIndexPair<PL::Pair>,
     ) -> TokenData<PL::Selected> {

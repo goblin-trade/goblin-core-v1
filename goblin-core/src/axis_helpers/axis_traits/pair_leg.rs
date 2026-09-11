@@ -9,12 +9,12 @@ use crate::{
     types::StoreReader,
 };
 
-pub trait PairLeg: Clone + Copy {
+pub const trait PairLeg: Clone + Copy {
     type Pair: TokenPair;
     type Selected: TokenMarker;
     type Leg: LegMatcher
         + LegToToken<Self::Pair, Selected = Self::Selected>
-        + StoreReader<
+        + const StoreReader<
             TokenIndexPair<Self::Pair>,
             Result = <Self::Selected as TokenQuantity>::TokenIndex,
         > + StoreReader<
@@ -28,7 +28,7 @@ where
     TP: TokenPair,
     In: LegMatcher
         + LegToToken<TP>
-        + StoreReader<TokenIndexPair<TP>, Result = <In::Selected as TokenQuantity>::TokenIndex>
+        + const StoreReader<TokenIndexPair<TP>, Result = <In::Selected as TokenQuantity>::TokenIndex>
         + StoreReader<LocalDeposits<TP>, Result = <In::Selected as TokenQuantity>::LocalDeposit>,
 {
     type Pair = TP;
