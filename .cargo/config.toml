@@ -14,3 +14,7 @@ rustflags = [
 "-C", "link-arg=-undefined",
 "-C", "link-arg=dynamic_lookup",
 ]
+
+[unstable]
+panic-immediate-abort = true
+build-std = ["core"]

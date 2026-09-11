@@ -1,3 +1,5 @@
+cargo-features = ["panic-immediate-abort"]
+
 [workspace]
 resolver = "2"
 members = [
@@ -9,4 +11,5 @@ members = [
 opt-level = "s"
 strip = true
 lto = true
-panic = "abort"
+#panic = "abort"
+panic = "immediate-abort"
