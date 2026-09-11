@@ -1,6 +1,6 @@
 use crate::types::{Marker, StoreReader, Tuple};
 
-impl<T0, T1, K> StoreReader<Tuple<T0, T1, K>> for Marker<K, 0> {
+const impl<T0, T1, K> StoreReader<Tuple<T0, T1, K>> for Marker<K, 0> {
     type Result = T0;
 
     fn get(store: &Tuple<T0, T1, K>) -> Self::Result
@@ -19,7 +19,7 @@ impl<T0, T1, K> StoreReader<Tuple<T0, T1, K>> for Marker<K, 0> {
     }
 }
 
-impl<T0, T1, K> StoreReader<Tuple<T0, T1, K>> for Marker<K, 1> {
+const impl<T0, T1, K> StoreReader<Tuple<T0, T1, K>> for Marker<K, 1> {
     type Result = T1;
 
     fn get(store: &Tuple<T0, T1, K>) -> Self::Result

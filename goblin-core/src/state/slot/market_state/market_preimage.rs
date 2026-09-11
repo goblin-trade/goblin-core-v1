@@ -17,20 +17,6 @@ pub struct MarketPreimage<TP: TokenPair> {
     pub token_address_pair: TokenAddressPair<TP>,
 }
 
-impl<TP: TokenPair> MarketPreimage<TP> {
-    pub fn new(
-        lot_size_pair: LotSizePair,
-        tick_size: QuoteLotsPerBaseUnitPerTick,
-        token_address_pair: TokenAddressPair<TP>,
-    ) -> Self {
-        Self {
-            lot_size_pair,
-            tick_size,
-            token_address_pair,
-        }
-    }
-}
-
 impl<TP: TokenPair> Preimage for MarketPreimage<TP> {
     const SLOT_DISCRIMINATOR: u8 = TP::DISCRIMINATOR;
 

@@ -6,8 +6,7 @@ const impl TestTrait for () {
 }
 
 /// A marker type to read fields from a store at compile time
-// #[const_trait]
-pub trait StoreReader<S> {
+pub const trait StoreReader<S> {
     type Result;
 
     fn get(store: &S) -> Self::Result
