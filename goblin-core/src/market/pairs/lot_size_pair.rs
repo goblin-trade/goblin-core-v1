@@ -10,7 +10,7 @@ pub type LotSizePair =
     Pair<<Base as LegQuantities>::LotsPerUnit, <Quote as LegQuantities>::LotsPerUnit>;
 
 impl LotSizePair {
-    pub fn validate(&self) -> Result<(), GoblinError> {
+    pub const fn validate(&self) -> Result<(), GoblinError> {
         for_axes!(In => {
             let lot_size = In::get(self);
             require!(
