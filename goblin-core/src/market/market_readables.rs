@@ -1,9 +1,7 @@
 use crate::{
     axis::token::{TokenDataTriple, token_list::CustomERC20List},
     axis_helpers::TokenPair,
-    goblin_error::GoblinError,
     market::CommonMarket,
-    require,
     state::{ConstPreimage, MarketPreimage, SlotKey},
 };
 
@@ -13,8 +11,10 @@ pub struct MarketReadables<TP: TokenPair> {
 }
 
 impl<TP: TokenPair> MarketReadables<TP> {
-    pub const fn get_hardcoded(market: CommonMarket<TP>) -> Self {
-        // require!(market.lot_size_pair.valid(), GoblinError::InvalidLotSize);
+    pub const fn get_const(market: CommonMarket<TP>) -> Self {
+        if !market.lot_size_pair.valid() {
+            panic!("InvalidLotSize");
+        }
 
         let custom_erc20_list = CustomERC20List { inner: &[] };
         let token_data_triple = TokenDataTriple::const_from(custom_erc20_list);
@@ -27,8 +27,5 @@ impl<TP: TokenPair> MarketReadables<TP> {
             }
             Err(_) => panic!("market tokens not found"),
         }
-
-        // let market_key = SlotKey::new([0u8; 32]);
-        // Ok(Self { market, market_key })
     }
 }
