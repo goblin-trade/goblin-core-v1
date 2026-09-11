@@ -42,6 +42,7 @@ impl<TP: TokenPair> CommonMarket<TP> {
         &self,
         token_data_triple: &TokenDataTriple<'a>,
     ) -> Result<MarketPreimage<TP>, GoblinError> {
+        // TODO make const
         let base_data = token_data_triple.get_data::<(TP, Base)>(&self.token_index_pair);
         let quote_data = token_data_triple.get_data::<(TP, Quote)>(&self.token_index_pair);
 

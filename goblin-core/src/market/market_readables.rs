@@ -18,11 +18,9 @@ pub struct MarketReadables<TP: TokenPair> {
 impl<TP: TokenPair> MarketReadables<TP> {
     pub const fn get_hardcoded(market: CommonMarket<TP>) -> Result<Self, GoblinError> {
         require!(market.lot_size_pair.valid(), GoblinError::InvalidLotSize);
-        // problem- LegMarker::get() doesn't work with const
-        //
 
-        // let custom_erc20_list = CustomERC20List { inner: &[] };
-        // let token_data_triple = TokenDataTriple::const_from(custom_erc20_list);
+        let custom_erc20_list = CustomERC20List { inner: &[] };
+        let token_data_triple = TokenDataTriple::const_from(custom_erc20_list);
 
         // let preimage = market.get_preimage(&token_data_triple);
 
