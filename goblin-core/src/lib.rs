@@ -1,5 +1,6 @@
 #![allow(static_mut_refs)]
 #![no_std]
+#![feature(const_trait_impl)]
 
 #[cfg(test)]
 extern crate std;
