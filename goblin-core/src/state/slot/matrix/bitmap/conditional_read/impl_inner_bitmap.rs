@@ -1,12 +1,12 @@
 use crate::{
+    Ctx,
     axis_helpers::MarketSpec,
     matching::MakeRegion,
-    quantities::{OuterPos, Pos1, INNER_POS, OUTER_POS, POS_0, POS_1},
+    quantities::{INNER_POS, OUTER_POS, OuterPos, POS_0, POS_1, Pos1},
     state::{
-        bitmap::{Bitmap, BitmapPreimage},
         Preimage, SlotKey,
+        bitmap::{Bitmap, BitmapPreimage},
     },
-    Ctx,
 };
 
 impl Bitmap<POS_1, INNER_POS> {

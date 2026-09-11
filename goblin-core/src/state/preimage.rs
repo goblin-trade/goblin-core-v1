@@ -3,6 +3,15 @@ use goblin_hostio::hostio_helpers;
 
 /// Preimage used to derive slot key. The slot key is then used
 /// to read SlotState
+///
+/// # Packing
+///
+/// * Preimage structs implement #[repr(C, packed)] whereas SlotState
+///   implement only #[repr(C)]
+///
+/// * packed representation saves space when hashing and avoids uninitialized
+///   zeroes memory issue. But we cannot use packed in SlotStore because of
+///   unaligned access issue.
 pub trait Preimage: Sized + Clone + Copy {
     /// Unique discriminator for each Preimage implementation
     ///

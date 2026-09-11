@@ -1,13 +1,10 @@
 use crate::{
     axis::{caller::CallerMarker, token::token_marker::TokenMarker},
-    state::{
-        ConstPreimage, IndexedPreimage, Preimage, PreimageSerializer, SlotKey, Store, StoreKeyIndex,
-    },
+    state::{ConstPreimage, IndexedPreimage, Preimage, SlotKey, Store, StoreKeyIndex},
     types::Address,
 };
-use keccak_const::Keccak256;
 
-#[repr(C)]
+#[repr(C, packed)]
 #[derive(Clone, Copy)]
 pub struct StorePreimage<TM: TokenMarker> {
     pub trader: Address,
