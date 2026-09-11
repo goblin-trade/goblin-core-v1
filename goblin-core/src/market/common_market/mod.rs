@@ -45,13 +45,13 @@ impl<TP: TokenPair> CommonMarket<TP> {
         let base_data = token_data_triple.get_data::<(TP, Base)>(&self.token_index_pair);
         let quote_data = token_data_triple.get_data::<(TP, Quote)>(&self.token_index_pair);
 
-        let address_pair = Pair::new(base_data.address, quote_data.address);
+        let token_address_pair = Pair::new(base_data.address, quote_data.address);
 
-        Ok(MarketPreimage::new(
-            self.lot_size_pair,
-            self.tick_size,
-            address_pair,
-        ))
+        Ok(MarketPreimage {
+            lot_size_pair: self.lot_size_pair,
+            tick_size: self.tick_size,
+            token_address_pair,
+        })
     }
 
     pub fn atoms_per_lot_pair(&self) -> SamePair<UnsidedAtomsPerLot> {

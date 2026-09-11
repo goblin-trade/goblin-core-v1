@@ -12,9 +12,9 @@ use crate::{
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct MarketPreimage<TP: TokenPair> {
-    lot_size_pair: LotSizePair,
-    tick_size: QuoteLotsPerBaseUnitPerTick,
-    token_address_pair: TokenAddressPair<TP>,
+    pub lot_size_pair: LotSizePair,
+    pub tick_size: QuoteLotsPerBaseUnitPerTick,
+    pub token_address_pair: TokenAddressPair<TP>,
 }
 
 impl<TP: TokenPair> MarketPreimage<TP> {

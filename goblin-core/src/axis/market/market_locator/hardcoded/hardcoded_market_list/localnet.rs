@@ -21,6 +21,7 @@ impl HardcodedMarketList for Pair<ETH, HardcodedERC20> {
                 ),
                 QuoteLotsPerBaseUnitPerTick::new(1),
             ),
+            // TODO generate market_key based on params
             market_key: SlotKey::new([0u8; 32]),
         }];
 }

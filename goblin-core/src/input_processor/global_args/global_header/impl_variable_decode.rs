@@ -1,8 +1,8 @@
 use crate::{
     axis::token::{token_list::custom_erc20::CustomERC20List, token_reader::TokenDataTriple},
     input_processor::{
-        global_args::global_header::GlobalHeader, ArgsReader, FixedDecode, HeaderFlags,
-        MarketCounts, VariableDecode,
+        ArgsReader, FixedDecode, HeaderFlags, MarketCounts, VariableDecode,
+        global_args::global_header::GlobalHeader,
     },
     quantities::UnsidedAtoms,
     types::Address,
@@ -35,7 +35,7 @@ impl<'a> VariableDecode<'a> for GlobalHeader<'a> {
             MarketCounts::raw_variable_decode(reader, &flags.process_dynamic_markets);
 
         let custom_erc20_list = CustomERC20List::raw_variable_decode(reader, flags);
-        let token_data_triple = TokenDataTriple::from(custom_erc20_list);
+        let token_data_triple = TokenDataTriple::const_from(custom_erc20_list);
 
         Self {
             eth_out_due,

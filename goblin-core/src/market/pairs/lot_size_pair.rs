@@ -1,5 +1,5 @@
 use crate::{
-    axis::leg::{leg_quantities::LegQuantities, leg_validator::LegValidator, Base, Pair, Quote},
+    axis::leg::{Base, Pair, Quote, leg_quantities::LegQuantities, leg_validator::LegValidator},
     for_axes,
     goblin_error::GoblinError,
     require,

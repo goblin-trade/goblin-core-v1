@@ -1,10 +1,10 @@
 use crate::{
     axis::token::{
+        CustomERC20, ETH, HardcodedERC20, Token,
         token_list::{
-            custom_erc20::CustomERC20List, hardcoded_erc20::HARDCODED_ERC20_LIST, TokenList,
+            TokenList, custom_erc20::CustomERC20List, hardcoded_erc20::HARDCODED_ERC20_LIST,
         },
         token_marker::TokenData,
-        CustomERC20, HardcodedERC20, Token, ETH,
     },
     axis_helpers::PairLeg,
     market::TokenIndexPair,
@@ -19,8 +19,8 @@ pub type TokenDataTriple<'a> = Triple<
     Token,
 >;
 
-impl<'a> From<CustomERC20List<'a>> for TokenDataTriple<'a> {
-    fn from(value: CustomERC20List<'a>) -> Self {
+impl<'a> TokenDataTriple<'a> {
+    pub const fn const_from(value: CustomERC20List<'a>) -> Self {
         Triple::new(&TokenData::<ETH>::DEFAULT, &HARDCODED_ERC20_LIST, value)
     }
 }
