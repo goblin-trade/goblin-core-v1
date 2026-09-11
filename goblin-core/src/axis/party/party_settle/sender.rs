@@ -2,11 +2,15 @@ use crate::{
     axis::{
         caller::{CallerEnum, CallerMarker, HardcodedCallerList},
         party::{PartySettle, Sender},
-        token::{token_marker::TokenMarker, token_reader::TokenDataTriple},
+        token::{
+            token_marker::TokenMarker, token_msg_transfer::TokenMsgTransfer,
+            token_reader::TokenDataTriple,
+        },
     },
     goblin_error::GoblinError,
     input_processor::{CallerAddresses, MsgTransfers},
     match_axes,
+    quantities::UnsidedDeltaAtoms,
     settlement::{
         ConstDefault, TokenSettler,
         global_delta::{GlobalDelta, TokenDelta},
@@ -27,6 +31,12 @@ impl PartySettle for Sender {
     {
         let sender_delta = Self::get_leg(global_delta);
 
+        // Top-level transfers are namespaced per token. For ETH this carries the
+        // `msg.value` deposit (and any requested withdrawal), which must be
+        // settled even when no market operation touched the token.
+        let token_msg_transfer = TM::get_leg(msg_transfers);
+        let has_msg_transfer = token_msg_transfer.net_delta()? != UnsidedDeltaAtoms::DEFAULT;
+
         let data_iter = TM::get_lifetimed(token_data_triple).into_iter();
         let delta_iter = TM::get_leg(sender_delta).into_iter();
 
@@ -39,7 +49,7 @@ impl PartySettle for Sender {
             for (index, (token_data, token_delta)) in
                 data_iter.zip(delta_iter).enumerate()
             {
-                if *token_delta != TokenDelta::DEFAULT {
+                if *token_delta != TokenDelta::DEFAULT || has_msg_transfer {
                     let token_index = TM::TokenIndex::from(index);
 
                     TokenSettler::<CM, TM> {
