@@ -16,4 +16,4 @@ use crate::{
 ///
 /// Since increase and decrease affects different state variables, we cannot use
 /// an i64 delta for netting
-pub type LocalCounterparty = SamePair<SameUpdatePair<UnsidedLots>>;
+pub type LocalCounterparty = SamePair<SameUpdatePair<UnsidedLots<u64>>>;

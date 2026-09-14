@@ -15,7 +15,7 @@ pub trait UpdateMarker:
     + UpdateERC20
     + UpdateETH
     + AxisMarker<Enum = UpdateEnum>
-    + StoreReader<SameUpdatePair<UnsidedLots>, Result = UnsidedLots>
+    + StoreReader<SameUpdatePair<UnsidedLots<u64>>, Result = UnsidedLots<u64>>
 {
 }
 

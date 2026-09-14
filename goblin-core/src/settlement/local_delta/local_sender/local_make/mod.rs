@@ -7,13 +7,13 @@ use crate::{
     },
     goblin_error::GoblinError,
     quantities::{
-        BaseLots, BaseLotsPerBaseUnit, QuoteLotsPerBaseUnit, TryIntoUnsidedDelta, UnsidedDeltaLots,
+        BaseLots, BaseLotsPerBaseUnit, QuoteLotsPerBaseUnit, TryIntoUnsidedDelta, UnsidedLots,
     },
 };
 
 #[derive(ConstDefault, Clone, Copy)]
 pub struct LocalMake {
-    pub inner: SamePair<UnsidedDeltaLots>,
+    pub inner: SamePair<UnsidedLots<i64>>,
 }
 
 impl LocalMake {
