@@ -1,6 +1,6 @@
 use crate::{
     axis::leg::{Base, Quote},
-    quantities::{Dim, N1, P1, Quantity, SidedDim, Unsided, Z0},
+    quantities::{Dim, P1, Quantity, SidedDim, Z0},
 };
 
 pub type BaseDeltaAtoms =

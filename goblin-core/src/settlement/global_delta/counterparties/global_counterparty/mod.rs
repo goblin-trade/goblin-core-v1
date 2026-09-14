@@ -17,5 +17,5 @@ use crate::{axis::update::SameUpdatePair, quantities::UnsidedAtoms};
 /// an i64 delta for netting
 #[derive(Default, ConstDefault, Clone, Copy)]
 pub struct GlobalCounterparty {
-    pub inner: SameUpdatePair<UnsidedAtoms>,
+    pub inner: SameUpdatePair<UnsidedAtoms<u64>>,
 }

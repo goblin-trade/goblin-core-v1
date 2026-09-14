@@ -12,7 +12,7 @@ use crate::{
 pub struct UpdateParams<'a, TM: TokenMarker, UM: UpdateMarker> {
     pub token_address: &'a TM::TokenAddress,
     pub caller_addresses: CallerAddresses<'a>,
-    pub deposit: UnsidedAtoms,
+    pub deposit: UnsidedAtoms<u64>,
     pub decimals: TM::StoredDecimals,
     pub _marker: PhantomData<UM>,
 }

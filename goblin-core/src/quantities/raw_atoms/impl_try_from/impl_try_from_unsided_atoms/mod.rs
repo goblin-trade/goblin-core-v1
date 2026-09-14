@@ -6,10 +6,10 @@ use crate::{
     quantities::{RawAtoms, UnsidedAtoms},
 };
 
-impl<const D: u8> TryFrom<UnsidedAtoms> for RawAtoms<D> {
+impl<const D: u8> TryFrom<UnsidedAtoms<u64>> for RawAtoms<D> {
     type Error = GoblinError;
 
-    fn try_from(value: UnsidedAtoms) -> Result<Self, Self::Error> {
+    fn try_from(value: UnsidedAtoms<u64>) -> Result<Self, Self::Error> {
         match D {
             6 => {
                 // No conversion needed. Optimized implementation avoids creation of multiplier.

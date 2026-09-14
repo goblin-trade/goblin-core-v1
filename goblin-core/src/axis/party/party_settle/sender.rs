@@ -10,7 +10,7 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::{CallerAddresses, MsgTransfers},
     match_axes,
-    quantities::UnsidedDeltaAtoms,
+    quantities::UnsidedAtoms,
     settlement::{
         ConstDefault, TokenSettler,
         global_delta::{GlobalDelta, TokenDelta},
@@ -35,7 +35,7 @@ impl PartySettle for Sender {
         // `msg.value` deposit (and any requested withdrawal), which must be
         // settled even when no market operation touched the token.
         let token_msg_transfer = TM::get_leg(msg_transfers);
-        let has_msg_transfer = token_msg_transfer.net_delta()? != UnsidedDeltaAtoms::DEFAULT;
+        let has_msg_transfer = token_msg_transfer.net_delta()? != UnsidedAtoms::<i64>::DEFAULT;
 
         let data_iter = TM::get_lifetimed(token_data_triple).into_iter();
         let delta_iter = TM::get_leg(sender_delta).into_iter();

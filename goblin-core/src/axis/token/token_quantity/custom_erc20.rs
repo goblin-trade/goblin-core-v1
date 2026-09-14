@@ -1,8 +1,8 @@
 use crate::{
     axis::token::{
-        token_marker::CustomERC20Index, token_quantity::TokenQuantity, CustomERC20, CustomERC20Stub,
+        CustomERC20, CustomERC20Stub, token_marker::CustomERC20Index, token_quantity::TokenQuantity,
     },
-    quantities::{UnsidedDeltaAtoms, UnsidedDeltaLots},
+    quantities::{UnsidedAtoms, UnsidedDeltaLots},
     types::Address,
 };
 
@@ -17,7 +17,7 @@ impl TokenQuantity for CustomERC20 {
     type StoredPadding = [u8; 16 - size_of::<Self::StoredDecimals>()];
 
     type LocalDeposit = UnsidedDeltaLots;
-    type GlobalDeposit = UnsidedDeltaAtoms;
+    type GlobalDeposit = UnsidedAtoms<i64>;
 
     type TokenMsgTransfer = CustomERC20Stub;
 }

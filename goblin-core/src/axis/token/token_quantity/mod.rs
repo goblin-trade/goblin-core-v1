@@ -5,7 +5,7 @@ mod hardcoded_erc20;
 use super::TokenMsgTransfer;
 use crate::{
     input_processor::FixedDecode,
-    quantities::UnsidedDeltaAtoms,
+    quantities::UnsidedAtoms,
     settlement::{CheckedOps, ConstDefault},
 };
 
@@ -38,7 +38,7 @@ pub trait TokenQuantity: Clone + Copy + PartialEq + 'static {
         + PartialEq
         + ConstDefault
         + CheckedOps
-        + Into<UnsidedDeltaAtoms>
+        + Into<UnsidedAtoms<i64>>
         + for<'a> FixedDecode<'a>;
 
     type TokenMsgTransfer: TokenMsgTransfer;

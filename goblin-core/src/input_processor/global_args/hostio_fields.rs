@@ -9,7 +9,7 @@ pub struct HostioFields {
     pub msg_sender: Address,
 
     /// ETH atoms deposited via msg_value
-    pub msg_value: UnsidedAtoms,
+    pub msg_value: UnsidedAtoms<u64>,
 }
 
 impl HostioFields {

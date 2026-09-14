@@ -17,7 +17,7 @@ use crate::{
         update::{Decrease, Increase},
     },
     goblin_error::GoblinError,
-    quantities::{UnsidedAtoms, UnsidedDeltaAtoms},
+    quantities::UnsidedAtoms,
     settlement::{
         CheckedOps,
         global_delta::{GlobalCounterparty, TokenDelta},
@@ -28,8 +28,8 @@ use crate::{
 
 #[repr(C)]
 pub struct Store<TM: TokenMarker> {
-    pub atoms_locked: UnsidedAtoms,
-    pub atoms_free: UnsidedAtoms,
+    pub atoms_locked: UnsidedAtoms<u64>,
+    pub atoms_free: UnsidedAtoms<u64>,
     pub decimals: TM::StoredDecimals,
     _padding: TM::StoredPadding,
 }
@@ -45,11 +45,12 @@ impl<TM: TokenMarker> Store<TM> {
             self.decimals = TM::get_stored_decimals(token_data)?;
         }
 
-        let atoms_free_delta = UnsidedDeltaAtoms::try_from(self.atoms_free)?
+        let atoms_free_delta = UnsidedAtoms::<i64>::try_from(self.atoms_free)?
             + token_delta.net_delta()
             + msg_transfer.net_delta()?;
 
-        let atoms_locked_delta = UnsidedDeltaAtoms::try_from(self.atoms_locked)? - token_delta.make;
+        let atoms_locked_delta =
+            UnsidedAtoms::<i64>::try_from(self.atoms_locked)? - token_delta.make;
 
         // Return error if free atoms > 0 or if we overflow
         self.atoms_free = UnsidedAtoms::try_from(atoms_free_delta)?;

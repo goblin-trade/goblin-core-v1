@@ -1,24 +1,21 @@
 use core::marker::PhantomData;
 
 use crate::{
-    axis::{
-        token::token_marker::TokenMarker,
-        update::UpdateEnum,
-    },
+    axis::{token::token_marker::TokenMarker, update::UpdateEnum},
     goblin_error::GoblinError,
     input_processor::CallerAddresses,
     match_axes,
-    quantities::{IntoAbs, UnsidedDeltaAtoms},
+    quantities::{IntoAbs, UnsidedAtoms},
     settlement::UpdateParams,
 };
 
 pub fn transfer_token<TM: TokenMarker>(
-    net_deposit: UnsidedDeltaAtoms,
+    net_deposit: UnsidedAtoms<i64>,
     token_address: &TM::TokenAddress,
     decimals: TM::StoredDecimals,
     caller_addresses: CallerAddresses,
 ) -> Result<(), GoblinError> {
-    if net_deposit == UnsidedDeltaAtoms::default() {
+    if net_deposit == UnsidedAtoms::default() {
         return Ok(());
     }
 

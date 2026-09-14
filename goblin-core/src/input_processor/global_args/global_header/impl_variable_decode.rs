@@ -12,7 +12,7 @@ impl<'a> VariableDecode<'a> for GlobalHeader<'a> {
     type Flags = HeaderFlags;
 
     fn size(flags: &Self::Flags) -> usize {
-        (flags.withdraw_eth as usize * UnsidedAtoms::ENCODED_SIZE)
+        (flags.withdraw_eth as usize * UnsidedAtoms::<u64>::ENCODED_SIZE)
             + (flags.read_custom_recipient as usize * core::mem::size_of::<Address>())
             + MarketCounts::size(&flags.process_dynamic_markets)
             + CustomERC20List::size(flags)

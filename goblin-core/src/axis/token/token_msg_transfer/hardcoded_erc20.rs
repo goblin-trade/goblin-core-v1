@@ -1,16 +1,16 @@
 use crate::{
-    axis::token::{token_msg_transfer::TokenMsgTransfer, HardcodedERC20Stub},
+    axis::token::{HardcodedERC20Stub, token_msg_transfer::TokenMsgTransfer},
     goblin_error::GoblinError,
-    quantities::UnsidedDeltaAtoms,
+    quantities::UnsidedAtoms,
     settlement::ConstDefault,
 };
 
 impl TokenMsgTransfer for HardcodedERC20Stub {
-    fn net_delta(&self) -> Result<UnsidedDeltaAtoms, GoblinError> {
-        Ok(UnsidedDeltaAtoms::DEFAULT)
+    fn net_delta(&self) -> Result<UnsidedAtoms<i64>, GoblinError> {
+        Ok(UnsidedAtoms::DEFAULT)
     }
 
-    fn deposit_due(&self) -> Result<UnsidedDeltaAtoms, GoblinError> {
-        Ok(UnsidedDeltaAtoms::DEFAULT)
+    fn deposit_due(&self) -> Result<UnsidedAtoms<i64>, GoblinError> {
+        Ok(UnsidedAtoms::DEFAULT)
     }
 }

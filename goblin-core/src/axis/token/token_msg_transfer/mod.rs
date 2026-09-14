@@ -2,7 +2,7 @@ mod custom_erc20;
 mod eth;
 mod hardcoded_erc20;
 
-use crate::{goblin_error::GoblinError, quantities::UnsidedDeltaAtoms};
+use crate::{goblin_error::GoblinError, quantities::UnsidedAtoms};
 
 /// Tokens transferred at the top level through calldata
 ///
@@ -11,7 +11,7 @@ use crate::{goblin_error::GoblinError, quantities::UnsidedDeltaAtoms};
 ///
 /// * ERC20 tokens deltas are read at the market level. They are stubs in the calldata level.
 pub trait TokenMsgTransfer {
-    fn net_delta(&self) -> Result<UnsidedDeltaAtoms, GoblinError>;
+    fn net_delta(&self) -> Result<UnsidedAtoms<i64>, GoblinError>;
 
-    fn deposit_due(&self) -> Result<UnsidedDeltaAtoms, GoblinError>;
+    fn deposit_due(&self) -> Result<UnsidedAtoms<i64>, GoblinError>;
 }

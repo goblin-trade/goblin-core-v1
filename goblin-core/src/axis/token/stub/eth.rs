@@ -3,7 +3,7 @@ use goblin_macros::ConstDefault;
 use crate::{
     axis::token::{ETH, token_marker::TokenData},
     input_processor::{ArgsReader, FixedDecode},
-    quantities::{NATIVE_TOKEN_DECIMALS, UnsidedDeltaAtoms},
+    quantities::{NATIVE_TOKEN_DECIMALS, UnsidedAtoms},
     settlement::{CheckedOps, ConstDefault},
 };
 use core::ops::Index;
@@ -36,9 +36,9 @@ impl CheckedOps for ETHStub {
     }
 }
 
-impl From<ETHStub> for UnsidedDeltaAtoms {
+impl From<ETHStub> for UnsidedAtoms<i64> {
     fn from(_val: ETHStub) -> Self {
-        UnsidedDeltaAtoms::DEFAULT
+        UnsidedAtoms::DEFAULT
     }
 }
 

@@ -6,7 +6,7 @@ use crate::{
     quantities::{RawAtoms, UnsidedAtoms},
 };
 
-impl<const D: u8> TryFrom<RawAtoms<D>> for UnsidedAtoms {
+impl<const D: u8> TryFrom<RawAtoms<D>> for UnsidedAtoms<u64> {
     type Error = GoblinError;
 
     fn try_from(value: RawAtoms<D>) -> Result<Self, Self::Error> {
