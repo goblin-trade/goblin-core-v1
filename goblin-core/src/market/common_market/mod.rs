@@ -18,9 +18,11 @@ pub struct CommonMarket<TP: TokenPair> {
     pub token_index_pair: TokenIndexPair<TP>,
 
     /// Lot sizes (one per side)
+    /// TODO In::SomeQuantity<u32>
     pub lot_size_pair: LotSizePair,
 
     /// Tick size (quote lots per base unit per tick)
+    /// TODO In::SomeQuantity<u32>
     pub tick_size: QuoteLotsPerBaseUnitPerTick,
 }
 

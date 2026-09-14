@@ -17,6 +17,7 @@ use goblin_macros::FixedDecode;
 
 use core::ops::{Add, Sub};
 
+/// TODO 32 bit for TakeHeaderOptional
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug, FixedDecode)]
 pub struct Position {
     pub inner: u64,

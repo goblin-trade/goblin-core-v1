@@ -5,6 +5,7 @@ use goblin_macros::FixedDecode;
 
 #[derive(FixedDecode)]
 pub struct OuterBitmapHeader {
+    /// TODO 32 bit
     pub outer_bitmap_index: OuterBitmapIndex,
     pub inner_bitmap_count: u8,
 }
