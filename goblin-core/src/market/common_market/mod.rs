@@ -54,7 +54,7 @@ impl<TP: TokenPair> CommonMarket<TP> {
         })
     }
 
-    pub fn atoms_per_lot_pair(&self) -> SamePair<UnsidedAtomsPerLot> {
+    pub fn atoms_per_lot_pair(&self) -> SamePair<UnsidedAtomsPerLot<u64>> {
         ATOMS_PER_UNIT / self.lot_size_pair.unsided()
     }
 }

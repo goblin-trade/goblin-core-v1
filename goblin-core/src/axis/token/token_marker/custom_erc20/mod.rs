@@ -7,7 +7,7 @@ use crate::{
     axis::{caller::HardcodedCaller, token::CustomERC20, update::UpdateMarker},
     goblin_error::GoblinError,
     hostio::erc20_hostio,
-    quantities::UnsidedDeltaAtomsPerLot,
+    quantities::UnsidedAtomsPerLot,
     settlement::global_delta::UpdateParams,
     state::{IndexedPreimage, Preimage, SlotKey, StorePreimage},
 };
@@ -15,7 +15,7 @@ use crate::{
 impl TokenMarker for CustomERC20 {
     fn get_global_deposit(
         local_deposit: Self::LocalDeposit,
-        atoms_per_lot: UnsidedDeltaAtomsPerLot,
+        atoms_per_lot: UnsidedAtomsPerLot<i64>,
     ) -> Result<Self::GlobalDeposit, GoblinError> {
         local_deposit
             .checked_mul(atoms_per_lot)

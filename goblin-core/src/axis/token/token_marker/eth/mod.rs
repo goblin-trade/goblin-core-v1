@@ -9,7 +9,7 @@ use crate::{
         update::UpdateMarker,
     },
     goblin_error::GoblinError,
-    quantities::UnsidedDeltaAtomsPerLot,
+    quantities::UnsidedAtomsPerLot,
     settlement::UpdateParams,
     state::{IndexedPreimage, SlotKey, StorePreimage},
 };
@@ -17,7 +17,7 @@ use crate::{
 impl TokenMarker for ETH {
     fn get_global_deposit(
         _local_deposit: Self::LocalDeposit,
-        _atoms_per_lot: UnsidedDeltaAtomsPerLot,
+        _atoms_per_lot: UnsidedAtomsPerLot<i64>,
     ) -> Result<Self::GlobalDeposit, GoblinError> {
         Ok(ETHStub)
     }

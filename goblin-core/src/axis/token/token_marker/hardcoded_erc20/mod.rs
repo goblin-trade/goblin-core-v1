@@ -10,7 +10,7 @@ use crate::{
         update::UpdateMarker,
     },
     goblin_error::GoblinError,
-    quantities::UnsidedDeltaAtomsPerLot,
+    quantities::UnsidedAtomsPerLot,
     settlement::global_delta::UpdateParams,
     state::{IndexedPreimage, SlotKey, StorePreimage},
 };
@@ -18,7 +18,7 @@ use crate::{
 impl TokenMarker for HardcodedERC20 {
     fn get_global_deposit(
         local_deposit: Self::LocalDeposit,
-        atoms_per_lot: UnsidedDeltaAtomsPerLot,
+        atoms_per_lot: UnsidedAtomsPerLot<i64>,
     ) -> Result<Self::GlobalDeposit, GoblinError> {
         local_deposit
             .checked_mul(atoms_per_lot)

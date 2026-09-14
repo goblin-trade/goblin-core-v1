@@ -19,7 +19,7 @@ pub trait PartyDelta {
 
     fn try_new<'a, PL: PairLeg>(
         local_update: Self::LocalUpdate<'a, PL::Pair>,
-        atoms_per_lot_pair: &SamePair<UnsidedAtomsPerLot>,
+        atoms_per_lot_pair: &SamePair<UnsidedAtomsPerLot<u64>>,
     ) -> Result<Self::GlobalInner<PL>, GoblinError>;
 
     fn get_store<'a, PL: PairLeg>(

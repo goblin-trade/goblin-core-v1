@@ -12,7 +12,7 @@ use crate::{
     axis::{caller::HardcodedCaller, update::UpdateMarker},
     axis_helpers::AxisMarker,
     goblin_error::GoblinError,
-    quantities::UnsidedDeltaAtomsPerLot,
+    quantities::UnsidedAtomsPerLot,
     settlement::UpdateParams,
     state::{IndexedPreimage, SlotKey, StorePreimage},
 };
@@ -20,7 +20,7 @@ use crate::{
 pub trait TokenMarker: 'static + TokenReader + AxisMarker<Enum = TokenEnum> {
     fn get_global_deposit(
         local_deposit: Self::LocalDeposit,
-        atoms_per_lot: UnsidedDeltaAtomsPerLot,
+        atoms_per_lot: UnsidedAtomsPerLot<i64>,
     ) -> Result<Self::GlobalDeposit, GoblinError>;
 
     // Transfer the token in or out, based on UM

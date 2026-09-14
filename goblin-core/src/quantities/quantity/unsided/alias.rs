@@ -30,12 +30,6 @@ pub type Unsided<L, U, A, I> = Quantity<UnsidedDim<L, U, A>, I>;
 pub type UnsidedAtoms<I> = Unsided<Z0, Z0, P1, I>;
 pub type UnsidedLots<I> = Unsided<P1, Z0, Z0, I>;
 
-pub type UnsidedAtomsPerUnit = Unsided<Z0, N1, P1, u64>;
-pub type UnsidedAtomsPerLot = Unsided<N1, Z0, P1, u64>;
-pub type UnsidedLotsPerUnit = Unsided<P1, N1, Z0, u64>;
-
-////// Unsided delta
-
-pub type UnsidedDeltaAtomsPerUnit = Unsided<Z0, N1, P1, i64>;
-pub type UnsidedDeltaAtomsPerLot = Unsided<N1, Z0, P1, i64>;
-pub type UnsidedDeltaLotsPerUnit = Unsided<P1, N1, Z0, i64>;
+pub type UnsidedAtomsPerUnit<I> = Unsided<Z0, N1, P1, I>;
+pub type UnsidedAtomsPerLot<I> = Unsided<N1, Z0, P1, I>;
+pub type UnsidedLotsPerUnit<I> = Unsided<P1, N1, Z0, I>;

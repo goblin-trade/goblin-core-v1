@@ -5,7 +5,7 @@ use crate::{
     },
     quantities::{
         BaseLots, BaseLotsPerBaseUnit, Position, QuoteLots, QuoteLotsPerQuoteUnit, UnsidedAtoms,
-        UnsidedAtomsPerLot, UnsidedDeltaAtomsPerLot, UnsidedLots,
+        UnsidedAtomsPerLot, UnsidedLots,
     },
     settlement::LocalCounterparty,
     types::{StoreReader, Tuple},
@@ -19,8 +19,8 @@ pub trait LegReader: LegMath
     + StoreReader<SamePair<Position>, Result = Position>
     + StoreReader<SamePair<UnsidedAtoms<i64>>, Result = UnsidedAtoms<i64>>
     + StoreReader<SamePair<UnsidedLots<i64>>, Result = UnsidedLots<i64>>
-    + StoreReader<SamePair<UnsidedAtomsPerLot>, Result = UnsidedAtomsPerLot>
-    + StoreReader<SamePair<UnsidedDeltaAtomsPerLot>, Result = UnsidedDeltaAtomsPerLot>
+    + StoreReader<SamePair<UnsidedAtomsPerLot<u64>>, Result = UnsidedAtomsPerLot<u64>>
+    + StoreReader<SamePair<UnsidedAtomsPerLot<i64>>, Result = UnsidedAtomsPerLot<i64>>
     + StoreReader<LocalCounterparty, Result = SameUpdatePair<UnsidedLots<u64>>>
 {
 }

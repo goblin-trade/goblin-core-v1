@@ -7,7 +7,7 @@ use crate::{
     axis_helpers::{PairLeg, TokenPair},
     goblin_error::GoblinError,
     market::TokenIndexPair,
-    quantities::{UnsidedAtomsPerLot, UnsidedDeltaAtomsPerLot},
+    quantities::UnsidedAtomsPerLot,
     settlement::{
         global_delta::{GlobalDelta, TokenDelta},
         local_delta::LocalSenderUpdate,
@@ -23,11 +23,11 @@ impl PartyDelta for Sender {
 
     fn try_new<'a, PL: PairLeg>(
         local: Self::LocalUpdate<'a, PL::Pair>,
-        atoms_per_lot_pair: &SamePair<UnsidedAtomsPerLot>,
+        atoms_per_lot_pair: &SamePair<UnsidedAtomsPerLot<u64>>,
     ) -> Result<Self::GlobalInner<PL>, GoblinError> {
         let local_deposit = PL::Leg::get(&local.deposits);
         let delta_atoms_per_lot_pair =
-            SamePair::<UnsidedDeltaAtomsPerLot>::try_from(atoms_per_lot_pair)?;
+            SamePair::<UnsidedAtomsPerLot<i64>>::try_from(atoms_per_lot_pair)?;
 
         let atoms_per_lot = PL::Leg::get(&delta_atoms_per_lot_pair);
 
