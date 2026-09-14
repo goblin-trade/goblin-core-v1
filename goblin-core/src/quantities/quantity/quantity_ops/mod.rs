@@ -1,4 +1,6 @@
+mod impl_i32;
 mod impl_i64;
+mod impl_u32;
 mod impl_u64;
 
 use core::ops::{Add, AddAssign, Sub, SubAssign};

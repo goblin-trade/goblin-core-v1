@@ -68,6 +68,22 @@ impl<'a> FixedDecode<'a> for u64 {
     }
 }
 
+impl<'a> FixedDecode<'a> for i32 {
+    const ENCODED_SIZE: usize = size_of::<Self>();
+
+    fn raw_fixed_decode(reader: &ArgsReader) -> Self {
+        let offset = reader.offset.get();
+        let value = i32::from_le_bytes([
+            reader.args[offset],
+            reader.args[offset + 1],
+            reader.args[offset + 2],
+            reader.args[offset + 3],
+        ]);
+        reader.advance_offset(4);
+        value
+    }
+}
+
 impl<'a> FixedDecode<'a> for i64 {
     const ENCODED_SIZE: usize = size_of::<Self>();
 

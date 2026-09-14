@@ -2,6 +2,14 @@ use core::marker::PhantomData;
 
 use crate::settlement::ConstDefault;
 
+impl ConstDefault for u32 {
+    const DEFAULT: Self = 0;
+}
+
+impl ConstDefault for i32 {
+    const DEFAULT: Self = 0;
+}
+
 impl ConstDefault for u64 {
     const DEFAULT: Self = 0;
 }
