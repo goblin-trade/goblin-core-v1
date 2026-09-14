@@ -10,7 +10,7 @@ macro_rules! define_axis {
         }
     ) => {
         $(#[$meta])*
-        #[derive(Default, Clone, Copy, PartialEq, PartialOrd)]
+        #[derive(Default, Clone, Copy, PartialEq, PartialOrd, Eq, Ord)]
         $vis struct $seed;
 
         #[repr(u8)]
@@ -63,11 +63,11 @@ macro_rules! define_axis {
         }
     ) => {
         $(#[$meta])*
-        #[derive(Default, Clone, Copy, PartialEq, PartialOrd)]
+        #[derive(Default, Clone, Copy, PartialEq, PartialOrd, Eq, Ord)]
         $vis struct $seed;
 
         #[repr(u8)]
-        #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
+        #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord)]
         pub enum $enum_name {
             $v0 = 0,
             $v1 = 1,

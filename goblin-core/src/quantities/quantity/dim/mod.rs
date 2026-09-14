@@ -1,11 +1,16 @@
 pub mod sided_dim;
+pub mod unsided_dim;
 
 pub use sided_dim::*;
+pub use unsided_dim::*;
 
 use crate::quantities::{Exp, add_exp::AddExp, sub_exp::SubExp};
 
 use core::marker::PhantomData;
 
+/// Tracks dimensions of base quantities, quote quantities and Ticks
+///
+/// Base and Quote are `SidedDim`
 #[derive(Default, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Debug)]
 pub struct Dim<Base: Exp, Quote: Exp, T: Exp>(PhantomData<(Base, Quote, T)>);
 

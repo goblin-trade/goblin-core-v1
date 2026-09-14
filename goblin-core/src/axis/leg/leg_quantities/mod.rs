@@ -4,7 +4,9 @@ mod quote;
 use crate::quantities::{N1, P1, QuantityOps, TryIntoUnsidedDelta, UnsideQuantity, Unsided, Z0};
 use core::ops::{Div, Mul, Rem};
 
-pub trait LegQuantities: Default + Sized + PartialEq + PartialOrd + Clone + Copy {
+pub trait LegQuantities:
+    Default + Sized + PartialEq + PartialOrd + Clone + Copy + Eq + Ord
+{
     // Basic quantities
     type Lots: QuantityOps
         + From<u64>

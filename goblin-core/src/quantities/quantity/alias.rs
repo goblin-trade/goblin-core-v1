@@ -1,7 +1,7 @@
-use crate::quantities::{Dim, Quantity, SidedDim, N1, P1, Z0};
+use crate::quantities::{Dim, N1, P1, Quantity, UnsidedDim, Z0};
 
-pub type BaseDim<L, U, A> = SidedDim<L, U, A>;
-pub type QuoteDim<L, U, A> = SidedDim<L, U, A>;
+pub type BaseDim<L, U, A> = UnsidedDim<L, U, A>;
+pub type QuoteDim<L, U, A> = UnsidedDim<L, U, A>;
 
 pub type BaseLots = Quantity<Dim<BaseDim<P1, Z0, Z0>, QuoteDim<Z0, Z0, Z0>, Z0>, u64>;
 pub type BaseUnits = Quantity<Dim<BaseDim<Z0, P1, Z0>, QuoteDim<Z0, Z0, Z0>, Z0>, u64>;
