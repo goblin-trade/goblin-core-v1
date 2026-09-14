@@ -8,7 +8,7 @@ use crate::{
 
 impl LegQuantities for Base {
     type Lots = BaseLots<u64>;
-    type Units = BaseUnits;
+    type Units = BaseUnits<u64>;
     type Atoms = BaseAtoms<u64>;
 
     type LotsPerUnit = BaseLotsPerBaseUnit;

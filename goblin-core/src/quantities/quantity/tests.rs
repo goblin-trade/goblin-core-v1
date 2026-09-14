@@ -5,7 +5,7 @@ use super::*;
 #[test]
 fn test_ops() {
     let base_lots: BaseLots<u64> = Quantity::new(10);
-    let base_units: BaseUnits = Quantity::new(5);
+    let base_units: BaseUnits<u64> = Quantity::new(5);
     let ticks: Ticks = Quantity::new(2);
 
     let more_ticks = Ticks::new(1);
