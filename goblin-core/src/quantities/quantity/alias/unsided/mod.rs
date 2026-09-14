@@ -23,13 +23,12 @@
 //! atoms = |raw atoms / 10^(K - 6)|
 //! - For USDC = raw atoms / 10^0 = raw atoms
 //! - For eth = raw atoms / 10^(18 - 6) = raw atoms / 10^12
-use crate::quantities::{N1, P1, Quantity, UnsidedDim, Z0};
+pub mod binary;
+pub mod unitary;
+
+pub use binary::*;
+pub use unitary::*;
+
+use crate::quantities::{Quantity, UnsidedDim};
 
 pub type Unsided<L, U, A, I> = Quantity<UnsidedDim<L, U, A>, I>;
-
-pub type UnsidedAtoms<I> = Unsided<Z0, Z0, P1, I>;
-pub type UnsidedLots<I> = Unsided<P1, Z0, Z0, I>;
-
-pub type UnsidedAtomsPerUnit<I> = Unsided<Z0, N1, P1, I>;
-pub type UnsidedAtomsPerLot<I> = Unsided<N1, Z0, P1, I>;
-pub type UnsidedLotsPerUnit<I> = Unsided<P1, N1, Z0, I>;

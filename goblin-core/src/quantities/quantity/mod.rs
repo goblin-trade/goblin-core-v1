@@ -1,4 +1,4 @@
-mod alias;
+pub mod alias;
 pub mod delta;
 pub mod dim;
 pub mod exp;
@@ -6,7 +6,12 @@ pub mod exp;
 pub mod quantity_ops;
 pub mod unsided;
 
-pub use alias::*;
+pub use alias::sided::binary::*;
+pub use alias::sided::ternary::*;
+pub use alias::sided::unitary::*;
+pub use alias::unsided::Unsided;
+pub use alias::unsided::binary::*;
+pub use alias::unsided::unitary::*;
 pub use delta::*;
 pub use dim::*;
 pub use exp::*;
