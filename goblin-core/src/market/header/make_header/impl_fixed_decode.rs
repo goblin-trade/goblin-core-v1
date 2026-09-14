@@ -15,7 +15,7 @@ impl<'a> FixedDecode<'a> for MakeHeader {
         let occupancy_enum = OccupancyEnum::from((bytes & 0b01) != 0);
         let inner_enum_raw = (bytes & 0b10) != 0;
 
-        let base_lots = BaseLots::new(bytes >> 2);
+        let base_lots = BaseLots::<u64>::new(bytes >> 2);
 
         Self {
             inner_pos,

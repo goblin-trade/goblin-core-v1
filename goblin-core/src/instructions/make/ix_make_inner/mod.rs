@@ -18,7 +18,7 @@ use crate::{
 };
 
 pub fn ix_make_inner<MS, OM, UM, In>(
-    base_lots: BaseLots,
+    base_lots: BaseLots<u64>,
     position: Position,
     region: MakeRegion,
     inner_bitmap_state: &mut InnerBitmap,

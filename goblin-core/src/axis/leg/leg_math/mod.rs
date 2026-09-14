@@ -37,7 +37,7 @@ pub trait LegMath: LegQuantities {
 
     /// Obtain MatchingLots from a resting order
     fn matching_lots_maker(
-        base_lots: BaseLots,
+        base_lots: BaseLots<u64>,
         price_in_quote_lots: QuoteLotsPerBaseUnit,
     ) -> Result<Self::MatchingLots, GoblinError>;
 
@@ -45,5 +45,5 @@ pub trait LegMath: LegQuantities {
     fn base_lots_maker(
         matching_lots: Self::MatchingLots,
         price_in_quote_lots: QuoteLotsPerBaseUnit,
-    ) -> BaseLots;
+    ) -> BaseLots<u64>;
 }

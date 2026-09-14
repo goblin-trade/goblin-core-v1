@@ -1,5 +1,5 @@
 use crate::{
-    axis::leg::{leg_quantities::LegQuantities, Base},
+    axis::leg::{Base, leg_quantities::LegQuantities},
     quantities::{
         BaseAtoms, BaseAtomsPerBaseLot, BaseAtomsPerBaseUnit, BaseLots, BaseLotsPerBaseUnit,
         BaseUnits,
@@ -7,9 +7,9 @@ use crate::{
 };
 
 impl LegQuantities for Base {
-    type Lots = BaseLots;
+    type Lots = BaseLots<u64>;
     type Units = BaseUnits;
-    type Atoms = BaseAtoms;
+    type Atoms = BaseAtoms<u64>;
 
     type LotsPerUnit = BaseLotsPerBaseUnit;
     type AtomsPerUnit = BaseAtomsPerBaseUnit;

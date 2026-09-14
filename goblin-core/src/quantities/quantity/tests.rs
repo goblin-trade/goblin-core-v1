@@ -4,7 +4,7 @@ use super::*;
 
 #[test]
 fn test_ops() {
-    let base_lots: BaseLots = Quantity::new(10);
+    let base_lots: BaseLots<u64> = Quantity::new(10);
     let base_units: BaseUnits = Quantity::new(5);
     let ticks: Ticks = Quantity::new(2);
 
@@ -26,10 +26,10 @@ fn test_ops() {
 
 #[test]
 fn test_into_unsided() {
-    let base_atoms = BaseAtoms::new(1);
+    let base_atoms = BaseAtoms::<u64>::new(1);
     base_atoms.unsided();
 
-    let quote_atoms = QuoteAtoms::new(1);
+    let quote_atoms = QuoteAtoms::<u64>::new(1);
     quote_atoms.unsided();
 
     let _adjusted = AdjustedQuoteLots::new(1);
@@ -37,8 +37,8 @@ fn test_into_unsided() {
 
 #[test]
 fn test_min() {
-    let a = BaseAtoms::new(1);
-    let b = BaseAtoms::new(2);
+    let a = BaseAtoms::<u64>::new(1);
+    let b = BaseAtoms::<u64>::new(2);
 
     assert!(a.min(b) == a);
 }

@@ -26,7 +26,7 @@ use crate::{impl_checked_slot_state, quantities::BaseLots, types::Address};
 #[derive(Default)]
 pub struct RestingOrder {
     pub maker: Address,
-    pub base_lots: BaseLots,
+    pub base_lots: BaseLots<u64>,
 }
 
 impl_checked_slot_state!(RestingOrder);

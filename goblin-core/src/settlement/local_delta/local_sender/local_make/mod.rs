@@ -28,7 +28,7 @@ impl LocalMake {
     ///
     pub fn add_make<UM, OP>(
         &mut self,
-        base_lots: BaseLots,
+        base_lots: BaseLots<u64>,
         base_lot_size: BaseLotsPerBaseUnit,
         price_in_quote_lots: QuoteLotsPerBaseUnit,
     ) -> Result<(), GoblinError>

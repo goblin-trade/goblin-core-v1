@@ -24,7 +24,7 @@ impl LegMath for Quote {
     }
 
     fn matching_lots_maker(
-        base_lots: BaseLots,
+        base_lots: BaseLots<u64>,
         price_in_quote_lots: QuoteLotsPerBaseUnit,
     ) -> Result<Self::MatchingLots, GoblinError> {
         price_in_quote_lots
@@ -35,7 +35,7 @@ impl LegMath for Quote {
     fn base_lots_maker(
         matching_lots: Self::MatchingLots,
         price_in_quote_lots: QuoteLotsPerBaseUnit,
-    ) -> BaseLots {
+    ) -> BaseLots<u64> {
         matching_lots / price_in_quote_lots
     }
 }

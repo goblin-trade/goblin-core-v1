@@ -21,7 +21,7 @@ use crate::{
 /// Therefore when make<In = Base>(), we deposit `Quote`.
 ///
 pub(crate) fn update_delta<MS: MarketSpec, UM: UpdateMarker, OP: LegMatcher>(
-    delta_base_lots: BaseLots,
+    delta_base_lots: BaseLots<u64>,
     position: Position,
     ctx: &mut Ctx<MS>,
 ) -> Result<(), GoblinError> {

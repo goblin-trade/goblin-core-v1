@@ -25,7 +25,7 @@ pub fn ix_make<MS: MarketSpec>(
         base_lots,
     } = MakeHeader::try_fixed_decode(reader)?;
 
-    if base_lots == BaseLots::default() {
+    if base_lots == BaseLots::<u64>::default() {
         return Ok(());
     }
 

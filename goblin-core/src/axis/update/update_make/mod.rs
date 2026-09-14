@@ -11,7 +11,7 @@ pub trait UpdateMake {
     /// `UM` represents increase or decrease in trader balance.
     /// Therefore UM = Increase subtracts from resting order while UM = Decrease adds.
     fn update_resting_order(
-        base_lots: BaseLots,
+        base_lots: BaseLots<u64>,
         resting_order: &mut RestingOrder,
-    ) -> Result<BaseLots, GoblinError>;
+    ) -> Result<BaseLots<u64>, GoblinError>;
 }

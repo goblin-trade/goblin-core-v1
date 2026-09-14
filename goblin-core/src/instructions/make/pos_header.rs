@@ -2,5 +2,5 @@ use crate::quantities::{BaseLots, Position};
 
 pub struct PosHeader {
     pub position: Position,
-    pub base_lots: BaseLots,
+    pub base_lots: BaseLots<u64>,
 }

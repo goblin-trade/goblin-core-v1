@@ -8,9 +8,9 @@ use crate::{
 
 impl UpdateMake for Decrease {
     fn update_resting_order(
-        base_lots: BaseLots,
+        base_lots: BaseLots<u64>,
         resting_order: &mut RestingOrder,
-    ) -> Result<BaseLots, GoblinError> {
+    ) -> Result<BaseLots<u64>, GoblinError> {
         let stored_base_lots = &mut resting_order.base_lots;
         *stored_base_lots = stored_base_lots
             .checked_add(base_lots)

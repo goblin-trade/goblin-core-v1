@@ -8,7 +8,7 @@ use crate::{
 impl LegMath for Base {
     type Opposite = Quote;
 
-    type MatchingLots = BaseLots;
+    type MatchingLots = BaseLots<u64>;
 
     fn matching_lots_taker(
         lots: Self::Lots,
@@ -25,7 +25,7 @@ impl LegMath for Base {
     }
 
     fn matching_lots_maker(
-        base_lots: BaseLots,
+        base_lots: BaseLots<u64>,
         _price_in_quote_lots: QuoteLotsPerBaseUnit,
     ) -> Result<Self::MatchingLots, GoblinError> {
         Ok(base_lots)
@@ -34,7 +34,7 @@ impl LegMath for Base {
     fn base_lots_maker(
         matching_lots: Self::MatchingLots,
         _price_in_quote_lots: QuoteLotsPerBaseUnit,
-    ) -> BaseLots {
+    ) -> BaseLots<u64> {
         matching_lots
     }
 }
