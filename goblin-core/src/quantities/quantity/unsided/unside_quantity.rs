@@ -1,6 +1,6 @@
 use crate::{
-    axis::leg::{leg_quantities::LegQuantities, Base, Quote},
-    quantities::{BaseDim, Dim, Exp, Quantity, QuantityOps, QuoteDim, Unsided, Z0},
+    axis::leg::{Base, Quote, leg_quantities::LegQuantities},
+    quantities::{Dim, Exp, Quantity, QuantityOps, SidedDim, Unsided, Z0},
 };
 
 /// Trait to unside quantity
@@ -17,7 +17,7 @@ where
 
 /// Base → Unsided
 impl<L, U, A, I> UnsideQuantity<Base>
-    for Quantity<Dim<BaseDim<L, U, A>, QuoteDim<Z0, Z0, Z0>, Z0>, I>
+    for Quantity<Dim<SidedDim<Base, L, U, A>, SidedDim<Quote, Z0, Z0, Z0>, Z0>, I>
 where
     L: Exp,
     U: Exp,
@@ -33,7 +33,7 @@ where
 
 /// Quote → Unsided
 impl<L, U, A, I> UnsideQuantity<Quote>
-    for Quantity<Dim<BaseDim<Z0, Z0, Z0>, QuoteDim<L, U, A>, Z0>, I>
+    for Quantity<Dim<SidedDim<Base, Z0, Z0, Z0>, SidedDim<Quote, L, U, A>, Z0>, I>
 where
     L: Exp,
     U: Exp,

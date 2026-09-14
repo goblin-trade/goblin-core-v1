@@ -1,30 +1,43 @@
-use crate::quantities::{Dim, N1, P1, Quantity, UnsidedDim, Z0};
+use crate::{
+    axis::leg::{Base, Quote},
+    quantities::{Dim, N1, P1, Quantity, SidedDim, Z0},
+};
 
-pub type BaseDim<L, U, A> = UnsidedDim<L, U, A>;
-pub type QuoteDim<L, U, A> = UnsidedDim<L, U, A>;
-
-pub type BaseLots = Quantity<Dim<BaseDim<P1, Z0, Z0>, QuoteDim<Z0, Z0, Z0>, Z0>, u64>;
-pub type BaseUnits = Quantity<Dim<BaseDim<Z0, P1, Z0>, QuoteDim<Z0, Z0, Z0>, Z0>, u64>;
-pub type BaseAtoms = Quantity<Dim<BaseDim<Z0, Z0, P1>, QuoteDim<Z0, Z0, Z0>, Z0>, u64>;
-pub type QuoteLots = Quantity<Dim<BaseDim<Z0, Z0, Z0>, QuoteDim<P1, Z0, Z0>, Z0>, u64>;
-pub type QuoteUnits = Quantity<Dim<BaseDim<Z0, Z0, Z0>, QuoteDim<Z0, P1, Z0>, Z0>, u64>;
-pub type QuoteAtoms = Quantity<Dim<BaseDim<Z0, Z0, Z0>, QuoteDim<Z0, Z0, P1>, Z0>, u64>;
-pub type Ticks = Quantity<Dim<BaseDim<Z0, Z0, Z0>, QuoteDim<Z0, Z0, Z0>, P1>, u64>;
+pub type BaseLots = Quantity<Dim<SidedDim<Base, P1, Z0, Z0>, SidedDim<Quote, Z0, Z0, Z0>, Z0>, u64>;
+pub type BaseUnits =
+    Quantity<Dim<SidedDim<Base, Z0, P1, Z0>, SidedDim<Quote, Z0, Z0, Z0>, Z0>, u64>;
+pub type BaseAtoms =
+    Quantity<Dim<SidedDim<Base, Z0, Z0, P1>, SidedDim<Quote, Z0, Z0, Z0>, Z0>, u64>;
+pub type QuoteLots =
+    Quantity<Dim<SidedDim<Base, Z0, Z0, Z0>, SidedDim<Quote, P1, Z0, Z0>, Z0>, u64>;
+pub type QuoteUnits =
+    Quantity<Dim<SidedDim<Base, Z0, Z0, Z0>, SidedDim<Quote, Z0, P1, Z0>, Z0>, u64>;
+pub type QuoteAtoms =
+    Quantity<Dim<SidedDim<Base, Z0, Z0, Z0>, SidedDim<Quote, Z0, Z0, P1>, Z0>, u64>;
+pub type Ticks = Quantity<Dim<SidedDim<Base, Z0, Z0, Z0>, SidedDim<Quote, Z0, Z0, Z0>, P1>, u64>;
 
 // Binary ratios
-pub type BaseLotsPerBaseUnit = Quantity<Dim<BaseDim<P1, N1, Z0>, QuoteDim<Z0, Z0, Z0>, Z0>, u64>;
-pub type QuoteLotsPerQuoteUnit = Quantity<Dim<BaseDim<Z0, Z0, Z0>, QuoteDim<P1, N1, Z0>, Z0>, u64>;
-pub type QuoteLotsPerBaseUnit = Quantity<Dim<BaseDim<Z0, N1, Z0>, QuoteDim<P1, Z0, Z0>, Z0>, u64>;
+pub type BaseLotsPerBaseUnit =
+    Quantity<Dim<SidedDim<Base, P1, N1, Z0>, SidedDim<Quote, Z0, Z0, Z0>, Z0>, u64>;
+pub type QuoteLotsPerQuoteUnit =
+    Quantity<Dim<SidedDim<Base, Z0, Z0, Z0>, SidedDim<Quote, P1, N1, Z0>, Z0>, u64>;
+pub type QuoteLotsPerBaseUnit =
+    Quantity<Dim<SidedDim<Base, Z0, N1, Z0>, SidedDim<Quote, P1, Z0, Z0>, Z0>, u64>;
 
-pub type BaseAtomsPerBaseUnit = Quantity<Dim<BaseDim<Z0, N1, P1>, QuoteDim<Z0, Z0, Z0>, Z0>, u64>;
-pub type QuoteAtomsPerQuoteUnit = Quantity<Dim<BaseDim<Z0, Z0, Z0>, QuoteDim<Z0, N1, P1>, Z0>, u64>;
+pub type BaseAtomsPerBaseUnit =
+    Quantity<Dim<SidedDim<Base, Z0, N1, P1>, SidedDim<Quote, Z0, Z0, Z0>, Z0>, u64>;
+pub type QuoteAtomsPerQuoteUnit =
+    Quantity<Dim<SidedDim<Base, Z0, Z0, Z0>, SidedDim<Quote, Z0, N1, P1>, Z0>, u64>;
 
-pub type BaseAtomsPerBaseLot = Quantity<Dim<BaseDim<N1, Z0, P1>, QuoteDim<Z0, Z0, Z0>, Z0>, u64>;
-pub type QuoteAtomsPerQuoteLot = Quantity<Dim<BaseDim<Z0, Z0, Z0>, QuoteDim<N1, Z0, P1>, Z0>, u64>;
+pub type BaseAtomsPerBaseLot =
+    Quantity<Dim<SidedDim<Base, N1, Z0, P1>, SidedDim<Quote, Z0, Z0, Z0>, Z0>, u64>;
+pub type QuoteAtomsPerQuoteLot =
+    Quantity<Dim<SidedDim<Base, Z0, Z0, Z0>, SidedDim<Quote, N1, Z0, P1>, Z0>, u64>;
 
 // Tertiary
 pub type QuoteLotsPerBaseUnitPerTick =
-    Quantity<Dim<BaseDim<Z0, N1, Z0>, QuoteDim<P1, Z0, Z0>, N1>, u64>;
+    Quantity<Dim<SidedDim<Base, Z0, N1, Z0>, SidedDim<Quote, P1, Z0, Z0>, N1>, u64>;
 pub type QuoteLotsPerBaseLotPerTick =
-    Quantity<Dim<BaseDim<N1, Z0, Z0>, QuoteDim<P1, Z0, Z0>, N1>, u64>;
-pub type AdjustedQuoteLots = Quantity<Dim<BaseDim<P1, N1, Z0>, QuoteDim<P1, Z0, Z0>, Z0>, u64>;
+    Quantity<Dim<SidedDim<Base, N1, Z0, Z0>, SidedDim<Quote, P1, Z0, Z0>, N1>, u64>;
+pub type AdjustedQuoteLots =
+    Quantity<Dim<SidedDim<Base, P1, N1, Z0>, SidedDim<Quote, P1, Z0, Z0>, Z0>, u64>;

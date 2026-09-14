@@ -1,7 +1,7 @@
 use crate::{
-    axis::leg::{leg_quantities::LegQuantities, Base, Quote},
+    axis::leg::{Base, Quote, leg_quantities::LegQuantities},
     goblin_error::GoblinError,
-    quantities::{BaseDim, Dim, Exp, Quantity, QuoteDim, Unsided, Z0},
+    quantities::{Dim, Exp, Quantity, SidedDim, Unsided, Z0},
 };
 
 pub trait TryIntoUnsidedDelta<S, L, U, A>
@@ -16,7 +16,7 @@ where
 
 /// Base → Unsided i64 (from u64, fallible)
 impl<L, U, A> TryIntoUnsidedDelta<Base, L, U, A>
-    for Quantity<Dim<BaseDim<L, U, A>, QuoteDim<Z0, Z0, Z0>, Z0>, u64>
+    for Quantity<Dim<SidedDim<Base, L, U, A>, SidedDim<Quote, Z0, Z0, Z0>, Z0>, u64>
 where
     L: Exp,
     U: Exp,
@@ -31,7 +31,7 @@ where
 
 /// Quote → Unsided i64 (from u64, fallible)
 impl<L, U, A> TryIntoUnsidedDelta<Quote, L, U, A>
-    for Quantity<Dim<BaseDim<Z0, Z0, Z0>, QuoteDim<L, U, A>, Z0>, u64>
+    for Quantity<Dim<SidedDim<Base, Z0, Z0, Z0>, SidedDim<Quote, L, U, A>, Z0>, u64>
 where
     L: Exp,
     U: Exp,
