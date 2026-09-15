@@ -2,7 +2,7 @@ use crate::{
     axis::leg::LegMatcher,
     goblin_error::GoblinError,
     matching::MakeRegion,
-    quantities::{InnerPos, PositionV2},
+    quantities::{FullPosition, PositionV2},
     require,
     state::InnerBitmap,
 };
@@ -19,7 +19,7 @@ where
         MakeRegion::In(leg_enum) => {
             require!(In::VARIANT == leg_enum, GoblinError::InvalidOpenPrice);
 
-            let inner_pos = InnerPos::from(position);
+            let inner_pos = position.extract_and_convert();
             require!(
                 !inner_bitmap_state.index_active(inner_pos),
                 GoblinError::PositionOccupied

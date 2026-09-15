@@ -1,6 +1,6 @@
 use crate::{
     axis::occupancy::{OccupancyEnum, OccupancyMarker},
-    quantities::{InnerPos, PositionV2},
+    quantities::{FullPosition, PositionV2},
     state::bitmap::alias::{InnerBitmap, InnerBitmapUpdater},
 };
 
@@ -13,7 +13,7 @@ pub(crate) fn update_matrix<OM>(
 {
     let mut inner_bitmap_updater = InnerBitmapUpdater {
         bitmap: inner_bitmap_state,
-        pos: InnerPos::from(position),
+        pos: position.extract_and_convert(),
     };
 
     if resting_order_empty {

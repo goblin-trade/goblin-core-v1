@@ -2,7 +2,7 @@ use core::range::RangeInclusive;
 
 use crate::{
     axis::leg::LegCoordinates,
-    quantities::{DerivedPosition, InnerVal, PositionV2},
+    quantities::{DerivedPosition, FullPosition, InnerVal, PositionV2},
 };
 
 pub trait PositionRange: Sized {
@@ -35,7 +35,7 @@ impl PositionRange for RangeInclusive<PositionV2> {
     where
         K: InnerVal,
     {
-        self.map_range(|pos| pos.into())
+        self.map_range(|pos| pos.extract_and_convert())
     }
 
     fn clamp_range<In, const BITS: u16>(&self, position: PositionV2) -> RangeInclusive<PositionV2>

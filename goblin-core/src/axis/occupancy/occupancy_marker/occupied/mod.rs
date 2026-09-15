@@ -8,7 +8,7 @@ use crate::{
     axis_helpers::TokenPair,
     goblin_error::GoblinError,
     matching::MakeRegion,
-    quantities::PositionV2,
+    quantities::{FullPosition, PositionV2},
     require,
     state::{InnerBitmap, RestingOrder, RestingOrderPreimage, SlotKey},
     types::Address,
@@ -34,7 +34,7 @@ impl OccupancyMarker for Occupied {
         inner_bitmap_state: &InnerBitmap,
     ) -> Result<(), GoblinError> {
         require!(
-            inner_bitmap_state.index_active(position.into()),
+            inner_bitmap_state.index_active(position.extract_and_convert()),
             GoblinError::NoRestingOrder
         );
         Ok(())

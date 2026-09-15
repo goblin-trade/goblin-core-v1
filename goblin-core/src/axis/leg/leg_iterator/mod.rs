@@ -4,8 +4,8 @@ mod quote;
 use crate::{
     axis::leg::LegCoordinates,
     quantities::{
-        INNER_POS, InnerPos, OUTER_BITMAP_INDEX, OUTER_POS, OuterBitmapIndex, OuterPos,
-        PositionRange, PositionV2,
+        FullPosition, INNER_POS, InnerPos, OUTER_BITMAP_INDEX, OUTER_POS, OuterBitmapIndex,
+        OuterPos, PositionRange, PositionV2,
     },
 };
 use core::range::RangeInclusive;
@@ -28,7 +28,7 @@ pub trait LegIterator: LegCoordinates {
         range: RangeInclusive<PositionV2>,
     ) -> impl Iterator<Item = OuterBitmapIndex> {
         let extracted_range = range.extract_range::<OUTER_BITMAP_INDEX>();
-        Self::step_iter::<OUTER_BITMAP_INDEX>(extracted_range).map(OuterBitmapIndex::from)
+        Self::step_iter::<OUTER_BITMAP_INDEX>(extracted_range).map(|pos| pos.extract_and_convert())
     }
 
     fn outer_pos_iter(
@@ -36,7 +36,7 @@ pub trait LegIterator: LegCoordinates {
         current: PositionV2,
     ) -> impl Iterator<Item = OuterPos> {
         let clamped_range = range.clamp_range::<Self, OUTER_POS>(current);
-        Self::step_iter::<OUTER_POS>(clamped_range).map(OuterPos::from)
+        Self::step_iter::<OUTER_POS>(clamped_range).map(|pos| pos.extract_and_convert())
     }
 
     fn inner_pos_iter(
@@ -44,6 +44,6 @@ pub trait LegIterator: LegCoordinates {
         current: PositionV2,
     ) -> impl Iterator<Item = InnerPos> {
         let clamped_range = range.clamp_range::<Self, INNER_POS>(current);
-        Self::step_iter::<INNER_POS>(clamped_range).map(InnerPos::from)
+        Self::step_iter::<INNER_POS>(clamped_range).map(|pos| pos.extract_and_convert())
     }
 }
