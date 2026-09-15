@@ -2,11 +2,11 @@ use core::range::RangeInclusive;
 
 use crate::{
     axis::leg::LegCoordinates,
-    quantities::{DerivedPosition, InnerVal, Position},
+    quantities::{DerivedPosition, InnerVal, PositionV2},
 };
 
 pub trait PositionRange: Sized {
-    fn map_range<A>(&self, f: impl Fn(Position) -> A) -> RangeInclusive<A>;
+    fn map_range<A>(&self, f: impl Fn(PositionV2) -> A) -> RangeInclusive<A>;
 
     fn extract_range<const BITS: u16>(&self) -> Self;
 
@@ -14,13 +14,13 @@ pub trait PositionRange: Sized {
     where
         K: InnerVal;
 
-    fn clamp_range<In, const BITS: u16>(&self, position: Position) -> RangeInclusive<Position>
+    fn clamp_range<In, const BITS: u16>(&self, position: PositionV2) -> RangeInclusive<PositionV2>
     where
         In: LegCoordinates;
 }
 
-impl PositionRange for RangeInclusive<Position> {
-    fn map_range<A>(&self, f: impl Fn(Position) -> A) -> RangeInclusive<A> {
+impl PositionRange for RangeInclusive<PositionV2> {
+    fn map_range<A>(&self, f: impl Fn(PositionV2) -> A) -> RangeInclusive<A> {
         RangeInclusive {
             start: f(self.start),
             last: f(self.last),
@@ -38,7 +38,7 @@ impl PositionRange for RangeInclusive<Position> {
         self.map_range(|pos| pos.into())
     }
 
-    fn clamp_range<In, const BITS: u16>(&self, position: Position) -> RangeInclusive<Position>
+    fn clamp_range<In, const BITS: u16>(&self, position: PositionV2) -> RangeInclusive<PositionV2>
     where
         In: LegCoordinates,
     {
