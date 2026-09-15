@@ -3,7 +3,7 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::{ArgsReader, FixedDecode, VariableDecode},
     instructions::{TakeFlags, TakeHeaderOptional},
-    quantities::Position,
+    quantities::{FullPosition, PositionV2},
     require,
 };
 
@@ -21,7 +21,7 @@ impl<'a, In: LegMatcher> VariableDecode<'a> for TakeHeaderOptional<In> {
         };
 
         let limit = match flags.read_limit {
-            true => Position::raw_fixed_decode(reader),
+            true => PositionV2::raw_fixed_decode(reader),
             false => In::DEFAULT_PRICE_LIMIT,
         };
 
@@ -32,7 +32,7 @@ impl<'a, In: LegMatcher> VariableDecode<'a> for TakeHeaderOptional<In> {
     }
 
     fn validate(&self) -> Result<(), GoblinError> {
-        require!(self.limit > Position::ZERO, GoblinError::InvalidTakeArgs);
+        require!(self.limit > PositionV2::ZERO, GoblinError::InvalidTakeArgs);
         Ok(())
     }
 }

@@ -1,4 +1,5 @@
 use crate::{
+    Ctx,
     axis::{
         leg::leg_matcher::LegMatcher,
         occupancy::{OccupancyEnum, OccupancyMarker},
@@ -6,13 +7,12 @@ use crate::{
     },
     axis_helpers::MarketSpec,
     matching::MakeRegion,
-    quantities::Position,
-    Ctx,
+    quantities::PositionV2,
 };
 
 // Update last position in market state if new position is opened beyond the last stored position
 pub(crate) fn update_last_position<MS, OM, UM, In>(
-    position: Position,
+    position: PositionV2,
     region: MakeRegion,
     ctx: &mut Ctx<MS>,
 ) where

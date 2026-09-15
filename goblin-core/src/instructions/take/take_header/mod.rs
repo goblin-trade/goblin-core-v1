@@ -6,7 +6,7 @@ pub use take_header_optional::*;
 
 mod impl_compound_decode;
 
-use crate::{axis::leg::LegMatcher, quantities::Position};
+use crate::{axis::leg::LegMatcher, quantities::PositionV2};
 
 /// Instructions for a limit order. Limit orders are also known as market orders or immediate or cancel (IOC).
 ///
@@ -22,5 +22,5 @@ pub struct TakeHeader<In: LegMatcher> {
     pub min_lots_to_fill: In::Lots,
 
     /// The worst position to be matched against. Stop matching after this price is crossed.
-    pub limit: Position,
+    pub limit: PositionV2,
 }

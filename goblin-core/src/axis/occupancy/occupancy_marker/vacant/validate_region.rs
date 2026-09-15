@@ -2,14 +2,14 @@ use crate::{
     axis::leg::LegMatcher,
     goblin_error::GoblinError,
     matching::MakeRegion,
-    quantities::{InnerPos, Position},
+    quantities::{InnerPos, PositionV2},
     require,
     state::InnerBitmap,
 };
 
 pub fn validate_region<In>(
     region: MakeRegion,
-    position: Position,
+    position: PositionV2,
     inner_bitmap_state: &InnerBitmap,
 ) -> Result<(), GoblinError>
 where

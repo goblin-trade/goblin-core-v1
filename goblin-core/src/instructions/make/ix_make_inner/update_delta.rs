@@ -1,14 +1,14 @@
 use crate::{
+    Ctx,
     axis::{
-        leg::{leg_matcher::LegMatcher, Base},
+        leg::{Base, leg_matcher::LegMatcher},
         party::Sender,
         update::UpdateMarker,
     },
     axis_helpers::MarketSpec,
     goblin_error::GoblinError,
-    quantities::{BaseLots, Position, Ticks},
+    quantities::{BaseLots, PositionV2, Ticks},
     types::StoreReader,
-    Ctx,
 };
 
 /// Add base lots to local make. Depending on `UM` lots are added or subtracted.
@@ -22,7 +22,7 @@ use crate::{
 ///
 pub(crate) fn update_delta<MS: MarketSpec, UM: UpdateMarker, OP: LegMatcher>(
     delta_base_lots: BaseLots<u64>,
-    position: Position,
+    position: PositionV2,
     ctx: &mut Ctx<MS>,
 ) -> Result<(), GoblinError> {
     let market = &ctx.readables.market_readables().market;
