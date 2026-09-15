@@ -14,7 +14,7 @@ pub use bitmap_preimage::*;
 pub use bitmap_reader::*;
 pub use bitmap_updater::*;
 
-use crate::quantities::{BitmapPosition, DerivedPosition};
+use crate::quantities::{BitmapPosition, Position};
 
 const CLOSED_SENTINEL: [u8; 32] = [0xFF; 32];
 
@@ -40,20 +40,20 @@ impl<const BITS: u16, const INNER_BITS: u16> Bitmap<BITS, INNER_BITS> {
         self.inner = CLOSED_SENTINEL
     }
 
-    pub fn index_active(&self, pos: DerivedPosition<u8, INNER_BITS>) -> bool {
+    pub fn index_active(&self, pos: Position<u8, INNER_BITS>) -> bool {
         let byte = self.inner[pos.byte_index()];
         let mask = 1 << pos.bit_index();
 
         (byte & mask) != 0
     }
 
-    pub fn deactivate(&mut self, pos: DerivedPosition<u8, INNER_BITS>) {
+    pub fn deactivate(&mut self, pos: Position<u8, INNER_BITS>) {
         // mask with 0 at target bit, 1 elsewhere
         let mask = !(1u8 << pos.bit_index());
         self.inner[pos.byte_index()] &= mask;
     }
 
-    pub fn activate(&mut self, pos: DerivedPosition<u8, INNER_BITS>) {
+    pub fn activate(&mut self, pos: Position<u8, INNER_BITS>) {
         // OR with 1 to turn on the bit
         let mask = 1u8 << pos.bit_index();
         self.inner[pos.byte_index()] |= mask;

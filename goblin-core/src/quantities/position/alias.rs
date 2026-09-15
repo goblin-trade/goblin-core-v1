@@ -1,4 +1,4 @@
-use crate::quantities::DerivedPosition;
+use crate::quantities::Position;
 
 const fn bits(offset: u8, count: u8) -> u16 {
     ((offset as u16) << 8) | (count as u16)
@@ -15,17 +15,15 @@ pub const POS_0: u16 = OUTER_BITMAP_INDEX;
 pub const POS_1: u16 = bits(8, 56);
 pub const POS_2: u16 = bits(0, 64);
 
-pub type InnerPos = DerivedPosition<u8, INNER_POS>;
-pub type Column = DerivedPosition<u8, COLUMN>;
-pub type Row = DerivedPosition<u8, ROW>;
-pub type OuterPos = DerivedPosition<u8, OUTER_POS>;
+pub type InnerPos = Position<u8, INNER_POS>;
+pub type Column = Position<u8, COLUMN>;
+pub type Row = Position<u8, ROW>;
+pub type OuterPos = Position<u8, OUTER_POS>;
 
-pub type TickPos = DerivedPosition<u64, TICK_POS>;
+pub type TickPos = Position<u64, TICK_POS>;
 
-/// TODO 32 bit
-pub type OuterBitmapIndex = DerivedPosition<u64, OUTER_BITMAP_INDEX>;
-pub type OuterBitmapIndexU32 = DerivedPosition<u32, OUTER_BITMAP_INDEX>;
+pub type OuterBitmapIndex = Position<u64, OUTER_BITMAP_INDEX>;
+pub type OuterBitmapIndexU32 = Position<u32, OUTER_BITMAP_INDEX>;
 
-/// TODO 32 bit
-pub type Position = DerivedPosition<u64, POS_2>;
-pub type PositionU32 = DerivedPosition<u32, POS_2>;
+pub type FullPos = Position<u64, POS_2>;
+pub type FullPosU32 = Position<u32, POS_2>;

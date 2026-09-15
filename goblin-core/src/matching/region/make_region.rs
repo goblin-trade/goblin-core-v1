@@ -1,6 +1,6 @@
 use crate::{
     axis::leg::{Base, LegEnum, Quote, SamePair, leg_coordinates::LegCoordinates},
-    quantities::{Position, Ticks},
+    quantities::{FullPos, Ticks},
     types::StoreReader,
 };
 
@@ -12,7 +12,7 @@ pub enum MakeRegion {
 }
 
 impl MakeRegion {
-    pub fn new(last_positions: &SamePair<Position>, position: Position) -> Self {
+    pub fn new(last_positions: &SamePair<FullPos>, position: FullPos) -> Self {
         let last_position_base = Base::get(last_positions);
         let last_position_quote = Quote::get(last_positions);
 

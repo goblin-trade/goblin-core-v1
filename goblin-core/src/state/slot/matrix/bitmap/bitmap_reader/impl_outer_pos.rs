@@ -1,7 +1,7 @@
 use crate::{
     axis::leg::LegMatcher,
     axis_helpers::TokenPair,
-    quantities::{OUTER_POS, POS_0, POS_1, Pos0, Pos1, Position},
+    quantities::{FullPos, OUTER_POS, POS_0, POS_1, Pos0, Pos1},
     state::{
         MarketPreimage, Preimage, SlotKey,
         bitmap::{Bitmap, BitmapPreimage, BitmapReader},
@@ -12,7 +12,7 @@ use core::range::RangeInclusive;
 impl BitmapReader<POS_1> for Bitmap<POS_0, OUTER_POS> {
     fn active_iterator<TP: TokenPair, In: LegMatcher>(
         market_key: SlotKey<MarketPreimage<TP>>,
-        range: RangeInclusive<Position>,
+        range: RangeInclusive<FullPos>,
     ) -> impl Iterator<Item = Pos1> {
         In::outer_bitmap_index_iter(range)
             .filter_map(move |outer_bitmap_index| {

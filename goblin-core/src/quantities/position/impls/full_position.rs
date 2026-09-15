@@ -1,6 +1,6 @@
-use crate::quantities::{BitsLayout, DerivedPosition, InnerVal, Position};
+use crate::quantities::{BitsLayout, FullPos, InnerVal, Position};
 
-/// Transformations for DerivedPosition<u64, POS_2>
+/// Transformations for Position<u64, POS_2>
 pub trait FullPosition {
     const ZERO: Self;
     const MAX: Self;
@@ -13,14 +13,14 @@ pub trait FullPosition {
     ///
     fn complement<const BITS: u16>(&self) -> Self;
 
-    /// Return a new Position instance with the extracted bits
+    /// Return a new FullPos instance with the extracted bits
     fn extract<const BITS: u16>(&self) -> Self;
 
-    /// Return a new DerivedPosition instance with the extracted bits and given size
-    fn extract_and_convert<K: InnerVal, const BITS: u16>(&self) -> DerivedPosition<K, BITS>;
+    /// Return a new Position instance with the extracted bits and given size
+    fn extract_and_convert<K: InnerVal, const BITS: u16>(&self) -> Position<K, BITS>;
 }
 
-impl FullPosition for Position {
+impl FullPosition for FullPos {
     const ZERO: Self = Self::new(u64::MIN);
     const MAX: Self = Self::new(u64::MAX);
 
@@ -36,9 +36,9 @@ impl FullPosition for Position {
         Self { inner }
     }
 
-    fn extract_and_convert<K: InnerVal, const BITS: u16>(&self) -> DerivedPosition<K, BITS> {
+    fn extract_and_convert<K: InnerVal, const BITS: u16>(&self) -> Position<K, BITS> {
         let extracted = self.extract::<BITS>();
-        DerivedPosition {
+        Position {
             inner: K::truncate_from_u64(extracted.inner),
         }
     }

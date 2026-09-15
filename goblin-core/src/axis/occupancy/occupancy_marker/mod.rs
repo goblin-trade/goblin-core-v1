@@ -10,7 +10,7 @@ use crate::{
     axis_helpers::{AxisMarker, TokenPair},
     goblin_error::GoblinError,
     matching::MakeRegion,
-    quantities::Position,
+    quantities::FullPos,
     state::{InnerBitmap, RestingOrder, RestingOrderPreimage, SlotKey},
     types::Address,
 };
@@ -23,7 +23,7 @@ pub trait OccupancyMarker: AxisMarker<Enum = OccupancyEnum> {
 
     fn validate_region<In: LegMatcher>(
         region: MakeRegion,
-        position: Position,
+        position: FullPos,
         inner_bitmap_state: &InnerBitmap,
     ) -> Result<(), GoblinError>;
 

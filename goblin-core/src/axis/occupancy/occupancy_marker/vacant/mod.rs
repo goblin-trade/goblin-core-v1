@@ -11,7 +11,7 @@ use crate::{
     axis_helpers::TokenPair,
     goblin_error::GoblinError,
     matching::MakeRegion,
-    quantities::Position,
+    quantities::FullPos,
     state::{InnerBitmap, RestingOrder, RestingOrderPreimage, SlotKey},
     types::Address,
 };
@@ -27,7 +27,7 @@ impl OccupancyMarker for Vacant {
 
     fn validate_region<In: LegMatcher>(
         region: MakeRegion,
-        position: Position,
+        position: FullPos,
         inner_bitmap_state: &InnerBitmap,
     ) -> Result<(), GoblinError> {
         validate_region::<In>(region, position, inner_bitmap_state)?;

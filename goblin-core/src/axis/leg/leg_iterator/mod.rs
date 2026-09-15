@@ -4,8 +4,8 @@ mod quote;
 use crate::{
     axis::leg::LegCoordinates,
     quantities::{
-        FullPosition, INNER_POS, InnerPos, OUTER_BITMAP_INDEX, OUTER_POS, OuterBitmapIndex,
-        OuterPos, PositionRange, Position,
+        FullPos, FullPosition, INNER_POS, InnerPos, OUTER_BITMAP_INDEX, OUTER_POS,
+        OuterBitmapIndex, OuterPos, PositionRange,
     },
 };
 use core::range::RangeInclusive;
@@ -18,30 +18,28 @@ pub trait LegIterator: LegCoordinates {
     /// Normalize last and limit positions into a RangeInclusive struct.
     ///
     /// In RangeInclusive, start is always the smaller value.
-    fn get_range(last_position: Position, limit: Position) -> RangeInclusive<Position>;
+    fn get_range(last_position: FullPos, limit: FullPos) -> RangeInclusive<FullPos>;
 
-    fn step_iter<const BITS: u16>(
-        range: RangeInclusive<Position>,
-    ) -> impl Iterator<Item = Position>;
+    fn step_iter<const BITS: u16>(range: RangeInclusive<FullPos>) -> impl Iterator<Item = FullPos>;
 
     fn outer_bitmap_index_iter(
-        range: RangeInclusive<Position>,
+        range: RangeInclusive<FullPos>,
     ) -> impl Iterator<Item = OuterBitmapIndex> {
         let extracted_range = range.extract_range::<OUTER_BITMAP_INDEX>();
         Self::step_iter::<OUTER_BITMAP_INDEX>(extracted_range).map(|pos| pos.extract_and_convert())
     }
 
     fn outer_pos_iter(
-        range: RangeInclusive<Position>,
-        current: Position,
+        range: RangeInclusive<FullPos>,
+        current: FullPos,
     ) -> impl Iterator<Item = OuterPos> {
         let clamped_range = range.clamp_range::<Self, OUTER_POS>(current);
         Self::step_iter::<OUTER_POS>(clamped_range).map(|pos| pos.extract_and_convert())
     }
 
     fn inner_pos_iter(
-        range: RangeInclusive<Position>,
-        current: Position,
+        range: RangeInclusive<FullPos>,
+        current: FullPos,
     ) -> impl Iterator<Item = InnerPos> {
         let clamped_range = range.clamp_range::<Self, INNER_POS>(current);
         Self::step_iter::<INNER_POS>(clamped_range).map(|pos| pos.extract_and_convert())

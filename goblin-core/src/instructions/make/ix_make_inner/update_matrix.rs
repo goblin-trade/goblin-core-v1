@@ -1,12 +1,12 @@
 use crate::{
     axis::occupancy::{OccupancyEnum, OccupancyMarker},
-    quantities::{FullPosition, Position},
+    quantities::{FullPos, FullPosition},
     state::bitmap::alias::{InnerBitmap, InnerBitmapUpdater},
 };
 
 pub(crate) fn update_matrix<OM>(
     resting_order_empty: bool,
-    position: Position,
+    position: FullPos,
     inner_bitmap_state: &mut InnerBitmap,
 ) where
     OM: OccupancyMarker,

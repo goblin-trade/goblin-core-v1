@@ -2,7 +2,7 @@ use crate::{
     axis::leg::LegMatcher,
     axis_helpers::TokenPair,
     goblin_error::GoblinError,
-    quantities::{INNER_POS, POS_1, Position},
+    quantities::{FullPos, INNER_POS, POS_1},
     require,
     state::{
         KeyValue, MarketPreimage, MarketState, Preimage, RestingOrderPreimage, SlotKey,
@@ -11,13 +11,13 @@ use crate::{
 };
 
 pub struct RestingOrderEntry<TP: TokenPair> {
-    pub position: Position,
+    pub position: FullPos,
     pub resting_order_key_value: KeyValue<RestingOrderPreimage<TP>>,
 }
 
 pub fn match_iterator<'a, TP: TokenPair, In: LegMatcher + 'a>(
     market_key: SlotKey<MarketPreimage<TP>>,
-    limit: Position,
+    limit: FullPos,
     market_state: &'a mut MarketState,
 ) -> Result<impl Iterator<Item = RestingOrderEntry<TP>> + 'a, GoblinError> {
     let last_position = In::get_leg_mut(&mut market_state.last_positions);
