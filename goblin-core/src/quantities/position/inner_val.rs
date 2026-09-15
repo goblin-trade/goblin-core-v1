@@ -1,8 +1,8 @@
-use core::ops::Shr;
+use core::ops::{Add, Shr};
 
 use crate::input_processor::FixedDecode;
 
-pub trait InnerVal: Sized + Shr + Into<u64> + for<'a> FixedDecode<'a> {
+pub trait InnerVal: Sized + Shr + Into<u64> + Add<Output = Self> + for<'a> FixedDecode<'a> {
     fn from_u64(val: u64) -> Self;
 }
 

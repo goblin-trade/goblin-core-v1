@@ -8,6 +8,7 @@ pub mod full_position;
 
 pub use bitmap_position::*;
 pub use full_position::*;
+mod impl_add;
 mod impl_from;
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug, FixedDecode)]

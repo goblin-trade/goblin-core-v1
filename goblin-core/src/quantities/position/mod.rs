@@ -15,7 +15,7 @@ pub use safe_position::*;
 
 use goblin_macros::FixedDecode;
 
-use core::ops::{Add, Sub};
+use core::ops::Add;
 
 /// TODO 32 bit for TakeHeaderOptional
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug, FixedDecode)]
@@ -53,22 +53,17 @@ impl Position {
     }
 }
 
+/// Add two position types
+///
+/// # Safety
+///
+/// We only add Pos0 into Pos1 and Pos1 into Pos2. This cannot overflow.
 impl Add for Position {
     type Output = Position;
 
     fn add(self, rhs: Position) -> Self::Output {
         Position {
             inner: self.inner + rhs.inner,
-        }
-    }
-}
-
-impl Sub for Position {
-    type Output = Position;
-
-    fn sub(self, rhs: Position) -> Self::Output {
-        Position {
-            inner: self.inner - rhs.inner,
         }
     }
 }
