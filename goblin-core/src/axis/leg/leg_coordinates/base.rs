@@ -1,18 +1,18 @@
 use crate::{
     axis::leg::{Base, LegCoordinates},
-    quantities::{BitsLayout, FullPosition, PositionV2},
+    quantities::{BitsLayout, FullPosition, Position},
 };
 
 impl LegCoordinates for Base {
-    fn in_region(last_position: PositionV2, position: PositionV2) -> bool {
+    fn in_region(last_position: Position, position: Position) -> bool {
         position <= last_position
     }
 
-    fn start<const BITS: u16>() -> PositionV2 {
-        PositionV2::new(BitsLayout::<BITS>::MAX)
+    fn start<const BITS: u16>() -> Position {
+        Position::new(BitsLayout::<BITS>::MAX)
     }
 
-    fn end<const BITS: u16>() -> PositionV2 {
-        PositionV2::ZERO
+    fn end<const BITS: u16>() -> Position {
+        Position::ZERO
     }
 }

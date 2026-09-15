@@ -1,6 +1,6 @@
 use goblin_macros::FixedDecode;
 
-use crate::quantities::{BitsLayout, PositionV2, inner_val::InnerVal};
+use crate::quantities::{BitsLayout, Position, inner_val::InnerVal};
 use core::range::RangeInclusive;
 
 pub mod bitmap_position;
@@ -26,16 +26,16 @@ where
         Self { inner }
     }
 
-    pub fn convert_range(value: RangeInclusive<PositionV2>) -> RangeInclusive<Self> {
+    pub fn convert_range(value: RangeInclusive<Position>) -> RangeInclusive<Self> {
         RangeInclusive {
             start: value.start.extract_and_convert(),
             last: value.last.extract_and_convert(),
         }
     }
 
-    pub fn into_position(&self) -> PositionV2 {
+    pub fn into_position(&self) -> Position {
         let inner: u64 = self.inner.into();
-        PositionV2 {
+        Position {
             inner: (inner & BitsLayout::<BITS>::MASK) << BitsLayout::<BITS>::OFFSET,
         }
     }

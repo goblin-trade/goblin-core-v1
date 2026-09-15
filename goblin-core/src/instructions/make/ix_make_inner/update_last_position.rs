@@ -7,12 +7,12 @@ use crate::{
     },
     axis_helpers::MarketSpec,
     matching::MakeRegion,
-    quantities::PositionV2,
+    quantities::Position,
 };
 
 // Update last position in market state if new position is opened beyond the last stored position
 pub(crate) fn update_last_position<MS, OM, UM, In>(
-    position: PositionV2,
+    position: Position,
     region: MakeRegion,
     ctx: &mut Ctx<MS>,
 ) where

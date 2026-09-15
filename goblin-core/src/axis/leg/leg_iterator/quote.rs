@@ -1,11 +1,11 @@
 use crate::{
     axis::leg::{LegIterator, Quote},
-    quantities::{BitsLayout, PositionV2},
+    quantities::{BitsLayout, Position},
 };
 use core::range::RangeInclusive;
 
 impl LegIterator for Quote {
-    fn get_range(last_position: PositionV2, limit: PositionV2) -> RangeInclusive<PositionV2> {
+    fn get_range(last_position: Position, limit: Position) -> RangeInclusive<Position> {
         RangeInclusive {
             start: last_position,
             last: limit,
@@ -13,14 +13,14 @@ impl LegIterator for Quote {
     }
 
     fn step_iter<const BITS: u16>(
-        range: RangeInclusive<PositionV2>,
-    ) -> impl Iterator<Item = PositionV2> {
+        range: RangeInclusive<Position>,
+    ) -> impl Iterator<Item = Position> {
         RangeInclusive {
             start: range.start.inner,
             last: range.last.inner,
         }
         .iter()
         .step_by(BitsLayout::<BITS>::step_interval())
-        .map(PositionV2::new)
+        .map(Position::new)
     }
 }

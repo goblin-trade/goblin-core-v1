@@ -3,13 +3,13 @@ use crate::{
     axis::{occupancy::OccupancyMarker, update::UpdateMarker},
     axis_helpers::MarketSpec,
     goblin_error::GoblinError,
-    quantities::{BaseLots, PositionV2},
+    quantities::{BaseLots, Position},
     state::{Preimage, RestingOrderPreimage},
 };
 
 pub(crate) fn update_resting_order<MS, OM, UM>(
     base_lots: BaseLots<u64>,
-    position: PositionV2,
+    position: Position,
     ctx: &mut Ctx<MS>,
 ) -> Result<(BaseLots<u64>, bool), GoblinError>
 where

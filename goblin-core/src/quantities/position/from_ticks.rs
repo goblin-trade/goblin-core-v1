@@ -1,4 +1,4 @@
-use crate::quantities::{FullPosition, PositionV2, TICK_POS, TickPos, Ticks};
+use crate::quantities::{FullPosition, Position, TICK_POS, TickPos, Ticks};
 
 impl From<TickPos> for Ticks {
     fn from(value: TickPos) -> Self {
@@ -12,8 +12,8 @@ impl From<Ticks> for TickPos {
     }
 }
 
-impl From<PositionV2> for Ticks {
-    fn from(value: PositionV2) -> Self {
+impl From<Position> for Ticks {
+    fn from(value: Position) -> Self {
         let tick_pos = value.extract_and_convert::<u64, TICK_POS>();
         Self::from(tick_pos)
     }

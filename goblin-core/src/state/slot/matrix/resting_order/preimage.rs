@@ -1,6 +1,6 @@
 use crate::{
     axis_helpers::TokenPair,
-    quantities::PositionV2,
+    quantities::Position,
     state::{MarketPreimage, Preimage, SlotKey, resting_order::RestingOrder},
 };
 
@@ -8,7 +8,7 @@ use crate::{
 #[derive(Clone, Copy)]
 pub struct RestingOrderPreimage<TP: TokenPair> {
     pub market_key: SlotKey<MarketPreimage<TP>>,
-    pub position: PositionV2,
+    pub position: Position,
 }
 
 impl<TP: TokenPair> Preimage for RestingOrderPreimage<TP> {

@@ -24,4 +24,5 @@ pub type OuterPos = DerivedPosition<u8, OUTER_POS>;
 pub type OuterBitmapIndex = DerivedPosition<u64, OUTER_BITMAP_INDEX>;
 pub type TickPos = DerivedPosition<u64, TICK_POS>;
 
-pub type PositionV2 = DerivedPosition<u64, POS_2>;
+/// TODO 32 bit
+pub type Position = DerivedPosition<u64, POS_2>;

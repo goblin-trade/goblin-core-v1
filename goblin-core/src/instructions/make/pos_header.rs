@@ -1,6 +1,6 @@
-use crate::quantities::{BaseLots, PositionV2};
+use crate::quantities::{BaseLots, Position};
 
 pub struct PosHeader {
-    pub position: PositionV2,
+    pub position: Position,
     pub base_lots: BaseLots<u64>,
 }

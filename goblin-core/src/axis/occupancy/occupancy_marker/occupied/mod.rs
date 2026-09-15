@@ -8,7 +8,7 @@ use crate::{
     axis_helpers::TokenPair,
     goblin_error::GoblinError,
     matching::MakeRegion,
-    quantities::{FullPosition, PositionV2},
+    quantities::{FullPosition, Position},
     require,
     state::{InnerBitmap, RestingOrder, RestingOrderPreimage, SlotKey},
     types::Address,
@@ -30,7 +30,7 @@ impl OccupancyMarker for Occupied {
 
     fn validate_region<In: LegMatcher>(
         _region: MakeRegion,
-        position: PositionV2,
+        position: Position,
         inner_bitmap_state: &InnerBitmap,
     ) -> Result<(), GoblinError> {
         require!(

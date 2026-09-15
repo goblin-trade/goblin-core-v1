@@ -1,4 +1,4 @@
-use crate::quantities::{BitsLayout, DerivedPosition, InnerVal, PositionV2};
+use crate::quantities::{BitsLayout, DerivedPosition, InnerVal, Position};
 
 /// Transformations for DerivedPosition<u64, POS_2>
 pub trait FullPosition {
@@ -20,7 +20,7 @@ pub trait FullPosition {
     fn extract_and_convert<K: InnerVal, const BITS: u16>(&self) -> DerivedPosition<K, BITS>;
 }
 
-impl FullPosition for PositionV2 {
+impl FullPosition for Position {
     const ZERO: Self = Self::new(u64::MIN);
     const MAX: Self = Self::new(u64::MAX);
 

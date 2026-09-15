@@ -13,13 +13,13 @@ use crate::{
         update_matrix::update_matrix, update_resting_order::update_resting_order,
     },
     matching::MakeRegion,
-    quantities::{BaseLots, PositionV2},
+    quantities::{BaseLots, Position},
     state::InnerBitmap,
 };
 
 pub fn ix_make_inner<MS, OM, UM, In>(
     base_lots: BaseLots<u64>,
-    position: PositionV2,
+    position: Position,
     region: MakeRegion,
     inner_bitmap_state: &mut InnerBitmap,
     ctx: &mut Ctx<MS>,
