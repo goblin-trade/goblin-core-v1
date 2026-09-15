@@ -2,6 +2,9 @@ use crate::quantities::{BitsLayout, DerivedPosition, InnerVal, PositionV2};
 
 /// Transformations for DerivedPosition<u64, POS_2>
 pub trait FullPosition {
+    const ZERO: Self;
+    const MAX: Self;
+
     /// Returns a copy of this position with all bits at indices ≤ `offset` zeroed.
     ///
     /// # Safety
@@ -18,6 +21,9 @@ pub trait FullPosition {
 }
 
 impl FullPosition for PositionV2 {
+    const ZERO: Self = Self::new(u64::MIN);
+    const MAX: Self = Self::new(u64::MAX);
+
     fn complement<const BITS: u16>(&self) -> Self {
         let mask = !((1u64 << (BitsLayout::<BITS>::OFFSET + 1)) - 1);
         Self {
@@ -33,7 +39,7 @@ impl FullPosition for PositionV2 {
     fn extract_and_convert<K: InnerVal, const BITS: u16>(&self) -> DerivedPosition<K, BITS> {
         let extracted = self.extract::<BITS>();
         DerivedPosition {
-            inner: K::from_u64(extracted.inner),
+            inner: K::truncate_from_u64(extracted.inner),
         }
     }
 }

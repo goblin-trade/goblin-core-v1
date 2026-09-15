@@ -6,7 +6,7 @@ where
 {
     fn from(value: Position) -> Self {
         let extracted = Position::extract::<BITS>(&value);
-        Self::new(K::from_u64(extracted.inner))
+        Self::new(K::truncate_from_u64(extracted.inner))
     }
 }
 

@@ -1,6 +1,6 @@
 use goblin_macros::FixedDecode;
 
-use crate::quantities::{Position, bits_layout::BitsLayout, inner_val::InnerVal};
+use crate::quantities::{Position, inner_val::InnerVal};
 use core::range::RangeInclusive;
 
 pub mod bitmap_position;
@@ -23,16 +23,8 @@ impl<K, const BITS: u16> DerivedPosition<K, BITS>
 where
     K: InnerVal,
 {
-    pub fn new(inner: K) -> Self {
+    pub const fn new(inner: K) -> Self {
         Self { inner }
-    }
-
-    pub fn min() -> Self {
-        Self::new(K::from_u64(0))
-    }
-
-    pub fn max() -> Self {
-        Self::new(K::from_u64(BitsLayout::<BITS>::MAX))
     }
 
     pub fn convert_range(value: RangeInclusive<Position>) -> RangeInclusive<Self> {

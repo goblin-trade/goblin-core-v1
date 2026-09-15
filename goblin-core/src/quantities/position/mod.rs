@@ -18,14 +18,13 @@ use goblin_macros::FixedDecode;
 use core::ops::Add;
 
 /// TODO 32 bit for TakeHeaderOptional
-#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug, FixedDecode)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug, FixedDecode)]
 pub struct Position {
     pub inner: u64,
 }
 
 impl Position {
     pub const ZERO: Self = Self::new(0);
-    pub const MIN: Self = Self::ZERO;
     pub const MAX: Self = Self::new(u64::MAX);
 
     pub const fn new(inner: u64) -> Self {
