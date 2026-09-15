@@ -3,7 +3,7 @@ use crate::{
     goblin_error::GoblinError,
     input_processor::{ArgsReader, FixedDecode, VariableDecode},
     instructions::{TakeFlags, TakeHeaderOptional},
-    quantities::{FullPosition, Position},
+    quantities::{FullPosition, Position, PositionU32, ScaledPosition},
     require,
 };
 
@@ -21,7 +21,7 @@ impl<'a, In: LegMatcher> VariableDecode<'a> for TakeHeaderOptional<In> {
         };
 
         let limit = match flags.read_limit {
-            true => Position::raw_fixed_decode(reader),
+            true => PositionU32::raw_fixed_decode(reader).scale_up(),
             false => In::DEFAULT_PRICE_LIMIT,
         };
 

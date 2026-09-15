@@ -1,13 +1,13 @@
 use crate::{
+    Ctx,
     axis_helpers::MarketSpec,
     goblin_error::GoblinError,
     input_processor::{ArgsReader, FixedDecode},
     market::header::{
         inner_bitmap_header::InnerBitmapHeader, outer_bitmap_header::OuterBitmapHeader,
     },
-    quantities::{Pos0, OUTER_POS, POS_0},
+    quantities::{OUTER_POS, POS_0, Pos0, ScaledPosition},
     state::bitmap::Bitmap,
-    Ctx,
 };
 
 impl OuterBitmapHeader {
@@ -16,10 +16,11 @@ impl OuterBitmapHeader {
         ctx: &mut Ctx<MS>,
     ) -> Result<(), GoblinError> {
         let Self {
-            outer_bitmap_index,
+            outer_bitmap_index_u32,
             inner_bitmap_count,
         } = Self::try_fixed_decode(reader)?;
 
+        let outer_bitmap_index = outer_bitmap_index_u32.scale_up();
         let pos_0 = Pos0::new(outer_bitmap_index);
 
         let (outer_bitmap_key, mut outer_bitmap_state) =

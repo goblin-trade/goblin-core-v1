@@ -20,9 +20,12 @@ pub type Column = DerivedPosition<u8, COLUMN>;
 pub type Row = DerivedPosition<u8, ROW>;
 pub type OuterPos = DerivedPosition<u8, OUTER_POS>;
 
-/// TODO 32 bit
-pub type OuterBitmapIndex = DerivedPosition<u64, OUTER_BITMAP_INDEX>;
 pub type TickPos = DerivedPosition<u64, TICK_POS>;
 
 /// TODO 32 bit
+pub type OuterBitmapIndex = DerivedPosition<u64, OUTER_BITMAP_INDEX>;
+pub type OuterBitmapIndexU32 = DerivedPosition<u32, OUTER_BITMAP_INDEX>;
+
+/// TODO 32 bit
 pub type Position = DerivedPosition<u64, POS_2>;
+pub type PositionU32 = DerivedPosition<u32, POS_2>;

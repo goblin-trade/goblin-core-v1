@@ -24,3 +24,9 @@ impl InnerVal for u64 {
         v
     }
 }
+
+impl InnerVal for u32 {
+    fn truncate_from_u64(v: u64) -> Self {
+        v as u32
+    }
+}

@@ -1,12 +1,12 @@
 use crate::{
+    Ctx,
     axis_helpers::MarketSpec,
     goblin_error::GoblinError,
     input_processor::{ArgsReader, FixedDecode},
     instructions::ix_make::ix_make,
     market::InnerBitmapHeader,
-    quantities::{Pos0, Pos1, INNER_POS, POS_1},
-    state::bitmap::{alias::OuterBitmap, Bitmap},
-    Ctx,
+    quantities::{INNER_POS, POS_1, Pos0, Pos1},
+    state::bitmap::{Bitmap, alias::OuterBitmap},
 };
 
 impl InnerBitmapHeader {

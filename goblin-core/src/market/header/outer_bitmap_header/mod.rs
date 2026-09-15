@@ -1,11 +1,11 @@
 mod process;
 
-use crate::quantities::OuterBitmapIndex;
+use crate::quantities::OuterBitmapIndexU32;
 use goblin_macros::FixedDecode;
 
 #[derive(FixedDecode)]
 pub struct OuterBitmapHeader {
     /// TODO 32 bit
-    pub outer_bitmap_index: OuterBitmapIndex,
+    pub outer_bitmap_index_u32: OuterBitmapIndexU32,
     pub inner_bitmap_count: u8,
 }
