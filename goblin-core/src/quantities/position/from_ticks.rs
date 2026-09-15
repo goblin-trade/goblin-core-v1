@@ -14,6 +14,7 @@ impl From<Ticks> for TickPos {
 
 impl From<Position> for Ticks {
     fn from(value: Position) -> Self {
+        // convert to TickPos to strip off the columns
         let tick_pos = TickPos::from(value);
         Self::from(tick_pos)
     }

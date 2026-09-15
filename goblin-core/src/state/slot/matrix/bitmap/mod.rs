@@ -14,7 +14,7 @@ pub use bitmap_preimage::*;
 pub use bitmap_reader::*;
 pub use bitmap_updater::*;
 
-use crate::quantities::DerivedPosition;
+use crate::quantities::{BitmapPosition, DerivedPosition};
 
 const CLOSED_SENTINEL: [u8; 32] = [0xFF; 32];
 

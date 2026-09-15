@@ -4,8 +4,8 @@ const fn bits(offset: u8, count: u8) -> u16 {
     ((offset as u16) << 8) | (count as u16)
 }
 
-pub const INNER_POS: u16 = bits(0, 8);
 pub const COLUMN: u16 = bits(0, 3);
+pub const INNER_POS: u16 = bits(0, 8);
 pub const ROW: u16 = bits(3, 5);
 pub const OUTER_POS: u16 = bits(8, 8);
 pub const OUTER_BITMAP_INDEX: u16 = bits(16, 48);
@@ -23,3 +23,5 @@ pub type OuterPos = DerivedPosition<u8, OUTER_POS>;
 /// TODO 32 bit
 pub type OuterBitmapIndex = DerivedPosition<u64, OUTER_BITMAP_INDEX>;
 pub type TickPos = DerivedPosition<u64, TICK_POS>;
+
+pub type PositionV2 = DerivedPosition<u64, POS_2>;

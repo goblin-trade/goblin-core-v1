@@ -3,6 +3,13 @@ use goblin_macros::FixedDecode;
 use crate::quantities::{Position, bits_layout::BitsLayout, inner_val::InnerVal};
 use core::range::RangeInclusive;
 
+pub mod bitmap_position;
+pub mod full_position;
+
+pub use bitmap_position::*;
+pub use full_position::*;
+mod impl_from;
+
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug, FixedDecode)]
 pub struct DerivedPosition<K, const BITS: u16>
 where
@@ -31,38 +38,6 @@ where
         RangeInclusive {
             start: value.start.into(),
             last: value.last.into(),
-        }
-    }
-}
-
-impl<const BITS: u16> DerivedPosition<u8, BITS> {
-    pub fn byte_index(&self) -> usize {
-        self.inner as usize / 8
-    }
-
-    pub fn bit_index(&self) -> usize {
-        self.inner as usize % 8
-    }
-}
-
-impl<K, const BITS: u16> From<Position> for DerivedPosition<K, BITS>
-where
-    K: InnerVal,
-{
-    fn from(value: Position) -> Self {
-        let extracted = Position::extract::<BITS>(&value);
-        Self::new(K::from_u64(extracted.inner))
-    }
-}
-
-impl<K, const BITS: u16> From<DerivedPosition<K, BITS>> for Position
-where
-    K: InnerVal,
-{
-    fn from(value: DerivedPosition<K, BITS>) -> Self {
-        let inner: u64 = value.inner.into();
-        Position {
-            inner: (inner & BitsLayout::<BITS>::MASK) << BitsLayout::<BITS>::OFFSET,
         }
     }
 }
