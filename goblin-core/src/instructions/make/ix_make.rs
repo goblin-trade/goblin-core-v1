@@ -1,4 +1,5 @@
 use crate::{
+    Ctx,
     axis::occupancy::OccupancyMarker,
     axis_helpers::MarketSpec,
     goblin_error::GoblinError,
@@ -9,7 +10,6 @@ use crate::{
     matching::MakeRegion,
     quantities::{BaseLots, Pos1, Pos2},
     state::InnerBitmap,
-    Ctx,
 };
 
 pub fn ix_make<MS: MarketSpec>(
@@ -22,15 +22,16 @@ pub fn ix_make<MS: MarketSpec>(
         inner_pos,
         occupancy_enum,
         inner_enum_raw,
-        base_lots,
+        base_lots_u32,
     } = MakeHeader::try_fixed_decode(reader)?;
 
-    if base_lots == BaseLots::<u64>::default() {
+    if base_lots_u32 == BaseLots::default() {
         return Ok(());
     }
 
     let position = Pos2::new(pos_1, inner_pos).into();
     let region = MakeRegion::new(&ctx.writables.market_state.last_positions, position);
+    let base_lots = base_lots_u32.into();
 
     match_axes!(OM = occupancy_enum => {
         let enums = OM::get_make_enums(inner_enum_raw, region)?;

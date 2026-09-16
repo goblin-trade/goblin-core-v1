@@ -9,7 +9,5 @@ pub struct MakeHeader {
     pub inner_pos: InnerPos,
     pub occupancy_enum: OccupancyEnum,
     pub inner_enum_raw: bool,
-
-    /// TODO In::SomeQuantity<u32>
-    pub base_lots: BaseLots<u64>,
+    pub base_lots_u32: BaseLots<u32>,
 }

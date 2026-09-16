@@ -6,22 +6,22 @@ use crate::{
 };
 
 impl<'a> FixedDecode<'a> for MakeHeader {
-    const ENCODED_SIZE: usize = 1 + 8;
+    const ENCODED_SIZE: usize = 1 + 4;
 
     fn raw_fixed_decode(reader: &'a ArgsReader) -> Self {
         let inner_pos = InnerPos::new(u8::raw_fixed_decode(reader));
-        let bytes = u64::raw_fixed_decode(reader);
+        let bytes = u32::raw_fixed_decode(reader);
 
         let occupancy_enum = OccupancyEnum::from((bytes & 0b01) != 0);
         let inner_enum_raw = (bytes & 0b10) != 0;
 
-        let base_lots = BaseLots::<u64>::new(bytes >> 2);
+        let base_lots_u32 = BaseLots::<u32>::new(bytes >> 2);
 
         Self {
             inner_pos,
             occupancy_enum,
             inner_enum_raw,
-            base_lots,
+            base_lots_u32,
         }
     }
 }
