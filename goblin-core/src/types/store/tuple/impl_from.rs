@@ -15,8 +15,8 @@ where
     E1: Exp,
 {
     fn from(value: &Tuple<Quantity<E0, u32>, Quantity<E1, u32>, K>) -> Self {
-        let t0 = Quantity::<E0, u64>::from(value.0);
-        let t1 = Quantity::<E1, u64>::from(value.1);
+        let t0 = value.0.widen_to_u64();
+        let t1 = value.1.widen_to_u64();
         Tuple::new(t0, t1)
     }
 }
