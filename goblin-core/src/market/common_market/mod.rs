@@ -50,7 +50,7 @@ impl<TP: TokenPair> CommonMarket<TP> {
 
         Ok(MarketPreimage {
             lot_size_pair: self.lot_size_pair,
-            tick_size: self.tick_size_u32.widen_to_u64(),
+            tick_size_u32: self.tick_size_u32,
             token_address_pair,
         })
     }
