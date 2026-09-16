@@ -10,8 +10,12 @@ use crate::{axis::token::TokenDataTriple, quantities::UnsidedAtoms, types::Addre
 pub struct GlobalHeader<'a> {
     /// Amount of ETH atoms pending withdrawal, as read from global namespace header
     ///
+    /// # Decoding
+    ///
+    /// Decoded as u32, then cast to u64.
+    ///
     /// The actual amount withdrawn is MIN(available, widthdrawal_due)
-    /// This allows us to withdraw max available amount by passing u64::MAX
+    /// This allows us to withdraw max available amount by passing u32::MAX
     ///
     /// The amount is transferred out internally (store credit) or externally (transfer call).
     pub eth_out_due: UnsidedAtoms<u64>,

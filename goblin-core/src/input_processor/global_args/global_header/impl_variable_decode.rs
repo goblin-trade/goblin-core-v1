@@ -12,7 +12,7 @@ impl<'a> VariableDecode<'a> for GlobalHeader<'a> {
     type Flags = HeaderFlags;
 
     fn size(flags: &Self::Flags) -> usize {
-        (flags.withdraw_eth as usize * UnsidedAtoms::<u64>::ENCODED_SIZE)
+        (flags.withdraw_eth as usize * UnsidedAtoms::<u32>::ENCODED_SIZE)
             + (flags.read_custom_recipient as usize * core::mem::size_of::<Address>())
             + MarketCounts::size(&flags.process_dynamic_markets)
             + CustomERC20List::size(flags)
@@ -20,7 +20,8 @@ impl<'a> VariableDecode<'a> for GlobalHeader<'a> {
 
     fn raw_variable_decode(reader: &'a ArgsReader, flags: &Self::Flags) -> Self {
         let eth_out_due = if flags.withdraw_eth {
-            UnsidedAtoms::raw_fixed_decode(reader)
+            // Decode as 32 bit, then cast to 64 bit
+            UnsidedAtoms::<u32>::raw_fixed_decode(reader).into()
         } else {
             UnsidedAtoms::default()
         };
