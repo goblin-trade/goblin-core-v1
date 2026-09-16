@@ -22,19 +22,18 @@ pub struct CommonMarket<TP: TokenPair> {
     pub lot_size_pair: LotSizePair,
 
     /// Tick size (quote lots per base unit per tick)
-    /// TODO In::SomeQuantity<u32>
-    pub tick_size: QuoteLotsPerBaseUnitPerTick,
+    pub tick_size_u32: QuoteLotsPerBaseUnitPerTick<u32>,
 }
 
 impl<TP: TokenPair> CommonMarket<TP> {
     pub const fn new(
         token_index_pair: TokenIndexPair<TP>,
         lot_size_pair: LotSizePair,
-        tick_size: QuoteLotsPerBaseUnitPerTick,
+        tick_size_u32: QuoteLotsPerBaseUnitPerTick<u32>,
     ) -> Self {
         Self {
             lot_size_pair,
-            tick_size,
+            tick_size_u32,
             token_index_pair,
         }
     }
@@ -51,7 +50,7 @@ impl<TP: TokenPair> CommonMarket<TP> {
 
         Ok(MarketPreimage {
             lot_size_pair: self.lot_size_pair,
-            tick_size: self.tick_size,
+            tick_size: self.tick_size_u32.widen_to_u64(),
             token_address_pair,
         })
     }

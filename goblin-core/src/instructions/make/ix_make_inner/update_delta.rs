@@ -31,7 +31,8 @@ pub(crate) fn update_delta<MS: MarketSpec, UM: UpdateMarker, OP: LegMatcher>(
 
     let price = Ticks::from(position);
     let price_in_quote_lots = market
-        .tick_size
+        .tick_size_u32
+        .widen_to_u64()
         .checked_mul(price)
         .ok_or(GoblinError::Overflow)?;
 

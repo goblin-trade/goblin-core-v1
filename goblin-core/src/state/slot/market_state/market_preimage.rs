@@ -20,7 +20,7 @@ use crate::{
 #[derive(Clone, Copy)]
 pub struct MarketPreimage<TP: TokenPair> {
     pub lot_size_pair: LotSizePair,
-    pub tick_size: QuoteLotsPerBaseUnitPerTick,
+    pub tick_size: QuoteLotsPerBaseUnitPerTick<u64>,
     pub token_address_pair: TokenAddressPair<TP>,
 }
 

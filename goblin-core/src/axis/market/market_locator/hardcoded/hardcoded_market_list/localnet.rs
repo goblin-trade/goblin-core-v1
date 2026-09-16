@@ -17,7 +17,7 @@ impl HardcodedMarketList for Pair<ETH, HardcodedERC20> {
                 BaseLotsPerBaseUnit::new(100),
                 QuoteLotsPerQuoteUnit::new(100),
             ),
-            QuoteLotsPerBaseUnitPerTick::new(1),
+            QuoteLotsPerBaseUnitPerTick::<u32>::new(1),
         ))];
 }
 
@@ -29,7 +29,7 @@ impl HardcodedMarketList for Pair<HardcodedERC20, ETH> {
                 BaseLotsPerBaseUnit::new(100),
                 QuoteLotsPerQuoteUnit::new(100),
             ),
-            QuoteLotsPerBaseUnitPerTick::new(1),
+            QuoteLotsPerBaseUnitPerTick::<u32>::new(1),
         ))];
 }
 
@@ -42,6 +42,6 @@ impl HardcodedMarketList for Pair<HardcodedERC20, HardcodedERC20> {
             BaseLotsPerBaseUnit::new(100),
             QuoteLotsPerQuoteUnit::new(100),
         ),
-        QuoteLotsPerBaseUnitPerTick::new(1),
+        QuoteLotsPerBaseUnitPerTick::<u32>::new(1),
     ))];
 }

@@ -18,7 +18,7 @@ pub struct FillOutcome<'a, In: LegMatcher> {
 
 impl<'a, In: LegMatcher> FillOutcome<'a, In> {
     pub fn new<TP: TokenPair>(
-        tick_size: QuoteLotsPerBaseUnitPerTick,
+        tick_size: QuoteLotsPerBaseUnitPerTick<u64>,
         RestingOrderEntry {
             position,
             resting_order_key_value,

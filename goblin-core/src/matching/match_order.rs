@@ -28,8 +28,11 @@ pub fn match_order<MS: MarketSpec, In: LegMatcher>(
         &mut ctx.writables.market_state,
     )?;
     for resting_order_entry in iterator {
-        let fill_outcome =
-            FillOutcome::<In>::new(market.tick_size, &resting_order_entry, &mut budget)?;
+        let fill_outcome = FillOutcome::<In>::new(
+            market.tick_size_u32.widen_to_u64(),
+            &resting_order_entry,
+            &mut budget,
+        )?;
 
         ctx.writables
             .local_delta
