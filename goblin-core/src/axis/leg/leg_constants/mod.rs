@@ -1,9 +1,9 @@
 mod base;
 mod quote;
 
-use crate::{axis::leg::LegQuantities, quantities::FullPos};
+use crate::{axis::leg::LegQuantities, quantities::FullPosU32};
 
 pub trait LegConstants: LegQuantities {
     const ATOMS_PER_UNIT: Self::AtomsPerUnit;
-    const DEFAULT_PRICE_LIMIT: FullPos;
+    const DEFAULT_PRICE_LIMIT: FullPosU32;
 }

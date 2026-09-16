@@ -12,9 +12,9 @@ impl<'a, In: LegMatcher> CompoundDecode<'a> for TakeHeader<In> {
             TakeHeaderOptional::<In>::raw_variable_decode(reader, &main_header.flags);
 
         Ok(Self {
-            num_lots: main_header.num_lots,
-            min_lots_to_fill: optional_header.min_lots_to_fill,
-            limit: optional_header.limit,
+            num_lots_u32: main_header.num_lots_u32,
+            min_lots_to_fill_u32: optional_header.min_lots_to_fill_u32,
+            limit_u32: optional_header.limit_u32,
         })
     }
 }

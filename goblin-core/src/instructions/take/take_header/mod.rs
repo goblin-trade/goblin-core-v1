@@ -6,7 +6,10 @@ pub use take_header_optional::*;
 
 mod impl_compound_decode;
 
-use crate::{axis::leg::LegMatcher, quantities::FullPos};
+use crate::{
+    axis::leg::LegMatcher,
+    quantities::{FullPosU32, U32Variant},
+};
 
 /// Instructions for a limit order. Limit orders are also known as market orders or immediate or cancel (IOC).
 ///
@@ -16,11 +19,11 @@ use crate::{axis::leg::LegMatcher, quantities::FullPos};
 /// num_lots == min_lots_to_fill
 pub struct TakeHeader<In: LegMatcher> {
     /// The order size, i.e. number of lots to fill
-    pub num_lots: In::Lots,
+    pub num_lots_u32: U32Variant<In::Lots>,
 
     /// The minimum number of base lots to fill, otherwise the order will be invalidated.
-    pub min_lots_to_fill: In::Lots,
+    pub min_lots_to_fill_u32: U32Variant<In::Lots>,
 
     /// The worst position to be matched against. Stop matching after this price is crossed.
-    pub limit: FullPos,
+    pub limit_u32: FullPosU32,
 }

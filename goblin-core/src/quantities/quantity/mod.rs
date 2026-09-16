@@ -4,6 +4,7 @@ pub mod dim;
 pub mod exp;
 
 pub mod quantity_ops;
+pub mod u32_quantity;
 pub mod unsided;
 
 pub use alias::*;
@@ -11,6 +12,7 @@ pub use delta::*;
 pub use dim::*;
 pub use exp::*;
 pub use quantity_ops::*;
+pub use u32_quantity::*;
 pub use unsided::*;
 
 mod impls;

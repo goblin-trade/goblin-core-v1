@@ -17,7 +17,7 @@ use core::range::RangeInclusive;
 
 use goblin_macros::FixedDecode;
 
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug, FixedDecode)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug, FixedDecode, Default)]
 pub struct Position<K, const BITS: u16>
 where
     K: InnerVal,

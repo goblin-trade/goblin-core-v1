@@ -6,6 +6,7 @@ use crate::{
     instructions::TakeHeader,
     market::MarketReadables,
     matching::{FillOutcome, match_iterator::match_iterator},
+    quantities::ScaledPosition,
     require,
     types::StoreReader,
 };
@@ -18,11 +19,14 @@ pub fn match_order<MS: MarketSpec, In: LegMatcher>(
     let MarketReadables { market, market_key } = ctx.readables.market_readables();
 
     let base_lot_size = Base::get(&market.lot_size_pair);
-    let input_budget = In::matching_lots_taker(header.num_lots, base_lot_size)?;
+    let input_budget = In::matching_lots_taker(header.num_lots_u32.into(), base_lot_size)?;
     let mut budget = input_budget;
 
-    let iterator =
-        match_iterator::<MS::Pair, In>(*market_key, header.limit, &mut ctx.writables.market_state)?;
+    let iterator = match_iterator::<MS::Pair, In>(
+        *market_key,
+        header.limit_u32.scale_up(),
+        &mut ctx.writables.market_state,
+    )?;
     for resting_order_entry in iterator {
         let fill_outcome =
             FillOutcome::<In>::new(market.tick_size, &resting_order_entry, &mut budget)?;
@@ -38,7 +42,7 @@ pub fn match_order<MS: MarketSpec, In: LegMatcher>(
 
     let total_matched = In::lots_taker(input_budget - budget, base_lot_size);
     require!(
-        total_matched >= header.min_lots_to_fill,
+        total_matched >= header.min_lots_to_fill_u32.into(),
         GoblinError::InsufficientTakerFill
     );
 

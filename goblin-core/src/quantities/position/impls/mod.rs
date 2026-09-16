@@ -1,9 +1,11 @@
 pub mod bitmap_position;
 pub mod full_position;
+pub mod full_position_u32;
 pub mod scaled_position;
 
 pub use bitmap_position::*;
 pub use full_position::*;
+pub use full_position_u32::*;
 pub use scaled_position::*;
 
 mod impl_add;

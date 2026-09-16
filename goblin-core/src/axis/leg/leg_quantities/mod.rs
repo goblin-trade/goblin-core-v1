@@ -1,7 +1,9 @@
 mod base;
 mod quote;
 
-use crate::quantities::{N1, P1, QuantityOps, TryIntoUnsidedDelta, UnsideQuantity, Unsided, Z0};
+use crate::quantities::{
+    N1, P1, QuantityOps, TryIntoUnsidedDelta, U32Quantity, UnsideQuantity, Unsided, Z0,
+};
 use core::ops::{Div, Mul, Rem};
 
 pub trait LegQuantities:
@@ -12,7 +14,9 @@ pub trait LegQuantities:
         + From<u64>
         + Mul<Self::AtomsPerLot, Output = Self::Atoms>
         + TryIntoUnsidedDelta<Self, P1, Z0, Z0>
-        + UnsideQuantity<Self, Output = Unsided<P1, Z0, Z0, u64>>;
+        + UnsideQuantity<Self, Output = Unsided<P1, Z0, Z0, u64>>
+        + U32Quantity;
+
     type Units: QuantityOps;
     type Atoms: QuantityOps + TryIntoUnsidedDelta<Self, Z0, Z0, P1>;
 
