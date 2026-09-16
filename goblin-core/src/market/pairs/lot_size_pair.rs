@@ -13,12 +13,7 @@ pub type LotSizePairU32 = Pair<
 >;
 
 impl LotSizePairU32 {
-    pub fn gg(&self) {
-        let zz = LotSizePair::from(self);
-    }
-}
-
-impl LotSizePair {
+    /// Validate the lot sizes in 32 bit form, as they appear on the wire.
     pub const fn valid(&self) -> bool {
         let base_lot_size = Base::get(self);
         let base_valid = Base::lots_per_unit_valid(base_lot_size);

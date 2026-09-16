@@ -1,7 +1,7 @@
 mod base;
 mod quote;
 
-use crate::axis::leg::LegConstants;
+use crate::{axis::leg::LegConstants, quantities::U32Variant};
 
 pub const trait LegValidator: LegConstants {
     /// Ensure that market has an integer number of atoms per lot
@@ -11,10 +11,10 @@ pub const trait LegValidator: LegConstants {
     ///  **10^6 % Lot size == 0**
     ///
     /// lots_per_unit is also called lot_size
-    fn lots_per_unit_valid(lots_per_unit: Self::LotsPerUnit) -> bool;
+    fn lots_per_unit_valid(lots_per_unit: U32Variant<Self::LotsPerUnit>) -> bool;
 
     /// The number of atoms per lot
     ///
     /// Since we have validated the modulo invariant, this will give a whole number
-    fn atoms_per_lot(lots_per_unit: Self::LotsPerUnit) -> Self::AtomsPerLot;
+    fn atoms_per_lot(lots_per_unit: U32Variant<Self::LotsPerUnit>) -> Self::AtomsPerLot;
 }

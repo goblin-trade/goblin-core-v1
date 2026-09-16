@@ -20,7 +20,7 @@ impl<TP: TokenPair + HardcodedMarketList> MarketLocator<TP> for Dynamic {
     ) -> Result<Self::Locator, GoblinError> {
         let common_market = CommonMarket::<TP>::try_fixed_decode(reader)?;
         require!(
-            common_market.lot_size_pair.valid(),
+            common_market.lot_size_pair_u32.valid(),
             GoblinError::InvalidLotSize
         );
 

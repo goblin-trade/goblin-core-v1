@@ -7,6 +7,7 @@ use crate::{
     },
     axis_helpers::MarketSpec,
     goblin_error::GoblinError,
+    market::LotSizePair,
     quantities::{BaseLots, FullPos, Ticks},
     types::StoreReader,
 };
@@ -27,7 +28,7 @@ pub(crate) fn update_delta<MS: MarketSpec, UM: UpdateMarker, OP: LegMatcher>(
 ) -> Result<(), GoblinError> {
     let market = &ctx.readables.market_readables().market;
 
-    let base_lot_size = Base::get(&market.lot_size_pair);
+    let base_lot_size = Base::get(&LotSizePair::from(&market.lot_size_pair_u32));
 
     let price = Ticks::from(position);
     let price_in_quote_lots = market

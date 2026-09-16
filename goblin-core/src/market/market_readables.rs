@@ -12,7 +12,7 @@ pub struct MarketReadables<TP: TokenPair> {
 
 impl<TP: TokenPair> MarketReadables<TP> {
     pub const fn get_const(market: CommonMarket<TP>) -> Self {
-        if !market.lot_size_pair.valid() {
+        if !market.lot_size_pair_u32.valid() {
             panic!("InvalidLotSize");
         }
 

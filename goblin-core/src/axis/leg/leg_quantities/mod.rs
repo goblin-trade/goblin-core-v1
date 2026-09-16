@@ -21,9 +21,10 @@ pub trait LegQuantities:
     type Atoms: QuantityOps + TryIntoUnsidedDelta<Self, Z0, Z0, P1>;
 
     // Ratios
-    type LotsPerUnit: QuantityOps;
+    type LotsPerUnit: QuantityOps + U32Quantity;
 
     type AtomsPerUnit: QuantityOps
+        + U32Quantity
         + Rem<Self::LotsPerUnit, Output = Self::AtomsPerUnit>
         + Div<Self::LotsPerUnit, Output = Self::AtomsPerLot>;
     type AtomsPerLot: QuantityOps + TryIntoUnsidedDelta<Self, N1, Z0, P1>;

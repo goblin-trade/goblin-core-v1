@@ -1,6 +1,6 @@
 use crate::{
     axis_helpers::TokenPair,
-    market::{LotSizePair, TokenAddressPair},
+    market::{LotSizePairU32, TokenAddressPair},
     quantities::QuoteLotsPerBaseUnitPerTick,
     state::{ConstPreimage, MarketState, Preimage},
 };
@@ -19,7 +19,7 @@ use crate::{
 #[repr(C, packed)]
 #[derive(Clone, Copy)]
 pub struct MarketPreimage<TP: TokenPair> {
-    pub lot_size_pair: LotSizePair,
+    pub lot_size_pair_u32: LotSizePairU32,
     pub tick_size_u32: QuoteLotsPerBaseUnitPerTick<u32>,
     pub token_address_pair: TokenAddressPair<TP>,
 }
