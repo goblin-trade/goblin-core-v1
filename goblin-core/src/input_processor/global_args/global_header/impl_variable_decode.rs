@@ -20,8 +20,7 @@ impl<'a> VariableDecode<'a> for GlobalHeader<'a> {
 
     fn raw_variable_decode(reader: &'a ArgsReader, flags: &Self::Flags) -> Self {
         let eth_out_due = if flags.withdraw_eth {
-            // Decode as 32 bit, then cast to 64 bit
-            UnsidedAtoms::<u32>::raw_fixed_decode(reader).into()
+            UnsidedAtoms::<u32>::raw_fixed_decode(reader)
         } else {
             UnsidedAtoms::default()
         };
@@ -39,7 +38,7 @@ impl<'a> VariableDecode<'a> for GlobalHeader<'a> {
         let token_data_triple = TokenDataTriple::const_from(custom_erc20_list);
 
         Self {
-            eth_out_due,
+            eth_out_due_u32: eth_out_due,
             custom_recipient,
             market_counts,
             token_data_triple,

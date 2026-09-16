@@ -18,7 +18,7 @@ pub struct GlobalHeader<'a> {
     /// This allows us to withdraw max available amount by passing u32::MAX
     ///
     /// The amount is transferred out internally (store credit) or externally (transfer call).
-    pub eth_out_due: UnsidedAtoms<u64>,
+    pub eth_out_due_u32: UnsidedAtoms<u32>,
 
     /// Optional custom recipient
     pub custom_recipient: Option<&'a Address>,

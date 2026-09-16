@@ -56,7 +56,7 @@ impl<'a> GlobalArgs<'a> {
     fn msg_transfers(&self) -> MsgTransfers {
         MsgTransfers::from(ETHTransfers {
             msg_value: self.hostio_fields.msg_value,
-            eth_out_due: self.global_header.eth_out_due,
+            eth_out_due: self.global_header.eth_out_due_u32.into(),
         })
     }
 }
