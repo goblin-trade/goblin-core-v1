@@ -1,18 +1,15 @@
 use crate::{
-    axis::leg::{Base, Pair, Quote, leg_quantities::LegQuantities, leg_validator::LegValidator},
-    quantities::U32Variant,
+    axis::leg::{Base, Pair, Quote, leg_validator::LegValidator},
+    quantities::{BaseLotsPerBaseUnit, QuoteLotsPerQuoteUnit},
     types::StoreReader,
 };
 
-pub type LotSizePair =
-    Pair<<Base as LegQuantities>::LotsPerUnit, <Quote as LegQuantities>::LotsPerUnit>;
+/// Lot sizes for the base and quote legs.
+///
+/// `I` is `u64` for internal math and `u32` for the compact wire form.
+pub type LotSizePair<I> = Pair<BaseLotsPerBaseUnit<I>, QuoteLotsPerQuoteUnit<I>>;
 
-pub type LotSizePairU32 = Pair<
-    U32Variant<<Base as LegQuantities>::LotsPerUnit>,
-    U32Variant<<Quote as LegQuantities>::LotsPerUnit>,
->;
-
-impl LotSizePairU32 {
+impl LotSizePair<u32> {
     /// Validate the lot sizes in 32 bit form, as they appear on the wire.
     pub const fn valid(&self) -> bool {
         let base_lot_size = Base::get(self);

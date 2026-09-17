@@ -7,8 +7,8 @@ use crate::{
 /// Delta produced by matching against an individual resting order
 pub struct MatchDelta<In: LegMatcher> {
     pub matching_lots: In::MatchingLots,
-    pub base_lot_size: BaseLotsPerBaseUnit,
-    pub price_in_quote_lots: QuoteLotsPerBaseUnit,
+    pub base_lot_size: BaseLotsPerBaseUnit<u64>,
+    pub price_in_quote_lots: QuoteLotsPerBaseUnit<u64>,
 }
 
 impl<In: LegMatcher> MatchDelta<In> {

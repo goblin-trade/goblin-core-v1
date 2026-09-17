@@ -18,7 +18,7 @@ pub fn match_order<MS: MarketSpec, In: LegMatcher>(
 ) -> Result<(), GoblinError> {
     let MarketReadables { market, market_key } = ctx.readables.market_readables();
 
-    let base_lot_size = Base::get(&LotSizePair::from(&market.lot_size_pair_u32));
+    let base_lot_size = Base::get(&LotSizePair::<u64>::from(&market.lot_size_pair_u32));
     let input_budget = In::matching_lots_taker(header.num_lots_u32.into(), base_lot_size)?;
     let mut budget = input_budget;
 

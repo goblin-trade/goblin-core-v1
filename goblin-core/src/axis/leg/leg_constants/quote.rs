@@ -5,6 +5,6 @@ use crate::{
 
 impl LegConstants for Quote {
     const ATOMS_PER_UNIT: U32Variant<Self::AtomsPerUnit> =
-        U32Variant::<QuoteAtomsPerQuoteUnit>::new(ATOMS_PER_UNIT.inner as u32);
+        QuoteAtomsPerQuoteUnit::new(ATOMS_PER_UNIT.inner as u32);
     const DEFAULT_PRICE_LIMIT: FullPosU32 = FullPosU32::MAX;
 }

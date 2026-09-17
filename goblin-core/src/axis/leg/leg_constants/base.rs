@@ -5,6 +5,6 @@ use crate::{
 
 impl LegConstants for Base {
     const ATOMS_PER_UNIT: U32Variant<Self::AtomsPerUnit> =
-        U32Variant::<BaseAtomsPerBaseUnit>::new(ATOMS_PER_UNIT.inner as u32);
+        BaseAtomsPerBaseUnit::new(ATOMS_PER_UNIT.inner as u32);
     const DEFAULT_PRICE_LIMIT: FullPosU32 = FullPosU32::ZERO;
 }

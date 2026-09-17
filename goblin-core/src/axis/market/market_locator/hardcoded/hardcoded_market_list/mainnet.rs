@@ -7,11 +7,11 @@ use crate::{
 pub const HARDCODED_MARKETS: [IndexedMarketV2; 1] = [IndexedMarketV2 {
     base: MarketLeg {
         token_index: TokenIndex::ETH,
-        lot_size: BaseLotsPerBaseUnit(100),
+        lot_size: BaseLotsPerBaseUnit::<u64>(100),
     },
     quote: MarketLeg {
         token_index: NamedToken::USDCoin.index(),
-        lot_size: QuoteLotsPerQuoteUnit(1000),
+        lot_size: QuoteLotsPerQuoteUnit::<u64>(1000),
     },
     tick_size: QuoteLotsPerBaseUnitPerTick::new(1),
 }];

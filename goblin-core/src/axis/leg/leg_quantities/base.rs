@@ -11,7 +11,7 @@ impl LegQuantities for Base {
     type Units = BaseUnits<u64>;
     type Atoms = BaseAtoms<u64>;
 
-    type LotsPerUnit = BaseLotsPerBaseUnit;
-    type AtomsPerUnit = BaseAtomsPerBaseUnit;
-    type AtomsPerLot = BaseAtomsPerBaseLot;
+    type LotsPerUnit = BaseLotsPerBaseUnit<u64>;
+    type AtomsPerUnit = BaseAtomsPerBaseUnit<u64>;
+    type AtomsPerLot = BaseAtomsPerBaseLot<u64>;
 }

@@ -11,7 +11,7 @@ use crate::{
 /// Result of matching against a single resting order
 pub struct FillOutcome<'a, In: LegMatcher> {
     pub counterparty: &'a Address,
-    pub price_in_quote_lots: QuoteLotsPerBaseUnit,
+    pub price_in_quote_lots: QuoteLotsPerBaseUnit<u64>,
     pub matched: In::MatchingLots,
     pub budget_exhausted: bool,
 }

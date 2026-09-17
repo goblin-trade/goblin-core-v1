@@ -7,7 +7,7 @@ use crate::{
     },
     axis_helpers::TokenPair,
     goblin_error::GoblinError,
-    market::{LotSizePair, LotSizePairU32, TokenIndexPair},
+    market::{LotSizePair, TokenIndexPair},
     quantities::{ATOMS_PER_UNIT, QuoteLotsPerBaseUnitPerTick, UnsideQuantity, UnsidedAtomsPerLot},
     state::MarketPreimage,
 };
@@ -18,7 +18,7 @@ pub struct CommonMarket<TP: TokenPair> {
     pub token_index_pair: TokenIndexPair<TP>,
 
     /// Lot sizes (one per side)
-    pub lot_size_pair_u32: LotSizePairU32,
+    pub lot_size_pair_u32: LotSizePair<u32>,
 
     /// Tick size (quote lots per base unit per tick)
     pub tick_size_u32: QuoteLotsPerBaseUnitPerTick<u32>,
@@ -27,7 +27,7 @@ pub struct CommonMarket<TP: TokenPair> {
 impl<TP: TokenPair> CommonMarket<TP> {
     pub const fn new(
         token_index_pair: TokenIndexPair<TP>,
-        lot_size_pair_u32: LotSizePairU32,
+        lot_size_pair_u32: LotSizePair<u32>,
         tick_size_u32: QuoteLotsPerBaseUnitPerTick<u32>,
     ) -> Self {
         Self {
@@ -55,7 +55,7 @@ impl<TP: TokenPair> CommonMarket<TP> {
     }
 
     pub fn atoms_per_lot_pair(&self) -> SamePair<UnsidedAtomsPerLot<u64>> {
-        let lot_size_pair = LotSizePair::from(&self.lot_size_pair_u32);
+        let lot_size_pair = LotSizePair::<u64>::from(&self.lot_size_pair_u32);
         ATOMS_PER_UNIT / lot_size_pair.unsided()
     }
 }

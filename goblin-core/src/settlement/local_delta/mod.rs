@@ -28,7 +28,7 @@ pub type LocalDelta<'a> = Tuple<LocalSender, &'a mut LocalCounterparties, Party>
 impl<'a> LocalDelta<'a> {
     pub fn add_take<In: LegMatcher>(
         &mut self,
-        base_lot_size: BaseLotsPerBaseUnit,
+        base_lot_size: BaseLotsPerBaseUnit<u64>,
         fill_outcome: &FillOutcome<In>,
     ) -> Result<(), GoblinError> {
         let match_delta = MatchDelta::<In> {

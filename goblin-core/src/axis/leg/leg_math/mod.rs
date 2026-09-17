@@ -26,24 +26,24 @@ pub trait LegMath: LegQuantities {
     /// Obtain MatchingLots from taker amount in
     fn matching_lots_taker(
         lots: Self::Lots,
-        base_lot_size: BaseLotsPerBaseUnit,
+        base_lot_size: BaseLotsPerBaseUnit<u64>,
     ) -> Result<Self::MatchingLots, GoblinError>;
 
     /// Decode MatchingLots into Lots
     fn lots_taker(
         matching_lots: Self::MatchingLots,
-        base_lot_size: BaseLotsPerBaseUnit,
+        base_lot_size: BaseLotsPerBaseUnit<u64>,
     ) -> Self::Lots;
 
     /// Obtain MatchingLots from a resting order
     fn matching_lots_maker(
         base_lots: BaseLots<u64>,
-        price_in_quote_lots: QuoteLotsPerBaseUnit,
+        price_in_quote_lots: QuoteLotsPerBaseUnit<u64>,
     ) -> Result<Self::MatchingLots, GoblinError>;
 
     /// Reciprocal of maker function
     fn base_lots_maker(
         matching_lots: Self::MatchingLots,
-        price_in_quote_lots: QuoteLotsPerBaseUnit,
+        price_in_quote_lots: QuoteLotsPerBaseUnit<u64>,
     ) -> BaseLots<u64>;
 }

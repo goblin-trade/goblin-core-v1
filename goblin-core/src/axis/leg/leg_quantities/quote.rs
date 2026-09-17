@@ -11,7 +11,7 @@ impl LegQuantities for Quote {
     type Units = QuoteUnits<u64>;
     type Atoms = QuoteAtoms<u64>;
 
-    type LotsPerUnit = QuoteLotsPerQuoteUnit;
-    type AtomsPerUnit = QuoteAtomsPerQuoteUnit;
-    type AtomsPerLot = QuoteAtomsPerQuoteLot;
+    type LotsPerUnit = QuoteLotsPerQuoteUnit<u64>;
+    type AtomsPerUnit = QuoteAtomsPerQuoteUnit<u64>;
+    type AtomsPerLot = QuoteAtomsPerQuoteLot<u64>;
 }
