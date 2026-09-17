@@ -1,22 +1,22 @@
-pub mod args_buffer;
 pub mod traits;
 
-pub use args_buffer::*;
 use goblin_hostio::hostio_unsafe;
 pub use traits::*;
 
 use core::cell::Cell;
 use core::mem::MaybeUninit;
 
+pub const INPUT_SIZE: usize = 512;
+
 pub struct ArgsReader {
-    pub args: ArgsBuffer,
+    pub args: [u8; INPUT_SIZE],
     pub len: usize,
     pub offset: Cell<usize>,
 }
 
 impl ArgsReader {
     pub fn new(len: usize) -> Self {
-        let mut args_buffer = MaybeUninit::<ArgsBuffer>::uninit();
+        let mut args_buffer = MaybeUninit::<[u8; INPUT_SIZE]>::uninit();
         let args = unsafe {
             hostio_unsafe::read_args(args_buffer.as_mut_ptr() as *mut u8);
             args_buffer.assume_init()
