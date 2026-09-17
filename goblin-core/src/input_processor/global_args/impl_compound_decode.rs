@@ -1,8 +1,8 @@
 use crate::{
     goblin_error::GoblinError,
     input_processor::{
+        ArgsReader, CompoundDecode, FixedCodec, GlobalArgs, HeaderFlags, VariableDecode,
         global_args::{global_header::GlobalHeader, hostio_fields::HostioFields},
-        ArgsReader, CompoundDecode, FixedDecode, GlobalArgs, HeaderFlags, VariableDecode,
     },
 };
 

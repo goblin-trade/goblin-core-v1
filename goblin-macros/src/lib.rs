@@ -2,6 +2,7 @@ use proc_macro::TokenStream;
 use syn::{DeriveInput, parse_macro_input};
 
 mod const_default;
+mod fixed_codec;
 mod fixed_decode;
 
 /// Derive `FixedDecode` for a fixed-size struct whose fields all implement
@@ -29,6 +30,42 @@ pub fn derive_decodable_v2(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
     match fixed_decode::expand(input) {
+        Ok(tokens) => tokens.into(),
+        Err(err) => err.to_compile_error().into(),
+    }
+}
+
+/// Derive `FixedCodec` for a fixed-size struct whose fields are byte-aligned
+/// `FixedCodec` implementors and/or explicitly-sized sub-byte bit fields.
+///
+/// This is the encode/decode-expanded counterpart of the `FixedDecode` derive:
+/// the generated `impl` provides both `raw_fixed_decode` and `raw_fixed_encode`.
+///
+/// # Bit-level syntax
+///
+/// A field annotated with `#[codec(bits = N)]` is packed into a sub-byte slot
+/// of `N` bits, LSB-first, matching the hand-written decoders in this crate
+/// (so the first field is the least-significant bit). Sub-byte fields are only
+/// used when such a width is explicitly requested; unannotated fields stay
+/// byte-aligned. Consecutive sub-byte fields are gathered into the smallest
+/// integer lane (`u8`/`u16`/`u32`/`u64`) that fits them.
+///
+/// ```ignore
+/// #[derive(FixedCodec)]
+/// struct HeaderFlags {
+///     #[codec(bits = 1)] read_custom_recipient: bool,
+///     #[codec(bits = 1)] read_msg_value: bool,
+///     #[codec(bits = 1)] process_dynamic_markets: bool,
+///     #[codec(bits = 1)] withdraw_eth: bool,
+///     #[codec(bits = 1)] withdraw_internally: bool,
+///     #[codec(bits = 3)] custom_erc20_count: usize,
+/// }
+/// ```
+#[proc_macro_derive(FixedCodec, attributes(codec))]
+pub fn derive_fixed_codec(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as DeriveInput);
+
+    match fixed_codec::expand(input) {
         Ok(tokens) => tokens.into(),
         Err(err) => err.to_compile_error().into(),
     }
