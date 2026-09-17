@@ -1,7 +1,8 @@
-mod impl_fixed_codec;
+use goblin_macros::fixed_codec;
 
 use crate::axis::leg::SamePair;
 
+#[fixed_codec(bits = 8)]
 pub struct MarketHeader {
     /// Whether to decode deposit amounts
     pub decode_deposit_amounts: bool,
@@ -11,18 +12,4 @@ pub struct MarketHeader {
 
     /// Number of outer bitmaps to traverse
     pub outer_bitmap_count: u8,
-}
-
-impl MarketHeader {
-    pub fn new(
-        decode_deposit_amounts: bool,
-        execute_takes: SamePair<bool>,
-        outer_bitmap_indices: u8,
-    ) -> Self {
-        Self {
-            decode_deposit_amounts,
-            execute_takes,
-            outer_bitmap_count: outer_bitmap_indices,
-        }
-    }
 }

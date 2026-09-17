@@ -1,3 +1,4 @@
+mod impl_bit_pack;
 mod impl_checked_ops;
 mod impl_const_default;
 mod impl_div;
