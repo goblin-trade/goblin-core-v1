@@ -37,10 +37,10 @@ mod fixed_codec;
 /// one bit and rejects any other width.
 #[proc_macro_attribute]
 pub fn fixed_codec(attr: TokenStream, item: TokenStream) -> TokenStream {
-    let bits = parse_macro_input!(attr as fixed_codec::BitsArgs).bits;
+    let args = parse_macro_input!(attr as fixed_codec::BitsArgs);
     let item = parse_macro_input!(item as syn::ItemStruct);
 
-    match fixed_codec::expand_attribute(item, bits) {
+    match fixed_codec::expand_attribute(item, args.bits, args.validate) {
         Ok(tokens) => tokens.into(),
         Err(err) => err.to_compile_error().into(),
     }

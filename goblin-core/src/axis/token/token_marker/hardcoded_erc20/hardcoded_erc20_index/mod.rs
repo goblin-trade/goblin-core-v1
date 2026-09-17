@@ -1,12 +1,13 @@
-mod impl_fixed_codec;
+use goblin_macros::{ConstDefault, fixed_codec};
+
 mod impl_index;
 
-use goblin_macros::ConstDefault;
+use crate::{axis::token::token_list::HARDCODED_ERC20_COUNT, goblin_error::GoblinError, require};
 
-use crate::axis::token::token_list::HARDCODED_ERC20_COUNT;
-
+#[fixed_codec(validate = Self::check)]
 #[derive(Clone, Copy, PartialEq, PartialOrd, ConstDefault)]
 pub struct HardcodedERC20Index {
+    #[codec(wire = u8)]
     pub inner: usize,
 }
 
@@ -15,6 +16,12 @@ impl HardcodedERC20Index {
 
     pub const fn new(inner: usize) -> Self {
         Self { inner }
+    }
+
+    /// Range check kept out of the generated codec via `validate = Self::check`.
+    fn check(&self) -> Result<(), GoblinError> {
+        require!(*self <= Self::MAX, GoblinError::InvalidPayload);
+        Ok(())
     }
 }
 

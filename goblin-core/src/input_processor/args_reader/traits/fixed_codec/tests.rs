@@ -2,6 +2,7 @@ use core::marker::PhantomData;
 
 use goblin_macros::fixed_codec;
 
+use crate::goblin_error::GoblinError;
 use crate::input_processor::{ArgsReader, ArgsWriter, BitPack, FixedCodec, bit_mask};
 
 /// Sub-byte fields followed by a byte-aligned field. The five leading bools and
@@ -51,6 +52,62 @@ struct WideLane {
 struct Generic<T> {
     value: u8,
     _marker: PhantomData<T>,
+}
+
+/// A 2-bit flag pair used as an inner `BitPack` field by [`Packed`].
+#[derive(Debug, PartialEq, Clone, Copy)]
+struct Flags {
+    a: bool,
+    b: bool,
+}
+
+impl BitPack for Flags {
+    const CAPACITY: u8 = 2;
+
+    fn to_raw(self) -> u64 {
+        (self.a as u64) | ((self.b as u64) << 1)
+    }
+
+    fn from_raw(raw: u64) -> Self {
+        Self {
+            a: raw & 1 != 0,
+            b: raw & 0b10 != 0,
+        }
+    }
+}
+
+/// `validate = Self::check` keeps a struct-level invariant while still deriving
+/// the wire codec.
+#[fixed_codec(bits = 32, validate = Self::check)]
+#[derive(Debug, PartialEq, Clone, Copy)]
+struct Packed {
+    flags: Flags,
+    lots: u32,
+}
+
+impl Packed {
+    fn check(&self) -> Result<(), GoblinError> {
+        if self.lots > 0 {
+            Ok(())
+        } else {
+            Err(GoblinError::InvalidTakeArgs)
+        }
+    }
+}
+
+/// `#[codec(wire = u8)]` lets a `usize` field encode as a single byte.
+#[fixed_codec(validate = Self::check)]
+#[derive(Debug, PartialEq, Clone, Copy)]
+struct SmallIndex(#[codec(wire = u8)] pub usize);
+
+impl SmallIndex {
+    fn check(&self) -> Result<(), GoblinError> {
+        if self.0 <= 3 {
+            Ok(())
+        } else {
+            Err(GoblinError::InvalidPayload)
+        }
+    }
 }
 
 fn round_trip<T>(value: T) -> T
@@ -144,6 +201,51 @@ fn generics_and_phantom_data() {
         _marker: PhantomData,
     };
     assert_eq!(round_trip(value), value);
+}
+
+#[test]
+fn validate_hook_runs_on_decode() {
+    let value = Packed {
+        flags: Flags { a: true, b: false },
+        lots: 0b101,
+    };
+
+    // flags at bits 0..2, lots at bits 2..32.
+    assert_eq!(Packed::ENCODED_SIZE, 4);
+    let mut buf = [0u8; 4];
+    let mut writer = ArgsWriter::new(&mut buf);
+    value.raw_fixed_encode(&mut writer);
+    assert_eq!(buf, [0b0001_0101, 0, 0, 0]);
+    assert_eq!(round_trip(value), value);
+
+    // The custom `validate` rejects `lots == 0` on decode.
+    let invalid = Packed {
+        flags: Flags { a: false, b: false },
+        lots: 0,
+    };
+    let mut buf = [0u8; 4];
+    let mut writer = ArgsWriter::new(&mut buf);
+    invalid.raw_fixed_encode(&mut writer);
+    let reader = ArgsReader::from_slice(&buf);
+    assert!(Packed::try_fixed_decode(&reader).is_err());
+}
+
+#[test]
+fn wire_type_override_for_usize() {
+    assert_eq!(SmallIndex::ENCODED_SIZE, 1);
+    assert_eq!(round_trip(SmallIndex(2)), SmallIndex(2));
+
+    let mut buf = [0u8; 1];
+    let mut writer = ArgsWriter::new(&mut buf);
+    SmallIndex(3).raw_fixed_encode(&mut writer);
+    assert_eq!(buf[0], 3);
+
+    // The custom `validate` rejects anything above 3.
+    let mut buf = [0u8; 1];
+    let mut writer = ArgsWriter::new(&mut buf);
+    SmallIndex(4).raw_fixed_encode(&mut writer);
+    let reader = ArgsReader::from_slice(&buf);
+    assert!(SmallIndex::try_fixed_decode(&reader).is_err());
 }
 
 #[test]

@@ -12,6 +12,10 @@ struct FieldInfo {
     ty: Type,
     /// Explicit wire width from `#[codec(bits = N)]`, if present.
     bits: Option<u8>,
+    /// Explicit wire *type* from `#[codec(wire = T)]`, if present. The field is
+    /// cast to/from `T` for the wire, which keeps byte alignment and lets a
+    /// `usize` field encode as a single byte.
+    wire: Option<Type>,
 }
 
 /// A member of a sub-byte lane, at a fixed bit offset within the lane.
@@ -41,9 +45,10 @@ struct Codegen {
     encoded_size: TokenStream,
 }
 
-/// Parse `#[codec(bits = N)]` from a field's attributes.
-fn parse_bits(attrs: &[Attribute]) -> syn::Result<Option<u8>> {
+/// Parse `#[codec(bits = N)]` / `#[codec(wire = T)]` from a field's attributes.
+fn parse_field_attrs(attrs: &[Attribute]) -> syn::Result<(Option<u8>, Option<Type>)> {
     let mut bits = None;
+    let mut wire = None;
     for attr in attrs {
         if !attr.path().is_ident("codec") {
             continue;
@@ -53,12 +58,16 @@ fn parse_bits(attrs: &[Attribute]) -> syn::Result<Option<u8>> {
                 let lit: LitInt = meta.value()?.parse()?;
                 bits = Some(lit.base10_parse::<u8>()?);
                 Ok(())
+            } else if meta.path.is_ident("wire") {
+                let ty: Type = meta.value()?.parse()?;
+                wire = Some(ty);
+                Ok(())
             } else {
-                Err(meta.error("unknown `codec` attribute; expected `bits = N`"))
+                Err(meta.error("unknown `codec` attribute; expected `bits = N` or `wire = T`"))
             }
         })?;
     }
-    Ok(bits)
+    Ok((bits, wire))
 }
 
 /// Does this type syntactically name `bool`?
@@ -80,6 +89,12 @@ fn lane_width_bytes(bits: u16) -> usize {
 fn normalize_bools(fields: &mut [FieldInfo]) -> syn::Result<()> {
     for field in fields.iter_mut() {
         if is_bool(&field.ty) {
+            if field.wire.is_some() {
+                return Err(syn::Error::new(
+                    field.ty.span(),
+                    "`bool` fields cannot take `#[codec(wire = T)]`",
+                ));
+            }
             if let Some(bits) = field.bits
                 && bits != 1
             {
@@ -117,6 +132,17 @@ fn plan(fields: &[FieldInfo]) -> syn::Result<Vec<Op>> {
     }
 
     for (i, field) in fields.iter().enumerate() {
+        if field.wire.is_some() {
+            if field.bits.is_some() {
+                return Err(syn::Error::new(
+                    field.ty.span(),
+                    "`#[codec(wire = T)]` and `#[codec(bits = N)]` are mutually exclusive",
+                ));
+            }
+            flush(&mut ops, &mut members, &mut lane_bits);
+            ops.push(Op::Full(i));
+            continue;
+        }
         match field.bits {
             // No explicit width, or an explicit zero-width field: byte-aligned.
             None | Some(0) => {
@@ -171,16 +197,30 @@ fn codegen_plan(fields: &[FieldInfo]) -> syn::Result<Codegen> {
                 let binding = &field.binding;
                 let accessor = &field.accessor;
 
-                cod.decode.push(quote! {
-                    let #binding = <#ty as #trait_path>::raw_fixed_decode(reader);
-                });
-                cod.encode.push(quote! {
-                    <#ty as #trait_path>::raw_fixed_encode(&#accessor, writer);
-                });
-                cod.validate.push(quote! {
-                    <#ty as #trait_path>::validate(&#accessor)?;
-                });
-                size_terms.push(quote! { <#ty as #trait_path>::ENCODED_SIZE });
+                if let Some(wire) = &field.wire {
+                    // Cast to/from the declared wire type.
+                    cod.decode.push(quote! {
+                        let #binding = <#wire as #trait_path>::raw_fixed_decode(reader) as #ty;
+                    });
+                    cod.encode.push(quote! {
+                        <#wire as #trait_path>::raw_fixed_encode(&(#accessor as #wire), writer);
+                    });
+                    cod.validate.push(quote! {
+                        <#wire as #trait_path>::validate(&(#accessor as #wire))?;
+                    });
+                    size_terms.push(quote! { <#wire as #trait_path>::ENCODED_SIZE });
+                } else {
+                    cod.decode.push(quote! {
+                        let #binding = <#ty as #trait_path>::raw_fixed_decode(reader);
+                    });
+                    cod.encode.push(quote! {
+                        <#ty as #trait_path>::raw_fixed_encode(&#accessor, writer);
+                    });
+                    cod.validate.push(quote! {
+                        <#ty as #trait_path>::validate(&#accessor)?;
+                    });
+                    size_terms.push(quote! { <#ty as #trait_path>::ENCODED_SIZE });
+                }
             }
             Op::Lane {
                 width_bytes,
@@ -260,6 +300,14 @@ fn codegen_bit_region(fields: &[FieldInfo], total: u8) -> syn::Result<Codegen> {
     let bit_pack_path = quote! { crate::input_processor::BitPack };
     let byte_len = (total as usize).div_ceil(8);
 
+    if let Some(field) = fields.iter().find(|f| f.wire.is_some()) {
+        return Err(syn::Error::new(
+            field.ty.span(),
+            "`#[codec(wire = T)]` cannot be used with a top-level `bits = N`; \
+             the bit region packs fields with `BitPack`",
+        ));
+    }
+
     if byte_len > 8 {
         return Err(syn::Error::new(
             Span::call_site(),
@@ -333,12 +381,12 @@ fn codegen_bit_region(fields: &[FieldInfo], total: u8) -> syn::Result<Codegen> {
     Ok(cod)
 }
 
-/// Attribute entry point: `#[fixed_codec(bits = N)]` supplies the packed size
-/// directly. Per-field `#[codec(bits = M)]` attributes are also read and
-/// consumed here.
+/// Attribute entry point: `#[fixed_codec(bits = N, validate = path)]` supplies
+/// the packed size and an optional validation function.
 pub fn expand_attribute(
     mut item: syn::ItemStruct,
     struct_bits: Option<u8>,
+    validate: Option<syn::Path>,
 ) -> syn::Result<TokenStream> {
     // `#[codec(...)]` is only meaningful to this macro. It must re-emit the
     // struct, and the compiler would reject any `#[codec(...)]` left on it, so
@@ -356,7 +404,7 @@ pub fn expand_attribute(
         }),
     };
 
-    let impl_tokens = expand_with_bits(input, struct_bits)?;
+    let impl_tokens = expand_with_bits(input, struct_bits, validate)?;
 
     item.attrs.retain(|attr| !attr.path().is_ident("codec"));
     strip_codec_attrs(&mut item.fields);
@@ -387,7 +435,11 @@ fn strip_codec_attrs(fields: &mut Fields) {
     }
 }
 
-fn expand_with_bits(input: DeriveInput, struct_bits: Option<u8>) -> syn::Result<TokenStream> {
+fn expand_with_bits(
+    input: DeriveInput,
+    struct_bits: Option<u8>,
+    validate_override: Option<syn::Path>,
+) -> syn::Result<TokenStream> {
     let name = &input.ident;
 
     let (mut fields, is_tuple): (Vec<FieldInfo>, bool) = match &input.data {
@@ -398,11 +450,13 @@ fn expand_with_bits(input: DeriveInput, struct_bits: Option<u8>) -> syn::Result<
                     .iter()
                     .map(|f| {
                         let ident = f.ident.clone().expect("named field");
+                        let (bits, wire) = parse_field_attrs(&f.attrs)?;
                         Ok(FieldInfo {
                             binding: ident.clone(),
                             accessor: quote! { self.#ident },
                             ty: f.ty.clone(),
-                            bits: parse_bits(&f.attrs)?,
+                            bits,
+                            wire,
                         })
                     })
                     .collect::<syn::Result<Vec<_>>>()?;
@@ -415,13 +469,15 @@ fn expand_with_bits(input: DeriveInput, struct_bits: Option<u8>) -> syn::Result<
                     .enumerate()
                     .map(|(i, f)| {
                         let idx = Index::from(i);
+                        let (bits, wire) = parse_field_attrs(&f.attrs)?;
                         Ok(FieldInfo {
                             // Synthetic binding; only valid inside
                             // `raw_fixed_decode`. Encode/validate use `self.N`.
                             binding: format_ident!("field_{}", i),
                             accessor: quote! { self.#idx },
                             ty: f.ty.clone(),
-                            bits: parse_bits(&f.attrs)?,
+                            bits,
+                            wire,
                         })
                     })
                     .collect::<syn::Result<Vec<_>>>()?;
@@ -475,7 +531,18 @@ fn expand_with_bits(input: DeriveInput, struct_bits: Option<u8>) -> syn::Result<
     let encoded_size = &codegen.encoded_size;
     let decode = &codegen.decode;
     let encode = &codegen.encode;
-    let validate = &codegen.validate;
+
+    // A custom validation function replaces the per-field checks.
+    let validate_body = match &validate_override {
+        Some(path) => quote! { #path(self) },
+        None => {
+            let validate = &codegen.validate;
+            quote! {
+                #(#validate)*
+                Ok(())
+            }
+        }
+    };
 
     let constructor = if is_tuple {
         let bindings = fields.iter().map(|f| &f.binding);
@@ -499,8 +566,7 @@ fn expand_with_bits(input: DeriveInput, struct_bits: Option<u8>) -> syn::Result<
             }
 
             fn validate(&self) -> Result<(), #error_path> {
-                #(#validate)*
-                Ok(())
+                #validate_body
             }
         }
     };
@@ -508,24 +574,39 @@ fn expand_with_bits(input: DeriveInput, struct_bits: Option<u8>) -> syn::Result<
     Ok(expanded)
 }
 
-/// Arguments for `#[fixed_codec(bits = N)]`.
+/// Arguments for `#[fixed_codec(bits = N, validate = path)]`.
 pub struct BitsArgs {
     pub bits: Option<u8>,
+    pub validate: Option<syn::Path>,
 }
 
 impl syn::parse::Parse for BitsArgs {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
-        if input.is_empty() {
-            return Ok(BitsArgs { bits: None });
+        let mut bits = None;
+        let mut validate = None;
+
+        while !input.is_empty() {
+            let ident: syn::Ident = input.parse()?;
+            if ident == "bits" {
+                input.parse::<syn::Token![=]>()?;
+                let lit: LitInt = input.parse()?;
+                bits = Some(lit.base10_parse()?);
+            } else if ident == "validate" {
+                input.parse::<syn::Token![=]>()?;
+                validate = Some(input.parse()?);
+            } else {
+                return Err(syn::Error::new(
+                    ident.span(),
+                    "expected `bits = N` or `validate = path`",
+                ));
+            }
+
+            if input.is_empty() {
+                break;
+            }
+            input.parse::<syn::Token![,]>()?;
         }
-        let ident: syn::Ident = input.parse()?;
-        if ident != "bits" {
-            return Err(syn::Error::new(ident.span(), "expected `bits = N`"));
-        }
-        input.parse::<syn::Token![=]>()?;
-        let lit: LitInt = input.parse()?;
-        Ok(BitsArgs {
-            bits: Some(lit.base10_parse()?),
-        })
+
+        Ok(BitsArgs { bits, validate })
     }
 }

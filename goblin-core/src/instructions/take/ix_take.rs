@@ -1,11 +1,11 @@
 use crate::{
+    Ctx,
     axis::leg::LegMatcher,
     axis_helpers::MarketSpec,
     goblin_error::GoblinError,
     input_processor::{ArgsReader, CompoundDecode},
     instructions::TakeHeader,
     matching::match_order,
-    Ctx,
 };
 
 pub fn ix_take<MS: MarketSpec, In: LegMatcher>(
