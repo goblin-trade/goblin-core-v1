@@ -14,37 +14,15 @@ mod impl_fixed_codec;
 #[cfg(test)]
 mod tests;
 
+pub mod read_lane;
+pub mod write_lane;
+
+pub use read_lane::*;
+pub use write_lane::*;
+
 use crate::goblin_error::GoblinError;
 use crate::input_processor::{ArgsReader, ArgsWriter};
 use crate::require;
-
-/// Read `byte_len` little-endian bytes into a `u64` lane, advancing `reader`.
-///
-/// Used by derived code for a struct with a top-level `#[codec(bits = N)]`,
-/// where the whole struct is one bit stream whose field widths are only known
-/// at compile time via `BitPack::CAPACITY`.
-#[inline]
-pub fn read_lane(reader: &ArgsReader, byte_len: usize) -> u64 {
-    let offset = reader.offset.get();
-    let mut lane = 0u64;
-    let mut i = 0;
-    while i < byte_len {
-        lane |= (reader.args[offset + i] as u64) << (i * 8);
-        i += 1;
-    }
-    reader.advance_offset(byte_len);
-    lane
-}
-
-/// Write the low `byte_len` bytes of `lane`, little-endian, advancing `writer`.
-#[inline]
-pub fn write_lane(writer: &mut ArgsWriter, lane: u64, byte_len: usize) {
-    let mut i = 0;
-    while i < byte_len {
-        writer.write_bytes(&[(lane >> (i * 8)) as u8]);
-        i += 1;
-    }
-}
 
 /// Encode and decode a fixed-size value.
 pub trait FixedCodec: Sized {

@@ -3,7 +3,9 @@ use core::marker::PhantomData;
 use goblin_macros::fixed_codec;
 
 use crate::goblin_error::GoblinError;
-use crate::input_processor::{ArgsReader, ArgsWriter, BitPack, FixedCodec, bit_mask};
+use crate::input_processor::{
+    ArgsReader, ArgsWriter, BitPack, FixedCodec, bit_mask, read_lane, write_lane,
+};
 
 /// Sub-byte fields followed by a byte-aligned field. The five leading bools and
 /// the two 1-bit/2-bit fields fill exactly one byte, so the wire layout is
@@ -246,6 +248,31 @@ fn wire_type_override_for_usize() {
     SmallIndex(4).raw_fixed_encode(&mut writer);
     let reader = ArgsReader::from_slice(&buf);
     assert!(SmallIndex::try_fixed_decode(&reader).is_err());
+}
+
+#[test]
+fn lane_read_write_round_trip_all_widths() {
+    let value = 0x0123_4567_89AB_CDEFu64;
+    for byte_len in 0..=8usize {
+        let expected = if byte_len == 8 {
+            value
+        } else {
+            value & ((1u64 << (byte_len * 8)) - 1)
+        };
+
+        let mut buf = [0u8; 8];
+        let mut writer = ArgsWriter::new(&mut buf);
+        write_lane(&mut writer, value, byte_len);
+        assert_eq!(writer.offset(), byte_len);
+
+        let reader = ArgsReader::from_slice(&buf[..byte_len]);
+        assert_eq!(
+            read_lane(&reader, byte_len),
+            expected,
+            "byte_len {byte_len}"
+        );
+        assert_eq!(reader.offset.get(), byte_len);
+    }
 }
 
 #[test]
