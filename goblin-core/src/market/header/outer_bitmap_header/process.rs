@@ -2,7 +2,7 @@ use crate::{
     Ctx,
     axis_helpers::MarketSpec,
     goblin_error::GoblinError,
-    input_processor::{ArgsReader, FixedDecode},
+    input_processor::{ArgsReader, FixedCodec},
     market::header::{
         inner_bitmap_header::InnerBitmapHeader, outer_bitmap_header::OuterBitmapHeader,
     },

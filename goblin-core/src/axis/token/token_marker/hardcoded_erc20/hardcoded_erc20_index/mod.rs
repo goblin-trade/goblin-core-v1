@@ -1,4 +1,4 @@
-mod impl_fixed_decode;
+mod impl_fixed_codec;
 mod impl_index;
 
 use goblin_macros::ConstDefault;

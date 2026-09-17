@@ -9,7 +9,7 @@ use crate::{
     },
     axis_helpers::TokenPair,
     goblin_error::GoblinError,
-    input_processor::{ArgsReader, FixedDecode},
+    input_processor::{ArgsReader, FixedCodec},
     market::MarketReadables,
 };
 

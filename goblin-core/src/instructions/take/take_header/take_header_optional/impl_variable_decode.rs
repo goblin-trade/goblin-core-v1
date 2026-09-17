@@ -1,7 +1,7 @@
 use crate::{
     axis::leg::LegMatcher,
     goblin_error::GoblinError,
-    input_processor::{ArgsReader, FixedDecode, VariableDecode},
+    input_processor::{ArgsReader, FixedCodec, VariableDecode},
     instructions::{TakeFlags, TakeHeaderOptional},
     quantities::{FullPosU32, U32Variant},
     require,

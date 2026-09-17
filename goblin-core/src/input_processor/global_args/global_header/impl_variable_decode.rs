@@ -1,7 +1,7 @@
 use crate::{
     axis::token::{token_list::custom_erc20::CustomERC20List, token_reader::TokenDataTriple},
     input_processor::{
-        ArgsReader, FixedDecode, HeaderFlags, MarketCounts, VariableDecode,
+        ArgsReader, FixedCodec, HeaderFlags, MarketCounts, VariableDecode,
         global_args::global_header::GlobalHeader,
     },
     quantities::UnsidedAtoms,

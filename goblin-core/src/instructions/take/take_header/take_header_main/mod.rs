@@ -2,7 +2,7 @@ pub mod take_flags;
 
 pub use take_flags::*;
 
-mod impl_fixed_decode;
+mod impl_fixed_codec;
 
 use crate::{axis::leg::LegMatcher, quantities::U32Variant};
 

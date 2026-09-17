@@ -1,7 +1,7 @@
 mod impl_checked_ops;
 mod impl_const_default;
 mod impl_div;
-mod impl_fixed_decode;
+mod impl_fixed_codec;
 mod impl_from;
 mod impl_mul;
 mod impl_store_reader;

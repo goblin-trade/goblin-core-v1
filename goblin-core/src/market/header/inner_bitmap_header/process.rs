@@ -2,7 +2,7 @@ use crate::{
     Ctx,
     axis_helpers::MarketSpec,
     goblin_error::GoblinError,
-    input_processor::{ArgsReader, FixedDecode},
+    input_processor::{ArgsReader, FixedCodec},
     instructions::ix_make::ix_make,
     market::InnerBitmapHeader,
     quantities::{INNER_POS, POS_1, Pos0, Pos1},

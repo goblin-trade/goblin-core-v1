@@ -1,9 +1,9 @@
 use core::ops::{Add, Shr};
 
-use crate::input_processor::FixedDecode;
+use crate::input_processor::FixedCodec;
 
 pub trait InnerVal:
-    Clone + Copy + Sized + Shr + Into<u64> + Add<Output = Self> + for<'a> FixedDecode<'a>
+    Clone + Copy + Sized + Shr + Into<u64> + Add<Output = Self> + FixedCodec
 {
     /// Convert from u64, truncating if needed
     ///

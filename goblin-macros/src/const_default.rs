@@ -54,7 +54,7 @@ pub fn expand(input: DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
         }
     };
 
-    // ConstDefault carries no lifetime of its own (unlike FixedDecode), so the
+    // ConstDefault carries no lifetime of its own, so the
     // struct's own generics can be used as-is for both the impl and Self.
     let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
 

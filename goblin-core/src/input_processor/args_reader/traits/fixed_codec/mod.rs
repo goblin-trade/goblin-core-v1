@@ -1,15 +1,14 @@
 //! Byte-level codec: decode from, and encode into, a caller-owned buffer.
 //!
-//! [`FixedCodec`] is the encode/decode-expanded counterpart of
-//! [`FixedDecode`](super::FixedDecode). It owns the *buffer* concerns only:
-//! moving whole bytes between the wire and a value. Sub-byte layout is handled
-//! by [`BitPack`](super::BitPack), which the `#[fixed_codec]` attribute macro
-//! uses when a field declares an explicit `#[codec(bits = N)]` width narrower
-//! than its natural size.
+//! [`FixedCodec`] is the single fixed-size codec: it owns the *buffer* concerns
+//! of moving whole bytes between the wire and a value, in both directions.
+//! Sub-byte layout is handled by [`BitPack`](super::BitPack), which the
+//! `#[fixed_codec]` attribute macro uses when it packs a struct into a bit
+//! stream or a field declares an explicit `#[codec(bits = N)]` width.
 //!
-//! Unlike `FixedDecode`, this trait carries no lifetime: it targets fixed-size,
-//! owned values (the zero-copy, borrowed decoders stay on `FixedDecode` /
-//! `VariableDecode`).
+//! The trait carries no lifetime: it targets fixed-size, owned values. The
+//! zero-copy, borrowed decoders live on [`VariableDecode`](super::VariableDecode)
+//! and [`CompoundDecode`](super::CompoundDecode) instead.
 
 mod impl_fixed_codec;
 #[cfg(test)]

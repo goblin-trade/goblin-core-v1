@@ -1,3 +1,4 @@
+use crate::input_processor::BitPack;
 use crate::quantities::{Exp, Quantity, QuantityOps};
 
 /// Associates a 64 bit quantity with its compact 32 bit variant.
@@ -6,7 +7,7 @@ use crate::quantities::{Exp, Quantity, QuantityOps};
 /// widened back to the 64 bit quantity before internal math.
 pub trait U32Quantity: Sized {
     /// Equivalent quantity backed by a `u32`, decodable from the wire.
-    type U32Variant: QuantityOps + From<u32> + Into<Self>;
+    type U32Variant: QuantityOps + From<u32> + Into<Self> + BitPack;
 }
 
 /// Convenience alias for the 32 bit variant of a quantity.

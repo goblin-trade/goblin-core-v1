@@ -1,4 +1,4 @@
-mod impl_fixed_decode;
+mod impl_fixed_codec;
 
 use crate::axis::leg::SamePair;
 

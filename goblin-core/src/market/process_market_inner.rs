@@ -6,7 +6,7 @@ use crate::{
     axis_helpers::MarketSpec,
     for_axes,
     goblin_error::GoblinError,
-    input_processor::{ArgsReader, FixedDecode},
+    input_processor::{ArgsReader, FixedCodec},
     instructions::{process_makes, process_takes},
     market::MarketHeader,
     settlement::{

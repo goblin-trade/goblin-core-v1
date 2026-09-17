@@ -1,16 +1,16 @@
 use crate::{
     axis::leg::LegMatcher,
     goblin_error::GoblinError,
-    input_processor::{ArgsReader, FixedDecode},
+    input_processor::{ArgsReader, ArgsWriter, BitPack, FixedCodec},
     instructions::{TakeFlags, TakeHeaderMain},
     quantities::U32Variant,
     require,
 };
 
-impl<'a, In: LegMatcher> FixedDecode<'a> for TakeHeaderMain<In> {
+impl<In: LegMatcher> FixedCodec for TakeHeaderMain<In> {
     const ENCODED_SIZE: usize = core::mem::size_of::<u32>();
 
-    fn raw_fixed_decode(reader: &'a ArgsReader) -> Self {
+    fn raw_fixed_decode(reader: &ArgsReader) -> Self {
         let raw_bytes = u32::raw_fixed_decode(reader);
 
         let read_min_lots = raw_bytes & 0b01 != 0;
@@ -24,6 +24,13 @@ impl<'a, In: LegMatcher> FixedDecode<'a> for TakeHeaderMain<In> {
                 read_limit,
             },
         }
+    }
+
+    fn raw_fixed_encode(&self, writer: &mut ArgsWriter) {
+        let raw_bytes = (self.flags.read_min_lots as u32)
+            | ((self.flags.read_limit as u32) << 1)
+            | ((self.num_lots_u32.to_raw() as u32) << 2);
+        raw_bytes.raw_fixed_encode(writer);
     }
 
     fn validate(&self) -> Result<(), GoblinError> {

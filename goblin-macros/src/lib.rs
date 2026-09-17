@@ -3,42 +3,11 @@ use syn::{DeriveInput, parse_macro_input};
 
 mod const_default;
 mod fixed_codec;
-mod fixed_decode;
-
-/// Derive `FixedDecode` for a fixed-size struct whose fields all implement
-/// `FixedDecode`.
-///
-/// - `ENCODED_SIZE` is generated as the sum of each field's `ENCODED_SIZE`.
-/// - `decode_raw` decodes fields in declaration order, so each field reads
-///   from wherever the previous field left the cursor. This matches how
-///   `Areader`'s offset is threaded through `decode_raw` calls today.
-///
-/// Only structs with named fields are supported (no tuple structs, no unit
-/// structs, no enums) since we're only targeting fixed-size, heap-free wire
-/// structs.
-///
-/// ```ignore
-/// #[derive(FixedDecode)]
-/// struct Header {
-///     kind: u8,
-///     len: u16,
-///     flags: u32,
-/// }
-/// ```
-#[proc_macro_derive(FixedDecode)]
-pub fn derive_decodable_v2(input: TokenStream) -> TokenStream {
-    let input = parse_macro_input!(input as DeriveInput);
-
-    match fixed_decode::expand(input) {
-        Ok(tokens) => tokens.into(),
-        Err(err) => err.to_compile_error().into(),
-    }
-}
 
 /// Generate `FixedCodec` (encode + decode) for a fixed-size struct.
 ///
-/// This is the encode/decode-expanded counterpart of the `FixedDecode` derive:
-/// the generated `impl` provides both `raw_fixed_decode` and `raw_fixed_encode`.
+/// This is the single fixed-size codec for the wire: the generated `impl`
+/// provides both `raw_fixed_decode` and `raw_fixed_encode`.
 /// It is applied as an attribute so the packed size can be passed directly.
 ///
 /// ```ignore

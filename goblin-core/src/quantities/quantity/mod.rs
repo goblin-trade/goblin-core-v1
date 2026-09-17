@@ -22,14 +22,13 @@ mod tests;
 
 use core::marker::PhantomData;
 
-use goblin_macros::{ConstDefault, FixedDecode};
+use goblin_macros::{ConstDefault, fixed_codec};
 
 //
 // Quantity type: value + Dim
 //
-#[derive(
-    Default, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Debug, FixedDecode, ConstDefault,
-)]
+#[fixed_codec]
+#[derive(Default, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Debug, ConstDefault)]
 pub struct Quantity<E, I>
 where
     E: Exp,

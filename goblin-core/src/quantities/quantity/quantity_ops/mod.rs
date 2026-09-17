@@ -6,7 +6,7 @@ mod impl_u64;
 use core::ops::{Add, AddAssign, Sub, SubAssign};
 
 use crate::{
-    input_processor::FixedDecode,
+    input_processor::FixedCodec,
     settlement::{CheckedOps, ConstDefault},
 };
 
@@ -27,7 +27,7 @@ pub trait QuantityOps:
     + Ord
     + ConstDefault
     + CheckedOps
-    + for<'a> FixedDecode<'a>
+    + FixedCodec
 {
     const MIN: Self;
     const MAX: Self;

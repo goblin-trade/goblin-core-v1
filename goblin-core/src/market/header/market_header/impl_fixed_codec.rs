@@ -1,10 +1,10 @@
 use super::MarketHeader;
 use crate::{
-    input_processor::{ArgsReader, FixedDecode},
+    input_processor::{ArgsReader, ArgsWriter, FixedCodec},
     types::Tuple,
 };
 
-impl<'a> FixedDecode<'a> for MarketHeader {
+impl FixedCodec for MarketHeader {
     const ENCODED_SIZE: usize = 1;
 
     fn raw_fixed_decode(reader: &ArgsReader) -> Self {
@@ -24,5 +24,14 @@ impl<'a> FixedDecode<'a> for MarketHeader {
         let outer_bitmap_indices = (byte_0 & 0b0001_1000) >> 3;
 
         Self::new(decode_deposit_amounts, execute_takes, outer_bitmap_indices)
+    }
+
+    fn raw_fixed_encode(&self, writer: &mut ArgsWriter) {
+        let mut byte_0 = 0u8;
+        byte_0 |= self.decode_deposit_amounts as u8;
+        byte_0 |= (self.execute_takes.0 as u8) << 1;
+        byte_0 |= (self.execute_takes.1 as u8) << 2;
+        byte_0 |= (self.outer_bitmap_count & 0b11) << 3;
+        byte_0.raw_fixed_encode(writer);
     }
 }

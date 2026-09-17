@@ -1,4 +1,4 @@
-use goblin_macros::FixedDecode;
+use goblin_macros::fixed_codec;
 
 use crate::{
     axis::{
@@ -12,7 +12,7 @@ use crate::{
     state::MarketPreimage,
 };
 
-#[derive(FixedDecode)]
+#[fixed_codec]
 pub struct CommonMarket<TP: TokenPair> {
     /// The token pair
     pub token_index_pair: TokenIndexPair<TP>,

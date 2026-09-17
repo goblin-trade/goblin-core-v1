@@ -1,9 +1,9 @@
 mod process;
 
 use crate::quantities::OuterPos;
-use goblin_macros::FixedDecode;
+use goblin_macros::fixed_codec;
 
-#[derive(FixedDecode)]
+#[fixed_codec]
 pub struct InnerBitmapHeader {
     pub outer_pos: OuterPos,
 
