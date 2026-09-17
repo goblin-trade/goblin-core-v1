@@ -3,7 +3,7 @@ use crate::{
     axis::occupancy::OccupancyMarker,
     axis_helpers::MarketSpec,
     goblin_error::GoblinError,
-    input_processor::{ArgsReader, FixedDecode},
+    input_processor::{ArgsReader, FixedCodec},
     instructions::ix_make_inner,
     market::MakeHeader,
     match_axes,

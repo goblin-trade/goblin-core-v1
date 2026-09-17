@@ -15,6 +15,7 @@ pub use quantity_ops::*;
 pub use u32_quantity::*;
 pub use unsided::*;
 
+mod impl_bit_pack;
 mod impls;
 #[cfg(test)]
 mod tests;

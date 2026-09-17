@@ -37,6 +37,20 @@ macro_rules! define_axis {
             }
         }
 
+        impl $crate::input_processor::BitPack for $enum_name {
+            const CAPACITY: u8 = 1;
+
+            #[inline]
+            fn to_raw(self) -> u64 {
+                self as u64
+            }
+
+            #[inline]
+            fn from_raw(raw: u64) -> Self {
+                if raw & 1 == 1 { Self::$v1 } else { Self::$v0 }
+            }
+        }
+
         pub type $v0 = $crate::types::Marker<$seed, { $enum_name::$v0 as usize }>;
         pub type $v1 = $crate::types::Marker<$seed, { $enum_name::$v1 as usize }>;
 
@@ -82,6 +96,24 @@ macro_rules! define_axis {
                     1 => Ok(Self::$v1),
                     2 => Ok(Self::$v2),
                     _ => Err($crate::goblin_error::GoblinError::InvalidEnumVariant),
+                }
+            }
+        }
+
+        impl $crate::input_processor::BitPack for $enum_name {
+            const CAPACITY: u8 = 2;
+
+            #[inline]
+            fn to_raw(self) -> u64 {
+                self as u64
+            }
+
+            #[inline]
+            fn from_raw(raw: u64) -> Self {
+                match raw & 0b11 {
+                    0 => Self::$v0,
+                    1 => Self::$v1,
+                    _ => Self::$v2,
                 }
             }
         }

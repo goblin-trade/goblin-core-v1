@@ -1,12 +1,14 @@
 use core::marker::PhantomData;
 
-use goblin_macros::FixedCodec;
+use goblin_macros::fixed_codec;
 
 use crate::input_processor::{ArgsReader, ArgsWriter, BitPack, FixedCodec, bit_mask};
 
 /// Sub-byte fields followed by a byte-aligned field. The five leading bools and
-/// the 2-bit field fill exactly one byte, so the wire layout is `[lane:u8, count:u16]`.
-#[derive(FixedCodec, Debug, PartialEq, Clone, Copy)]
+/// the two 1-bit/2-bit fields fill exactly one byte, so the wire layout is
+/// `[lane:u8, count:u16]`.
+#[fixed_codec]
+#[derive(Debug, PartialEq, Clone, Copy)]
 struct ByteThenWord {
     #[codec(bits = 1)]
     flag_a: bool,
@@ -19,11 +21,24 @@ struct ByteThenWord {
     count: u16,
 }
 
-#[derive(FixedCodec, Debug, PartialEq, Clone, Copy)]
+#[fixed_codec]
+#[derive(Debug, PartialEq, Clone, Copy)]
 struct TuplePair(#[codec(bits = 3)] u8, #[codec(bits = 5)] u8);
 
+/// Top-level size: each `bool` is one bit and the trailing field absorbs the
+/// remaining `8 - 3 = 5` bits.
+#[fixed_codec(bits = 8)]
+#[derive(Debug, PartialEq, Clone, Copy)]
+struct SizedStruct {
+    a: bool,
+    b: bool,
+    c: bool,
+    value: u8,
+}
+
 /// A sub-byte run wider than one byte promotes to the next lane type.
-#[derive(FixedCodec, Debug, PartialEq, Clone, Copy)]
+#[fixed_codec]
+#[derive(Debug, PartialEq, Clone, Copy)]
 struct WideLane {
     #[codec(bits = 12)]
     a: u16,
@@ -31,7 +46,8 @@ struct WideLane {
     b: u32,
 }
 
-#[derive(FixedCodec, Debug, PartialEq, Clone, Copy)]
+#[fixed_codec]
+#[derive(Debug, PartialEq, Clone, Copy)]
 struct Generic<T> {
     value: u8,
     _marker: PhantomData<T>,
@@ -74,6 +90,27 @@ fn byte_then_word_layout() {
     value.raw_fixed_encode(&mut writer);
     assert_eq!(buf, expected);
     assert_eq!(ByteThenWord::ENCODED_SIZE, 3);
+
+    assert_eq!(round_trip(value), value);
+}
+
+#[test]
+fn top_level_size_infers_remaining_width() {
+    let value = SizedStruct {
+        a: true,
+        b: false,
+        c: true,
+        value: 0b10101,
+    };
+
+    assert_eq!(SizedStruct::ENCODED_SIZE, 1);
+
+    // a=bit0, b=bit1, c=bit2, value=bits3..7.
+    let expected = 0b1010_1101;
+    let mut buf = [0u8; 1];
+    let mut writer = ArgsWriter::new(&mut buf);
+    value.raw_fixed_encode(&mut writer);
+    assert_eq!(buf[0], expected);
 
     assert_eq!(round_trip(value), value);
 }

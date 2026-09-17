@@ -35,37 +35,43 @@ pub fn derive_decodable_v2(input: TokenStream) -> TokenStream {
     }
 }
 
-/// Derive `FixedCodec` for a fixed-size struct whose fields are byte-aligned
-/// `FixedCodec` implementors and/or explicitly-sized sub-byte bit fields.
+/// Generate `FixedCodec` (encode + decode) for a fixed-size struct.
 ///
 /// This is the encode/decode-expanded counterpart of the `FixedDecode` derive:
 /// the generated `impl` provides both `raw_fixed_decode` and `raw_fixed_encode`.
-///
-/// # Bit-level syntax
-///
-/// A field annotated with `#[codec(bits = N)]` is packed into a sub-byte slot
-/// of `N` bits, LSB-first, matching the hand-written decoders in this crate
-/// (so the first field is the least-significant bit). Sub-byte fields are only
-/// used when such a width is explicitly requested; unannotated fields stay
-/// byte-aligned. Consecutive sub-byte fields are gathered into the smallest
-/// integer lane (`u8`/`u16`/`u32`/`u64`) that fits them.
+/// It is applied as an attribute so the packed size can be passed directly.
 ///
 /// ```ignore
-/// #[derive(FixedCodec)]
-/// struct HeaderFlags {
-///     #[codec(bits = 1)] read_custom_recipient: bool,
-///     #[codec(bits = 1)] read_msg_value: bool,
-///     #[codec(bits = 1)] process_dynamic_markets: bool,
-///     #[codec(bits = 1)] withdraw_eth: bool,
-///     #[codec(bits = 1)] withdraw_internally: bool,
-///     #[codec(bits = 3)] custom_erc20_count: usize,
+/// #[fixed_codec(bits = 40)]
+/// struct MakeHeader {
+///     inner_pos: InnerPos,           // full 8 bits
+///     occupancy_enum: OccupancyEnum, // 1 bit
+///     inner_enum_raw: bool,          // 1 bit
+///     base_lots_u32: BaseLots<u32>,  // remaining 30 bits
 /// }
 /// ```
-#[proc_macro_derive(FixedCodec, attributes(codec))]
-pub fn derive_fixed_codec(input: TokenStream) -> TokenStream {
-    let input = parse_macro_input!(input as DeriveInput);
+///
+/// # Width inference
+///
+/// With a top-level `bits = N`, the struct is one little-endian bit stream of
+/// `N` bits (padded to a byte) and widths are inferred:
+///
+/// * a field's explicit `#[codec(bits = M)]` wins;
+/// * otherwise a field takes its type's `BitPack::CAPACITY` — 1 for `bool`, the
+///   full width for a newtype over `u8`/`u16`/..., 1 for a generated axis enum.
+///   Numbers that appear *before* the flags therefore occupy their full width;
+/// * the **last** field without an explicit width absorbs the remainder
+///   `N - (sum of the other widths)` — the number after the bools/enum.
+///
+/// Without `bits`, fields carrying `#[codec(bits = M)]` are gathered into
+/// integer lanes and unannotated fields stay byte-aligned. `bool` is always
+/// one bit and rejects any other width.
+#[proc_macro_attribute]
+pub fn fixed_codec(attr: TokenStream, item: TokenStream) -> TokenStream {
+    let bits = parse_macro_input!(attr as fixed_codec::BitsArgs).bits;
+    let item = parse_macro_input!(item as syn::ItemStruct);
 
-    match fixed_codec::expand(input) {
+    match fixed_codec::expand_attribute(item, bits) {
         Ok(tokens) => tokens.into(),
         Err(err) => err.to_compile_error().into(),
     }

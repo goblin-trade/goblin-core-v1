@@ -1,4 +1,5 @@
 mod alias;
+mod impl_bit_pack;
 mod impls;
 
 pub mod bits_layout;
