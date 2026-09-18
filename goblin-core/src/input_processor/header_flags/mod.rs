@@ -1,4 +1,14 @@
+use core::marker::PhantomData;
+
+use deku::{DekuRead, DekuSize, DekuWrite};
 use goblin_macros::fixed_codec;
+
+// #[derive(DekuRead, DekuWrite, DekuSize)]
+// pub struct HeaderFlagsV2<T> {
+//     pub flag: u8,
+//     #[deku(skip)]
+//     pub marker: PhantomData<T>,
+// }
 
 /// First byte of the calldata header.
 ///
@@ -6,6 +16,7 @@ use goblin_macros::fixed_codec;
 /// each `bool` takes one bit and the trailing count takes whatever is left
 /// (3 bits here).
 #[fixed_codec(bits = 8)]
+#[derive(DekuRead, DekuWrite, Default)]
 pub struct HeaderFlags {
     /// Whether to read custom recipient address from payload
     pub read_custom_recipient: bool,

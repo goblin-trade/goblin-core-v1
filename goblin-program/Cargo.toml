@@ -12,3 +12,4 @@ crate-type = ["cdylib", "lib"]
 # The default (localnet) is used when no feature is specified.
 goblin-core = { path = "../goblin-core" }
 goblin-hostio = { path = "../goblin-hostio" }
+deku = { version = "0.20", default-features = false }
