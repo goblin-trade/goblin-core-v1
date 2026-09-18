@@ -3,12 +3,16 @@ use core::marker::PhantomData;
 use deku::{DekuRead, DekuSize, DekuWrite};
 use goblin_macros::fixed_codec;
 
-// #[derive(DekuRead, DekuWrite, DekuSize)]
-// pub struct HeaderFlagsV2<T> {
-//     pub flag: u8,
-//     #[deku(skip)]
-//     pub marker: PhantomData<T>,
-// }
+#[derive(DekuRead, DekuWrite, DekuSize)]
+pub struct HeaderFlagsV2<T> {
+    pub flag: bool,
+
+    #[deku(skip, cond = "!flag", default = "0")]
+    pub conditional: u8,
+
+    #[deku(skip)]
+    pub marker: PhantomData<T>,
+}
 
 /// First byte of the calldata header.
 ///
