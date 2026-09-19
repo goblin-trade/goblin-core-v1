@@ -22,19 +22,24 @@ mod tests;
 
 use core::marker::PhantomData;
 
+use deku::DekuRead;
+#[cfg(feature = "encode")]
+use deku::DekuWrite;
 use goblin_macros::{ConstDefault, fixed_codec};
 
 //
 // Quantity type: value + Dim
 //
 #[fixed_codec]
-#[derive(Default, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Debug, ConstDefault)]
+#[derive(Default, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Debug, ConstDefault, DekuRead)]
+#[cfg_attr(feature = "encode", derive(DekuWrite))]
 pub struct Quantity<E, I>
 where
     E: Exp,
     I: QuantityOps,
 {
     pub inner: I,
+    #[deku(skip)]
     _marker: PhantomData<E>,
 }
 

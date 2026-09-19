@@ -1,4 +1,6 @@
 use deku::DekuRead;
+#[cfg(feature = "encode")]
+use deku::DekuWrite;
 use goblin_macros::{ConstDefault, fixed_codec};
 
 use crate::{goblin_error::GoblinError, require};

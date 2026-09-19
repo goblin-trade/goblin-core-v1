@@ -1,18 +1,20 @@
-use core::marker::PhantomData;
-
-use deku::{DekuRead, DekuSize, DekuWrite};
+use deku::DekuRead;
+#[cfg(feature = "encode")]
+use deku::DekuWrite;
 use goblin_macros::fixed_codec;
 
-#[derive(DekuRead, DekuWrite, DekuSize)]
-pub struct HeaderFlagsV2<T> {
+use crate::axis::leg::LegQuantities;
+
+#[derive(DekuRead)]
+#[cfg_attr(feature = "encode", derive(DekuWrite))]
+pub struct HeaderFlagsV2<In: LegQuantities> {
+    pub lots: In::Lots,
+
     #[deku(bits = 1)]
     pub flag: bool,
 
     #[deku(skip, cond = "!flag", default = "0")]
     pub conditional: u8,
-
-    #[deku(skip)]
-    pub marker: PhantomData<T>,
 }
 
 /// First byte of the calldata header.

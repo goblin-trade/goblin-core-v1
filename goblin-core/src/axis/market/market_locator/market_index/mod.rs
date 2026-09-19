@@ -3,6 +3,8 @@ mod impl_index;
 use core::marker::PhantomData;
 
 use deku::DekuRead;
+#[cfg(feature = "encode")]
+use deku::DekuWrite;
 use goblin_macros::fixed_codec;
 
 use crate::{
