@@ -1,9 +1,11 @@
+use deku::DekuRead;
 use goblin_macros::{ConstDefault, fixed_codec};
 
 use crate::{goblin_error::GoblinError, require};
 
 #[fixed_codec(validate = Self::check)]
-#[derive(Clone, Copy, PartialEq, PartialOrd, ConstDefault)]
+#[derive(Clone, Copy, PartialEq, PartialOrd, ConstDefault, DekuRead)]
+#[cfg_attr(feature = "encode", derive(DekuWrite))]
 pub struct CustomERC20Index(#[codec(wire = u8)] pub usize);
 
 impl CustomERC20Index {

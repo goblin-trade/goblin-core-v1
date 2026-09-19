@@ -1,3 +1,4 @@
+use deku::DekuRead;
 use goblin_macros::{ConstDefault, fixed_codec};
 
 mod impl_index;
@@ -5,9 +6,11 @@ mod impl_index;
 use crate::{axis::token::token_list::HARDCODED_ERC20_COUNT, goblin_error::GoblinError, require};
 
 #[fixed_codec(validate = Self::check)]
-#[derive(Clone, Copy, PartialEq, PartialOrd, ConstDefault)]
+#[derive(Clone, Copy, PartialEq, PartialOrd, ConstDefault, DekuRead)]
+#[cfg_attr(feature = "encode", derive(DekuWrite))]
 pub struct HardcodedERC20Index {
     #[codec(wire = u8)]
+    #[deku(bytes = "1")]
     pub inner: usize,
 }
 
