@@ -10,5 +10,5 @@ use crate::{
 
 #[derive(Clone, Copy, ConstDefault)]
 pub struct CustomERC20Deltas {
-    pub inner: [TokenDelta<CustomERC20>; CustomERC20Index::MAX_COUNT],
+    pub inner: [TokenDelta<CustomERC20>; CustomERC20Index::MAX_INNER],
 }

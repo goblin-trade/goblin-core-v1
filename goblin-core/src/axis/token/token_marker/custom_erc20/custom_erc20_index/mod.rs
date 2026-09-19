@@ -8,21 +8,17 @@ use crate::{goblin_error::GoblinError, require};
 #[cfg_attr(feature = "encode", derive(DekuWrite))]
 pub struct CustomERC20Index {
     #[codec(wire = u8)]
-    #[deku(bytes = "1")]
+    #[deku(bytes = "1", assert = "*inner <= Self::MAX_INNER")]
     pub inner: usize,
 }
 
 impl CustomERC20Index {
     /// 0b111 = 7 as it is decoded from 3 bits.
-    pub const MAX_COUNT: usize = 7;
-
-    pub const MAX: Self = Self {
-        inner: Self::MAX_COUNT - 1,
-    };
+    pub const MAX_INNER: usize = 7;
 
     /// Range check kept out of the generated codec via `validate = Self::check`.
     fn check(&self) -> Result<(), GoblinError> {
-        require!(self.inner <= Self::MAX.inner, GoblinError::InvalidPayload);
+        require!(self.inner <= Self::MAX_INNER, GoblinError::InvalidPayload);
         Ok(())
     }
 }

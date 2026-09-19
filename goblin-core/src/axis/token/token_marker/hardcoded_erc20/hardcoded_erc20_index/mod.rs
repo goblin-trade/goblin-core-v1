@@ -10,12 +10,12 @@ use crate::{axis::token::token_list::HARDCODED_ERC20_COUNT, goblin_error::Goblin
 #[cfg_attr(feature = "encode", derive(DekuWrite))]
 pub struct HardcodedERC20Index {
     #[codec(wire = u8)]
-    #[deku(bytes = "1")]
+    #[deku(bytes = "1", assert = "*inner <= Self::MAX_INNER")]
     pub inner: usize,
 }
 
 impl HardcodedERC20Index {
-    pub const MAX: Self = Self::new(HARDCODED_ERC20_COUNT - 1);
+    pub const MAX_INNER: usize = HARDCODED_ERC20_COUNT - 1;
 
     pub const fn new(inner: usize) -> Self {
         Self { inner }
@@ -23,7 +23,7 @@ impl HardcodedERC20Index {
 
     /// Range check kept out of the generated codec via `validate = Self::check`.
     fn check(&self) -> Result<(), GoblinError> {
-        require!(*self <= Self::MAX, GoblinError::InvalidPayload);
+        require!(self.inner <= Self::MAX_INNER, GoblinError::InvalidPayload);
         Ok(())
     }
 }

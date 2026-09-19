@@ -18,7 +18,7 @@ where
     TP: TokenPair + HardcodedMarketList,
 {
     #[codec(wire = u8)]
-    #[deku(bytes = "1")]
+    #[deku(bytes = "1", assert = "*inner < TP::HARDCODED_MARKET_LIST.len()")]
     pub inner: usize,
     #[deku(skip)]
     _marker: PhantomData<TP>,
