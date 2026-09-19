@@ -11,7 +11,7 @@ goblin-hostio = { path = "../goblin-hostio" }
 goblin-macros = { path = "../goblin-macros" }
 keccak-const = "0.2.0"
 hex-literal = "0.4.1"
-deku = { version = "0.20", default-features = false }
+deku = { version = "0.20", default-features = false, features = ["bits"] }
 
 [features]
 default = ["localnet"]

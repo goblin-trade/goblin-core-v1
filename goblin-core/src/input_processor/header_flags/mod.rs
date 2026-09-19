@@ -5,6 +5,7 @@ use goblin_macros::fixed_codec;
 
 #[derive(DekuRead, DekuWrite, DekuSize)]
 pub struct HeaderFlagsV2<T> {
+    #[deku(bits = 1)]
     pub flag: bool,
 
     #[deku(skip, cond = "!flag", default = "0")]
@@ -23,21 +24,27 @@ pub struct HeaderFlagsV2<T> {
 #[derive(DekuRead, DekuWrite, Default)]
 pub struct HeaderFlags {
     /// Whether to read custom recipient address from payload
+    #[deku(bits = "1")]
     pub read_custom_recipient: bool,
 
     /// Whether to read msg.value from hostio
+    #[deku(bits = "1")]
     pub read_msg_value: bool,
 
     /// Whether to process dynamic markets
+    #[deku(bits = "1")]
     pub process_dynamic_markets: bool,
 
     /// Whether to read ETH withdraw amount from args and withdraw ETH
+    #[deku(bits = "1")]
     pub withdraw_eth: bool,
 
     /// Whether to credit tokens to ERC20Store or EthStore, or to actually transfer out tokens
+    #[deku(bits = "1")]
     pub withdraw_internally: bool,
 
     /// Number of custom ERC20 tokens to read
+    #[deku(bits = "3")]
     pub custom_erc20_count: usize,
 }
 
