@@ -21,7 +21,8 @@ pub struct HeaderFlagsV2<T> {
 /// each `bool` takes one bit and the trailing count takes whatever is left
 /// (3 bits here).
 #[fixed_codec(bits = 8)]
-#[derive(DekuRead, DekuWrite, Default)]
+#[derive(DekuRead, Default)]
+#[cfg_attr(feature = "encode", derive(DekuWrite))]
 pub struct HeaderFlags {
     /// Whether to read custom recipient address from payload
     #[deku(bits = "1")]
