@@ -8,6 +8,7 @@ use crate::{goblin_error::GoblinError, require};
 #[cfg_attr(feature = "encode", derive(DekuWrite))]
 pub struct CustomERC20Index {
     #[codec(wire = u8)]
+    #[deku(bytes = "1")]
     pub inner: usize,
 }
 

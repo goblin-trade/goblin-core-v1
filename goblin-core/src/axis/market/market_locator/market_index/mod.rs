@@ -2,6 +2,7 @@ mod impl_index;
 
 use core::marker::PhantomData;
 
+use deku::DekuRead;
 use goblin_macros::fixed_codec;
 
 use crate::{
@@ -10,13 +11,16 @@ use crate::{
 
 /// Index for hardcoded market
 #[fixed_codec(validate = Self::check)]
-#[derive(Clone, Copy, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, PartialEq, PartialOrd, DekuRead)]
+#[cfg_attr(feature = "encode", derive(DekuWrite))]
 pub struct MarketIndex<TP>
 where
     TP: TokenPair + HardcodedMarketList,
 {
     #[codec(wire = u8)]
+    #[deku(bytes = "1")]
     pub inner: usize,
+    #[deku(skip)]
     _marker: PhantomData<TP>,
 }
 
