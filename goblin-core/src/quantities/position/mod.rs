@@ -16,8 +16,11 @@ pub use safe_position::*;
 use core::range::RangeInclusive;
 
 use deku::DekuRead;
+#[cfg(feature = "encode")]
+use deku::DekuWrite;
 
 #[derive(DekuRead, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug, Default)]
+#[cfg_attr(feature = "encode", derive(DekuWrite))]
 pub struct Position<K, const BITS: u16>
 where
     K: InnerVal,
