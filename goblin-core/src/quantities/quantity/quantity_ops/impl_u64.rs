@@ -4,6 +4,10 @@ impl QuantityOps for u64 {
     const MIN: Self = 0;
     const MAX: Self = u64::MAX;
     const ONE: Self = 1;
+
+    fn from_raw(raw: u64) -> Self {
+        raw
+    }
 }
 
 impl CheckedOps for u64 {

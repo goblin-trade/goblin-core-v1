@@ -2,20 +2,35 @@ pub mod take_flags;
 
 pub use take_flags::*;
 
-use goblin_macros::fixed_codec;
+use deku::DekuRead;
+#[cfg(feature = "encode")]
+use deku::DekuWrite;
 
-use crate::{axis::leg::LegMatcher, quantities::U32Variant};
+use crate::{
+    axis::leg::LegMatcher,
+    quantities::{QuantityOps, U32Variant},
+};
 
 /// Take header, packed into one `u32`: the two flags occupy the low bits and
 /// `num_lots_u32` occupies the remaining 30 bits.
 ///
 /// The `num_lots_u32 > 0` check lives at the call site (`ix_take`) rather than in
 /// a `validate` hook, since it is already enforced there.
-#[fixed_codec(bits = 32)]
+#[derive(DekuRead)]
+#[deku(bit_order = "lsb")]
+#[cfg_attr(feature = "encode", derive(DekuWrite))]
 pub struct TakeHeaderMain<In: LegMatcher> {
     /// Flags indicating if optional take params should be decoded
+    #[deku(
+        bits = "2",
+        map = "|raw: u8| -> Result<_, deku::DekuError> { Ok(TakeFlags::from_raw(raw as u64)) }"
+    )]
     pub flags: TakeFlags,
 
     /// The order size, i.e. number of lots to fill
+    #[deku(
+        bits = "30",
+        map = "|raw: u32| -> Result<_, deku::DekuError> { Ok(U32Variant::<In::Lots>::from_raw(raw as u64)) }"
+    )]
     pub num_lots_u32: U32Variant<In::Lots>,
 }

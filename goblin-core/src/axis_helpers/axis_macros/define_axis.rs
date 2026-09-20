@@ -37,16 +37,9 @@ macro_rules! define_axis {
             }
         }
 
-        impl $crate::input_processor::BitPack for $enum_name {
-            const CAPACITY: u8 = 1;
-
+        impl $enum_name {
             #[inline]
-            fn to_raw(self) -> u64 {
-                self as u64
-            }
-
-            #[inline]
-            fn from_raw(raw: u64) -> Self {
+            pub const fn from_raw(raw: u64) -> Self {
                 if raw & 1 == 1 { Self::$v1 } else { Self::$v0 }
             }
         }
@@ -100,16 +93,9 @@ macro_rules! define_axis {
             }
         }
 
-        impl $crate::input_processor::BitPack for $enum_name {
-            const CAPACITY: u8 = 2;
-
+        impl $enum_name {
             #[inline]
-            fn to_raw(self) -> u64 {
-                self as u64
-            }
-
-            #[inline]
-            fn from_raw(raw: u64) -> Self {
+            pub const fn from_raw(raw: u64) -> Self {
                 match raw & 0b11 {
                     0 => Self::$v0,
                     1 => Self::$v1,

@@ -4,10 +4,11 @@ pub mod take_header_optional;
 pub use take_header_main::*;
 pub use take_header_optional::*;
 
-mod impl_compound_decode;
+use deku::{DekuError, DekuReader};
 
 use crate::{
     axis::leg::LegMatcher,
+    input_processor::ArgsReaderV2,
     quantities::{FullPosU32, U32Variant},
 };
 
@@ -26,4 +27,19 @@ pub struct TakeHeader<In: LegMatcher> {
 
     /// The worst position to be matched against. Stop matching after this price is crossed.
     pub limit_u32: FullPosU32,
+}
+
+impl<In: LegMatcher> TakeHeader<In> {
+    /// Decode the fixed-size main header followed by the flag-gated optional
+    /// fields.
+    pub fn decode<'a>(reader: &mut ArgsReaderV2<'a>) -> Result<Self, DekuError> {
+        let main_header = TakeHeaderMain::<In>::from_reader_with_ctx(reader, ())?;
+        let optional_header = TakeHeaderOptional::<In>::decode(reader, main_header.flags)?;
+
+        Ok(Self {
+            num_lots_u32: main_header.num_lots_u32,
+            min_lots_to_fill_u32: optional_header.min_lots_to_fill_u32,
+            limit_u32: optional_header.limit_u32,
+        })
+    }
 }

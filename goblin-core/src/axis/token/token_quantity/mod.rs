@@ -4,7 +4,6 @@ mod hardcoded_erc20;
 
 use super::TokenMsgTransfer;
 use crate::{
-    input_processor::FixedCodec,
     quantities::UnsidedAtoms,
     settlement::{CheckedOps, ConstDefault},
 };
@@ -13,7 +12,12 @@ pub trait TokenQuantity: Clone + Copy + PartialEq + 'static {
     const DISCRIMINATOR: u8;
 
     /// Index to lookup token address
-    type TokenIndex: Clone + Copy + ConstDefault + PartialEq + From<usize> + FixedCodec;
+    type TokenIndex: Clone
+        + Copy
+        + ConstDefault
+        + PartialEq
+        + From<usize>
+        + for<'a> deku::DekuReader<'a>;
 
     type TokenAddress: Clone + Copy + Sized + Default + ConstDefault;
 
@@ -29,7 +33,12 @@ pub trait TokenQuantity: Clone + Copy + PartialEq + 'static {
     type StoredPadding: Clone + Copy;
 
     /// Pending deposit amount in local namespace
-    type LocalDeposit: Clone + Copy + Default + ConstDefault + CheckedOps + FixedCodec;
+    type LocalDeposit: Clone
+        + Copy
+        + Default
+        + ConstDefault
+        + CheckedOps
+        + for<'a> deku::DekuReader<'a>;
 
     /// Pending deposit amount in global namespace
     type GlobalDeposit: Clone
@@ -39,7 +48,7 @@ pub trait TokenQuantity: Clone + Copy + PartialEq + 'static {
         + ConstDefault
         + CheckedOps
         + Into<UnsidedAtoms<i64>>
-        + FixedCodec;
+        + for<'a> deku::DekuReader<'a>;
 
     type TokenMsgTransfer: TokenMsgTransfer;
 }

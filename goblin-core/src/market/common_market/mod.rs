@@ -1,4 +1,6 @@
-use goblin_macros::fixed_codec;
+use deku::DekuRead;
+#[cfg(feature = "encode")]
+use deku::DekuWrite;
 
 use crate::{
     axis::{
@@ -12,7 +14,8 @@ use crate::{
     state::MarketPreimage,
 };
 
-#[fixed_codec]
+#[derive(DekuRead)]
+#[cfg_attr(feature = "encode", derive(DekuWrite))]
 pub struct CommonMarket<TP: TokenPair> {
     /// The token pair
     pub token_index_pair: TokenIndexPair<TP>,

@@ -8,11 +8,9 @@
 //! [`ArgsReaderV2`](crate::input_processor::ArgsReaderV2) =
 //! `Reader<Cursor<&'a [u8]>>`.
 //!
-//! Like the [`ZeroCopyRead`](super::ZeroCopyRead) decoder for the program's own
-//! [`ArgsReader`](crate::input_processor::ArgsReader), this is an unchecked
-//! primitive that mirrors that decoder's logic: it validates nothing and an
-//! out-of-range read panics on the slice index. The caller owns the offset,
-//! bounds and layout invariants.
+//! Like the old fixed-codec decoder, this is an unchecked primitive that
+//! validates nothing: an out-of-range read panics on the slice index, and the
+//! caller owns the offset, bounds and layout invariants.
 //!
 //! Offsets are taken from [`Reader::bits_read`], not from the cursor position.
 //! When a bit-level decode leaves `leftover` bits, the inner cursor runs up to

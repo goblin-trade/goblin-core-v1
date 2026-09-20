@@ -1,3 +1,5 @@
+use deku::DekuReader;
+
 use crate::{
     axis::{
         market::{Dynamic, HardcodedMarketList, MarketLocator},
@@ -5,7 +7,7 @@ use crate::{
     },
     axis_helpers::TokenPair,
     goblin_error::GoblinError,
-    input_processor::{ArgsReader, FixedCodec},
+    input_processor::ArgsReaderV2,
     market::{CommonMarket, MarketReadables},
     require,
     state::Preimage,
@@ -14,11 +16,12 @@ use crate::{
 impl<TP: TokenPair + HardcodedMarketList> MarketLocator<TP> for Dynamic {
     type Locator = MarketReadables<TP>;
 
-    fn decode_locator(
-        reader: &ArgsReader,
+    fn decode_locator<'a>(
+        reader: &mut ArgsReaderV2<'a>,
         token_data_triple: &TokenDataTriple,
     ) -> Result<Self::Locator, GoblinError> {
-        let common_market = CommonMarket::<TP>::try_fixed_decode(reader)?;
+        let common_market = CommonMarket::<TP>::from_reader_with_ctx(reader, ())
+            .map_err(|_| GoblinError::InvalidPayload)?;
         require!(
             common_market.lot_size_pair_u32.valid(),
             GoblinError::InvalidLotSize

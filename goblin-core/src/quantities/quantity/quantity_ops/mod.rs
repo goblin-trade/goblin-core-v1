@@ -9,10 +9,7 @@ use deku::DekuReader;
 #[cfg(feature = "encode")]
 use deku::DekuWriter;
 
-use crate::{
-    input_processor::FixedCodec,
-    settlement::{CheckedOps, ConstDefault},
-};
+use crate::settlement::{CheckedOps, ConstDefault};
 
 /// Encoder side of a quantity, required only when the `encode` feature is on.
 ///
@@ -47,11 +44,13 @@ pub trait QuantityOps:
     + Ord
     + ConstDefault
     + CheckedOps
-    + FixedCodec
     + for<'a> DekuReader<'a>
     + MaybeDekuEncode
 {
     const MIN: Self;
     const MAX: Self;
     const ONE: Self;
+
+    /// Decode from the low bits of a raw bit field.
+    fn from_raw(raw: u64) -> Self;
 }

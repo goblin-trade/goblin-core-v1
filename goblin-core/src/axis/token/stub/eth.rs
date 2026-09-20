@@ -1,8 +1,8 @@
+use deku::DekuRead;
 use goblin_macros::ConstDefault;
 
 use crate::{
     axis::token::{ETH, token_marker::TokenData},
-    input_processor::{ArgsReader, ArgsWriter, FixedCodec},
     quantities::{NATIVE_TOKEN_DECIMALS, UnsidedAtoms},
     settlement::{CheckedOps, ConstDefault},
 };
@@ -11,18 +11,9 @@ use core::ops::Index;
 /// Stub type for ETH token index, address and deposit
 ///
 /// Use an explicit stub type instead of `()` for clarity
-#[derive(Default, Clone, Copy, PartialEq, ConstDefault)]
+#[derive(Default, Clone, Copy, PartialEq, ConstDefault, DekuRead)]
+#[cfg_attr(feature = "encode", derive(deku::DekuWrite))]
 pub struct ETHStub;
-
-impl FixedCodec for ETHStub {
-    const ENCODED_SIZE: usize = 0;
-
-    fn raw_fixed_decode(_reader: &ArgsReader) -> Self {
-        Self
-    }
-
-    fn raw_fixed_encode(&self, _writer: &mut ArgsWriter) {}
-}
 
 impl CheckedOps for ETHStub {
     fn checked_add(self, _rhs: Self) -> Option<Self> {

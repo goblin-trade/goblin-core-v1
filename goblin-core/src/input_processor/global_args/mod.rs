@@ -10,6 +10,8 @@ pub use header_refs::*;
 
 mod hostio_fields;
 
+use deku::DekuReader;
+
 use crate::{
     axis::{
         leg::Pair,
@@ -18,9 +20,7 @@ use crate::{
     },
     for_axes,
     goblin_error::GoblinError,
-    input_processor::{
-        ArgsReader, FixedCodec, VariableDecode, global_args::hostio_fields::HostioFields,
-    },
+    input_processor::{ArgsReaderV2, global_args::hostio_fields::HostioFields},
     market::process_market,
     settlement::StaticDelta,
 };
@@ -33,10 +33,11 @@ pub struct GlobalArgs<'a> {
 }
 
 impl<'a> GlobalArgs<'a> {
-    pub fn new(reader: &'a ArgsReader) -> Result<Self, GoblinError> {
-        let flags = HeaderFlags::try_fixed_decode(reader)?;
-        let header = Header::try_variable_decode(reader, &flags)?;
-        let refs = HeaderRefs::try_variable_decode(reader, &flags)?;
+    pub fn new(reader: &mut ArgsReaderV2<'a>) -> Result<Self, GoblinError> {
+        let flags = HeaderFlags::from_reader_with_ctx(reader, ())
+            .map_err(|_| GoblinError::InvalidPayload)?;
+        let header = Header::decode(reader, &flags).map_err(|_| GoblinError::InvalidPayload)?;
+        let refs = HeaderRefs::decode(reader, &flags).map_err(|_| GoblinError::InvalidPayload)?;
         let hostio_fields = HostioFields::try_new(flags.read_msg_value)?;
 
         Ok(Self {
@@ -48,8 +49,8 @@ impl<'a> GlobalArgs<'a> {
     }
 
     pub fn process(
-        &'a self,
-        reader: &ArgsReader,
+        &self,
+        reader: &mut ArgsReaderV2<'_>,
         delta: &mut StaticDelta,
     ) -> Result<(), GoblinError> {
         let caller = &self.hostio_fields.msg_sender;

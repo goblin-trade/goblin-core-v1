@@ -1,4 +1,7 @@
+use deku::DekuReader;
+
 use crate::{
+    Ctx,
     axis::{
         party::{Counterparties, PartyCommit},
         token::token_reader::TokenDataTriple,
@@ -6,28 +9,29 @@ use crate::{
     axis_helpers::MarketSpec,
     for_axes,
     goblin_error::GoblinError,
-    input_processor::{ArgsReader, FixedCodec},
+    input_processor::ArgsReaderV2,
     instructions::{process_makes, process_takes},
     market::MarketHeader,
     settlement::{
-        local_delta::{LocalDeposits, LocalUpdate},
         StaticDelta,
+        local_delta::{LocalDeposits, LocalUpdate},
     },
     types::{Address, StoreReader},
-    Ctx,
 };
 
 #[inline(never)]
 pub fn process_market_inner<'a, MS: MarketSpec>(
     msg_sender: &Address,
-    reader: &ArgsReader,
+    reader: &mut ArgsReaderV2<'_>,
     token_data_triple: &TokenDataTriple<'a>,
     static_delta: &mut StaticDelta,
 ) -> Result<(), GoblinError> {
-    let header = MarketHeader::try_fixed_decode(reader)?;
+    let header =
+        MarketHeader::from_reader_with_ctx(reader, ()).map_err(|_| GoblinError::InvalidPayload)?;
 
     let local_deposits = if header.decode_deposit_amounts {
-        LocalDeposits::<MS::Pair>::try_fixed_decode(reader)?
+        LocalDeposits::<MS::Pair>::from_reader_with_ctx(reader, ())
+            .map_err(|_| GoblinError::InvalidPayload)?
     } else {
         LocalDeposits::<MS::Pair>::default()
     };

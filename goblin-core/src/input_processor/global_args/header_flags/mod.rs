@@ -1,7 +1,6 @@
 use deku::DekuRead;
 #[cfg(feature = "encode")]
 use deku::DekuWrite;
-use goblin_macros::fixed_codec;
 
 use crate::axis::leg::LegQuantities;
 
@@ -22,8 +21,8 @@ pub struct HeaderFlagsV2<In: LegQuantities> {
 /// The whole struct is packed into a single byte, least-significant bit first:
 /// each `bool` takes one bit and the trailing count takes whatever is left
 /// (3 bits here).
-#[fixed_codec(bits = 8)]
 #[derive(DekuRead, Default)]
+#[deku(bit_order = "lsb")]
 #[cfg_attr(feature = "encode", derive(DekuWrite))]
 pub struct HeaderFlags {
     /// Whether to read custom recipient address from payload
@@ -53,29 +52,21 @@ pub struct HeaderFlags {
 
 #[cfg(test)]
 mod tests {
+    use deku::DekuReader;
+    use deku::no_std_io::Cursor;
+    use deku::reader::Reader;
+
     use super::*;
-    use crate::input_processor::{ArgsReader, ArgsWriter, FixedCodec};
 
     #[test]
-    fn round_trip_matches_manual_layout() {
-        let flags = HeaderFlags {
-            read_custom_recipient: false,
-            read_msg_value: false,
-            process_dynamic_markets: false,
-            withdraw_eth: true,
-            withdraw_internally: false,
-            custom_erc20_count: 5,
-        };
-
-        let mut buf = [0u8; HeaderFlags::ENCODED_SIZE];
-        let mut writer = ArgsWriter::new(&mut buf);
-        flags.raw_fixed_encode(&mut writer);
-
+    fn deku_layout_matches_manual_layout() {
         // withdraw_eth occupies bit 3; custom_erc20_count occupies bits 5..7.
-        assert_eq!(buf[0], 0b1010_1000);
+        // Byte `0b1010_1000` therefore decodes to those two fields.
+        let byte = [0b1010_1000u8];
 
-        let reader = ArgsReader::from_slice(&buf);
-        let decoded = HeaderFlags::try_fixed_decode(&reader).unwrap();
+        let mut reader = Reader::new(Cursor::new(&byte[..]));
+        let decoded = HeaderFlags::from_reader_with_ctx(&mut reader, ()).unwrap();
+
         assert!(decoded.withdraw_eth);
         assert_eq!(decoded.custom_erc20_count, 5);
         assert!(!decoded.read_custom_recipient);

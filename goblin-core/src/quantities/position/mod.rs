@@ -1,5 +1,4 @@
 mod alias;
-mod impl_bit_pack;
 mod impls;
 
 pub mod bits_layout;
@@ -16,10 +15,9 @@ pub use safe_position::*;
 
 use core::range::RangeInclusive;
 
-use goblin_macros::fixed_codec;
+use deku::DekuRead;
 
-#[fixed_codec]
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug, Default)]
+#[derive(DekuRead, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug, Default)]
 pub struct Position<K, const BITS: u16>
 where
     K: InnerVal,
@@ -33,6 +31,12 @@ where
 {
     pub const fn new(inner: K) -> Self {
         Self { inner }
+    }
+
+    /// Decode from the low bits of a raw bit field, delegating to the inner value.
+    #[inline]
+    pub fn from_raw(raw: u64) -> Self {
+        Self::new(K::from_raw(raw))
     }
 
     pub fn convert_range(value: RangeInclusive<FullPos>) -> RangeInclusive<Self> {

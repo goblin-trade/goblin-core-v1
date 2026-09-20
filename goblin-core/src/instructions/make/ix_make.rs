@@ -1,9 +1,11 @@
+use deku::DekuReader;
+
 use crate::{
     Ctx,
     axis::occupancy::OccupancyMarker,
     axis_helpers::MarketSpec,
     goblin_error::GoblinError,
-    input_processor::{ArgsReader, FixedCodec},
+    input_processor::ArgsReaderV2,
     instructions::ix_make_inner,
     market::MakeHeader,
     match_axes,
@@ -14,7 +16,7 @@ use crate::{
 
 pub fn ix_make<MS: MarketSpec>(
     pos_1: Pos1,
-    reader: &ArgsReader,
+    reader: &mut ArgsReaderV2<'_>,
     inner_bitmap_state: &mut InnerBitmap,
     ctx: &mut Ctx<MS>,
 ) -> Result<(), GoblinError> {
@@ -23,7 +25,7 @@ pub fn ix_make<MS: MarketSpec>(
         occupancy_enum,
         inner_enum_raw,
         base_lots_u32,
-    } = MakeHeader::try_fixed_decode(reader)?;
+    } = MakeHeader::from_reader_with_ctx(reader, ()).map_err(|_| GoblinError::InvalidPayload)?;
 
     if base_lots_u32 == BaseLots::default() {
         return Ok(());

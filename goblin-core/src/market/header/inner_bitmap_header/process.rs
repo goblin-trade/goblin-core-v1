@@ -1,8 +1,10 @@
+use deku::DekuReader;
+
 use crate::{
     Ctx,
     axis_helpers::MarketSpec,
     goblin_error::GoblinError,
-    input_processor::{ArgsReader, FixedCodec},
+    input_processor::ArgsReaderV2,
     instructions::ix_make::ix_make,
     market::InnerBitmapHeader,
     quantities::{INNER_POS, POS_1, Pos0, Pos1},
@@ -13,13 +15,13 @@ impl InnerBitmapHeader {
     pub fn process<MS: MarketSpec>(
         pos_0: Pos0,
         outer_bitmap_state: &mut OuterBitmap,
-        reader: &ArgsReader,
+        reader: &mut ArgsReaderV2<'_>,
         ctx: &mut Ctx<MS>,
     ) -> Result<(), GoblinError> {
         let Self {
             outer_pos,
             update_count,
-        } = Self::try_fixed_decode(reader)?;
+        } = Self::from_reader_with_ctx(reader, ()).map_err(|_| GoblinError::InvalidPayload)?;
 
         let pos_1 = Pos1::new(pos_0, outer_pos);
 

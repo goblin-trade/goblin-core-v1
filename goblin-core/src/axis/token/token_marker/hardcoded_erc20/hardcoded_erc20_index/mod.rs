@@ -1,17 +1,15 @@
 use deku::DekuRead;
 #[cfg(feature = "encode")]
 use deku::DekuWrite;
-use goblin_macros::{ConstDefault, fixed_codec};
+use goblin_macros::ConstDefault;
 
 mod impl_index;
 
-use crate::{axis::token::token_list::HARDCODED_ERC20_COUNT, goblin_error::GoblinError, require};
+use crate::axis::token::token_list::HARDCODED_ERC20_COUNT;
 
-#[fixed_codec(validate = Self::check)]
 #[derive(Clone, Copy, PartialEq, PartialOrd, ConstDefault, DekuRead)]
 #[cfg_attr(feature = "encode", derive(DekuWrite))]
 pub struct HardcodedERC20Index {
-    #[codec(wire = u8)]
     #[deku(bytes = "1", assert = "*inner <= Self::MAX_INNER")]
     pub inner: usize,
 }
@@ -21,12 +19,6 @@ impl HardcodedERC20Index {
 
     pub const fn new(inner: usize) -> Self {
         Self { inner }
-    }
-
-    /// Range check kept out of the generated codec via `validate = Self::check`.
-    fn check(&self) -> Result<(), GoblinError> {
-        require!(self.inner <= Self::MAX_INNER, GoblinError::InvalidPayload);
-        Ok(())
     }
 }
 

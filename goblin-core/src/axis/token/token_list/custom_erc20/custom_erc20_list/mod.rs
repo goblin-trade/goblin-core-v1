@@ -1,6 +1,5 @@
 mod impl_index;
 mod impl_into_iterator;
-mod impl_variable_decode;
 
 use deku::DekuError;
 

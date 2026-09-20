@@ -15,7 +15,6 @@ pub use quantity_ops::*;
 pub use u32_quantity::*;
 pub use unsided::*;
 
-mod impl_bit_pack;
 mod impls;
 #[cfg(test)]
 mod tests;
@@ -25,12 +24,11 @@ use core::marker::PhantomData;
 use deku::DekuRead;
 #[cfg(feature = "encode")]
 use deku::DekuWrite;
-use goblin_macros::{ConstDefault, fixed_codec};
+use goblin_macros::ConstDefault;
 
 //
 // Quantity type: value + Dim
 //
-#[fixed_codec]
 #[derive(Default, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Debug, ConstDefault, DekuRead)]
 #[cfg_attr(feature = "encode", derive(DekuWrite))]
 pub struct Quantity<E, I>
@@ -53,6 +51,12 @@ where
             inner: value,
             _marker: PhantomData,
         }
+    }
+
+    /// Decode from the low bits of a raw bit field, delegating to the inner ops.
+    #[inline]
+    pub fn from_raw(raw: u64) -> Self {
+        Self::new(I::from_raw(raw))
     }
 }
 

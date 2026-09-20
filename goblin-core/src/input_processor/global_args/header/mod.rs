@@ -2,9 +2,12 @@ pub mod market_counts;
 
 pub use market_counts::*;
 
-mod impl_variable_decode;
+use deku::{DekuError, DekuReader};
 
-use crate::quantities::UnsidedAtoms;
+use crate::{
+    input_processor::{ArgsReaderV2, HeaderFlags},
+    quantities::UnsidedAtoms,
+};
 
 /// Arguments read from calldata
 pub struct Header {
@@ -22,4 +25,22 @@ pub struct Header {
 
     /// Number of hardcoded and dynamic markets to process
     pub market_counts: MarketCounts,
+}
+
+impl Header {
+    /// Decode the header, whose layout depends on `flags`.
+    pub fn decode(reader: &mut ArgsReaderV2<'_>, flags: &HeaderFlags) -> Result<Self, DekuError> {
+        let eth_out_due_u32 = if flags.withdraw_eth {
+            UnsidedAtoms::<u32>::from_reader_with_ctx(reader, ())?
+        } else {
+            UnsidedAtoms::default()
+        };
+
+        let market_counts = MarketCounts::decode(reader, flags.process_dynamic_markets)?;
+
+        Ok(Self {
+            eth_out_due_u32,
+            market_counts,
+        })
+    }
 }

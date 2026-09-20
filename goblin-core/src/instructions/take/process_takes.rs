@@ -1,11 +1,11 @@
 use crate::{
-    axis_helpers::MarketSpec, for_axes, goblin_error::GoblinError, input_processor::ArgsReader,
-    instructions::ix_take, market::MarketHeader, types::StoreReader, Ctx,
+    Ctx, axis_helpers::MarketSpec, for_axes, goblin_error::GoblinError,
+    input_processor::ArgsReaderV2, instructions::ix_take, market::MarketHeader, types::StoreReader,
 };
 
 pub fn process_takes<MS: MarketSpec>(
     header: &MarketHeader,
-    reader: &ArgsReader,
+    reader: &mut ArgsReaderV2<'_>,
     ctx: &mut Ctx<MS>,
 ) -> Result<(), GoblinError> {
     for_axes!(In => {

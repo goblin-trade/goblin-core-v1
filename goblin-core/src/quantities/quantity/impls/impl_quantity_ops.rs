@@ -16,6 +16,10 @@ where
     const MIN: Self = Self::new(I::MIN);
     const MAX: Self = Self::new(I::MAX);
     const ONE: Self = Self::new(I::ONE);
+
+    fn from_raw(raw: u64) -> Self {
+        Self::new(I::from_raw(raw))
+    }
 }
 
 impl<E, I> CheckedOps for Quantity<E, I>

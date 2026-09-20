@@ -1,9 +1,13 @@
 mod process;
 
-use crate::quantities::OuterPos;
-use goblin_macros::fixed_codec;
+use deku::DekuRead;
+#[cfg(feature = "encode")]
+use deku::DekuWrite;
 
-#[fixed_codec]
+use crate::quantities::OuterPos;
+
+#[derive(DekuRead)]
+#[cfg_attr(feature = "encode", derive(DekuWrite))]
 pub struct InnerBitmapHeader {
     pub outer_pos: OuterPos,
 

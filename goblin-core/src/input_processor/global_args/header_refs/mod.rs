@@ -1,5 +1,4 @@
 mod impl_deku_decode;
-mod impl_variable_decode;
 
 use crate::{axis::token::TokenDataTriple, types::Address};
 

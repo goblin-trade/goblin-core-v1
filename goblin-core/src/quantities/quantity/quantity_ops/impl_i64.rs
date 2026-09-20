@@ -4,6 +4,10 @@ impl QuantityOps for i64 {
     const MIN: Self = 0;
     const MAX: Self = i64::MAX;
     const ONE: Self = 1;
+
+    fn from_raw(raw: u64) -> Self {
+        raw as i64
+    }
 }
 
 impl CheckedOps for i64 {
