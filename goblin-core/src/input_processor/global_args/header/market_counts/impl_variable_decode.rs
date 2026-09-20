@@ -1,5 +1,5 @@
 use crate::input_processor::{
-    FixedCodec, VariableDecode, global_args::global_header::MarketCounts,
+    FixedCodec, VariableDecode, global_args::header::MarketCounts,
 };
 
 impl<'a> VariableDecode<'a> for MarketCounts {

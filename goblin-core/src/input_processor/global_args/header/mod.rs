@@ -4,10 +4,10 @@ pub use market_counts::*;
 
 mod impl_variable_decode;
 
-use crate::{axis::token::TokenDataTriple, quantities::UnsidedAtoms, types::Address};
+use crate::quantities::UnsidedAtoms;
 
 /// Arguments read from calldata
-pub struct GlobalHeader<'a> {
+pub struct Header {
     /// Amount of ETH atoms pending withdrawal, as read from global namespace header
     ///
     /// # Decoding
@@ -20,10 +20,6 @@ pub struct GlobalHeader<'a> {
     /// The amount is transferred out internally (store credit) or externally (transfer call).
     pub eth_out_due_u32: UnsidedAtoms<u32>,
 
-    /// Optional custom recipient
-    pub custom_recipient: Option<&'a Address>,
-
     /// Number of hardcoded and dynamic markets to process
     pub market_counts: MarketCounts,
-    pub token_data_triple: TokenDataTriple<'a>,
 }

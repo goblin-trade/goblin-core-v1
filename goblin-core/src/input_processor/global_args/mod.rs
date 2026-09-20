@@ -1,9 +1,11 @@
 pub mod caller_addresses;
-pub mod global_header;
+pub mod header;
+pub mod header_refs;
 pub mod msg_transfers;
 
 pub use caller_addresses::*;
-pub use global_header::*;
+pub use header::*;
+pub use header_refs::*;
 pub use msg_transfers::*;
 
 mod hostio_fields;
@@ -20,7 +22,8 @@ use crate::{
 
 pub struct GlobalArgs<'a> {
     pub flags: HeaderFlags,
-    pub global_header: GlobalHeader<'a>,
+    pub header: Header,
+    pub refs: HeaderRefs<'a>,
     pub hostio_fields: HostioFields,
 }
 
@@ -35,18 +38,18 @@ impl<'a> GlobalArgs<'a> {
         for_axes!(M, TM0, TM1 => process_market::<(M, Pair<TM0, TM1>)>(
             caller,
             reader,
-            &self.global_header.token_data_triple,
-            &self.global_header.market_counts,
+            &self.refs.token_data_triple,
+            &self.header.market_counts,
             delta,
         )?);
 
         for_axes!(PT, TM0 => PT::settle::<TM0>(
             &delta.global,
-            &self.global_header.token_data_triple,
+            &self.refs.token_data_triple,
             &self.msg_transfers(),
             CallerAddresses {
                 caller: &self.hostio_fields.msg_sender,
-                custom_recipient: self.global_header.custom_recipient
+                custom_recipient: self.refs.custom_recipient
             },
         )?);
 
@@ -56,7 +59,7 @@ impl<'a> GlobalArgs<'a> {
     fn msg_transfers(&self) -> MsgTransfers {
         MsgTransfers::from(ETHTransfers {
             msg_value: self.hostio_fields.msg_value,
-            eth_out_due: self.global_header.eth_out_due_u32.into(),
+            eth_out_due: self.header.eth_out_due_u32.into(),
         })
     }
 }

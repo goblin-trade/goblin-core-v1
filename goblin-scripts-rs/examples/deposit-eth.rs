@@ -7,17 +7,20 @@
 //! ┌──────────────────────────────────────────────────────────────────────┐
 //! │ GlobalArgs                                                           │
 //! │  ├─ HeaderFlags          (1 byte)                                    │
-//! │  └─ GlobalHeader         (variable length, depends on the flags)     │
-//! │       ├─ eth_out_due          (8 bytes, only if `withdraw_eth`)      │
+//! │  ├─ Header               (variable length, depends on the flags)     │
+//! │  │    ├─ eth_out_due          (8 bytes, only if `withdraw_eth`)      │
+//! │  │    └─ market_counts        (2 bytes, +4 if `process_dynamic_...`) │
+//! │  └─ HeaderRefs           (variable length, depends on the flags)     │
 //! │       ├─ custom_recipient     (20 bytes, only if flag set)           │
-//! │       ├─ market_counts        (2 bytes, +4 if `process_dynamic_...`) │
 //! │       └─ custom_erc20_list    (20 bytes per custom token)            │
 //! └──────────────────────────────────────────────────────────────────────┘
 //! ```
 //!
 //! See `goblin-core/src/input_processor/header_flags/impl_fixed_decode.rs` for the
-//! bit layout of `HeaderFlags` and
+//! bit layout of `HeaderFlags`,
 //! `goblin-core/src/input_processor/global_args/global_header/impl_variable_decode.rs`
+//! and
+//! `goblin-core/src/input_processor/global_args/zero_copy/impl_variable_decode.rs`
 //! for the order of the variable fields.
 //!
 //! To deposit ETH we only need to turn on the `read_msg_value` flag. That makes
