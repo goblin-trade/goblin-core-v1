@@ -9,7 +9,6 @@ pub use header_flags::*;
 pub use header_refs::*;
 
 mod hostio_fields;
-mod impl_compound_decode;
 
 use crate::{
     axis::{
@@ -19,7 +18,9 @@ use crate::{
     },
     for_axes,
     goblin_error::GoblinError,
-    input_processor::{ArgsReader, global_args::hostio_fields::HostioFields},
+    input_processor::{
+        ArgsReader, FixedCodec, VariableDecode, global_args::hostio_fields::HostioFields,
+    },
     market::process_market,
     settlement::StaticDelta,
 };
@@ -32,6 +33,20 @@ pub struct GlobalArgs<'a> {
 }
 
 impl<'a> GlobalArgs<'a> {
+    pub fn new(reader: &'a ArgsReader) -> Result<Self, GoblinError> {
+        let flags = HeaderFlags::try_fixed_decode(reader)?;
+        let header = Header::try_variable_decode(reader, &flags)?;
+        let refs = HeaderRefs::try_variable_decode(reader, &flags)?;
+        let hostio_fields = HostioFields::try_new(flags.read_msg_value)?;
+
+        Ok(Self {
+            flags,
+            header,
+            refs,
+            hostio_fields,
+        })
+    }
+
     pub fn process(
         &'a self,
         reader: &ArgsReader,

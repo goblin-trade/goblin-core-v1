@@ -5,9 +5,7 @@ use deku::{
 };
 use goblin_core::{
     goblin_error::GoblinError,
-    input_processor::{
-        ArgsReader, CompoundDecode, GlobalArgs, HeaderFlags, INPUT_SIZE, header_flags,
-    },
+    input_processor::{ArgsReader, GlobalArgs, HeaderFlags, INPUT_SIZE, header_flags},
     require,
     settlement::StaticDelta,
 };
@@ -44,7 +42,7 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
     //     .to_writer(deku_writer, ())
     //     .map_err(|_| GoblinError::CallFail)?;
 
-    let global_args = GlobalArgs::try_compound_decode(reader)?;
+    let global_args = GlobalArgs::new(reader)?;
     global_args.process(reader, delta)?;
 
     // Write cache to trie
