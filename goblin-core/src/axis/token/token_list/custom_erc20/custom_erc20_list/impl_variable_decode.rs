@@ -2,7 +2,7 @@ use crate::{
     axis::token::{
         CustomERC20, token_list::custom_erc20::CustomERC20List, token_marker::TokenData,
     },
-    input_processor::{ArgsReader, HeaderFlags, VariableDecode, ZeroCopyReader},
+    input_processor::{ArgsReader, HeaderFlags, VariableDecode, ZeroCopyRead},
     types::Address,
 };
 

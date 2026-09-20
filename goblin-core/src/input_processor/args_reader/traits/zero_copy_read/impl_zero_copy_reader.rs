@@ -1,6 +1,6 @@
-use crate::input_processor::{ArgsReader, ZeroCopyReader};
+use crate::input_processor::{ArgsReader, ZeroCopyRead};
 
-impl ZeroCopyReader for ArgsReader {
+impl ZeroCopyRead for ArgsReader {
     fn zero_copy_unchecked<T>(&self) -> &T {
         let start = self.offset.get();
         let end = start + core::mem::size_of::<T>();
