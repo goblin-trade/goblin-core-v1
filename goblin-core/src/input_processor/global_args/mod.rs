@@ -1,9 +1,11 @@
 pub mod caller_addresses;
 pub mod header;
+pub mod header_flags;
 pub mod header_refs;
 
 pub use caller_addresses::*;
 pub use header::*;
+pub use header_flags::*;
 pub use header_refs::*;
 
 mod hostio_fields;
@@ -17,7 +19,7 @@ use crate::{
     },
     for_axes,
     goblin_error::GoblinError,
-    input_processor::{ArgsReader, HeaderFlags, global_args::hostio_fields::HostioFields},
+    input_processor::{ArgsReader, global_args::hostio_fields::HostioFields},
     market::process_market,
     settlement::StaticDelta,
 };
