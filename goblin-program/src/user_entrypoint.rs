@@ -44,8 +44,8 @@ fn user_entrypoint_inner(len: usize) -> Result<(), GoblinError> {
     //     .to_writer(deku_writer, ())
     //     .map_err(|_| GoblinError::CallFail)?;
 
-    // let global_args = GlobalArgs::try_compound_decode(reader)?;
-    // global_args.process(reader, delta)?;
+    let global_args = GlobalArgs::try_compound_decode(reader)?;
+    global_args.process(reader, delta)?;
 
     // Write cache to trie
     // https://github.com/OffchainLabs/stylus-sdk-rs/blob/2c709a5a1a620ed7585c7d8af64fefabe3a0fc9a/stylus-sdk/src/storage/mod.rs#L81

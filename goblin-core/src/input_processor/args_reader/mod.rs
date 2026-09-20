@@ -1,6 +1,8 @@
+pub mod args_buffer_v2;
 mod args_writer;
 pub mod traits;
 
+pub use args_buffer_v2::*;
 pub use args_writer::*;
 use goblin_hostio::hostio_unsafe;
 pub use traits::*;
