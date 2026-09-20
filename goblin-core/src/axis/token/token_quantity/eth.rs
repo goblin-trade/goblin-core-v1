@@ -1,7 +1,4 @@
-use crate::{
-    axis::token::{token_quantity::TokenQuantity, ETHStub, ETH},
-    input_processor::ETHTransfers,
-};
+use crate::axis::token::{ETH, ETHStub, ETHTransfers, token_quantity::TokenQuantity};
 
 impl TokenQuantity for ETH {
     const DISCRIMINATOR: u8 = 0;

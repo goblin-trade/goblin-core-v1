@@ -1,9 +1,5 @@
-pub mod eth_transfers;
-
-pub use eth_transfers::*;
-
 use crate::{
-    axis::token::{CustomERC20Stub, HardcodedERC20Stub, Token},
+    axis::token::{CustomERC20Stub, ETHTransfers, HardcodedERC20Stub, Token},
     types::Triple,
 };
 

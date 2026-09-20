@@ -1,6 +1,10 @@
 mod custom_erc20;
 mod eth;
 mod hardcoded_erc20;
+mod msg_transfers;
+
+pub use eth::*;
+pub use msg_transfers::*;
 
 use crate::{goblin_error::GoblinError, quantities::UnsidedAtoms};
 

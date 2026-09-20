@@ -2,10 +2,10 @@ use crate::{
     axis::{
         caller::{CallerEnum, CallerMarker, HardcodedCallerList},
         party::{Counterparties, PartySettle},
-        token::{token_marker::TokenMarker, token_reader::TokenDataTriple},
+        token::{MsgTransfers, token_marker::TokenMarker, token_reader::TokenDataTriple},
     },
     goblin_error::GoblinError,
-    input_processor::{CallerAddresses, MsgTransfers},
+    input_processor::CallerAddresses,
     match_axes,
     settlement::global_delta::{CounterpartyMap, GlobalDelta, TokenDelta},
     types::StoreReader,

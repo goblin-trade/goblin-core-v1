@@ -4,11 +4,11 @@ use crate::{
         party::{PartySettle, Sender},
         token::{
             token_marker::TokenMarker, token_msg_transfer::TokenMsgTransfer,
-            token_reader::TokenDataTriple,
+            token_reader::TokenDataTriple, MsgTransfers,
         },
     },
     goblin_error::GoblinError,
-    input_processor::{CallerAddresses, MsgTransfers},
+    input_processor::CallerAddresses,
     match_axes,
     quantities::UnsidedAtoms,
     settlement::{

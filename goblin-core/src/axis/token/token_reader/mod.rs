@@ -3,10 +3,10 @@ pub mod token_data_triple;
 pub use token_data_triple::*;
 
 use super::{
-    CustomERC20, ETH, HardcodedERC20, token_list::TokenList, token_quantity::TokenQuantity,
+    CustomERC20, ETH, HardcodedERC20, MsgTransfers, token_list::TokenList,
+    token_quantity::TokenQuantity,
 };
 use crate::{
-    input_processor::MsgTransfers,
     settlement::global_delta::{CounterpartyMap, CounterpartyTriple, GlobalSender},
     types::{LifetimedStoreReader, StoreReader},
 };

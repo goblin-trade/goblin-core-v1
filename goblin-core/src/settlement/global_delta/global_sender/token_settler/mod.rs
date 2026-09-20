@@ -8,13 +8,14 @@ use crate::{
     axis::{
         caller::CallerMarker,
         token::{
+            MsgTransfers,
             token_marker::{TokenData, TokenMarker},
             token_msg_transfer::TokenMsgTransfer,
             token_quantity::TokenQuantity,
         },
     },
     goblin_error::GoblinError,
-    input_processor::{CallerAddresses, MsgTransfers},
+    input_processor::CallerAddresses,
     settlement::TokenDelta,
     state::{IndexedPreimage, StoreKeyIndex, StorePreimage},
 };

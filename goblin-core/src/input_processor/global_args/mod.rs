@@ -1,18 +1,20 @@
 pub mod caller_addresses;
 pub mod header;
 pub mod header_refs;
-pub mod msg_transfers;
 
 pub use caller_addresses::*;
 pub use header::*;
 pub use header_refs::*;
-pub use msg_transfers::*;
 
 mod hostio_fields;
 mod impl_compound_decode;
 
 use crate::{
-    axis::{leg::Pair, party::PartySettle},
+    axis::{
+        leg::Pair,
+        party::PartySettle,
+        token::{ETHTransfers, MsgTransfers},
+    },
     for_axes,
     goblin_error::GoblinError,
     input_processor::{ArgsReader, HeaderFlags, global_args::hostio_fields::HostioFields},

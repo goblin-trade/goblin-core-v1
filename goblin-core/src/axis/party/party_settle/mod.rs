@@ -2,9 +2,9 @@ mod counterparties;
 mod sender;
 
 use crate::{
-    axis::token::{token_marker::TokenMarker, token_reader::TokenDataTriple},
+    axis::token::{MsgTransfers, token_marker::TokenMarker, token_reader::TokenDataTriple},
     goblin_error::GoblinError,
-    input_processor::{CallerAddresses, MsgTransfers},
+    input_processor::CallerAddresses,
     settlement::global_delta::{GlobalDelta, TokenDelta},
 };
 
