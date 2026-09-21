@@ -6,10 +6,7 @@ use deku::DekuRead;
 #[cfg(feature = "encode")]
 use deku::DekuWrite;
 
-use crate::{
-    axis::leg::LegMatcher,
-    quantities::{QuantityOps, U32Variant},
-};
+use crate::{axis::leg::LegMatcher, quantities::U32Variant};
 
 /// Take header, packed into one `u32`: the two flags occupy the low bits and
 /// `num_lots_u32` occupies the remaining 30 bits.
@@ -24,9 +21,6 @@ pub struct TakeHeaderMain<In: LegMatcher> {
     pub flags: TakeFlags,
 
     /// The order size, i.e. number of lots to fill
-    #[deku(
-        bits = "30",
-        map = "|raw: u32| -> Result<_, deku::DekuError> { Ok(U32Variant::<In::Lots>::from_raw(raw as u64)) }"
-    )]
+    #[deku(bits = "30")]
     pub num_lots_u32: U32Variant<In::Lots>,
 }
