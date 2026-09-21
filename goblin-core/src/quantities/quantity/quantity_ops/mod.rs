@@ -5,12 +5,8 @@ mod impl_u64;
 
 use core::ops::{Add, AddAssign, Sub, SubAssign};
 
-use deku::DekuReader;
-#[cfg(feature = "encode")]
-use deku::DekuWriter;
-
 use crate::{
-    input_processor::MaybeDekuEncode,
+    input_processor::DekuBounds,
     settlement::{CheckedOps, ConstDefault},
 };
 
@@ -31,8 +27,7 @@ pub trait QuantityOps:
     + Ord
     + ConstDefault
     + CheckedOps
-    + for<'a> DekuReader<'a>
-    + MaybeDekuEncode
+    + DekuBounds
 {
     const MIN: Self;
     const MAX: Self;
