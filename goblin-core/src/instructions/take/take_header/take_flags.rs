@@ -6,7 +6,7 @@ use deku::ctx::Order;
 /// Two flags packed into the take header's flag field, LSB first.
 ///
 /// The bit order is taken from `ctx` so this stays in lockstep with the
-/// enclosing [`TakeHeaderMain`](super::TakeHeaderMain) bit order.
+/// enclosing [`TakeHeader`](super::TakeHeader) bit order.
 #[derive(Clone, Copy, DekuRead)]
 #[deku(bit_order = "order", ctx = "order: Order")]
 #[cfg_attr(feature = "encode", derive(DekuWrite))]
