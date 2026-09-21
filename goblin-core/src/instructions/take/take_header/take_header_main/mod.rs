@@ -21,10 +21,6 @@ use crate::{
 #[cfg_attr(feature = "encode", derive(DekuWrite))]
 pub struct TakeHeaderMain<In: LegMatcher> {
     /// Flags indicating if optional take params should be decoded
-    #[deku(
-        bits = "2",
-        map = "|raw: u8| -> Result<_, deku::DekuError> { Ok(TakeFlags::from_raw(raw as u64)) }"
-    )]
     pub flags: TakeFlags,
 
     /// The order size, i.e. number of lots to fill
