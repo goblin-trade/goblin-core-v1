@@ -1,6 +1,8 @@
 mod impl_checked_ops;
 mod impl_const_default;
 mod impl_deku_reader;
+#[cfg(feature = "encode")]
+mod impl_deku_writer;
 mod impl_div;
 mod impl_from;
 mod impl_mul;
