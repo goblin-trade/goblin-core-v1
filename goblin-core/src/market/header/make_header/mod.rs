@@ -28,6 +28,10 @@ pub struct MakeHeader {
     pub occupancy_enum: OccupancyEnum,
     #[deku(bits = "1")]
     pub inner_enum_raw: bool,
+
+    // TODO why error if map() removed?
+    //
+    // BaseLots implements DekuRead
     #[deku(
         bits = "30",
         map = "|raw: u32| -> Result<_, deku::DekuError> { Ok(BaseLots::<u32>::from_raw(raw as u64)) }"

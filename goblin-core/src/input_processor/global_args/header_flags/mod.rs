@@ -2,20 +2,6 @@ use deku::DekuRead;
 #[cfg(feature = "encode")]
 use deku::DekuWrite;
 
-use crate::axis::leg::LegQuantities;
-
-#[derive(DekuRead)]
-#[cfg_attr(feature = "encode", derive(DekuWrite))]
-pub struct HeaderFlagsV2<In: LegQuantities> {
-    pub lots: In::Lots,
-
-    #[deku(bits = 1)]
-    pub flag: bool,
-
-    #[deku(skip, cond = "!flag", default = "0")]
-    pub conditional: u8,
-}
-
 /// First byte of the calldata header.
 ///
 /// The whole struct is packed into a single byte, least-significant bit first:

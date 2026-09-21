@@ -13,10 +13,7 @@ pub struct MarketHeader {
     pub decode_deposit_amounts: bool,
 
     /// Whether to execute take orders for sides In=Base and In=Quote
-    #[deku(
-        bits = "2",
-        map = "|raw: u8| -> Result<_, deku::DekuError> { Ok(SamePair::<bool>::from_raw(raw as u64)) }"
-    )]
+    #[deku(bits = "2", ctx = "(1, 1)")]
     pub execute_takes: SamePair<bool>,
 
     /// Number of outer bitmaps to traverse
