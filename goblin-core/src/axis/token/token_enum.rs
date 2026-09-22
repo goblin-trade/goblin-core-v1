@@ -1,10 +1,8 @@
-use crate::define_axis;
+use goblin_macros::define_axis;
 
-define_axis! {
-    pub struct Token;
-    enum TokenEnum {
-        ETH = 0,
-        HardcodedERC20 = 1,
-        CustomERC20 = 2,
-    }
+#[define_axis]
+pub enum TokenEnum {
+    ETH = 0,
+    HardcodedERC20 = 1,
+    CustomERC20 = 2,
 }

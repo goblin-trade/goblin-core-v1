@@ -1,12 +1,11 @@
 /// Leg axis - the side of a trade
-use crate::{define_axis, types::Tuple};
+use crate::types::Tuple;
+use goblin_macros::define_axis;
 
-define_axis! {
-    pub struct Leg;
-    enum LegEnum {
-        Base = 0,
-        Quote = 1,
-    }
+#[define_axis]
+pub enum LegEnum {
+    Base = 0,
+    Quote = 1,
 }
 
 pub type Pair<T0, T1> = Tuple<T0, T1, Leg>;

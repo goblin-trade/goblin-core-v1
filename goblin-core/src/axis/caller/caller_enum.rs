@@ -1,12 +1,10 @@
 use super::HardcodedCallerIndex;
-use crate::define_axis;
+use goblin_macros::define_axis;
 
-define_axis! {
-    pub struct Caller;
-    enum CallerEnum {
-        HardcodedCaller = 0,
-        CustomCaller = 1,
-    }
+#[define_axis]
+pub enum CallerEnum {
+    HardcodedCaller = 0,
+    CustomCaller = 1,
 }
 
 impl From<Option<HardcodedCallerIndex>> for CallerEnum {

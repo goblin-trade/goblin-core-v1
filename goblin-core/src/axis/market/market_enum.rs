@@ -1,9 +1,7 @@
-use crate::define_axis;
+use goblin_macros::define_axis;
 
-define_axis! {
-    pub struct Market;
-    enum MarketEnum {
-        Hardcoded = 0,
-        Dynamic = 1,
-    }
+#[define_axis]
+pub enum MarketEnum {
+    Hardcoded = 0,
+    Dynamic = 1,
 }

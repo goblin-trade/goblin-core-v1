@@ -1,16 +1,14 @@
 use crate::{
-    define_axis,
     quantities::{Exp, Quantity},
     settlement::ConstDefault,
     types::Tuple,
 };
+use goblin_macros::define_axis;
 
-define_axis! {
-    pub struct Update;
-    enum UpdateEnum {
-        Increase = 0,
-        Decrease = 1,
-    }
+#[define_axis]
+pub enum UpdateEnum {
+    Increase = 0,
+    Decrease = 1,
 }
 
 impl<E: Exp> From<Quantity<E, i64>> for UpdateEnum {
