@@ -1,16 +1,18 @@
 pub mod caller_addresses;
+pub mod global_args;
 pub mod header;
 pub mod header_flags;
 pub mod header_refs;
 
 pub use caller_addresses::*;
+pub use global_args::*;
 pub use header::*;
 pub use header_flags::*;
 pub use header_refs::*;
 
 mod hostio_fields;
 
-use deku::DekuReader;
+use hostio_fields::HostioFields;
 
 use crate::{
     axis::{
@@ -20,36 +22,29 @@ use crate::{
     },
     for_axes,
     goblin_error::GoblinError,
-    input_processor::{ArgsReader, global_args::hostio_fields::HostioFields},
+    input_processor::ArgsReader,
     market::process_market,
     settlement::StaticDelta,
 };
 
-pub struct GlobalArgs<'a> {
-    pub flags: HeaderFlags,
-    pub header: Header,
-    pub refs: HeaderRefs<'a>,
+/// The complete set of global inputs to a call: the calldata [`GlobalArgs`]
+/// together with the fields read from hostio.
+///
+/// [`GlobalArgs`] is a pure calldata payload that implements Deku, so anything
+/// that is not part of that payload (hostio values) lives here instead. The
+/// settlement logic that consumes both also lives here.
+pub struct GlobalInput<'a> {
+    pub args: GlobalArgs<'a>,
     pub hostio_fields: HostioFields,
 }
 
-impl<'a> GlobalArgs<'a> {
+impl<'a> GlobalInput<'a> {
     pub fn new(reader: &mut ArgsReader<'a>) -> Result<Self, GoblinError> {
-        let flags = HeaderFlags::from_reader_with_ctx(reader, ())
-            .map_err(|_| GoblinError::InvalidPayload)?;
-        let header = Header::from_reader_with_ctx(reader, &flags)
-            .map_err(|_| GoblinError::InvalidPayload)?;
-
-        // Zero-copy refs borrow the calldata. A `DekuReader` impl cannot recover
-        // that slice from a generic reader, so hand it in through the ctx.
-        let source: &'a [u8] = reader.as_mut().get_ref();
-        let refs = HeaderRefs::from_reader_with_ctx(reader, HeaderRefsCtx { flags, source })
-            .map_err(|_| GoblinError::InvalidPayload)?;
-        let hostio_fields = HostioFields::try_new(flags.read_msg_value)?;
+        let args = GlobalArgs::new(reader)?;
+        let hostio_fields = HostioFields::try_new(args.flags.read_msg_value)?;
 
         Ok(Self {
-            flags,
-            header,
-            refs,
+            args,
             hostio_fields,
         })
     }
@@ -64,18 +59,18 @@ impl<'a> GlobalArgs<'a> {
         for_axes!(M, TM0, TM1 => process_market::<(M, Pair<TM0, TM1>)>(
             caller,
             reader,
-            &self.refs.token_data_triple,
-            &self.header.market_counts,
+            &self.args.refs.token_data_triple,
+            &self.args.header.market_counts,
             delta,
         )?);
 
         for_axes!(PT, TM0 => PT::settle::<TM0>(
             &delta.global,
-            &self.refs.token_data_triple,
+            &self.args.refs.token_data_triple,
             &self.msg_transfers(),
             CallerAddresses {
                 caller: &self.hostio_fields.msg_sender,
-                custom_recipient: self.refs.custom_recipient
+                custom_recipient: self.args.refs.custom_recipient
             },
         )?);
 
@@ -85,7 +80,7 @@ impl<'a> GlobalArgs<'a> {
     fn msg_transfers(&self) -> MsgTransfers {
         MsgTransfers::from(ETHTransfers {
             msg_value: self.hostio_fields.msg_value,
-            eth_out_due: self.header.eth_out_due_u32.into(),
+            eth_out_due: self.args.header.eth_out_due_u32.into(),
         })
     }
 }

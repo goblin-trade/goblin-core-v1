@@ -1,6 +1,6 @@
 use goblin_core::{
     goblin_error::GoblinError,
-    input_processor::{ArgsBuffer, ArgsReader, GlobalArgs},
+    input_processor::{ArgsBuffer, ArgsReader, GlobalInput},
     require,
     settlement::StaticDelta,
 };
@@ -20,10 +20,10 @@ fn user_entrypoint_inner() -> Result<(), GoblinError> {
     let delta = StaticDelta::get();
 
     let args_buffer = ArgsBuffer::default();
-    let mut reader: ArgsReader = (&args_buffer).into();
+    let reader = &mut ArgsReader::from(&args_buffer);
 
-    let global_args = GlobalArgs::new(&mut reader)?;
-    global_args.process(&mut reader, delta)?;
+    let global_input = GlobalInput::new(reader)?;
+    global_input.process(reader, delta)?;
 
     // Write cache to trie
     // https://github.com/OffchainLabs/stylus-sdk-rs/blob/2c709a5a1a620ed7585c7d8af64fefabe3a0fc9a/stylus-sdk/src/storage/mod.rs#L81
