@@ -1,13 +1,14 @@
 use deku::DekuError;
+use deku::DekuReader;
 use deku::no_std_io::{Read, Seek};
 use deku::reader::Reader;
 
 use crate::{
     axis::token::{
-        CustomERC20, token_list::custom_erc20::CustomERC20List, token_marker::TokenData,
+        token_list::custom_erc20::{CustomERC20List, CustomERC20ListCtx},
         token_reader::TokenDataTriple,
     },
-    input_processor::{zero_copy_from, zero_copy_slice_from},
+    input_processor::zero_copy_from,
     types::Address,
 };
 
@@ -36,16 +37,15 @@ impl<'a> HeaderRefsCtx<'a> {
         &self,
         reader: &mut Reader<R>,
     ) -> Result<TokenDataTriple<'a>, DekuError> {
-        // SAFETY: `TokenData<CustomERC20>` is `Address` (`[u8; 20]`) plus a
-        // zero-sized decimals marker, so every bit pattern is a valid value,
-        // and `self.source` is the reader's backing slice.
-        let inner = unsafe {
-            zero_copy_slice_from::<TokenData<CustomERC20>, _>(
-                reader,
-                self.source,
-                self.flags.custom_erc20_count,
-            )
-        };
-        Ok(TokenDataTriple::const_from(CustomERC20List { inner }))
+        // The custom list borrows from the same calldata slice and count that
+        // drive this ctx, so hand them to its own zero-copy reader.
+        let list = CustomERC20List::from_reader_with_ctx(
+            reader,
+            CustomERC20ListCtx {
+                count: self.flags.custom_erc20_count,
+                source: self.source,
+            },
+        )?;
+        Ok(TokenDataTriple::const_from(list))
     }
 }

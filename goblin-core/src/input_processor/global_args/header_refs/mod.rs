@@ -30,7 +30,7 @@ pub struct HeaderRefs<'a> {
     #[deku(reader = "ctx.read_token_data_triple(deku::reader)")]
     #[cfg_attr(
         feature = "encode",
-        deku(writer = "self.token_data_triple.2.to_writer(deku::writer, ())")
+        deku(writer = "ctx.write_token_data_triple(deku::writer, &self.token_data_triple)")
     )]
     pub token_data_triple: TokenDataTriple<'a>,
 }
