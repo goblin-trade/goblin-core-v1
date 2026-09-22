@@ -36,7 +36,8 @@ impl<'a> GlobalArgs<'a> {
     pub fn new(reader: &mut ArgsReaderV2<'a>) -> Result<Self, GoblinError> {
         let flags = HeaderFlags::from_reader_with_ctx(reader, ())
             .map_err(|_| GoblinError::InvalidPayload)?;
-        let header = Header::decode(reader, &flags).map_err(|_| GoblinError::InvalidPayload)?;
+        let header = Header::from_reader_with_ctx(reader, &flags)
+            .map_err(|_| GoblinError::InvalidPayload)?;
         let refs = HeaderRefs::decode(reader, &flags).map_err(|_| GoblinError::InvalidPayload)?;
         let hostio_fields = HostioFields::try_new(flags.read_msg_value)?;
 
