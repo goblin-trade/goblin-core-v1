@@ -5,7 +5,7 @@ use crate::{
     axis::occupancy::OccupancyMarker,
     axis_helpers::MarketSpec,
     goblin_error::GoblinError,
-    input_processor::ArgsReaderV2,
+    input_processor::ArgsReader,
     instructions::ix_make_inner,
     market::MakeHeader,
     match_axes,
@@ -16,7 +16,7 @@ use crate::{
 
 pub fn ix_make<MS: MarketSpec>(
     pos_1: Pos1,
-    reader: &mut ArgsReaderV2<'_>,
+    reader: &mut ArgsReader<'_>,
     inner_bitmap_state: &mut InnerBitmap,
     ctx: &mut Ctx<MS>,
 ) -> Result<(), GoblinError> {

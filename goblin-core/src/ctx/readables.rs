@@ -2,7 +2,7 @@ use crate::{
     axis::{market::MarketLocator, token::token_reader::TokenDataTriple},
     axis_helpers::MarketSpec,
     goblin_error::GoblinError,
-    input_processor::ArgsReaderV2,
+    input_processor::ArgsReader,
     market::MarketReadables,
     types::Address,
 };
@@ -15,7 +15,7 @@ pub struct Readables<'a, MS: MarketSpec> {
 impl<'a, MS: MarketSpec> Readables<'a, MS> {
     pub fn try_new(
         msg_sender: &'a Address,
-        reader: &mut ArgsReaderV2<'_>,
+        reader: &mut ArgsReader<'_>,
         token_data_triple: &TokenDataTriple<'a>,
     ) -> Result<Self, GoblinError> {
         let locator = MS::Market::decode_locator(reader, token_data_triple)?;

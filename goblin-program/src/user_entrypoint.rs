@@ -1,6 +1,6 @@
 use goblin_core::{
     goblin_error::GoblinError,
-    input_processor::{ArgsBufferV2, ArgsReaderV2, GlobalArgs},
+    input_processor::{ArgsBuffer, ArgsReader, GlobalArgs},
     require,
     settlement::StaticDelta,
 };
@@ -19,8 +19,8 @@ fn user_entrypoint_inner() -> Result<(), GoblinError> {
 
     let delta = StaticDelta::get();
 
-    let args_buffer = ArgsBufferV2::default();
-    let mut reader: ArgsReaderV2 = (&args_buffer).into();
+    let args_buffer = ArgsBuffer::default();
+    let mut reader: ArgsReader = (&args_buffer).into();
 
     let global_args = GlobalArgs::new(&mut reader)?;
     global_args.process(&mut reader, delta)?;

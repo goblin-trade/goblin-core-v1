@@ -2,11 +2,11 @@ use deku::DekuReader;
 
 use crate::{
     Ctx, axis::leg::LegMatcher, axis_helpers::MarketSpec, goblin_error::GoblinError,
-    input_processor::ArgsReaderV2, instructions::TakeHeader, matching::match_order,
+    input_processor::ArgsReader, instructions::TakeHeader, matching::match_order,
 };
 
 pub fn ix_take<MS: MarketSpec, In: LegMatcher>(
-    reader: &mut ArgsReaderV2<'_>,
+    reader: &mut ArgsReader<'_>,
     ctx: &mut Ctx<MS>,
 ) -> Result<(), GoblinError> {
     let header = TakeHeader::<In>::from_reader_with_ctx(reader, ())

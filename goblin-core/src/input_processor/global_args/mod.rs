@@ -20,7 +20,7 @@ use crate::{
     },
     for_axes,
     goblin_error::GoblinError,
-    input_processor::{ArgsReaderV2, global_args::hostio_fields::HostioFields},
+    input_processor::{ArgsReader, global_args::hostio_fields::HostioFields},
     market::process_market,
     settlement::StaticDelta,
 };
@@ -33,7 +33,7 @@ pub struct GlobalArgs<'a> {
 }
 
 impl<'a> GlobalArgs<'a> {
-    pub fn new(reader: &mut ArgsReaderV2<'a>) -> Result<Self, GoblinError> {
+    pub fn new(reader: &mut ArgsReader<'a>) -> Result<Self, GoblinError> {
         let flags = HeaderFlags::from_reader_with_ctx(reader, ())
             .map_err(|_| GoblinError::InvalidPayload)?;
         let header = Header::from_reader_with_ctx(reader, &flags)
@@ -56,7 +56,7 @@ impl<'a> GlobalArgs<'a> {
 
     pub fn process(
         &self,
-        reader: &mut ArgsReaderV2<'_>,
+        reader: &mut ArgsReader<'_>,
         delta: &mut StaticDelta,
     ) -> Result<(), GoblinError> {
         let caller = &self.hostio_fields.msg_sender;

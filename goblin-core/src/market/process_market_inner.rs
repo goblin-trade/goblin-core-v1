@@ -9,7 +9,7 @@ use crate::{
     axis_helpers::MarketSpec,
     for_axes,
     goblin_error::GoblinError,
-    input_processor::ArgsReaderV2,
+    input_processor::ArgsReader,
     instructions::{process_makes, process_takes},
     market::MarketHeader,
     settlement::{
@@ -22,7 +22,7 @@ use crate::{
 #[inline(never)]
 pub fn process_market_inner<'a, MS: MarketSpec>(
     msg_sender: &Address,
-    reader: &mut ArgsReaderV2<'_>,
+    reader: &mut ArgsReader<'_>,
     token_data_triple: &TokenDataTriple<'a>,
     static_delta: &mut StaticDelta,
 ) -> Result<(), GoblinError> {

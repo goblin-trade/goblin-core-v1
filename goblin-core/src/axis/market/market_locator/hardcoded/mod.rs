@@ -11,7 +11,7 @@ use crate::{
     },
     axis_helpers::TokenPair,
     goblin_error::GoblinError,
-    input_processor::ArgsReaderV2,
+    input_processor::ArgsReader,
     market::MarketReadables,
 };
 
@@ -19,7 +19,7 @@ impl<TP: TokenPair + HardcodedMarketList> MarketLocator<TP> for Hardcoded {
     type Locator = MarketIndex<TP>;
 
     fn decode_locator<'a>(
-        reader: &mut ArgsReaderV2<'a>,
+        reader: &mut ArgsReader<'a>,
         _token_data_triple: &TokenDataTriple,
     ) -> Result<Self::Locator, GoblinError> {
         MarketIndex::<TP>::from_reader_with_ctx(reader, ()).map_err(|_| GoblinError::InvalidPayload)

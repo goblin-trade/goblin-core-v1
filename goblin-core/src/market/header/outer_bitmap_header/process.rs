@@ -4,7 +4,7 @@ use crate::{
     Ctx,
     axis_helpers::MarketSpec,
     goblin_error::GoblinError,
-    input_processor::ArgsReaderV2,
+    input_processor::ArgsReader,
     market::header::{
         inner_bitmap_header::InnerBitmapHeader, outer_bitmap_header::OuterBitmapHeader,
     },
@@ -14,7 +14,7 @@ use crate::{
 
 impl OuterBitmapHeader {
     pub fn process<MS: MarketSpec>(
-        reader: &mut ArgsReaderV2<'_>,
+        reader: &mut ArgsReader<'_>,
         ctx: &mut Ctx<MS>,
     ) -> Result<(), GoblinError> {
         let Self {

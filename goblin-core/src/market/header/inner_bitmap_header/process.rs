@@ -4,7 +4,7 @@ use crate::{
     Ctx,
     axis_helpers::MarketSpec,
     goblin_error::GoblinError,
-    input_processor::ArgsReaderV2,
+    input_processor::ArgsReader,
     instructions::ix_make::ix_make,
     market::InnerBitmapHeader,
     quantities::{INNER_POS, POS_1, Pos0, Pos1},
@@ -15,7 +15,7 @@ impl InnerBitmapHeader {
     pub fn process<MS: MarketSpec>(
         pos_0: Pos0,
         outer_bitmap_state: &mut OuterBitmap,
-        reader: &mut ArgsReaderV2<'_>,
+        reader: &mut ArgsReader<'_>,
         ctx: &mut Ctx<MS>,
     ) -> Result<(), GoblinError> {
         let Self {
