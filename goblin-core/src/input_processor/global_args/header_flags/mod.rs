@@ -7,7 +7,7 @@ use deku::DekuWrite;
 /// The whole struct is packed into a single byte, least-significant bit first:
 /// each `bool` takes one bit and the trailing count takes whatever is left
 /// (3 bits here).
-#[derive(DekuRead, Default)]
+#[derive(DekuRead, Default, Clone, Copy)]
 #[deku(bit_order = "lsb")]
 #[cfg_attr(feature = "encode", derive(DekuWrite))]
 pub struct HeaderFlags {

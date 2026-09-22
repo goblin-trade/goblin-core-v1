@@ -38,7 +38,12 @@ impl<'a> GlobalArgs<'a> {
             .map_err(|_| GoblinError::InvalidPayload)?;
         let header = Header::from_reader_with_ctx(reader, &flags)
             .map_err(|_| GoblinError::InvalidPayload)?;
-        let refs = HeaderRefs::decode(reader, &flags).map_err(|_| GoblinError::InvalidPayload)?;
+
+        // Zero-copy refs borrow the calldata. A `DekuReader` impl cannot recover
+        // that slice from a generic reader, so hand it in through the ctx.
+        let source: &'a [u8] = reader.as_mut().get_ref();
+        let refs = HeaderRefs::from_reader_with_ctx(reader, HeaderRefsCtx { flags, source })
+            .map_err(|_| GoblinError::InvalidPayload)?;
         let hostio_fields = HostioFields::try_new(flags.read_msg_value)?;
 
         Ok(Self {
