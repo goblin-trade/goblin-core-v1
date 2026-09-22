@@ -28,17 +28,19 @@ impl<'a> HeaderRefsCtx<'a> {
         }
     }
 
-    /// Write the token triple; only the custom ERC20 list (`.2`) is carried in
-    /// calldata, so it is the only component serialized.
+    /// Write the token triple. Only the custom ERC20 list is carried in
+    /// calldata, so only its count and backing slice reach the encode path.
     pub fn write_token_data_triple<W: Write + Seek>(
         &self,
         writer: &mut Writer<W>,
-        triple: &TokenDataTriple,
+        triple: &TokenDataTriple<'a>,
     ) -> Result<(), DekuError> {
-        let ctx = CustomERC20ListCtx {
-            count: triple.2.inner.len(),
-            source: self.source,
-        };
-        triple.2.to_writer(writer, ctx)
+        triple.to_writer(
+            writer,
+            CustomERC20ListCtx {
+                count: triple.2.inner.len(),
+                source: self.source,
+            },
+        )
     }
 }

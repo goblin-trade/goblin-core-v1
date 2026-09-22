@@ -4,10 +4,7 @@ use deku::no_std_io::{Read, Seek};
 use deku::reader::Reader;
 
 use crate::{
-    axis::token::{
-        token_list::custom_erc20::{CustomERC20List, CustomERC20ListCtx},
-        token_reader::TokenDataTriple,
-    },
+    axis::token::{token_list::custom_erc20::CustomERC20ListCtx, token_reader::TokenDataTriple},
     input_processor::zero_copy_from,
     types::Address,
 };
@@ -31,21 +28,18 @@ impl<'a> HeaderRefsCtx<'a> {
         }
     }
 
-    /// Zero-copy read of the custom ERC20 list, wrapped with the two
-    /// contract-constant lists into a [`TokenDataTriple`].
+    /// Zero-copy read of the token triple. Only the custom ERC20 list is carried
+    /// in calldata, so its count and the backing slice drive the decode.
     pub fn read_token_data_triple<R: Read + Seek>(
         &self,
         reader: &mut Reader<R>,
     ) -> Result<TokenDataTriple<'a>, DekuError> {
-        // The custom list borrows from the same calldata slice and count that
-        // drive this ctx, so hand them to its own zero-copy reader.
-        let list = CustomERC20List::from_reader_with_ctx(
+        TokenDataTriple::from_reader_with_ctx(
             reader,
             CustomERC20ListCtx {
                 count: self.flags.custom_erc20_count,
                 source: self.source,
             },
-        )?;
-        Ok(TokenDataTriple::const_from(list))
+        )
     }
 }

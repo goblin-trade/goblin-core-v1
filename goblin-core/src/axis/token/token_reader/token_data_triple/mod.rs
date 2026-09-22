@@ -1,3 +1,7 @@
+mod impl_deku_reader;
+#[cfg(feature = "encode")]
+mod impl_deku_writer;
+
 use crate::{
     axis::token::{
         CustomERC20, ETH, HardcodedERC20, Token,
