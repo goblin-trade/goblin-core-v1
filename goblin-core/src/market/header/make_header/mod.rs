@@ -17,10 +17,6 @@ use crate::{
 pub struct MakeHeader {
     pub inner_pos: InnerPos,
 
-    #[deku(
-        bits = "1",
-        map = "|raw: u8| -> Result<_, deku::DekuError> { Ok(OccupancyEnum::from_raw(raw as u64)) }"
-    )]
     pub occupancy_enum: OccupancyEnum,
 
     #[deku(bits = "1")]
