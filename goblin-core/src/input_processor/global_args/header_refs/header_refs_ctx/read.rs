@@ -5,7 +5,7 @@ use deku::reader::Reader;
 
 use crate::{
     axis::token::{token_list::custom_erc20::CustomERC20ListCtx, token_reader::TokenDataTriple},
-    input_processor::zero_copy_from,
+    input_processor::ZeroCopyReader,
     types::Address,
 };
 
@@ -18,11 +18,10 @@ impl<'a> HeaderRefsCtx<'a> {
         reader: &mut Reader<R>,
     ) -> Result<Option<&'a Address>, DekuError> {
         if self.flags.read_custom_recipient {
+            let mut reader = ZeroCopyReader::new(reader, self.source);
             // SAFETY: `Address` is `[u8; 20]`, so every bit pattern is valid,
             // and `self.source` is the reader's backing slice.
-            Ok(Some(unsafe {
-                zero_copy_from::<Address, _>(reader, self.source)
-            }))
+            Ok(Some(unsafe { reader.zero_copy() }))
         } else {
             Ok(None)
         }

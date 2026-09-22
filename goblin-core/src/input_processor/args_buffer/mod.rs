@@ -1,8 +1,10 @@
 pub mod args_reader;
 pub mod traits;
+pub mod zero_copy_reader;
 
 pub use args_reader::*;
 pub use traits::*;
+pub use zero_copy_reader::*;
 
 #[cfg(feature = "encode")]
 pub mod args_writer;
