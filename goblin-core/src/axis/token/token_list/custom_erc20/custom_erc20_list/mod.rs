@@ -1,3 +1,5 @@
+#[cfg(feature = "encode")]
+mod impl_deku_writer;
 mod impl_index;
 mod impl_into_iterator;
 
