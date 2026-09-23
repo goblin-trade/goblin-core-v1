@@ -16,7 +16,7 @@ use crate::axis::token::{CustomERC20, token_marker::TokenData};
 /// [`CustomERC20ListCtx`], which is why the field uses a custom
 /// `#[deku(reader)]`. The same ctx drives writing; neither of its fields is
 /// consulted there.
-#[derive(Clone, Copy, DekuRead)]
+#[derive(Clone, Copy, DekuRead, Default)]
 #[cfg_attr(feature = "encode", derive(DekuWrite))]
 #[deku(ctx = "ctx: CustomERC20ListCtx<'a>")]
 pub struct CustomERC20List<'a> {

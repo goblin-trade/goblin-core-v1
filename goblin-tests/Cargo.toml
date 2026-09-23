@@ -1,0 +1,8 @@
+[package]
+name = "goblin-tests"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+goblin-core = { path = "../goblin-core", default-features = false, features = ["localnet", "encode"] }
+goblin-program = { path = "../goblin-program" }

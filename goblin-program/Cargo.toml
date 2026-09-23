@@ -7,9 +7,6 @@ edition = "2024"
 crate-type = ["cdylib", "lib"]
 
 [dependencies]
-# Select the network by choosing goblin-core's feature here, e.g.
-#   goblin-core = { path = "../goblin-core", default-features = false, features = ["mainnet"] }
-# The default (localnet) is used when no feature is specified.
-goblin-core = { path = "../goblin-core" }
+goblin-core = { path = "../goblin-core", default-features = false, features = ["localnet"] }
 goblin-hostio = { path = "../goblin-hostio" }
 deku = { version = "0.20", default-features = false }

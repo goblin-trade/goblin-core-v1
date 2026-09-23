@@ -6,13 +6,13 @@ use deku::{
 
 use crate::{axis::leg::Pair, axis_helpers::MarketSpec, for_axes, types::StoreReader};
 
-use super::MarketCountsV2;
+use super::MarketCounts;
 
 /// Write the counts back as packed nibbles, mirroring the reader: the three
 /// hardcoded counts always occupy the first two bytes, and the eight dynamic
 /// counts add four more bytes when `process_dynamic_markets` is set. Illegal
 /// combinations are skipped.
-impl DekuWriter<bool> for MarketCountsV2 {
+impl DekuWriter<bool> for MarketCounts {
     fn to_writer<W: Write + Seek>(
         &self,
         writer: &mut Writer<W>,

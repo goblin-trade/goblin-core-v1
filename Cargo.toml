@@ -3,8 +3,12 @@ cargo-features = ["panic-immediate-abort"]
 [workspace]
 resolver = "2"
 members = [
-    "goblin-core", "goblin-hostio", "goblin-macros", "goblin-program",
-    "goblin-scripts-rs"
+    "goblin-core",
+    "goblin-hostio",
+    "goblin-macros",
+    "goblin-program",
+    "goblin-scripts-rs",
+    "goblin-tests"
 ]
 
 [profile.release]
