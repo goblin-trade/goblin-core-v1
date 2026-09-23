@@ -12,3 +12,5 @@ impl<T0, T1, T2, K> Triple<T0, T1, T2, K> {
         Self(t0, t1, t2, PhantomData)
     }
 }
+
+pub type SameTriple<T, K> = Triple<T, T, T, K>;

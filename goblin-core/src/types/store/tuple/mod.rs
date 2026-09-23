@@ -20,3 +20,5 @@ impl<T0, T1, K> Tuple<T0, T1, K> {
         Self(t0, t1, PhantomData)
     }
 }
+
+pub type SameTuple<T, K> = Tuple<T, T, K>;

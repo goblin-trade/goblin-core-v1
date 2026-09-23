@@ -4,6 +4,16 @@ use deku::{
     reader::Reader,
 };
 
+use crate::{
+    axis::{
+        market::Market,
+        token::{Token, TokenDataTriple},
+    },
+    types::{SameTriple, SameTuple, Tuple},
+};
+
+pub type MarketCountsV2 = SameTuple<SameTriple<SameTriple<u8, Token>, Token>, Market>;
+
 /// Number of hardcoded and dynamic markets to process, as decoded from calldata.
 pub struct MarketCounts {
     counts: [u8; 11],
