@@ -55,13 +55,12 @@ impl<'a> GlobalInput<'a> {
         delta: &mut StaticDelta,
     ) -> Result<(), GoblinError> {
         let caller = &self.hostio_fields.msg_sender;
-        let mut market_counts = self.args.header.market_counts.cursor();
 
         for_axes!(M, TM0, TM1 => process_market::<(M, Pair<TM0, TM1>)>(
             caller,
             reader,
             &self.args.refs.token_data_triple,
-            &mut market_counts,
+            &self.args.header.market_counts,
             delta,
         )?);
 
