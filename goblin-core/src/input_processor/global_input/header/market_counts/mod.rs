@@ -1,33 +1,22 @@
-use core::cell::Cell;
-
 use deku::{
     DekuError, DekuReader,
-    no_std_io::{Read, Seek},
+    no_std_io::{Cursor, Read, Seek},
     reader::Reader,
 };
 
+/// Number of hardcoded and dynamic markets to process, as decoded from calldata.
 pub struct MarketCounts {
     counts: [u8; 11],
-    index: Cell<usize>,
 }
 
 impl MarketCounts {
     pub fn new(counts: [u8; 11]) -> Self {
-        Self {
-            counts,
-            index: Cell::default(),
-        }
+        Self { counts }
     }
 
-    fn count(&self) -> u8 {
-        self.counts[self.index.get()]
-    }
-
-    pub fn get_count_and_advance(&self) -> u8 {
-        let count = self.count();
-        self.index.set(self.index.get() + 1);
-
-        count
+    /// A read cursor over the decoded counts, yielding one count per byte read.
+    pub fn cursor(&self) -> Cursor<&[u8]> {
+        Cursor::new(&self.counts[..])
     }
 }
 
