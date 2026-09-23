@@ -9,11 +9,25 @@ mod impl_deku_reader;
 mod impl_deku_writer;
 
 use crate::{
-    axis::{market::Market, token::Token},
-    types::{SameTriple, SameTuple},
+    axis::{
+        market::{Hardcoded, Market, MarketMarker},
+        token::Token,
+    },
+    axis_helpers::{MarketSpec, TokenPair},
+    types::{SameTriple, SameTuple, StoreReader},
 };
 
-pub type MarketCountsV2 = SameTuple<SameTriple<SameTriple<u8, Token>, Token>, Market>;
+pub type MarketCountsInner = SameTriple<SameTriple<u8, Token>, Token>;
+pub type MarketCountsV2 = SameTuple<MarketCountsInner, Market>;
+
+impl MarketCountsV2 {
+    pub fn get_count<MS: MarketSpec>(&self) -> u8 {
+        let market_counts = MS::Market::get_leg(self);
+        let base_counts = <MS::Pair as TokenPair>::Base::get_leg(market_counts);
+
+        <MS::Pair as TokenPair>::Quote::get(base_counts)
+    }
+}
 
 /// Number of hardcoded and dynamic markets to process, as decoded from calldata.
 pub struct MarketCounts {

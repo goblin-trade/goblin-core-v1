@@ -1,8 +1,12 @@
 use deku::no_std_io::{Cursor, Read};
 
 use crate::{
-    axis::token::TokenDataTriple, axis_helpers::MarketSpec, goblin_error::GoblinError,
-    input_processor::ArgsReader, market::process_market_inner, settlement::StaticDelta,
+    axis::token::TokenDataTriple,
+    axis_helpers::MarketSpec,
+    goblin_error::GoblinError,
+    input_processor::{ArgsReader, MarketCountsV2},
+    market::process_market_inner,
+    settlement::StaticDelta,
     types::Address,
 };
 
@@ -11,6 +15,7 @@ pub fn process_market<'a, MS: MarketSpec>(
     reader: &mut ArgsReader<'_>,
     token_data_triple: &TokenDataTriple<'a>,
     market_counts: &mut Cursor<&[u8]>,
+    // market_counts_v2: &MarketCountsV2,
     static_delta: &mut StaticDelta,
 ) -> Result<(), GoblinError> {
     if MS::illegal() {
@@ -21,6 +26,8 @@ pub fn process_market<'a, MS: MarketSpec>(
     market_counts
         .read_exact(&mut count)
         .map_err(|_| GoblinError::InvalidPayload)?;
+
+    // let count_v2 = market_counts_v2.get_count::<MS>();
 
     for _ in 0..count[0] {
         process_market_inner::<MS>(msg_sender, reader, token_data_triple, static_delta)?;

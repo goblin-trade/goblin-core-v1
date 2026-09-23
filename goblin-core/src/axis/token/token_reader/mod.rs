@@ -7,8 +7,10 @@ use super::{
     token_quantity::TokenQuantity,
 };
 use crate::{
+    axis::token::Token,
+    input_processor::MarketCountsInner,
     settlement::global_delta::{CounterpartyMap, CounterpartyTriple, GlobalSender},
-    types::{LifetimedStoreReader, StoreReader},
+    types::{LifetimedStoreReader, SameTriple, StoreReader},
 };
 
 pub trait TokenReader:
@@ -18,6 +20,8 @@ pub trait TokenReader:
     + StoreReader<CounterpartyTriple, Result = CounterpartyMap<Self>>
     + StoreReader<MsgTransfers, Result = Self::TokenMsgTransfer>
     + StoreReader<GlobalSender, Result = Self::SenderDeltaList>
+    + StoreReader<MarketCountsInner, Result = SameTriple<u8, Token>>
+    + StoreReader<SameTriple<u8, Token>, Result = u8>
 {
 }
 
