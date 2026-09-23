@@ -1,3 +1,8 @@
+mod impl_deku_reader;
+
+#[cfg(feature = "encode")]
+mod impl_deku_writer;
+
 use deku::DekuRead;
 #[cfg(feature = "encode")]
 use deku::DekuWrite;

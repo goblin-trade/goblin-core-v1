@@ -22,10 +22,10 @@ impl DekuWriter<bool> for MarketCounts {
         let mut next = nibbles.iter_mut();
 
         for_axes!(M, TM0, TM1 => {
-            if !<(M, Pair<TM0, TM1>) as MarketSpec>::illegal() {
-                if let Some(nibble) = next.next() {
-                    *nibble = *TM1::get_leg(TM0::get_leg(M::get_leg(self)));
-                }
+            if !<(M, Pair<TM0, TM1>) as MarketSpec>::illegal()
+                && let Some(nibble) = next.next()
+            {
+                *nibble = *TM1::get_leg(TM0::get_leg(M::get_leg(self)));
             }
         });
 

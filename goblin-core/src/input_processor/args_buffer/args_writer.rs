@@ -1,4 +1,4 @@
-use deku::{no_std_io::Cursor, reader::Reader, writer::Writer};
+use deku::{no_std_io::Cursor, writer::Writer};
 
 use crate::input_processor::ArgsBuffer;
 

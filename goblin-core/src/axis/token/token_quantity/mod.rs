@@ -4,6 +4,7 @@ mod hardcoded_erc20;
 
 use super::TokenMsgTransfer;
 use crate::{
+    input_processor::DekuBounds,
     quantities::UnsidedAtoms,
     settlement::{CheckedOps, ConstDefault},
 };
@@ -12,12 +13,7 @@ pub trait TokenQuantity: Clone + Copy + PartialEq + 'static {
     const DISCRIMINATOR: u8;
 
     /// Index to lookup token address
-    type TokenIndex: Clone
-        + Copy
-        + ConstDefault
-        + PartialEq
-        + From<usize>
-        + for<'a> deku::DekuReader<'a>;
+    type TokenIndex: Clone + Copy + ConstDefault + PartialEq + From<usize> + DekuBounds;
 
     type TokenAddress: Clone + Copy + Sized + Default + ConstDefault;
 

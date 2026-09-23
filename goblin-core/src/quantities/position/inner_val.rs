@@ -1,9 +1,9 @@
 use core::ops::{Add, Shr};
 
-use deku::DekuReader;
+use crate::input_processor::DekuBounds;
 
 pub trait InnerVal:
-    Clone + Copy + Sized + Shr + Into<u64> + Add<Output = Self> + for<'a> DekuReader<'a>
+    Clone + Copy + Sized + Shr + Into<u64> + Add<Output = Self> + DekuBounds
 {
     /// Convert from u64, truncating if needed
     ///

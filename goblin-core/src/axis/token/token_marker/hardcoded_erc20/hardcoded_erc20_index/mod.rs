@@ -3,6 +3,9 @@ use deku::DekuRead;
 use deku::DekuWrite;
 use goblin_macros::ConstDefault;
 
+mod impl_deku_reader;
+#[cfg(feature = "encode")]
+mod impl_deku_writer;
 mod impl_index;
 
 use crate::axis::token::token_list::HARDCODED_ERC20_COUNT;
