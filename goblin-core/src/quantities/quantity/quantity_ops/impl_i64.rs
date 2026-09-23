@@ -8,6 +8,10 @@ impl QuantityOps for i64 {
     fn from_raw(raw: u64) -> Self {
         raw as i64
     }
+
+    fn to_raw(self) -> u64 {
+        self as u64
+    }
 }
 
 impl CheckedOps for i64 {

@@ -20,6 +20,10 @@ where
     fn from_raw(raw: u64) -> Self {
         Self::new(I::from_raw(raw))
     }
+
+    fn to_raw(self) -> u64 {
+        self.inner.to_raw()
+    }
 }
 
 impl<E, I> CheckedOps for Quantity<E, I>

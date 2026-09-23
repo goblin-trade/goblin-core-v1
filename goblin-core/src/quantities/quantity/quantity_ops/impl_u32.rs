@@ -8,6 +8,10 @@ impl QuantityOps for u32 {
     fn from_raw(raw: u64) -> Self {
         raw as u32
     }
+
+    fn to_raw(self) -> u64 {
+        self as u64
+    }
 }
 
 impl CheckedOps for u32 {

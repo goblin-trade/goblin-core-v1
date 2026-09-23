@@ -35,4 +35,8 @@ pub trait QuantityOps:
 
     /// Decode from the low bits of a raw bit field.
     fn from_raw(raw: u64) -> Self;
+
+    /// Encode to the low bits of a raw bit field, two's complement for signed
+    /// inner types. Callers mask to the field width.
+    fn to_raw(self) -> u64;
 }
