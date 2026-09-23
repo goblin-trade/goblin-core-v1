@@ -33,5 +33,5 @@ pub struct Header {
 
     /// Number of hardcoded and dynamic markets to process
     #[deku(ctx = "flags.process_dynamic_markets")]
-    pub market_counts: MarketCountsV2,
+    pub market_counts: MarketCounts,
 }

@@ -6,7 +6,7 @@ use deku::{
 
 use crate::{axis::leg::Pair, axis_helpers::MarketSpec, for_axes, types::StoreReader};
 
-use super::MarketCountsV2;
+use super::MarketCounts;
 
 /// Each count is a nibble, packed LSB-first, stored at the position of its
 /// `(market, base token, quote token)` combination.
@@ -14,7 +14,7 @@ use super::MarketCountsV2;
 /// The three hardcoded counts always occupy the first two bytes; the eight
 /// dynamic counts add four more bytes when `process_dynamic_markets` is set.
 /// Illegal combinations have no count on the wire and stay zeroed.
-impl<'a> DekuReader<'a, bool> for MarketCountsV2 {
+impl<'a> DekuReader<'a, bool> for MarketCounts {
     fn from_reader_with_ctx<R: Read + Seek>(
         reader: &mut Reader<R>,
         process_dynamic_markets: bool,
@@ -36,7 +36,7 @@ impl<'a> DekuReader<'a, bool> for MarketCountsV2 {
             }
         }
 
-        let mut counts = MarketCountsV2::default();
+        let mut counts = MarketCounts::default();
         let mut nibbles = nibbles.into_iter();
 
         // The wire order mirrors `for_axes!`: iterate the same legal

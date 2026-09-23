@@ -56,13 +56,15 @@ impl<'a> GlobalInput<'a> {
     ) -> Result<(), GoblinError> {
         let caller = &self.hostio_fields.msg_sender;
 
-        for_axes!(M, TM0, TM1 => process_market::<(M, Pair<TM0, TM1>)>(
-            caller,
-            reader,
-            &self.args.refs.token_data_triple,
-            &self.args.header.market_counts,
-            delta,
-        )?);
+        for_axes!(M, TM0, TM1 => {
+            process_market::<(M, Pair<TM0, TM1>)>(
+                caller,
+                reader,
+                &self.args.refs.token_data_triple,
+                &self.args.header.market_counts,
+                delta,
+            )?;
+        });
 
         for_axes!(PT, TM0 => PT::settle::<TM0>(
             &delta.global,
