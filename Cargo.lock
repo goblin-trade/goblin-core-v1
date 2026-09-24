@@ -2132,6 +2132,7 @@ dependencies = [
  "deku",
  "goblin-hostio",
  "goblin-macros",
+ "goblin-types",
  "hex-literal",
  "keccak-const",
 ]
@@ -2195,6 +2196,10 @@ dependencies = [
  "goblin-core",
  "goblin-program",
 ]
+
+[[package]]
+name = "goblin-types"
+version = "0.1.0"
 
 [[package]]
 name = "group"

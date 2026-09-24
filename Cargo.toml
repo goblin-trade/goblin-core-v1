@@ -8,7 +8,8 @@ members = [
     "goblin-macros",
     "goblin-program",
     "goblin-scripts-rs",
-    "goblin-tests"
+    "goblin-tests",
+    "goblin-types"
 ]
 
 [profile.release]
