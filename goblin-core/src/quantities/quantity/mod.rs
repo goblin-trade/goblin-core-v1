@@ -21,24 +21,47 @@ mod tests;
 
 use core::marker::PhantomData;
 
-use deku::DekuRead;
+use crate::codec::{CodecResult, GoblinRead, Reader};
 #[cfg(feature = "encode")]
-use deku::DekuWrite;
+use crate::codec::{GoblinWrite, Writer};
 use goblin_macros::ConstDefault;
 
 //
 // Quantity type: value + Dim
 //
-#[derive(Default, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Debug, ConstDefault, DekuRead)]
-#[cfg_attr(feature = "encode", derive(DekuWrite))]
+#[derive(Default, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Debug, ConstDefault)]
 pub struct Quantity<E, I>
 where
     E: Exp,
     I: QuantityOps,
 {
     pub inner: I,
-    #[deku(skip)]
     _marker: PhantomData<E>,
+}
+
+impl<'de, E, I> GoblinRead<'de, ()> for Quantity<E, I>
+where
+    E: Exp,
+    I: QuantityOps,
+{
+    fn from_reader_with_ctx(reader: &mut Reader<'de>, (): ()) -> CodecResult<Self> {
+        let inner = I::from_reader_with_ctx(reader, ())?;
+        Ok(Self {
+            inner,
+            _marker: PhantomData,
+        })
+    }
+}
+
+#[cfg(feature = "encode")]
+impl<E, I> GoblinWrite<()> for Quantity<E, I>
+where
+    E: Exp,
+    I: QuantityOps,
+{
+    fn to_writer(&self, writer: &mut Writer<'_>, (): ()) -> CodecResult<()> {
+        self.inner.to_writer(writer, ())
+    }
 }
 
 impl<E, I> Quantity<E, I>

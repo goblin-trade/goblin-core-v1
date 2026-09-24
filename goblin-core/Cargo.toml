@@ -12,7 +12,6 @@ goblin-macros = { path = "../goblin-macros" }
 goblin-types = { path = "../goblin-types" }
 keccak-const = "0.2.0"
 hex-literal = "0.4.1"
-deku = { version = "0.20", default-features = false }
 
 [features]
 default = ["localnet"]

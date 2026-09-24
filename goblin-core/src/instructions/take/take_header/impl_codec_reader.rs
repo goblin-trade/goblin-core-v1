@@ -1,8 +1,4 @@
-use deku::{
-    DekuError, DekuReader,
-    no_std_io::{Read, Seek},
-    reader::Reader,
-};
+use crate::codec::{CodecResult, GoblinRead, Reader};
 
 use crate::{
     axis::leg::LegMatcher,
@@ -11,13 +7,10 @@ use crate::{
     quantities::{FullPosU32, QuantityOps, U32Variant},
 };
 
-impl<'a, In: LegMatcher> DekuReader<'a, ()> for TakeHeader<In> {
+impl<'de, In: LegMatcher> GoblinRead<'de, ()> for TakeHeader<In> {
     #[inline]
-    fn from_reader_with_ctx<R: Read + Seek>(
-        reader: &mut Reader<R>,
-        _ctx: (),
-    ) -> Result<Self, DekuError> {
-        let lane = read_lane::<R, 4>(reader)?;
+    fn from_reader_with_ctx(reader: &mut Reader<'de>, (): ()) -> CodecResult<Self> {
+        let lane = read_lane::<4>(reader)?;
 
         let flags = TakeFlags {
             read_min_lots: unpack_bool(lane, 0),

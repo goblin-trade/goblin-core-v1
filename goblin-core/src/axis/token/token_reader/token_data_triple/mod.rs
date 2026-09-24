@@ -1,6 +1,6 @@
-mod impl_deku_reader;
+mod impl_codec_reader;
 #[cfg(feature = "encode")]
-mod impl_deku_writer;
+mod impl_codec_writer;
 
 use crate::{
     axis::token::{

@@ -22,6 +22,7 @@ pub use ctx::*;
 
 // Re-exported from `goblin-types` so existing `crate::goblin_error::...` and
 // `crate::require!` paths keep resolving.
+pub use goblin_types::codec;
 pub use goblin_types::goblin_error;
 pub use goblin_types::require;
 

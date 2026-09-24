@@ -1,18 +1,17 @@
 //! Read/write traits for Goblin wire formats.
 //!
-//! These are the intended replacement for the `deku`-based decoding in
-//! `goblin-core`. The trait is deliberately **not** generic over the backing
-//! reader: decoding happens directly over a borrowed `&[u8]`, so a borrowing
-//! decoder (a zero-copy token list, say) can name the backing slice and hand
-//! back `&'de` references without threading a separate "source" through a
-//! context.
+//! These replace the `deku`-based decoding that `goblin-core` used to rely on.
+//! The trait is deliberately **not** generic over the backing reader: decoding
+//! happens directly over a borrowed `&[u8]`, so a borrowing decoder (a zero-copy
+//! token list, say) can name the backing slice and hand back `&'de` references
+//! without threading a separate "source" through a context.
 //!
 //! Sub-byte fields are not modelled here: the wire format is byte-oriented and
-//! the existing bit packing is decoded by hand out of whole-byte lanes.
+//! bit packing is decoded by hand out of whole-byte lanes.
 //!
-//! NOTE: these traits are defined but not yet wired in. `goblin-core` still
-//! decodes with `deku`, so nothing implements `GoblinRead`/`GoblinWrite` yet.
-//! Primitive/array impls arrive with the migration.
+//! Endianness is explicit and little-endian. (deku defaulted to the target's
+//! native endianness, which is little-endian on every target this crate builds
+//! for; pinning it here keeps the wire format portable and unambiguous.)
 
 use core::result::Result as CoreResult;
 
@@ -23,7 +22,8 @@ pub enum CodecError {
     UnexpectedEof,
     /// The output buffer was too small to hold the encoded value.
     BufferFull,
-    /// A decoded value failed a structural check (deku's `assert`).
+    /// A decoded value failed a structural check (e.g. a bounds assertion on a
+    /// decoded index).
     InvalidValue,
 }
 
@@ -174,12 +174,78 @@ impl<'a> Writer<'a> {
 /// Decode `Self` from a byte-oriented [`Reader`].
 ///
 /// The lifetime ties the decoded value to the reader's backing input, so
-/// borrowing decoders stay zero-copy.
-pub trait GoblinRead<'de>: Sized {
-    fn from_reader(reader: &mut Reader<'de>) -> CodecResult<Self>;
+/// borrowing decoders stay zero-copy. `Ctx` carries out-of-band decoding
+/// parameters (a preceding flag, a count, ...) for types that need them.
+pub trait GoblinRead<'de, Ctx = ()>: Sized {
+    fn from_reader_with_ctx(reader: &mut Reader<'de>, ctx: Ctx) -> CodecResult<Self>;
 }
 
 /// Encode `self` into a byte-oriented [`Writer`].
-pub trait GoblinWrite {
-    fn to_writer(&self, writer: &mut Writer<'_>) -> CodecResult<()>;
+pub trait GoblinWrite<Ctx = ()> {
+    fn to_writer(&self, writer: &mut Writer<'_>, ctx: Ctx) -> CodecResult<()>;
+}
+
+macro_rules! impl_unsigned {
+    ($($t:ty => $read:ident, $write:ident;)*) => {
+        $(
+            impl<'de> GoblinRead<'de, ()> for $t {
+                fn from_reader_with_ctx(reader: &mut Reader<'de>, (): ()) -> CodecResult<Self> {
+                    reader.$read()
+                }
+            }
+
+            impl GoblinWrite<()> for $t {
+                fn to_writer(&self, writer: &mut Writer<'_>, (): ()) -> CodecResult<()> {
+                    writer.$write(*self)
+                }
+            }
+        )*
+    };
+}
+
+impl_unsigned! {
+    u8 => read_u8, write_u8;
+    u16 => read_u16_le, write_u16_le;
+    u32 => read_u32_le, write_u32_le;
+    u64 => read_u64_le, write_u64_le;
+}
+
+macro_rules! impl_signed {
+    ($($t:ty => $wide:ty, $read:ident, $write:ident;)*) => {
+        $(
+            impl<'de> GoblinRead<'de, ()> for $t {
+                fn from_reader_with_ctx(reader: &mut Reader<'de>, (): ()) -> CodecResult<Self> {
+                    Ok(reader.$read()? as $wide as $t)
+                }
+            }
+
+            impl GoblinWrite<()> for $t {
+                fn to_writer(&self, writer: &mut Writer<'_>, (): ()) -> CodecResult<()> {
+                    writer.$write(*self as $wide)
+                }
+            }
+        )*
+    };
+}
+
+impl_signed! {
+    i8 => u8, read_u8, write_u8;
+    i16 => u16, read_u16_le, write_u16_le;
+    i32 => u32, read_u32_le, write_u32_le;
+    i64 => u64, read_u64_le, write_u64_le;
+}
+
+impl<'de, const N: usize> GoblinRead<'de, ()> for [u8; N] {
+    fn from_reader_with_ctx(reader: &mut Reader<'de>, (): ()) -> CodecResult<Self> {
+        reader
+            .take(N)?
+            .try_into()
+            .map_err(|_| CodecError::UnexpectedEof)
+    }
+}
+
+impl<const N: usize> GoblinWrite<()> for [u8; N] {
+    fn to_writer(&self, writer: &mut Writer<'_>, (): ()) -> CodecResult<()> {
+        writer.write(self)
+    }
 }

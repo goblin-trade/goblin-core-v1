@@ -6,7 +6,7 @@ mod impl_u64;
 use core::ops::{Add, AddAssign, Sub, SubAssign};
 
 use crate::{
-    input_processor::DekuBounds,
+    input_processor::CodecBounds,
     settlement::{CheckedOps, ConstDefault},
 };
 
@@ -27,7 +27,7 @@ pub trait QuantityOps:
     + Ord
     + ConstDefault
     + CheckedOps
-    + DekuBounds
+    + CodecBounds
 {
     const MIN: Self;
     const MAX: Self;

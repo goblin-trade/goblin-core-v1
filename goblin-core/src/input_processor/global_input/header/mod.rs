@@ -2,19 +2,15 @@ pub mod market_counts;
 
 pub use market_counts::*;
 
-use deku::DekuRead;
+use crate::codec::{CodecResult, GoblinRead, Reader};
 #[cfg(feature = "encode")]
-use deku::DekuWrite;
+use crate::codec::{GoblinWrite, Writer};
 
 use crate::{input_processor::HeaderFlags, quantities::UnsidedAtoms};
 
 /// Arguments read from calldata
 ///
-/// The layout depends on [`HeaderFlags`], which is threaded through as Deku
-/// decoding context.
-#[derive(DekuRead)]
-#[cfg_attr(feature = "encode", derive(DekuWrite))]
-#[deku(ctx = "flags: &HeaderFlags")]
+/// The layout depends on [`HeaderFlags`], which is passed as decoding context.
 pub struct Header {
     /// Amount of ETH atoms pending withdrawal, as read from global namespace header
     ///
@@ -28,10 +24,40 @@ pub struct Header {
     /// The amount is transferred out internally (store credit) or externally (transfer call).
     ///
     /// Only present when [`HeaderFlags::withdraw_eth`] is set; otherwise defaults to zero.
-    #[deku(cond = "flags.withdraw_eth")]
     pub eth_out_due_u32: UnsidedAtoms<u32>,
 
     /// Number of hardcoded and dynamic markets to process
-    #[deku(ctx = "flags.process_dynamic_markets")]
     pub market_counts: MarketCounts,
+}
+
+impl<'de> GoblinRead<'de, HeaderFlags> for Header {
+    fn from_reader_with_ctx(reader: &mut Reader<'de>, flags: HeaderFlags) -> CodecResult<Self> {
+        let eth_out_due_u32 = if flags.withdraw_eth {
+            UnsidedAtoms::<u32>::from_reader_with_ctx(reader, ())?
+        } else {
+            UnsidedAtoms::<u32>::default()
+        };
+
+        let market_counts =
+            MarketCounts::from_reader_with_ctx(reader, flags.process_dynamic_markets)?;
+
+        Ok(Self {
+            eth_out_due_u32,
+            market_counts,
+        })
+    }
+}
+
+#[cfg(feature = "encode")]
+impl GoblinWrite<HeaderFlags> for Header {
+    fn to_writer(&self, writer: &mut Writer<'_>, flags: HeaderFlags) -> CodecResult<()> {
+        if flags.withdraw_eth {
+            self.eth_out_due_u32.to_writer(writer, ())?;
+        }
+
+        self.market_counts
+            .to_writer(writer, flags.process_dynamic_markets)?;
+
+        Ok(())
+    }
 }

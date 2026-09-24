@@ -33,8 +33,8 @@ pub fn derive_const_default(input: TokenStream) -> TokenStream {
 /// * a `Marker` type alias plus an `AxisMarker` impl for each variant.
 ///
 /// The enum keeps its own attributes verbatim, so derives that only some axes
-/// need (such as Deku) can be added per-enum rather than to every axis. To
-/// have those attributes forwarded, place them *after* `#[define_axis]`.
+/// need can be added per-enum rather than to every axis. To have those
+/// attributes forwarded, place them *after* `#[define_axis]`.
 #[proc_macro_attribute]
 pub fn define_axis(attr: TokenStream, item: TokenStream) -> TokenStream {
     let item = parse_macro_input!(item as ItemEnum);

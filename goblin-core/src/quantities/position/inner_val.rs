@@ -1,9 +1,9 @@
 use core::ops::{Add, Shr};
 
-use crate::input_processor::DekuBounds;
+use crate::input_processor::CodecBounds;
 
 pub trait InnerVal:
-    Clone + Copy + Sized + Shr + Into<u64> + Add<Output = Self> + DekuBounds
+    Clone + Copy + Sized + Shr + Into<u64> + Add<Output = Self> + CodecBounds
 {
     /// Convert from u64, truncating if needed
     ///

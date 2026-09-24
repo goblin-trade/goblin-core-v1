@@ -1,12 +1,10 @@
-use deku::{no_std_io::Cursor, reader::Reader};
-
+use crate::codec::Reader;
 use crate::input_processor::ArgsBuffer;
 
-pub type ArgsReader<'a> = Reader<Cursor<&'a [u8]>>;
+pub type ArgsReader<'de> = Reader<'de>;
 
-impl<'a> From<&'a ArgsBuffer> for ArgsReader<'a> {
-    fn from(value: &'a ArgsBuffer) -> Self {
-        let cursor = Cursor::new(value.inner.as_ref());
-        Self::new(cursor)
+impl<'de> From<&'de ArgsBuffer> for ArgsReader<'de> {
+    fn from(value: &'de ArgsBuffer) -> Self {
+        Reader::new(&value.inner)
     }
 }

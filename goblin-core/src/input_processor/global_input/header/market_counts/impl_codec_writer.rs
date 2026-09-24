@@ -1,8 +1,4 @@
-use deku::{
-    DekuError, DekuWriter,
-    no_std_io::{Seek, Write},
-    writer::Writer,
-};
+use crate::codec::{CodecResult, GoblinWrite, Writer};
 
 use crate::{axis::leg::Pair, axis_helpers::MarketSpec, for_axes, types::StoreReader};
 
@@ -12,12 +8,8 @@ use super::MarketCounts;
 /// hardcoded counts always occupy the first two bytes, and the eight dynamic
 /// counts add four more bytes when `process_dynamic_markets` is set. Illegal
 /// combinations are skipped.
-impl DekuWriter<bool> for MarketCounts {
-    fn to_writer<W: Write + Seek>(
-        &self,
-        writer: &mut Writer<W>,
-        process_dynamic_markets: bool,
-    ) -> Result<(), DekuError> {
+impl GoblinWrite<bool> for MarketCounts {
+    fn to_writer(&self, writer: &mut Writer<'_>, process_dynamic_markets: bool) -> CodecResult<()> {
         let mut nibbles = [0u8; 11];
         let mut next = nibbles.iter_mut();
 
@@ -42,6 +34,6 @@ impl DekuWriter<bool> for MarketCounts {
             2
         };
 
-        writer.write_bytes(&bytes[..len])
+        writer.write(&bytes[..len])
     }
 }

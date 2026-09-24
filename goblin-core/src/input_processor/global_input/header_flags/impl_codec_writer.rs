@@ -1,18 +1,11 @@
-use deku::DekuError;
-use deku::DekuWriter;
-use deku::no_std_io::{Seek, Write};
-use deku::writer::Writer;
+use crate::codec::{CodecResult, GoblinWrite, Writer};
 
 use crate::input_processor::HeaderFlags;
 use crate::input_processor::bit_lane::{pack, pack_bool, write_lane};
 
-impl DekuWriter<()> for HeaderFlags {
+impl GoblinWrite<()> for HeaderFlags {
     #[inline]
-    fn to_writer<W: Write + Seek>(
-        &self,
-        writer: &mut Writer<W>,
-        _ctx: (),
-    ) -> Result<(), DekuError> {
+    fn to_writer(&self, writer: &mut Writer<'_>, (): ()) -> CodecResult<()> {
         let mut lane = 0u64;
         lane = pack_bool(lane, self.read_custom_recipient, 0);
         lane = pack_bool(lane, self.read_msg_value, 1);
@@ -21,6 +14,6 @@ impl DekuWriter<()> for HeaderFlags {
         lane = pack_bool(lane, self.withdraw_internally, 4);
         lane = pack(lane, self.custom_erc20_count as u64, 5, 3);
 
-        write_lane::<W, 1>(writer, lane)
+        write_lane::<1>(writer, lane)
     }
 }

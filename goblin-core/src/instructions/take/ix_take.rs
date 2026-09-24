@@ -1,4 +1,4 @@
-use deku::DekuReader;
+use crate::codec::GoblinRead;
 
 use crate::{
     Ctx, axis::leg::LegMatcher, axis_helpers::MarketSpec, goblin_error::GoblinError,

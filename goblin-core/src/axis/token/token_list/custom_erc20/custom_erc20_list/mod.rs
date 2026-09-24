@@ -4,27 +4,35 @@ mod impl_into_iterator;
 
 pub use custom_erc20_list_ctx::CustomERC20ListCtx;
 
-use deku::DekuRead;
-#[cfg(feature = "encode")]
-use deku::DekuWrite;
-
 use crate::axis::token::{CustomERC20, token_marker::TokenData};
+use crate::codec::{CodecResult, GoblinRead, Reader};
+#[cfg(feature = "encode")]
+use crate::codec::{GoblinWrite, Writer};
 
 /// Zero copy custom ERC20 token list read from calldata.
 ///
-/// Reading borrows zero-copy out of the calldata slice carried by
-/// [`CustomERC20ListCtx`], which is why the field uses a custom
-/// `#[deku(reader)]`. The same ctx drives writing; neither of its fields is
-/// consulted there.
-#[derive(Clone, Copy, DekuRead, Default)]
-#[cfg_attr(feature = "encode", derive(DekuWrite))]
-#[deku(ctx = "ctx: CustomERC20ListCtx<'a>")]
+/// Reading borrows zero-copy out of the reader's backing slice; only the token
+/// count travels in [`CustomERC20ListCtx`].
+#[derive(Clone, Copy, Default)]
 pub struct CustomERC20List<'a> {
     /// Concatenated token addresses, no length prefix.
-    #[deku(reader = "ctx.read_tokens(deku::reader)")]
-    #[cfg_attr(
-        feature = "encode",
-        deku(writer = "ctx.write_tokens(deku::writer, self.inner)")
-    )]
     pub inner: &'a [TokenData<CustomERC20>],
+}
+
+impl<'de> GoblinRead<'de, CustomERC20ListCtx> for CustomERC20List<'de> {
+    fn from_reader_with_ctx(
+        reader: &mut Reader<'de>,
+        ctx: CustomERC20ListCtx,
+    ) -> CodecResult<Self> {
+        Ok(Self {
+            inner: ctx.read_tokens(reader)?,
+        })
+    }
+}
+
+#[cfg(feature = "encode")]
+impl<'de> GoblinWrite<CustomERC20ListCtx> for CustomERC20List<'de> {
+    fn to_writer(&self, writer: &mut Writer<'_>, ctx: CustomERC20ListCtx) -> CodecResult<()> {
+        ctx.write_tokens(writer, self.inner)
+    }
 }

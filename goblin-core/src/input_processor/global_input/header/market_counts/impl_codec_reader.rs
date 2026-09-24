@@ -1,8 +1,4 @@
-use deku::{
-    DekuError, DekuReader,
-    no_std_io::{Read, Seek},
-    reader::Reader,
-};
+use crate::codec::{CodecResult, GoblinRead, Reader};
 
 use crate::{axis::leg::Pair, axis_helpers::MarketSpec, for_axes, types::StoreReader};
 
@@ -14,13 +10,13 @@ use super::MarketCounts;
 /// The three hardcoded counts always occupy the first two bytes; the eight
 /// dynamic counts add four more bytes when `process_dynamic_markets` is set.
 /// Illegal combinations have no count on the wire and stay zeroed.
-impl<'a> DekuReader<'a, bool> for MarketCounts {
-    fn from_reader_with_ctx<R: Read + Seek>(
-        reader: &mut Reader<R>,
+impl<'de> GoblinRead<'de, bool> for MarketCounts {
+    fn from_reader_with_ctx(
+        reader: &mut Reader<'de>,
         process_dynamic_markets: bool,
-    ) -> Result<Self, DekuError> {
-        let byte_0 = u8::from_reader_with_ctx(reader, ())?;
-        let byte_1 = u8::from_reader_with_ctx(reader, ())?;
+    ) -> CodecResult<Self> {
+        let byte_0 = reader.read_u8()?;
+        let byte_1 = reader.read_u8()?;
 
         // byte_1 has 4 free unused bits
         let mut nibbles = [0u8; 11];
@@ -30,7 +26,7 @@ impl<'a> DekuReader<'a, bool> for MarketCounts {
 
         if process_dynamic_markets {
             for i in 0..4 {
-                let byte = u8::from_reader_with_ctx(reader, ())?;
+                let byte = reader.read_u8()?;
                 nibbles[3 + 2 * i] = byte & 0b0000_1111;
                 nibbles[3 + 2 * i + 1] = byte >> 4;
             }

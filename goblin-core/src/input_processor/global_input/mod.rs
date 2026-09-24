@@ -30,7 +30,8 @@ use crate::{
 /// The complete set of global inputs to a call: the calldata [`GlobalArgs`]
 /// together with the fields read from hostio.
 ///
-/// [`GlobalArgs`] is a pure calldata payload that implements Deku, so anything
+/// [`GlobalArgs`] is a pure calldata payload that implements the codec traits,
+/// so anything
 /// that is not part of that payload (hostio values) lives here instead. The
 /// settlement logic that consumes both also lives here.
 pub struct GlobalInput<'a> {

@@ -1,6 +1,6 @@
-use deku::DekuRead;
+use crate::codec::{CodecResult, GoblinRead, Reader};
 #[cfg(feature = "encode")]
-use deku::DekuWrite;
+use crate::codec::{GoblinWrite, Writer};
 
 use crate::{
     axis::{
@@ -14,8 +14,6 @@ use crate::{
     state::MarketPreimage,
 };
 
-#[derive(DekuRead)]
-#[cfg_attr(feature = "encode", derive(DekuWrite))]
 pub struct CommonMarket<TP: TokenPair> {
     /// The token pair
     pub token_index_pair: TokenIndexPair<TP>,
@@ -25,6 +23,30 @@ pub struct CommonMarket<TP: TokenPair> {
 
     /// Tick size (quote lots per base unit per tick)
     pub tick_size_u32: QuoteLotsPerBaseUnitPerTick<u32>,
+}
+
+impl<'de, TP: TokenPair> GoblinRead<'de, ()> for CommonMarket<TP> {
+    fn from_reader_with_ctx(reader: &mut Reader<'de>, (): ()) -> CodecResult<Self> {
+        let token_index_pair = TokenIndexPair::<TP>::from_reader_with_ctx(reader, ())?;
+        let lot_size_pair_u32 = LotSizePair::<u32>::from_reader_with_ctx(reader, ())?;
+        let tick_size_u32 = QuoteLotsPerBaseUnitPerTick::<u32>::from_reader_with_ctx(reader, ())?;
+
+        Ok(Self {
+            token_index_pair,
+            lot_size_pair_u32,
+            tick_size_u32,
+        })
+    }
+}
+
+#[cfg(feature = "encode")]
+impl<TP: TokenPair> GoblinWrite<()> for CommonMarket<TP> {
+    fn to_writer(&self, writer: &mut Writer<'_>, (): ()) -> CodecResult<()> {
+        self.token_index_pair.to_writer(writer, ())?;
+        self.lot_size_pair_u32.to_writer(writer, ())?;
+        self.tick_size_u32.to_writer(writer, ())?;
+        Ok(())
+    }
 }
 
 impl<TP: TokenPair> CommonMarket<TP> {

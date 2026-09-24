@@ -1,17 +1,33 @@
-use deku::DekuRead;
+use crate::codec::{CodecError, CodecResult, GoblinRead, Reader};
 #[cfg(feature = "encode")]
-use deku::DekuWrite;
+use crate::codec::{GoblinWrite, Writer};
 use goblin_macros::ConstDefault;
 
 mod impl_index;
 
 use crate::axis::token::token_list::HARDCODED_ERC20_COUNT;
 
-#[derive(Clone, Copy, PartialEq, PartialOrd, ConstDefault, DekuRead)]
-#[cfg_attr(feature = "encode", derive(DekuWrite))]
+#[derive(Clone, Copy, PartialEq, PartialOrd, ConstDefault)]
 pub struct HardcodedERC20Index {
-    #[deku(bytes = "1", assert = "*inner <= Self::MAX_INNER")]
     pub inner: usize,
+}
+
+impl<'de> GoblinRead<'de, ()> for HardcodedERC20Index {
+    fn from_reader_with_ctx(reader: &mut Reader<'de>, (): ()) -> CodecResult<Self> {
+        let inner = reader.read_u8()? as usize;
+        if inner <= Self::MAX_INNER {
+            Ok(Self { inner })
+        } else {
+            Err(CodecError::InvalidValue)
+        }
+    }
+}
+
+#[cfg(feature = "encode")]
+impl GoblinWrite<()> for HardcodedERC20Index {
+    fn to_writer(&self, writer: &mut Writer<'_>, (): ()) -> CodecResult<()> {
+        writer.write_u8(self.inner as u8)
+    }
 }
 
 impl HardcodedERC20Index {

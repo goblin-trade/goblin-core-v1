@@ -1,17 +1,12 @@
-use deku::no_std_io::{Read, Seek};
-use deku::reader::Reader;
-use deku::{DekuError, DekuReader};
+use crate::codec::{CodecResult, GoblinRead, Reader};
 
 use crate::input_processor::HeaderFlags;
 use crate::input_processor::bit_lane::{read_lane, unpack, unpack_bool};
 
-impl<'a> DekuReader<'a, ()> for HeaderFlags {
+impl<'de> GoblinRead<'de, ()> for HeaderFlags {
     #[inline]
-    fn from_reader_with_ctx<R: Read + Seek>(
-        reader: &mut Reader<R>,
-        _ctx: (),
-    ) -> Result<Self, DekuError> {
-        let lane = read_lane::<R, 1>(reader)?;
+    fn from_reader_with_ctx(reader: &mut Reader<'de>, (): ()) -> CodecResult<Self> {
+        let lane = read_lane::<1>(reader)?;
 
         Ok(Self {
             read_custom_recipient: unpack_bool(lane, 0),

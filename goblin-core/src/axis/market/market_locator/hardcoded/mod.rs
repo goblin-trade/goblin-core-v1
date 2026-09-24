@@ -2,7 +2,7 @@ pub mod hardcoded_market_list;
 
 pub use hardcoded_market_list::*;
 
-use deku::DekuReader;
+use crate::codec::GoblinRead;
 
 use crate::{
     axis::{

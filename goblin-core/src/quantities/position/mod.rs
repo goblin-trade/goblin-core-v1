@@ -15,17 +15,36 @@ pub use safe_position::*;
 
 use core::range::RangeInclusive;
 
-use deku::DekuRead;
+use crate::codec::{CodecResult, GoblinRead, Reader};
 #[cfg(feature = "encode")]
-use deku::DekuWrite;
+use crate::codec::{GoblinWrite, Writer};
 
-#[derive(DekuRead, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug, Default)]
-#[cfg_attr(feature = "encode", derive(DekuWrite))]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug, Default)]
 pub struct Position<K, const BITS: u16>
 where
     K: InnerVal,
 {
     pub inner: K,
+}
+
+impl<'de, K, const BITS: u16> GoblinRead<'de, ()> for Position<K, BITS>
+where
+    K: InnerVal,
+{
+    fn from_reader_with_ctx(reader: &mut Reader<'de>, (): ()) -> CodecResult<Self> {
+        let inner = K::from_reader_with_ctx(reader, ())?;
+        Ok(Self { inner })
+    }
+}
+
+#[cfg(feature = "encode")]
+impl<K, const BITS: u16> GoblinWrite<()> for Position<K, BITS>
+where
+    K: InnerVal,
+{
+    fn to_writer(&self, writer: &mut Writer<'_>, (): ()) -> CodecResult<()> {
+        self.inner.to_writer(writer, ())
+    }
 }
 
 impl<K, const BITS: u16> Position<K, BITS>

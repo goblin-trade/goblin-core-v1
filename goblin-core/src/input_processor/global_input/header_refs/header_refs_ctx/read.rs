@@ -1,43 +1,38 @@
-use deku::DekuError;
-use deku::DekuReader;
-use deku::no_std_io::{Read, Seek};
-use deku::reader::Reader;
+use crate::codec::{CodecError, CodecResult, GoblinRead, Reader};
 
 use crate::{
     axis::token::{token_list::custom_erc20::CustomERC20ListCtx, token_reader::TokenDataTriple},
-    input_processor::ZeroCopyReader,
     types::Address,
 };
 
 use super::HeaderRefsCtx;
 
-impl<'a> HeaderRefsCtx<'a> {
+impl HeaderRefsCtx {
     /// Zero-copy read of the optional custom recipient.
-    pub fn read_recipient<R: Read + Seek>(
+    pub fn read_recipient<'de>(
         &self,
-        reader: &mut Reader<R>,
-    ) -> Result<Option<&'a Address>, DekuError> {
+        reader: &mut Reader<'de>,
+    ) -> CodecResult<Option<&'de Address>> {
         if self.flags.read_custom_recipient {
-            let mut reader = ZeroCopyReader::new(reader, self.source);
-            // SAFETY: `Address` is `[u8; 20]`, so every bit pattern is valid,
-            // and `self.source` is the reader's backing slice.
-            Ok(Some(unsafe { reader.zero_copy() }))
+            let bytes = reader.take(20)?;
+            // `Address` is `[u8; 20]`, so this is a checked, zero-copy borrow.
+            let address: &[u8; 20] = bytes.try_into().map_err(|_| CodecError::UnexpectedEof)?;
+            Ok(Some(address))
         } else {
             Ok(None)
         }
     }
 
     /// Zero-copy read of the token triple. Only the custom ERC20 list is carried
-    /// in calldata, so its count and the backing slice drive the decode.
-    pub fn read_token_data_triple<R: Read + Seek>(
+    /// in calldata, so its count drives the decode.
+    pub fn read_token_data_triple<'de>(
         &self,
-        reader: &mut Reader<R>,
-    ) -> Result<TokenDataTriple<'a>, DekuError> {
+        reader: &mut Reader<'de>,
+    ) -> CodecResult<TokenDataTriple<'de>> {
         TokenDataTriple::from_reader_with_ctx(
             reader,
             CustomERC20ListCtx {
                 count: self.flags.custom_erc20_count,
-                source: self.source,
             },
         )
     }

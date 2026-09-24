@@ -1,3 +1,3 @@
-pub mod deku_bounds;
+pub mod codec_bounds;
 
-pub use deku_bounds::*;
+pub use codec_bounds::*;

@@ -5,9 +5,9 @@ use quote::quote;
 use syn::{Attribute, Ident, ItemEnum, Lit, Token, parse::Parser, spanned::Spanned};
 
 /// Baseline derive set applied to every generated axis enum. Extra traits can
-/// be added per-enum by deriving them on the annotated item (e.g. `DekuRead`);
-/// any trait the caller already derives is skipped here to avoid duplicate
-/// impls.
+/// be added per-enum by deriving them on the annotated item (e.g. a codec
+/// derive); any trait the caller already derives is skipped here to avoid
+/// duplicate impls.
 const BASE_DERIVES: &[&str] = &[
     "Debug",
     "Clone",
@@ -21,7 +21,7 @@ const BASE_DERIVES: &[&str] = &[
 /// Expands `#[define_axis]` on an axis enum.
 ///
 /// The enum keeps all of its own attributes (doc comments, `cfg_attr`, extra
-/// derives such as Deku, ...) and gains:
+/// derives, ...) and gains:
 ///
 /// * a seed struct named after the enum with the trailing `Enum` removed
 ///   (e.g. `OccupancyEnum` -> `Occupancy`), used only to parameterise
