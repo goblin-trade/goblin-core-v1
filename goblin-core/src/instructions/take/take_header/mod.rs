@@ -1,8 +1,8 @@
-mod impl_codec_reader;
+mod impl_goblin_read;
 pub mod take_flags;
 
 #[cfg(feature = "encode")]
-mod impl_codec_writer;
+mod impl_goblin_write;
 
 pub use take_flags::*;
 

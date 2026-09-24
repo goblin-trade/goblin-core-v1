@@ -1,7 +1,7 @@
-mod impl_codec_reader;
+mod impl_goblin_read;
 
 #[cfg(feature = "encode")]
-mod impl_codec_writer;
+mod impl_goblin_write;
 
 /// First byte of the calldata header.
 ///

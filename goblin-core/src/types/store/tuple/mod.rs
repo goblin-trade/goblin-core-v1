@@ -1,10 +1,10 @@
 mod impl_checked_ops;
-mod impl_codec_reader;
-#[cfg(feature = "encode")]
-mod impl_codec_writer;
 mod impl_const_default;
 mod impl_div;
 mod impl_from;
+mod impl_goblin_read;
+#[cfg(feature = "encode")]
+mod impl_goblin_write;
 mod impl_mul;
 mod impl_store_reader;
 mod impl_try_from;
