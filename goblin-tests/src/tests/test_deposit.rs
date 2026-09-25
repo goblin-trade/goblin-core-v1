@@ -2,9 +2,11 @@ use goblin_core::{
     axis::token::{
         CustomERC20, TokenDataTriple, token_list::CustomERC20List, token_marker::TokenData,
     },
+    codec::{GoblinWrite, Writer},
     input_processor::{GlobalArgs, Header, HeaderFlags, HeaderRefs, MarketCounts},
     quantities::UnsidedAtoms,
 };
+use goblin_hostio::hostio_unsafe::set_test_args;
 
 #[test]
 fn test_deposit_eth() {
@@ -33,4 +35,12 @@ fn test_deposit_eth() {
             token_data_triple,
         },
     };
+
+    let mut buffer = [0u8; 512];
+    let writer = &mut Writer::new(buffer.as_mut());
+
+    global_args.to_writer(writer, ()).unwrap();
+
+    let calldata = writer.get_calldata();
+    set_test_args(calldata.to_vec());
 }

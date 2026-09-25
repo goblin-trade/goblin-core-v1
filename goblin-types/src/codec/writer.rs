@@ -20,6 +20,10 @@ impl<'a> Writer<'a> {
         self.pos
     }
 
+    pub fn get_calldata(&self) -> &[u8] {
+        &self.output[..self.pos]
+    }
+
     /// Number of bytes still available.
     pub fn remaining_len(&self) -> usize {
         self.output.len().saturating_sub(self.pos)

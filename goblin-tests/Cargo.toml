@@ -6,3 +6,4 @@ edition = "2024"
 [dependencies]
 goblin-core = { path = "../goblin-core", default-features = false, features = ["localnet", "encode"] }
 goblin-program = { path = "../goblin-program" }
+goblin-hostio = { path = "../goblin-hostio", features = ["test-hostio"] }

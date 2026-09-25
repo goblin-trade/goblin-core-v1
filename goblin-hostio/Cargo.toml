@@ -4,7 +4,20 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+# Used by the native "test hostio" emulation (`test_suite/test_hooks/keccak.rs`).
+# Made optional so it is not pulled into the production wasm build; enable it via
+# the `test-hostio` feature.
+keccak-const = { version = "0.2.0", optional = true }
 
 [dev-dependencies]
 hex-literal = "0.4.1"
+# Also a regular dev-dependency so this crate's own `#[cfg(test)]` suite can use
+# the emulation without enabling the `test-hostio` feature.
 keccak-const = "0.2.0"
+
+[features]
+# Replace the real Stylus hostio imports with the native, in-memory emulation so
+# that dependent crates (e.g. integration tests) can exercise code without a VM.
+# Note: feature unification means any build that enables this will affect every
+# consumer of `goblin-hostio` in that build graph, so keep it out of wasm builds.
+test-hostio = ["dep:keccak-const"]
