@@ -1,4 +1,4 @@
-use goblin_types::{CodecResult, GoblinWrite, Writer};
+use crate::codec::{CodecResult, GoblinWrite, Writer};
 
 use crate::input_processor::{GlobalArgs, HeaderRefsCtx};
 

@@ -9,9 +9,16 @@ crate-type = ["lib"]
 [dependencies]
 goblin-hostio = { path = "../goblin-hostio" }
 goblin-macros = { path = "../goblin-macros" }
-goblin-types = { path = "../goblin-types" }
 keccak-const = "0.2.0"
 hex-literal = "0.4.1"
+
+# The integration tests exercise the full `entrypoint()` path, which needs the
+# calldata encoder (`encode`) and the native hostio emulation (`test-hostio`).
+# Depending on ourselves is how we turn on our own `encode` feature for test
+# targets without enabling it for normal builds (in particular, wasm).
+[dev-dependencies]
+goblin-core = { path = ".", features = ["encode"] }
+goblin-hostio = { path = "../goblin-hostio", features = ["test-hostio"] }
 
 [features]
 default = ["localnet"]

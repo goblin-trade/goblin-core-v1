@@ -1,4 +1,4 @@
-use goblin_types::{CodecResult, GoblinRead, Reader};
+use crate::codec::{CodecResult, GoblinRead, Reader};
 
 use crate::input_processor::{GlobalArgs, Header, HeaderFlags, HeaderRefs, HeaderRefsCtx};
 

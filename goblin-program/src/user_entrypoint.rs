@@ -1,33 +1,12 @@
-use goblin_core::{
-    goblin_error::GoblinError,
-    input_processor::{ArgsBuffer, ArgsReader, GlobalInput},
-    require,
-    settlement::StaticDelta,
-};
-use goblin_hostio::hostio_helpers;
+//! Wasm ABI shim. The contract logic lives in [`goblin_core::entrypoint`]; this
+//! only adapts it to the `extern "C"` signature Stylus expects.
+
+use goblin_core::entrypoint;
 
 #[unsafe(no_mangle)]
 pub extern "C" fn user_entrypoint(_len: usize) -> i32 {
-    match user_entrypoint_inner() {
-        Ok(_) => 0,
+    match entrypoint() {
+        Ok(()) => 0,
         Err(err) => err.code(),
     }
-}
-
-fn user_entrypoint_inner() -> Result<(), GoblinError> {
-    require!(!hostio_helpers::msg_reentrant(), GoblinError::Reentrant);
-
-    let delta = StaticDelta::get();
-
-    let args_buffer = ArgsBuffer::default();
-    let reader = &mut ArgsReader::from(&args_buffer);
-
-    let global_input = GlobalInput::new(reader)?;
-    global_input.process(reader, delta)?;
-
-    // Write cache to trie
-    // https://github.com/OffchainLabs/stylus-sdk-rs/blob/2c709a5a1a620ed7585c7d8af64fefabe3a0fc9a/stylus-sdk/src/storage/mod.rs#L81
-    hostio_helpers::storage_flush_cache(false);
-
-    Ok(())
 }

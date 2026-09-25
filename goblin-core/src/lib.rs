@@ -8,7 +8,9 @@ extern crate std;
 
 pub mod axis;
 pub mod axis_helpers;
+pub mod codec;
 pub mod ctx;
+pub mod goblin_error;
 pub mod hostio;
 pub mod input_processor;
 pub mod instructions;
@@ -20,11 +22,8 @@ pub mod state;
 pub mod types;
 pub use ctx::*;
 
-// Re-exported from `goblin-types` so existing `crate::goblin_error::...` and
-// `crate::require!` paths keep resolving.
-pub use goblin_types::codec;
-pub use goblin_types::goblin_error;
-pub use goblin_types::require;
+mod entrypoint;
+pub use entrypoint::entrypoint;
 
 use hex_literal::hex;
 

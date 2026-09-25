@@ -2071,9 +2071,9 @@ checksum = "e4eba85ea1d0a966a983acd07deee566e67395d2d96b6fb39e62b5a833f1eb0b"
 name = "goblin-core"
 version = "0.1.0"
 dependencies = [
+ "goblin-core",
  "goblin-hostio",
  "goblin-macros",
- "goblin-types",
  "hex-literal",
  "keccak-const",
 ]
@@ -2128,19 +2128,6 @@ dependencies = [
  "wasm-gen",
  "wasmparser",
 ]
-
-[[package]]
-name = "goblin-tests"
-version = "0.1.0"
-dependencies = [
- "goblin-core",
- "goblin-hostio",
- "goblin-program",
-]
-
-[[package]]
-name = "goblin-types"
-version = "0.1.0"
 
 [[package]]
 name = "group"

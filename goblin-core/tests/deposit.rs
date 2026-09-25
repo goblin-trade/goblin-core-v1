@@ -3,11 +3,18 @@ use goblin_core::{
         CustomERC20, TokenDataTriple, token_list::CustomERC20List, token_marker::TokenData,
     },
     codec::{GoblinWrite, Writer},
+    entrypoint,
+    goblin_error::GoblinError,
     input_processor::{GlobalArgs, Header, HeaderFlags, HeaderRefs, MarketCounts},
     quantities::UnsidedAtoms,
 };
-use goblin_hostio::hostio_unsafe::set_test_args;
+use goblin_hostio::hostio_unsafe::{set_msg_reentrant, set_test_args};
 
+/// Deposit-call calldata: turn on `read_msg_value` and nothing else, so the
+/// global header is just two zero bytes of market counts.
+///
+/// NOTE: this test drives the global `VMContext` and `StaticDelta` singletons, so
+/// it must not be split across tests that run concurrently.
 #[test]
 fn test_deposit_eth() {
     let custom_erc20_list_inner: [TokenData<CustomERC20>; 0] = [];
@@ -43,4 +50,12 @@ fn test_deposit_eth() {
 
     let calldata = writer.get_calldata();
     set_test_args(calldata.to_vec());
+
+    // A reentrant call is rejected before any state is touched.
+    set_msg_reentrant(true);
+    assert!(matches!(entrypoint(), Err(GoblinError::Reentrant)));
+    set_msg_reentrant(false);
+
+    // The full decode -> process -> flush path succeeds.
+    assert!(matches!(entrypoint(), Ok(())));
 }

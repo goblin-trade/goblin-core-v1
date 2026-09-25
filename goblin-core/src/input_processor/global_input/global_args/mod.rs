@@ -4,8 +4,8 @@ mod impl_goblin_read;
 mod impl_goblin_write;
 
 use super::{Header, HeaderFlags, HeaderRefs};
+use crate::codec::GoblinRead;
 use crate::{goblin_error::GoblinError, input_processor::ArgsReader};
-use goblin_types::GoblinRead;
 
 /// Arguments read from calldata.
 ///
