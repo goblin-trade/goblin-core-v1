@@ -11,3 +11,4 @@ mod test_utils;
 mod test_make_across_outer_bitmaps;
 mod test_make_multiple_orders;
 mod test_make_single_order;
+mod test_make_two_sided_book;

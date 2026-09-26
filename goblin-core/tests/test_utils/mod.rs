@@ -264,3 +264,133 @@ pub fn custom_erc20_eth_market_header(
         locator: custom_erc20_eth_market(),
     }
 }
+
+// ---------------------------------------------------------------------------
+// Dynamic `Pair<CustomERC20, CustomERC20>` WBTC/USDC market
+// ---------------------------------------------------------------------------
+//
+// A realistic two-custom-token market: WBTC as base, USDC as quote. Both are
+// listed in calldata and traded through a dynamic market.
+//
+// Pricing is normalised: `price = tick_size * tick / quote_lots_per_unit`, so
+// the constants below are chosen to put the mid price at 80_000 USD/BTC:
+//
+//   800 * 10_000 / 100 = 80_000
+
+/// Mainnet WBTC address, used purely as an opaque address.
+pub const WBTC_TOKEN: [u8; 20] = hex!("2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599");
+
+/// Decimals mocked for [`WBTC_TOKEN`]. `update_erc20` accepts 6, 8 or 18.
+pub const WBTC_DECIMALS: u8 = 8;
+
+/// Mainnet USDC address, used purely as an opaque address.
+pub const USDC_TOKEN: [u8; 20] = hex!("A0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48");
+
+/// Decimals mocked for [`USDC_TOKEN`]. `update_erc20` accepts 6, 8 or 18.
+pub const USDC_DECIMALS: u8 = 6;
+
+/// Base lots per WBTC. `100` means one lot is `0.01` WBTC.
+pub const WBTC_LOTS_PER_UNIT: u32 = 100;
+
+/// Quote lots per USD. `100` means one lot is `0.01` USD.
+pub const USDC_LOTS_PER_UNIT: u32 = 100;
+
+/// Quote lots per WBTC per tick, i.e. `800 / 100 = 8` USD per tick.
+pub const WBTC_USDC_QUOTE_LOTS_PER_BASE_UNIT_PER_TICK: u32 = 800;
+
+/// Tick whose price is the `80_000` USD/BTC mid.
+pub const WBTC_USDC_MID_TICK: u64 = 10_000;
+
+/// The calldata token list for [`WBTC_TOKEN`] (index 0) and [`USDC_TOKEN`]
+/// (index 1).
+pub fn wbtc_usdc_list_inner() -> [TokenData<CustomERC20>; 2] {
+    [
+        TokenData::<CustomERC20> {
+            address: WBTC_TOKEN,
+            decimals: CustomERC20Stub,
+        },
+        TokenData::<CustomERC20> {
+            address: USDC_TOKEN,
+            decimals: CustomERC20Stub,
+        },
+    ]
+}
+
+/// The [`TokenDataTriple`] for the WBTC/USDC dynamic market.
+pub fn wbtc_usdc_token_data_triple<'a>(inner: &'a [TokenData<CustomERC20>]) -> TokenDataTriple<'a> {
+    TokenDataTriple::const_from(CustomERC20List { inner })
+}
+
+/// `MarketCounts` selecting a single dynamic `Pair<CustomERC20, CustomERC20>`
+/// market with WBTC as base and USDC as quote.
+pub fn wbtc_usdc_market_counts() -> MarketCounts {
+    MarketCounts::new(
+        MarketCountsInner::default(), // hardcoded markets
+        MarketCountsInner::new(
+            SameTriple::new(0, 0, 0), // base ETH
+            SameTriple::new(0, 0, 0), // base HardcodedERC20
+            SameTriple::new(0, 0, 1), // base CustomERC20, quote CustomERC20
+        ),
+    )
+}
+
+/// Global args for a call that processes only the dynamic WBTC/USDC market.
+pub fn wbtc_usdc_global_args<'a>(token_data_triple: TokenDataTriple<'a>) -> GlobalArgs<'a> {
+    GlobalArgs {
+        flags: HeaderFlags {
+            read_custom_recipient: false,
+            read_msg_value: false,
+            process_dynamic_markets: true,
+            withdraw_eth: false,
+            withdraw_internally: false,
+            custom_erc20_count: 2,
+        },
+        header: Header {
+            eth_out_due_u32: UnsidedAtoms::default(),
+            market_counts: wbtc_usdc_market_counts(),
+        },
+        refs: HeaderRefs {
+            custom_recipient: None,
+            token_data_triple,
+        },
+    }
+}
+
+/// The dynamic `Pair<CustomERC20, CustomERC20>` WBTC/USDC market locator.
+pub fn wbtc_usdc_market() -> CommonMarket<Pair<CustomERC20, CustomERC20>> {
+    CommonMarket::<Pair<CustomERC20, CustomERC20>>::new(
+        Pair::new(CustomERC20Index::from(0), CustomERC20Index::from(1)),
+        Pair::new(
+            BaseLotsPerBaseUnit::new(WBTC_LOTS_PER_UNIT),
+            QuoteLotsPerQuoteUnit::new(USDC_LOTS_PER_UNIT),
+        ),
+        QuoteLotsPerBaseUnitPerTick::new(WBTC_USDC_QUOTE_LOTS_PER_BASE_UNIT_PER_TICK),
+    )
+}
+
+/// A [`MarketHeader`] for the WBTC/USDC dynamic market with both sides funded.
+pub fn wbtc_usdc_market_header(
+    base_deposit_lots: i64,
+    quote_deposit_lots: i64,
+    outer_bitmap_count: u8,
+) -> MarketHeader<(Dynamic, Pair<CustomERC20, CustomERC20>)> {
+    MarketHeader::<(Dynamic, Pair<CustomERC20, CustomERC20>)> {
+        decode_deposit_amounts: true,
+        execute_takes: Pair::new(false, false),
+        outer_bitmap_count,
+        local_deposits: Pair::new(
+            UnsidedLots::new(base_deposit_lots),
+            UnsidedLots::new(quote_deposit_lots),
+        ),
+        locator: wbtc_usdc_market(),
+    }
+}
+
+/// Mock every hostio read the WBTC/USDC market performs: `decimals()` and
+/// `transferFrom(..)` for both tokens.
+pub fn mock_wbtc_usdc() {
+    mock_decimals(WBTC_TOKEN, WBTC_DECIMALS);
+    mock_transfer_from(WBTC_TOKEN);
+    mock_decimals(USDC_TOKEN, USDC_DECIMALS);
+    mock_transfer_from(USDC_TOKEN);
+}
