@@ -1,83 +1,123 @@
 extern crate alloc;
+use alloc::vec::Vec;
+
 use crate::hostio_unsafe::test_suite::*;
 
-/// Emulate a contract call in test environment, returning the result length
+/// Resolve the mocked return data for an outgoing call, record it as the most
+/// recent return data, and write its length to `return_data_len`.
+///
+/// If no mock matches, the recorded return data is empty and `return_data_len`
+/// is set to 0, which lets callers such as `call_and_check` reject the call.
 ///
 /// # Safety
 ///
-/// Developer sets return value during intialization.
+/// * `contract` is either null or points to a 20-byte address.
+/// * `calldata` is either null or points to `calldata_len` readable bytes.
+/// * `return_data_len` points to a writable `usize`.
+unsafe fn record_call(
+    call_type: CallType,
+    contract: *const u8,
+    calldata: *const u8,
+    calldata_len: usize,
+    return_data_len: *mut usize,
+) {
+    let contract = if contract.is_null() {
+        [0u8; 20]
+    } else {
+        // SAFETY: per the hostio ABI, `contract` points to a 20-byte address.
+        unsafe { *(contract as *const [u8; 20]) }
+    };
+
+    let calldata = if calldata.is_null() || calldata_len == 0 {
+        &[][..]
+    } else {
+        // SAFETY: `calldata` points to `calldata_len` readable bytes.
+        unsafe { core::slice::from_raw_parts(calldata, calldata_len) }
+    };
+
+    let vm_ctx = vm_ctx();
+    let data = match vm_ctx.find_mock(call_type, &contract, calldata) {
+        Some(mock) => mock.return_data.clone(),
+        None => Vec::new(),
+    };
+
+    // SAFETY: `return_data_len` is a valid out-pointer per the hostio ABI.
+    unsafe {
+        *return_data_len = data.len();
+    }
+    vm_ctx.last_return_data = data;
+}
+
+/// Emulate a contract call in the test environment, returning the result length.
+///
+/// The return data is looked up from the mocks registered with `set_mock_call`.
+///
+/// # Safety
+///
+/// Developer sets the mock response during initialization.
 ///
 pub unsafe fn call_contract(
-    _contract: *const u8,
-    _calldata: *const u8,
-    _calldata_len: usize,
+    contract: *const u8,
+    calldata: *const u8,
+    calldata_len: usize,
     _value: *const u8,
     _gas: u64,
     return_data_len: *mut usize,
 ) -> u8 {
-    let vm_ctx = vm_ctx();
-
-    if vm_ctx.return_data_index >= vm_ctx.return_data.len() {
-        unsafe {
-            *return_data_len = 0;
-        }
-    } else {
-        let data = &vm_ctx.return_data[vm_ctx.return_data_index];
-        unsafe {
-            *return_data_len = data.len();
-        }
-        vm_ctx.return_data_index += 1;
+    // SAFETY: pointer invariants are upheld by the hostio ABI.
+    unsafe {
+        record_call(
+            CallType::Call,
+            contract,
+            calldata,
+            calldata_len,
+            return_data_len,
+        );
     }
 
     0
 }
 
-/// Emulate a static contract call in test environment, returning the result length
+/// Emulate a static contract call in the test environment, returning the result length.
+///
+/// The return data is looked up from the mocks registered with
+/// `set_mock_static_call`.
 ///
 /// # Safety
 ///
-/// Developer sets return value during intialization.
+/// Developer sets the mock response during initialization.
 ///
 pub unsafe fn static_call_contract(
-    _contract: *const u8,
-    _calldata: *const u8,
-    _calldata_len: usize,
+    contract: *const u8,
+    calldata: *const u8,
+    calldata_len: usize,
     _gas: u64,
     return_data_len: *mut usize,
 ) -> u8 {
-    let vm_ctx = vm_ctx();
-
-    if vm_ctx.return_data_index >= vm_ctx.return_data.len() {
-        unsafe {
-            *return_data_len = 0;
-        }
-    } else {
-        let data = &vm_ctx.return_data[vm_ctx.return_data_index];
-        unsafe {
-            *return_data_len = data.len();
-        }
-        vm_ctx.return_data_index += 1;
+    // SAFETY: pointer invariants are upheld by the hostio ABI.
+    unsafe {
+        record_call(
+            CallType::StaticCall,
+            contract,
+            calldata,
+            calldata_len,
+            return_data_len,
+        );
     }
 
     0
 }
 
-/// Returns the queued return data. It should only be called after calling call_contract()
-/// or static_call_contract(); otherwise it returns 0.
+/// Returns the return data recorded by the most recent `call_contract()` or
+/// `static_call_contract()`; otherwise it returns 0.
 ///
 /// # Safety
 ///
-/// Developer sets return value during intialization.
+/// Developer sets the mock response during initialization.
 ///
 pub unsafe fn read_return_data(dest: *mut u8, offset: usize, size: usize) -> usize {
     let vm_ctx = vm_ctx();
-
-    // index == 0 means no call has occurred yet
-    if vm_ctx.return_data_index == 0 || vm_ctx.return_data_index > vm_ctx.return_data.len() {
-        return 0;
-    }
-
-    let data = &vm_ctx.return_data[vm_ctx.return_data_index - 1];
+    let data = &vm_ctx.last_return_data;
 
     if offset >= data.len() {
         return 0;

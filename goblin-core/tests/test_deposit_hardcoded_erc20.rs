@@ -1,3 +1,4 @@
+use goblin_core::hostio::abi_selector;
 use goblin_core::{
     axis::{
         leg::{Base, Pair},
@@ -19,7 +20,7 @@ use goblin_core::{
     state::{Preimage, StorePreimage},
     types::{SameTriple, StoreReader},
 };
-use goblin_hostio::hostio_unsafe::{set_msg_sender, set_return_data, set_test_args};
+use goblin_hostio::hostio_unsafe::{set_mock_call, set_msg_sender, set_test_args};
 use hex_literal::hex;
 
 const MSG_SENDER: [u8; 20] = hex!("11D05b50ac23f0F24F536315174f35E96d2D5354");
@@ -90,15 +91,21 @@ fn test_deposit_hardcoded_erc20() {
     // 2. Set msg_sender
     set_msg_sender(MSG_SENDER);
 
-    // 3. ERC20 `transferFrom` sucess = true
+    // 3. ERC20 `transferFrom` succeeds for the hardcoded token being deposited.
+    //    The mock is keyed by (call type, token address, calldata), so it only
+    //    applies to this call and leaves any other hostio call untouched.
+    let hardcoded_token_data = HARDCODED_ERC20_LIST.inner[0];
+
     let mut erc20_return = vec![0u8; 32];
     erc20_return[31] = 1;
-    set_return_data(vec![erc20_return]);
+    set_mock_call(
+        hardcoded_token_data.address,
+        abi_selector(b"transferFrom(address,address,uint256)").to_vec(),
+        erc20_return,
+    );
 
     // The full decode -> process -> flush path succeeds.
     assert!(matches!(entrypoint(), Ok(())));
-
-    let hardcoded_token_data = HARDCODED_ERC20_LIST.inner[0];
 
     let hash = StorePreimage::<HardcodedERC20> {
         trader: MSG_SENDER,
