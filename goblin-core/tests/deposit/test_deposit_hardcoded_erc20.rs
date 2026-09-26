@@ -21,11 +21,12 @@ use goblin_core::{
 };
 use goblin_hostio::hostio_unsafe::set_test_args;
 
-mod test_utils;
-use test_utils::{MSG_SENDER, mock_transfer_from, set_sender};
+use crate::test_utils::{MSG_SENDER, isolated, mock_transfer_from, set_sender};
 
 #[test]
 fn test_deposit_hardcoded_erc20() {
+    let _guard = isolated();
+
     let custom_erc20_list_inner: [TokenData<CustomERC20>; 0] = [];
     let custom_erc20_count = custom_erc20_list_inner.len();
     let custom_erc20_list = CustomERC20List {

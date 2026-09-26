@@ -14,32 +14,25 @@
 use goblin_core::{
     axis::{
         leg::{Base, Pair},
-        market::Dynamic,
         occupancy::OccupancyEnum,
-        token::{
-            CustomERC20, CustomERC20Stub, ETH, ETHStub, TokenDataTriple,
-            token_list::CustomERC20List,
-            token_marker::{CustomERC20Index, TokenData},
-        },
+        token::{CustomERC20, ETH},
     },
     codec::{GoblinWrite, Writer},
     entrypoint,
-    input_processor::{
-        GlobalArgs, Header, HeaderFlags, HeaderRefs, INPUT_SIZE, MarketCounts, MarketCountsInner,
-    },
-    market::{CommonMarket, InnerBitmapHeader, MakeHeader, MarketHeader, OuterBitmapHeader},
+    input_processor::INPUT_SIZE,
+    market::{InnerBitmapHeader, MakeHeader, OuterBitmapHeader},
     quantities::{
-        BaseLots, BaseLotsPerBaseUnit, FullPos, InnerPos, IntoAbs, OuterBitmapIndexU32, OuterPos,
-        QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit, UnsidedAtoms, UnsidedLots,
+        BaseLots, FullPos, InnerPos, IntoAbs, OuterBitmapIndexU32, OuterPos, UnsidedLots,
     },
-    settlement::LocalDeposits,
     state::{Preimage, RestingOrderPreimage, StorePreimage},
-    types::{SameTriple, StoreReader},
+    types::StoreReader,
 };
 use goblin_hostio::hostio_unsafe::set_test_args;
 
 use crate::test_utils::{
-    CUSTOM_TOKEN, CUSTOM_TOKEN_DECIMALS, MSG_SENDER, mock_decimals, mock_transfer_from, set_sender,
+    CUSTOM_TOKEN, CUSTOM_TOKEN_DECIMALS, MSG_SENDER, custom_erc20_eth_global_args,
+    custom_erc20_eth_market_header, custom_erc20_list_inner, custom_market_token_data_triple,
+    isolated, mock_custom_token, set_sender,
 };
 
 /// Base lots in the single resting order.
@@ -53,78 +46,22 @@ const TICK: u64 = 100;
 
 #[test]
 fn test_make_single_order() {
-    // A custom ERC20 can never live in a hardcoded market, so it is listed in
-    // calldata and traded through a dynamic market.
-    let custom_token_data = TokenData::<CustomERC20> {
-        address: CUSTOM_TOKEN,
-        decimals: CustomERC20Stub,
-    };
-    let custom_erc20_list_inner: [TokenData<CustomERC20>; 1] = [custom_token_data];
-    let custom_erc20_count = custom_erc20_list_inner.len();
-    let custom_erc20_list = CustomERC20List {
-        inner: custom_erc20_list_inner.as_ref(),
-    };
-    let token_data_triple = TokenDataTriple::const_from(custom_erc20_list);
+    let _guard = isolated();
 
-    // One dynamic market for `Pair<CustomERC20, ETH>`. Legs are indexed
-    // `[market][base][quote]`, each ordered by variant:
-    // markets `[Hardcoded, Dynamic]`, tokens `[ETH, HardcodedERC20, CustomERC20]`.
-    let market_counts = MarketCounts::new(
-        MarketCountsInner::default(), // hardcoded markets
-        MarketCountsInner::new(
-            SameTriple::new(0, 0, 0), // base ETH
-            SameTriple::new(0, 0, 0), // base HardcodedERC20
-            SameTriple::new(1, 0, 0), // base CustomERC20, quote ETH
-        ),
-    );
+    let custom_tokens = custom_erc20_list_inner();
+    let token_data_triple = custom_market_token_data_triple(&custom_tokens);
 
-    let global_args = GlobalArgs {
-        flags: HeaderFlags {
-            read_custom_recipient: false,
-            read_msg_value: false,
-            process_dynamic_markets: true,
-            withdraw_eth: false,
-            withdraw_internally: false,
-            custom_erc20_count,
-        },
-        header: Header {
-            eth_out_due_u32: UnsidedAtoms::default(),
-            market_counts,
-        },
-        refs: HeaderRefs {
-            custom_recipient: None,
-            token_data_triple,
-        },
-    };
+    let global_args = custom_erc20_eth_global_args(token_data_triple);
+    let market_header = custom_erc20_eth_market_header(DEPOSIT_LOTS, 1);
 
-    let common_market = CommonMarket::<Pair<CustomERC20, ETH>>::new(
-        Pair::new(CustomERC20Index::from(0), ETHStub),
-        Pair::new(
-            BaseLotsPerBaseUnit::new(100),
-            QuoteLotsPerQuoteUnit::new(100),
-        ),
-        QuoteLotsPerBaseUnitPerTick::new(1),
-    );
-
-    // The resting order is keyed by `(market, position)`. The market key is
-    // derived in-contract from the token addresses, never read from the wire, so
-    // the test derives it the same way to look the order up afterwards.
-    let market_key = common_market
+    // The market key is derived in-contract from the token addresses, never read
+    // from the wire, so the test derives it the same way to look the order up
+    // afterwards.
+    let market_key = market_header
+        .locator
         .get_preimage(&token_data_triple)
         .unwrap()
         .hash();
-
-    // The make locks base, so fund it with a local base deposit.
-    let deposit_lots_delta = UnsidedLots::new(DEPOSIT_LOTS);
-    let local_deposits = LocalDeposits::<Pair<CustomERC20, ETH>>::new(deposit_lots_delta, ETHStub);
-
-    let market_header = MarketHeader::<(Dynamic, Pair<CustomERC20, ETH>)> {
-        decode_deposit_amounts: true,
-        execute_takes: Pair::new(false, false),
-        outer_bitmap_count: 1,
-        local_deposits,
-        locator: common_market,
-    };
 
     // Decompose the target tick into the `(outer bitmap index, outer pos, inner
     // pos)` triple the bitmap headers carry. A full position is `tick << 3`,
@@ -170,11 +107,9 @@ fn test_make_single_order() {
     let calldata = writer.get_calldata();
     set_test_args(calldata.to_vec());
 
-    // 3. Set msg_sender. The store is created here, so its decimals are read via
-    //    hostio and the funding deposit is pulled with `transferFrom`.
+    // 3. Set msg_sender and mock the custom token's hostio reads.
     set_sender();
-    mock_decimals(custom_token_data.address, CUSTOM_TOKEN_DECIMALS);
-    mock_transfer_from(custom_token_data.address);
+    mock_custom_token();
 
     assert!(matches!(entrypoint(), Ok(())));
 
@@ -194,13 +129,13 @@ fn test_make_single_order() {
     // rest of the deposit free.
     let store = StorePreimage::<CustomERC20> {
         trader: MSG_SENDER,
-        token_address: custom_token_data.address,
+        token_address: CUSTOM_TOKEN,
     }
     .hash()
     .load();
 
     let base_atoms_per_lot = Base::get(&market_header.locator.atoms_per_lot_pair());
-    let deposit_atoms = deposit_lots_delta.abs() * base_atoms_per_lot;
+    let deposit_atoms = UnsidedLots::new(DEPOSIT_LOTS).abs() * base_atoms_per_lot;
     let order_atoms = UnsidedLots::new(ORDER_LOTS) * base_atoms_per_lot;
 
     assert_eq!(store.atoms_free, deposit_atoms - order_atoms);
