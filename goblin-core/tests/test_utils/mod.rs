@@ -22,19 +22,21 @@ use goblin_core::{
     axis::{
         leg::Pair,
         market::Dynamic,
+        occupancy::OccupancyEnum,
         token::{
             CustomERC20, CustomERC20Stub, ETH, ETHStub, TokenDataTriple,
             token_list::CustomERC20List,
             token_marker::{CustomERC20Index, TokenData},
         },
     },
+    codec::{GoblinWrite, Writer},
     input_processor::{
         GlobalArgs, Header, HeaderFlags, HeaderRefs, MarketCounts, MarketCountsInner,
     },
-    market::{CommonMarket, MarketHeader},
+    market::{CommonMarket, InnerBitmapHeader, MakeHeader, MarketHeader, OuterBitmapHeader},
     quantities::{
-        BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit, UnsidedAtoms,
-        UnsidedLots,
+        BaseLots, BaseLotsPerBaseUnit, InnerPos, OuterBitmapIndexU32, OuterPos,
+        QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit, UnsidedAtoms, UnsidedLots,
     },
     settlement::{ConstDefault, LocalDeposits, StaticDelta},
     types::SameTriple,
@@ -46,6 +48,10 @@ use hex_literal::hex;
 
 /// The trader used as `msg_sender` by the integration tests.
 pub const MSG_SENDER: [u8; 20] = hex!("11D05b50ac23f0F24F536315174f35E96d2D5354");
+
+/// A second trader used as `msg_sender` by the take tests, so the taker is a
+/// different party from the maker.
+pub const TAKER: [u8; 20] = hex!("7D9a3AC8cAFe4A5c2D87d1a3c7F6C6b3E6A55C81");
 
 /// A custom ERC20 token that is not part of the hardcoded token list, so it can
 /// only be traded in a dynamic market. This is the mainnet USDC address, used
@@ -97,6 +103,29 @@ pub fn isolated() -> MutexGuard<'static, ()> {
     guard
 }
 
+/// Clear the transient per-call state while keeping the on-chain storage.
+///
+/// `entrypoint()` leaves scratch state behind: the settled global delta, the
+/// calldata and the message fields. A test that makes in one call and then takes
+/// in a later call has to clear that scratch so the second call starts fresh,
+/// but it must keep the storage that holds the resting orders and balances.
+///
+/// Registered hostio mocks are intentionally kept: they are keyed by call and
+/// can be accumulated once per test.
+pub fn reset_call_state() {
+    *StaticDelta::get() = StaticDelta::DEFAULT;
+
+    let ctx = vm_ctx();
+    ctx.test_args.clear();
+    ctx.test_result.clear();
+    ctx.msg_value = [0u8; 32];
+    ctx.msg_sender = [0u8; 20];
+    ctx.last_return_data.clear();
+    ctx.block_number = 0;
+    ctx.block_timestamp = 0;
+    ctx.msg_reentrant = false;
+}
+
 // ---------------------------------------------------------------------------
 // Hostio mocks
 // ---------------------------------------------------------------------------
@@ -104,6 +133,11 @@ pub fn isolated() -> MutexGuard<'static, ()> {
 /// Select [`MSG_SENDER`] as the caller for the next `entrypoint()` run.
 pub fn set_sender() {
     set_msg_sender(MSG_SENDER);
+}
+
+/// Select [`TAKER`] as the caller for the next `entrypoint()` run.
+pub fn set_taker() {
+    set_msg_sender(TAKER);
 }
 
 /// Mock `token.transferFrom(..)` for `token` to succeed.
@@ -162,12 +196,126 @@ pub const fn outer_bitmap_index_of(full_pos: u64) -> u32 {
 }
 
 // ---------------------------------------------------------------------------
+// Make payload writer
+// ---------------------------------------------------------------------------
+//
+// The make instruction drives three nested headers after the market header:
+// one `OuterBitmapHeader` per traversed outer bitmap, one `InnerBitmapHeader`
+// per occupied outer position, and one `MakeHeader` per update. These helpers
+// emit that payload so the make and take tests share one implementation.
+
+/// A single resting order to place with a make.
+pub struct MakeOrder {
+    /// Price, in ticks. `full_pos = tick << 3`.
+    pub tick: u64,
+
+    /// Base lots offered.
+    pub base_lots: u32,
+
+    /// Which leg the maker locks, from the taker's perspective:
+    /// `false` locks quote (a bid), `true` locks base (an ask).
+    pub inner_enum_raw: bool,
+}
+
+/// Number of `OuterBitmapHeader`s [`write_makes`] emits for `orders`.
+///
+/// Orders must be grouped contiguously by outer bitmap index.
+pub fn make_outer_bitmap_count(orders: &[MakeOrder]) -> u8 {
+    let mut count = 0u8;
+    let mut last_index = None;
+
+    for order in orders {
+        let index = outer_bitmap_index_of(full_pos_of(order.tick));
+        if last_index != Some(index) {
+            count += 1;
+            last_index = Some(index);
+        }
+    }
+
+    count
+}
+
+/// Write the make payload for `orders`.
+///
+/// Orders must be grouped contiguously by `(outer bitmap index, outer pos)`: a
+/// new group opens a new inner bitmap, and a new outer bitmap index opens a new
+/// outer bitmap. Within a group the makes keep their slice order.
+pub fn write_makes(writer: &mut Writer<'_>, orders: &[MakeOrder]) {
+    let mut outer_start = 0;
+
+    while outer_start < orders.len() {
+        let outer_bitmap_index = outer_bitmap_index_of(full_pos_of(orders[outer_start].tick));
+
+        // End of this outer bitmap: the first order with a different index.
+        let mut outer_end = outer_start;
+        while outer_end < orders.len()
+            && outer_bitmap_index_of(full_pos_of(orders[outer_end].tick)) == outer_bitmap_index
+        {
+            outer_end += 1;
+        }
+
+        // Count the distinct (contiguous) outer positions in this outer bitmap.
+        let mut inner_bitmap_count = 0u8;
+        let mut last_outer_pos = None;
+        for order in &orders[outer_start..outer_end] {
+            let outer_pos = outer_pos_of(full_pos_of(order.tick));
+            if last_outer_pos != Some(outer_pos) {
+                inner_bitmap_count += 1;
+                last_outer_pos = Some(outer_pos);
+            }
+        }
+
+        OuterBitmapHeader {
+            outer_bitmap_index_u32: OuterBitmapIndexU32::new(outer_bitmap_index),
+            inner_bitmap_count,
+        }
+        .to_writer(writer, ())
+        .unwrap();
+
+        // Emit each inner bitmap group followed by its makes.
+        let mut inner_start = outer_start;
+        while inner_start < outer_end {
+            let outer_pos = outer_pos_of(full_pos_of(orders[inner_start].tick));
+            let mut inner_end = inner_start;
+            while inner_end < outer_end
+                && outer_pos_of(full_pos_of(orders[inner_end].tick)) == outer_pos
+            {
+                inner_end += 1;
+            }
+
+            InnerBitmapHeader {
+                outer_pos: OuterPos::new(outer_pos),
+                update_count: (inner_end - inner_start) as u8,
+            }
+            .to_writer(writer, ())
+            .unwrap();
+
+            for order in &orders[inner_start..inner_end] {
+                MakeHeader {
+                    inner_pos: InnerPos::new(inner_pos_of(full_pos_of(order.tick))),
+                    occupancy_enum: OccupancyEnum::Vacant,
+                    inner_enum_raw: order.inner_enum_raw,
+                    base_lots_u32: BaseLots::new(order.base_lots),
+                }
+                .to_writer(writer, ())
+                .unwrap();
+            }
+
+            inner_start = inner_end;
+        }
+
+        outer_start = outer_end;
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Dynamic `Pair<CustomERC20, ETH>` market
 // ---------------------------------------------------------------------------
 //
 // A custom ERC20 can never live in a hardcoded market, so it is listed in
 // calldata and traded through a dynamic market. The deposit and make tests both
 // build this same market, so its construction is centralised here.
+//
 
 /// The calldata token-list entry for [`CUSTOM_TOKEN`].
 pub fn custom_token_data() -> TokenData<CustomERC20> {
@@ -369,14 +517,19 @@ pub fn wbtc_usdc_market() -> CommonMarket<Pair<CustomERC20, CustomERC20>> {
 }
 
 /// A [`MarketHeader`] for the WBTC/USDC dynamic market with both sides funded.
-pub fn wbtc_usdc_market_header(
+///
+/// `execute_takes` selects which taker legs run: index 0 is `In = Base` (the
+/// taker sells base into bids) and index 1 is `In = Quote` (the taker buys base
+/// from asks).
+pub fn wbtc_usdc_market_header_with_takes(
     base_deposit_lots: i64,
     quote_deposit_lots: i64,
     outer_bitmap_count: u8,
+    execute_takes: Pair<bool, bool>,
 ) -> MarketHeader<(Dynamic, Pair<CustomERC20, CustomERC20>)> {
     MarketHeader::<(Dynamic, Pair<CustomERC20, CustomERC20>)> {
         decode_deposit_amounts: true,
-        execute_takes: Pair::new(false, false),
+        execute_takes,
         outer_bitmap_count,
         local_deposits: Pair::new(
             UnsidedLots::new(base_deposit_lots),
@@ -384,6 +537,30 @@ pub fn wbtc_usdc_market_header(
         ),
         locator: wbtc_usdc_market(),
     }
+}
+
+/// A make-only [`MarketHeader`] for the WBTC/USDC dynamic market.
+pub fn wbtc_usdc_market_header(
+    base_deposit_lots: i64,
+    quote_deposit_lots: i64,
+    outer_bitmap_count: u8,
+) -> MarketHeader<(Dynamic, Pair<CustomERC20, CustomERC20>)> {
+    wbtc_usdc_market_header_with_takes(
+        base_deposit_lots,
+        quote_deposit_lots,
+        outer_bitmap_count,
+        Pair::new(false, false),
+    )
+}
+
+/// A take-only [`MarketHeader`] for the WBTC/USDC dynamic market: no makes
+/// follow, and `execute_takes` selects the taker leg.
+pub fn wbtc_usdc_take_market_header(
+    base_deposit_lots: i64,
+    quote_deposit_lots: i64,
+    execute_takes: Pair<bool, bool>,
+) -> MarketHeader<(Dynamic, Pair<CustomERC20, CustomERC20>)> {
+    wbtc_usdc_market_header_with_takes(base_deposit_lots, quote_deposit_lots, 0, execute_takes)
 }
 
 /// Mock every hostio read the WBTC/USDC market performs: `decimals()` and

@@ -10,30 +10,28 @@
 //! * one `OuterBitmapHeader` per traversed outer bitmap,
 //! * one `InnerBitmapHeader` per occupied outer position inside it,
 //! * one `MakeHeader` per update inside that inner bitmap.
+//!
+//! Those headers are emitted by the shared `test_utils::write_makes`, which the
+//! take tests reuse for their make phase.
 
 use goblin_core::{
     axis::{
         leg::{Base, Pair},
-        occupancy::OccupancyEnum,
         token::{CustomERC20, ETH},
     },
     codec::{GoblinWrite, Writer},
     entrypoint,
     input_processor::INPUT_SIZE,
-    market::{InnerBitmapHeader, MakeHeader, OuterBitmapHeader},
-    quantities::{
-        BaseLots, FullPos, InnerPos, IntoAbs, OuterBitmapIndexU32, OuterPos, UnsidedLots,
-    },
+    quantities::{BaseLots, FullPos, IntoAbs, UnsidedLots},
     state::{Preimage, RestingOrderPreimage, StorePreimage},
     types::StoreReader,
 };
 use goblin_hostio::hostio_unsafe::set_test_args;
 
 use crate::test_utils::{
-    CUSTOM_TOKEN, CUSTOM_TOKEN_DECIMALS, MSG_SENDER, custom_erc20_eth_global_args,
+    CUSTOM_TOKEN, CUSTOM_TOKEN_DECIMALS, MSG_SENDER, MakeOrder, custom_erc20_eth_global_args,
     custom_erc20_eth_market_header, custom_erc20_list_inner, custom_market_token_data_triple,
-    full_pos_of, inner_pos_of, isolated, mock_custom_token, outer_bitmap_index_of, outer_pos_of,
-    set_sender,
+    full_pos_of, isolated, make_outer_bitmap_count, mock_custom_token, set_sender, write_makes,
 };
 
 /// Base lots in the single resting order.
@@ -52,8 +50,16 @@ fn test_make_single_order() {
     let custom_tokens = custom_erc20_list_inner();
     let token_data_triple = custom_market_token_data_triple(&custom_tokens);
 
+    // One ask: the maker locks base and the taker leg is quote.
+    let orders = [MakeOrder {
+        tick: TICK,
+        base_lots: ORDER_LOTS as u32,
+        inner_enum_raw: true,
+    }];
+
     let global_args = custom_erc20_eth_global_args(token_data_triple);
-    let market_header = custom_erc20_eth_market_header(DEPOSIT_LOTS, 1);
+    let market_header =
+        custom_erc20_eth_market_header(DEPOSIT_LOTS, make_outer_bitmap_count(&orders));
 
     // The market key is derived in-contract from the token addresses, never read
     // from the wire, so the test derives it the same way to look the order up
@@ -64,12 +70,7 @@ fn test_make_single_order() {
         .unwrap()
         .hash();
 
-    // Decompose the target tick into the `(outer bitmap index, outer pos, inner
-    // pos)` triple the bitmap headers carry.
     let full_pos = full_pos_of(TICK);
-    let inner_pos = inner_pos_of(full_pos);
-    let outer_pos = outer_pos_of(full_pos);
-    let outer_bitmap_index = outer_bitmap_index_of(full_pos);
 
     let mut buffer = [0u8; INPUT_SIZE];
     let writer = &mut Writer::new(buffer.as_mut());
@@ -79,30 +80,7 @@ fn test_make_single_order() {
     market_header.to_writer(writer, ()).unwrap();
 
     // 2. The make payload: one outer bitmap, one inner bitmap, one update.
-    OuterBitmapHeader {
-        outer_bitmap_index_u32: OuterBitmapIndexU32::new(outer_bitmap_index),
-        inner_bitmap_count: 1,
-    }
-    .to_writer(writer, ())
-    .unwrap();
-
-    InnerBitmapHeader {
-        outer_pos: OuterPos::new(outer_pos),
-        update_count: 1,
-    }
-    .to_writer(writer, ())
-    .unwrap();
-
-    MakeHeader {
-        inner_pos: InnerPos::new(inner_pos),
-        occupancy_enum: OccupancyEnum::Vacant,
-        // On a fresh market every position lies in the quote region, so the
-        // taker leg is quote and the maker therefore locks base.
-        inner_enum_raw: true,
-        base_lots_u32: BaseLots::new(ORDER_LOTS as u32),
-    }
-    .to_writer(writer, ())
-    .unwrap();
+    write_makes(writer, &orders);
 
     let calldata = writer.get_calldata();
     set_test_args(calldata.to_vec());

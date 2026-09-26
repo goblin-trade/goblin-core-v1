@@ -16,26 +16,22 @@
 use goblin_core::{
     axis::{
         leg::{Base, Pair},
-        occupancy::OccupancyEnum,
         token::{CustomERC20, ETH},
     },
     codec::{GoblinWrite, Writer},
     entrypoint,
     input_processor::INPUT_SIZE,
-    market::{InnerBitmapHeader, MakeHeader, OuterBitmapHeader},
-    quantities::{
-        BaseLots, FullPos, InnerPos, IntoAbs, OuterBitmapIndexU32, OuterPos, UnsidedLots,
-    },
+    quantities::{BaseLots, FullPos, IntoAbs, UnsidedLots},
     state::{Preimage, RestingOrderPreimage, StorePreimage},
     types::StoreReader,
 };
 use goblin_hostio::hostio_unsafe::set_test_args;
 
 use crate::test_utils::{
-    CUSTOM_TOKEN, CUSTOM_TOKEN_DECIMALS, MSG_SENDER, custom_erc20_eth_global_args,
+    CUSTOM_TOKEN, CUSTOM_TOKEN_DECIMALS, MSG_SENDER, MakeOrder, custom_erc20_eth_global_args,
     custom_erc20_eth_market_header, custom_erc20_list_inner, custom_market_token_data_triple,
-    full_pos_of, inner_pos_of, isolated, mock_custom_token, outer_bitmap_index_of, outer_pos_of,
-    set_sender,
+    full_pos_of, inner_pos_of, isolated, make_outer_bitmap_count, mock_custom_token,
+    outer_bitmap_index_of, outer_pos_of, set_sender, write_makes,
 };
 
 /// Base lots in each resting order.
@@ -57,8 +53,23 @@ fn test_make_across_outer_bitmaps() {
     let custom_tokens = custom_erc20_list_inner();
     let token_data_triple = custom_market_token_data_triple(&custom_tokens);
 
+    // Two asks, one whole outer bitmap apart.
+    let orders = [
+        MakeOrder {
+            tick: TICK_0,
+            base_lots: ORDER_LOTS as u32,
+            inner_enum_raw: true,
+        },
+        MakeOrder {
+            tick: TICK_1,
+            base_lots: ORDER_LOTS as u32,
+            inner_enum_raw: true,
+        },
+    ];
+
     let global_args = custom_erc20_eth_global_args(token_data_triple);
-    let market_header = custom_erc20_eth_market_header(DEPOSIT_LOTS, 2);
+    let market_header =
+        custom_erc20_eth_market_header(DEPOSIT_LOTS, make_outer_bitmap_count(&orders));
 
     let market_key = market_header
         .locator
@@ -85,32 +96,7 @@ fn test_make_across_outer_bitmaps() {
     market_header.to_writer(writer, ()).unwrap();
 
     // Two outer bitmaps, each holding one inner bitmap with a single update.
-    for full_pos in [full_pos_0, full_pos_1] {
-        OuterBitmapHeader {
-            outer_bitmap_index_u32: OuterBitmapIndexU32::new(outer_bitmap_index_of(full_pos)),
-            inner_bitmap_count: 1,
-        }
-        .to_writer(writer, ())
-        .unwrap();
-
-        InnerBitmapHeader {
-            outer_pos: OuterPos::new(outer_pos_of(full_pos)),
-            update_count: 1,
-        }
-        .to_writer(writer, ())
-        .unwrap();
-
-        MakeHeader {
-            inner_pos: InnerPos::new(inner_pos_of(full_pos)),
-            occupancy_enum: OccupancyEnum::Vacant,
-            // On a fresh market every position lies in the quote region, so the
-            // taker leg is quote and the maker therefore locks base.
-            inner_enum_raw: true,
-            base_lots_u32: BaseLots::new(ORDER_LOTS as u32),
-        }
-        .to_writer(writer, ())
-        .unwrap();
-    }
+    write_makes(writer, &orders);
 
     let calldata = writer.get_calldata();
     set_test_args(calldata.to_vec());

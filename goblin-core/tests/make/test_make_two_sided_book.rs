@@ -19,27 +19,24 @@
 use goblin_core::{
     axis::{
         leg::{Base, Pair, Quote},
-        occupancy::OccupancyEnum,
         token::CustomERC20,
     },
     codec::{GoblinWrite, Writer},
     entrypoint,
     input_processor::INPUT_SIZE,
-    market::{InnerBitmapHeader, MakeHeader, OuterBitmapHeader},
-    quantities::{
-        BaseLots, FullPos, InnerPos, IntoAbs, OuterBitmapIndexU32, OuterPos, UnsidedLots,
-    },
+    quantities::{BaseLots, FullPos, IntoAbs, UnsidedLots},
     state::{Preimage, RestingOrderPreimage, StorePreimage},
     types::StoreReader,
 };
 use goblin_hostio::hostio_unsafe::set_test_args;
 
 use crate::test_utils::{
-    MSG_SENDER, USDC_DECIMALS, USDC_LOTS_PER_UNIT, USDC_TOKEN, WBTC_DECIMALS, WBTC_LOTS_PER_UNIT,
-    WBTC_TOKEN, WBTC_USDC_MID_TICK, WBTC_USDC_QUOTE_LOTS_PER_BASE_UNIT_PER_TICK, full_pos_of,
-    inner_pos_of, isolated, mock_wbtc_usdc, outer_bitmap_index_of, outer_pos_of, set_sender,
+    MSG_SENDER, MakeOrder, USDC_DECIMALS, USDC_LOTS_PER_UNIT, USDC_TOKEN, WBTC_DECIMALS,
+    WBTC_LOTS_PER_UNIT, WBTC_TOKEN, WBTC_USDC_MID_TICK,
+    WBTC_USDC_QUOTE_LOTS_PER_BASE_UNIT_PER_TICK, full_pos_of, inner_pos_of, isolated,
+    make_outer_bitmap_count, mock_wbtc_usdc, outer_bitmap_index_of, outer_pos_of, set_sender,
     wbtc_usdc_global_args, wbtc_usdc_list_inner, wbtc_usdc_market_header,
-    wbtc_usdc_token_data_triple,
+    wbtc_usdc_token_data_triple, write_makes,
 };
 
 /// Base lots in each order. One lot is `0.01` WBTC, so each order is `0.01` BTC.
@@ -81,8 +78,48 @@ fn test_make_two_sided_book() {
     let tokens = wbtc_usdc_list_inner();
     let token_data_triple = wbtc_usdc_token_data_triple(&tokens);
 
+    // Bids buy base (taker leg base, `inner_enum_raw = false`, maker locks
+    // quote); asks sell base (taker leg quote, `inner_enum_raw = true`, maker
+    // locks base).
+    let orders = [
+        MakeOrder {
+            tick: BID_TICKS[0],
+            base_lots: ORDER_LOTS as u32,
+            inner_enum_raw: false,
+        },
+        MakeOrder {
+            tick: BID_TICKS[1],
+            base_lots: ORDER_LOTS as u32,
+            inner_enum_raw: false,
+        },
+        MakeOrder {
+            tick: BID_TICKS[2],
+            base_lots: ORDER_LOTS as u32,
+            inner_enum_raw: false,
+        },
+        MakeOrder {
+            tick: ASK_TICKS[0],
+            base_lots: ORDER_LOTS as u32,
+            inner_enum_raw: true,
+        },
+        MakeOrder {
+            tick: ASK_TICKS[1],
+            base_lots: ORDER_LOTS as u32,
+            inner_enum_raw: true,
+        },
+        MakeOrder {
+            tick: ASK_TICKS[2],
+            base_lots: ORDER_LOTS as u32,
+            inner_enum_raw: true,
+        },
+    ];
+
     let global_args = wbtc_usdc_global_args(token_data_triple);
-    let market_header = wbtc_usdc_market_header(BASE_DEPOSIT_LOTS, QUOTE_DEPOSIT_LOTS, 1);
+    let market_header = wbtc_usdc_market_header(
+        BASE_DEPOSIT_LOTS,
+        QUOTE_DEPOSIT_LOTS,
+        make_outer_bitmap_count(&orders),
+    );
 
     let market_key = market_header
         .locator
@@ -118,45 +155,7 @@ fn test_make_two_sided_book() {
     market_header.to_writer(writer, ()).unwrap();
 
     // One outer bitmap holding one inner bitmap with six updates.
-    OuterBitmapHeader {
-        outer_bitmap_index_u32: OuterBitmapIndexU32::new(outer_bitmap_index),
-        inner_bitmap_count: 1,
-    }
-    .to_writer(writer, ())
-    .unwrap();
-
-    InnerBitmapHeader {
-        outer_pos: OuterPos::new(outer_pos),
-        update_count: (BID_TICKS.len() + ASK_TICKS.len()) as u8,
-    }
-    .to_writer(writer, ())
-    .unwrap();
-
-    // Bids buy base, so the taker leg is base (`inner_enum_raw = false`) and the
-    // maker locks quote.
-    for tick in BID_TICKS {
-        MakeHeader {
-            inner_pos: InnerPos::new(inner_pos_of(full_pos_of(tick))),
-            occupancy_enum: OccupancyEnum::Vacant,
-            inner_enum_raw: false,
-            base_lots_u32: BaseLots::new(ORDER_LOTS as u32),
-        }
-        .to_writer(writer, ())
-        .unwrap();
-    }
-
-    // Asks sell base, so the taker leg is quote (`inner_enum_raw = true`) and the
-    // maker locks base.
-    for tick in ASK_TICKS {
-        MakeHeader {
-            inner_pos: InnerPos::new(inner_pos_of(full_pos_of(tick))),
-            occupancy_enum: OccupancyEnum::Vacant,
-            inner_enum_raw: true,
-            base_lots_u32: BaseLots::new(ORDER_LOTS as u32),
-        }
-        .to_writer(writer, ())
-        .unwrap();
-    }
+    write_makes(writer, &orders);
 
     let calldata = writer.get_calldata();
     set_test_args(calldata.to_vec());

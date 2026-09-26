@@ -11,7 +11,7 @@ use crate::{
     axis_helpers::TokenPair,
     goblin_error::GoblinError,
     matching::MakeRegion,
-    quantities::FullPos,
+    quantities::{BaseLots, FullPos},
     state::{InnerBitmap, RestingOrder, RestingOrderPreimage, SlotKey},
     types::Address,
 };
@@ -36,9 +36,13 @@ impl OccupancyMarker for Vacant {
 
     fn get_validated_resting_order<TP: TokenPair>(
         _key: &SlotKey<RestingOrderPreimage<TP>>,
-        _msg_sender: &Address,
+        msg_sender: &Address,
     ) -> Result<RestingOrder, GoblinError> {
-        // Vacant postion. Simply return a default empty resting order.
-        Ok(RestingOrder::default())
+        // Vacant position: open a new resting order owned by the caller. The
+        // maker has to be recorded so that a later take can credit it.
+        Ok(RestingOrder {
+            maker: *msg_sender,
+            base_lots: BaseLots::default(),
+        })
     }
 }
