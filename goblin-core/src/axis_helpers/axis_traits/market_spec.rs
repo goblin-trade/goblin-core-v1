@@ -1,3 +1,5 @@
+use core::borrow::Borrow;
+
 use crate::{
     axis::{
         market::{
@@ -8,12 +10,15 @@ use crate::{
     },
     axis_helpers::{AxisMarker, TokenPair},
     input_processor::CodecBounds,
+    market::MarketReadables,
 };
 
 pub trait MarketSpec: Clone + Copy + PartialEq + PartialOrd {
-    type Market: MarketMarker + MarketLocator<Self::Pair, Locator = Self::Locator>;
+    type Market: MarketMarker
+        + MarketLocator<Self::Pair, Locator = Self::Locator, Readables = Self::Readables>;
     type Pair: TokenPair + HardcodedMarketList;
     type Locator: CodecBounds;
+    type Readables: Borrow<MarketReadables<Self::Pair>>;
 
     /// Whether the generic combination is illegal
     ///
@@ -43,4 +48,5 @@ where
     type Market = M;
     type Pair = TP;
     type Locator = <M as MarketLocator<TP>>::Locator;
+    type Readables = <M as MarketLocator<TP>>::Readables;
 }

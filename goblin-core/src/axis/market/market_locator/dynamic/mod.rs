@@ -11,11 +11,12 @@ use crate::{
 
 impl<TP: TokenPair + HardcodedMarketList> MarketLocator<TP> for Dynamic {
     type Locator = CommonMarket<TP>;
+    type Readables = MarketReadables<TP>;
 
     fn locate_market(
         locator: &Self::Locator,
         token_data_triple: &TokenDataTriple,
-    ) -> Result<MarketReadables<TP>, GoblinError> {
+    ) -> Result<Self::Readables, GoblinError> {
         require!(
             locator.lot_size_pair_u32.valid(),
             GoblinError::InvalidLotSize

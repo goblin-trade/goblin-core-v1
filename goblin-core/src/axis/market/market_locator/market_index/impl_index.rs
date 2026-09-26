@@ -3,7 +3,7 @@ use core::ops::Index;
 
 use crate::{axis_helpers::TokenPair, market::MarketReadables};
 
-impl<TP> Index<MarketIndex<TP>> for &'static [MarketReadables<TP>]
+impl<TP> Index<MarketIndex<TP>> for [MarketReadables<TP>]
 where
     TP: TokenPair + HardcodedMarketList,
 {

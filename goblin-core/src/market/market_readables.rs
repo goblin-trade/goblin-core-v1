@@ -11,7 +11,6 @@ use crate::{
 ///
 /// The slot key is never taken from the wire; it is always computed in-contract
 /// from the market's token addresses (see [`MarketReadables::from_market`]).
-#[derive(Clone, Copy)]
 pub struct MarketReadables<TP: TokenPair> {
     pub market: CommonMarket<TP>,
     pub market_key: SlotKey<MarketPreimage<TP>>,

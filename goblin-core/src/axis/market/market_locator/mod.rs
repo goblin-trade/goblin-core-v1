@@ -5,6 +5,8 @@ pub mod market_index;
 pub use hardcoded::*;
 pub use market_index::*;
 
+use core::borrow::Borrow;
+
 use crate::{
     axis::token::TokenDataTriple, axis_helpers::TokenPair, goblin_error::GoblinError,
     input_processor::CodecBounds, market::MarketReadables,
@@ -25,6 +27,15 @@ pub trait MarketLocator<TP: TokenPair + HardcodedMarketList> {
     /// codec context.
     type Locator: CodecBounds;
 
+    /// The resolved market, either borrowed from the static hardcoded list or
+    /// computed in-contract for a custom market.
+    ///
+    /// Expressed via [`Borrow`] so a hardcoded market can hand back a
+    /// `&'static MarketReadables` (no copy of the static data) while a custom
+    /// market owns its value. Both satisfy `Borrow<MarketReadables<TP>>` through
+    /// the blanket impls for `T` and `&T`.
+    type Readables: Borrow<MarketReadables<TP>>;
+
     /// Resolve the locator to a market and its slot key.
     ///
     /// - Hardcoded: maps the index into the static hardcoded market list
@@ -32,5 +43,5 @@ pub trait MarketLocator<TP: TokenPair + HardcodedMarketList> {
     fn locate_market(
         locator: &Self::Locator,
         token_data_triple: &TokenDataTriple,
-    ) -> Result<MarketReadables<TP>, GoblinError>;
+    ) -> Result<Self::Readables, GoblinError>;
 }

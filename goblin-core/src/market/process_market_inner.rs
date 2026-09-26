@@ -36,7 +36,7 @@ pub fn process_market_inner<'a, MS: MarketSpec>(
     process_takes(&header, reader, ctx)?;
     process_makes(&header, reader, ctx)?;
 
-    let market = &ctx.readables.market_readables.market;
+    let market = &ctx.readables.market_readables().market;
     let local_update =
         LocalUpdate::<MS::Pair>::from((&ctx.writables.local_delta, header.local_deposits));
 

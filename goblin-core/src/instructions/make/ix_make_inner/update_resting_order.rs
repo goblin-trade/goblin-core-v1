@@ -18,7 +18,7 @@ where
     UM: UpdateMarker,
 {
     let key = &RestingOrderPreimage {
-        market_key: ctx.readables.market_readables.market_key,
+        market_key: ctx.readables.market_readables().market_key,
         position,
     }
     .hash();

@@ -1,3 +1,5 @@
+use core::borrow::Borrow;
+
 use crate::{
     axis::{market::MarketLocator, token::TokenDataTriple},
     axis_helpers::MarketSpec,
@@ -8,7 +10,7 @@ use crate::{
 
 pub struct Readables<'a, MS: MarketSpec> {
     pub msg_sender: &'a Address,
-    pub market_readables: MarketReadables<MS::Pair>,
+    resolved: MS::Readables,
 }
 
 impl<'a, MS: MarketSpec> Readables<'a, MS> {
@@ -19,7 +21,11 @@ impl<'a, MS: MarketSpec> Readables<'a, MS> {
     ) -> Result<Self, GoblinError> {
         Ok(Self {
             msg_sender,
-            market_readables: MS::Market::locate_market(locator, token_data_triple)?,
+            resolved: MS::Market::locate_market(locator, token_data_triple)?,
         })
+    }
+
+    pub fn market_readables(&self) -> &MarketReadables<MS::Pair> {
+        self.resolved.borrow()
     }
 }

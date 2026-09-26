@@ -22,8 +22,10 @@ impl<'a, MS: MarketSpec> Ctx<'a, MS> {
         local_counterparties: &'a mut LocalCounterparties,
     ) -> Result<Self, GoblinError> {
         let readables = Readables::new(msg_sender, locator, token_data_triple)?;
-        let writables =
-            Writables::try_new(&readables.market_readables.market_key, local_counterparties)?;
+        let writables = Writables::try_new(
+            &readables.market_readables().market_key,
+            local_counterparties,
+        )?;
 
         Ok(Self {
             readables,

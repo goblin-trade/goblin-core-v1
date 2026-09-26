@@ -15,7 +15,7 @@ impl Bitmap<POS_0, OUTER_POS> {
         ctx: &Ctx<MS>,
     ) -> (SlotKey<BitmapPreimage<MS::Pair, POS_0, OUTER_POS>>, Self) {
         let key = BitmapPreimage {
-            market_key: ctx.readables.market_readables.market_key,
+            market_key: ctx.readables.market_readables().market_key,
             safe_position,
         }
         .hash();
