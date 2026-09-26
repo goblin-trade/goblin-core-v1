@@ -23,13 +23,12 @@ pub fn process_market_inner<'a, MS: MarketSpec>(
     token_data_triple: &TokenDataTriple<'a>,
     static_delta: &mut StaticDelta,
 ) -> Result<(), GoblinError> {
-    let header = MarketHeader::<MS::Pair>::from_reader_with_ctx(reader, ())
+    let header = MarketHeader::<MS>::from_reader_with_ctx(reader, token_data_triple)
         .map_err(|_| GoblinError::InvalidPayload)?;
 
     let ctx = &mut Ctx::<MS>::try_new(
         msg_sender,
-        reader,
-        token_data_triple,
+        &header.locator,
         &mut static_delta.local_counterparties,
     )?;
 

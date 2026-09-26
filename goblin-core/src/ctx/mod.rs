@@ -5,8 +5,8 @@ pub use readables::*;
 pub use writables::*;
 
 use crate::{
-    axis::token::TokenDataTriple, axis_helpers::MarketSpec, goblin_error::GoblinError,
-    input_processor::ArgsReader, settlement::LocalCounterparties, types::Address,
+    axis_helpers::MarketSpec, goblin_error::GoblinError, settlement::LocalCounterparties,
+    types::Address,
 };
 
 pub struct Ctx<'a, MS: MarketSpec> {
@@ -17,11 +17,10 @@ pub struct Ctx<'a, MS: MarketSpec> {
 impl<'a, MS: MarketSpec> Ctx<'a, MS> {
     pub fn try_new(
         msg_sender: &'a Address,
-        reader: &mut ArgsReader<'_>,
-        token_data_triple: &TokenDataTriple<'a>,
+        locator: &'a MS::Locator,
         local_counterparties: &'a mut LocalCounterparties,
     ) -> Result<Self, GoblinError> {
-        let readables = Readables::try_new(msg_sender, reader, token_data_triple)?;
+        let readables = Readables::new(msg_sender, locator);
         let writables = Writables::try_new(
             &readables.market_readables().market_key,
             local_counterparties,

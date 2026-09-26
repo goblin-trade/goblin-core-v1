@@ -7,7 +7,7 @@ use crate::{
 };
 
 pub fn process_makes<MS: MarketSpec>(
-    header: &MarketHeader<MS::Pair>,
+    header: &MarketHeader<MS>,
     reader: &mut ArgsReader<'_>,
     ctx: &mut Ctx<MS>,
 ) -> Result<(), GoblinError> {

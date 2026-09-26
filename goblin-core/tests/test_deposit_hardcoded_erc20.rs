@@ -1,13 +1,17 @@
 use goblin_core::{
-    axis::token::{
-        CustomERC20, ETH, ETHStub, TokenDataTriple, token_list::CustomERC20List,
-        token_marker::TokenData,
+    axis::{
+        leg::Pair,
+        token::{
+            CustomERC20, ETH, ETHStub, TokenDataTriple, token_list::CustomERC20List,
+            token_marker::TokenData,
+        },
     },
     codec::{GoblinWrite, Writer},
     entrypoint,
     input_processor::{
         GlobalArgs, Header, HeaderFlags, HeaderRefs, MarketCounts, MarketCountsInner,
     },
+    market::{MarketHeader, market_header},
     quantities::{ETHAtoms, UnsidedAtoms},
     state::{Preimage, StorePreimage},
     types::SameTriple,
@@ -61,6 +65,13 @@ fn test_deposit_hardcoded_erc20() {
             token_data_triple,
         },
     };
+
+    // let market_header = MarketHeader {
+    //     decode_deposit_amounts: true,
+    //     execute_takes: Pair::new(false, false),
+    //     outer_bitmap_count: 0,
+    //     local_deposits: Pair::new(),
+    // };
 
     let mut buffer = [0u8; 512];
     let writer = &mut Writer::new(buffer.as_mut());

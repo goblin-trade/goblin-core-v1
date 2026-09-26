@@ -8,9 +8,9 @@
 //! byte 1       MarketCounts byte 0  = 0x00   (hardcoded slots 0/1 empty)
 //! byte 2       MarketCounts byte 1  = 0x01   (hardcoded slot 2 = BASE/QUOTE)
 //! byte 3       MarketHeader         = 0x01   (decode_deposit_amounts)
-//! byte 4..12   Base deposit         = i64 LE lots
-//! byte 12..20  Quote deposit        = i64 LE lots
-//! byte 20      MarketIndex          = 0
+//! byte 4       MarketIndex          = 0
+//! byte 5..13   Base deposit         = i64 LE lots
+//! byte 13..21  Quote deposit        = i64 LE lots
 //! ```
 //!
 //! Run with:
@@ -53,9 +53,9 @@ fn build_deposit_calldata(base_lots: i64, quote_lots: i64) -> Vec<u8> {
     let mut calldata = vec![0x00]; // HeaderFlags
     calldata.extend_from_slice(&MARKET_COUNTS);
     calldata.push(0x01); // MarketHeader: decode_deposit_amounts
+    calldata.push(MARKET_INDEX);
     calldata.extend_from_slice(&base_lots.to_le_bytes());
     calldata.extend_from_slice(&quote_lots.to_le_bytes());
-    calldata.push(MARKET_INDEX);
     calldata
 }
 
