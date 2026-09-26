@@ -132,6 +132,36 @@ pub fn mock_custom_token() {
 }
 
 // ---------------------------------------------------------------------------
+// Position layout helpers
+// ---------------------------------------------------------------------------
+//
+// A full position is 64 bits: 8 bits of inner pos (3 of column, 5 of row), 8 of
+// outer pos and 48 of outer bitmap index. A tick is the full position shifted
+// right by the 3 column bits, i.e. `full_pos = tick << 3`, so one outer bitmap
+// spans `1 << 13` consecutive ticks. These helpers expose the decomposition that
+// the bitmap headers carry.
+
+/// The full position of `tick`.
+pub const fn full_pos_of(tick: u64) -> u64 {
+    tick << 3
+}
+
+/// Inner pos: the low 8 bits of the full position.
+pub const fn inner_pos_of(full_pos: u64) -> u8 {
+    (full_pos & 0xFF) as u8
+}
+
+/// Outer pos: bits 8..16 of the full position.
+pub const fn outer_pos_of(full_pos: u64) -> u8 {
+    ((full_pos >> 8) & 0xFF) as u8
+}
+
+/// Outer bitmap index: bits 16..64 of the full position.
+pub const fn outer_bitmap_index_of(full_pos: u64) -> u32 {
+    (full_pos >> 16) as u32
+}
+
+// ---------------------------------------------------------------------------
 // Dynamic `Pair<CustomERC20, ETH>` market
 // ---------------------------------------------------------------------------
 //

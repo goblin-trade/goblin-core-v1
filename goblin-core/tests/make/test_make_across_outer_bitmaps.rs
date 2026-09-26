@@ -1,11 +1,13 @@
-//! Multiple resting orders placed on the same `InnerBitmap`.
+//! Multiple resting orders spread across two outer bitmap indices.
 //!
-//! An inner bitmap is identified by an `(outer bitmap index, outer pos)` pair,
-//! so two orders share it when they land in the same outer position of the same
-//! outer bitmap. A single `InnerBitmapHeader` then carries `update_count = 2`,
-//! followed by one `MakeHeader` per order. Each make writes a distinct
-//! `inner_pos`, which is what makes the two orders occupy different positions
-//! inside the shared bitmap.
+//! An outer bitmap is identified by the high bits of the position: a full
+//! position is `tick << 3` and its outer bitmap index is `full_pos >> 16`, so
+//! one outer bitmap spans `1 << 13` consecutive ticks. Two orders therefore hit
+//! different outer bitmaps when their ticks differ by `1 << 13`.
+//!
+//! The payload carries `outer_bitmap_count = 2`, and each outer bitmap holds its
+//! own inner bitmap with a single make, matching
+//! [`goblin_core::instructions::process_makes`].
 //!
 //! The market setup mirrors `test_make_single_order.rs`: a dynamic
 //! `Pair<CustomERC20, ETH>` market whose locator is read straight out of
@@ -42,21 +44,21 @@ const ORDER_LOTS: u64 = 10;
 /// Base lots deposited up front, enough to collateralise both orders.
 const DEPOSIT_LOTS: i64 = 30;
 
-/// Ticks of the two orders. Both lie in outer position `3` of outer bitmap `0`
-/// (a full position is `tick << 3`), so they share one inner bitmap while
-/// sitting at different inner positions (`0x20` and `0x28`).
+/// Ticks of the two orders. The second is one whole outer bitmap (`1 << 13`
+/// ticks) above the first, so the two share the same inner and outer position
+/// but live in different outer bitmap indices.
 const TICK_0: u64 = 100;
-const TICK_1: u64 = 101;
+const TICK_1: u64 = TICK_0 + (1 << 13);
 
 #[test]
-fn test_make_multiple_orders() {
+fn test_make_across_outer_bitmaps() {
     let _guard = isolated();
 
     let custom_tokens = custom_erc20_list_inner();
     let token_data_triple = custom_market_token_data_triple(&custom_tokens);
 
     let global_args = custom_erc20_eth_global_args(token_data_triple);
-    let market_header = custom_erc20_eth_market_header(DEPOSIT_LOTS, 1);
+    let market_header = custom_erc20_eth_market_header(DEPOSIT_LOTS, 2);
 
     let market_key = market_header
         .locator
@@ -64,22 +66,17 @@ fn test_make_multiple_orders() {
         .unwrap()
         .hash();
 
-    // Both orders share the outer bitmap and outer position, so a single inner
-    // bitmap is traversed with two updates.
     let full_pos_0 = full_pos_of(TICK_0);
     let full_pos_1 = full_pos_of(TICK_1);
 
-    let inner_pos_0 = inner_pos_of(full_pos_0);
-    let inner_pos_1 = inner_pos_of(full_pos_1);
-    let outer_pos_0 = outer_pos_of(full_pos_0);
-    let outer_pos_1 = outer_pos_of(full_pos_1);
-    let outer_bitmap_index = outer_bitmap_index_of(full_pos_0);
+    let outer_bitmap_index_0 = outer_bitmap_index_of(full_pos_0);
+    let outer_bitmap_index_1 = outer_bitmap_index_of(full_pos_1);
 
-    // The layout above only works if the two ticks really do share one inner
-    // bitmap; assert that up front so the test cannot silently drift.
-    assert_eq!(outer_pos_0, outer_pos_1);
-    assert_eq!(outer_bitmap_index_of(full_pos_1), outer_bitmap_index);
-    assert_ne!(inner_pos_0, inner_pos_1);
+    // The two ticks differ by exactly one outer bitmap, and nothing else: same
+    // inner and outer position, adjacent outer bitmap indices.
+    assert_eq!(outer_bitmap_index_1, outer_bitmap_index_0 + 1);
+    assert_eq!(inner_pos_of(full_pos_0), inner_pos_of(full_pos_1));
+    assert_eq!(outer_pos_of(full_pos_0), outer_pos_of(full_pos_1));
 
     let mut buffer = [0u8; INPUT_SIZE];
     let writer = &mut Writer::new(buffer.as_mut());
@@ -87,38 +84,33 @@ fn test_make_multiple_orders() {
     global_args.to_writer(writer, ()).unwrap();
     market_header.to_writer(writer, ()).unwrap();
 
-    // One outer bitmap holding one inner bitmap, which carries both updates.
-    OuterBitmapHeader {
-        outer_bitmap_index_u32: OuterBitmapIndexU32::new(outer_bitmap_index),
-        inner_bitmap_count: 1,
-    }
-    .to_writer(writer, ())
-    .unwrap();
+    // Two outer bitmaps, each holding one inner bitmap with a single update.
+    for full_pos in [full_pos_0, full_pos_1] {
+        OuterBitmapHeader {
+            outer_bitmap_index_u32: OuterBitmapIndexU32::new(outer_bitmap_index_of(full_pos)),
+            inner_bitmap_count: 1,
+        }
+        .to_writer(writer, ())
+        .unwrap();
 
-    InnerBitmapHeader {
-        outer_pos: OuterPos::new(outer_pos_0),
-        update_count: 2,
-    }
-    .to_writer(writer, ())
-    .unwrap();
+        InnerBitmapHeader {
+            outer_pos: OuterPos::new(outer_pos_of(full_pos)),
+            update_count: 1,
+        }
+        .to_writer(writer, ())
+        .unwrap();
 
-    MakeHeader {
-        inner_pos: InnerPos::new(inner_pos_0),
-        occupancy_enum: OccupancyEnum::Vacant,
-        inner_enum_raw: true,
-        base_lots_u32: BaseLots::new(ORDER_LOTS as u32),
+        MakeHeader {
+            inner_pos: InnerPos::new(inner_pos_of(full_pos)),
+            occupancy_enum: OccupancyEnum::Vacant,
+            // On a fresh market every position lies in the quote region, so the
+            // taker leg is quote and the maker therefore locks base.
+            inner_enum_raw: true,
+            base_lots_u32: BaseLots::new(ORDER_LOTS as u32),
+        }
+        .to_writer(writer, ())
+        .unwrap();
     }
-    .to_writer(writer, ())
-    .unwrap();
-
-    MakeHeader {
-        inner_pos: InnerPos::new(inner_pos_1),
-        occupancy_enum: OccupancyEnum::Vacant,
-        inner_enum_raw: true,
-        base_lots_u32: BaseLots::new(ORDER_LOTS as u32),
-    }
-    .to_writer(writer, ())
-    .unwrap();
 
     let calldata = writer.get_calldata();
     set_test_args(calldata.to_vec());
@@ -128,7 +120,7 @@ fn test_make_multiple_orders() {
 
     assert!(matches!(entrypoint(), Ok(())));
 
-    // Both makes became stored resting orders at their requested positions.
+    // Each make became a stored resting order at its requested position.
     for full_pos in [full_pos_0, full_pos_1] {
         let resting_order = RestingOrderPreimage::<Pair<CustomERC20, ETH>> {
             market_key,
@@ -140,7 +132,7 @@ fn test_make_multiple_orders() {
         assert!(resting_order.base_lots == BaseLots::new(ORDER_LOTS));
     }
 
-    // The two orders together locked twice the order size in the maker's base
+    // Both orders together locked twice the order size in the maker's base
     // store, leaving the rest of the deposit free.
     let store = StorePreimage::<CustomERC20> {
         trader: MSG_SENDER,

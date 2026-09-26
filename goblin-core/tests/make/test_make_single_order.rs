@@ -32,7 +32,8 @@ use goblin_hostio::hostio_unsafe::set_test_args;
 use crate::test_utils::{
     CUSTOM_TOKEN, CUSTOM_TOKEN_DECIMALS, MSG_SENDER, custom_erc20_eth_global_args,
     custom_erc20_eth_market_header, custom_erc20_list_inner, custom_market_token_data_triple,
-    isolated, mock_custom_token, set_sender,
+    full_pos_of, inner_pos_of, isolated, mock_custom_token, outer_bitmap_index_of, outer_pos_of,
+    set_sender,
 };
 
 /// Base lots in the single resting order.
@@ -64,12 +65,11 @@ fn test_make_single_order() {
         .hash();
 
     // Decompose the target tick into the `(outer bitmap index, outer pos, inner
-    // pos)` triple the bitmap headers carry. A full position is `tick << 3`,
-    // split into 3 bits of column, 5 of row, 8 of outer pos and 48 of index.
-    let full_pos = TICK << 3;
-    let inner_pos = (full_pos & 0xFF) as u8;
-    let outer_pos = ((full_pos >> 8) & 0xFF) as u8;
-    let outer_bitmap_index = (full_pos >> 16) as u32;
+    // pos)` triple the bitmap headers carry.
+    let full_pos = full_pos_of(TICK);
+    let inner_pos = inner_pos_of(full_pos);
+    let outer_pos = outer_pos_of(full_pos);
+    let outer_bitmap_index = outer_bitmap_index_of(full_pos);
 
     let mut buffer = [0u8; INPUT_SIZE];
     let writer = &mut Writer::new(buffer.as_mut());
