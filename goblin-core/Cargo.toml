@@ -19,6 +19,9 @@ hex-literal = "0.4.1"
 [dev-dependencies]
 goblin-core = { path = ".", features = ["encode"] }
 goblin-hostio = { path = "../goblin-hostio", features = ["test-hostio"] }
+# Used by integration tests to derive call selectors and encode mock return
+# values from Solidity interfaces instead of hand-rolling the ABI.
+alloy-sol-types = "1"
 
 [features]
 default = ["localnet"]

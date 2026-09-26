@@ -1,4 +1,4 @@
-use goblin_core::hostio::abi_selector;
+use alloy_sol_types::{SolCall, sol};
 use goblin_core::{
     axis::{
         leg::{Base, Pair},
@@ -24,6 +24,12 @@ use goblin_hostio::hostio_unsafe::{set_mock_call, set_msg_sender, set_test_args}
 use hex_literal::hex;
 
 const MSG_SENDER: [u8; 20] = hex!("11D05b50ac23f0F24F536315174f35E96d2D5354");
+
+sol! {
+    interface IERC20 {
+        function transferFrom(address from, address to, uint256 amount) returns (bool);
+    }
+}
 
 #[test]
 fn test_deposit_hardcoded_erc20() {
@@ -96,12 +102,10 @@ fn test_deposit_hardcoded_erc20() {
     //    applies to this call and leaves any other hostio call untouched.
     let hardcoded_token_data = HARDCODED_ERC20_LIST.inner[0];
 
-    let mut erc20_return = vec![0u8; 32];
-    erc20_return[31] = 1;
     set_mock_call(
         hardcoded_token_data.address,
-        abi_selector(b"transferFrom(address,address,uint256)").to_vec(),
-        erc20_return,
+        IERC20::transferFromCall::SELECTOR.to_vec(),
+        IERC20::transferFromCall::abi_encode_returns(&true),
     );
 
     // The full decode -> process -> flush path succeeds.
