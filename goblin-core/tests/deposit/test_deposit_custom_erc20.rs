@@ -1,4 +1,3 @@
-use alloy_sol_types::{SolCall, sol};
 use goblin_core::{
     axis::{
         leg::{Base, Pair},
@@ -12,7 +11,7 @@ use goblin_core::{
     codec::{GoblinWrite, Writer},
     entrypoint,
     input_processor::{
-        GlobalArgs, Header, HeaderFlags, HeaderRefs, MarketCounts, MarketCountsInner,
+        GlobalArgs, Header, HeaderFlags, HeaderRefs, INPUT_SIZE, MarketCounts, MarketCountsInner,
     },
     market::{CommonMarket, MarketHeader},
     quantities::{
@@ -23,26 +22,12 @@ use goblin_core::{
     state::{Preimage, StorePreimage},
     types::{SameTriple, StoreReader},
 };
-use goblin_hostio::hostio_unsafe::{
-    set_mock_call, set_mock_static_call, set_msg_sender, set_test_args,
+use goblin_hostio::hostio_unsafe::set_test_args;
+
+mod test_utils;
+use test_utils::{
+    CUSTOM_TOKEN, CUSTOM_TOKEN_DECIMALS, MSG_SENDER, mock_decimals, mock_transfer_from, set_sender,
 };
-use hex_literal::hex;
-
-const MSG_SENDER: [u8; 20] = hex!("11D05b50ac23f0F24F536315174f35E96d2D5354");
-
-/// A custom ERC20 token that is not part of the hardcoded token list, so it can
-/// only be traded in a dynamic market.
-const CUSTOM_TOKEN: [u8; 20] = hex!("A0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48");
-
-/// Decimals mocked for the custom token. `update_erc20` accepts 6, 8 or 18.
-const CUSTOM_TOKEN_DECIMALS: u8 = 6;
-
-sol! {
-    interface IERC20 {
-        function transferFrom(address from, address to, uint256 amount) returns (bool);
-        function decimals() external view returns (uint8);
-    }
-}
 
 #[test]
 fn test_deposit_custom_erc20() {
@@ -117,7 +102,7 @@ fn test_deposit_custom_erc20() {
         locator: common_market,
     };
 
-    let mut buffer = [0u8; 512];
+    let mut buffer = [0u8; INPUT_SIZE];
     let writer = &mut Writer::new(buffer.as_mut());
 
     // 1. Set calldata
@@ -128,22 +113,13 @@ fn test_deposit_custom_erc20() {
     set_test_args(calldata.to_vec());
 
     // 2. Set msg_sender
-    set_msg_sender(MSG_SENDER);
+    set_sender();
 
     // 3. The custom token's decimals are read via hostio, and the deposit is
     //    pulled with `transferFrom`. Both mocks are keyed by (call type, token
     //    address, calldata), so they only apply to this token.
-    set_mock_static_call(
-        custom_token_data.address,
-        IERC20::decimalsCall::SELECTOR.to_vec(),
-        IERC20::decimalsCall::abi_encode_returns(&CUSTOM_TOKEN_DECIMALS),
-    );
-
-    set_mock_call(
-        custom_token_data.address,
-        IERC20::transferFromCall::SELECTOR.to_vec(),
-        IERC20::transferFromCall::abi_encode_returns(&true),
-    );
+    mock_decimals(custom_token_data.address, CUSTOM_TOKEN_DECIMALS);
+    mock_transfer_from(custom_token_data.address);
 
     // The full decode -> process -> flush path succeeds.
     assert!(matches!(entrypoint(), Ok(())));

@@ -5,14 +5,14 @@ use goblin_core::{
     },
     codec::{GoblinWrite, Writer},
     entrypoint,
-    input_processor::{GlobalArgs, Header, HeaderFlags, HeaderRefs, MarketCounts},
+    input_processor::{GlobalArgs, Header, HeaderFlags, HeaderRefs, INPUT_SIZE, MarketCounts},
     quantities::{ETHAtoms, UnsidedAtoms},
     state::{Preimage, StorePreimage},
 };
-use goblin_hostio::hostio_unsafe::{set_msg_sender, set_msg_value, set_test_args};
-use hex_literal::hex;
+use goblin_hostio::hostio_unsafe::{set_msg_value, set_test_args};
 
-const MSG_SENDER: [u8; 20] = hex!("11D05b50ac23f0F24F536315174f35E96d2D5354");
+mod test_utils;
+use test_utils::{MSG_SENDER, set_sender};
 
 /// Deposit-call calldata: turn on `read_msg_value` and nothing else, so the
 /// global header is just two zero bytes of market counts.
@@ -47,7 +47,7 @@ fn test_deposit_eth() {
         },
     };
 
-    let mut buffer = [0u8; 512];
+    let mut buffer = [0u8; INPUT_SIZE];
     let writer = &mut Writer::new(buffer.as_mut());
 
     // 1. Set calldata
@@ -56,7 +56,7 @@ fn test_deposit_eth() {
     set_test_args(calldata.to_vec());
 
     // 2. Set msg_sender
-    set_msg_sender(MSG_SENDER);
+    set_sender();
 
     // 3. Set msg_value
     let eth_value = UnsidedAtoms::new(10);
