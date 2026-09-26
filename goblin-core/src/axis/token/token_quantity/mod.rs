@@ -30,7 +30,7 @@ pub trait TokenQuantity: Clone + Copy + PartialEq + 'static {
     type StoredPadding: Clone + Copy;
 
     /// Pending deposit amount in local namespace
-    type LocalDeposit: Clone + Copy + Default + ConstDefault + CheckedOps + for<'de> GoblinRead<'de>;
+    type LocalDeposit: Clone + Copy + Default + ConstDefault + CheckedOps + CodecBounds;
 
     /// Pending deposit amount in global namespace
     type GlobalDeposit: Clone

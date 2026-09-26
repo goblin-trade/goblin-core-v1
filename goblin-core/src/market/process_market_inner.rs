@@ -12,10 +12,7 @@ use crate::{
     input_processor::ArgsReader,
     instructions::{process_makes, process_takes},
     market::MarketHeader,
-    settlement::{
-        StaticDelta,
-        local_delta::{LocalDeposits, LocalUpdate},
-    },
+    settlement::{StaticDelta, local_delta::LocalUpdate},
     types::{Address, StoreReader},
 };
 
@@ -26,15 +23,8 @@ pub fn process_market_inner<'a, MS: MarketSpec>(
     token_data_triple: &TokenDataTriple<'a>,
     static_delta: &mut StaticDelta,
 ) -> Result<(), GoblinError> {
-    let header =
-        MarketHeader::from_reader_with_ctx(reader, ()).map_err(|_| GoblinError::InvalidPayload)?;
-
-    let local_deposits = if header.decode_deposit_amounts {
-        LocalDeposits::<MS::Pair>::from_reader_with_ctx(reader, ())
-            .map_err(|_| GoblinError::InvalidPayload)?
-    } else {
-        LocalDeposits::<MS::Pair>::default()
-    };
+    let header = MarketHeader::<MS::Pair>::from_reader_with_ctx(reader, ())
+        .map_err(|_| GoblinError::InvalidPayload)?;
 
     let ctx = &mut Ctx::<MS>::try_new(
         msg_sender,
@@ -47,7 +37,8 @@ pub fn process_market_inner<'a, MS: MarketSpec>(
     process_makes(&header, reader, ctx)?;
 
     let market = &ctx.readables.market_readables().market;
-    let local_update = LocalUpdate::<MS::Pair>::from((&ctx.writables.local_delta, local_deposits));
+    let local_update =
+        LocalUpdate::<MS::Pair>::from((&ctx.writables.local_delta, header.local_deposits));
 
     // Commit sender and counterparty
     for_axes!(PT => PT::commit::<MS::Pair>(
