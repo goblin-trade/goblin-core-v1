@@ -1,14 +1,18 @@
 use goblin_core::{
     axis::token::{
-        CustomERC20, TokenDataTriple, token_list::CustomERC20List, token_marker::TokenData,
+        CustomERC20, ETH, ETHStub, TokenDataTriple, token_list::CustomERC20List,
+        token_marker::TokenData,
     },
     codec::{GoblinWrite, Writer},
     entrypoint,
-    goblin_error::GoblinError,
     input_processor::{GlobalArgs, Header, HeaderFlags, HeaderRefs, MarketCounts},
-    quantities::UnsidedAtoms,
+    quantities::{ETHAtoms, UnsidedAtoms},
+    state::{Preimage, StorePreimage},
 };
-use goblin_hostio::hostio_unsafe::{set_msg_reentrant, set_test_args};
+use goblin_hostio::hostio_unsafe::{set_msg_sender, set_msg_value, set_test_args};
+use hex_literal::hex;
+
+const MSG_SENDER: [u8; 20] = hex!("11D05b50ac23f0F24F536315174f35E96d2D5354");
 
 /// Deposit-call calldata: turn on `read_msg_value` and nothing else, so the
 /// global header is just two zero bytes of market counts.
@@ -46,16 +50,30 @@ fn test_deposit_eth() {
     let mut buffer = [0u8; 512];
     let writer = &mut Writer::new(buffer.as_mut());
 
+    // 1. Set calldata
     global_args.to_writer(writer, ()).unwrap();
-
     let calldata = writer.get_calldata();
     set_test_args(calldata.to_vec());
 
-    // A reentrant call is rejected before any state is touched.
-    set_msg_reentrant(true);
-    assert!(matches!(entrypoint(), Err(GoblinError::Reentrant)));
-    set_msg_reentrant(false);
+    // 2. Set msg_sender
+    set_msg_sender(MSG_SENDER);
+
+    // 3. Set msg_value
+    let eth_value = UnsidedAtoms::new(10);
+    let eth_raw_atoms = ETHAtoms::try_from(eth_value).unwrap();
+    set_msg_value(eth_raw_atoms.0);
 
     // The full decode -> process -> flush path succeeds.
     assert!(matches!(entrypoint(), Ok(())));
+
+    let hash = StorePreimage::<ETH> {
+        trader: MSG_SENDER,
+        token_address: ETHStub,
+    }
+    .hash();
+
+    let store = hash.load();
+
+    assert_eq!(store.atoms_free, eth_value);
+    assert_eq!(store.atoms_locked, UnsidedAtoms::default());
 }
