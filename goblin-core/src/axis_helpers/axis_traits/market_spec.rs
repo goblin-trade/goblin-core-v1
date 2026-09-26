@@ -1,18 +1,19 @@
 use crate::{
     axis::{
         market::{
-            market_locator::hardcoded::HardcodedMarketList, market_marker::MarketMarker,
-            MarketEnum, MarketLocator,
+            MarketEnum, MarketLocator, market_locator::hardcoded::HardcodedMarketList,
+            market_marker::MarketMarker,
         },
         token::TokenEnum,
     },
     axis_helpers::{AxisMarker, TokenPair},
+    input_processor::CodecBounds,
 };
 
 pub trait MarketSpec: Clone + Copy + PartialEq + PartialOrd {
     type Market: MarketMarker + MarketLocator<Self::Pair, Locator = Self::Locator>;
     type Pair: TokenPair + HardcodedMarketList;
-    type Locator;
+    type Locator: CodecBounds;
 
     /// Whether the generic combination is illegal
     ///

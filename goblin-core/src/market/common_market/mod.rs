@@ -14,6 +14,7 @@ use crate::{
     state::MarketPreimage,
 };
 
+#[derive(Clone, Copy)]
 pub struct CommonMarket<TP: TokenPair> {
     /// The token pair
     pub token_index_pair: TokenIndexPair<TP>,

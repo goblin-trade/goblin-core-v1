@@ -25,7 +25,7 @@ pub(crate) fn update_delta<MS: MarketSpec, UM: UpdateMarker, OP: LegMatcher>(
     position: FullPos,
     ctx: &mut Ctx<MS>,
 ) -> Result<(), GoblinError> {
-    let market = &ctx.readables.market_readables().market;
+    let market = &ctx.readables.market_readables.market;
     let base_lot_size = Base::get(&market.lot_size_pair_u32).widen_to_u64();
 
     let price = Ticks::from(position);

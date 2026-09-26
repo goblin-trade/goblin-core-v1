@@ -1,12 +1,12 @@
 use crate::{
+    Ctx,
     axis_helpers::MarketSpec,
     matching::MakeRegion,
-    quantities::{Pos0, OUTER_POS, POS_0},
+    quantities::{OUTER_POS, POS_0, Pos0},
     state::{
-        bitmap::{Bitmap, BitmapPreimage},
         Preimage, SlotKey,
+        bitmap::{Bitmap, BitmapPreimage},
     },
-    Ctx,
 };
 
 impl Bitmap<POS_0, OUTER_POS> {
@@ -15,7 +15,7 @@ impl Bitmap<POS_0, OUTER_POS> {
         ctx: &Ctx<MS>,
     ) -> (SlotKey<BitmapPreimage<MS::Pair, POS_0, OUTER_POS>>, Self) {
         let key = BitmapPreimage {
-            market_key: ctx.readables.market_readables().market_key,
+            market_key: ctx.readables.market_readables.market_key,
             safe_position,
         }
         .hash();

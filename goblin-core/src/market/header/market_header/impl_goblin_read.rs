@@ -1,23 +1,19 @@
-use crate::codec::{CodecError, CodecResult, GoblinRead, Reader};
+use crate::codec::{CodecResult, GoblinRead, Reader};
 
-use crate::axis::{leg::SamePair, market::MarketLocator, token::TokenDataTriple};
+use crate::axis::leg::SamePair;
 use crate::axis_helpers::MarketSpec;
 use crate::input_processor::bit_lane::{read_lane, unpack, unpack_bool};
 use crate::settlement::local_delta::LocalDeposits;
 
 use super::MarketHeader;
 
-impl<'de, 'a, 't, MS: MarketSpec> GoblinRead<'de, &'a TokenDataTriple<'t>> for MarketHeader<MS> {
+impl<'de, MS: MarketSpec> GoblinRead<'de, ()> for MarketHeader<MS> {
     #[inline]
-    fn from_reader_with_ctx(
-        reader: &mut Reader<'de>,
-        token_data_triple: &'a TokenDataTriple<'t>,
-    ) -> CodecResult<Self> {
+    fn from_reader_with_ctx(reader: &mut Reader<'de>, (): ()) -> CodecResult<Self> {
         let lane = read_lane::<1>(reader)?;
 
         let decode_deposit_amounts = unpack_bool(lane, 0);
-        let locator = MS::Market::decode_locator(reader, token_data_triple)
-            .map_err(|_| CodecError::InvalidValue)?;
+        let locator = MS::Locator::from_reader_with_ctx(reader, ())?;
         let local_deposits = if decode_deposit_amounts {
             LocalDeposits::<MS::Pair>::from_reader_with_ctx(reader, ())?
         } else {

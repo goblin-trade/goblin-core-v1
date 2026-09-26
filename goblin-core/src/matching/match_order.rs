@@ -16,7 +16,7 @@ pub fn match_order<MS: MarketSpec, In: LegMatcher>(
     header: TakeHeader<In>,
     ctx: &mut Ctx<MS>,
 ) -> Result<(), GoblinError> {
-    let MarketReadables { market, market_key } = ctx.readables.market_readables();
+    let MarketReadables { market, market_key } = ctx.readables.market_readables;
     let base_lot_size = Base::get(&LotSizePair::<u64>::from(&market.lot_size_pair_u32));
 
     let num_lots = header.num_lots_u32.into();
@@ -26,7 +26,7 @@ pub fn match_order<MS: MarketSpec, In: LegMatcher>(
     let mut budget = input_budget;
 
     let iterator = match_iterator::<MS::Pair, In>(
-        *market_key,
+        market_key,
         header.limit_u32.scale_up(),
         &mut ctx.writables.market_state,
     )?;

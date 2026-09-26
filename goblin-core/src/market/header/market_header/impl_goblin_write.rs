@@ -5,10 +5,7 @@ use crate::input_processor::bit_lane::{pack, pack_bool, write_lane};
 
 use super::MarketHeader;
 
-impl<MS: MarketSpec> GoblinWrite<()> for MarketHeader<MS>
-where
-    MS::Locator: GoblinWrite<()>,
-{
+impl<MS: MarketSpec> GoblinWrite<()> for MarketHeader<MS> {
     #[inline]
     fn to_writer(&self, writer: &mut Writer<'_>, (): ()) -> CodecResult<()> {
         let mut lane = 0u64;

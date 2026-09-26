@@ -2,6 +2,7 @@ use alloy_sol_types::{SolCall, sol};
 use goblin_core::{
     axis::{
         leg::{Base, Pair},
+        market::Dynamic,
         token::{
             CustomERC20, CustomERC20Stub, ETH, ETHStub, TokenDataTriple,
             token_list::CustomERC20List,
@@ -11,9 +12,9 @@ use goblin_core::{
     codec::{GoblinWrite, Writer},
     entrypoint,
     input_processor::{
-        GlobalArgs, Header, HeaderFlags, HeaderRefs, MarketCounts, MarketCountsInner, write_lane,
+        GlobalArgs, Header, HeaderFlags, HeaderRefs, MarketCounts, MarketCountsInner,
     },
-    market::CommonMarket,
+    market::{CommonMarket, MarketHeader},
     quantities::{
         BaseLotsPerBaseUnit, IntoAbs, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit,
         UnsidedAtoms, UnsidedLots,
@@ -45,6 +46,8 @@ sol! {
 
 #[test]
 fn test_deposit_custom_erc20() {
+    // A custom ERC20 can never live in a hardcoded market, so it is listed in
+    // calldata and traded through a dynamic market.
     let custom_token_data = TokenData::<CustomERC20> {
         address: CUSTOM_TOKEN,
         decimals: CustomERC20Stub,
@@ -56,8 +59,12 @@ fn test_deposit_custom_erc20() {
     };
     let token_data_triple = TokenDataTriple::const_from(custom_erc20_list);
 
+    // One dynamic market for `Pair<CustomERC20, ETH>`. Legs are indexed
+    // `[market][base][quote]`, each ordered by variant:
+    // markets `[Hardcoded, Dynamic]`, tokens `[ETH, HardcodedERC20, CustomERC20]`.
+    // No hardcoded markets are processed.
     let market_counts = MarketCounts::new(
-        MarketCountsInner::default(),
+        MarketCountsInner::default(), // hardcoded markets
         MarketCountsInner::new(
             SameTriple::new(0, 0, 0), // base ETH
             SameTriple::new(0, 0, 0), // base HardcodedERC20
@@ -84,6 +91,9 @@ fn test_deposit_custom_erc20() {
         },
     };
 
+    // The dynamic market locator is read straight out of calldata, so the test
+    // builds the same `CommonMarket` the decoder expects and deposits on the
+    // base (custom ERC20) leg.
     let common_market = CommonMarket::<Pair<CustomERC20, ETH>>::new(
         Pair::new(CustomERC20Index::from(0), ETHStub),
         Pair::new(
@@ -96,19 +106,23 @@ fn test_deposit_custom_erc20() {
     let deposit_lots_delta = UnsidedLots::new(10);
     let local_deposits = LocalDeposits::<Pair<CustomERC20, ETH>>::new(deposit_lots_delta, ETHStub);
 
+    // The locator is the `CommonMarket` itself. The slot key is never sent on
+    // the wire; the contract derives it from the token addresses when it
+    // resolves the market.
+    let market_header = MarketHeader::<(Dynamic, Pair<CustomERC20, ETH>)> {
+        decode_deposit_amounts: true,
+        execute_takes: Pair::new(false, false),
+        outer_bitmap_count: 0,
+        local_deposits,
+        locator: common_market,
+    };
+
     let mut buffer = [0u8; 512];
     let writer = &mut Writer::new(buffer.as_mut());
 
     // 1. Set calldata
     global_args.to_writer(writer, ()).unwrap();
-
-    // Dynamic markets are not written by `MarketHeader` (their locator is a
-    // `MarketReadables`, which has no writer), so the per-market header is laid
-    // out by hand: a packed lane with `decode_deposit_amounts` set, the
-    // `CommonMarket` locator, then the local deposits.
-    write_lane::<1>(writer, 0b1).unwrap();
-    common_market.to_writer(writer, ()).unwrap();
-    local_deposits.to_writer(writer, ()).unwrap();
+    market_header.to_writer(writer, ()).unwrap();
 
     let calldata = writer.get_calldata();
     set_test_args(calldata.to_vec());
@@ -142,7 +156,7 @@ fn test_deposit_custom_erc20() {
 
     let store = hash.load();
 
-    let atoms_per_lot_pair = common_market.atoms_per_lot_pair();
+    let atoms_per_lot_pair = market_header.locator.atoms_per_lot_pair();
     let atoms_per_lot = Base::get(&atoms_per_lot_pair);
 
     let deposit_lots = deposit_lots_delta.abs();
