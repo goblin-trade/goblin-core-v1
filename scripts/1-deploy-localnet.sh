@@ -13,14 +13,14 @@ forge script script/DeployCREATE3Factory.s.sol:DeployCREATE3Factory \
 
 # Base token at nonce 4
 # 0x85D9a8a4bd77b9b5559c1B7FCb8eC9635922Ed49
-readonly BASE_TOKENS_TO_MINT=100000000000000000000
+readonly BASE_TOKENS_TO_MINT=$(cast --to-wei 100000000 ether)
 forge create \
     --private-key $PRIVATE_KEY --broadcast \
     TestERC20 --constructor-args "Base" "BASE" $BASE_TOKENS_TO_MINT
 
 # Quote token at nonce 5
 # 0x4A2bA922052bA54e29c5417bC979Daaf7D5Fe4f4
-readonly QUOTE_TOKENS_TO_MINT=100000000000000000000
+readonly QUOTE_TOKENS_TO_MINT=$(cast --to-wei 100000000 ether)
 forge create \
     --private-key $PRIVATE_KEY --broadcast \
     TestERC20 --constructor-args "Quote" "QUOTE" $QUOTE_TOKENS_TO_MINT
