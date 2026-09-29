@@ -21,7 +21,9 @@ hex = "0.4"
 glob = "0.3.1"
 
 [dependencies]
-goblin-core = { path = "../goblin-core" }
+# `encode` turns on `GoblinWrite`, so the examples can build calldata with the
+# same header types the contract decodes (mirroring the integration tests).
+goblin-core = { path = "../goblin-core", features = ["encode"] }
 alloy = "2.4.1"
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 url = "2"

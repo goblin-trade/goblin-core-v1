@@ -177,8 +177,11 @@ fn test_make_order_book() {
         make_calldata.len(),
         3 + 2 + 5 + 2 * 3 + 5 * (BID_COUNT + ASK_COUNT)
     );
+
+    println!("order calldata {:?}", make_calldata);
     assert!(make_calldata.len() <= INPUT_SIZE);
     set_test_args(make_calldata);
+
     set_sender();
 
     let make_result = entrypoint();

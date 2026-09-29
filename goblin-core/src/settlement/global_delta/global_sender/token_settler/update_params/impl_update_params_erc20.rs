@@ -15,7 +15,7 @@ where
         match self.decimals {
             6 => self.update_erc20_for_decimals::<6>(),
             8 => self.update_erc20_for_decimals::<8>(),
-            18 => self.update_erc20_for_decimals::<8>(),
+            18 => self.update_erc20_for_decimals::<18>(),
             _ => Err(GoblinError::UnsupportedDecimals),
         }
     }
