@@ -47,6 +47,9 @@ pub fn process_market_inner<'a, MS: MarketSpec>(
         &mut static_delta.global
     )?);
 
+    let market_key = ctx.readables.market_readables().market_key;
+    market_key.store(&ctx.writables.market_state);
+
     // Reset counter of global mut counterparty buffer
     Counterparties::get_leg_mut(&mut ctx.writables.local_delta).reset();
 
