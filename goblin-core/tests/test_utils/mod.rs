@@ -21,19 +21,22 @@ use alloy_sol_types::{SolCall, sol};
 use goblin_core::{
     axis::{
         leg::Pair,
-        market::Dynamic,
+        market::{Dynamic, Hardcoded, HardcodedMarketList, MarketIndex},
         occupancy::OccupancyEnum,
         token::{
-            CustomERC20, CustomERC20Stub, ETH, ETHStub, TokenDataTriple,
-            token_list::CustomERC20List,
+            CustomERC20, CustomERC20Stub, ETH, ETHStub, HardcodedERC20, TokenDataTriple,
+            token_list::{CustomERC20List, HARDCODED_ERC20_LIST},
             token_marker::{CustomERC20Index, TokenData},
         },
     },
     codec::{GoblinWrite, Writer},
     input_processor::{
-        GlobalArgs, Header, HeaderFlags, HeaderRefs, MarketCounts, MarketCountsInner,
+        GlobalArgs, Header, HeaderFlags, HeaderRefs, INPUT_SIZE, MarketCounts, MarketCountsInner,
     },
-    market::{CommonMarket, InnerBitmapHeader, MakeHeader, MarketHeader, OuterBitmapHeader},
+    market::{
+        CommonMarket, InnerBitmapHeader, MakeHeader, MarketHeader, MarketReadables,
+        OuterBitmapHeader,
+    },
     quantities::{
         BaseLots, BaseLotsPerBaseUnit, InnerPos, OuterBitmapIndexU32, OuterPos,
         QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit, UnsidedAtoms, UnsidedLots,
@@ -240,6 +243,10 @@ pub fn make_outer_bitmap_count(orders: &[MakeOrder]) -> u8 {
 /// Orders must be grouped contiguously by `(outer bitmap index, outer pos)`: a
 /// new group opens a new inner bitmap, and a new outer bitmap index opens a new
 /// outer bitmap. Within a group the makes keep their slice order.
+///
+/// Several orders may share a tick. Each price level owns eight bitmap slots (a
+/// byte of the inner bitmap), so a repeated tick is stacked into the next free
+/// column of that byte instead of colliding on the same bit.
 pub fn write_makes(writer: &mut Writer<'_>, orders: &[MakeOrder]) {
     let mut outer_start = 0;
 
@@ -290,9 +297,16 @@ pub fn write_makes(writer: &mut Writer<'_>, orders: &[MakeOrder]) {
             .to_writer(writer, ())
             .unwrap();
 
+            // One column counter per row of the inner bitmap: a repeated tick
+            // is placed in the next free column of its price byte.
+            let mut columns = [0u8; 32];
             for order in &orders[inner_start..inner_end] {
+                let row = (order.tick & 0x1F) as usize;
+                let inner_pos = inner_pos_of(full_pos_of(order.tick)) | columns[row];
+                columns[row] += 1;
+
                 MakeHeader {
-                    inner_pos: InnerPos::new(inner_pos_of(full_pos_of(order.tick))),
+                    inner_pos: InnerPos::new(inner_pos),
                     occupancy_enum: OccupancyEnum::Vacant,
                     inner_enum_raw: order.inner_enum_raw,
                     base_lots_u32: BaseLots::new(order.base_lots),
@@ -570,4 +584,132 @@ pub fn mock_wbtc_usdc() {
     mock_transfer_from(WBTC_TOKEN);
     mock_decimals(USDC_TOKEN, USDC_DECIMALS);
     mock_transfer_from(USDC_TOKEN);
+}
+
+// ---------------------------------------------------------------------------
+// Hardcoded `Pair<HardcodedERC20, HardcodedERC20>` WBTC/USDC market
+// ---------------------------------------------------------------------------
+//
+// The `localnet` build lists exactly two hardcoded ERC20s (18 decimals each)
+// and a single hardcoded `Pair<HardcodedERC20, HardcodedERC20>` market: base
+// index `0`, quote index `1`, `100` base lots per unit, `100` quote lots per
+// unit and a tick size of one quote lot. We assume index `0` is WBTC and index
+// `1` is USDC, so the `80_000` USD/BTC mid (`1 * 8_000_000 / 100`) sits at tick
+// `8_000_000`.
+
+/// Hardcoded token index assumed to be WBTC (the market's base).
+pub const WBTC_HARDCODED_INDEX: usize = 0;
+
+/// Hardcoded token index assumed to be USDC (the market's quote).
+pub const USDC_HARDCODED_INDEX: usize = 1;
+
+/// Locator for the single hardcoded `Pair<HardcodedERC20, HardcodedERC20>`
+/// market.
+pub const HARDCODED_WBTC_USDC_MARKET_INDEX: MarketIndex<Pair<HardcodedERC20, HardcodedERC20>> =
+    MarketIndex::new(0);
+
+/// Hardcoded market base lots per WBTC.
+pub const WBTC_USDC_HARDCODED_BASE_LOTS_PER_UNIT: u32 = 100;
+
+/// Hardcoded market quote lots per USDC.
+pub const WBTC_USDC_HARDCODED_QUOTE_LOTS_PER_UNIT: u32 = 100;
+
+/// Hardcoded market tick size, in quote lots per WBTC per tick.
+pub const WBTC_USDC_HARDCODED_TICK_SIZE: u32 = 1;
+
+/// Tick whose price is the hardcoded market's `80_000` USD/BTC mid.
+pub const WBTC_USDC_HARDCODED_MID_TICK: u64 = 8_000_000;
+
+/// The resolved hardcoded WBTC/USDC market: parameters plus derived slot key.
+pub fn hardcoded_wbtc_usdc_market() -> &'static MarketReadables<Pair<HardcodedERC20, HardcodedERC20>>
+{
+    &<Pair<HardcodedERC20, HardcodedERC20> as HardcodedMarketList>::HARDCODED_MARKET_LIST[0]
+}
+
+/// The calldata address of the hardcoded token at `index`.
+pub fn hardcoded_token_address(index: usize) -> [u8; 20] {
+    HARDCODED_ERC20_LIST.inner[index].address
+}
+
+/// `MarketCounts` selecting the single hardcoded `Pair<HardcodedERC20,
+/// HardcodedERC20>` market.
+pub fn hardcoded_wbtc_usdc_market_counts() -> MarketCounts {
+    MarketCounts::new(
+        MarketCountsInner::new(
+            SameTriple::new(0, 0, 0), // base ETH
+            SameTriple::new(0, 1, 0), // base HardcodedERC20, quote HardcodedERC20
+            SameTriple::new(0, 0, 0), // base CustomERC20
+        ),
+        MarketCountsInner::default(), // dynamic markets
+    )
+}
+
+/// Global args for a call that processes only the hardcoded WBTC/USDC market.
+pub fn hardcoded_wbtc_usdc_global_args<'a>() -> GlobalArgs<'a> {
+    GlobalArgs {
+        flags: HeaderFlags {
+            read_custom_recipient: false,
+            read_msg_value: false,
+            process_dynamic_markets: false,
+            withdraw_eth: false,
+            withdraw_internally: false,
+            custom_erc20_count: 0,
+        },
+        header: Header {
+            eth_out_due_u32: UnsidedAtoms::default(),
+            market_counts: hardcoded_wbtc_usdc_market_counts(),
+        },
+        refs: HeaderRefs {
+            custom_recipient: None,
+            token_data_triple: TokenDataTriple::const_from(CustomERC20List { inner: &[] }),
+        },
+    }
+}
+
+/// A [`MarketHeader`] for the hardcoded WBTC/USDC market.
+///
+/// `decode_deposit_amounts` selects whether `(base_deposit_lots,
+/// quote_deposit_lots)` are encoded after the locator; pass `false` for a header
+/// that only precedes a make payload.
+pub fn hardcoded_wbtc_usdc_market_header(
+    base_deposit_lots: i64,
+    quote_deposit_lots: i64,
+    outer_bitmap_count: u8,
+    decode_deposit_amounts: bool,
+) -> MarketHeader<(Hardcoded, Pair<HardcodedERC20, HardcodedERC20>)> {
+    MarketHeader::<(Hardcoded, Pair<HardcodedERC20, HardcodedERC20>)> {
+        decode_deposit_amounts,
+        execute_takes: Pair::new(false, false),
+        outer_bitmap_count,
+        local_deposits: LocalDeposits::<Pair<HardcodedERC20, HardcodedERC20>>::new(
+            UnsidedLots::new(base_deposit_lots),
+            UnsidedLots::new(quote_deposit_lots),
+        ),
+        locator: HARDCODED_WBTC_USDC_MARKET_INDEX,
+    }
+}
+
+/// The make calldata for the hardcoded WBTC/USDC market.
+///
+/// Writes the global args, a deposit-free market header and the make payload for
+/// `orders` into a fresh [`INPUT_SIZE`] buffer, and returns the calldata. Orders
+/// are addressed by tick; repeated ticks are stacked in the spare column slots
+/// of the shared inner bitmap (see [`write_makes`]), so several orders can rest
+/// at one price level.
+///
+/// This is the reusable entry point for building the maker's calldata: the make
+/// and take tests share it instead of re-encoding the headers by hand.
+pub fn hardcoded_wbtc_usdc_make_calldata(orders: &[MakeOrder]) -> Vec<u8> {
+    let mut buffer = [0u8; INPUT_SIZE];
+    let writer = &mut Writer::new(buffer.as_mut());
+
+    hardcoded_wbtc_usdc_global_args()
+        .to_writer(writer, ())
+        .unwrap();
+    hardcoded_wbtc_usdc_market_header(0, 0, make_outer_bitmap_count(orders), false)
+        .to_writer(writer, ())
+        .unwrap();
+    write_makes(writer, orders);
+
+    writer.get_calldata().to_vec()
 }
