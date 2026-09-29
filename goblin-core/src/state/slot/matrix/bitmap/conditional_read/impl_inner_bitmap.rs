@@ -27,7 +27,8 @@ impl Bitmap<POS_1, INNER_POS> {
             safe_position.into(),
         );
 
-        let bitmap = if region == MakeRegion::Spread || !outer_bitmap_state.index_active(outer_pos)
+        let bitmap = if matches!(region, MakeRegion::Spread | MakeRegion::Unseeded)
+            || !outer_bitmap_state.index_active(outer_pos)
         {
             Bitmap::<POS_1, INNER_POS>::default()
         } else {

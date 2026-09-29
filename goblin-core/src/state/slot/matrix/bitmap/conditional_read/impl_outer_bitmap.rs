@@ -25,7 +25,7 @@ impl Bitmap<POS_0, OUTER_POS> {
             safe_position.into(),
         );
 
-        let bitmap = if region == MakeRegion::Spread {
+        let bitmap = if matches!(region, MakeRegion::Spread | MakeRegion::Unseeded) {
             Bitmap::<POS_0, OUTER_POS>::default()
         } else {
             let outer_bitmap = key.load();

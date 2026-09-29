@@ -21,8 +21,12 @@ impl OccupancyMarker for Occupied {
     ) -> Result<(UpdateEnum, LegEnum), GoblinError> {
         let update_enum = UpdateEnum::from(inner_enum_raw);
 
-        let MakeRegion::In(leg_enum) = region else {
-            return Err(GoblinError::NoRestingOrder);
+        let leg_enum = match region {
+            MakeRegion::In(leg_enum) => leg_enum,
+            MakeRegion::Unseeded => LegEnum::from(inner_enum_raw),
+            MakeRegion::OnLastPrice(_) | MakeRegion::Spread => {
+                return Err(GoblinError::NoRestingOrder);
+            }
         };
 
         Ok((update_enum, leg_enum))

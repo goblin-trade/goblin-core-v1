@@ -9,6 +9,7 @@
 mod test_utils;
 
 mod test_make_across_outer_bitmaps;
+mod test_make_fresh_market;
 mod test_make_multiple_orders;
 mod test_make_order_book;
 mod test_make_single_order;

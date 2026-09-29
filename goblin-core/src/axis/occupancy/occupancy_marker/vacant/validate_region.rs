@@ -16,6 +16,7 @@ where
     In: LegMatcher,
 {
     match region {
+        MakeRegion::Unseeded => {}
         MakeRegion::In(leg_enum) => {
             require!(In::VARIANT == leg_enum, GoblinError::InvalidOpenPrice);
 
