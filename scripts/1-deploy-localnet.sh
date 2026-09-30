@@ -53,4 +53,4 @@ cast send $CREATE3_FACTORY \
 cast send $ARB_WASM_CONTRACT \
     "activateProgram(address)" $CONTRACT \
     --private-key $PRIVATE_KEY \
-    --value 0.01ether
+    --value 0.0001ether

@@ -9,6 +9,12 @@ RPC: https://robinhood-testnet.drpc.org
 | Create3 factory | [0xda52b25ddB0e3B9CC393b0690Ac62245Ac772527](https://explorer.testnet.chain.robinhood.com/address/0xda52b25ddB0e3B9CC393b0690Ac62245Ac772527) |
 | Base token      | [0x11B57FE348584f042E436c6Bf7c3c3deF171de49](https://explorer.testnet.chain.robinhood.com/address/0x11B57FE348584f042E436c6Bf7c3c3deF171de49) |
 | Quote token     | [0x1294b86822ff4976BfE136cB06CF43eC7FCF2574](https://explorer.testnet.chain.robinhood.com/address/0x1294b86822ff4976BfE136cB06CF43eC7FCF2574) |
+| Goblin          | [0x888853cf2e8e5aee7157d84a7c2c5c514c52be34](https://explorer.testnet.chain.robinhood.com/address/0x888853cf2e8e5aee7157d84a7c2c5c514c52be34) |
+
+# Revised data for testnet
+
+- Address: 0x888853cf2e8e5aee7157d84a7c2c5c514c52be34
+- Salt: 0x0000000000000000000000000000000000000000000000004000000000000cd5
 
 # Scripts
 

@@ -3,12 +3,12 @@ mod localnet;
 
 #[cfg(feature = "mainnet")]
 mod mainnet;
-#[cfg(feature = "testnet")]
+#[cfg(all(feature = "testnet", not(feature = "localnet")))]
 mod testnet;
 
 #[cfg(feature = "localnet")]
 pub use localnet::*;
 #[cfg(feature = "mainnet")]
 pub use mainnet::*;
-#[cfg(feature = "testnet")]
+#[cfg(all(feature = "testnet", not(feature = "localnet")))]
 pub use testnet::*;

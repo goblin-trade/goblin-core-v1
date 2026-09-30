@@ -4,7 +4,7 @@ mod illegal;
 mod localnet;
 #[cfg(feature = "mainnet")]
 mod mainnet;
-#[cfg(feature = "testnet")]
+#[cfg(all(feature = "testnet", not(feature = "localnet")))]
 mod testnet;
 
 use crate::{axis_helpers::TokenPair, market::MarketReadables};

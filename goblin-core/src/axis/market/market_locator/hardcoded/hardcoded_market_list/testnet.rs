@@ -1,17 +1,47 @@
+use super::HardcodedMarketList;
 use crate::{
-    markets::{IndexedMarketV2, MarketLeg},
+    axis::{
+        leg::Pair,
+        token::{ETH, ETHStub, HardcodedERC20, token_marker::HardcodedERC20Index},
+    },
+    market::{CommonMarket, MarketReadables},
     quantities::{BaseLotsPerBaseUnit, QuoteLotsPerBaseUnitPerTick, QuoteLotsPerQuoteUnit},
-    tokens::TokenIndex,
+    types::Tuple,
 };
 
-pub const HARDCODED_MARKETS: [IndexedMarketV2; 1] = [IndexedMarketV2 {
-    base: MarketLeg {
-        token_index: TokenIndex(0),
-        lot_size: BaseLotsPerBaseUnit::<u64>::new(100),
-    },
-    quote: MarketLeg {
-        token_index: TokenIndex(1),
-        lot_size: QuoteLotsPerQuoteUnit::<u64>::new(1000),
-    },
-    tick_size: QuoteLotsPerBaseUnitPerTick::new(1),
-}];
+impl HardcodedMarketList for Pair<ETH, HardcodedERC20> {
+    const HARDCODED_MARKET_LIST: &'static [MarketReadables<Pair<ETH, HardcodedERC20>>] =
+        &[MarketReadables::get_const(CommonMarket::new(
+            Pair::new(ETHStub, HardcodedERC20Index::new(0)),
+            Tuple::new(
+                BaseLotsPerBaseUnit::new(100),
+                QuoteLotsPerQuoteUnit::new(100),
+            ),
+            QuoteLotsPerBaseUnitPerTick::new(1),
+        ))];
+}
+
+impl HardcodedMarketList for Pair<HardcodedERC20, ETH> {
+    const HARDCODED_MARKET_LIST: &'static [MarketReadables<Pair<HardcodedERC20, ETH>>] =
+        &[MarketReadables::get_const(CommonMarket::new(
+            Pair::new(HardcodedERC20Index::new(1), ETHStub),
+            Tuple::new(
+                BaseLotsPerBaseUnit::new(100),
+                QuoteLotsPerQuoteUnit::new(100),
+            ),
+            QuoteLotsPerBaseUnitPerTick::new(1),
+        ))];
+}
+
+impl HardcodedMarketList for Pair<HardcodedERC20, HardcodedERC20> {
+    const HARDCODED_MARKET_LIST: &'static [MarketReadables<
+        Pair<HardcodedERC20, HardcodedERC20>,
+    >] = &[MarketReadables::get_const(CommonMarket::new(
+        Pair::new(HardcodedERC20Index::new(0), HardcodedERC20Index::new(1)),
+        Tuple::new(
+            BaseLotsPerBaseUnit::new(100),
+            QuoteLotsPerQuoteUnit::new(100),
+        ),
+        QuoteLotsPerBaseUnitPerTick::new(1),
+    ))];
+}

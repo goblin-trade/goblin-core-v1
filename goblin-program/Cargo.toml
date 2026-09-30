@@ -7,5 +7,5 @@ edition = "2024"
 crate-type = ["cdylib", "lib"]
 
 [dependencies]
-goblin-core = { path = "../goblin-core", default-features = false, features = ["localnet"] }
+goblin-core = { path = "../goblin-core", default-features = false, features = ["testnet"] }
 goblin-hostio = { path = "../goblin-hostio" }

@@ -31,4 +31,8 @@ use hex_literal::hex;
 ///
 /// The contract logic reads this at compile time, e.g. to approve
 /// `transferFrom` pulls from the maker.
+#[cfg(not(feature = "testnet"))]
+pub const CONTRACT_ADDRESS: [u8; 20] = hex!("8888ef09a63b6328468fce63a09fc185de807722");
+
+#[cfg(feature = "testnet")]
 pub const CONTRACT_ADDRESS: [u8; 20] = hex!("8888ef09a63b6328468fce63a09fc185de807722");

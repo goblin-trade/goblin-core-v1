@@ -5,6 +5,8 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 const DEPLOYER: Address = address!("3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E");
+
+// Replace for testnet. CREATE3 factory- da52b25ddB0e3B9CC393b0690Ac62245Ac772527
 const FACTORY_ADDRESS: Address = address!("525c2aBA45F66987217323E8a05EA400C65D06DC");
 const PROXY_BYTECODE: [u8; 16] = hex!("67363d3d37363d34f03d5260086018f3");
 const DESIRED_PREFIX: [u8; 2] = hex!("8888"); // Define desired prefix as bytes
